@@ -328,7 +328,7 @@ void Copter::init_ardupilot()
     }
 
     // disable safety if requested
-    BoardConfig.init_safety();    
+    BoardConfig.init_safety();
 
     cliSerial->printf("\nReady to FLY ");
 

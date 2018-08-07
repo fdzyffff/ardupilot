@@ -43,6 +43,7 @@ bool Copter::guided_init(bool ignore_checks)
         set_auto_yaw_mode(get_default_auto_yaw_mode(false));
         // start in position control mode
         guided_pos_control_start();
+        guided_gcs_init();    
         return true;
     }else{
         return false;
@@ -342,6 +343,8 @@ void Copter::guided_run()
         guided_angle_control_run();
         break;
     }
+
+    guided_valid_gcs_cmd();
  }
 
 // guided_takeoff_run - takeoff in guided mode
@@ -396,6 +399,8 @@ void Copter::guided_takeoff_run()
 
     // call attitude controller
     auto_takeoff_attitude_run(target_yaw_rate);
+
+    guided_gcs_state.state_complete = wp_nav->reached_wp_destination();
 }
 
 // guided_pos_control_run - runs the guided position controller
@@ -765,4 +770,43 @@ bool Copter::guided_limit_check()
 
     // if we got this far we must be within limits
     return false;
+}
+
+void Copter::guided_gcs_init()
+{
+    guided_gcs_state.num_next_command = 0;
+    guided_gcs_state.state_complete = false;
+    guided_gcs_state.target_pos.x = 0.0f;
+    guided_gcs_state.target_pos.y = 0.0f;
+    guided_gcs_state.target_pos.z = 0.0f;
+    guided_gcs_state.target_yaw = 0.0f;
+}
+
+void Copter::guided_valid_gcs_cmd()
+{
+    if (guided_gcs_state.num_next_command <= 0) {
+        return;
+    }
+    if (!guided_gcs_state.state_complete) {
+        return;
+    }
+    gcs_send_text(MAV_SEVERITY_WARNING, "guided complete");
+    switch (guided_mode) {
+
+    case Guided_TakeOff:
+        if (guided_gcs_state.target_yaw < 0.0f) {
+            guided_set_destination(guided_gcs_state.target_pos, false, 0.0f, true, 0.0f, false);
+        } else {
+            guided_set_destination(guided_gcs_state.target_pos, true, guided_gcs_state.target_yaw, false, 0.0f, false);            
+        }
+        break;
+
+    case Guided_WP:
+    case Guided_Velocity:
+    case Guided_PosVel:
+    case Guided_Angle:
+        break;
+    }
+    guided_gcs_state.state_complete = false;
+    guided_gcs_state.num_next_command--;
 }

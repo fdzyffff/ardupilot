@@ -1576,6 +1576,36 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
             }
             break;
 
+        case MAV_CMD_USER_1:
+        {
+            if (copter.control_mode != GUIDED) {
+                result = MAV_RESULT_FAILED;
+                break;
+            }
+            //param 1: 
+            copter.guided_gcs_state.target_yaw = packet.param4 * 100.f;
+            Vector3f pos_ned(packet.param5, packet.param6, packet.param7);
+            copter.guided_gcs_state.target_pos = pos_ned;
+            if (copter.ap.land_complete)
+            {
+                copter.guided_gcs_state.num_next_command = 1;
+                copter.do_user_takeoff(MAX(200.f, pos_ned.z), false);
+            }
+            else 
+            {
+                copter.do_user_takeoff(MAX(200.f, pos_ned.z), false);
+                copter.guided_gcs_state.num_next_command = 0;
+
+                if (copter.guided_gcs_state.target_yaw < 0.0f) {
+                    copter.guided_set_destination(copter.guided_gcs_state.target_pos, false, 0.0f, true, 0.0f, false);
+                } else {
+                    copter.guided_set_destination(copter.guided_gcs_state.target_pos, true, copter.guided_gcs_state.target_yaw, false, 0.0f, false);
+                }
+            }
+            copter.guided_gcs_state.state_complete = false;
+            result = MAV_RESULT_ACCEPTED;
+            break;
+        }
         default:
             result = MAV_RESULT_UNSUPPORTED;
             break;
@@ -1787,6 +1817,16 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
                     break;
             }
             pos_ned = copter.pv_location_to_vector(loc);
+
+            if (copter.ap.land_complete)
+            {
+                copter.do_user_takeoff(MAX(200.f, pos_ned.z), false);
+                copter.guided_gcs_state.num_next_command = 1;
+                copter.guided_gcs_state.state_complete = false;
+                copter.guided_gcs_state.target_pos = pos_ned;
+                copter.guided_gcs_state.target_yaw = ToDeg(packet.yaw) * 100.0f;
+                break;
+            }
         }
 
         // prepare yaw

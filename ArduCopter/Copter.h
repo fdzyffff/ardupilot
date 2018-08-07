@@ -377,6 +377,13 @@ private:
     // Guided
     GuidedMode guided_mode;  // controls which controller is run (pos or vel)
 
+    struct {
+        Vector3f target_pos;        
+        float target_yaw;
+        bool state_complete;
+        int16_t num_next_command;
+    } guided_gcs_state;
+
     // RTL
     RTLState rtl_state;  // records state of rtl (initial climb, returning home, etc)
     bool rtl_state_complete; // set to true if the current state is completed
@@ -881,6 +888,8 @@ private:
     bool guided_nogps_init(bool ignore_checks);
     void guided_nogps_run();
     void guided_set_yaw_state(bool use_yaw, float yaw_cd, bool use_yaw_rate, float yaw_rate_cds, bool relative_angle);
+    void guided_gcs_init();
+    void guided_valid_gcs_cmd();
     bool land_init(bool ignore_checks);
     void land_run();
     void land_gps_run();
