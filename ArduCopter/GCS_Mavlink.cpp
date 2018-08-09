@@ -1582,9 +1582,24 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
                 result = MAV_RESULT_FAILED;
                 break;
             }
+
             //param 1: 
             copter.guided_gcs_state.target_yaw = packet.param4 * 100.f;
-            Vector3f pos_ned(packet.param5, packet.param6, packet.param7);
+            Vector3f pos_ned;
+
+            if (int16_t(packet.param1) == 1) {
+                Location loc;
+                loc.lat = int32_t(packet.param5);
+                loc.lng = int32_t(packet.param6);
+                loc.alt = int32_t(packet.param7);
+
+                loc.flags.relative_alt = true;
+                loc.flags.terrain_alt = false;
+                pos_ned = copter.pv_location_to_vector(loc);
+            } else {
+                pos_ned = Vector3f(packet.param5, packet.param6, packet.param7);
+            }
+            
             copter.guided_gcs_state.target_pos = pos_ned;
             if (copter.ap.land_complete)
             {
