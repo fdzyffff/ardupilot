@@ -1593,7 +1593,6 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
             }
             else 
             {
-                copter.do_user_takeoff(MAX(200.f, pos_ned.z), false);
                 copter.guided_gcs_state.num_next_command = 0;
 
                 if (copter.guided_gcs_state.target_yaw < 0.0f) {
