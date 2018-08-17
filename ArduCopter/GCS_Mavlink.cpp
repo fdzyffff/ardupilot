@@ -278,12 +278,16 @@ void NOINLINE Copter::send_proximity(mavlink_channel_t chan, uint16_t count_max)
  */
 void NOINLINE Copter::send_rpm(mavlink_channel_t chan)
 {
-    if (rpm_sensor.enabled(0) || rpm_sensor.enabled(1)) {
+    /*if (rpm_sensor.enabled(0) || rpm_sensor.enabled(1)) {
         mavlink_msg_rpm_send(
             chan,
             rpm_sensor.get_rpm(0),
             rpm_sensor.get_rpm(1));
-    }
+    }*/
+    mavlink_msg_rpm_send(
+            chan,
+            (float)ICD_A1_in_info.ICD_A1_in_data_recv.DC_DC_U1,
+            (float)ICD_A1_in_info.ICD_A1_in_data_recv.DC_DC_I1);
 }
 
 void NOINLINE Copter::send_a1_out(mavlink_channel_t chan)

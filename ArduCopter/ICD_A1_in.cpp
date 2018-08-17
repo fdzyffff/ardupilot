@@ -6,7 +6,7 @@ void Copter::icd_a1_in_init() {
     ICD_A1_in_info.ICD_A1_in_port = serial_manager.find_serial(AP_SerialManager::SerialProtocol_ICD_A1_in, 0);
 
     if (ICD_A1_in_info.ICD_A1_in_port != nullptr) {
-    	//memset(&ICD_A1_in_info, 0, sizeof(ICD_A1_in_info));
+    	memset(&ICD_A1_in_info.ICD_A1_in_data_recv, 0, sizeof(ICD_A1_in_info.ICD_A1_in_data_recv));
         memset(&ICD_A1_in_Buf, 0, sizeof(ICD_A1_in_Buf));
 
 		ICD_A1_in_info.i_counter = 0;
