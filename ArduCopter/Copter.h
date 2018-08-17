@@ -93,6 +93,9 @@
 #include <AP_Arming/AP_Arming.h>
 #include <AP_VisualOdom/AP_VisualOdom.h>
 
+#include "ICD_A1_in.h"
+#include "ICD_C1_out.h"
+
 // Configuration
 #include "defines.h"
 #include "config.h"
@@ -1157,6 +1160,81 @@ private:
     void init_capabilities(void);
     void dataflash_periodic(void);
     void accel_cal_update(void);
+
+    void icd_a1_in_init();
+    void icd_a1_in_update();
+    void icd_a1_in_dealRecv(uint8_t data_in);
+    void send_a1_out(mavlink_channel_t chan);
+
+    struct PACKED ICD_A1_in_data_t {
+        uint8_t head_1;
+        uint8_t head_2;
+        uint16_t DC_DC_U1;
+        uint16_t DC_DC_U2;
+        uint16_t DC_DC_U3;
+        uint16_t VDC_DC_U4;
+        uint16_t DC_DC_I1;
+        uint16_t DC_DC_I2;
+        uint16_t DC_DC_I3;
+        uint8_t VDC_DC_I4;
+        uint8_t DC_DC_status1;
+        uint8_t DC_DC_status2;
+        uint8_t DC_DC_status3;
+        uint8_t DC_DC_status4;
+        uint8_t keep;
+        uint8_t counter;
+        uint8_t tail;
+    };
+
+    union PACKED ICD_A1_in_Buf_t {
+        ICD_A1_in_data_t ICD_A1_in_data;
+        uint8_t bytes[24];
+    } ICD_A1_in_Buf;
+
+    struct ICD_A1_in_info_t {
+        AP_HAL::UARTDriver *ICD_A1_in_port;
+        ICD_A1_in_data_t ICD_A1_in_data_recv;
+        uint16_t i_counter;
+        uint32_t last_update_ms;
+        bool find_head_1;
+        bool find_head_2;
+    } ICD_A1_in_info;
+
+    void icd_c1_out_init();
+    void icd_c1_out_update();
+    void icd_c1_out_write();
+
+    struct PACKED ICD_C1_out_data_t {
+        uint8_t head_1;
+        uint8_t head_2;
+        uint8_t len;
+        uint8_t command;
+        uint8_t sub_command;
+        uint8_t empty_05_1f[11];
+        uint32_t lng;
+        uint32_t lat;
+        uint16_t alt_sealevel;
+        uint16_t alt_rel;
+        uint16_t alt_terrain;
+        uint16_t vel_target;
+        uint8_t empty_30_35[6];
+        uint16_t roll_cd;
+        uint16_t pitch_cd;
+        uint8_t empty_3a_42[9];
+        uint16_t yaw;
+        uint8_t empty_45_7e[58];
+        uint8_t tail;
+    };
+
+    union PACKED ICD_C1_out_Buf_t {
+        ICD_C1_out_data_t ICD_C1_out_data;
+        uint8_t bytes[128];
+    } ICD_C1_out_Buf;
+
+    struct ICD_C1_out_info_t {
+        AP_HAL::UARTDriver *ICD_C1_out_port;
+        uint32_t last_update_ms;
+    } ICD_C1_out_info;
 
 public:
     void mavlink_delay_cb();

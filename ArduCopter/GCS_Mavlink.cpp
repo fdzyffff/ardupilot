@@ -286,6 +286,16 @@ void NOINLINE Copter::send_rpm(mavlink_channel_t chan)
     }
 }
 
+void NOINLINE Copter::send_a1_out(mavlink_channel_t chan)
+{
+    mavlink_msg_command_long_send(
+            chan,
+            0,
+            0,
+            MAV_CMD_USER_1,
+            0,
+            1, 0, 0, 0, 0, 0, 0);
+}
 
 /*
   send PID tuning message
@@ -598,6 +608,10 @@ bool GCS_MAVLINK_Copter::try_send_message(enum ap_message id)
         break;
     case MSG_BATTERY_STATUS:
         send_battery_status(copter.battery);
+        break;
+    case MSG_A1_OUT:
+        CHECK_PAYLOAD_SIZE(COMMAND_LONG);
+        copter.send_a1_out(chan);
         break;
     }
 

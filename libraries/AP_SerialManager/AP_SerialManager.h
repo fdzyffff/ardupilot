@@ -69,6 +69,14 @@
 #define AP_SERIALMANAGER_ULANDING_BUFSIZE_RX     128
 #define AP_SERIALMANAGER_ULANDING_BUFSIZE_TX     128
 
+#define AP_SERIALMANAGER_ICD_A1_IN_BAUD           115200
+#define AP_SERIALMANAGER_ICD_A1_IN_BUFSIZE_RX     128
+#define AP_SERIALMANAGER_ICD_A1_IN_BUFSIZE_TX     128
+
+#define AP_SERIALMANAGER_ICD_C1_OUT_BAUD           115200
+#define AP_SERIALMANAGER_ICD_C1_OUT_BUFSIZE_RX     128
+#define AP_SERIALMANAGER_ICD_C1_OUT_BUFSIZE_TX     256
+
 
 class AP_SerialManager {
 
@@ -89,7 +97,9 @@ public:
         SerialProtocol_FrSky_SPort_Passthrough = 10, // FrSky SPort Passthrough (OpenTX) protocol (X-receivers)
         SerialProtocol_Lidar360 = 11,                // Lightware SF40C or TeraRanger Tower
         SerialProtocol_Aerotenna_uLanding      = 12, // Ulanding support
-        SerialProtocol_Beacon = 13
+        SerialProtocol_Beacon = 13,
+        SerialProtocol_ICD_A1_in = 14,
+        SerialProtocol_ICD_C1_out = 15
     };
 
     // Constructor

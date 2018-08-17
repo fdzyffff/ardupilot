@@ -19,6 +19,16 @@ void Copter::userhook_FastLoop()
 void Copter::userhook_50Hz()
 {
     // put your 50Hz code here
+    icd_a1_in_update();
+
+    //25Hz
+    static bool update_c1_out = false;
+    if (update_c1_out) {
+    	icd_c1_out_update();
+    	update_c1_out = false;
+    } else {
+    	update_c1_out = true;
+    }
 }
 #endif
 

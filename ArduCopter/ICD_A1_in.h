@@ -1,0 +1,11 @@
+#pragma once
+
+
+#define ICD_A1_IN_HEAD_1 					0xA1
+#define ICD_A1_IN_HEAD_2 					0x1A
+#define ICD_A1_IN_TAIL 						0xFF
+#define ICD_A1_IN_DCDC_STATUS_GOOD 			0x00
+#define ICD_A1_IN_DCDC_STATUS_OVERV_OUT		0x10
+#define ICD_A1_IN_DCDC_STATUS_OVERV_IN		0x40
+#define ICD_A1_IN_DCDC_STATUS_LESSV_IN		0x80
+#define ICD_A1_IN_DCDC_STATUS_OTHER 		0xFF
