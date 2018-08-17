@@ -79,6 +79,36 @@ bool Copter::guided_takeoff_start(float final_alt_above_home)
     return true;
 }
 
+void Copter::guided_land_start()
+{
+    guided_mode = Guided_Land;
+    //land_init();
+        // check if we have GPS and decide which LAND we're going to do
+    land_with_gps = position_ok();
+    if (land_with_gps) {
+        // set target to stopping point
+        guided_gcs_state.target_pos.z = inertial_nav.get_altitude();
+        wp_nav->init_loiter_target(guided_gcs_state.target_pos);
+    }
+
+    // initialize vertical speeds and leash lengths
+    pos_control->set_speed_z(wp_nav->get_speed_down(), wp_nav->get_speed_up());
+    pos_control->set_accel_z(wp_nav->get_accel_z());
+
+    // initialise position and desired velocity
+    if (!pos_control->is_active_z()) {
+        pos_control->set_alt_target_to_current_alt();
+        pos_control->set_desired_velocity_z(inertial_nav.get_velocity_z());
+    }
+    
+    land_start_time = millis();
+
+    land_pause = false;
+
+    // reset flag indicating if pilot has applied roll or pitch inputs during landing
+    ap.land_repo_active = false;
+}
+
 // initialise guided mode's position controller
 void Copter::guided_pos_control_start()
 {
@@ -342,8 +372,14 @@ void Copter::guided_run()
         // run angle controller
         guided_angle_control_run();
         break;
+
+    case Guided_Land:
+        // run angle controller
+        guided_land_run();
+        break;
     }
 
+    guided_gcs_state.state_complete = wp_nav->reached_wp_destination();
     guided_valid_gcs_cmd();
  }
 
@@ -399,8 +435,11 @@ void Copter::guided_takeoff_run()
 
     // call attitude controller
     auto_takeoff_attitude_run(target_yaw_rate);
+}
 
-    guided_gcs_state.state_complete = wp_nav->reached_wp_destination();
+void Copter::guided_land_run()
+{
+    land_run();
 }
 
 // guided_pos_control_run - runs the guided position controller
@@ -774,26 +813,30 @@ bool Copter::guided_limit_check()
 
 void Copter::guided_gcs_init()
 {
-    guided_gcs_state.num_next_command = 0;
     guided_gcs_state.state_complete = false;
+    guided_gcs_state.delta_pos_set = false;
     guided_gcs_state.target_pos.x = 0.0f;
     guided_gcs_state.target_pos.y = 0.0f;
     guided_gcs_state.target_pos.z = 0.0f;
+    guided_gcs_state.delta_pos.x = 0.0f;
+    guided_gcs_state.delta_pos.y = 0.0f;
+    guided_gcs_state.delta_pos.z = 0.0f;
     guided_gcs_state.target_yaw = 0.0f;
+    guided_gcs_state.next_command = guided_command_NONE;
 }
 
 void Copter::guided_valid_gcs_cmd()
 {
-    if (guided_gcs_state.num_next_command <= 0) {
+    if (guided_gcs_state.next_command == guided_command_NONE) {
         return;
     }
     if (!guided_gcs_state.state_complete) {
         return;
     }
     gcs_send_text(MAV_SEVERITY_WARNING, "guided complete");
-    switch (guided_mode) {
+    switch (guided_gcs_state.next_command) {
 
-    case Guided_TakeOff:
+    case guided_command_WP:
         if (guided_gcs_state.target_yaw < 0.0f) {
             guided_set_destination(guided_gcs_state.target_pos, false, 0.0f, true, 0.0f, false);
         } else {
@@ -801,12 +844,13 @@ void Copter::guided_valid_gcs_cmd()
         }
         break;
 
-    case Guided_WP:
-    case Guided_Velocity:
-    case Guided_PosVel:
-    case Guided_Angle:
+    case guided_command_LAND:
+        guided_land_start();
+        break;
+
+    default :
         break;
     }
     guided_gcs_state.state_complete = false;
-    guided_gcs_state.num_next_command--;
+    guided_gcs_state.next_command = guided_command_NONE;
 }

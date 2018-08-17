@@ -1,10 +1,5 @@
 #include "Copter.h"
 
-static bool land_with_gps;
-
-static uint32_t land_start_time;
-static bool land_pause;
-
 // land_init - initialise land controller
 bool Copter::land_init(bool ignore_checks)
 {

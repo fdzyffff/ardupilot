@@ -380,12 +380,20 @@ private:
     // Guided
     GuidedMode guided_mode;  // controls which controller is run (pos or vel)
 
-    struct {
-        Vector3f target_pos;        
+    struct guided_gcs_state_t {
+        Vector3f target_pos;    
+        Vector3f delta_pos;     
         float target_yaw;
         bool state_complete;
-        int16_t num_next_command;
+        bool delta_pos_set;
+        guided_next_command_t next_command;
     } guided_gcs_state;
+
+    // Land
+
+    bool land_with_gps;
+    uint32_t land_start_time;
+    bool land_pause;
 
     // RTL
     RTLState rtl_state;  // records state of rtl (initial climb, returning home, etc)
@@ -868,6 +876,7 @@ private:
     void flip_run();
     bool guided_init(bool ignore_checks);
     bool guided_takeoff_start(float final_alt_above_home);
+    void guided_land_start();
     void guided_pos_control_start();
     void guided_vel_control_start();
     void guided_posvel_control_start();
@@ -879,6 +888,7 @@ private:
     void guided_set_angle(const Quaternion &q, float climb_rate_cms, bool use_yaw_rate, float yaw_rate_rads);
     void guided_run();
     void guided_takeoff_run();
+    void guided_land_run();
     void guided_pos_control_run();
     void guided_vel_control_run();
     void guided_posvel_control_run();
@@ -1161,6 +1171,7 @@ private:
     void dataflash_periodic(void);
     void accel_cal_update(void);
 
+    void send_delta_pos(mavlink_channel_t chan);
     void icd_a1_in_init();
     void icd_a1_in_update();
     void icd_a1_in_dealRecv(uint8_t data_in);

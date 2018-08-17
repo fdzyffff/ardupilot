@@ -209,6 +209,7 @@ enum GuidedMode {
     Guided_Velocity,
     Guided_PosVel,
     Guided_Angle,
+    Guided_Land
 };
 
 // RTL states
@@ -291,6 +292,13 @@ enum PayloadPlaceStateType {
 // bit options for DEV_OPTIONS parameter
 enum DevOptions {
     DevOptionADSBMAVLink = 1,
+};
+
+
+enum guided_next_command_t {
+    guided_command_NONE = 0,
+    guided_command_WP = 1,
+    guided_command_LAND = 2,
 };
 
 //  Logging parameters
