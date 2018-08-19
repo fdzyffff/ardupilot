@@ -273,6 +273,74 @@ bool GCS_MAVLINK_Tracker::try_send_message(enum ap_message id)
     case MSG_POSITION_TARGET_GLOBAL_INT:
     case MSG_AOA_SSA:
         break; // just here to prevent a warning
+    case MSG_DELTA_POS:
+    {
+        if (tracker.control_mode == MANUAL) {
+            if (!tracker.vehicle.mode_init) {
+                CHECK_PAYLOAD_SIZE(COMMAND_LONG);
+                Location_Class tmp_loc(tracker.current_loc);
+                tmp_loc.offset(tracker.vehicle.target_pos.x / 100.f, tracker.vehicle.target_pos.y / 100.f);
+                if (tracker.gps.status() >= AP_GPS::GPS_OK_FIX_2D) {
+                    mavlink_msg_command_long_send(
+                    chan,
+                    0,
+                    0,
+                    MAV_CMD_USER_1,
+                    0,
+                    1, 0, 0, tracker.vehicle.target_yaw, tmp_loc.lat, tmp_loc.lng, tracker.vehicle.target_pos.z);
+                } else {
+                    mavlink_msg_command_long_send(
+                    chan,
+                    0,
+                    0,
+                    MAV_CMD_USER_1,
+                    0,
+                    0, 0, 0, tracker.vehicle.target_yaw, tracker.vehicle.target_pos.x, tracker.vehicle.target_pos.y, tracker.vehicle.target_pos.z);
+                }
+    
+                tracker.vehicle.mode_init = true;
+            }
+        }
+        if (tracker.control_mode == AUTO) {
+                CHECK_PAYLOAD_SIZE(COMMAND_LONG);
+                if (tracker.gps.status() >= AP_GPS::GPS_OK_FIX_2D) {
+                    mavlink_msg_command_long_send(
+                    chan,
+                    0,
+                    0,
+                    MAV_CMD_USER_2,
+                    0,
+                    1, 0, 0, tracker.get_vehicle_yaw(ToDeg(tracker.ahrs.yaw)), tracker.current_loc.lat, tracker.current_loc.lng, tracker.vehicle.target_pos.z);
+                }
+        }
+        if (tracker.control_mode == SCAN) {
+            if (!tracker.vehicle.mode_init) {
+                CHECK_PAYLOAD_SIZE(COMMAND_LONG);
+                if (tracker.gps.status() >= AP_GPS::GPS_OK_FIX_2D) {
+                    mavlink_msg_command_long_send(
+                    chan,
+                    0,
+                    0,
+                    MAV_CMD_USER_1,
+                    0,
+                    1, 2, 0, tracker.vehicle.target_yaw, tracker.current_loc.lat, tracker.current_loc.lng, tracker.vehicle.target_pos.z);
+                } else {
+                    mavlink_msg_command_long_send(
+                    chan,
+                    0,
+                    0,
+                    MAV_CMD_USER_1,
+                    0,
+                    0, 4, 0, tracker.vehicle.target_yaw, 0, 0, tracker.vehicle.target_pos.z);
+                }
+                
+                tracker.vehicle.mode_init = true;
+            }
+        }
+        break;
+    }
+    default :
+        break;
     }
     return true;
 }
@@ -507,6 +575,7 @@ void Tracker::mavlink_check_target(const mavlink_message_t* msg)
 
     // flag target has been set
     target_set = true;
+    gcs_send_text_fmt(MAV_SEVERITY_WARNING, "Vehicle %d connected", msg->sysid);
 }
 
 void GCS_MAVLINK_Tracker::handleMessage(mavlink_message_t* msg)
@@ -599,6 +668,54 @@ void GCS_MAVLINK_Tracker::handleMessage(mavlink_message_t* msg)
                 break;
             }
 
+            case MAV_CMD_DO_CHANGE_ALTITUDE:
+            {
+                bool change_alt = false;
+                bool change_pos = false;
+                bool change_yaw = false;
+                tracker.vehicle.is_rel_yaw = false;
+                int16_t tmp_int = int16_t(packet.param1);
+                if (tmp_int > 999) {
+                    tracker.vehicle.is_rel_yaw = true;
+                    tmp_int = tmp_int - (tmp_int/1000) * 1000;
+                }
+                if (tmp_int > 99) {
+                    change_yaw = true;
+                    tmp_int = tmp_int - (tmp_int/100) * 100;
+                }
+                if (tmp_int > 9) {
+                    change_pos = true;
+                    tmp_int = tmp_int - (tmp_int/10) * 10;
+                }
+                if (tmp_int > 0) {
+                    change_alt = true;
+                }
+
+                if (change_yaw) {
+                    tracker.vehicle.target_yaw = tracker.constrain_yaw(packet.param4);
+                    if (tracker.vehicle.target_yaw < 0.0f) {
+                        tracker.vehicle.is_rel_yaw = false;
+                    }
+                    tracker.vehicle.mode_init = false;
+                    send_text(MAV_SEVERITY_WARNING, "change yaw");
+                }
+
+                if (change_pos) {
+                    tracker.vehicle.target_pos.x = packet.param5;
+                    tracker.vehicle.target_pos.y = packet.param6;
+                    tracker.vehicle.mode_init = false;
+                    send_text(MAV_SEVERITY_WARNING, "change pos");
+                }
+
+                if (packet.param7 > 200.0f && change_alt) {
+                    tracker.vehicle.target_pos.z = packet.param7;
+                    tracker.vehicle.mode_init = false;
+                    send_text(MAV_SEVERITY_WARNING, "change alt");
+                }
+                result = MAV_RESULT_ACCEPTED;
+                break;
+            }
+
             case MAV_CMD_COMPONENT_ARM_DISARM:
                 if (packet.target_component == MAV_COMP_ID_SYSTEM_CONTROL) {
                     if (is_equal(packet.param1,1.0f)) {
@@ -613,7 +730,7 @@ void GCS_MAVLINK_Tracker::handleMessage(mavlink_message_t* msg)
                 } else {
                     result = MAV_RESULT_UNSUPPORTED;
                 }
-            break;
+                break;
 
             case MAV_CMD_GET_HOME_POSITION:
                 send_home(tracker.ahrs.get_home());
@@ -675,13 +792,14 @@ void GCS_MAVLINK_Tracker::handleMessage(mavlink_message_t* msg)
                 result = tracker.compass.handle_mag_cal_command(packet);
                 break;
 
-            case MAV_CMD_ACCELCAL_VEHICLE_POS:
+            case MAV_CMD_ACCELCAL_VEHICLE_POS: {
                 result = MAV_RESULT_FAILED;
 
                 if (tracker.ins.get_acal()->gcs_vehicle_position(packet.param1)) {
                     result = MAV_RESULT_ACCEPTED;
                 }
                 break;
+            }
 
             default:
                 break;

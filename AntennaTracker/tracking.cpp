@@ -104,15 +104,15 @@ void Tracker::update_tracking(void)
 
     switch (control_mode) {
     case AUTO:
-        update_auto();
+        //update_auto();
         break;
 
     case MANUAL:
-        update_manual();
+        //update_manual();
         break;
 
     case SCAN:
-        update_scan();
+        //update_scan();
         break;
 
     case SERVO_TEST:
@@ -190,4 +190,25 @@ void Tracker::update_armed_disarmed()
     } else {
         AP_Notify::flags.armed = false;
     }
+}
+
+float Tracker::get_vehicle_yaw(float tracker_yaw)
+{
+    float final_yaw = vehicle.target_yaw;
+    if (vehicle.is_rel_yaw) {
+        final_yaw = tracker_yaw + vehicle.target_yaw;
+    }
+    return constrain_yaw(final_yaw);
+}
+
+float Tracker::constrain_yaw(float input_yaw)
+{
+    if (input_yaw < 0.0f) {
+        return input_yaw;
+    }
+    
+    int16_t n_yaw = int32_t(input_yaw) / 360;
+    input_yaw = input_yaw - float(n_yaw) * 360.0;
+    input_yaw = constrain_float(input_yaw, 0.0f, 360.0f);
+    return input_yaw;
 }

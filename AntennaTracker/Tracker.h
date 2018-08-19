@@ -157,6 +157,10 @@ private:
         uint32_t last_update_ms;    // last position update in milliseconds
         Vector3f vel;           // the vehicle's velocity in m/s
         int32_t relative_alt;	// the vehicle's relative altitude in meters * 100
+        bool mode_init;
+        float target_yaw;
+        bool is_rel_yaw;
+        Vector3f target_pos;
     } vehicle;
 
     // Navigation controller state
@@ -262,6 +266,8 @@ private:
     void start_logging();
     void log_init(void);
     bool should_log(uint32_t mask);
+    float get_vehicle_yaw(float tracker_yaw);
+    float constrain_yaw(float input_yaw);
 
 public:
     void mavlink_snoop(const mavlink_message_t* msg);

@@ -296,9 +296,9 @@ void NOINLINE Copter::send_a1_out(mavlink_channel_t chan)
             chan,
             0,
             0,
-            MAV_CMD_USER_1,
+            MAV_CMD_USER_4,
             0,
-            1, 0, 0, 0, 0, 0, 0);
+            0, 0, 0, 0, 0, 0, 0);
 }
 
 void NOINLINE Copter::send_delta_pos(mavlink_channel_t chan)
@@ -307,15 +307,15 @@ void NOINLINE Copter::send_delta_pos(mavlink_channel_t chan)
             chan,
             0,
             0,
-            MAV_CMD_USER_2,
+            MAV_CMD_USER_4,
             0,
+            1,
+            0,
+            0,
+            copter.ahrs.yaw_sensor,
             copter.guided_gcs_state.delta_pos.x,
             copter.guided_gcs_state.delta_pos.y,
-            copter.guided_gcs_state.delta_pos.z,
-            copter.ahrs.yaw_sensor,
-            copter.guided_gcs_state.target_pos.x,
-            copter.guided_gcs_state.target_pos.x,
-            copter.guided_gcs_state.target_pos.x);
+            copter.guided_gcs_state.delta_pos.z);
 }
 
 /*
@@ -634,6 +634,10 @@ bool GCS_MAVLINK_Copter::try_send_message(enum ap_message id)
         CHECK_PAYLOAD_SIZE(COMMAND_LONG);
         copter.send_a1_out(chan);
         break;
+    case MSG_DELTA_POS:
+        CHECK_PAYLOAD_SIZE(COMMAND_LONG);
+        copter.send_delta_pos(chan);
+        break;
     }
 
     return true;
@@ -827,6 +831,8 @@ GCS_MAVLINK_Copter::data_stream_send(void)
         send_message(MSG_EKF_STATUS_REPORT);
         send_message(MSG_VIBRATION);
         send_message(MSG_RPM);
+        send_message(MSG_DELTA_POS);
+        send_message(MSG_A1_OUT);
     }
 
     if (copter.gcs_out_of_time) return;
@@ -1618,6 +1624,10 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
                 break;
             }
 
+            if (!copter.motors->armed()) {
+                copter.init_arm_motors(true);
+            }
+
             //param 1: 
             copter.guided_gcs_state.next_command = guided_command_NONE;
             copter.guided_gcs_state.state_complete = false;
@@ -1637,6 +1647,7 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
             } else {
                 pos_ned = Vector3f(packet.param5, packet.param6, packet.param7);
             }
+            pos_ned.z = MAX(200.f, pos_ned.z);
             
             copter.guided_gcs_state.target_pos = pos_ned;
 
@@ -1648,16 +1659,25 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
                 break;
             }
 
-            if (copter.guided_gcs_state.target_yaw < 0.0f) {
-                copter.guided_set_destination(copter.guided_gcs_state.target_pos, false, 0.0f, true, 0.0f, false);
-            } else {
-                copter.guided_set_destination(copter.guided_gcs_state.target_pos, true, copter.guided_gcs_state.target_yaw, false, 0.0f, false);
-            }
+            if (int16_t(packet.param2) == 0 || int16_t(packet.param2) == 2) {
+                if (copter.guided_gcs_state.target_yaw < 0.0f) {
+                    copter.guided_set_destination(copter.guided_gcs_state.target_pos, false, 0.0f, true, 0.0f, false);
+                } else {
+                    copter.guided_set_destination(copter.guided_gcs_state.target_pos, true, copter.guided_gcs_state.target_yaw, false, 0.0f, false);
+                }
 
-            if (int16_t(packet.param2) == 2) {
-                copter.guided_gcs_state.next_command = guided_command_LAND;
+                if (int16_t(packet.param2) == 2) {
+                    copter.guided_gcs_state.next_command = guided_command_LAND;
+                }
             }
             
+            if (int16_t(packet.param2) == 4) {
+                copter.guided_gcs_state.target_pos.x = copter.inertial_nav.get_position().x;
+                copter.guided_gcs_state.target_pos.y = copter.inertial_nav.get_position().y;
+                copter.guided_land_start();
+                copter.guided_gcs_state.next_command = guided_command_NONE;
+            }
+
             result = MAV_RESULT_ACCEPTED;
             break;
         }
@@ -1672,7 +1692,6 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
             //param 1: 
             copter.guided_gcs_state.next_command = guided_command_NONE;
             copter.guided_gcs_state.state_complete = false;
-            copter.guided_gcs_state.target_yaw = packet.param4 * 100.f;
             Vector3f pos_ned;
 
             if (int16_t(packet.param1) == 1) {
@@ -1687,23 +1706,25 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
             } else {
                 pos_ned = Vector3f(packet.param5, packet.param6, packet.param7);
             }
+            pos_ned.z = MAX(200.f, pos_ned.z);
 
             if (!copter.guided_gcs_state.delta_pos_set)
             {
                 copter.guided_gcs_state.target_pos = copter.inertial_nav.get_position();
                 copter.guided_gcs_state.delta_pos = pos_ned - copter.guided_gcs_state.target_pos;
+                copter.guided_gcs_state.delta_pos.z = 0.0f;
                 copter.guided_gcs_state.delta_pos_set = true;
                 result = MAV_RESULT_ACCEPTED;
                 break;
             }
 
             Vector3f tmp_target_pos = pos_ned - copter.guided_gcs_state.delta_pos;
-            if (norm(tmp_target_pos.x - copter.guided_gcs_state.target_pos.x, tmp_target_pos.y - copter.guided_gcs_state.target_pos.y) < 200.f
-                && fabsf(copter.guided_gcs_state.target_pos.z - tmp_target_pos.z) < 100.f) {
+            if (!copter.guided_target_moved(tmp_target_pos, packet.param4, copter.guided_gcs_state.target_pos, copter.guided_gcs_state.target_yaw/100.0f)) {
                 result = MAV_RESULT_FAILED;
                 return;
             }
-            
+
+            copter.guided_gcs_state.target_yaw = packet.param4 * 100.f;
             copter.guided_gcs_state.target_pos = tmp_target_pos;
 
             if (copter.guided_gcs_state.target_yaw < 0.0f) {

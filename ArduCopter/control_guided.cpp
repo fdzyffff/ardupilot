@@ -811,6 +811,28 @@ bool Copter::guided_limit_check()
     return false;
 }
 
+bool Copter::guided_target_moved(const Vector3f &target_pos, float target_yaw, const Vector3f &current_pos, float current_yaw)
+{
+    if (norm(target_pos.x - current_pos.x, target_pos.y - current_pos.y) > 200.0f) {
+        return true;
+    }
+    if (fabsf(target_pos.z - current_pos.z) > 100.f) {
+        return true;
+    }
+
+    bool do_not_change_yaw = false;
+    if (fabsf(target_yaw - current_yaw) < 10.0f) {
+        do_not_change_yaw = true;
+    }
+    if (fabsf(360.0f + target_yaw - current_yaw) < 10.0f) {
+        do_not_change_yaw = true;
+    }
+    if (fabsf(target_yaw - current_yaw - 360.0f) < 10.0f) {
+        do_not_change_yaw = true;
+    }
+    return !do_not_change_yaw;
+}
+
 void Copter::guided_gcs_init()
 {
     guided_gcs_state.state_complete = false;

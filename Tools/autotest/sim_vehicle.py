@@ -860,7 +860,7 @@ group_sim.add_option("-g", "--gdb-stopped", action='store_true', default=False, 
 group_sim.add_option("-d", "--delay-start", default=0, type='float', help="delays the start of mavproxy by the number of seconds")
 group_sim.add_option("-B", "--breakpoint", type='string', action="append", default=[], help="add a breakpoint at given location in debugger")
 group_sim.add_option("-M", "--mavlink-gimbal", action='store_true', default=False, help="enable MAVLink gimbal")
-group_sim.add_option("-L", "--location", type='string', default='CMAC', help="select start location from Tools/autotest/locations.txt")
+group_sim.add_option("-L", "--location", type='string', default='BUAA', help="select start location from Tools/autotest/locations.txt")
 group_sim.add_option("-l", "--custom-location", type='string', default=None, help="set custom start location")
 group_sim.add_option("-S", "--speedup", default=1, type='int', help="set simulation speedup (1 for wall clock time)")
 group_sim.add_option("-t", "--tracker-location", default='CMAC_PILOTSBOX', type='string', help="set antenna tracker start location")

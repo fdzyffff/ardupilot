@@ -115,7 +115,13 @@ void Tracker::init_tracker()
     gcs_send_text(MAV_SEVERITY_INFO,"Ready to track");
     hal.scheduler->delay(1000); // Why????
 
-    set_mode(AUTO); // tracking
+    set_mode(STOP); // tracking
+    vehicle.mode_init = false;
+    vehicle.is_rel_yaw = false;
+    vehicle.target_pos.x = 0.0f;
+    vehicle.target_pos.y = 0.0f;
+    vehicle.target_pos.z = 500.0f;
+    vehicle.target_yaw = -1.0f;
 
     if (g.startup_delay > 0) {
         // arm servos with trim value to allow them to start up (required
@@ -207,6 +213,7 @@ void Tracker::set_mode(enum ControlMode mode)
     case MANUAL:
     case SCAN:
     case SERVO_TEST:
+        vehicle.mode_init = false;
         arm_servos();
         break;
 

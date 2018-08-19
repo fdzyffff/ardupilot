@@ -903,6 +903,7 @@ private:
     void guided_set_yaw_state(bool use_yaw, float yaw_cd, bool use_yaw_rate, float yaw_rate_cds, bool relative_angle);
     void guided_gcs_init();
     void guided_valid_gcs_cmd();
+    bool guided_target_moved(const Vector3f &target_pos, float target_yaw, const Vector3f &current_pos, float current_yaw);
     bool land_init(bool ignore_checks);
     void land_run();
     void land_gps_run();
