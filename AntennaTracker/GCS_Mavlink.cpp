@@ -297,8 +297,7 @@ bool GCS_MAVLINK_Tracker::try_send_message(enum ap_message id)
                     0,
                     0, 0, 0, tracker.vehicle.target_yaw, tracker.vehicle.target_pos.x, tracker.vehicle.target_pos.y, tracker.vehicle.target_pos.z);
                 }
-    
-                tracker.vehicle.mode_init = true;
+                send_text(MAV_SEVERITY_INFO,"Command sent");
             }
         }
         if (tracker.control_mode == AUTO) {
@@ -333,8 +332,7 @@ bool GCS_MAVLINK_Tracker::try_send_message(enum ap_message id)
                     0,
                     0, 4, 0, tracker.vehicle.target_yaw, 0, 0, tracker.vehicle.target_pos.z);
                 }
-                
-                tracker.vehicle.mode_init = true;
+                send_text(MAV_SEVERITY_INFO,"Command sent");
             }
         }
         break;
@@ -500,7 +498,7 @@ void Tracker::mavlink_snoop(const mavlink_message_t* msg)
         mavlink_check_target(msg);
         break;
     }
-
+/*
     case MAVLINK_MSG_ID_GLOBAL_POSITION_INT:
     {
         // decode
@@ -517,7 +515,7 @@ void Tracker::mavlink_snoop(const mavlink_message_t* msg)
         mavlink_msg_scaled_pressure_decode(msg, &packet);
         tracking_update_pressure(packet);
         break;
-    }
+    }*/
     }
 }
 
