@@ -690,12 +690,14 @@ void GCS_MAVLINK_Tracker::handleMessage(mavlink_message_t* msg)
                 }
 
                 if (change_yaw) {
-                    tracker.vehicle.target_yaw = tracker.constrain_yaw(packet.param4);
+                    tracker.vehicle.target_yaw = packet.param4;
                     if (tracker.vehicle.target_yaw < 0.0f) {
                         tracker.vehicle.is_rel_yaw = false;
+                    } else if (tracker.vehicle.target_yaw > 360.0) {
+                        tracker.vehicle.target_yaw = tracker.constrain_yaw(tracker.vehicle.target_yaw);
                     }
                     tracker.vehicle.mode_init = false;
-                    send_text(MAV_SEVERITY_WARNING, "change yaw");
+                    send_text_fmt(MAV_SEVERITY_WARNING, "change yaw %.2f", tracker.vehicle.target_yaw);
                 }
 
                 if (change_pos) {
