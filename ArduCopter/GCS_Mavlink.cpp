@@ -1707,6 +1707,7 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
                 pos_ned = Vector3f(packet.param5, packet.param6, packet.param7);
             }
             pos_ned.z = MAX(200.f, pos_ned.z);
+            vel_ned = Vector3f(packet.param2, packet.param3, 0.0f);
 
             if (!copter.guided_gcs_state.delta_pos_set)
             {
@@ -1728,9 +1729,9 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
             copter.guided_gcs_state.target_pos = tmp_target_pos;
 
             if (copter.guided_gcs_state.target_yaw < 0.0f) {
-                copter.guided_set_destination(copter.guided_gcs_state.target_pos, false, 0.0f, true, 0.0f, false);
+                copter.guided_set_destination_posvel(copter.guided_gcs_state.target_pos, vel_ned, false, 0.0f, true, 0.0f, false);
             } else {
-                copter.guided_set_destination(copter.guided_gcs_state.target_pos, true, copter.guided_gcs_state.target_yaw, false, 0.0f, false);
+                copter.guided_set_destination_posvel(copter.guided_gcs_state.target_pos, vel_ned, true, copter.guided_gcs_state.target_yaw, false, 0.0f, false);
             }
             
             result = MAV_RESULT_ACCEPTED;
