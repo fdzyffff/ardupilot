@@ -1693,6 +1693,7 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
             copter.guided_gcs_state.next_command = guided_command_NONE;
             copter.guided_gcs_state.state_complete = false;
             Vector3f pos_ned;
+            Vector3f vel_ned;
 
             if (int16_t(packet.param1) == 1) {
                 Location loc;
@@ -1708,6 +1709,10 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
             }
             pos_ned.z = MAX(200.f, pos_ned.z);
             vel_ned = Vector3f(packet.param2, packet.param3, 0.0f);
+            
+            if (vel_ned.length() < 200.f) {
+                vel_ned.zero();
+            }
 
             if (!copter.guided_gcs_state.delta_pos_set)
             {

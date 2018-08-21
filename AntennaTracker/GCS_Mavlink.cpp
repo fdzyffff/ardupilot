@@ -302,6 +302,8 @@ bool GCS_MAVLINK_Tracker::try_send_message(enum ap_message id)
         }
         if (tracker.control_mode == AUTO) {
                 CHECK_PAYLOAD_SIZE(COMMAND_LONG);
+                Vector3f vel_ned;
+                tracker.ahrs.get_velocity_NED(vel_ned);
                 if (tracker.gps.status() >= AP_GPS::GPS_OK_FIX_2D) {
                     mavlink_msg_command_long_send(
                     chan,
@@ -309,7 +311,7 @@ bool GCS_MAVLINK_Tracker::try_send_message(enum ap_message id)
                     0,
                     MAV_CMD_USER_2,
                     0,
-                    1, 0, 0, tracker.get_vehicle_yaw(ToDeg(tracker.ahrs.yaw)), tracker.current_loc.lat, tracker.current_loc.lng, tracker.vehicle.target_pos.z);
+                    1, vel_ned.x, vel_ned.y, tracker.get_vehicle_yaw(ToDeg(tracker.ahrs.yaw)), tracker.current_loc.lat, tracker.current_loc.lng, tracker.vehicle.target_pos.z);
                 }
         }
         if (tracker.control_mode == SCAN) {
@@ -697,7 +699,7 @@ void GCS_MAVLINK_Tracker::handleMessage(mavlink_message_t* msg)
                         tracker.vehicle.target_yaw = tracker.constrain_yaw(tracker.vehicle.target_yaw);
                     }
                     tracker.vehicle.mode_init = false;
-                    send_text_fmt(MAV_SEVERITY_WARNING, "change yaw %.2f", tracker.vehicle.target_yaw);
+                    tracker.gcs_send_text_fmt(MAV_SEVERITY_WARNING, "change yaw %.2f", tracker.vehicle.target_yaw);
                 }
 
                 if (change_pos) {
