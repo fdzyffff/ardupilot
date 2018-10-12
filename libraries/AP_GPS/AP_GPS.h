@@ -141,6 +141,10 @@ public:
         bool have_horizontal_accuracy:1;    ///< does GPS give horizontal position accuracy? Set to true only once available.
         bool have_vertical_accuracy:1;      ///< does GPS give vertical position accuracy? Set to true only once available.
         uint32_t last_gps_time_ms;          ///< the system time we got the last GPS timestamp, milliseconds
+        float heading_deg;
+        float pitch_deg;
+        float heading_dev_deg;
+        float pitch_dev_deg;
     };
 
     /// Startup initialisation.
@@ -278,6 +282,8 @@ public:
         return get_vdop(primary_instance);
     }
 
+    void get_BeijingTime(uint8_t &year_out, uint8_t &month_out, uint8_t &day_out, uint8_t &hour_out, uint8_t &minute_out, uint8_t &second_out);
+
     // the time we got our last fix in system milliseconds. This is
     // used when calculating how far we might have moved since that fix
     uint32_t last_fix_time_ms(uint8_t instance) const {
@@ -364,6 +370,20 @@ public:
     static const struct AP_Param::GroupInfo var_info[];
 
     void Write_DataFlash_Log_Startup_messages();
+
+    float get_heading_deg(uint8_t instance) const {
+        return state[instance].heading_deg;
+    }
+    float get_heading_deg() const {
+        return get_heading_deg(primary_instance);
+    }
+
+    float get_heading_dev_deg(uint8_t instance) const {
+        return state[instance].heading_dev_deg;
+    }
+    float get_heading_dev_deg() const {
+        return get_heading_dev_deg(primary_instance);
+    }
 
 protected:
 

@@ -1172,6 +1172,8 @@ private:
     void dataflash_periodic(void);
     void accel_cal_update(void);
 
+    void user_update_gps_dir();
+
     void send_delta_pos(mavlink_channel_t chan);
     void icd_a1_in_init();
     void icd_a1_in_update();

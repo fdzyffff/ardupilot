@@ -29,6 +29,8 @@ void Copter::userhook_50Hz()
     } else {
     	update_c1_out = true;
     }
+
+    user_update_gps_dir();
 }
 #endif
 
@@ -52,3 +54,13 @@ void Copter::userhook_SuperSlowLoop()
     // put your 1Hz code here
 }
 #endif
+
+void Copter::user_update_gps_dir()
+{
+    static uint32_t last_dir_update_time = millis();
+
+    if (last_dir_update_time - millis() > 2000) {
+        gcs_send_text_fmt(MAV_SEVERITY_WARNING, "heading: %0.2f , dev: %0.2f ", gps.get_heading_deg(), gps.get_heading_dev_deg());
+        last_dir_update_time = millis();
+    }
+}

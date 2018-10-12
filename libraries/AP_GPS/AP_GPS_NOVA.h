@@ -53,18 +53,7 @@ private:
     bool            _new_speed:1;
     
     uint32_t        _last_vel_time;
-    
-    uint8_t _init_blob_index = 0;
-    uint32_t _init_blob_time = 0;
-    const char* _initialisation_blob[6] = {
-        "\r\n\r\nunlogall\r\n", // cleanup enviroment
-        "log bestposb ontime 0.2 0 nohold\r\n", // get bestpos
-        "log bestvelb ontime 0.2 0 nohold\r\n", // get bestvel
-        "log psrdopb onchanged\r\n", // tersus
-        "log psrdopb ontime 0.2\r\n", // comnav
-        "log psrdopb\r\n" // poll message, as dop only changes when a sat is dropped/added to the visible list
-    };
-   
+
     uint32_t crc_error_counter = 0;
     uint32_t last_injected_data_ms = 0;
 
@@ -150,11 +139,33 @@ private:
         double vertspd;
         float resv;
     };
+
+    struct PACKED heading
+    {
+        uint32_t solstat;
+        uint32_t postype;
+        float leagth;
+        float heading;
+        float pitch;
+        float reserved1;
+        float heading_dev;
+        float pitch_dev;
+        int8_t station_ID[4];
+        uint8_t Svs_num;
+        uint8_t Svs_soln_num;
+        uint8_t obs_num;
+        uint8_t multi_num;
+        uint8_t reserved2;
+        uint8_t ext_sol_stat;
+        uint8_t reserved3;
+        uint8_t sig_mask;
+    };
     
     union PACKED msgbuffer {
         bestvel bestvelu;
         bestpos bestposu;
         psrdop psrdopu;
+        heading headingu;
         uint8_t bytes[256];
     };
     
