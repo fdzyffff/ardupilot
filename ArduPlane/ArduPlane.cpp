@@ -496,6 +496,10 @@ void Plane::update_flight_mode(void)
         handle_auto_mode();
         break;
 
+    case BOX:
+        handle_box_mode();
+        break;
+
     case AVOID_ADSB:
     case GUIDED:
         if (auto_state.vtol_loiter && quadplane.available()) {
@@ -751,6 +755,10 @@ void Plane::update_navigation()
 
     case CRUISE:
         update_cruise();
+        break;
+
+    case BOX:
+        update_box_navigation();
         break;
 
     case MANUAL:

@@ -1053,6 +1053,50 @@ private:
     static_assert(_failsafe_priorities[ARRAY_SIZE(_failsafe_priorities) - 1] == -1,
                   "_failsafe_priorities is missing the sentinel");
 
+    void handle_box_mode();
+    void update_box_navigation();
+    bool Plane::verify_loiter_to_alt_box(const AP_Mission::Mission_Command& cmd);
+    bool verify_box_box(const AP_Mission::Mission_Command& cmd);
+    void box_reset_cmd();
+    bool box_start_check();
+    bool box_allow_receive();
+    void box_info_init();
+    bool box_init();
+    void box_cruise_init();
+    float box_get_heading(float in_bearing);
+
+    void box_build_loiter_standby();
+    void box_build_loiter_to_alt();
+    void box_build_way_point_1();
+    void box_build_way_point_2();
+    void box_build_way_point_4();
+
+    enum box_info_state_t{
+        loiter_standby = 0,
+        loiter_to_alt  = 1,
+        way_point_1    = 2,
+        way_point_2    = 3,
+        way_point_4    = 4,
+        box            = 5
+    };
+
+    struct box_info_t {
+        AP_Mission::Mission_Command cmd_loiter_standby;
+        AP_Mission::Mission_Command cmd_loiter_to_alt;
+        AP_Mission::Mission_Command cmd_way_point_1;
+        AP_Mission::Mission_Command cmd_way_point_2;
+        AP_Mission::Mission_Command cmd_way_point_4;
+
+        bool box_location_recieved;
+        bool path_build_allow;
+
+        Location box_location;
+        float box_heading;
+
+        box_info_state_t state;
+    };
+
+    box_info_t box_info;
 public:
     void mavlink_delay_cb();
     void failsafe_check(void);

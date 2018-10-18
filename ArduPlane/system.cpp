@@ -473,6 +473,14 @@ void Plane::set_mode(enum FlightMode mode, mode_reason_t reason)
             auto_state.vtol_mode = true;
         }
         break;
+    case BOX: {
+        throttle_allows_nudging = true;
+        auto_throttle_mode = true;
+        auto_navigation_mode = true;
+        next_WP_loc = prev_WP_loc = current_loc;
+        box_init();
+        break;
+        }
     }
 
     // start with throttle suppressed in auto_throttle modes

@@ -1493,6 +1493,38 @@ void GCS_MAVLINK_Plane::handleMessage(mavlink_message_t* msg)
         plane.adsb.handle_message(chan, msg);
         break;
 
+    case MAVLINK_MSG_ID_COMMAND_LONG:       // MAV ID: 76
+    {
+        // decode packet
+        mavlink_command_long_t packet;
+        mavlink_msg_command_long_decode(msg, &packet);
+
+        switch(packet.command) {
+            case MAV_CMD_USER_2:
+            {
+                if (!plane.box_allow_receive()) {
+                    break;
+                }
+
+                if (int16_t(packet.param1) == 1) {
+                    Location loc;
+                    loc.lat = int32_t(packet.param5);
+                    loc.lng = int32_t(packet.param6);
+                    loc.alt = int32_t(packet.param7);
+    
+                    loc.flags.relative_alt = true;
+                    loc.flags.terrain_alt = false;
+                    plane.box_info.box_location = loc;
+                }
+                plane.box_info.box_heading = packet.param4;
+                break;
+            }
+
+            default:
+                break;
+        }
+    }
+
     default:
         handle_common_message(msg);
         break;
