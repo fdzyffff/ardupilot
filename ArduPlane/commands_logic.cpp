@@ -776,35 +776,6 @@ bool Plane::verify_loiter_to_alt()
     return result;
 }
 
-
-bool Plane::verify_loiter_to_alt_box(const AP_Mission::Mission_Command& cmd) 
-{
-    bool result = false;
-    update_loiter(cmd.p1);
-
-    // condition_value == 0 means alt has never been reached
-    if (condition_value == 0) {
-        // primary goal, loiter to alt
-        if (labs(loiter.sum_cd) > 1 && (loiter.reached_target_alt || loiter.unable_to_acheive_target_alt)) {
-            // primary goal completed, initialize secondary heading goal
-            if (loiter.unable_to_acheive_target_alt) {
-                gcs().send_text(MAV_SEVERITY_INFO,"Loiter to alt was stuck at %d", current_loc.alt/100);
-            }
-
-            condition_value = 1;
-            result = verify_loiter_heading(true);
-        }
-    } else {
-        // secondary goal, loiter to heading
-        result = verify_loiter_heading(false);
-    }
-
-    if (result) {
-        gcs().send_text(MAV_SEVERITY_INFO,"Loiter to alt complete");
-    }
-    return result;
-}
-
 bool Plane::verify_RTL()
 {
     if (g.rtl_radius < 0) {

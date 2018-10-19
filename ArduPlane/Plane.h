@@ -1055,8 +1055,9 @@ private:
 
     void handle_box_mode();
     void update_box_navigation();
-    bool Plane::verify_loiter_to_alt_box(const AP_Mission::Mission_Command& cmd);
-    bool verify_box_box(const AP_Mission::Mission_Command& cmd);
+    void update_cruise_box();
+    bool verify_loiter_to_alt_box(const AP_Mission::Mission_Command& cmd);
+    bool verify_box_box();
     void box_reset_cmd();
     bool box_start_check();
     bool box_allow_receive();
