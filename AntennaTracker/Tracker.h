@@ -267,6 +267,7 @@ private:
     void log_init(void);
     bool should_log(uint32_t mask);
     float get_vehicle_yaw(float tracker_yaw);
+    float get_tracker_yaw();
     float constrain_yaw(float input_yaw);
 
 public:

@@ -106,6 +106,16 @@ void Tracker::one_second_loop()
         }
         one_second_counter = 0;
     }
+
+    static uint32_t counter = 0;
+
+    counter++;
+    if (counter >= 3) {
+        if (g.rtk_yaw_out_enable > 0) {
+            gcs_send_text_fmt(MAV_SEVERITY_WARNING, "heading: %0.2f , dev: %0.2f ", gps.get_heading_deg(), gps.get_heading_dev_deg());
+        }
+        counter = 0;
+    }
 }
 
 void Tracker::ten_hz_logging_loop()

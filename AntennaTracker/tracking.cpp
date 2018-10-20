@@ -192,6 +192,15 @@ void Tracker::update_armed_disarmed()
     }
 }
 
+float Tracker::get_tracker_yaw()
+{
+    float final_yaw = ToDeg(tracker.ahrs.yaw);
+    if (gps.get_heading_dev_deg() > 0.01f && gps.get_heading_dev_deg() < 2.0f) {
+        final_yaw = gps.get_heading_deg();
+    }
+    return constrain_yaw(final_yaw);
+}
+
 float Tracker::get_vehicle_yaw(float tracker_yaw)
 {
     float final_yaw = vehicle.target_yaw;

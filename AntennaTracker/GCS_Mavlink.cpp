@@ -313,6 +313,16 @@ bool GCS_MAVLINK_Tracker::try_send_message(enum ap_message id)
                     0,
                     1, vel_ned.x, vel_ned.y, tracker.get_vehicle_yaw(ToDeg(tracker.ahrs.yaw)), tracker.current_loc.lat, tracker.current_loc.lng, tracker.vehicle.target_pos.z);
                 }
+
+                if (tracker.gps.status() >= AP_GPS::GPS_OK_FIX_2D) {
+                    mavlink_msg_command_long_send(
+                    chan,
+                    0,
+                    0,
+                    MAV_CMD_USER_3,
+                    0,
+                    1, vel_ned.x, vel_ned.y, tracker.get_tracker_yaw(), tracker.current_loc.lat, tracker.current_loc.lng, tracker.vehicle.target_pos.z);
+                }
         }
         if (tracker.control_mode == SCAN) {
             if (!tracker.vehicle.mode_init) {
@@ -709,7 +719,7 @@ void GCS_MAVLINK_Tracker::handleMessage(mavlink_message_t* msg)
                     send_text(MAV_SEVERITY_WARNING, "change pos");
                 }
 
-                if (packet.param7 > 200.0f && change_alt) {
+                if (packet.param7 > 100.0f && change_alt) {
                     tracker.vehicle.target_pos.z = packet.param7;
                     tracker.vehicle.mode_init = false;
                     send_text(MAV_SEVERITY_WARNING, "change alt");

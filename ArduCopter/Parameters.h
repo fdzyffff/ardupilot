@@ -569,6 +569,8 @@ public:
     
     // control over servo output ranges
     SRV_Channels servo_channels;
+
+    AP_Int16 rtk_yaw_out_enable;
 };
 
 extern const AP_Param::Info        var_info[];
