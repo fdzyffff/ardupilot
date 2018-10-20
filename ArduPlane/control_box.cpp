@@ -25,6 +25,7 @@ void Plane::box_cruise_init() {
 bool Plane::box_start_check() {
     if (box_info.path_build_allow && box_info.box_location_recieved) {
         box_build_loiter_to_alt();
+        box_build_way_point_0();
         box_build_way_point_1();
         box_build_way_point_2();
         box_build_way_point_4();
@@ -36,59 +37,76 @@ bool Plane::box_start_check() {
 void Plane::box_build_loiter_standby() {
     box_info.cmd_loiter_standby.content.location = current_loc;
     box_info.cmd_loiter_standby.content.location.flags.loiter_ccw = true;
+
+
+    box_info.cmd_loiter_to_alt.content.location = current_loc;
+    box_info.cmd_loiter_to_alt.content.location.flags.loiter_ccw = true;
 }
 
 void Plane::box_build_loiter_to_alt() {
-    box_info.cmd_loiter_to_alt.content.location = box_info.box_location;
-
     box_info.cmd_loiter_to_alt.content.location.alt = box_info.box_location.alt + 2000;
     box_info.cmd_loiter_to_alt.content.location.flags.relative_alt = true;
-    box_info.cmd_loiter_to_alt.content.location.flags.terrain_alt = true;
-    box_info.cmd_loiter_to_alt.content.location.flags.origin_alt = true;
+    box_info.cmd_loiter_to_alt.content.location.flags.terrain_alt = false;
+    box_info.cmd_loiter_to_alt.content.location.flags.origin_alt = false;
     box_info.cmd_loiter_to_alt.p1 = 0;
+}
 
-    location_update(box_info.cmd_loiter_to_alt.content.location,
+void Plane::box_build_way_point_0() {
+    box_info.cmd_way_point_0.content.location = box_info.box_location;
+
+    box_info.cmd_way_point_0.content.location.alt = box_info.box_location.alt + 2000;
+    box_info.cmd_way_point_0.content.location.flags.relative_alt = true;
+    box_info.cmd_way_point_0.content.location.flags.terrain_alt = false;
+    box_info.cmd_way_point_0.content.location.flags.origin_alt = false;
+
+    location_update(box_info.cmd_way_point_0.content.location,
                         box_get_heading(box_info.box_heading - 180.f),
-                        200 );
-    location_update(box_info.cmd_loiter_to_alt.content.location,
+                        g2.box_offset_back );
+    location_update(box_info.cmd_way_point_0.content.location,
                         box_get_heading(box_info.box_heading - 90.f),
-                        100 );
+                        g2.box_offset_left );
 }
 
 void Plane::box_build_way_point_1() {
     box_info.cmd_way_point_1.content.location = box_info.box_location;
 
+    box_info.cmd_way_point_1.content.location.alt = box_info.box_location.alt + 2000;
     box_info.cmd_way_point_1.content.location.flags.relative_alt = true;
-    box_info.cmd_way_point_1.content.location.flags.terrain_alt = true;
-    box_info.cmd_way_point_1.content.location.flags.origin_alt = true;
+    box_info.cmd_way_point_1.content.location.flags.terrain_alt = false;
+    box_info.cmd_way_point_1.content.location.flags.origin_alt = false;
+
     location_update(box_info.cmd_way_point_1.content.location,
                         box_get_heading(box_info.box_heading - 180.f),
-                        200 );
-    box_info.cmd_way_point_1.content.location.alt = box_info.box_location.alt + 1000;
+                        g2.box_offset_back);
+    location_update(box_info.cmd_way_point_1.content.location,
+                        box_get_heading(box_info.box_heading - 90.f),
+                        g2.box_offset_left_wp1 );
 }
 
 void Plane::box_build_way_point_2() {
     box_info.cmd_way_point_2.content.location = box_info.box_location;
 
+    box_info.cmd_way_point_2.content.location.alt = box_info.box_location.alt;
     box_info.cmd_way_point_2.content.location.flags.relative_alt = true;
-    box_info.cmd_way_point_2.content.location.flags.terrain_alt = true;
-    box_info.cmd_way_point_2.content.location.flags.origin_alt = true;
+    box_info.cmd_way_point_2.content.location.flags.terrain_alt = false;
+    box_info.cmd_way_point_2.content.location.flags.origin_alt = false;
+
     location_update(box_info.cmd_way_point_2.content.location,
                         box_get_heading(box_info.box_heading - 180.f),
-                        100 );
-    box_info.cmd_way_point_2.content.location.alt = box_info.box_location.alt;
+                        50 );
 }
 
 void Plane::box_build_way_point_4() {
     box_info.cmd_way_point_4.content.location = current_loc;
 
+    box_info.cmd_way_point_4.content.location.alt = box_info.box_location.alt + 2000;
     box_info.cmd_way_point_4.content.location.flags.relative_alt = true;
-    box_info.cmd_way_point_4.content.location.flags.terrain_alt = true;
-    box_info.cmd_way_point_4.content.location.flags.origin_alt = true;
+    box_info.cmd_way_point_4.content.location.flags.terrain_alt = false;
+    box_info.cmd_way_point_4.content.location.flags.origin_alt = false;
+
     location_update(box_info.cmd_way_point_4.content.location,
                         box_get_heading(box_info.box_heading),
                         100 );
-    box_info.cmd_way_point_2.content.location.alt = box_info.box_location.alt + 2000;
 }
 
 void Plane::box_reset_cmd() {
@@ -136,17 +154,63 @@ bool Plane::verify_loiter_to_alt_box(const AP_Mission::Mission_Command& cmd)
             }
 
             condition_value = 1;
-            result = verify_loiter_heading(true);
         }
     } else {
         // secondary goal, loiter to heading
-        result = verify_loiter_heading(false);
+        result = verify_loiter_heading_box(box_info.cmd_way_point_0);
     }
 
     if (result) {
         gcs().send_text(MAV_SEVERITY_INFO,"Loiter to alt complete");
     }
     return result;
+}
+
+bool Plane::verify_loiter_heading_box(const AP_Mission::Mission_Command& next_nav_cmd) {
+    if (quadplane.in_vtol_auto()) {
+        // skip heading verify if in VTOL auto
+        return true;
+    }
+
+    if (get_distance(next_WP_loc, next_nav_cmd.content.location) < abs(aparm.loiter_radius)) {
+        /* Whenever next waypoint is within the loiter radius,
+           maintaining loiter would prevent us from ever pointing toward the next waypoint.
+           Hence break out of loiter immediately
+         */
+        return true;
+    }
+
+    // Bearing in degrees
+    int32_t bearing_cd = get_bearing_cd(current_loc,next_nav_cmd.content.location);
+
+    // get current heading.
+    int32_t heading_cd = gps.ground_course_cd();
+
+    int32_t heading_err_cd = wrap_180_cd(bearing_cd - heading_cd);
+
+    /*
+      Check to see if the the plane is heading toward the land
+      waypoint. We use 20 degrees (+/-10 deg) of margin so that
+      we can handle 200 degrees/second of yaw.
+
+      After every full circle, extend acceptance criteria to ensure
+      aircraft will not loop forever in case high winds are forcing
+      it beyond 200 deg/sec when passing the desired exit course
+    */
+
+    // Use integer division to get discrete steps
+    int32_t expanded_acceptance = 1000 * (loiter.sum_cd / 36000);
+
+    if (labs(heading_err_cd) <= 1000 + expanded_acceptance) {
+        // Want to head in a straight line from _here_ to the next waypoint instead of center of loiter wp
+
+        // 0 to xtrack from center of waypoint, 1 to xtrack from tangent exit location
+        if (next_WP_loc.flags.loiter_xtrack) {
+            next_WP_loc = current_loc;
+        }
+        return true;
+    }
+    return false;
 }
 
 void Plane::update_box_navigation() {
@@ -156,31 +220,54 @@ void Plane::update_box_navigation() {
             if (box_start_check()) {
                 box_info.state = loiter_to_alt;
                 do_loiter_to_alt(box_info.cmd_loiter_to_alt);
-                gcs().send_text(MAV_SEVERITY_WARNING, "BOX loiter to alt");
+                gcs().send_text(MAV_SEVERITY_WARNING, "BOX to loiter to alt");
             }
             break;
         }
         case loiter_to_alt: {
             if (verify_loiter_to_alt_box(box_info.cmd_loiter_to_alt)) {
-                box_info.state = way_point_1;
-                do_nav_wp(box_info.cmd_way_point_1);
-                gcs().send_text(MAV_SEVERITY_WARNING, "BOX way point 1");
+                box_info.state = way_point_0;
+                auto_state.next_wp_crosstrack = false;
+                do_nav_wp(box_info.cmd_way_point_0);
+                gcs().send_text(MAV_SEVERITY_WARNING, "BOX to way point 0");
             }
             break;
         }
+        case way_point_0: {
+            if (verify_nav_wp(box_info.cmd_way_point_0)) {
+                box_info.state = way_point_1;
+                auto_state.next_wp_crosstrack = false;
+                do_nav_wp(box_info.cmd_way_point_1);
+                gcs().send_text(MAV_SEVERITY_WARNING, "BOX to way point 1");
+            }
+            break;
+        }
+        
         case way_point_1: {
             if (verify_nav_wp(box_info.cmd_way_point_1)) {
                 box_info.state = way_point_2;
+                auto_state.next_wp_crosstrack = false;
                 do_nav_wp(box_info.cmd_way_point_2);
-                gcs().send_text(MAV_SEVERITY_WARNING, "BOX way point 2");
+                location_update(prev_WP_loc,
+                        box_get_heading(box_info.box_heading + 90.f),
+                        g2.box_offset_left_wp1 );
+/*                location_update(prev_WP_loc,
+                        box_get_heading(box_info.box_heading - 180.f),
+                        200 );*/
+                gcs().send_text(MAV_SEVERITY_WARNING, "BOX to way point 2");
             }
             break;
         }
         case way_point_2: {
-            if (verify_nav_wp(box_info.cmd_way_point_2)) {
+            if (verify_nav_wp(box_info.cmd_way_point_2) || get_distance(current_loc, box_info.box_location) < 40) {
                 box_info.state = box;
+                auto_state.next_wp_crosstrack = false;
                 box_cruise_init();
-                gcs().send_text(MAV_SEVERITY_WARNING, "BOX boxing");
+                prev_WP_loc = box_info.cmd_way_point_1.content.location;
+                location_update(prev_WP_loc,
+                        box_get_heading(box_info.box_heading + 90.f),
+                        g2.box_offset_left_wp1 );
+                gcs().send_text(MAV_SEVERITY_WARNING, "BOX in boxing");
             }
             break;
         }
@@ -199,7 +286,7 @@ void Plane::update_box_navigation() {
                 box_reset_cmd();
                 box_info.state = loiter_standby;
                 do_loiter_unlimited(box_info.cmd_loiter_standby);
-                gcs().send_text(MAV_SEVERITY_WARNING, "BOX stand by");
+                gcs().send_text(MAV_SEVERITY_WARNING, "BOX to stand by");
             }
             break;
         }
@@ -211,6 +298,7 @@ void Plane::handle_box_mode(void) {
     switch (box_info.state) {
         case loiter_standby:
         case loiter_to_alt:
+        case way_point_0:
         case way_point_1:
         case way_point_2:
         case way_point_4: {
@@ -228,15 +316,15 @@ void Plane::handle_box_mode(void) {
 }
 
 void Plane::update_cruise_box() {
-        prev_WP_loc = box_info.cmd_way_point_2.content.location;
         next_WP_loc = box_info.box_location;
         // always look 100 ahead
         static int32_t box_curise_cd = 0;
-        if (get_distance(prev_WP_loc, current_loc) < get_distance(prev_WP_loc, box_info.box_location) ) {
-            box_curise_cd = get_bearing_cd(current_loc, box_info.box_location);
-        }
+        //if (get_distance(prev_WP_loc, current_loc) < get_distance(prev_WP_loc, box_info.box_location) ) {
+        box_curise_cd = get_bearing_cd(prev_WP_loc, box_info.box_location);
+        //}
         location_update(next_WP_loc,
-                        box_curise_cd*0.01f, 100);
+                        box_curise_cd*0.01f, 400);
+        
         nav_controller->update_waypoint(prev_WP_loc, next_WP_loc);
 }
 

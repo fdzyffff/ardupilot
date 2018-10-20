@@ -1057,6 +1057,7 @@ private:
     void update_box_navigation();
     void update_cruise_box();
     bool verify_loiter_to_alt_box(const AP_Mission::Mission_Command& cmd);
+    bool verify_loiter_heading_box(const AP_Mission::Mission_Command& cmd);
     bool verify_box_box();
     void box_reset_cmd();
     bool box_start_check();
@@ -1068,6 +1069,7 @@ private:
 
     void box_build_loiter_standby();
     void box_build_loiter_to_alt();
+    void box_build_way_point_0();
     void box_build_way_point_1();
     void box_build_way_point_2();
     void box_build_way_point_4();
@@ -1075,15 +1077,17 @@ private:
     enum box_info_state_t{
         loiter_standby = 0,
         loiter_to_alt  = 1,
-        way_point_1    = 2,
-        way_point_2    = 3,
-        way_point_4    = 4,
-        box            = 5
+        way_point_0    = 2,
+        way_point_1    = 3,
+        way_point_2    = 4,
+        way_point_4    = 5,
+        box            = 6
     };
 
     struct box_info_t {
         AP_Mission::Mission_Command cmd_loiter_standby;
         AP_Mission::Mission_Command cmd_loiter_to_alt;
+        AP_Mission::Mission_Command cmd_way_point_0;
         AP_Mission::Mission_Command cmd_way_point_1;
         AP_Mission::Mission_Command cmd_way_point_2;
         AP_Mission::Mission_Command cmd_way_point_4;

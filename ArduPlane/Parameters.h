@@ -538,6 +538,12 @@ public:
     // home reset altitude threshold
     AP_Int8 home_reset_threshold;
 
+    AP_Int32 box_offset_left;
+    AP_Int32 box_offset_back;
+    AP_Int32 box_offset_left_wp1;
+    AP_Float box_offset_yaw;
+
+
 #if GRIPPER_ENABLED == ENABLED
     // Payload Gripper
     AP_Gripper gripper;

@@ -211,12 +211,14 @@ AP_GPS_NOVA::process_message(void)
         {
             switch (bestposu.postype)
             {
+                case 9:
                 case 16:
                     state.status = AP_GPS::GPS_OK_FIX_3D;
                     break;
                 case 17: // psrdiff
                 case 18: // waas
                 case 20: // omnistar
+                case 35: // ComNav psrdiff
                 case 68: // ppp_converg
                 case 69: // ppp
                     state.status = AP_GPS::GPS_OK_FIX_3D_DGPS;
@@ -267,6 +269,15 @@ AP_GPS_NOVA::process_message(void)
         state.hdop = (uint16_t) (psrdopu.hdop*100);
         state.vdop = (uint16_t) (psrdopu.htdop*100);
         return false;
+    }
+
+    if (messageid == 971)  // headingb
+    {
+        const heading &headingu = nova_msg.data.headingu;
+        state.heading_deg = (float) (headingu.heading);
+        state.heading_dev_deg = (float) (headingu.heading_dev);
+        state.pitch_deg = (float) (headingu.pitch);
+        state.pitch_dev_deg = (float) (headingu.pitch_dev);
     }
 
     // ensure out position and velocity stay insync

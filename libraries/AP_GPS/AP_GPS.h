@@ -148,7 +148,10 @@ public:
         bool have_horizontal_accuracy:1;    ///< does GPS give horizontal position accuracy? Set to true only once available.
         bool have_vertical_accuracy:1;      ///< does GPS give vertical position accuracy? Set to true only once available.
         uint32_t last_gps_time_ms;          ///< the system time we got the last GPS timestamp, milliseconds
-
+        float heading_deg;
+        float pitch_deg;
+        float heading_dev_deg;
+        float pitch_dev_deg;
         // all the following fields must only all be filled by RTK capable backend drivers
         uint32_t rtk_time_week_ms;         ///< GPS Time of Week of last baseline in milliseconds
         uint16_t rtk_week_number;          ///< GPS Week Number of last baseline
@@ -416,6 +419,20 @@ public:
 
     // returns true if all GPS instances have passed all final arming checks/state changes
     bool prepare_for_arming(void);
+
+    float get_heading_deg(uint8_t instance) const {
+        return state[instance].heading_deg;
+    }
+    float get_heading_deg() const {
+        return get_heading_deg(primary_instance);
+    }
+
+    float get_heading_dev_deg(uint8_t instance) const {
+        return state[instance].heading_dev_deg;
+    }
+    float get_heading_dev_deg() const {
+        return get_heading_dev_deg(primary_instance);
+    }
 
 protected:
 

@@ -1106,6 +1106,29 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_long_packet(const mavlink_command_l
         }
         return MAV_RESULT_ACCEPTED;
 
+    case MAV_CMD_USER_2:
+    {
+        if (!plane.box_allow_receive()) {
+            return MAV_RESULT_FAILED;
+            break;
+        }
+        if (int16_t(packet.param1) == 1) {
+            Location loc;
+            loc.lat = int32_t(packet.param5);
+            loc.lng = int32_t(packet.param6);
+            loc.alt = int32_t(packet.param7);    
+            loc.flags.relative_alt = true;
+            loc.flags.terrain_alt = false;
+            plane.box_info.box_location = loc;
+            plane.box_info.box_heading = plane.box_get_heading(packet.param4 + plane.g2.box_offset_yaw);
+            plane.box_info.box_location_recieved = true;
+        } else if (int16_t(packet.param1) == 666) {
+            plane.box_info_init();
+        }
+        return MAV_RESULT_ACCEPTED;
+        break;
+    }
+
     default:
         return GCS_MAVLINK::handle_command_long_packet(packet);
     }
@@ -1494,38 +1517,6 @@ void GCS_MAVLINK_Plane::handleMessage(mavlink_message_t* msg)
         plane.adsb.handle_message(chan, msg);
         break;
 
-    case MAVLINK_MSG_ID_COMMAND_LONG:       // MAV ID: 76
-    {
-        // decode packet
-        mavlink_command_long_t packet;
-        mavlink_msg_command_long_decode(msg, &packet);
-
-        switch(packet.command) {
-            case MAV_CMD_USER_2:
-            {
-                if (!plane.box_allow_receive()) {
-                    break;
-                }
-
-                if (int16_t(packet.param1) == 1) {
-                    Location loc;
-                    loc.lat = int32_t(packet.param5);
-                    loc.lng = int32_t(packet.param6);
-                    loc.alt = int32_t(packet.param7);
-    
-                    loc.flags.relative_alt = true;
-                    loc.flags.terrain_alt = false;
-                    plane.box_info.box_location = loc;
-                }
-                plane.box_info.box_heading = packet.param4;
-                break;
-            }
-
-            default:
-                break;
-        }
-    }
-
     default:
         handle_common_message(msg);
         break;
@@ -1674,6 +1665,7 @@ bool GCS_MAVLINK_Plane::set_mode(const uint8_t mode)
     case QLOITER:
     case QLAND:
     case QRTL:
+    case BOX:
         plane.set_mode((enum FlightMode)mode, MODE_REASON_GCS_COMMAND);
         return true;
     }
