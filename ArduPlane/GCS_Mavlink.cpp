@@ -1106,13 +1106,13 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_long_packet(const mavlink_command_l
         }
         return MAV_RESULT_ACCEPTED;
 
-    case MAV_CMD_USER_2:
+    case MAV_CMD_USER_3:
     {
         if (!plane.box_allow_receive()) {
             return MAV_RESULT_FAILED;
             break;
         }
-        if (int16_t(packet.param1) == 1) {
+        if (int16_t(packet.param1) == 11) {
             Location loc;
             loc.lat = int32_t(packet.param5);
             loc.lng = int32_t(packet.param6);
