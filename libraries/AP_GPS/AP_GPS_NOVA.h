@@ -150,7 +150,7 @@ private:
         double vertspd;
         float resv;
     };
-
+    
     struct PACKED heading
     {
         uint32_t solstat;
@@ -171,7 +171,7 @@ private:
         uint8_t reserved3;
         uint8_t sig_mask;
     };
-        
+    
     union PACKED msgbuffer {
         bestvel bestvelu;
         bestpos bestposu;

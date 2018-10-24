@@ -28,7 +28,7 @@ void Plane::adjust_altitude_target()
     Location target_location;
 
     if (control_mode == FLY_BY_WIRE_B ||
-        control_mode == CRUISE) {
+        control_mode == CRUISE || box_in_cruise()) {
         return;
     }
     if (landing.is_flaring()) {

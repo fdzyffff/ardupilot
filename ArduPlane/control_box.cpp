@@ -19,7 +19,11 @@ void Plane::box_cruise_init() {
     auto_throttle_mode = true;
     auto_navigation_mode = false;
                 
-    set_target_altitude_location(box_info.cmd_way_point_2.content.location);
+    set_target_altitude_location(box_info.box_location);
+}
+
+bool Plane::box_in_cruise() {
+    return (control_mode == BOX && box_info.state == box);
 }
 
 bool Plane::box_start_check() {
@@ -86,7 +90,7 @@ void Plane::box_build_way_point_1() {
 void Plane::box_build_way_point_2() {
     box_info.cmd_way_point_2.content.location = box_info.box_location;
 
-    box_info.cmd_way_point_2.content.location.alt = box_info.box_location.alt;
+    box_info.cmd_way_point_2.content.location.alt = box_info.box_location.alt + 1000;
     box_info.cmd_way_point_2.content.location.flags.relative_alt = true;
     box_info.cmd_way_point_2.content.location.flags.terrain_alt = false;
     box_info.cmd_way_point_2.content.location.flags.origin_alt = false;
@@ -323,7 +327,7 @@ void Plane::update_cruise_box() {
         box_curise_cd = get_bearing_cd(prev_WP_loc, box_info.box_location);
         //}
         location_update(next_WP_loc,
-                        box_curise_cd*0.01f, 400);
+                        box_curise_cd*0.01f, 100);
         
         nav_controller->update_waypoint(prev_WP_loc, next_WP_loc);
 }

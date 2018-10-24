@@ -307,6 +307,16 @@ void Plane::one_second_loop()
     // indicates that the sensor or subsystem is present but not
     // functioning correctly
     update_sensor_status_flags();
+
+    static uint32_t counter = 0;
+
+    counter++;
+    if (counter >= 3) {
+        if (g2.rtk_yaw_out_enable > 0) {
+            gcs().send_text(MAV_SEVERITY_WARNING, "heading: %0.2f , dev: %0.2f ", gps.get_heading_deg(), gps.get_heading_dev_deg());
+        }
+        counter = 0;
+    }
 }
 
 void Plane::compass_save()

@@ -1174,6 +1174,8 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("BOX_OFF_LEFT_WP1", 15, ParametersG2, box_offset_left_wp1, 20),
     AP_GROUPINFO("BOX_OFF_YAW", 16, ParametersG2, box_offset_yaw, 0.0f),
 
+    AP_GROUPINFO("RTK_YAW_OUT", 17, ParametersG2, rtk_yaw_out_enable, 0),
+
 #if GRIPPER_ENABLED == ENABLED
     // @Group: GRIP_
     // @Path: ../libraries/AP_Gripper/AP_Gripper.cpp

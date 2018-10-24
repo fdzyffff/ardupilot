@@ -1073,6 +1073,7 @@ private:
     void box_build_way_point_1();
     void box_build_way_point_2();
     void box_build_way_point_4();
+    bool box_in_cruise();
 
     enum box_info_state_t{
         loiter_standby = 0,

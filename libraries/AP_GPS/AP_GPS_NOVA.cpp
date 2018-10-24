@@ -43,12 +43,6 @@ AP_GPS_NOVA::AP_GPS_NOVA(AP_GPS &_gps, AP_GPS::GPS_State &_state,
     AP_GPS_Backend(_gps, _state, _port)
 {
     nova_msg.nova_state = nova_msg_parser::PREAMBLE1;
-
-    const char *init_str = _initialisation_blob[0];
-    const char *init_str1 = _initialisation_blob[1];
-    
-    port->write((const uint8_t*)init_str, strlen(init_str));
-    port->write((const uint8_t*)init_str1, strlen(init_str1));
 }
 
 // Process all bytes available from the stream
@@ -56,18 +50,6 @@ AP_GPS_NOVA::AP_GPS_NOVA(AP_GPS &_gps, AP_GPS::GPS_State &_state,
 bool
 AP_GPS_NOVA::read(void)
 {
-    uint32_t now = AP_HAL::millis();
-
-    if (_init_blob_index < (sizeof(_initialisation_blob) / sizeof(_initialisation_blob[0]))) {
-        const char *init_str = _initialisation_blob[_init_blob_index];
-
-        if (now > _init_blob_time) {
-            port->write((const uint8_t*)init_str, strlen(init_str));
-            _init_blob_time = now + 200;
-            _init_blob_index++;
-        }
-    }
-
     bool ret = false;
     while (port->available() > 0) {
         uint8_t temp = port->read();
@@ -226,6 +208,7 @@ AP_GPS_NOVA::process_message(void)
                 case 32: // l1 float
                 case 33: // iono float
                 case 34: // narrow float
+                case 49: // wide int
                     state.status = AP_GPS::GPS_OK_FIX_3D_RTK_FLOAT;
                     break;
                 case 48: // l1 int
@@ -279,7 +262,7 @@ AP_GPS_NOVA::process_message(void)
         state.pitch_deg = (float) (headingu.pitch);
         state.pitch_dev_deg = (float) (headingu.pitch_dev);
     }
-
+    
     // ensure out position and velocity stay insync
     if (_new_position && _new_speed && _last_vel_time == state.time_week_ms) {
         _new_speed = _new_position = false;

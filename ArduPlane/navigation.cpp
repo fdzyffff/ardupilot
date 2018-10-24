@@ -109,7 +109,7 @@ void Plane::calc_airspeed_errors()
 
     // FBW_B airspeed target
     if (control_mode == FLY_BY_WIRE_B || 
-        control_mode == CRUISE) {
+        control_mode == CRUISE || box_in_cruise()) {
         target_airspeed_cm = ((int32_t)(aparm.airspeed_max -
                                         aparm.airspeed_min) *
                               channel_throttle->get_control_in()) +

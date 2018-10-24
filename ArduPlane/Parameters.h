@@ -543,6 +543,8 @@ public:
     AP_Int32 box_offset_left_wp1;
     AP_Float box_offset_yaw;
 
+    AP_Int8 rtk_yaw_out_enable;
+
 
 #if GRIPPER_ENABLED == ENABLED
     // Payload Gripper
