@@ -1,17 +1,49 @@
 #include "Plane.h"
 
 bool Plane::box_init() {
-	box_info_init();
-    box_build_loiter_standby();
-    do_loiter_unlimited(box_info.cmd_loiter_standby);
-    gcs().send_text(MAV_SEVERITY_WARNING, "BOX stand by");
-	return true;
+    if (g2.box_option == 0) {
+        box_info_init();
+        box_build_loiter_standby();
+        do_loiter_unlimited(box_info_cmd_loiter_standby);
+        gcs().send_text(MAV_SEVERITY_WARNING, "BOX stand by");
+        return true;
+    } else if (box_info.box_location_recieved) {
+        box_info_init_option1();
+        return true;
+    }
+    return false;
 }
 
 void Plane::box_info_init() {
 	box_info.state = loiter_standby;
 	box_info.box_location_recieved = false;
 	box_info.path_build_allow = true;
+}
+
+void Plane::box_info_init_option1() {
+    box_info.box_heading = box_info.box_heading_in;
+    box_build_loiter_standby();
+    box_info_cmd_loiter_standby.content.location.alt = 5000;
+    box_info_cmd_loiter_standby.content.location.flags.relative_alt = true;
+    box_info_cmd_loiter_standby.content.location.flags.terrain_alt = false;
+    box_info_cmd_loiter_standby.content.location.flags.origin_alt = false;
+
+    box_build_loiter_to_alt();
+    box_build_way_point_0();
+    box_build_way_point_1();
+    box_build_way_point_2();
+    box_build_way_point_4();
+
+    box_info.state = way_point_2;
+    auto_state.next_wp_crosstrack = true;
+    do_nav_wp(box_info_cmd_way_point_2);
+
+    prev_WP_loc = box_info_cmd_way_point_2.content.location;
+    prev_WP_loc.alt = box_info_cmd_way_point_2.content.location.alt;
+    location_update(prev_WP_loc,
+                        box_get_heading(box_info.box_heading - 180.f),
+                        1000.f);
+    gcs().send_text(MAV_SEVERITY_WARNING, "BOX to way point 2 direct");
 }
 
 void Plane::box_cruise_init() {
@@ -28,6 +60,7 @@ bool Plane::box_in_cruise() {
 
 bool Plane::box_start_check() {
     if (box_info.path_build_allow && box_info.box_location_recieved) {
+        box_info.box_heading = box_info.box_heading_in;
         box_build_loiter_to_alt();
         box_build_way_point_0();
         box_build_way_point_1();
@@ -39,76 +72,76 @@ bool Plane::box_start_check() {
 }
 
 void Plane::box_build_loiter_standby() {
-    box_info.cmd_loiter_standby.content.location = current_loc;
-    box_info.cmd_loiter_standby.content.location.flags.loiter_ccw = true;
+    box_info_cmd_loiter_standby.content.location = current_loc;
+    box_info_cmd_loiter_standby.content.location.flags.loiter_ccw = true;
 
 
-    box_info.cmd_loiter_to_alt.content.location = current_loc;
-    box_info.cmd_loiter_to_alt.content.location.flags.loiter_ccw = true;
+    box_info_cmd_loiter_to_alt.content.location = current_loc;
+    box_info_cmd_loiter_to_alt.content.location.flags.loiter_ccw = true;
 }
 
 void Plane::box_build_loiter_to_alt() {
-    box_info.cmd_loiter_to_alt.content.location.alt = box_info.box_location.alt + 2000;
-    box_info.cmd_loiter_to_alt.content.location.flags.relative_alt = true;
-    box_info.cmd_loiter_to_alt.content.location.flags.terrain_alt = false;
-    box_info.cmd_loiter_to_alt.content.location.flags.origin_alt = false;
-    box_info.cmd_loiter_to_alt.p1 = 0;
+    box_info_cmd_loiter_to_alt.content.location.alt = box_info.box_location.alt + 2000;
+    box_info_cmd_loiter_to_alt.content.location.flags.relative_alt = true;
+    box_info_cmd_loiter_to_alt.content.location.flags.terrain_alt = false;
+    box_info_cmd_loiter_to_alt.content.location.flags.origin_alt = false;
+    box_info_cmd_loiter_to_alt.p1 = 0;
 }
 
 void Plane::box_build_way_point_0() {
-    box_info.cmd_way_point_0.content.location = box_info.box_location;
+    box_info_cmd_way_point_0.content.location = box_info.box_location;
 
-    box_info.cmd_way_point_0.content.location.alt = box_info.box_location.alt + 2000;
-    box_info.cmd_way_point_0.content.location.flags.relative_alt = true;
-    box_info.cmd_way_point_0.content.location.flags.terrain_alt = false;
-    box_info.cmd_way_point_0.content.location.flags.origin_alt = false;
+    box_info_cmd_way_point_0.content.location.alt = box_info.box_location.alt + 2000;
+    box_info_cmd_way_point_0.content.location.flags.relative_alt = true;
+    box_info_cmd_way_point_0.content.location.flags.terrain_alt = false;
+    box_info_cmd_way_point_0.content.location.flags.origin_alt = false;
 
-    location_update(box_info.cmd_way_point_0.content.location,
+    location_update(box_info_cmd_way_point_0.content.location,
                         box_get_heading(box_info.box_heading - 180.f),
                         g2.box_offset_back );
-    location_update(box_info.cmd_way_point_0.content.location,
+    location_update(box_info_cmd_way_point_0.content.location,
                         box_get_heading(box_info.box_heading - 90.f),
                         g2.box_offset_left );
 }
 
 void Plane::box_build_way_point_1() {
-    box_info.cmd_way_point_1.content.location = box_info.box_location;
+    box_info_cmd_way_point_1.content.location = box_info.box_location;
 
-    box_info.cmd_way_point_1.content.location.alt = box_info.box_location.alt + 2000;
-    box_info.cmd_way_point_1.content.location.flags.relative_alt = true;
-    box_info.cmd_way_point_1.content.location.flags.terrain_alt = false;
-    box_info.cmd_way_point_1.content.location.flags.origin_alt = false;
+    box_info_cmd_way_point_1.content.location.alt = box_info.box_location.alt + 2000;
+    box_info_cmd_way_point_1.content.location.flags.relative_alt = true;
+    box_info_cmd_way_point_1.content.location.flags.terrain_alt = false;
+    box_info_cmd_way_point_1.content.location.flags.origin_alt = false;
 
-    location_update(box_info.cmd_way_point_1.content.location,
+    location_update(box_info_cmd_way_point_1.content.location,
                         box_get_heading(box_info.box_heading - 180.f),
                         g2.box_offset_back);
-    location_update(box_info.cmd_way_point_1.content.location,
+    location_update(box_info_cmd_way_point_1.content.location,
                         box_get_heading(box_info.box_heading - 90.f),
                         g2.box_offset_left_wp1 );
 }
 
 void Plane::box_build_way_point_2() {
-    box_info.cmd_way_point_2.content.location = box_info.box_location;
+    box_info_cmd_way_point_2.content.location = box_info.box_location;
 
-    box_info.cmd_way_point_2.content.location.alt = box_info.box_location.alt + 1000;
-    box_info.cmd_way_point_2.content.location.flags.relative_alt = true;
-    box_info.cmd_way_point_2.content.location.flags.terrain_alt = false;
-    box_info.cmd_way_point_2.content.location.flags.origin_alt = false;
+    box_info_cmd_way_point_2.content.location.alt = box_info.box_location.alt;
+    box_info_cmd_way_point_2.content.location.flags.relative_alt = true;
+    box_info_cmd_way_point_2.content.location.flags.terrain_alt = false;
+    box_info_cmd_way_point_2.content.location.flags.origin_alt = false;
 
-    location_update(box_info.cmd_way_point_2.content.location,
+    location_update(box_info_cmd_way_point_2.content.location,
                         box_get_heading(box_info.box_heading - 180.f),
                         50 );
 }
 
 void Plane::box_build_way_point_4() {
-    box_info.cmd_way_point_4.content.location = current_loc;
+    box_info_cmd_way_point_4.content.location = current_loc;
 
-    box_info.cmd_way_point_4.content.location.alt = box_info.box_location.alt + 2000;
-    box_info.cmd_way_point_4.content.location.flags.relative_alt = true;
-    box_info.cmd_way_point_4.content.location.flags.terrain_alt = false;
-    box_info.cmd_way_point_4.content.location.flags.origin_alt = false;
+    box_info_cmd_way_point_4.content.location.alt = box_info.box_location.alt + 2000;
+    box_info_cmd_way_point_4.content.location.flags.relative_alt = true;
+    box_info_cmd_way_point_4.content.location.flags.terrain_alt = false;
+    box_info_cmd_way_point_4.content.location.flags.origin_alt = false;
 
-    location_update(box_info.cmd_way_point_4.content.location,
+    location_update(box_info_cmd_way_point_4.content.location,
                         box_get_heading(box_info.box_heading),
                         100 );
 }
@@ -119,6 +152,10 @@ void Plane::box_reset_cmd() {
 }
 
 bool Plane::box_allow_receive() {
+    if (g2.box_option == 1) {
+        return true;
+    }
+
     if (control_mode != BOX) {
         return false;
     }
@@ -161,7 +198,7 @@ bool Plane::verify_loiter_to_alt_box(const AP_Mission::Mission_Command& cmd)
         }
     } else {
         // secondary goal, loiter to heading
-        result = verify_loiter_heading_box(box_info.cmd_way_point_0);
+        result = verify_loiter_heading_box(box_info_cmd_way_point_0);
     }
 
     if (result) {
@@ -221,37 +258,37 @@ void Plane::update_box_navigation() {
     switch (box_info.state) {
         case loiter_standby: {
             verify_loiter_unlim();
-            if (box_start_check()) {
+            if (g2.box_option == 0 && box_start_check()) {
                 box_info.state = loiter_to_alt;
-                do_loiter_to_alt(box_info.cmd_loiter_to_alt);
+                do_loiter_to_alt(box_info_cmd_loiter_to_alt);
                 gcs().send_text(MAV_SEVERITY_WARNING, "BOX to loiter to alt");
             }
             break;
         }
         case loiter_to_alt: {
-            if (verify_loiter_to_alt_box(box_info.cmd_loiter_to_alt)) {
+            if (verify_loiter_to_alt_box(box_info_cmd_loiter_to_alt)) {
                 box_info.state = way_point_0;
                 auto_state.next_wp_crosstrack = false;
-                do_nav_wp(box_info.cmd_way_point_0);
+                do_nav_wp(box_info_cmd_way_point_0);
                 gcs().send_text(MAV_SEVERITY_WARNING, "BOX to way point 0");
             }
             break;
         }
         case way_point_0: {
-            if (verify_nav_wp(box_info.cmd_way_point_0)) {
+            if (verify_nav_wp(box_info_cmd_way_point_0)) {
                 box_info.state = way_point_1;
                 auto_state.next_wp_crosstrack = false;
-                do_nav_wp(box_info.cmd_way_point_1);
+                do_nav_wp(box_info_cmd_way_point_1);
                 gcs().send_text(MAV_SEVERITY_WARNING, "BOX to way point 1");
             }
             break;
         }
         
         case way_point_1: {
-            if (verify_nav_wp(box_info.cmd_way_point_1)) {
+            if (verify_nav_wp(box_info_cmd_way_point_1)) {
                 box_info.state = way_point_2;
-                auto_state.next_wp_crosstrack = false;
-                do_nav_wp(box_info.cmd_way_point_2);
+                auto_state.next_wp_crosstrack = true;
+                do_nav_wp(box_info_cmd_way_point_2);
                 location_update(prev_WP_loc,
                         box_get_heading(box_info.box_heading + 90.f),
                         g2.box_offset_left_wp1 );
@@ -263,11 +300,12 @@ void Plane::update_box_navigation() {
             break;
         }
         case way_point_2: {
-            if (verify_nav_wp(box_info.cmd_way_point_2) || get_distance(current_loc, box_info.box_location) < 40) {
+            if (verify_nav_wp(box_info_cmd_way_point_2) || get_distance(current_loc, box_info.box_location) < 40) {
                 box_info.state = box;
-                auto_state.next_wp_crosstrack = false;
+                auto_state.next_wp_crosstrack = true;
                 box_cruise_init();
-                prev_WP_loc = box_info.cmd_way_point_1.content.location;
+                prev_WP_loc = box_info_cmd_way_point_1.content.location;
+                prev_WP_loc.alt = box_info.box_location.alt;
                 location_update(prev_WP_loc,
                         box_get_heading(box_info.box_heading + 90.f),
                         g2.box_offset_left_wp1 );
@@ -280,16 +318,16 @@ void Plane::update_box_navigation() {
             if (verify_box_box()) {
                 box_info.state = way_point_4;
                 box_build_way_point_4();
-                do_nav_wp(box_info.cmd_way_point_4);
+                do_nav_wp(box_info_cmd_way_point_4);
                 gcs().send_text(MAV_SEVERITY_WARNING, "BOX fail");
             }
             break;
         }
         case way_point_4: {
-            if (verify_nav_wp(box_info.cmd_way_point_4)) {
+            if (verify_nav_wp(box_info_cmd_way_point_4)) {
                 box_reset_cmd();
                 box_info.state = loiter_standby;
-                do_loiter_unlimited(box_info.cmd_loiter_standby);
+                do_loiter_unlimited(box_info_cmd_loiter_standby);
                 gcs().send_text(MAV_SEVERITY_WARNING, "BOX to stand by");
             }
             break;

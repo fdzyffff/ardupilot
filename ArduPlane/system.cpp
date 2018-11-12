@@ -213,6 +213,7 @@ void Plane::init_ardupilot()
     g2.gripper.init();
 #endif
 
+    //memset(&box_info, 0, sizeof(box_info));
     // disable safety if requested
     BoardConfig.init_safety();
 }

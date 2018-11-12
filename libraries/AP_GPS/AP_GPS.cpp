@@ -479,9 +479,14 @@ void AP_GPS::detect_instance(uint8_t instance)
         new_gps = new AP_GPS_GSOF(*this, state[instance], _port[instance]);
         break;
 
-    case GPS_TYPE_NOVA:
+    case GPS_TYPE_NOVA: {
+        dstate->auto_detected_baud = false;
         new_gps = new AP_GPS_NOVA(*this, state[instance], _port[instance]);
-        break;
+        uint32_t baudrate = 115200U;
+        _port[instance]->begin(baudrate);
+        _port[instance]->set_flow_control(AP_HAL::UARTDriver::FLOW_CONTROL_DISABLE);
+        goto found_gps;
+        break;}
 
     default:
         break;
@@ -643,6 +648,8 @@ void AP_GPS::update_instance(uint8_t instance)
             timing[instance].delta_time_ms = GPS_TIMEOUT_MS;
             // do not try to detect again if type is MAV
             if (_type[instance] == GPS_TYPE_MAV) {
+                state[instance].status = NO_FIX;
+            } else if (_type[instance] == GPS_TYPE_NOVA) {
                 state[instance].status = NO_FIX;
             } else {
                 // free the driver before we run the next detection, so we

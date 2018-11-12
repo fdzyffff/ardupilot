@@ -189,6 +189,9 @@ AP_GPS_NOVA::process_message(void)
         state.rtk_age_ms = bestposu.diffage * 1000;
         state.rtk_num_sats = bestposu.svsused;
 
+        state.postype = bestposu.postype;
+        state.solstat = bestposu.solstat;
+
         if (bestposu.solstat == 0) // have a solution
         {
             switch (bestposu.postype)
@@ -259,8 +262,8 @@ AP_GPS_NOVA::process_message(void)
         const heading &headingu = nova_msg.data.headingu;
         state.heading_deg = (float) (headingu.heading);
         state.heading_dev_deg = (float) (headingu.heading_dev);
-        state.pitch_deg = (float) (headingu.pitch);
-        state.pitch_dev_deg = (float) (headingu.pitch_dev);
+        //state.pitch_deg = (float) (headingu.pitch);
+        //state.pitch_dev_deg = (float) (headingu.pitch_dev);
     }
     
     // ensure out position and velocity stay insync

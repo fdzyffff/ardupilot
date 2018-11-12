@@ -538,6 +538,11 @@ public:
     // home reset altitude threshold
     AP_Int8 home_reset_threshold;
 
+#if GRIPPER_ENABLED == ENABLED
+    // Payload Gripper
+    AP_Gripper gripper;
+#endif
+
     AP_Int32 box_offset_left;
     AP_Int32 box_offset_back;
     AP_Int32 box_offset_left_wp1;
@@ -545,11 +550,10 @@ public:
 
     AP_Int8 rtk_yaw_out_enable;
 
+    AP_Int8 box_option;
 
-#if GRIPPER_ENABLED == ENABLED
-    // Payload Gripper
-    AP_Gripper gripper;
-#endif
+    AP_Float box_yaw_fix;
+    AP_Int32 box_alt_fix;
 };
 
 extern const AP_Param::Info var_info[];

@@ -1116,11 +1116,17 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_long_packet(const mavlink_command_l
             Location loc;
             loc.lat = int32_t(packet.param5);
             loc.lng = int32_t(packet.param6);
-            loc.alt = int32_t(packet.param7);    
+            loc.alt = int32_t(packet.param7);
+            if (plane.g2.box_alt_fix <= 0) {
+                loc.alt = int32_t(plane.g2.box_alt_fix);
+            }
             loc.flags.relative_alt = true;
             loc.flags.terrain_alt = false;
             plane.box_info.box_location = loc;
-            plane.box_info.box_heading = plane.box_get_heading(packet.param4 + plane.g2.box_offset_yaw);
+            plane.box_info.box_heading_in = plane.box_get_heading(packet.param4 + plane.g2.box_offset_yaw);
+            if (plane.g2.box_yaw_fix < 0.0f) {
+                plane.box_info.box_heading_in = plane.box_get_heading(plane.g2.box_yaw_fix);
+            }
             plane.box_info.box_location_recieved = true;
         } else if (int16_t(packet.param1) == 666) {
             plane.box_info_init();

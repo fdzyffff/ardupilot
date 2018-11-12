@@ -149,9 +149,9 @@ public:
         bool have_vertical_accuracy:1;      ///< does GPS give vertical position accuracy? Set to true only once available.
         uint32_t last_gps_time_ms;          ///< the system time we got the last GPS timestamp, milliseconds
         float heading_deg;
-        float pitch_deg;
+        uint32_t postype;
         float heading_dev_deg;
-        float pitch_dev_deg;
+        uint32_t solstat;
         // all the following fields must only all be filled by RTK capable backend drivers
         uint32_t rtk_time_week_ms;         ///< GPS Time of Week of last baseline in milliseconds
         uint16_t rtk_week_number;          ///< GPS Week Number of last baseline
@@ -433,6 +433,13 @@ public:
     float get_heading_dev_deg() const {
         return get_heading_dev_deg(primary_instance);
     }
+    uint32_t get_postype() const {
+        return state[primary_instance].postype;
+    }
+    uint32_t get_slostat() const {
+        return state[primary_instance].solstat;
+    }
+
 
 protected:
 

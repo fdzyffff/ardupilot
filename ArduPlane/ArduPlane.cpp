@@ -311,9 +311,9 @@ void Plane::one_second_loop()
     static uint32_t counter = 0;
 
     counter++;
-    if (counter >= 3) {
+    if (counter >= 1) {
         if (g2.rtk_yaw_out_enable > 0) {
-            gcs().send_text(MAV_SEVERITY_WARNING, "heading: %0.2f , dev: %0.2f ", gps.get_heading_deg(), gps.get_heading_dev_deg());
+            gcs().send_text(MAV_SEVERITY_WARNING, "solstat : %d , id : %d , heading: %0.2f , dev: %0.2f ", gps.get_slostat(), gps.get_postype(), gps.get_heading_deg(), gps.get_heading_dev_deg());
         }
         counter = 0;
     }

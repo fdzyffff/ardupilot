@@ -1063,6 +1063,7 @@ private:
     bool box_start_check();
     bool box_allow_receive();
     void box_info_init();
+    void box_info_init_option1();
     bool box_init();
     void box_cruise_init();
     float box_get_heading(float in_bearing);
@@ -1086,23 +1087,24 @@ private:
     };
 
     struct box_info_t {
-        AP_Mission::Mission_Command cmd_loiter_standby;
-        AP_Mission::Mission_Command cmd_loiter_to_alt;
-        AP_Mission::Mission_Command cmd_way_point_0;
-        AP_Mission::Mission_Command cmd_way_point_1;
-        AP_Mission::Mission_Command cmd_way_point_2;
-        AP_Mission::Mission_Command cmd_way_point_4;
-
         bool box_location_recieved;
         bool path_build_allow;
 
         Location box_location;
         float box_heading;
+        float box_heading_in;
 
         box_info_state_t state;
     };
 
     box_info_t box_info;
+
+    AP_Mission::Mission_Command box_info_cmd_loiter_standby;
+    AP_Mission::Mission_Command box_info_cmd_loiter_to_alt;
+    AP_Mission::Mission_Command box_info_cmd_way_point_0;
+    AP_Mission::Mission_Command box_info_cmd_way_point_1;
+    AP_Mission::Mission_Command box_info_cmd_way_point_2;
+    AP_Mission::Mission_Command box_info_cmd_way_point_4;
 public:
     void mavlink_delay_cb();
     void failsafe_check(void);
