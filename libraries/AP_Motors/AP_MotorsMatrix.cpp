@@ -503,14 +503,14 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     success = true;
                     break;
                 case MOTOR_FRAME_TYPE_V:
-                    add_motor_raw(AP_MOTORS_MOT_1,  1.0f,   1.0f,  1.0f,  1);
-                    add_motor_raw(AP_MOTORS_MOT_2,  0.5f,  -1.0f, -0.5f,  2);
-                    add_motor_raw(AP_MOTORS_MOT_3,  0.5f,  -0.5f, -0.5f,  3);
-                    add_motor_raw(AP_MOTORS_MOT_4,  1.0f,  -1.0f, -0.5f,  4);
-                    add_motor_raw(AP_MOTORS_MOT_5, -1.0f,  -1.0f,  0.5f,  5);
-                    add_motor_raw(AP_MOTORS_MOT_6, -0.5f,  -0.5f,  0.5f,  6);
-                    add_motor_raw(AP_MOTORS_MOT_7, -0.5f,  -1.0f,  0.5f,  7);
-                    add_motor_raw(AP_MOTORS_MOT_8, -1.0f,   1.0f, -1.0f,  8);
+                    add_motor_raw(AP_MOTORS_MOT_1, -1.0f,   1.0f,  1.0f,  1);
+                    add_motor_raw(AP_MOTORS_MOT_2, -0.5f,  -1.0f, -0.0f,  2);
+                    add_motor_raw(AP_MOTORS_MOT_3, -0.5f,  -0.5f, -1.0f,  3);
+                    add_motor_raw(AP_MOTORS_MOT_4, -1.0f,  -1.0f, -0.0f,  4);
+                    add_motor_raw(AP_MOTORS_MOT_5,  1.0f,  -1.0f,  0.0f,  5);
+                    add_motor_raw(AP_MOTORS_MOT_6,  0.5f,  -0.5f,  1.0f,  6);
+                    add_motor_raw(AP_MOTORS_MOT_7,  0.5f,  -1.0f,  0.0f,  7);
+                    add_motor_raw(AP_MOTORS_MOT_8,  1.0f,   1.0f, -1.0f,  8);
                     success = true;
                     break;
                 case MOTOR_FRAME_TYPE_H:
