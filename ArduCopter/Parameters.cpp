@@ -1004,7 +1004,9 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_SUBGROUPINFO(visual_odom, "VISO", 18, ParametersG2, AP_VisualOdom),
 #endif
 
-    AP_GROUPINFO("RTK_YAW_OUT", 19, ParametersG2, rtk_yaw_out_enable, 1),
+    AP_GROUPINFO("RTK_YAW_OUT", 19, ParametersG2, rtk_yaw_out_enable, 0),
+
+    AP_GROUPINFO("RTK_YAW_CORR", 20, ParametersG2, rtk_yaw_corr_enable, 0),
 
     AP_GROUPEND
 };

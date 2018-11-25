@@ -571,6 +571,7 @@ public:
     SRV_Channels servo_channels;
 
     AP_Int16 rtk_yaw_out_enable;
+    AP_Int16 rtk_yaw_corr_enable;
 };
 
 extern const AP_Param::Info        var_info[];
