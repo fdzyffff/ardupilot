@@ -73,13 +73,12 @@ float Copter::user_corr_yaw_rtk_cd(float input_target_yaw_cd) {
     static uint32_t last_dir_update_time = millis();
     static float global_yaw_rtk_offset_cd = 0.0f;
 
-    float copter_target_yaw_cd = input_target_yaw_cd;//attitude_control->get_att_target_euler_cd().z;
     float copter_current_yaw_cd = ahrs.yaw_sensor;
     if (last_dir_update_time - millis() > 5000) {
-        if (fabsf(wrap_180_cd(copter_target_yaw_cd - copter_current_yaw_cd)) < 100.0f && gps.get_heading_dev_deg() > 0.01f && gps.get_heading_dev_deg() < 2.0f) {
+        if (gps.get_heading_dev_deg() > 0.01f && gps.get_heading_dev_deg() < 2.0f) {
             global_yaw_rtk_offset_cd = wrap_180_cd(gps.get_heading_deg()*100.0f - copter_current_yaw_cd);
             if (g2.rtk_yaw_out_enable == 2 || g2.rtk_yaw_out_enable == 3) {
-                gcs_send_text_fmt(MAV_SEVERITY_WARNING, "corrected: %0.2f, final: %0.2f", global_yaw_rtk_offset_cd, wrap_360_cd(copter_target_yaw_cd + global_yaw_rtk_offset_cd));
+                gcs_send_text_fmt(MAV_SEVERITY_WARNING, "corrected: %0.2f, final: %0.2f", global_yaw_rtk_offset_cd, wrap_360_cd(input_target_yaw_cd + global_yaw_rtk_offset_cd));
             }
             last_dir_update_time = millis();
         }
@@ -87,6 +86,6 @@ float Copter::user_corr_yaw_rtk_cd(float input_target_yaw_cd) {
     if (g2.rtk_yaw_corr_enable <= 0) {
         return input_target_yaw_cd;
     }
-    float final_yaw_cd = wrap_360_cd(copter_target_yaw_cd + global_yaw_rtk_offset_cd);
+    float final_yaw_cd = wrap_360_cd(input_target_yaw_cd - global_yaw_rtk_offset_cd);
     return final_yaw_cd;
 }
