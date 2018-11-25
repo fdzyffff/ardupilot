@@ -224,6 +224,33 @@ void RGBLed::update_colours(void)
         return;
     }
 
+    // solid purple if calibration camposs running
+    if (AP_Notify::flags.compass_cal_running || AP_Notify::flags.compass_cal_running_2nd)
+    {
+        switch(step) {
+            case 0:
+            case 2:
+            case 4:
+            case 6:
+            case 8:
+                _red_des = brightness;
+                _blue_des = brightness;
+                _green_des = brightness;
+                break;
+            case 1:
+            case 3:
+            case 5:
+            case 7:
+            case 9:
+                if (AP_Notify::flags.compass_cal_running_2nd) {
+                    _red_des = _led_off;
+                    _blue_des = _led_off;
+                    _green_des = _led_off;
+                }
+        }
+        return;
+    }
+    
     // solid green or blue if armed
     if (AP_Notify::flags.armed) {
         // solid green if armed with GPS 3d lock
