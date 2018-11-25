@@ -85,6 +85,7 @@ void CompassCalibrator::start(bool retry, float delay, uint16_t offset_max) {
     _offset_max = offset_max;
     _attempt = 1;
     _retry = retry;
+    _pause = true;
     _delay_start_sec = delay;
     _start_time_ms = AP_HAL::millis();
     set_status(COMPASS_CAL_WAITING_TO_START);
@@ -108,9 +109,9 @@ float CompassCalibrator::get_completion_percent() const {
         case COMPASS_CAL_WAITING_TO_START:
             return 0.0f;
         case COMPASS_CAL_RUNNING_STEP_ONE:
-            return 33.3f * _samples_collected/COMPASS_CAL_NUM_SAMPLES;
+            return 99.0f * _samples_collected/COMPASS_CAL_NUM_SAMPLES;
         case COMPASS_CAL_RUNNING_STEP_TWO:
-            return 33.3f + 65.7f*((float)(_samples_collected-_samples_thinned)/(COMPASS_CAL_NUM_SAMPLES-_samples_thinned));
+            return 99.0f*((float)(_samples_collected-_samples_thinned)/(COMPASS_CAL_NUM_SAMPLES-_samples_thinned));
         case COMPASS_CAL_SUCCESS:
             return 100.0f;
         case COMPASS_CAL_FAILED:
@@ -174,39 +175,45 @@ void CompassCalibrator::new_sample(const Vector3f& sample) {
 void CompassCalibrator::update(bool &failure) {
     failure = false;
 
-    if(!fitting()) {
+    if(!running()) {
         return;
     }
 
     if(_status == COMPASS_CAL_RUNNING_STEP_ONE) {
-        if (_fit_step >= 10) {
-            if(is_equal(_fitness,_initial_fitness) || isnan(_fitness)) {           //if true, means that fitness is diverging instead of converging
-                set_status(COMPASS_CAL_FAILED);
-                failure = true;
-            }
+        if (_samples_collected > COMPASS_CAL_NUM_SAMPLES / 2) 
+        {
+            _samples_collected_1st = _samples_collected;
             set_status(COMPASS_CAL_RUNNING_STEP_TWO);
-        } else {
-            if (_fit_step == 0) {
-                calc_initial_offset();
-            }
-            run_sphere_fit();
-            _fit_step++;
         }
     } else if(_status == COMPASS_CAL_RUNNING_STEP_TWO) {
-        if (_fit_step >= 35) {
-            if(fit_acceptable()) {
-                set_status(COMPASS_CAL_SUCCESS);
-            } else {
-                set_status(COMPASS_CAL_FAILED);
-                failure = true;
-            }
-        } else if (_fit_step < 15) {
-            run_sphere_fit();
-            _fit_step++;
-        } else {
-            run_ellipsoid_fit();
-            _fit_step++;
+        if(!fitting()) {
+            return;
         }
+            if (_fit_step >= 35) {
+                if(fit_acceptable()) {
+                    set_status(COMPASS_CAL_SUCCESS);
+                } else {
+                    set_status(COMPASS_CAL_FAILED);
+                    failure = true;
+                }
+            } else if (_fit_step < 10) {
+                if (_fit_step == 0) {
+                    calc_initial_offset();
+                }
+                run_sphere_fit();
+                _fit_step++;
+            } else if (_fit_step == 10) {
+                if(is_equal(_fitness,_initial_fitness) || isnan(_fitness)) {           //if true, means that fitness is diverging instead of converging
+                    set_status(COMPASS_CAL_FAILED);
+                    failure = true;
+                }
+                else {
+                    _fit_step++;
+                }
+            } else {
+                run_ellipsoid_fit();
+                _fit_step++;
+            }
     }
 }
 
@@ -237,7 +244,7 @@ void CompassCalibrator::initialize_fit() {
 void CompassCalibrator::reset_state() {
     _samples_collected = 0;
     _samples_thinned = 0;
-    _params.radius = 200;
+    _params.radius = 250;
     _params.offset.zero();
     _params.diag = Vector3f(1.0f,1.0f,1.0f);
     _params.offdiag.zero();
@@ -296,7 +303,7 @@ bool CompassCalibrator::set_status(compass_cal_status_t status) {
             if(_status != COMPASS_CAL_RUNNING_STEP_ONE) {
                 return false;
             }
-            thin_samples();
+            //thin_samples();
             initialize_fit();
             _status = COMPASS_CAL_RUNNING_STEP_TWO;
             return true;
@@ -397,20 +404,54 @@ void CompassCalibrator::thin_samples() {
  * The above equation was proved after solving for spherical triangular excess
  * and related equations.
  */
+
 bool CompassCalibrator::accept_sample(const Vector3f& sample)
 {
-    static const uint16_t faces = (2 * COMPASS_CAL_NUM_SAMPLES - 4);
-    static const float a = (4.0f * M_PI / (3.0f * faces)) + M_PI / 3.0f;
-    static const float theta = 0.5f * acosf(cosf(a) / (1.0f - cosf(a)));
-
-    if(_sample_buffer == nullptr) {
-        return false;
+    switch(_status) {
+        case COMPASS_CAL_RUNNING_STEP_ONE: {
+            return accept_sample_1st(sample);
+            break;
+        } 
+        case COMPASS_CAL_RUNNING_STEP_TWO: {
+            return !_pause && accept_sample_2nd(sample);
+            break;
+        }
+        default: {
+            return false;
+            break;
+        }
     }
+}
 
-    float min_distance = _params.radius * 2*sinf(theta/2);
+bool CompassCalibrator::accept_sample_1st(const Vector3f& sample)
+{
+    float min_distance = 1.0f * M_PI / COMPASS_CAL_NUM_SAMPLES;
+
+    Vector2f sample_2f(sample.x, sample.y);
+    sample_2f.normalize();
 
     for (uint16_t i = 0; i<_samples_collected; i++){
-        float distance = (sample - _sample_buffer[i].get()).length();
+        Vector2f tmp_sample_2f(_sample_buffer[i].get().x, _sample_buffer[i].get().y);
+        tmp_sample_2f.normalize();
+        float distance = (sample_2f - tmp_sample_2f).length();
+        if(distance < min_distance) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool CompassCalibrator::accept_sample_2nd(const Vector3f& sample)
+{
+    float min_distance = 1.0f * M_PI / COMPASS_CAL_NUM_SAMPLES;
+
+    Vector2f sample_2f(sample.y, sample.z);
+    sample_2f.normalize();
+
+    for (uint16_t i = _samples_collected_1st; i<_samples_collected; i++){
+        Vector2f tmp_sample_2f(_sample_buffer[i].get().y, _sample_buffer[i].get().z);
+        tmp_sample_2f.normalize();
+        float distance = (sample_2f - tmp_sample_2f).length();
         if(distance < min_distance) {
             return false;
         }

@@ -118,7 +118,6 @@ public:
         //
         k_param_command_total = 220,
 
-        k_param_rtk_yaw_out_enable,
         // 254,255: reserved
     };
 
@@ -161,13 +160,12 @@ public:
     //
     AP_Int8 command_total; // 1 if HOME is set
 
+
     AP_Int32 log_bitmask;
 
     // AC_PID controllers
     AC_PID         pidPitch2Srv;
     AC_PID         pidYaw2Srv;
-
-    AP_Int16 rtk_yaw_out_enable;
 
     Parameters() :
         pidPitch2Srv(0.2, 0, 0.05f, 4000.0f, 0.1, 0.02f),

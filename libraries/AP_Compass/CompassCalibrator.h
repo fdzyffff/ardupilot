@@ -41,6 +41,8 @@ public:
     enum compass_cal_status_t get_status() const { return _status; }
     float get_fitness() const { return sqrtf(_fitness); }
     uint8_t get_attempt() const { return _attempt; }
+    bool get_pause() const {return _pause; }
+    void set_pause(bool pause_in) {_pause = pause_in; }
 
 private:
     class param_t {
@@ -80,6 +82,7 @@ private:
     float _delay_start_sec;
     uint32_t _start_time_ms;
     bool _retry;
+    bool _pause;
     float _tolerance;
     uint8_t _attempt;
     uint16_t _offset_max;
@@ -95,11 +98,14 @@ private:
     float _sphere_lambda;
     float _ellipsoid_lambda;
     uint16_t _samples_collected;
+    uint16_t _samples_collected_1st;
     uint16_t _samples_thinned;
 
     bool set_status(compass_cal_status_t status);
 
     // returns true if sample should be added to buffer
+    bool accept_sample_1st(const Vector3f& sample);
+    bool accept_sample_2nd(const Vector3f& sample);
     bool accept_sample(const Vector3f &sample);
     bool accept_sample(const CompassSample &sample);
 

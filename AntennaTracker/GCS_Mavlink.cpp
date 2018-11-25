@@ -275,17 +275,20 @@ bool GCS_MAVLINK_Tracker::try_send_message(enum ap_message id)
         break; // just here to prevent a warning
     case MSG_DELTA_POS:
     {
+        // Take off
         if (tracker.control_mode == MANUAL) {
             if (!tracker.vehicle.mode_init) {
-                CHECK_PAYLOAD_SIZE(COMMAND_LONG);
+                CHECK_PAYLOAD_SIZE(COMMAND_INT);
                 Location_Class tmp_loc(tracker.current_loc);
                 tmp_loc.offset(tracker.vehicle.target_pos.x / 100.f, tracker.vehicle.target_pos.y / 100.f);
                 if (tracker.gps.status() >= AP_GPS::GPS_OK_FIX_2D) {
-                    mavlink_msg_command_long_send(
+                    mavlink_msg_command_int_send(
                     chan,
                     0,
                     0,
+                    0,
                     MAV_CMD_USER_1,
+                    0,
                     0,
                     1, 0, 0, tracker.vehicle.target_yaw, tmp_loc.lat, tmp_loc.lng, tracker.vehicle.target_pos.z);
                 } else {
@@ -300,39 +303,45 @@ bool GCS_MAVLINK_Tracker::try_send_message(enum ap_message id)
                 send_text(MAV_SEVERITY_INFO,"Command sent");
             }
         }
+        // Follow
         if (tracker.control_mode == AUTO) {
-                CHECK_PAYLOAD_SIZE(COMMAND_LONG);
-                Vector3f vel_ned;
-                tracker.ahrs.get_velocity_NED(vel_ned);
-                if (tracker.gps.status() >= AP_GPS::GPS_OK_FIX_2D) {
-                    mavlink_msg_command_long_send(
-                    chan,
-                    0,
-                    0,
-                    MAV_CMD_USER_2,
-                    0,
-                    1, vel_ned.x, vel_ned.y, tracker.get_vehicle_yaw(ToDeg(tracker.ahrs.yaw)), tracker.current_loc.lat, tracker.current_loc.lng, tracker.vehicle.target_pos.z);
-                }
+            CHECK_PAYLOAD_SIZE(COMMAND_INT);
+            Vector3f vel_ned;
+            tracker.ahrs.get_velocity_NED(vel_ned);
+            if (tracker.gps.status() >= AP_GPS::GPS_OK_FIX_2D) {
+                mavlink_msg_command_int_send(
+                chan,
+                0,
+                0,
+                0,
+                MAV_CMD_USER_2,
+                0,
+                0,
+                1, vel_ned.x, vel_ned.y, tracker.get_vehicle_yaw(ToDeg(tracker.ahrs.yaw)), tracker.current_loc.lat, tracker.current_loc.lng, tracker.vehicle.target_pos.z);
+            }
 
-                if (tracker.gps.status() >= AP_GPS::GPS_OK_FIX_2D) {
+/*                if (tracker.gps.status() >= AP_GPS::GPS_OK_FIX_2D) {
                     mavlink_msg_command_long_send(
                     chan,
                     0,
                     0,
                     MAV_CMD_USER_3,
                     0,
-                    1, vel_ned.x, vel_ned.y, tracker.get_tracker_yaw(), tracker.current_loc.lat, tracker.current_loc.lng, tracker.vehicle.target_pos.z);
-                }
+                    11, vel_ned.x, vel_ned.y, tracker.get_tracker_yaw(), tracker.current_loc.lat, tracker.current_loc.lng, tracker.vehicle.target_pos.z);
+                }*/
         }
+        // Land
         if (tracker.control_mode == SCAN) {
             if (!tracker.vehicle.mode_init) {
-                CHECK_PAYLOAD_SIZE(COMMAND_LONG);
+                CHECK_PAYLOAD_SIZE(COMMAND_INT);
                 if (tracker.gps.status() >= AP_GPS::GPS_OK_FIX_2D) {
-                    mavlink_msg_command_long_send(
+                    mavlink_msg_command_int_send(
                     chan,
                     0,
                     0,
+                    0,
                     MAV_CMD_USER_1,
+                    0,
                     0,
                     1, 2, 0, tracker.vehicle.target_yaw, tracker.current_loc.lat, tracker.current_loc.lng, tracker.vehicle.target_pos.z);
                 } else {
@@ -684,7 +693,12 @@ void GCS_MAVLINK_Tracker::handleMessage(mavlink_message_t* msg)
                 bool change_pos = false;
                 bool change_yaw = false;
                 tracker.vehicle.is_rel_yaw = false;
-                int16_t tmp_int = int16_t(packet.param1);
+                tracker.rtk_yaw_out_enable = false;
+                int32_t tmp_int = int32_t(packet.param1);
+                if (tmp_int > 9999) {
+                    tracker.rtk_yaw_out_enable = true;
+                    tmp_int = tmp_int - (tmp_int/10000) * 10000;
+                }
                 if (tmp_int > 999) {
                     tracker.vehicle.is_rel_yaw = true;
                     tmp_int = tmp_int - (tmp_int/1000) * 1000;

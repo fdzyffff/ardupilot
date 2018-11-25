@@ -111,7 +111,7 @@ void Tracker::one_second_loop()
 
     counter++;
     if (counter >= 3) {
-        if (g.rtk_yaw_out_enable > 0) {
+        if (rtk_yaw_out_enable) {
             gcs_send_text_fmt(MAV_SEVERITY_WARNING, "heading: %0.2f , dev: %0.2f ", gps.get_heading_deg(), gps.get_heading_dev_deg());
         }
         counter = 0;

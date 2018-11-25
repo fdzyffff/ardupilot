@@ -193,6 +193,8 @@ private:
     static const AP_Param::Info var_info[];
     static const struct LogStructure log_structure[];
 
+    bool rtk_yaw_out_enable = false;
+
     void dataflash_periodic(void);
     void one_second_loop();
     void ten_hz_logging_loop();

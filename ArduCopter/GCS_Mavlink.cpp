@@ -1118,6 +1118,127 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
                 result = MAV_RESULT_ACCEPTED;
                 break;
             }
+            case MAV_CMD_USER_1:
+            {
+                if (copter.control_mode != GUIDED) {
+                    result = MAV_RESULT_FAILED;
+                    break;
+                }
+    
+                if (!copter.motors->armed()) {
+                    copter.init_arm_motors(true);
+                }
+    
+                //param 1: 
+                copter.guided_gcs_state.next_command = guided_command_NONE;
+                copter.guided_gcs_state.state_complete = false;
+                copter.guided_gcs_state.delta_pos_set = false;
+                copter.guided_gcs_state.target_yaw = packet.param4 * 100.f;
+                Vector3f pos_ned;
+    
+
+                Location loc;
+                loc.lat = int32_t(packet.x);
+                loc.lng = int32_t(packet.y);
+                loc.alt = int32_t(packet.z);
+    
+                loc.flags.relative_alt = true;
+                loc.flags.terrain_alt = false;
+                pos_ned = copter.pv_location_to_vector(loc);
+
+                pos_ned.z = MAX(200.f, pos_ned.z);
+                
+                copter.guided_gcs_state.target_pos = pos_ned;
+    
+                if (copter.ap.land_complete || int16_t(packet.param2) == 1)
+                {
+                    copter.guided_gcs_state.next_command = guided_command_WP;
+                    copter.do_user_takeoff(MAX(200.f, pos_ned.z), false);
+                    result = MAV_RESULT_ACCEPTED;
+                    break;
+                }
+    
+                if (int16_t(packet.param2) == 0 || int16_t(packet.param2) == 2) {
+                    if (copter.guided_gcs_state.target_yaw < 0.0f) {
+                        copter.guided_set_destination(copter.guided_gcs_state.target_pos, false, 0.0f, true, 0.0f, false);
+                    } else {
+                        copter.guided_set_destination(copter.guided_gcs_state.target_pos, true, copter.guided_gcs_state.target_yaw, false, 0.0f, false);
+                    }
+    
+                    if (int16_t(packet.param2) == 2) {
+                        copter.guided_gcs_state.next_command = guided_command_LAND;
+                    }
+                }
+                
+                if (int16_t(packet.param2) == 4) {
+                    copter.guided_gcs_state.target_pos.x = copter.inertial_nav.get_position().x;
+                    copter.guided_gcs_state.target_pos.y = copter.inertial_nav.get_position().y;
+                    copter.guided_land_start();
+                    copter.guided_gcs_state.next_command = guided_command_NONE;
+                }
+    
+                result = MAV_RESULT_ACCEPTED;
+                break;
+            }
+    
+            case MAV_CMD_USER_2:
+            {
+                if (copter.control_mode != GUIDED) {
+                    result = MAV_RESULT_FAILED;
+                    break;
+                }
+    
+                //param 1: 
+                copter.guided_gcs_state.next_command = guided_command_NONE;
+                copter.guided_gcs_state.state_complete = false;
+                Vector3f pos_ned;
+                Vector3f vel_ned;
+    
+
+                Location loc;
+                loc.lat = int32_t(packet.x);
+                loc.lng = int32_t(packet.y);
+                loc.alt = int32_t(packet.z);
+    
+                loc.flags.relative_alt = true;
+                loc.flags.terrain_alt = false;
+                pos_ned = copter.pv_location_to_vector(loc);
+
+                pos_ned.z = MAX(200.f, pos_ned.z);
+                vel_ned = Vector3f(packet.param2, packet.param3, 0.0f);
+                
+                if (vel_ned.length() < 200.f) {
+                    vel_ned.zero();
+                }
+    
+                if (!copter.guided_gcs_state.delta_pos_set)
+                {
+                    copter.guided_gcs_state.target_pos = copter.inertial_nav.get_position();
+                    copter.guided_gcs_state.delta_pos = pos_ned - copter.guided_gcs_state.target_pos;
+                    copter.guided_gcs_state.delta_pos.z = 0.0f;
+                    copter.guided_gcs_state.delta_pos_set = true;
+                    result = MAV_RESULT_ACCEPTED;
+                    break;
+                }
+    
+                Vector3f tmp_target_pos = pos_ned - copter.guided_gcs_state.delta_pos;
+                if (!copter.guided_target_moved(tmp_target_pos, packet.param4, copter.guided_gcs_state.target_pos, copter.guided_gcs_state.target_yaw/100.0f)) {
+                    result = MAV_RESULT_FAILED;
+                    return;
+                }
+    
+                copter.guided_gcs_state.target_yaw = packet.param4 * 100.f;
+                copter.guided_gcs_state.target_pos = tmp_target_pos;
+    
+                if (copter.guided_gcs_state.target_yaw < 0.0f) {
+                    copter.guided_set_destination_posvel(copter.guided_gcs_state.target_pos, vel_ned, false, 0.0f, true, 0.0f, false);
+                } else {
+                    copter.guided_set_destination_posvel(copter.guided_gcs_state.target_pos, vel_ned, true, copter.guided_gcs_state.target_yaw, false, 0.0f, false);
+                }
+                
+                result = MAV_RESULT_ACCEPTED;
+                break;
+            }
             default:
                 result = MAV_RESULT_UNSUPPORTED;
                 break;
@@ -1635,18 +1756,8 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
             copter.guided_gcs_state.target_yaw = packet.param4 * 100.f;
             Vector3f pos_ned;
 
-            if (int16_t(packet.param1) == 1) {
-                Location loc;
-                loc.lat = int32_t(packet.param5);
-                loc.lng = int32_t(packet.param6);
-                loc.alt = int32_t(packet.param7);
+            pos_ned = Vector3f(packet.param5, packet.param6, packet.param7);
 
-                loc.flags.relative_alt = true;
-                loc.flags.terrain_alt = false;
-                pos_ned = copter.pv_location_to_vector(loc);
-            } else {
-                pos_ned = Vector3f(packet.param5, packet.param6, packet.param7);
-            }
             pos_ned.z = MAX(200.f, pos_ned.z);
             
             copter.guided_gcs_state.target_pos = pos_ned;
@@ -1678,67 +1789,6 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
                 copter.guided_gcs_state.next_command = guided_command_NONE;
             }
 
-            result = MAV_RESULT_ACCEPTED;
-            break;
-        }
-
-        case MAV_CMD_USER_2:
-        {
-            if (copter.control_mode != GUIDED) {
-                result = MAV_RESULT_FAILED;
-                break;
-            }
-
-            //param 1: 
-            copter.guided_gcs_state.next_command = guided_command_NONE;
-            copter.guided_gcs_state.state_complete = false;
-            Vector3f pos_ned;
-            Vector3f vel_ned;
-
-            if (int16_t(packet.param1) == 1) {
-                Location loc;
-                loc.lat = int32_t(packet.param5);
-                loc.lng = int32_t(packet.param6);
-                loc.alt = int32_t(packet.param7);
-
-                loc.flags.relative_alt = true;
-                loc.flags.terrain_alt = false;
-                pos_ned = copter.pv_location_to_vector(loc);
-            } else {
-                pos_ned = Vector3f(packet.param5, packet.param6, packet.param7);
-            }
-            pos_ned.z = MAX(200.f, pos_ned.z);
-            vel_ned = Vector3f(packet.param2, packet.param3, 0.0f);
-            
-            if (vel_ned.length() < 200.f) {
-                vel_ned.zero();
-            }
-
-            if (!copter.guided_gcs_state.delta_pos_set)
-            {
-                copter.guided_gcs_state.target_pos = copter.inertial_nav.get_position();
-                copter.guided_gcs_state.delta_pos = pos_ned - copter.guided_gcs_state.target_pos;
-                copter.guided_gcs_state.delta_pos.z = 0.0f;
-                copter.guided_gcs_state.delta_pos_set = true;
-                result = MAV_RESULT_ACCEPTED;
-                break;
-            }
-
-            Vector3f tmp_target_pos = pos_ned - copter.guided_gcs_state.delta_pos;
-            if (!copter.guided_target_moved(tmp_target_pos, packet.param4, copter.guided_gcs_state.target_pos, copter.guided_gcs_state.target_yaw/100.0f)) {
-                result = MAV_RESULT_FAILED;
-                return;
-            }
-
-            copter.guided_gcs_state.target_yaw = packet.param4 * 100.f;
-            copter.guided_gcs_state.target_pos = tmp_target_pos;
-
-            if (copter.guided_gcs_state.target_yaw < 0.0f) {
-                copter.guided_set_destination_posvel(copter.guided_gcs_state.target_pos, vel_ned, false, 0.0f, true, 0.0f, false);
-            } else {
-                copter.guided_set_destination_posvel(copter.guided_gcs_state.target_pos, vel_ned, true, copter.guided_gcs_state.target_yaw, false, 0.0f, false);
-            }
-            
             result = MAV_RESULT_ACCEPTED;
             break;
         }

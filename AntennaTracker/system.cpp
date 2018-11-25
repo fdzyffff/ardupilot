@@ -120,7 +120,7 @@ void Tracker::init_tracker()
     vehicle.is_rel_yaw = false;
     vehicle.target_pos.x = 0.0f;
     vehicle.target_pos.y = 0.0f;
-    vehicle.target_pos.z = 500.0f;
+    vehicle.target_pos.z = 200.f;
     vehicle.target_yaw = -1.0f;
 
     if (g.startup_delay > 0) {

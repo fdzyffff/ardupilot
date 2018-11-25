@@ -1173,6 +1173,7 @@ private:
     void accel_cal_update(void);
 
     void user_update_gps_dir();
+    float user_corr_yaw_rtk_cd(float input_target_yaw_cd);
 
     void send_delta_pos(mavlink_channel_t chan);
     void icd_a1_in_init();

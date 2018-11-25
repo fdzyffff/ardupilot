@@ -379,9 +379,6 @@ const AP_Param::Info Tracker::var_info[] = {
     // @User: Advanced
     GSCALAR(command_total,          "CMD_TOTAL",      0),
 
-    GSCALAR(rtk_yaw_out_enable,          "RTK_YAW_OUT",      1),
-
-
     AP_VAREND
 };
 
