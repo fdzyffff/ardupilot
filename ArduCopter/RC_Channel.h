@@ -1,7 +1,7 @@
 #pragma once
 
 #include <RC_Channel/RC_Channel.h>
-#include "Copter.h"
+#include "mode.h"
 
 class RC_Channel_Copter : public RC_Channel
 {
@@ -15,7 +15,7 @@ protected:
 
 private:
 
-    void do_aux_function_change_mode(const control_mode_t mode,
+    void do_aux_function_change_mode(const Mode::Number mode,
                                      const aux_switch_pos_t ch_flag);
 
     // called when the mode switch changes position:
@@ -26,11 +26,6 @@ private:
 class RC_Channels_Copter : public RC_Channels
 {
 public:
-
-    // this must be implemented for the AP_Scheduler functor to work:
-    void read_aux_all() override {
-        RC_Channels::read_aux_all();
-    }
 
     bool has_valid_input() const override;
 

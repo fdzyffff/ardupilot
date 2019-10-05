@@ -17,12 +17,17 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_HAL/utility/OwnPtr.h>
 #include <stdio.h>
+
+#if HAL_USE_I2C == TRUE || HAL_USE_SPI == TRUE
+
 #include "Scheduler.h"
 #include "Semaphores.h"
 #include "Util.h"
 #include "hwdef/common/stm32_util.h"
 
-#if HAL_USE_I2C == TRUE || HAL_USE_SPI == TRUE
+#ifndef HAL_DEVICE_THREAD_STACK
+#define HAL_DEVICE_THREAD_STACK 1024
+#endif
 
 using namespace ChibiOS;
 
@@ -31,8 +36,8 @@ static const AP_HAL::HAL &hal = AP_HAL::get_HAL();
 DeviceBus::DeviceBus(uint8_t _thread_priority) :
         thread_priority(_thread_priority)
 {
-    bouncebuffer_init(&bounce_buffer_tx, 10);
-    bouncebuffer_init(&bounce_buffer_rx, 10);
+    bouncebuffer_init(&bounce_buffer_tx, 10, false);
+    bouncebuffer_init(&bounce_buffer_rx, 10, false);
 }
 
 /*
@@ -79,7 +84,7 @@ void DeviceBus::bus_thread(void *arg)
         if (next_needed >= now && next_needed - now < delay) {
             delay = next_needed - now;
         }
-        // don't delay for less than 400usec, so one thread doesn't
+        // don't delay for less than 100usec, so one thread doesn't
         // completely dominate the CPU
         if (delay < 100) {
             delay = 100;
@@ -113,12 +118,14 @@ AP_HAL::Device::PeriodicHandle DeviceBus::register_periodic_callback(uint32_t pe
             break;
         }
 
-        thread_ctx = chThdCreateFromHeap(NULL,
-                         THD_WORKING_AREA_SIZE(1024),
-                         name,
-                         thread_priority,           /* Initial priority.    */
-                         DeviceBus::bus_thread,    /* Thread function.     */
-                         this);                     /* Thread parameter.    */
+        thread_ctx = thread_create_alloc(THD_WORKING_AREA_SIZE(HAL_DEVICE_THREAD_STACK),
+                                         name,
+                                         thread_priority,           /* Initial priority.    */
+                                         DeviceBus::bus_thread,    /* Thread function.     */
+                                         this);                     /* Thread parameter.    */
+        if (thread_ctx == nullptr) {
+            AP_HAL::panic("Failed to create bus thread %s", name);
+        }
     }
     DeviceBus::callback_info *callback = new DeviceBus::callback_info;
     if (callback == nullptr) {

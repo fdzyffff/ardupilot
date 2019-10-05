@@ -10,10 +10,10 @@ class AP_RangeFinder_Wasp : public AP_RangeFinder_Backend {
 
 public:
     AP_RangeFinder_Wasp(RangeFinder::RangeFinder_State &_state,
-                        AP_SerialManager &serial_manager,
+                        AP_RangeFinder_Params &_params,
                         uint8_t serial_instance);
 
-    static bool detect(AP_SerialManager &serial_manager, uint8_t serial_instance);
+    static bool detect(uint8_t serial_instance);
 
     void update(void) override;
 
@@ -49,7 +49,6 @@ private:
     void parse_response(void);
 
     AP_HAL::UARTDriver *uart;
-    uint32_t last_reading_ms;
     char linebuf[10];
     uint8_t linebuf_len;
     AP_Int16 mavg;

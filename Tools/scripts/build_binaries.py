@@ -16,10 +16,10 @@ import shutil
 import time
 import subprocess
 import sys
-import zlib
+import gzip
 
 # local imports
-import generate_manifest
+import generate_manifest, gen_stable
 
 
 class build_binaries(object):
@@ -100,7 +100,7 @@ class build_binaries(object):
                           "--recursive",
                           "-f"])
 
-    def checkout(self, vehicle, ctag, cboard=None, cframe=None):
+    def checkout(self, vehicle, ctag, cboard=None, cframe=None, submodule_update=True):
         '''attempt to check out a git tree.  Various permutations are
 attempted based on ctag - for examplle, if the board is avr and ctag
 is bob we will attempt to checkout bob-AVR'''
@@ -131,12 +131,12 @@ is bob we will attempt to checkout bob-AVR'''
             try:
                 self.progress("Trying branch %s" % branch)
                 self.run_git(["checkout", "-f", branch])
-                self.run_git_update_submodules()
+                if submodule_update:
+                    self.run_git_update_submodules()
                 self.run_git(["log", "-1"])
                 return True
-            except subprocess.CalledProcessError as e:
+            except subprocess.CalledProcessError:
                 self.progress("Checkout branch %s failed" % branch)
-                pass
 
         self.progress("Failed to find tag for %s %s %s %s" %
                       (vehicle, ctag, cboard, cframe))
@@ -150,15 +150,18 @@ is bob we will attempt to checkout bob-AVR'''
         try:
             out = self.run_program('waf', ['./waf', 'configure', '--board=BOARDTEST'], False)
             lines = out.split('\n')
-            needle = "BOARDTEST' (choose from"
+            needles = ["BOARDTEST' (choose from", "BOARDTEST': choices are"]
             for line in lines:
-                idx = line.find(needle)
+                for needle in needles:
+                    idx = line.find(needle)
+                    if idx != -1:
+                        break
                 if idx != -1:
                     line = line[idx+len(needle):-1]
-                    line = line.replace("'","")
-                    line = line.replace(" ","")
+                    line = line.replace("'", "")
+                    line = line.replace(" ", "")
                     boards = line.split(",")
-                    return not board in boards
+                    return board not in boards
         except IOError as e:
             if e.errno != 2:
                 raise
@@ -169,7 +172,7 @@ is bob we will attempt to checkout bob-AVR'''
     def skip_frame(self, board, frame):
         '''returns true if this board/frame combination should not be built'''
         if frame == "heli":
-            if board in ["bebop", "aerofc-v1", "skyviper-v2450"]:
+            if board in ["bebop", "aerofc-v1", "skyviper-v2450", "CubeSolo", "CubeGreen-solo", 'skyviper-journey']:
                 self.progress("Skipping heli build for %s" % board)
                 return True
         return False
@@ -323,7 +326,8 @@ is bob we will attempt to checkout bob-AVR'''
                       (vehicle, tag, os.getcwd()))
 
         for board in boards:
-            self.progress("Building board: %s" % board)
+            now = datetime.datetime.now()
+            self.progress("Building board: %s at %s" % (board, str(now)))
             for frame in frames:
                 if frame is not None:
                     self.progress("Considering frame %s for board %s" %
@@ -332,14 +336,13 @@ is bob we will attempt to checkout bob-AVR'''
                     framesuffix = ""
                 else:
                     framesuffix = "-%s" % frame
-                if not self.checkout(vehicle, tag, board, frame):
+                if not self.checkout(vehicle, tag, board, frame, submodule_update=False):
                     msg = ("Failed checkout of %s %s %s %s" %
                            (vehicle, board, tag, frame,))
                     self.progress(msg)
                     self.error_strings.append(msg)
                     continue
-                if self.skip_board_waf(board):
-                    continue
+
                 self.progress("Building %s %s %s binaries %s" %
                               (vehicle, tag, board, frame))
                 ddir = os.path.join(self.binaries,
@@ -352,10 +355,19 @@ is bob we will attempt to checkout bob-AVR'''
                 if self.skip_frame(board, frame):
                     continue
 
+                # we do the submodule update after the skip_board_waf check to avoid doing it on
+                # builds we will not be running
+                self.run_git_update_submodules()
+
+                if self.skip_board_waf(board):
+                    continue
+                
                 if os.path.exists(self.buildroot):
                     shutil.rmtree(self.buildroot)
 
-                self.remove_tmpdir();
+                self.remove_tmpdir()
+
+                t0 = time.time()
 
                 self.progress("Configuring for %s in %s" %
                               (board, self.buildroot))
@@ -366,19 +378,23 @@ is bob we will attempt to checkout bob-AVR'''
                                 "clean"]
                     waf_opts.extend(self.board_options(board))
                     self.run_waf(waf_opts)
-                except subprocess.CalledProcessError as e:
+                except subprocess.CalledProcessError:
                     self.progress("waf configure failed")
                     continue
                 try:
                     target = os.path.join("bin",
                                           "".join([binaryname, framesuffix]))
                     self.run_waf(["build", "--targets", target])
-                except subprocess.CalledProcessError as e:
+                except subprocess.CalledProcessError:
                     msg = ("Failed build of %s %s%s %s" %
                            (vehicle, board, framesuffix, tag))
                     self.progress(msg)
                     self.error_strings.append(msg)
                     continue
+
+                t1 = time.time()
+                self.progress("Building %s %s %s %s took %u seconds" %
+                              (vehicle, tag, board, frame, t1-t0))
 
                 bare_path = os.path.join(self.buildroot,
                                          board,
@@ -401,6 +417,17 @@ is bob we will attempt to checkout bob-AVR'''
                 # why is touching this important? -pb20170816
                 self.touch_filepath(os.path.join(self.binaries,
                                                  vehicle_binaries_subdir, tag))
+
+        if not self.checkout(vehicle, tag, "PX4", None):
+            self.checkout(vehicle, "latest")
+            return
+
+        board_list = self.run_program('BB-WAF', ['./waf', 'list_boards'])
+        board_list = board_list.split(' ')
+        self.checkout(vehicle, "latest")
+        if 'px4-v2' not in board_list:
+            print("Skipping px4 builds")
+            return
 
         # PX4-building
         board = "px4"
@@ -451,7 +478,7 @@ is bob we will attempt to checkout bob-AVR'''
                 try:
                     self.run_waf(["configure", "--board", px4_v,
                                   "--out", self.buildroot, "clean"])
-                except subprocess.CalledProcessError as e:
+                except subprocess.CalledProcessError:
                     self.progress("waf configure failed")
                     continue
                 try:
@@ -460,7 +487,7 @@ is bob we will attempt to checkout bob-AVR'''
                         "--targets",
                         os.path.join("bin",
                                      "".join([binaryname, framesuffix]))])
-                except subprocess.CalledProcessError as e:
+                except subprocess.CalledProcessError:
                     msg = ("Failed build of %s %s%s %s for %s" %
                            (vehicle, board, framesuffix, tag, v))
                     self.progress(msg)
@@ -486,7 +513,6 @@ is bob we will attempt to checkout bob-AVR'''
 
     def common_boards(self):
         '''returns list of boards common to all vehicles'''
-        # note that while we do not use these for AntennaTracker!
         return ["fmuv2",
                 "fmuv3",
                 "fmuv4",
@@ -495,32 +521,59 @@ is bob we will attempt to checkout bob-AVR'''
                 "erlebrain2",
                 "navio",
                 "navio2",
+                "edge",
                 "pxf",
                 "pxfmini",
                 "KakuteF4",
                 "KakuteF7",
                 "MatekF405",
+                "MatekF405-STD",
                 "MatekF405-Wing",
+                "MatekF765-Wing",
                 "OMNIBUSF7V2",
                 "sparky2",
+                "omnibusf4",
                 "omnibusf4pro",
+                "omnibusf4v6",
                 "OmnibusNanoV6",
                 "mini-pix",
                 "airbotf4",
                 "revo-mini",
                 "CubeBlack",
+                "CubeBlack+",
+                "CubePurple",
                 "Pixhawk1",
+                "Pixhawk1-1M",
                 "Pixhawk4",
                 "PH4-mini",
                 "CUAVv5",
+                "CUAVv5Nano",
                 "mRoX21",
                 "Pixracer",
-                "F4BY"]
+                "F4BY",
+                "mRoX21-777",
+                "mRoControlZeroF7",
+                "F35Lightning",
+                "speedybeef4",
+                "DrotekP3Pro",
+                "VRBrain-v51",
+                "VRBrain-v52",
+                "VRUBrain-v51",
+                "VRCore-v10",
+                "VRBrain-v54",
+                "TBS-Colibri-F7",
+                "Durandal",
+                "CubeOrange",
+                "CubeYellow",
+                # SITL targets
+                "SITL_x86_64_linux_gnu",
+                "SITL_arm_linux_gnueabihf",
+                ]
 
     def build_arducopter(self, tag):
         '''build Copter binaries'''
         boards = []
-        boards.extend(["skyviper-v2450", "aerofc-v1", "bebop"])
+        boards.extend(["skyviper-v2450", "aerofc-v1", "bebop", "CubeSolo", "CubeGreen-solo", "skyviper-journey"])
         boards.extend(self.common_boards()[:])
         self.build_vehicle(tag,
                            "ArduCopter",
@@ -543,7 +596,7 @@ is bob we will attempt to checkout bob-AVR'''
 
     def build_antennatracker(self, tag):
         '''build Tracker binaries'''
-        boards = ['navio', 'navio2']
+        boards = self.common_boards()[:]
         self.build_vehicle(tag,
                            "AntennaTracker",
                            boards,
@@ -581,15 +634,20 @@ is bob we will attempt to checkout bob-AVR'''
         self.write_string_to_filepath(content, new_json_filepath)
         # provide a pre-compressed manifest.  For reference, a 7M manifest
         # "gzip -9"s to 300k in 1 second, "xz -e"s to 80k in 26 seconds
-        compressed = zlib.compress(content, 9)
         new_json_filepath_gz = os.path.join(self.binaries,
                                             "manifest.json.gz.new")
-        self.write_string_to_filepath(compressed, new_json_filepath_gz)
+        with gzip.open(new_json_filepath_gz, 'wb') as gf:
+            gf.write(content)
         json_filepath = os.path.join(self.binaries, "manifest.json")
         json_filepath_gz = os.path.join(self.binaries, "manifest.json.gz")
         shutil.move(new_json_filepath, json_filepath)
         shutil.move(new_json_filepath_gz, json_filepath_gz)
         self.progress("Manifest generation successful")
+
+        self.progress("Generating stable releases")
+        gen_stable.make_all_stable(self.binaries)
+        self.progress("Generate stable releases done")
+
 
     def validate(self):
         '''run pre-run validation checks'''
@@ -616,6 +674,10 @@ is bob we will attempt to checkout bob-AVR'''
             self.progress("Removing (%s)" % (self.tmpdir,))
             shutil.rmtree(self.tmpdir)
 
+    def buildlogs_dirpath(self):
+        return os.getenv("BUILDLOGS",
+                         os.path.join(os.getcwd(), "..", "buildlogs"))
+
     def run(self):
         self.validate()
 
@@ -624,11 +686,14 @@ is bob we will attempt to checkout bob-AVR'''
         origin_env_path = os.environ.get("PATH")
         os.environ["PATH"] = ':'.join([prefix_bin_dirpath, origin_env_path,
                                        "/bin", "/usr/bin"])
-        self.tmpdir = os.path.join(os.getcwd(), 'build.tmp.binaries')
+        if 'BUILD_BINARIES_PATH' in os.environ:
+            self.tmpdir = os.environ['BUILD_BINARIES_PATH']
+        else:
+            self.tmpdir = os.path.join(os.getcwd(), 'build.tmp.binaries')
         os.environ["TMPDIR"] = self.tmpdir
 
         print(self.tmpdir)
-        self.remove_tmpdir();
+        self.remove_tmpdir()
 
         self.progress("Building in %s" % self.tmpdir)
 
@@ -646,8 +711,7 @@ is bob we will attempt to checkout bob-AVR'''
 
         self.mkpath(os.path.join("binaries", self.hdate_ym,
                                  self.hdate_ymdhm))
-        self.binaries = os.path.join(os.getcwd(), "..", "buildlogs",
-                                     "binaries")
+        self.binaries = os.path.join(self.buildlogs_dirpath(), "binaries")
         self.basedir = os.getcwd()
         self.error_strings = []
 

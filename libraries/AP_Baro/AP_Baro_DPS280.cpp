@@ -126,6 +126,7 @@ bool AP_Baro_DPS280::init()
         return false;
     }
 
+    dev->set_read_flag(0x80);
     dev->set_speed(AP_HAL::Device::SPEED_HIGH);
 
     uint8_t whoami=0;
@@ -164,13 +165,13 @@ void AP_Baro_DPS280::calculate_PT(int32_t UT, int32_t UP, float &pressure, float
 {
     const struct dps280_cal &cal = calibration;
     // scaling for 16x oversampling
-    const float scaling_16 = 1.0/253952;
+    const float scaling_16 = 1.0f/253952;
 
     float temp_scaled;
     float press_scaled;
 
     temp_scaled = float(UT) * scaling_16;
-    temperature = cal.C0 * 0.5 + cal.C1 * temp_scaled;
+    temperature = cal.C0 * 0.5f + cal.C1 * temp_scaled;
 
     press_scaled = float(UP) * scaling_16;
 
@@ -210,28 +211,24 @@ void AP_Baro_DPS280::timer(void)
         return;
     }
 
-    if (_sem->take_nonblocking()) {
-        pressure_sum += pressure;
-        temperature_sum += temperature;
-        count++;
-        _sem->give();
-    }
+    WITH_SEMAPHORE(_sem);
+
+    pressure_sum += pressure;
+    temperature_sum += temperature;
+    count++;
 }
 
 // transfer data to the frontend
 void AP_Baro_DPS280::update(void)
 {
-    if (count != 0 && _sem->take_nonblocking()) {
-        if (count == 0) {
-            _sem->give();
-            return;
-        }
-
-        _copy_to_frontend(instance, pressure_sum/count, temperature_sum/count);
-        pressure_sum = 0;
-        temperature_sum = 0;
-        count=0;
-
-        _sem->give();
+    if (count == 0) {
+        return;
     }
+
+    WITH_SEMAPHORE(_sem);
+
+    _copy_to_frontend(instance, pressure_sum/count, temperature_sum/count);
+    pressure_sum = 0;
+    temperature_sum = 0;
+    count=0;
 }

@@ -53,8 +53,12 @@ class upload_fw(Task.Task):
     always_run = True
     def run(self):
         upload_tools = self.env.get_flat('UPLOAD_TOOLS')
+        upload_port = self.generator.bld.options.upload_port
         src = self.inputs[0]
-        return self.exec_command("{} '{}/px_uploader.py' '{}'".format(self.env.get_flat('PYTHON'), upload_tools, src))
+        cmd = "{} '{}/uploader.py' '{}'".format(self.env.get_flat('PYTHON'), upload_tools, src)
+        if upload_port is not None:
+            cmd += " '--port' '%s'" % upload_port
+        return self.exec_command(cmd)
 
     def exec_command(self, cmd, **kw):
         kw['stdout'] = sys.stdout
@@ -75,11 +79,9 @@ class set_default_parameters(Task.Task):
         sys.path.append(os.path.dirname(apj_tool))
         from apj_tool import embedded_defaults
         defaults = embedded_defaults(self.inputs[0].abspath())
-        if not defaults.find():
-            print("Error: Param defaults support not found in firmware")
-            sys.exit(1)
-        defaults.set_file(abs_default_parameters)
-        defaults.save()
+        if defaults.find():
+            defaults.set_file(abs_default_parameters)
+            defaults.save()
 
 
 class generate_bin(Task.Task):
@@ -92,13 +94,33 @@ class generate_bin(Task.Task):
         return self.outputs[0].path_from(self.generator.bld.bldnode)
 
 class generate_apj(Task.Task):
+    '''generate an apj firmware file'''
     color='CYAN'
-    run_str="${PYTHON} '${UPLOAD_TOOLS}/px_mkfw.py' --image '${SRC}' --prototype '${BUILDROOT}/apj.prototype' > '${TGT}'"
     always_run = True
     def keyword(self):
-        return "Generating"
-    def __str__(self):
-        return self.outputs[0].path_from(self.generator.bld.bldnode)
+        return "apj_gen"
+    def run(self):
+        import json, time, base64, zlib
+        img = open(self.inputs[0].abspath(),'rb').read()
+        d = {
+            "board_id": int(self.env.APJ_BOARD_ID),
+            "magic": "APJFWv1",
+            "description": "Firmware for a %s board" % self.env.APJ_BOARD_TYPE,
+            "image": base64.b64encode(zlib.compress(img,9)).decode('utf-8'),
+            "summary": self.env.BOARD,
+            "version": "0.1",
+            "image_size": len(img),
+            "git_identity": self.generator.bld.git_head_hash(short=True),
+            "board_revision": 0
+        }
+        if self.env.build_dates:
+            # we omit build_time when we don't have build_dates so that apj
+            # file is idential for same git hash and compiler
+            d["build_time"] = int(time.time())
+        apj_file = self.outputs[0].abspath()
+        f = open(apj_file, "w")
+        f.write(json.dumps(d, indent=4))
+        f.close()
 
 class build_abin(Task.Task):
     '''build an abin file for skyviper firmware upload via web UI'''
@@ -142,10 +164,13 @@ def chibios_firmware(self):
         abin_task.set_run_after(generate_apj_task)
 
     bootloader_bin = self.bld.srcnode.make_node("Tools/bootloaders/%s_bl.bin" % self.env.BOARD)
-    if os.path.exists(bootloader_bin.abspath()) and self.bld.env.HAVE_INTEL_HEX:
-        hex_target = self.bld.bldnode.find_or_declare('bin/' + link_output.change_ext('.hex').name)
-        hex_task = self.create_task('build_intel_hex', src=[bin_target, bootloader_bin], tgt=hex_target)
-        hex_task.set_run_after(generate_bin_task)
+    if self.bld.env.HAVE_INTEL_HEX:
+        if os.path.exists(bootloader_bin.abspath()):
+            hex_target = self.bld.bldnode.find_or_declare('bin/' + link_output.change_ext('.hex').name)
+            hex_task = self.create_task('build_intel_hex', src=[bin_target, bootloader_bin], tgt=hex_target)
+            hex_task.set_run_after(generate_bin_task)
+        else:
+            print("Not embedding bootloader; %s does not exist" % bootloader_bin)
 
     if self.env.DEFAULT_PARAMETERS:
         default_params_task = self.create_task('set_default_parameters',
@@ -164,7 +189,6 @@ def setup_can_build(cfg):
     env.AP_LIBRARIES += [
         'AP_UAVCAN',
         'modules/uavcan/libuavcan/src/**/*.cpp',
-        'modules/uavcan/libuavcan_drivers/stm32/driver/src/*.cpp'
         ]
 
     env.CFLAGS += ['-DUAVCAN_STM32_CHIBIOS=1',
@@ -184,7 +208,6 @@ def setup_can_build(cfg):
 
     env.INCLUDES += [
         cfg.srcnode.find_dir('modules/uavcan/libuavcan/include').abspath(),
-        cfg.srcnode.find_dir('modules/uavcan/libuavcan_drivers/stm32/driver/include').abspath()
         ]
     cfg.get_board().with_uavcan = True
 
@@ -218,6 +241,18 @@ def load_env_vars(env):
     if env.ENABLE_ASSERTS:
         env.CHIBIOS_BUILD_FLAGS += ' ENABLE_ASSERTS=yes'
 
+def setup_optimization(env):
+    '''setup optimization flags for build'''
+    if env.DEBUG:
+        OPTIMIZE = "-Og"
+    elif env.OPTIMIZE:
+        OPTIMIZE = env.OPTIMIZE
+    else:
+        OPTIMIZE = "-Os"
+    env.CFLAGS += [ OPTIMIZE ]
+    env.CXXFLAGS += [ OPTIMIZE ]
+    env.CHIBIOS_BUILD_FLAGS += ' USE_COPT=%s' % OPTIMIZE
+
 def configure(cfg):
     cfg.find_program('make', var='MAKE')
     #cfg.objcopy = cfg.find_program('%s-%s'%(cfg.env.TOOLCHAIN,'objcopy'), var='OBJCOPY', mandatory=True)
@@ -240,7 +275,8 @@ def configure(cfg):
     env.BUILDROOT = bldpath('')
     env.SRCROOT = srcpath('')
     env.PT_DIR = srcpath('Tools/ardupilotwaf/chibios/image')
-    env.UPLOAD_TOOLS = srcpath('Tools/ardupilotwaf')
+    env.MKFW_TOOLS = srcpath('Tools/ardupilotwaf')
+    env.UPLOAD_TOOLS = srcpath('Tools/scripts')
     env.CHIBIOS_SCRIPTS = srcpath('libraries/AP_HAL_ChibiOS/hwdef/scripts')
     env.TOOLS_SCRIPTS = srcpath('Tools/scripts')
     env.APJ_TOOL = srcpath('Tools/scripts/apj_tool.py')
@@ -289,6 +325,7 @@ def configure(cfg):
     load_env_vars(cfg.env)
     if env.HAL_WITH_UAVCAN:
         setup_can_build(cfg)
+    setup_optimization(cfg.env)
 
 def pre_build(bld):
     '''pre-build hook to change dynamic sources'''
@@ -299,13 +336,12 @@ def pre_build(bld):
 def build(bld):
 
     bld(
-        # build hwdef.h and apj.prototype from hwdef.dat. This is needed after a waf clean
+        # build hwdef.h from hwdef.dat. This is needed after a waf clean
         source=bld.path.ant_glob(bld.env.HWDEF),
         rule="%s '${AP_HAL_ROOT}/hwdef/scripts/chibios_hwdef.py' -D '${BUILDROOT}' '%s' %s" % (
             bld.env.get_flat('PYTHON'), bld.env.HWDEF, bld.env.BOOTLOADER_OPTION),
         group='dynamic_sources',
         target=[bld.bldnode.find_or_declare('hwdef.h'),
-                bld.bldnode.find_or_declare('apj.prototype'),
                 bld.bldnode.find_or_declare('ldscript.ld')]
     )
     
@@ -326,7 +362,7 @@ def build(bld):
         common_src += [bld.bldnode.find_or_declare('ap_romfs_embedded.h')]
     ch_task = bld(
         # build libch.a from ChibiOS sources and hwdef.h
-        rule="BUILDDIR='${BUILDDIR_REL}' CHIBIOS='${CH_ROOT_REL}' AP_HAL=${AP_HAL_REL} ${CHIBIOS_BUILD_FLAGS} ${CHIBIOS_BOARD_NAME} '${MAKE}' lib -f '${BOARD_MK}'",
+        rule="BUILDDIR='${BUILDDIR_REL}' CHIBIOS='${CH_ROOT_REL}' AP_HAL=${AP_HAL_REL} ${CHIBIOS_BUILD_FLAGS} ${CHIBIOS_BOARD_NAME} '${MAKE}' -j%u lib -f '${BOARD_MK}'" % bld.options.jobs,
         group='dynamic_sources',
         source=common_src,
         target=bld.bldnode.find_or_declare('modules/ChibiOS/libch.a')
@@ -335,6 +371,15 @@ def build(bld):
 
     bld.env.LIB += ['ch']
     bld.env.LIBPATH += ['modules/ChibiOS/']
-    wraplist = ['strerror_r', 'fclose', 'freopen', 'fread']
+    # list of functions that will be wrapped to move them out of libc into our
+    # own code note that we also include functions that we deliberately don't
+    # implement anywhere (the FILE* functions). This allows us to get link
+    # errors if we accidentially try to use one of those functions either
+    # directly or via another libc call
+    wraplist = ['sscanf', 'fprintf', 'snprintf', 'vsnprintf','vasprintf','asprintf','vprintf','scanf',
+                'fiprintf','printf',
+                'fopen', 'fread', 'fflush', 'fwrite', 'fread', 'fputs', 'fgets',
+                'clearerr', 'fseek', 'ferror', 'fclose', 'tmpfile', 'getc', 'ungetc', 'feof',
+                'ftell', 'freopen', 'remove', 'vfprintf', 'fscanf' ]
     for w in wraplist:
         bld.env.LINKFLAGS += ['-Wl,--wrap,%s' % w]

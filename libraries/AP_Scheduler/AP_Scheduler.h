@@ -62,8 +62,8 @@ public:
     AP_Scheduler(const AP_Scheduler &other) = delete;
     AP_Scheduler &operator=(const AP_Scheduler&) = delete;
 
-    static AP_Scheduler *get_instance();
-    static AP_Scheduler *_s_instance;
+    static AP_Scheduler *get_singleton();
+    static AP_Scheduler *_singleton;
 
     FUNCTOR_TYPEDEF(task_fn_t, void);
 
@@ -84,7 +84,7 @@ public:
     // call to update any logging the scheduler might do; call at 1Hz
     void update_logging();
 
-    // write out PERF message to dataflash
+    // write out PERF message to logger
     void Log_Write_Performance();
 
     // call when one tick has passed
@@ -126,7 +126,7 @@ public:
     // get the time-allowed-per-loop in seconds
     float get_loop_period_s() {
         if (is_zero(_loop_period_s)) {
-            _loop_period_s = 1.0 / _loop_rate_hz;
+            _loop_period_s = 1.0f / _loop_rate_hz;
         }
         return _loop_period_s;
     }
@@ -139,11 +139,13 @@ public:
     float get_last_loop_time_s(void) const {
         return _last_loop_time_s;
     }
-    
-    static const struct AP_Param::GroupInfo var_info[];
 
-    // current running task, or -1 if none. Used to debug stuck tasks
-    static int8_t current_task;
+    // get the amount of extra time being added on each loop
+    uint32_t get_extra_loop_us(void) const {
+        return extra_loop_us;
+    }
+
+    static const struct AP_Param::GroupInfo var_info[];
 
     // loop performance monitoring:
     AP::PerfInfo perf_info;
@@ -201,8 +203,21 @@ private:
     // performance counters
     AP_HAL::Util::perf_counter_t *_perf_counters;
 
-    // bitmask bit which indicates if we should log PERF message to dataflash
+    // bitmask bit which indicates if we should log PERF message
     uint32_t _log_performance_bit;
+
+    // maximum task slowdown compared to desired task rate before we
+    // start giving extra time per loop
+    const uint8_t max_task_slowdown = 4;
+
+    // counters to handle dynamically adjusting extra loop time to
+    // cope with low CPU conditions
+    uint32_t task_not_achieved;
+    uint32_t task_all_achieved;
+    
+    // extra time available for each loop - used to dynamically adjust
+    // the loop rate in case we are well over budget
+    uint32_t extra_loop_us;
 };
 
 namespace AP {

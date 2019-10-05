@@ -34,6 +34,7 @@
 #define DISPLAY_OFF     0
 #define DISPLAY_SSD1306 1
 #define DISPLAY_SH1106  2
+#define DISPLAY_SITL 10
 
 class AP_Notify
 {
@@ -47,8 +48,8 @@ public:
     AP_Notify &operator=(const AP_Notify&) = delete;
 
     // get singleton instance
-    static AP_Notify *instance(void) {
-        return _instance;
+    static AP_Notify *get_singleton(void) {
+        return _singleton;
     }
     
     // Oreo LED Themes
@@ -66,6 +67,9 @@ public:
         Notify_LED_PCA9685LED_I2C_External  = (1 << 3), // External PCA9685_I2C
         Notify_LED_OreoLED                  = (1 << 4), // Oreo
         Notify_LED_UAVCAN                   = (1 << 5), // UAVCAN RGB LED
+        Notify_LED_NCP5623_I2C_External     = (1 << 6), // External NCP5623
+        Notify_LED_NCP5623_I2C_Internal     = (1 << 7), // Internal NCP5623
+        Notify_LED_NeoPixel                 = (1 << 8), // NeoPixel 5050 AdaFruit 1655 SK6812  Worldsemi WS2812B
         Notify_LED_MAX
     };
 
@@ -76,6 +80,7 @@ public:
         uint8_t gps_num_sats;     // number of sats
         uint8_t flight_mode;      // flight mode
         bool armed;               // 0 = disarmed, 1 = armed
+        bool flying;              // 0 = not flying, 1 = flying/driving/diving/tracking
         bool pre_arm_check;       // true if passing pre arm checks
         bool pre_arm_gps_check;   // true if passing pre arm gps checks
         bool save_trim;           // true if gathering trim data
@@ -131,10 +136,13 @@ public:
     void update(void);
 
     // handle a LED_CONTROL message
-    static void handle_led_control(mavlink_message_t* msg);
+    static void handle_led_control(const mavlink_message_t &msg);
 
     // handle a PLAY_TUNE message
-    static void handle_play_tune(mavlink_message_t* msg);
+    static void handle_play_tune(const mavlink_message_t &msg);
+
+    // play a tune string
+    static void play_tune(const char *tune);
 
     bool buzzer_enabled() const { return _buzzer_enable; }
 
@@ -149,10 +157,16 @@ public:
 
     static const struct AP_Param::GroupInfo var_info[];
     uint8_t get_buzz_pin() const  { return _buzzer_pin; }
+    uint8_t get_buzz_level() const  { return _buzzer_level; }
+    uint8_t get_buzz_volume() const  { return _buzzer_volume; }
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+    HAL_Semaphore sf_window_mutex;
+#endif
 
 private:
 
-    static AP_Notify *_instance;
+    static AP_Notify *_singleton;
 
     void add_backend_helper(NotifyDevice *backend);
 
@@ -167,6 +181,8 @@ private:
     AP_Int8 _oreo_theme;
     AP_Int8 _buzzer_pin;
     AP_Int32 _led_type;
+    AP_Int8 _buzzer_level;
+    AP_Int8 _buzzer_volume;
 
     char _send_text[NOTIFY_TEXT_BUFFER_SIZE];
     uint32_t _send_text_updated_millis; // last time text changed
@@ -174,4 +190,8 @@ private:
 
     static NotifyDevice* _devices[];
     static uint8_t _num_devices;
+};
+
+namespace AP {
+    AP_Notify &notify();
 };

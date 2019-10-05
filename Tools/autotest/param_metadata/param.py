@@ -1,7 +1,8 @@
 
 class Parameter(object):
-    def __init__(self, name):
+    def __init__(self, name, real_path):
         self.name = name
+        self.real_path = real_path
 
 
 class Vehicle(object):
@@ -101,6 +102,7 @@ known_units = {
              'm/V'     : 'meters per volt'       ,
              'gravities': 'standard acceleration due to gravity' , # g_n would be a more correct unit, but IMHO no one understands what g_n means
              'octal'   : 'octal'                 ,
+             'RPM'     : 'Revolutions Per Minute',
              }
 
 required_param_fields = [

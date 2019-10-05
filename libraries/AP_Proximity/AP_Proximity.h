@@ -22,7 +22,6 @@
 #include <AP_RangeFinder/AP_RangeFinder.h>
 
 #define PROXIMITY_MAX_INSTANCES             1   // Maximum number of proximity sensor instances available on this platform
-#define PROXIMITY_YAW_CORRECTION_DEFAULT    22  // default correction for sensor error in yaw
 #define PROXIMITY_MAX_IGNORE                6   // up to six areas can be ignored
 #define PROXIMITY_MAX_DIRECTION 8
 #define PROXIMITY_SENSOR_ID_START 10
@@ -47,7 +46,10 @@ public:
         Proximity_Type_TRTOWER = 3,
         Proximity_Type_RangeFinder = 4,
         Proximity_Type_RPLidarA2 = 5,
+        Proximity_Type_TRTOWEREVO = 6,
         Proximity_Type_SITL    = 10,
+        Proximity_Type_MorseSITL = 11,
+        Proximity_Type_AirSimSITL = 12,
     };
 
     enum Proximity_Status {
@@ -111,7 +113,7 @@ public:
     float distance_min() const;
 
     // handle mavlink DISTANCE_SENSOR messages
-    void handle_msg(mavlink_message_t *msg);
+    void handle_msg(const mavlink_message_t &msg);
 
     // The Proximity_State structure is filled in by the backend driver
     struct Proximity_State {
@@ -120,7 +122,7 @@ public:
     };
 
     //
-    // support for upwardward facing sensors
+    // support for upward facing sensors
     //
 
     // get distance upwards in meters. returns true on success
@@ -134,7 +136,7 @@ public:
 
     static AP_Proximity *get_singleton(void) { return _singleton; };
 
-    // methods for mavlink SYS_STATUS message (send_extended_status1)
+    // methods for mavlink SYS_STATUS message (send_sys_status)
     // these methods cover only the primary instance
     bool sensor_present() const;
     bool sensor_enabled() const;
@@ -145,8 +147,8 @@ private:
     Proximity_State state[PROXIMITY_MAX_INSTANCES];
     AP_Proximity_Backend *drivers[PROXIMITY_MAX_INSTANCES];
     const RangeFinder *_rangefinder;
-    uint8_t primary_instance:3;
-    uint8_t num_instances:3;
+    uint8_t primary_instance;
+    uint8_t num_instances;
     AP_SerialManager &serial_manager;
 
     // parameters for all instances
@@ -157,5 +159,8 @@ private:
     AP_Int8 _ignore_width_deg[PROXIMITY_MAX_IGNORE];    // width of beam (in degrees) that should be ignored
 
     void detect_instance(uint8_t instance);
-    void update_instance(uint8_t instance);  
+};
+
+namespace AP {
+    AP_Proximity *proximity();
 };

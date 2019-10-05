@@ -19,10 +19,6 @@
 #include "UARTDriver.h"
 #include "Util.h"
 
-#if HAL_WITH_UAVCAN
-#include "CAN.h"
-#endif
-
 using namespace Linux;
 
 extern const AP_HAL::HAL& hal;
@@ -33,6 +29,7 @@ extern const AP_HAL::HAL& hal;
 #define APM_LINUX_RCIN_PRIORITY         13
 #define APM_LINUX_MAIN_PRIORITY         12
 #define APM_LINUX_IO_PRIORITY           10
+#define APM_LINUX_SCRIPTING_PRIORITY     1
 
 #define APM_LINUX_TIMER_RATE            1000
 #define APM_LINUX_UART_RATE             100
@@ -41,7 +38,7 @@ extern const AP_HAL::HAL& hal;
     CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BH || \
     CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_DARK || \
     CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_PXFMINI
-#define APM_LINUX_RCIN_RATE             2000
+#define APM_LINUX_RCIN_RATE             500
 #define APM_LINUX_IO_RATE               50
 #else
 #define APM_LINUX_RCIN_RATE             100
@@ -59,6 +56,30 @@ extern const AP_HAL::HAL& hal;
 
 Scheduler::Scheduler()
 { }
+
+
+void Scheduler::init_realtime()
+{
+#if APM_BUILD_TYPE(APM_BUILD_Replay)
+    // we don't run Replay in real-time...
+    return;
+#endif
+#if APM_BUILD_TYPE(APM_BUILD_UNKNOWN)
+    // we opportunistically run examples/tools in realtime
+    if (geteuid() != 0) {
+        fprintf(stderr, "WARNING: not running as root. Will not use realtime scheduling\n");
+        return;
+    }
+#endif
+
+    mlockall(MCL_CURRENT|MCL_FUTURE);
+
+    struct sched_param param = { .sched_priority = APM_LINUX_MAIN_PRIORITY };
+    if (sched_setscheduler(0, SCHED_FIFO, &param) == -1) {
+        AP_HAL::panic("Scheduler: failed to set scheduling parameters: %s",
+                      strerror(errno));
+    }
+}
 
 void Scheduler::init()
 {
@@ -78,16 +99,7 @@ void Scheduler::init()
 
     _main_ctx = pthread_self();
 
-#if !APM_BUILD_TYPE(APM_BUILD_Replay)
-    // we don't run Replay in real-time...
-    mlockall(MCL_CURRENT|MCL_FUTURE);
-
-    struct sched_param param = { .sched_priority = APM_LINUX_MAIN_PRIORITY };
-    if (sched_setscheduler(0, SCHED_FIFO, &param) == -1) {
-        AP_HAL::panic("Scheduler: failed to set scheduling parameters: %s",
-                      strerror(errno));
-    }
-#endif
+    init_realtime();
 
     /* set barrier to N + 1 threads: worker threads + main */
     unsigned n_threads = ARRAY_SIZE(sched_table) + 1;
@@ -119,8 +131,7 @@ void Scheduler::_debug_stack()
                 "\ttimer = %zu\n"
                 "\tio    = %zu\n"
                 "\trcin  = %zu\n"
-                "\tuart  = %zu\n"
-                "\ttone  = %zu\n",
+                "\tuart  = %zu\n",
                 _timer_thread.get_stack_usage(),
                 _io_thread.get_stack_usage(),
                 _rcin_thread.get_stack_usage(),
@@ -222,16 +233,6 @@ void Scheduler::_timer_task()
     }
 
     _in_timer_proc = false;
-
-#if HAL_WITH_UAVCAN
-#if CONFIG_HAL_BOARD == HAL_BOARD_LINUX
-    for (i = 0; i < MAX_NUMBER_OF_CAN_INTERFACES; i++) {
-        if(hal.can_mgr[i] != nullptr) {
-            CANManager::from(hal.can_mgr[i])->_timer_tick();
-        }
-    }
-#endif
-#endif
 }
 
 void Scheduler::_run_io(void)
@@ -263,6 +264,7 @@ void Scheduler::_run_uarts()
     hal.uartE->_timer_tick();
     hal.uartF->_timer_tick();
     hal.uartG->_timer_tick();
+    hal.uartH->_timer_tick();
 }
 
 void Scheduler::_rcin_task()
@@ -366,6 +368,7 @@ bool Scheduler::thread_create(AP_HAL::MemberProc proc, const char *name, uint32_
         { PRIORITY_IO, APM_LINUX_IO_PRIORITY},
         { PRIORITY_UART, APM_LINUX_UART_PRIORITY},
         { PRIORITY_STORAGE, APM_LINUX_IO_PRIORITY},
+        { PRIORITY_SCRIPTING, APM_LINUX_SCRIPTING_PRIORITY},
     };
     for (uint8_t i=0; i<ARRAY_SIZE(priority_map); i++) {
         if (priority_map[i].base == base) {
@@ -374,7 +377,8 @@ bool Scheduler::thread_create(AP_HAL::MemberProc proc, const char *name, uint32_
         }
     }
 
-    thread->set_stack_size(stack_size);
+    // Add 256k to HAL-independent requested stack size
+    thread->set_stack_size(256 * 1024 + stack_size);
 
     /*
      * We should probably store the thread handlers and join() when exiting,

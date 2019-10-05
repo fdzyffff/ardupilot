@@ -24,11 +24,13 @@
 #include <AP_HAL/HAL.h>
 #include <AP_HAL/I2CDevice.h>
 #include <AP_HAL/utility/OwnPtr.h>
+#include "AP_HAL_ChibiOS.h"
+
+#if HAL_USE_I2C == TRUE
+
 #include "Semaphores.h"
 #include "Device.h"
 #include "shared_dma.h"
-
-#if HAL_USE_I2C == TRUE
 
 namespace ChibiOS {
 
@@ -48,7 +50,8 @@ public:
     void dma_deallocate(Shared_DMA *);
     void dma_init(void);
     static void clear_all(void);
-    static void clear_bus(ioline_t scl_line, uint8_t scl_af);
+    static void clear_bus(uint8_t busidx);
+    static uint8_t read_sda(uint8_t busidx);
 };
     
 class I2CDevice : public AP_HAL::I2CDevice {

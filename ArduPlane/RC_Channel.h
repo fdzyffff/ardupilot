@@ -9,8 +9,14 @@ public:
 
 protected:
 
+    void init_aux_function(aux_func_t ch_option,
+                           aux_switch_pos_t ch_flag) override;
+    void do_aux_function(aux_func_t ch_option, aux_switch_pos_t) override;
+
 private:
 
+    void do_aux_function_change_mode(Mode::Number number,
+                                     aux_switch_pos_t ch_flag);
 };
 
 class RC_Channels_Plane : public RC_Channels
@@ -24,6 +30,8 @@ public:
         }
         return &obj_channels[chan];
     }
+
+    bool has_valid_input() const override;
 
 protected:
 

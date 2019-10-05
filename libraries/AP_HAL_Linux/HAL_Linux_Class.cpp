@@ -24,13 +24,12 @@
 #include "RCInput_Navio2.h"
 #include "RCInput_PRU.h"
 #include "RCInput_RPI.h"
-#include "RCInput_SBUS.h"
 #include "RCInput_SoloLink.h"
 #include "RCInput_UART.h"
 #include "RCInput_UDP.h"
-#include "RCInput_115200.h"
 #include "RCInput_Multi.h"
 #include "RCInput_ZYNQ.h"
+#include "RCInput_RCProtocol.h"
 #include "RCOutput_AioPRU.h"
 #include "RCOutput_Bebop.h"
 #include "RCOutput_Disco.h"
@@ -67,6 +66,7 @@ static UARTDriver uartDDriver(false);
 static UARTDriver uartEDriver(false);
 static UARTDriver uartFDriver(false);
 static UARTDriver uartGDriver(false);
+static UARTDriver uartHDriver(false);
 
 static I2CDeviceManager i2c_mgr_instance;
 static SPIDeviceManager spi_mgr_instance;
@@ -137,7 +137,7 @@ static RCInput_PRU rcinDriver;
       CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_POCKET
 static RCInput_AioPRU rcinDriver;
 #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BLUE
-static RCInput_Multi rcinDriver{2, new RCInput_AioPRU, new RCInput_115200("/dev/ttyO4")};
+static RCInput_Multi rcinDriver{2, new RCInput_AioPRU, new RCInput_RCProtocol(NULL, "/dev/ttyO4")};
 #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_NAVIO || \
       CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_ERLEBRAIN2 || \
       CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BH || \
@@ -150,14 +150,14 @@ static RCInput_ZYNQ rcinDriver;
 #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BEBOP
 static RCInput_UDP  rcinDriver;
 #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_DISCO
-static RCInput_Multi rcinDriver{2, new RCInput_SBUS, new RCInput_115200("/dev/uart-sumd")};
+static RCInput_Multi rcinDriver{2, new RCInput_RCProtocol("/dev/uart-sbus", "/dev/uart-sumd"), new RCInput_UDP()};
 #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_AERO
 static RCInput_SoloLink rcinDriver;
 #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_NAVIO2 || \
       CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_EDGE
 static RCInput_Navio2 rcinDriver;
 #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RST_ZYNQ
-static RCInput_SBUS rcinDriver;
+static RCInput_RCProtocol rcinDriver{"/dev/ttyPS0", NULL};
 #else
 static RCInput rcinDriver;
 #endif
@@ -210,6 +210,8 @@ static OpticalFlow_Onboard opticalFlow;
 static Empty::OpticalFlow opticalFlow;
 #endif
 
+static Empty::Flash flashDriver;
+
 HAL_Linux::HAL_Linux() :
     AP_HAL::HAL(
         &uartADriver,
@@ -219,6 +221,7 @@ HAL_Linux::HAL_Linux() :
         &uartEDriver,
         &uartFDriver,
         &uartGDriver,
+        &uartHDriver,
         &i2c_mgr_instance,
         &spi_mgr_instance,
         &analogIn,
@@ -230,12 +233,13 @@ HAL_Linux::HAL_Linux() :
         &schedulerInstance,
         &utilInstance,
         &opticalFlow,
+        &flashDriver,
         nullptr)
 {}
 
 void _usage(void)
 {
-    printf("Usage: -A uartAPath -B uartBPath -C uartCPath -D uartDPath -E uartEPath -F uartFPath -G uartGpath\n");
+    printf("Usage: -A uartAPath -B uartBPath -C uartCPath -D uartDPath -E uartEPath -F uartFPath -G uartGpath -H uartHpath\n");
     printf("Options:\n");
     printf("\tserial:\n");
     printf("                    -A /dev/ttyO4\n");
@@ -277,6 +281,7 @@ void HAL_Linux::run(int argc, char* const argv[], Callbacks* callbacks) const
         {"uartE",         true,  0, 'E'},
         {"uartF",         true,  0, 'F'},
         {"uartG",         true,  0, 'G'},
+        {"uartH",         true,  0, 'H'},
         {"log-directory",       true,  0, 'l'},
         {"terrain-directory",   true,  0, 't'},
         {"storage-directory",   true,  0, 's'},
@@ -314,6 +319,9 @@ void HAL_Linux::run(int argc, char* const argv[], Callbacks* callbacks) const
         case 'G':
             uartGDriver.set_device_path(gopt.optarg);
             break;
+        case 'H':
+            uartHDriver.set_device_path(gopt.optarg);
+            break;
         case 'l':
             utilInstance.set_custom_log_directory(gopt.optarg);
             break;
@@ -347,6 +355,7 @@ void HAL_Linux::run(int argc, char* const argv[], Callbacks* callbacks) const
     uartE->begin(115200);
     uartF->begin(115200);
     uartG->begin(115200);
+    uartH->begin(115200);
     analogin->init();
     utilInstance.init(argc+gopt.optind-1, &argv[gopt.optind-1]);
 

@@ -25,11 +25,12 @@ extern const AP_HAL::HAL& hal;
 // Note this is called after detect() returns true, so we
 // already know that we should setup the rangefinder
 AP_RangeFinder_NMEA::AP_RangeFinder_NMEA(RangeFinder::RangeFinder_State &_state,
-                                         AP_SerialManager &serial_manager,
+                                         AP_RangeFinder_Params &_params,
                                          uint8_t serial_instance) :
-    AP_RangeFinder_Backend(_state),
+    AP_RangeFinder_Backend(_state, _params),
     _distance_m(-1.0f)
 {
+    const AP_SerialManager &serial_manager = AP::serialmanager();
     uart = serial_manager.find_serial(AP_SerialManager::SerialProtocol_Rangefinder, serial_instance);
     if (uart != nullptr) {
         uart->begin(serial_manager.find_baudrate(AP_SerialManager::SerialProtocol_Rangefinder, serial_instance));
@@ -37,9 +38,9 @@ AP_RangeFinder_NMEA::AP_RangeFinder_NMEA(RangeFinder::RangeFinder_State &_state,
 }
 
 // detect if a NMEA rangefinder by looking to see if the user has configured it
-bool AP_RangeFinder_NMEA::detect(AP_SerialManager &serial_manager, uint8_t serial_instance)
+bool AP_RangeFinder_NMEA::detect(uint8_t serial_instance)
 {
-    return serial_manager.find_serial(AP_SerialManager::SerialProtocol_Rangefinder, serial_instance) != nullptr;
+    return AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_Rangefinder, serial_instance) != nullptr;
 }
 
 // update the state of the sensor
@@ -48,9 +49,9 @@ void AP_RangeFinder_NMEA::update(void)
     uint32_t now = AP_HAL::millis();
     if (get_reading(state.distance_cm)) {
         // update range_valid state based on distance measured
-        _last_reading_ms = now;
+        state.last_reading_ms = now;
         update_status();
-    } else if ((now - _last_reading_ms) > 3000) {
+    } else if ((now - state.last_reading_ms) > 3000) {
         set_status(RangeFinder::RangeFinder_NoData);
     }
 }
@@ -119,10 +120,12 @@ bool AP_RangeFinder_NMEA::decode(char c)
     }
 
     // ordinary characters are added to term
-    if (_term_offset < sizeof(_term) - 1)
+    if (_term_offset < sizeof(_term) - 1) {
         _term[_term_offset++] = c;
-    if (!_term_is_checksum)
+    }
+    if (!_term_is_checksum) {
         _checksum ^= c;
+    }
 
     return false;
 }
@@ -133,7 +136,12 @@ bool AP_RangeFinder_NMEA::decode_latest_term()
 {
     // handle the last term in a message
     if (_term_is_checksum) {
-        uint8_t checksum = 16 * char_to_hex(_term[0]) + char_to_hex(_term[1]);
+        uint8_t nibble_high = 0;
+        uint8_t nibble_low  = 0;
+        if (!hex_to_uint8(_term[0], nibble_high) || !hex_to_uint8(_term[1], nibble_low)) {
+            return false;
+        }
+        const uint8_t checksum = (nibble_high << 4u) | nibble_low;
         return ((checksum == _checksum) &&
                 !is_negative(_distance_m) &&
                 (_sentence_type == SONAR_DBT || _sentence_type == SONAR_DPT));
@@ -172,15 +180,4 @@ bool AP_RangeFinder_NMEA::decode_latest_term()
     }
 
     return false;
-}
-
-// return the numeric value of an ascii hex character
-int16_t AP_RangeFinder_NMEA::char_to_hex(char a)
-{
-    if (a >= 'A' && a <= 'F')
-        return a - 'A' + 10;
-    else if (a >= 'a' && a <= 'f')
-        return a - 'a' + 10;
-    else
-        return a - '0';
 }

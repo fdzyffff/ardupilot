@@ -1,10 +1,5 @@
 #pragma once
 
-// Command/Waypoint/Location Options Bitmask
-//--------------------
-#define MASK_OPTIONS_RELATIVE_ALT       (1<<0)          // 1 = Relative
-                                                        // altitude
-
 // Controller modes
 // ----------------
 
@@ -34,6 +29,11 @@ enum mode_reason_t {
     MODE_REASON_STARTUP,
     MODE_REASON_SERVOTEST,
     MODE_REASON_GCS_COMMAND,
+};
+
+enum class PWMDisarmed {
+    ZERO = 0,
+    TRIM,
 };
 
 //  Filter

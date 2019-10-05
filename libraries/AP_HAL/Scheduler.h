@@ -30,6 +30,14 @@ public:
     virtual void     delay_microseconds_boost(uint16_t us) { delay_microseconds(us); }
 
     /*
+      inform the scheduler that we are calling an operation from the
+      main thread that may take an extended amount of time. This can
+      be used to prevent watchdog reset during expected long delays
+      A value of zero cancels the previous expected delay
+     */
+    virtual void     expect_delay_ms(uint32_t ms) { }
+    
+    /*
       end the priority boost from delay_microseconds_boost()
      */
     virtual void     boost_end(void) {}
@@ -63,8 +71,6 @@ public:
 
     virtual bool     in_main_thread() const = 0;
 
-    virtual void create_uavcan_thread() {};
-
     /*
       disable interrupts and return a context that can be used to
       restore the interrupt state. This can be used to protect
@@ -97,7 +103,8 @@ public:
         PRIORITY_RCIN,
         PRIORITY_IO,
         PRIORITY_UART,
-        PRIORITY_STORAGE
+        PRIORITY_STORAGE,
+        PRIORITY_SCRIPTING,
     };
     
     /*
@@ -114,3 +121,16 @@ private:
     bool _in_delay_callback : 1;
 
 };
+
+/*
+  helper macro and class to make using expect_delay_ms() safer and easier
+ */
+class ExpectDelay {
+public:
+    ExpectDelay(uint32_t ms);
+    ~ExpectDelay();
+};
+
+#define EXPECT_DELAY_MS(ms) DELAY_JOIN( ms, __COUNTER__ )
+#define DELAY_JOIN( ms, counter) _DO_DELAY_JOIN( ms, counter )
+#define _DO_DELAY_JOIN( ms, counter ) ExpectDelay _getdelay ## counter(ms)

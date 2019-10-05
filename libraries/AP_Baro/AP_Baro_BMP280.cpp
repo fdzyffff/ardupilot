@@ -66,9 +66,10 @@ AP_Baro_Backend *AP_Baro_BMP280::probe(AP_Baro &baro,
 
 bool AP_Baro_BMP280::_init()
 {
-    if (!_dev | !_dev->get_semaphore()->take(HAL_SEMAPHORE_BLOCK_FOREVER)) {
+    if (!_dev) {
         return false;
     }
+    WITH_SEMAPHORE(_dev->get_semaphore());
 
     _has_sample = false;
 
@@ -78,7 +79,6 @@ bool AP_Baro_BMP280::_init()
     if (!_dev->read_registers(BMP280_REG_ID, &whoami, 1)  ||
         whoami != BMP280_ID) {
         // not a BMP280
-        _dev->get_semaphore()->give();
         return false;
     }
 
@@ -114,8 +114,6 @@ bool AP_Baro_BMP280::_init()
 
     _instance = _frontend.register_sensor();
 
-    _dev->get_semaphore()->give();
-
     // request 50Hz update
     _dev->register_periodic_callback(20 * AP_USEC_PER_MSEC, FUNCTOR_BIND_MEMBER(&AP_Baro_BMP280::_timer, void));
 
@@ -140,16 +138,14 @@ void AP_Baro_BMP280::_timer(void)
 // transfer data to the frontend
 void AP_Baro_BMP280::update(void)
 {
-    if (_sem->take_nonblocking()) {
-        if (!_has_sample) {
-            _sem->give();
-            return;
-        }
+    WITH_SEMAPHORE(_sem);
 
-        _copy_to_frontend(_instance, _pressure, _temperature);
-        _has_sample = false;
-        _sem->give();
+    if (!_has_sample) {
+        return;
     }
+
+    _copy_to_frontend(_instance, _pressure, _temperature);
+    _has_sample = false;
 }
 
 // calculate temperature
@@ -165,10 +161,9 @@ void AP_Baro_BMP280::_update_temperature(int32_t temp_raw)
 
     const float temp = ((float)t) / 100.0f;
 
-    if (_sem->take(HAL_SEMAPHORE_BLOCK_FOREVER)) {
-        _temperature = temp;
-        _sem->give();
-    }
+    WITH_SEMAPHORE(_sem);
+    
+    _temperature = temp;
 }
 
 // calculate pressure
@@ -199,9 +194,9 @@ void AP_Baro_BMP280::_update_pressure(int32_t press_raw)
     if (!pressure_ok(press)) {
         return;
     }
-    if (_sem->take(HAL_SEMAPHORE_BLOCK_FOREVER)) {
-        _pressure = press;
-        _has_sample = true;
-        _sem->give();
-    }
+    
+    WITH_SEMAPHORE(_sem);
+    
+    _pressure = press;
+    _has_sample = true;
 }

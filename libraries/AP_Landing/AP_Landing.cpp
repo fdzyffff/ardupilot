@@ -19,6 +19,7 @@
 
 #include "AP_Landing.h"
 #include <GCS_MAVLink/GCS.h>
+#include <AP_AHRS/AP_AHRS.h>
 
 // table of user settable parameters
 const AP_Param::GroupInfo AP_Landing::var_info[] = {
@@ -169,7 +170,6 @@ AP_Landing::AP_Landing(AP_Mission &_mission, AP_AHRS &_ahrs, AP_SpdHgtControl *_
     AP_Param::setup_object_defaults(this, var_info);
 }
 
-
 void AP_Landing::do_land(const AP_Mission::Mission_Command& cmd, const float relative_altitude)
 {
     Log(); // log old state so we get a nice transition from old to new here
@@ -219,7 +219,6 @@ bool AP_Landing::verify_land(const Location &prev_WP_loc, Location &next_WP_loc,
     Log();
     return success;
 }
-
 
 bool AP_Landing::verify_abort_landing(const Location &prev_WP_loc, Location &next_WP_loc, const Location &current_loc,
     const int32_t auto_state_takeoff_altitude_rel_cm, bool &throttle_suppressed)
@@ -365,7 +364,7 @@ bool AP_Landing::override_servos(void) {
 
 // returns a PID_Info object if there is one available for the selected landing
 // type, otherwise returns a nullptr, indicating no data to be logged/sent
-const DataFlash_Class::PID_Info* AP_Landing::get_pid_info(void) const
+const AP_Logger::PID_Info* AP_Landing::get_pid_info(void) const
 {
     switch (type) {
     case TYPE_DEEPSTALL:
@@ -420,7 +419,7 @@ bool AP_Landing::restart_landing_sequence()
             mission.set_current_cmd(current_index+1))
     {
         // if the next immediate command is MAV_CMD_NAV_CONTINUE_AND_CHANGE_ALT to climb, do it
-        gcs().send_text(MAV_SEVERITY_NOTICE, "Restarted landing sequence. Climbing to %dm", cmd.content.location.alt/100);
+        gcs().send_text(MAV_SEVERITY_NOTICE, "Restarted landing sequence. Climbing to %dm", (signed)cmd.content.location.alt/100);
         success =  true;
     }
     else if (do_land_start_index != 0 &&

@@ -10,10 +10,9 @@
   own class.
  */
 
-#include <AP_Common/AP_Common.h>
-#include <AP_Param/AP_Param.h>
-#include <DataFlash/DataFlash.h>
 #include <AP_Vehicle/AP_Vehicle.h>
+
+#include <stdint.h>
 
 class AP_SpdHgtControl {
 public:

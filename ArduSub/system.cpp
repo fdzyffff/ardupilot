@@ -40,13 +40,16 @@ void Sub::init_ardupilot()
     switch (AP_BoardConfig::get_board_type()) {
     case AP_BoardConfig::PX4_BOARD_PIXHAWK2:
         AP_Param::set_by_name("GND_EXT_BUS", 0);
+        celsius.init(0);
         break;
     default:
         AP_Param::set_by_name("GND_EXT_BUS", 1);
+        celsius.init(1);
         break;
     }
 #else
     AP_Param::set_default_by_name("GND_EXT_BUS", 1);
+    celsius.init(1);
 #endif
 
     // identify ourselves correctly with the ground station
@@ -56,12 +59,14 @@ void Sub::init_ardupilot()
     serial_manager.init();
 
     // setup first port early to allow BoardConfig to report errors
-    gcs().chan(0).setup_uart(serial_manager, AP_SerialManager::SerialProtocol_MAVLink, 0);
+    gcs().setup_console();
 
     // init cargo gripper
 #if GRIPPER_ENABLED == ENABLED
     g2.gripper.init();
 #endif
+
+    fence.init();
 
     // initialise notify system
     notify.init();
@@ -71,21 +76,17 @@ void Sub::init_ardupilot()
 
     barometer.init();
 
-    celsius.init();
-
     // Register the mavlink service callback. This will run
     // anytime there are more than 5ms remaining in a call to
     // hal.scheduler->delay.
     hal.scheduler->register_delay_callback(mavlink_delay_cb_static, 5);
 
     // setup telem slots with serial ports
-    gcs().setup_uarts(serial_manager);
+    gcs().setup_uarts();
 
 #if LOGGING_ENABLED == ENABLED
     log_init();
 #endif
-
-    gcs().set_dataflash(&DataFlash);
 
     // initialise rc channels including setting mode
     rc().init();
@@ -93,9 +94,6 @@ void Sub::init_ardupilot()
     init_rc_in();               // sets up rc channels from radio
     init_rc_out();              // sets up motors and output to escs
     init_joystick();            // joystick initialization
-
-    // initialise which outputs Servo and Relay events can use
-    ServoRelayEvents.set_channel_mask(~motors.get_motor_mask());
 
     relay.init();
 
@@ -109,9 +107,8 @@ void Sub::init_ardupilot()
     gps.set_log_gps_bit(MASK_LOG_GPS);
     gps.init(serial_manager);
 
-    if (g.compass_enabled) {
-        init_compass();
-    }
+    AP::compass().set_log_bit(MASK_LOG_COMPASS);
+    AP::compass().init();
 
 #if OPTFLOW == ENABLED
     // make optflow available to AHRS
@@ -120,13 +117,8 @@ void Sub::init_ardupilot()
 
     // init Location class
 #if AP_TERRAIN_AVAILABLE && AC_TERRAIN
-    Location_Class::set_terrain(&terrain);
+    Location::set_terrain(&terrain);
     wp_nav.set_terrain(&terrain);
-#endif
-
-#if AVOIDANCE_ENABLED == ENABLED
-    wp_nav.set_avoidance(&avoid);
-    loiter_nav.set_avoidance(&avoid);
 #endif
 
     pos_control.set_dt(MAIN_LOOP_SECONDS);
@@ -138,7 +130,7 @@ void Sub::init_ardupilot()
 
 #if MOUNT == ENABLED
     // initialise camera mount
-    camera_mount.init(serial_manager);
+    camera_mount.init();
 #endif
 
 #ifdef USERHOOK_INIT
@@ -188,13 +180,18 @@ void Sub::init_ardupilot()
     // initialise mission library
     mission.init();
 
-    // initialise DataFlash library
+    // initialise AP_Logger library
 #if LOGGING_ENABLED == ENABLED
-    DataFlash.set_mission(&mission);
-    DataFlash.setVehicle_Startup_Log_Writer(FUNCTOR_BIND(&sub, &Sub::Log_Write_Vehicle_Startup_Messages, void));
+    logger.setVehicle_Startup_Writer(FUNCTOR_BIND(&sub, &Sub::Log_Write_Vehicle_Startup_Messages, void));
 #endif
 
     startup_INS_ground();
+
+#ifdef ENABLE_SCRIPTING
+    if (!g2.scripting.init()) {
+        gcs().send_text(MAV_SEVERITY_ERROR, "Scripting failed to start");
+    }
+#endif // ENABLE_SCRIPTING
 
     // we don't want writes to the serial port to cause us to pause
     // mid-flight, so set the serial ports non-blocking once we are
@@ -206,9 +203,6 @@ void Sub::init_ardupilot()
 
     ins.set_log_raw_bit(MASK_LOG_IMU_RAW);
 
-    // init vehicle capabilties
-    init_capabilities();
-
     // disable safety if requested
     BoardConfig.init_safety();    
     
@@ -216,6 +210,10 @@ void Sub::init_ardupilot()
 
     // flag that initialisation has completed
     ap.initialised = true;
+
+#if AP_PARAM_KEY_DUMP
+    AP_Param::show_all(hal.console, true);
+#endif
 }
 
 
@@ -296,8 +294,8 @@ bool Sub::optflow_position_ok()
 bool Sub::should_log(uint32_t mask)
 {
 #if LOGGING_ENABLED == ENABLED
-    ap.logging_started = DataFlash.logging_started();
-    return DataFlash.should_log(mask);
+    ap.logging_started = logger.logging_started();
+    return logger.should_log(mask);
 #else
     return false;
 #endif

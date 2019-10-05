@@ -1,9 +1,23 @@
 #pragma once
 
 #include <hwdef.h>
+#include <hal.h>
 
 #define HAL_BOARD_NAME "ChibiOS"
-#define HAL_CPU_CLASS HAL_CPU_CLASS_150
+
+#if HAL_MEMORY_TOTAL_KB >= 1000
+#define HAL_MEM_CLASS HAL_MEM_CLASS_1000
+#elif HAL_MEMORY_TOTAL_KB >= 500
+#define HAL_MEM_CLASS HAL_MEM_CLASS_500
+#elif HAL_MEMORY_TOTAL_KB >= 300
+#define HAL_MEM_CLASS HAL_MEM_CLASS_300
+#elif HAL_MEMORY_TOTAL_KB >= 192
+#define HAL_MEM_CLASS HAL_MEM_CLASS_192
+#elif HAL_MEMORY_TOTAL_KB >= 64
+#define HAL_MEM_CLASS HAL_MEM_CLASS_64
+#else
+#define HAL_MEM_CLASS HAL_MEM_CLASS_20
+#endif
 
 #ifndef HAL_GPIO_LED_ON
 #define HAL_GPIO_LED_ON           0
@@ -18,6 +32,10 @@
 
 #ifndef HAL_HAVE_BOARD_VOLTAGE
 #define HAL_HAVE_BOARD_VOLTAGE 0
+#endif
+
+#ifndef HAL_HAVE_SERVO_VOLTAGE
+#define HAL_HAVE_SERVO_VOLTAGE 0
 #endif
 
 #ifdef HAL_GPIO_PIN_SAFETY_IN
@@ -37,6 +55,11 @@
 #ifndef HAL_WITH_RAMTRON
 #define HAL_WITH_RAMTRON 0
 #endif
+
+// allow for static semaphores
+#include <AP_HAL_ChibiOS/Semaphores.h>
+#define HAL_Semaphore ChibiOS::Semaphore
+#define HAL_Semaphore_Recursive ChibiOS::Semaphore_Recursive
 
 /* string names for well known SPI devices */
 #define HAL_BARO_MS5611_NAME "ms5611"
@@ -86,3 +109,7 @@
 #define HAL_I2C_INTERNAL_MASK 1
 #endif
 
+// put all storage of files under /APM directory
+#ifndef HAL_BOARD_STORAGE_DIRECTORY
+#define HAL_BOARD_STORAGE_DIRECTORY "/APM"
+#endif

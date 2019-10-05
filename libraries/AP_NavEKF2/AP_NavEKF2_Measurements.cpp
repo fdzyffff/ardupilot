@@ -1,12 +1,13 @@
 #include <AP_HAL/AP_HAL.h>
 
-#if HAL_CPU_CLASS >= HAL_CPU_CLASS_150
 #include "AP_NavEKF2.h"
 #include "AP_NavEKF2_core.h"
 #include <AP_AHRS/AP_AHRS.h>
 #include <AP_Vehicle/AP_Vehicle.h>
 #include <GCS_MAVLink/GCS.h>
 #include <AP_RangeFinder/RangeFinder_Backend.h>
+#include <AP_GPS/AP_GPS.h>
+#include <AP_Baro/AP_Baro.h>
 
 #include <stdio.h>
 
@@ -117,7 +118,7 @@ void NavEKF2_core::readRangeFinder(void)
 
 // write the raw optical flow measurements
 // this needs to be called externally.
-void NavEKF2_core::writeOptFlowMeas(uint8_t &rawFlowQuality, Vector2f &rawFlowRates, Vector2f &rawGyroRates, uint32_t &msecFlowMeas, const Vector3f &posOffset)
+void NavEKF2_core::writeOptFlowMeas(const uint8_t rawFlowQuality, const Vector2f &rawFlowRates, const Vector2f &rawGyroRates, const uint32_t msecFlowMeas, const Vector3f &posOffset)
 {
     // The raw measurements need to be optical flow rates in radians/second averaged across the time since the last update
     // The PX4Flow sensor outputs flow rates with the following axis and sign conventions:
@@ -200,6 +201,19 @@ void NavEKF2_core::readMagData()
         return;
     }
 
+    if (_ahrs->get_compass()->learn_offsets_enabled()) {
+        // while learning offsets keep all mag states reset
+        InitialiseVariablesMag();
+        wasLearningCompass_ms = imuSampleTime_ms;
+    } else if (wasLearningCompass_ms != 0 && imuSampleTime_ms - wasLearningCompass_ms > 1000) {
+        wasLearningCompass_ms = 0;
+        // force a new yaw alignment 1s after learning completes. The
+        // delay is to ensure any buffered mag samples are discarded
+        yawAlignComplete = false;
+        InitialiseVariablesMag();
+    }
+
+    
     // do not accept new compass data faster than 14Hz (nominal rate is 10Hz) to prevent high processor loading
     // because magnetometer fusion is an expensive step and we could overflow the FIFO buffer
     if (use_compass() && _ahrs->get_compass()->last_update_usec() - lastMagUpdate_us > 70000) {
@@ -234,6 +248,7 @@ void NavEKF2_core::readMagData()
                     magStateResetRequest = true;
                     // declare the field unlearned so that the reset request will be obeyed
                     magFieldLearned = false;
+                    break;
                 }
             }
         }
@@ -292,23 +307,60 @@ void NavEKF2_core::readIMUData()
     imuSampleTime_ms = AP_HAL::millis();
 
     // use the nominated imu or primary if not available
+    uint8_t accel_active, gyro_active;
+
     if (ins.use_accel(imu_index)) {
-        readDeltaVelocity(imu_index, imuDataNew.delVel, imuDataNew.delVelDT);
-        accelPosOffset = ins.get_imu_pos_offset(imu_index);
+        accel_active = imu_index;
     } else {
-        readDeltaVelocity(ins.get_primary_accel(), imuDataNew.delVel, imuDataNew.delVelDT);
-        accelPosOffset = ins.get_imu_pos_offset(ins.get_primary_accel());
+        accel_active = ins.get_primary_accel();
     }
 
-    // Get delta angle data from primary gyro or primary if not available
     if (ins.use_gyro(imu_index)) {
-        readDeltaAngle(imu_index, imuDataNew.delAng, imuDataNew.delAngDT);
+        gyro_active = imu_index;
     } else {
-        readDeltaAngle(ins.get_primary_gyro(), imuDataNew.delAng, imuDataNew.delAngDT);
+        gyro_active = ins.get_primary_gyro();
     }
+
+    if (gyro_active != gyro_index_active) {
+        // we are switching active gyro at runtime. Copy over the
+        // biases we have learned from the previously inactive
+        // gyro. We don't re-init the bias uncertainty as it should
+        // have the same uncertainty as the previously active gyro
+        stateStruct.gyro_bias = inactiveBias[gyro_active].gyro_bias;
+        gyro_index_active = gyro_active;
+
+        // use the gyro scale factor we have previously used on this
+        // IMU (if any). We don't reset the variances as we don't want
+        // errors after switching to be mis-assigned to the gyro scale
+        // factor
+        stateStruct.gyro_scale = inactiveBias[gyro_active].gyro_scale;
+    }
+
+    if (accel_active != accel_index_active) {
+        // switch to the learned accel bias for this IMU
+        stateStruct.accel_zbias = inactiveBias[accel_active].accel_zbias;
+        accel_index_active = accel_active;
+    }
+
+    // update the inactive bias states
+    learnInactiveBiases();
+
+    readDeltaVelocity(accel_index_active, imuDataNew.delVel, imuDataNew.delVelDT);
+    accelPosOffset = ins.get_imu_pos_offset(accel_index_active);
+    imuDataNew.accel_index = accel_index_active;
+
+    // Get delta angle data from primary gyro or primary if not available
+    readDeltaAngle(gyro_index_active, imuDataNew.delAng, imuDataNew.delAngDT);
+    imuDataNew.gyro_index = gyro_index_active;
 
     // Get current time stamp
     imuDataNew.time_ms = imuSampleTime_ms;
+
+    // use the most recent IMU index for the downsampled IMU
+    // data. This isn't strictly correct if we switch IMUs between
+    // samples
+    imuDataDownSampledNew.gyro_index = imuDataNew.gyro_index;
+    imuDataDownSampledNew.accel_index = imuDataNew.accel_index;
 
     // Accumulate the measurement time interval for the delta velocity and angle data
     imuDataDownSampledNew.delAngDT += imuDataNew.delAngDT;
@@ -356,6 +408,8 @@ void NavEKF2_core::readIMUData()
         imuDataDownSampledNew.delVel.zero();
         imuDataDownSampledNew.delAngDT = 0.0f;
         imuDataDownSampledNew.delVelDT = 0.0f;
+        imuDataDownSampledNew.gyro_index = gyro_index_active;
+        imuDataDownSampledNew.accel_index = accel_index_active;
         imuQuatDownSampleNew[0] = 1.0f;
         imuQuatDownSampleNew[3] = imuQuatDownSampleNew[2] = imuQuatDownSampleNew[1] = 0.0f;
 
@@ -379,8 +433,8 @@ void NavEKF2_core::readIMUData()
         // correct the extracted IMU data for sensor errors
         delAngCorrected = imuDataDelayed.delAng;
         delVelCorrected = imuDataDelayed.delVel;
-        correctDeltaAngle(delAngCorrected, imuDataDelayed.delAngDT);
-        correctDeltaVelocity(delVelCorrected, imuDataDelayed.delVelDT);
+        correctDeltaAngle(delAngCorrected, imuDataDelayed.delAngDT, imuDataDelayed.gyro_index);
+        correctDeltaVelocity(delVelCorrected, imuDataDelayed.delVelDT, imuDataDelayed.accel_index);
 
     } else {
         // we don't have new IMU data in the buffer so don't run filter updates on this time step
@@ -409,6 +463,11 @@ bool NavEKF2_core::readDeltaVelocity(uint8_t ins_index, Vector3f &dVel, float &d
 // check for new valid GPS data and update stored measurement if available
 void NavEKF2_core::readGpsData()
 {
+    if (frontend->_fusionModeGPS == 3) {
+        // don't read GPS data if GPS usage disabled
+        return;
+    }
+
     // check for new GPS data
     // do not accept data at a faster rate than 14Hz to avoid overflowing the FIFO buffer
     const AP_GPS &gps = AP::gps();
@@ -486,23 +545,24 @@ void NavEKF2_core::readGpsData()
                 useGpsVertVel = false;
             }
 
-            // Monitor quality of the GPS velocity data before and after alignment using separate checks
-            if (PV_AidingMode != AID_ABSOLUTE) {
-                // Pre-alignment checks
-                gpsGoodToAlign = calcGpsGoodToAlign();
-            } else {
-                gpsGoodToAlign = false;
-            }
+            // Monitor quality of the GPS velocity data both before and after alignment. This updates
+            // GpsGoodToAlign class variable
+            calcGpsGoodToAlign();
 
             // Post-alignment checks
             calcGpsGoodForFlight();
+
+            // see if we can get origin from frontend
+            if (!validOrigin && frontend->common_origin_valid) {
+                setOrigin(frontend->common_EKF_origin);
+            }
 
             // Read the GPS location in WGS-84 lat,long,height coordinates
             const struct Location &gpsloc = gps.location();
 
             // Set the EKF origin and magnetic field declination if not previously set  and GPS checks have passed
             if (gpsGoodToAlign && !validOrigin) {
-                setOrigin();
+                setOrigin(gpsloc);
 
                 // set the NE earth magnetic field states using the published declination
                 // and set the corresponding variances and covariances
@@ -516,20 +576,34 @@ void NavEKF2_core::readGpsData()
 
             }
 
+            if (gpsGoodToAlign && !have_table_earth_field) {
+                table_earth_field_ga = AP_Declination::get_earth_field_ga(gpsloc);
+                table_declination = radians(AP_Declination::get_declination(gpsloc.lat*1.0e-7,
+                                                                            gpsloc.lng*1.0e-7));
+                have_table_earth_field = true;
+                if (frontend->_mag_ef_limit > 0) {
+                    // initialise earth field from tables
+                    stateStruct.earth_magfield = table_earth_field_ga;
+                }
+            }
+            
             // convert GPS measurements to local NED and save to buffer to be fused later if we have a valid origin
             if (validOrigin) {
-                gpsDataNew.pos = location_diff(EKF_origin, gpsloc);
-                gpsDataNew.hgt = (float)((double)0.01 * (double)gpsloc.alt - ekfGpsRefHgt);
+                gpsDataNew.pos = EKF_origin.get_distance_NE(gpsloc);
+                if ((frontend->_originHgtMode & (1<<2)) == 0) {
+                    gpsDataNew.hgt = (float)((double)0.01 * (double)gpsloc.alt - ekfGpsRefHgt);
+                } else {
+                    gpsDataNew.hgt = 0.01 * (gpsloc.alt - EKF_origin.alt);
+                }
                 storedGPS.push(gpsDataNew);
                 // declare GPS available for use
                 gpsNotAvailable = false;
             }
 
-            frontend->logging.log_gps = true;
-
         } else {
             // report GPS fix status
             gpsCheckStatus.bad_fix = true;
+            hal.util->snprintf(prearm_fail_string, sizeof(prearm_fail_string), "Waiting for 3D fix");
         }
     }
 }
@@ -542,7 +616,7 @@ bool NavEKF2_core::readDeltaAngle(uint8_t ins_index, Vector3f &dAng, float &dAng
     if (ins_index < ins.get_gyro_count()) {
         ins.get_delta_angle(ins_index,dAng);
         frontend->logging.log_imu = true;
-        dAng_dt = MAX(ins.get_delta_angle_dt(imu_index),1.0e-4f);
+        dAng_dt = MAX(ins.get_delta_angle_dt(ins_index),1.0e-4f);
         dAng_dt = MIN(dAng_dt,1.0e-1f);
         return true;
     }
@@ -652,7 +726,7 @@ void NavEKF2_core::readAirSpdData()
     if (aspeed &&
             aspeed->use() &&
             aspeed->last_update_ms() != timeTasReceived_ms) {
-        tasDataNew.tas = aspeed->get_airspeed() * aspeed->get_EAS2TAS();
+        tasDataNew.tas = aspeed->get_airspeed() * AP::ahrs().get_EAS2TAS();
         timeTasReceived_ms = aspeed->last_update_ms();
         tasDataNew.time_ms = timeTasReceived_ms - frontend->tasDelay_ms;
 
@@ -674,7 +748,7 @@ void NavEKF2_core::readAirSpdData()
 void NavEKF2_core::readRngBcnData()
 {
     // get the location of the beacon data
-    const AP_Beacon *beacon = _ahrs->get_beacon();
+    const AP_Beacon *beacon = AP::beacon();
 
     // exit immediately if no beacon object
     if (beacon == nullptr) {
@@ -825,13 +899,105 @@ void NavEKF2_core::writeExtNavData(const Vector3f &sensOffset, const Vector3f &p
 
     extNavDataNew.pos = pos;
     extNavDataNew.quat = quat;
-    extNavDataNew.posErr = posErr;
+    if (posErr > 0) {
+        extNavDataNew.posErr = posErr;
+    } else {
+        extNavDataNew.posErr = frontend->_gpsHorizPosNoise;
+    }
     extNavDataNew.angErr = angErr;
     extNavDataNew.body_offset = &sensOffset;
+    timeStamp_ms = timeStamp_ms - frontend->_extnavDelay_ms;
+    // Correct for the average intersampling delay due to the filter updaterate
+    timeStamp_ms -= localFilterTimeStep_ms/2;
+    // Prevent time delay exceeding age of oldest IMU data in the buffer
+    timeStamp_ms = MAX(timeStamp_ms,imuDataDelayed.time_ms);
     extNavDataNew.time_ms = timeStamp_ms;
 
     storedExtNav.push(extNavDataNew);
 
 }
 
-#endif // HAL_CPU_CLASS
+/*
+  return declination in radians
+*/
+float NavEKF2_core::MagDeclination(void) const
+{
+    // if we are using the WMM tables then use the table declination
+    // to ensure consistency with the table mag field. Otherwise use
+    // the declination from the compass library
+    if (have_table_earth_field && frontend->_mag_ef_limit > 0) {
+        return table_declination;
+    }
+    if (!use_compass()) {
+        return 0;
+    }
+    return _ahrs->get_compass()->get_declination();
+}
+
+/*
+  update estimates of inactive bias states. This keeps inactive IMUs
+  as hot-spares so we can switch to them without causing a jump in the
+  error
+ */
+void NavEKF2_core::learnInactiveBiases(void)
+{
+    const AP_InertialSensor &ins = AP::ins();
+
+    // learn gyro biases
+    for (uint8_t i=0; i<INS_MAX_INSTANCES; i++) {
+        if (!ins.use_gyro(i)) {
+            // can't use this gyro
+            continue;
+        }
+        if (gyro_index_active == i) {
+            // use current estimates from main filter of gyro bias and scale
+            inactiveBias[i].gyro_bias = stateStruct.gyro_bias;
+            inactiveBias[i].gyro_scale = stateStruct.gyro_scale;
+        } else {
+            // get filtered gyro and use the difference between the
+            // corrected gyro on the active IMU and the inactive IMU
+            // to move the inactive bias towards the right value
+            Vector3f filtered_gyro_active = ins.get_gyro(gyro_index_active) - (stateStruct.gyro_bias/dtEkfAvg);
+            Vector3f filtered_gyro_inactive = ins.get_gyro(i) - (inactiveBias[i].gyro_bias/dtEkfAvg);
+            Vector3f error = filtered_gyro_active - filtered_gyro_inactive;
+
+            // prevent a single large error from contaminating bias estimate
+            const float bias_limit = radians(5);
+            error.x = constrain_float(error.x, -bias_limit, bias_limit);
+            error.y = constrain_float(error.y, -bias_limit, bias_limit);
+            error.z = constrain_float(error.z, -bias_limit, bias_limit);
+
+            // slowly bring the inactive gyro in line with the active gyro. This corrects a 5 deg/sec
+            // gyro bias error in around 1 minute
+            inactiveBias[i].gyro_bias -= error * (1.0e-4f * dtEkfAvg);
+        }
+    }
+
+    // learn accel biases
+    for (uint8_t i=0; i<INS_MAX_INSTANCES; i++) {
+        if (!ins.use_accel(i)) {
+            // can't use this accel
+            continue;
+        }
+        if (accel_index_active == i) {
+            // use current estimate from main filter
+            inactiveBias[i].accel_zbias = stateStruct.accel_zbias;
+        } else {
+            // get filtered accel and use the difference between the
+            // corrected accel on the active IMU and the inactive IMU
+            // to move the inactive bias towards the right value
+            float filtered_accel_active = ins.get_accel(accel_index_active).z - (stateStruct.accel_zbias/dtEkfAvg);
+            float filtered_accel_inactive = ins.get_accel(i).z - (inactiveBias[i].accel_zbias/dtEkfAvg);
+            float error = filtered_accel_active - filtered_accel_inactive;
+
+            // prevent a single large error from contaminating bias estimate
+            const float bias_limit = 1; // m/s/s
+            error = constrain_float(error, -bias_limit, bias_limit);
+
+            // slowly bring the inactive accel in line with the active accel
+            // this learns 0.5m/s/s bias in about 1 minute
+            inactiveBias[i].accel_zbias -= error * (1.0e-4f * dtEkfAvg);
+        }
+    }
+}
+

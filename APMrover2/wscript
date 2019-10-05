@@ -13,6 +13,7 @@ def build(bld):
             'AP_L1_Control',
             'AP_Mount',
             'AP_Navigation',
+            'AR_WPNav',
             'AP_RCMapper',
             'AC_PID',
             'AP_Stats',
@@ -21,10 +22,11 @@ def build(bld):
             'AP_WheelEncoder',
             'AP_SmartRTL',
             'AC_Fence',
-            'AC_Avoidance',
             'AC_AttitudeControl',
             'AP_Devo_Telem',
             'AP_Follow',
+            'AP_OSD',
+            'AP_WindVane',
         ],
     )
 

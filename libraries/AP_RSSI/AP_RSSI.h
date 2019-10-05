@@ -21,12 +21,12 @@
 class AP_RSSI
 {
 public:
-    enum RssiType {
-        RSSI_DISABLED           = 0,
-        RSSI_ANALOG_PIN         = 1,
-        RSSI_RC_CHANNEL_VALUE   = 2,
-        RSSI_RECEIVER           = 3,
-        RSSI_PWM_PIN            = 4
+    enum class RssiType {
+        TYPE_DISABLED      = 0,
+        ANALOG_PIN         = 1,
+        RC_CHANNEL_VALUE   = 2,
+        RECEIVER           = 3,
+        PWM_PIN            = 4
     };
 
     AP_RSSI();
@@ -38,13 +38,13 @@ public:
     // destructor
     ~AP_RSSI(void);
 
-    static AP_RSSI *get_instance();
+    static AP_RSSI *get_singleton();
 
     // Initialize the rssi object and prepare it for use
     void init();
 
     // return true if rssi reading is enabled
-    bool enabled() const { return rssi_type != RSSI_DISABLED; }
+    bool enabled() const { return RssiType(rssi_type.get()) != RssiType::TYPE_DISABLED; }
 
     // Read the receiver RSSI value as a float 0.0f - 1.0f.
     // 0.0 represents weakest signal, 1.0 represents maximum signal.
@@ -59,7 +59,7 @@ public:
 
 private:
 
-    static AP_RSSI *_s_instance;
+    static AP_RSSI *_singleton;
 
     // RSSI parameters
     AP_Int8         rssi_type;                              // Type of RSSI being used
@@ -75,16 +75,20 @@ private:
     AP_HAL::AnalogSource *rssi_analog_source;
 
     // PWM input
-    static struct PWMState {
-        uint32_t gpio;              // gpio pin used for reading pwm
-        uint32_t last_gpio;         // last gpio pin used for reading pwm (used to recognise change in pin assignment)
-        uint32_t value;             // last calculated pwm value
-        uint32_t last_reading_ms;   // system time of last read (used for health reporting)
-        uint64_t pulse_start_us;    // system time of start of pulse
+    struct PWMState {
+        int8_t last_rssi_analog_pin; // last pin used for reading pwm (used to recognise change in pin assignment)
+        uint32_t last_reading_ms;      // system time of last read (used for health reporting)
+        float rssi_value;              // last calculated RSSI value
+        // the following two members are updated by the interrupt handler
+        uint32_t irq_value_us;         // last calculated pwm value (irq copy)
+        uint32_t pulse_start_us;       // system time of start of pulse
     } pwm_state;
 
     // read the RSSI value from an analog pin - returns float in range 0.0 to 1.0
     float read_pin_rssi();
+
+    // check if pin has changed and configure interrupt handlers if required
+    void check_pwm_pin_rssi();
 
     // read the RSSI value from a PWM value on a RC channel
     float read_channel_rssi();
@@ -96,8 +100,9 @@ private:
     float scale_and_constrain_float_rssi(float current_rssi_value, float low_rssi_range, float high_rssi_range);
 
     // PWM input handling
-    uint32_t get_gpio(uint8_t pin_number) const;
-    static int irq_handler(int irq, void *context);
+    void irq_handler(uint8_t pin,
+                     bool pin_state,
+                     uint32_t timestamp);
 };
 
 namespace AP {

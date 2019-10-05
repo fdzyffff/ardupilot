@@ -1,12 +1,11 @@
 #include <AP_HAL/AP_HAL.h>
 
-#if HAL_CPU_CLASS >= HAL_CPU_CLASS_150
-
 #include "AP_NavEKF3.h"
 #include "AP_NavEKF3_core.h"
 #include <AP_AHRS/AP_AHRS.h>
 #include <AP_Vehicle/AP_Vehicle.h>
 #include <GCS_MAVLink/GCS.h>
+#include <AP_GPS/AP_GPS.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -85,7 +84,7 @@ void NavEKF3_core::setWindMagStateLearningMode()
         }
     }
 
-    // determine if the vehicle is manoevring
+    // determine if the vehicle is manoeuvring
     if (accNavMagHoriz > 0.5f) {
         manoeuvring = true;
     } else {
@@ -211,7 +210,7 @@ void NavEKF3_core::setAidingMode()
             // GPS aiding is the preferred option unless excluded by the user
             if(readyToUseGPS() || readyToUseRangeBeacon()) {
                 PV_AidingMode = AID_ABSOLUTE;
-            } else if (readyToUseOptFlow() || readyToUseBodyOdm()) {
+            } else if ((readyToUseOptFlow()  && (frontend->_flowUse == FLOW_USE_NAV)) || readyToUseBodyOdm()) {
                 PV_AidingMode = AID_RELATIVE;
             }
             break;
@@ -303,7 +302,7 @@ void NavEKF3_core::setAidingMode()
 
     // check to see if we are starting or stopping aiding and set states and modes as required
     if (PV_AidingMode != PV_AidingModePrev) {
-        // set various  usage modes based on the condition when we start aiding. These are then held until aiding is stopped.
+        // set various usage modes based on the condition when we start aiding. These are then held until aiding is stopped.
         switch (PV_AidingMode) {
         case AID_NONE:
             // We have ceased aiding
@@ -367,9 +366,6 @@ void NavEKF3_core::setAidingMode()
             lastVelPassTime_ms = imuSampleTime_ms;
             lastRngBcnPassTime_ms = imuSampleTime_ms;
             break;
-
-        default:
-            break;
         }
 
         // Always reset the position and velocity when changing mode
@@ -399,6 +395,7 @@ void NavEKF3_core::checkAttitudeAlignmentStatus()
     if (!yawAlignComplete && tiltAlignComplete && use_compass()) {
             magYawResetRequest = true;
     }
+
 }
 
 // return true if we should use the airspeed sensor
@@ -432,7 +429,7 @@ bool NavEKF3_core::readyToUseBodyOdm(void) const
     bool wencDataGood = (imuSampleTime_ms - wheelOdmMeasTime_ms < 200);
 
     // We require stable roll/pitch angles and gyro bias estimates but do not need the yaw angle aligned to use odometry measurements
-    // becasue they are in a body frame of reference
+    // because they are in a body frame of reference
     return (visoDataGood || wencDataGood)
             && tiltAlignComplete
             && delAngBiasLearned;
@@ -453,7 +450,7 @@ bool NavEKF3_core::readyToUseRangeBeacon(void) const
 // return true if we should use the compass
 bool NavEKF3_core::use_compass(void) const
 {
-    return _ahrs->get_compass() && _ahrs->get_compass()->use_for_yaw(magSelectIndex) && !allMagSensorsFailed;
+    return (frontend->_magCal != 5) && _ahrs->get_compass() && _ahrs->get_compass()->use_for_yaw(magSelectIndex) && !allMagSensorsFailed;
 }
 
 /*
@@ -476,25 +473,28 @@ bool NavEKF3_core::setOriginLLH(const Location &loc)
     EKF_origin = loc;
     ekfGpsRefHgt = (double)0.01 * (double)EKF_origin.alt;
     // define Earth rotation vector in the NED navigation frame at the origin
-    calcEarthRateNED(earthRateNED, _ahrs->get_home().lat);
+    calcEarthRateNED(earthRateNED, loc.lat);
     validOrigin = true;
     return true;
 }
 
 // Set the NED origin to be used until the next filter reset
-void NavEKF3_core::setOrigin()
+void NavEKF3_core::setOrigin(const Location &loc)
 {
-    // assume origin at current GPS location (no averaging)
-    EKF_origin = AP::gps().location();
+    EKF_origin = loc;
     // if flying, correct for height change from takeoff so that the origin is at field elevation
     if (inFlight) {
         EKF_origin.alt += (int32_t)(100.0f * stateStruct.position.z);
     }
     ekfGpsRefHgt = (double)0.01 * (double)EKF_origin.alt;
     // define Earth rotation vector in the NED navigation frame at the origin
-    calcEarthRateNED(earthRateNED, _ahrs->get_home().lat);
+    calcEarthRateNED(earthRateNED, EKF_origin.lat);
     validOrigin = true;
-    gcs().send_text(MAV_SEVERITY_INFO, "EKF3 IMU%u Origin set to GPS",(unsigned)imu_index);
+    gcs().send_text(MAV_SEVERITY_INFO, "EKF3 IMU%u origin set",(unsigned)imu_index);
+
+    // put origin in frontend as well to ensure it stays in sync between lanes
+    frontend->common_EKF_origin = EKF_origin;
+    frontend->common_origin_valid = true;
 }
 
 // record a yaw reset event
@@ -565,4 +565,3 @@ void  NavEKF3_core::updateFilterStatus(void)
     filterStatus.flags.gps_quality_good = gpsGoodToAlign;
 }
 
-#endif // HAL_CPU_CLASS

@@ -76,7 +76,7 @@ void stm32_timer_set_channel_input(stm32_tim_t *tim, uint8_t channel, uint8_t in
     }
 }
 
-#if CH_DBG_ENABLE_STACK_CHECK == TRUE
+#if CH_DBG_ENABLE_STACK_CHECK == TRUE && !defined(HAL_BOOTLOADER_BUILD)
 void show_stack_usage(void)
 {
   thread_t *tp;
@@ -96,21 +96,11 @@ void show_stack_usage(void)
 #endif
 
 /*
-  flush all memory. Used in chSysHalt()
- */
-void memory_flush_all(void)
-{
-#if defined(STM32F7) && STM32_DMA_CACHE_HANDLING == TRUE
-    cacheBufferFlush(HAL_RAM_BASE_ADDRESS, HAL_RAM_SIZE_KB * 1024U);
-#endif
-}
-
-/*
   set the utc time
  */
 void stm32_set_utc_usec(uint64_t time_utc_usec)
 {
-    uint64_t now = hrt_micros();
+    uint64_t now = hrt_micros64();
     if (now <= time_utc_usec) {
         utc_time_offset = time_utc_usec - now;
     }
@@ -121,7 +111,7 @@ void stm32_set_utc_usec(uint64_t time_utc_usec)
 */
 uint64_t stm32_get_utc_usec()
 {
-    return hrt_micros() + utc_time_offset;
+    return hrt_micros64() + utc_time_offset;
 }
 
 struct utc_tm {
@@ -219,15 +209,25 @@ uint32_t get_fattime()
     return fattime;
 }
 
-// get RTC backup register 0
-static uint32_t get_rtc_backup0(void)
+#if !defined(NO_FASTBOOT)
+
+// get RTC backup registers starting at given idx
+void get_rtc_backup(uint8_t idx, uint32_t *v, uint8_t n)
 {
-	return RTC->BKP0R;
+    while (n--) {
+#if defined(STM32F1)
+        __IO uint32_t *dr = (__IO uint32_t *)&BKP->DR1;
+        *v++ = (dr[n/2]&0xFFFF) | (dr[n/2+1]<<16);
+#else
+        *v++ = ((__IO uint32_t *)&RTC->BKP0R)[idx++];
+#endif
+    }
 }
 
-// set RTC backup register 0
-static void set_rtc_backup0(uint32_t v)
+// set n RTC backup registers starting at given idx
+void set_rtc_backup(uint8_t idx, const uint32_t *v, uint8_t n)
 {
+#if !defined(STM32F1)
     if ((RCC->BDCR & RCC_BDCR_RTCEN) == 0) {
         RCC->BDCR |= STM32_RTCSEL;
         RCC->BDCR |= RCC_BDCR_RTCEN;
@@ -237,20 +237,46 @@ static void set_rtc_backup0(uint32_t v)
 #else
     PWR->CR1 |= PWR_CR1_DBP;
 #endif
-    RTC->BKP0R = v;
+#endif
+    while (n--) {
+#if defined(STM32F1)
+        __IO uint32_t *dr = (__IO uint32_t *)&BKP->DR1;
+        dr[n/2] =   (*v) & 0xFFFF;
+        dr[n/2+1] = (*v) >> 16;
+#else
+        ((__IO uint32_t *)&RTC->BKP0R)[idx++] = *v++;
+#endif
+    }
 }
 
 // see if RTC registers is setup for a fast reboot
 enum rtc_boot_magic check_fast_reboot(void)
 {
-    return (enum rtc_boot_magic)get_rtc_backup0();
+    uint32_t v;
+    get_rtc_backup(0, &v, 1);
+    return (enum rtc_boot_magic)v;
 }
 
 // set RTC register for a fast reboot
 void set_fast_reboot(enum rtc_boot_magic v)
 {
-    set_rtc_backup0(v);
+    uint32_t vv = (uint32_t)v;
+    set_rtc_backup(0, &vv, 1);
 }
+
+#else // NO_FASTBOOT
+
+// set n RTC backup registers starting at given idx
+void set_rtc_backup(uint8_t idx, const uint32_t *v, uint8_t n)
+{
+}
+
+// get RTC backup registers starting at given idx
+void get_rtc_backup(uint8_t idx, uint32_t *v, uint8_t n)
+{
+    return 0;
+}
+#endif // NO_FASTBOOT
 
 /*
   enable peripheral power if needed This is done late to prevent
@@ -259,7 +285,7 @@ void set_fast_reboot(enum rtc_boot_magic v)
 */
 void peripheral_power_enable(void)
 {
-#if defined(HAL_GPIO_PIN_nVDD_5V_PERIPH_EN) || defined(HAL_GPIO_PIN_nVDD_5V_HIPOWER_EN)
+#if defined(HAL_GPIO_PIN_nVDD_5V_PERIPH_EN) || defined(HAL_GPIO_PIN_nVDD_5V_HIPOWER_EN) || defined(HAL_GPIO_PIN_VDD_3V3_SENSORS_EN) || defined(HAL_GPIO_PIN_nVDD_3V3_SD_CARD_EN) || defined(HAL_GPIO_PIN_VDD_3V3_SD_CARD_EN)
     // we don't know what state the bootloader had the CTS pin in, so
     // wait here with it pulled up from the PAL table for enough time
     // for the radio to be definately powered down
@@ -274,5 +300,54 @@ void peripheral_power_enable(void)
 #ifdef HAL_GPIO_PIN_nVDD_5V_HIPOWER_EN
     palWriteLine(HAL_GPIO_PIN_nVDD_5V_HIPOWER_EN, 0);
 #endif
+#ifdef HAL_GPIO_PIN_VDD_3V3_SENSORS_EN
+    // the TBS-Colibri-F7 needs PE3 low at power on
+    palWriteLine(HAL_GPIO_PIN_VDD_3V3_SENSORS_EN, 1);
 #endif
+#ifdef HAL_GPIO_PIN_nVDD_3V3_SD_CARD_EN
+    // the TBS-Colibri-F7 needs PG7 low for SD card
+    palWriteLine(HAL_GPIO_PIN_nVDD_3V3_SD_CARD_EN, 0);
+#endif
+#ifdef HAL_GPIO_PIN_VDD_3V3_SD_CARD_EN
+    // others need it active high
+    palWriteLine(HAL_GPIO_PIN_VDD_3V3_SD_CARD_EN, 1);
+#endif
+    for (i=0; i<20; i++) {
+        // give 20ms for sensors to settle
+        chThdSleep(chTimeMS2I(1));
+    }
+#endif
+}
+
+#if defined(STM32F7) || defined(STM32H7) || defined(STM32F4)
+/*
+  read mode of a pin. This allows a pin config to be read, changed and
+  then written back
+ */
+iomode_t palReadLineMode(ioline_t line)
+{
+    ioportid_t port = PAL_PORT(line);
+    uint8_t pad = PAL_PAD(line);
+    iomode_t ret = 0;
+    ret |= (port->MODER >> (pad*2)) & 0x3;
+    ret |= ((port->OTYPER >> pad)&1) << 2;
+    ret |= ((port->OSPEEDR >> (pad*2))&3) << 3;
+    ret |= ((port->PUPDR >> (pad*2))&3) << 5;
+    if (pad < 8) {
+        ret |= ((port->AFRL >> (pad*4))&0xF) << 7;
+    } else {
+        ret |= ((port->AFRH >> ((pad-8)*4))&0xF) << 7;
+    }
+    return ret;
+}
+#endif
+
+void stm32_cacheBufferInvalidate(const void *p, size_t size)
+{
+    cacheBufferInvalidate(p, size);
+}
+
+void stm32_cacheBufferFlush(const void *p, size_t size)
+{
+    cacheBufferFlush(p, size);
 }

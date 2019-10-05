@@ -36,9 +36,9 @@
 
 class ChibiOS::Storage : public AP_HAL::Storage {
 public:
-    void init() {}
-    void read_block(void *dst, uint16_t src, size_t n);
-    void write_block(uint16_t dst, const void* src, size_t n);
+    void init() override {}
+    void read_block(void *dst, uint16_t src, size_t n) override;
+    void write_block(uint16_t dst, const void* src, size_t n) override;
 
     void _timer_tick(void) override;
     bool healthy(void) override;
@@ -50,7 +50,7 @@ private:
     void _save_backup(void);
     void _mark_dirty(uint16_t loc, uint16_t length);
     uint8_t _buffer[CH_STORAGE_SIZE] __attribute__((aligned(4)));
-    Bitmask _dirty_mask{CH_STORAGE_NUM_LINES};
+    Bitmask<CH_STORAGE_NUM_LINES> _dirty_mask;
 
     bool _flash_write_data(uint8_t sector, uint32_t offset, const uint8_t *data, uint16_t length);
     bool _flash_read_data(uint8_t sector, uint32_t offset, uint8_t *data, uint16_t length);

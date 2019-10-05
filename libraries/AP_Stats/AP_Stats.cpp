@@ -32,8 +32,8 @@ const AP_Param::GroupInfo AP_Stats::var_info[] = {
     AP_GROUPINFO("_RUNTIME",    2, AP_Stats, params.runtime, 0),
 
     // @Param: _RESET
-    // @DisplayName: Reset time
-    // @Description: Seconds since January 1st 2016 (Unix epoch+1451606400) since reset (set to 0 to reset statistics)
+    // @DisplayName: Statistics Reset Time
+    // @Description: Seconds since January 1st 2016 (Unix epoch+1451606400) since statistics reset (set to 0 to reset statistics)
     // @Units: s
     // @ReadOnly: True
     // @User: Standard
@@ -42,11 +42,20 @@ const AP_Param::GroupInfo AP_Stats::var_info[] = {
     AP_GROUPEND
 };
 
+AP_Stats *AP_Stats::_singleton;
+
+// constructor
+AP_Stats::AP_Stats(void)
+{
+    _singleton = this;
+}
+
 void AP_Stats::copy_variables_from_parameters()
 {
     flttime = params.flttime;
     runtime = params.runtime;
     reset = params.reset;
+    flttime_boot = flttime;
 }
 
 void AP_Stats::init()
@@ -120,4 +129,18 @@ void AP_Stats::set_flying(const bool is_flying)
         update_flighttime();
         _flying_ms = 0;
     }
+}
+
+/*
+  get time in flight since boot
+ */
+uint32_t AP_Stats::get_flight_time_s(void)
+{
+    update_flighttime();
+    return flttime - flttime_boot;
+}
+
+AP_Stats *AP::stats(void)
+{
+    return AP_Stats::get_singleton();
 }

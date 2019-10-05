@@ -43,6 +43,7 @@
  * @author Marco Bauer <marco@wtns.de>
  */
 #include "AP_RCProtocol_SUMD.h"
+#include <AP_Math/crc.h>
 
 #define SUMD_HEADER_LENGTH	3
 #define SUMD_HEADER_ID		0xA8
@@ -64,18 +65,6 @@
 // #define SUMD_DEBUG
 extern const AP_HAL::HAL& hal;
 
-uint16_t AP_RCProtocol_SUMD::sumd_crc16(uint16_t crc, uint8_t value)
-{
-    int i;
-    crc ^= (uint16_t)value << 8;
-
-    for (i = 0; i < 8; i++) {
-        crc = (crc & 0x8000) ? (crc << 1) ^ 0x1021 : (crc << 1);
-    }
-
-    return crc;
-}
-
 uint8_t AP_RCProtocol_SUMD::sumd_crc8(uint8_t crc, uint8_t value)
 {
     crc += value;
@@ -84,69 +73,17 @@ uint8_t AP_RCProtocol_SUMD::sumd_crc8(uint8_t crc, uint8_t value)
 
 void AP_RCProtocol_SUMD::process_pulse(uint32_t width_s0, uint32_t width_s1)
 {
-    // convert to bit widths, allowing for up to about 4usec error, assuming 115200 bps
-    uint16_t bits_s0 = ((width_s0+4)*(uint32_t)115200) / 1000000;
-    uint16_t bits_s1 = ((width_s1+4)*(uint32_t)115200) / 1000000;
-    uint8_t bit_ofs, byte_ofs;
-    uint16_t nbits;
-
-    if (bits_s0 == 0 || bits_s1 == 0) {
-        // invalid data
-        goto reset;
+    uint8_t b;
+    if (ss.process_pulse(width_s0, width_s1, b)) {
+        _process_byte(ss.get_byte_timestamp_us(), b);
     }
-
-    byte_ofs = sumd_state.bit_ofs/10;
-    bit_ofs = sumd_state.bit_ofs%10;
-    if (byte_ofs >= SUMD_FRAME_MAXLEN) {
-        goto reset;
-    }
-    // pull in the high bits
-    nbits = bits_s0;
-    if (nbits+bit_ofs > 10) {
-        nbits = 10 - bit_ofs;
-    }
-    sumd_state.bytes[byte_ofs] |= ((1U<<nbits)-1) << bit_ofs;
-    sumd_state.bit_ofs += nbits;
-    bit_ofs += nbits;
-    if (bits_s0 - nbits > 10) {
-        // we have a full frame
-        uint8_t byte;
-        uint8_t i;
-        for (i=0; i <= byte_ofs; i++) {
-            // get raw data
-            uint16_t v = sumd_state.bytes[i];
-
-            // check start bit
-            if ((v & 1) != 0) {
-                break;
-            }
-            // check stop bits
-            if ((v & 0x200) != 0x200) {
-                break;
-            }
-            byte = ((v>>1) & 0xFF);
-            process_byte(byte);
-        }
-        memset(&sumd_state, 0, sizeof(sumd_state));
-    }
-
-    byte_ofs = sumd_state.bit_ofs/10;
-    bit_ofs = sumd_state.bit_ofs%10;
-
-    if (bits_s1+bit_ofs > 10) {
-        // invalid data
-        goto reset;
-    }
-
-    // pull in the low bits
-    sumd_state.bit_ofs += bits_s1;
-    return;
-reset:
-    memset(&sumd_state, 0, sizeof(sumd_state));
 }
 
-void AP_RCProtocol_SUMD::process_byte(uint8_t byte)
+void AP_RCProtocol_SUMD::_process_byte(uint32_t timestamp_us, uint8_t byte)
 {
+    if (timestamp_us - last_packet_us > 5000U) {
+        _decode_state = SUMD_DECODE_STATE_UNSYNCED;
+    }
     switch (_decode_state) {
     case SUMD_DECODE_STATE_UNSYNCED:
 #ifdef SUMD_DEBUG
@@ -159,13 +96,14 @@ void AP_RCProtocol_SUMD::process_byte(uint8_t byte)
             _crc16 = 0x0000;
             _crc8 = 0x00;
             _crcOK = false;
-            _crc16 = sumd_crc16(_crc16, byte);
+            _crc16 = crc_xmodem_update(_crc16, byte);
             _crc8 = sumd_crc8(_crc8, byte);
             _decode_state = SUMD_DECODE_STATE_GOT_HEADER;
 
 #ifdef SUMD_DEBUG
             hal.console->printf(" SUMD_DECODE_STATE_GOT_HEADER: %x \n", byte) ;
 #endif
+            last_packet_us = timestamp_us;
         }
         break;
 
@@ -178,7 +116,7 @@ void AP_RCProtocol_SUMD::process_byte(uint8_t byte)
             }
 
             if (_sumd) {
-                _crc16 = sumd_crc16(_crc16, byte);
+                _crc16 = crc_xmodem_update(_crc16, byte);
 
             } else {
                 _crc8 = sumd_crc8(_crc8, byte);
@@ -201,7 +139,7 @@ void AP_RCProtocol_SUMD::process_byte(uint8_t byte)
             _rxpacket.length = byte;
 
             if (_sumd) {
-                _crc16 = sumd_crc16(_crc16, byte);
+                _crc16 = crc_xmodem_update(_crc16, byte);
 
             } else {
                 _crc8 = sumd_crc8(_crc8, byte);
@@ -224,7 +162,7 @@ void AP_RCProtocol_SUMD::process_byte(uint8_t byte)
         _rxpacket.sumd_data[_rxlen] = byte;
 
         if (_sumd) {
-            _crc16 = sumd_crc16(_crc16, byte);
+            _crc16 = crc_xmodem_update(_crc16, byte);
 
         } else {
             _crc8 = sumd_crc8(_crc8, byte);
@@ -358,7 +296,7 @@ void AP_RCProtocol_SUMD::process_byte(uint8_t byte)
 
             for (i = 4; i < _rxpacket.length; i++) {
 #ifdef SUMD_DEBUG
-                hal.console->printf("ch[%d] : %x %x [ %x    %d ]\n", i + 1, _rxpacket.sumd_data[i * 2 + 1], _rxpacket.sumd_data[i * 2 + 2],
+                hal.console->printf("ch[%u] : %x %x [ %x    %d ]\n", i + 1, _rxpacket.sumd_data[i * 2 + 1], _rxpacket.sumd_data[i * 2 + 2],
                                     ((_rxpacket.sumd_data[i * 2 + 1] << 8) | _rxpacket.sumd_data[i * 2 + 2]) >> 3,
                                     ((_rxpacket.sumd_data[i * 2 + 1] << 8) | _rxpacket.sumd_data[i * 2 + 2]) >> 3);
 #endif
@@ -383,4 +321,12 @@ void AP_RCProtocol_SUMD::process_byte(uint8_t byte)
         _decode_state = SUMD_DECODE_STATE_UNSYNCED;
         break;
     }
+}
+
+void AP_RCProtocol_SUMD::process_byte(uint8_t byte, uint32_t baudrate)
+{
+    if (baudrate != 115200) {
+        return;
+    }
+    _process_byte(AP_HAL::micros(), byte);
 }

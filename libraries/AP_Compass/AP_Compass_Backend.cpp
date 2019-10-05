@@ -2,14 +2,14 @@
 
 #include "AP_Compass.h"
 #include "AP_Compass_Backend.h"
-#include <stdio.h>
+
+#include <AP_BattMonitor/AP_BattMonitor.h>
 
 extern const AP_HAL::HAL& hal;
 
-AP_Compass_Backend::AP_Compass_Backend(Compass &compass) :
-    _compass(compass)
+AP_Compass_Backend::AP_Compass_Backend()
+    : _compass(AP::compass())
 {
-    _sem = hal.util->new_semaphore();    
 }
 
 void AP_Compass_Backend::rotate_field(Vector3f &mag, uint8_t instance)
@@ -39,8 +39,9 @@ void AP_Compass_Backend::publish_raw_field(const Vector3f &mag, uint8_t instance
     // EKF and DCM would end up consuming compass data at the full
     // sensor rate. We want them to consume only the filtered fields
     state.last_update_ms = AP_HAL::millis();
-
+#if COMPASS_CAL_ENABLED
     _compass._calibrator[instance].new_sample(mag);
+#endif
 }
 
 void AP_Compass_Backend::correct_field(Vector3f &mag, uint8_t i)
@@ -54,7 +55,6 @@ void AP_Compass_Backend::correct_field(Vector3f &mag, uint8_t i)
     const Vector3f &offsets = state.offset.get();
     const Vector3f &diagonals = state.diagonals.get();
     const Vector3f &offdiagonals = state.offdiagonals.get();
-    const Vector3f &mot = state.motor_compensation.get();
 
     // add in the basic offsets
     mag += offsets;
@@ -68,6 +68,8 @@ void AP_Compass_Backend::correct_field(Vector3f &mag, uint8_t i)
 
     mag = mat * mag;
 
+#if COMPASS_MOT_ENABLED
+    const Vector3f &mot = state.motor_compensation.get();
     /*
       calculate motor-power based compensation
       note that _motor_offset[] is kept even if compensation is not
@@ -81,8 +83,9 @@ void AP_Compass_Backend::correct_field(Vector3f &mag, uint8_t i)
         state.motor_offset = mot * _compass._thr;
     } else if (_compass._motor_comp_type == AP_COMPASS_MOT_COMP_CURRENT) {
         AP_BattMonitor &battery = AP::battery();
-        if (battery.has_current()) {
-            state.motor_offset = mot * battery.current_amps();
+        float current;
+        if (battery.current_amps(current)) {
+            state.motor_offset = mot * current;
         }
     }
 
@@ -93,6 +96,56 @@ void AP_Compass_Backend::correct_field(Vector3f &mag, uint8_t i)
       on final field outputs, not on the raw outputs
     */
     mag += state.motor_offset;
+#endif // COMPASS_MOT_ENABLED
+}
+
+void AP_Compass_Backend::accumulate_sample(Vector3f &field, uint8_t instance,
+                                           uint32_t max_samples)
+{
+    /* rotate raw_field from sensor frame to body frame */
+    rotate_field(field, instance);
+
+    /* publish raw_field (uncorrected point sample) for calibration use */
+    publish_raw_field(field, instance);
+
+    /* correct raw_field for known errors */
+    correct_field(field, instance);
+
+    if (!field_ok(field)) {
+        return;
+    }
+
+    WITH_SEMAPHORE(_sem);
+
+    Compass::mag_state &state = _compass._state[instance];
+    state.accum += field;
+    state.accum_count++;
+    if (max_samples && state.accum_count >= max_samples) {
+        state.accum_count /= 2;
+        state.accum /= 2;
+    }
+}
+
+void AP_Compass_Backend::drain_accumulated_samples(uint8_t instance,
+                                                   const Vector3f *scaling)
+{
+    WITH_SEMAPHORE(_sem);
+
+    Compass::mag_state &state = _compass._state[instance];
+
+    if (state.accum_count == 0) {
+        return;
+    }
+
+    if (scaling) {
+        state.accum *= *scaling;
+    }
+    state.accum /= state.accum_count;
+
+    publish_filtered_field(state.accum, instance);
+
+    state.accum.zero();
+    state.accum_count = 0;
 }
 
 /*

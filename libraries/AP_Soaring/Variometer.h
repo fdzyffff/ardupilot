@@ -7,7 +7,6 @@ Manages the estimation of aircraft total energy, drag and vertical air velocity.
 
 #include <AP_AHRS/AP_AHRS.h>
 #include <AP_Param/AP_Param.h>
-#include <DataFlash/DataFlash.h>
 #include <AP_SpdHgtControl/AP_SpdHgtControl.h>
 
 #define ASPD_FILT 0.05

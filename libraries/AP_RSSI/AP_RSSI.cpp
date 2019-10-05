@@ -14,26 +14,24 @@
  */
 
 #include <AP_RSSI/AP_RSSI.h>
-#include <AP_BoardConfig/AP_BoardConfig.h>
+#include <GCS_MAVLink/GCS.h>
 #include <RC_Channel/RC_Channel.h>
+
 #include <utility>
-#if CONFIG_HAL_BOARD == HAL_BOARD_PX4 || CONFIG_HAL_BOARD == HAL_BOARD_VRBRAIN
-#include <board_config.h>
-#endif
 
 extern const AP_HAL::HAL& hal;
 
-#ifdef CONFIG_ARCH_BOARD_PX4FMU_V4
-#define BOARD_RSSI_DEFAULT 1
-#define BOARD_RSSI_ANA_PIN 11
-#define BOARD_RSSI_ANA_PIN_HIGH 3.3f
-#else
+#ifndef BOARD_RSSI_DEFAULT
 #define BOARD_RSSI_DEFAULT 0
-#define BOARD_RSSI_ANA_PIN 0
-#define BOARD_RSSI_ANA_PIN_HIGH 5.0f
 #endif
 
-AP_RSSI::PWMState AP_RSSI::pwm_state;
+#ifndef BOARD_RSSI_ANA_PIN
+#define BOARD_RSSI_ANA_PIN 0
+#endif
+
+#ifndef BOARD_RSSI_ANA_PIN_HIGH
+#define BOARD_RSSI_ANA_PIN_HIGH 5.0f
+#endif
 
 const AP_Param::GroupInfo AP_RSSI::var_info[] = {
 
@@ -47,7 +45,7 @@ const AP_Param::GroupInfo AP_RSSI::var_info[] = {
     // @Param: ANA_PIN
     // @DisplayName: Receiver RSSI sensing pin
     // @Description: Pin used to read the RSSI voltage or PWM value
-    // @Values: 11:Pixracer,13:Pixhawk ADC4,14:Pixhawk ADC3,15:Pixhawk ADC6,15:Pixhawk2 ADC,50:PixhawkAUX1,51:PixhawkAUX2,52:PixhawkAUX3,53:PixhawkAUX4,54:PixhawkAUX5,55:PixhawkAUX6,103:Pixhawk SBUS
+    // @Values: 8:V5 Nano,11:Pixracer,13:Pixhawk ADC4,14:Pixhawk ADC3,15:Pixhawk ADC6,15:Pixhawk2 ADC,50:PixhawkAUX1,51:PixhawkAUX2,52:PixhawkAUX3,53:PixhawkAUX4,54:PixhawkAUX5,55:PixhawkAUX6,103:Pixhawk SBUS
     // @User: Standard
     AP_GROUPINFO("ANA_PIN", 1, AP_RSSI, rssi_analog_pin,  BOARD_RSSI_ANA_PIN),
 
@@ -102,10 +100,10 @@ const AP_Param::GroupInfo AP_RSSI::var_info[] = {
 AP_RSSI::AP_RSSI()
 {       
     AP_Param::setup_object_defaults(this, var_info);
-    if (_s_instance) {
+    if (_singleton) {
         AP_HAL::panic("Too many RSSI sensors");
     }
-    _s_instance = this;
+    _singleton = this;
 }
 
 // destructor
@@ -116,9 +114,9 @@ AP_RSSI::~AP_RSSI(void)
 /*
  * Get the AP_RSSI singleton
  */
-AP_RSSI *AP_RSSI::get_instance()
+AP_RSSI *AP_RSSI::get_singleton()
 {
-    return _s_instance;
+    return _singleton;
 }
 
 // Initialize the rssi object and prepare it for use
@@ -133,35 +131,25 @@ void AP_RSSI::init()
 // 0.0 represents weakest signal, 1.0 represents maximum signal.
 float AP_RSSI::read_receiver_rssi()
 {
-    // Default to 0 RSSI
-    float receiver_rssi = 0.0f;  
-
-    switch (rssi_type) {
-        case RssiType::RSSI_DISABLED:
-            receiver_rssi = 0.0f;
-            break;
-        case RssiType::RSSI_ANALOG_PIN:
-            receiver_rssi = read_pin_rssi();
-            break;
-        case RssiType::RSSI_RC_CHANNEL_VALUE:
-            receiver_rssi = read_channel_rssi();
-            break;
-        case RssiType::RSSI_RECEIVER: {
+    switch (RssiType(rssi_type.get())) {
+        case RssiType::TYPE_DISABLED:
+            return 0.0f;
+        case RssiType::ANALOG_PIN:
+            return read_pin_rssi();
+        case RssiType::RC_CHANNEL_VALUE:
+            return read_channel_rssi();
+        case RssiType::RECEIVER: {
             int16_t rssi = RC_Channels::get_receiver_rssi();
             if (rssi != -1) {
-                receiver_rssi = rssi / 255.0;
+                return rssi / 255.0;
             }
-            break;
+            return 0.0f;
         }
-        case RssiType::RSSI_PWM_PIN:
-            receiver_rssi = read_pwm_pin_rssi();
-            break;
-        default :   
-            receiver_rssi = 0.0f;
-            break;
-    }    
-                  
-    return receiver_rssi;
+        case RssiType::PWM_PIN:
+            return read_pwm_pin_rssi();
+    }
+    // should never get to here
+    return 0.0f;
 }
 
 // Read the receiver RSSI value as an 8-bit integer
@@ -186,56 +174,87 @@ float AP_RSSI::read_pin_rssi()
 // read the RSSI value from a PWM value on a RC channel
 float AP_RSSI::read_channel_rssi()
 {
-    RC_Channel *ch = rc().channel(rssi_channel-1);
-    if (ch == nullptr) {
+    RC_Channel *c = rc().channel(rssi_channel-1);
+    if (c == nullptr) {
         return 0.0f;
     }
-    uint16_t rssi_channel_value = ch->get_radio_in();
+    uint16_t rssi_channel_value = c->get_radio_in();
     float channel_rssi = scale_and_constrain_float_rssi(rssi_channel_value, rssi_channel_low_pwm_value, rssi_channel_high_pwm_value);
     return channel_rssi;    
+}
+
+void AP_RSSI::check_pwm_pin_rssi()
+{
+    if (rssi_analog_pin == pwm_state.last_rssi_analog_pin) {
+        return;
+    }
+
+    // detach last one
+    if (pwm_state.last_rssi_analog_pin) {
+        if (!hal.gpio->detach_interrupt(pwm_state.last_rssi_analog_pin)) {
+            gcs().send_text(MAV_SEVERITY_WARNING,
+                            "RSSI: Failed to detach from pin %u",
+                            pwm_state.last_rssi_analog_pin);
+            // ignore this failure or the user may be stuck
+        }
+    }
+
+    pwm_state.last_rssi_analog_pin = rssi_analog_pin;
+
+    if (!rssi_analog_pin) {
+        // don't need to install handler
+        return;
+    }
+
+    // install interrupt handler on rising and falling edge
+    hal.gpio->pinMode(rssi_analog_pin, HAL_GPIO_INPUT);
+    if (!hal.gpio->attach_interrupt(
+            rssi_analog_pin,
+            FUNCTOR_BIND_MEMBER(&AP_RSSI::irq_handler,
+                                void,
+                                uint8_t,
+                                bool,
+                                uint32_t),
+            AP_HAL::GPIO::INTERRUPT_BOTH)) {
+        // failed to attach interrupt
+        gcs().send_text(MAV_SEVERITY_WARNING,
+                        "RSSI: Failed to attach to pin %u",
+                        (unsigned int)rssi_analog_pin);
+        return;
+    }
 }
 
 // read the PWM value from a pin
 float AP_RSSI::read_pwm_pin_rssi()
 {
-#if CONFIG_HAL_BOARD == HAL_BOARD_PX4 || CONFIG_HAL_BOARD == HAL_BOARD_VRBRAIN
-    // check if pin has changed and initialise gpio event callback
-    pwm_state.gpio = get_gpio(rssi_analog_pin);
-    if (pwm_state.gpio != pwm_state.last_gpio) {
+    // check if pin has changed and configure interrupt handlers if required:
+    check_pwm_pin_rssi();
 
-        // remove old gpio event callback if present
-        if (pwm_state.last_gpio != 0) {
-            stm32_gpiosetevent(pwm_state.last_gpio, false, false, false, nullptr);
-            pwm_state.last_gpio = 0;
-        }
-
-        // install interrupt handler on rising or falling edge of gpio
-        if (pwm_state.gpio != 0) {
-            stm32_gpiosetevent(pwm_state.gpio, true, true, false, irq_handler);
-            pwm_state.last_gpio = pwm_state.gpio;
-        }
+    if (!pwm_state.last_rssi_analog_pin) {
+        // disabled (either by configuration or failure to attach interrupt)
+        return 0.0f;
     }
 
-    // disable interrupts temporarily
-    irqstate_t istate = irqsave();
+    // disable interrupts and grab state
+    void *irqstate = hal.scheduler->disable_interrupts_save();
+    const uint32_t irq_value_us = pwm_state.irq_value_us;
+    pwm_state.irq_value_us = 0;
+    hal.scheduler->restore_interrupts(irqstate);
 
-    // check for timeout
-    float ret;
-    if ((pwm_state.last_reading_ms == 0) || (AP_HAL::millis() - pwm_state.last_reading_ms > 1000)) {
-        pwm_state.value = 0;
-        ret = 0;
+    const uint32_t now = AP_HAL::millis();
+    if (irq_value_us == 0) {
+        // no reading; check for timeout:
+        if (now - pwm_state.last_reading_ms > 1000) {
+            // no reading for a second - something is broken
+            pwm_state.rssi_value = 0.0f;
+        }
     } else {
-        // convert pwm value to rssi value
-        ret = scale_and_constrain_float_rssi(pwm_state.value, rssi_channel_low_pwm_value, rssi_channel_high_pwm_value);
+        // a new reading - convert pwm value to rssi value
+        pwm_state.rssi_value = scale_and_constrain_float_rssi(irq_value_us, rssi_channel_low_pwm_value, rssi_channel_high_pwm_value);
+        pwm_state.last_reading_ms = now;
     }
 
-    // restore interrupts
-    irqrestore(istate);
-
-    return ret;
-#else
-    return 0.0f;
-#endif
+    return pwm_state.rssi_value;
 }
 
 // Scale and constrain a float rssi value to 0.0 to 1.0 range 
@@ -268,65 +287,26 @@ float AP_RSSI::scale_and_constrain_float_rssi(float current_rssi_value, float lo
     return constrain_float(rssi_value_scaled, 0.0f, 1.0f);
 }
 
-// get gpio id from pin number
-uint32_t AP_RSSI::get_gpio(uint8_t pin_number) const
-{
-#ifdef GPIO_GPIO0_INPUT
-    switch (pin_number) {
-    case 50:
-        return GPIO_GPIO0_INPUT;
-    case 51:
-        return GPIO_GPIO1_INPUT;
-    case 52:
-        return GPIO_GPIO2_INPUT;
-    case 53:
-        return GPIO_GPIO3_INPUT;
-    case 54:
-        return GPIO_GPIO4_INPUT;
-    case 55:
-        return GPIO_GPIO5_INPUT;
-    }
-#endif
-    return 0;
-}
-
 // interrupt handler for reading pwm value
-int AP_RSSI::irq_handler(int irq, void *context)
+void AP_RSSI::irq_handler(uint8_t pin, bool pin_high, uint32_t timestamp_us)
 {
-#if CONFIG_HAL_BOARD == HAL_BOARD_PX4 || CONFIG_HAL_BOARD == HAL_BOARD_VRBRAIN
-    // sanity check
-    if (pwm_state.gpio == 0) {
-        return 0;
-    }
-
-    // capture time
-    uint64_t now = AP_HAL::micros64();
-
-    // read value of pin
-    bool pin_high = stm32_gpioread(pwm_state.gpio);
-
-    // calculate pwm value
     if (pin_high) {
-        pwm_state.pulse_start_us = now;
+        pwm_state.pulse_start_us = timestamp_us;
     } else {
         if (pwm_state.pulse_start_us != 0) {
-            pwm_state.value = now - pwm_state.pulse_start_us;
+            pwm_state.irq_value_us = timestamp_us - pwm_state.pulse_start_us;
+            pwm_state.pulse_start_us = 0;
         }
-        pwm_state.pulse_start_us = 0;
-        pwm_state.last_reading_ms = AP_HAL::millis();
     }
-#endif
-
-    return 0;
 }
 
-AP_RSSI *AP_RSSI::_s_instance = nullptr;
+AP_RSSI *AP_RSSI::_singleton = nullptr;
 
 namespace AP {
 
 AP_RSSI *rssi()
 {
-    return AP_RSSI::get_instance();
+    return AP_RSSI::get_singleton();
 }
 
 };

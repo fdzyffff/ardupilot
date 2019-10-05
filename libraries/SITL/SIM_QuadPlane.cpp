@@ -22,8 +22,8 @@
 
 using namespace SITL;
 
-QuadPlane::QuadPlane(const char *home_str, const char *frame_str) :
-    Plane(home_str, frame_str)
+QuadPlane::QuadPlane(const char *frame_str) :
+    Plane(frame_str)
 {
     // default to X frame
     const char *frame_type = "x";
@@ -109,6 +109,19 @@ void QuadPlane::update(const struct sitl_input &input)
 
     frame->calculate_forces(*this, input, quad_rot_accel, quad_accel_body);
 
+    // estimate voltage and current
+    frame->current_and_voltage(input, battery_voltage, battery_current);
+
+    float throttle;
+    if (reverse_thrust) {
+        throttle = filtered_servo_angle(input, 2);
+    } else {
+        throttle = filtered_servo_range(input, 2);
+    }
+    // assume 20A at full fwd throttle
+    throttle = fabsf(throttle);
+    battery_current += 20 * throttle;
+    
     rot_accel += quad_rot_accel;
     accel_body += quad_accel_body;
 

@@ -2,14 +2,26 @@
 
 #include <AP_Math/AP_Math.h>
 #include <GCS_MAVLink/GCS_MAVLink.h>
+#include <AP_Common/Location.h>
 
 #include "SIM_Sprayer.h"
 #include "SIM_Gripper_Servo.h"
 #include "SIM_Gripper_EPM.h"
-
-class DataFlash_Class;
+#include "SIM_Parachute.h"
+#include "SIM_Precland.h"
 
 namespace SITL {
+
+struct vector3f_array {
+    uint16_t length;
+    Vector3f *data;
+};
+
+struct float_array {
+    uint16_t length;
+    float *data;
+};
+    
 
 struct sitl_fdm {
     // this is the structure passed between FDM models and the main SITL code
@@ -33,6 +45,12 @@ struct sitl_fdm {
     double range;           // rangefinder value
     Vector3f bodyMagField;  // Truth XYZ magnetic field vector in body-frame. Includes motor interference. Units are milli-Gauss.
     Vector3f angAccel; // Angular acceleration in degrees/s/s about the XYZ body axes
+
+    struct {
+        // data from simulated laser scanner, if available
+        struct vector3f_array points;
+        struct float_array ranges;
+    } scanner;
 };
 
 // number of rc output channels
@@ -46,18 +64,24 @@ public:
         mag_ofs.set(Vector3f(5, 13, -18));
         AP_Param::setup_object_defaults(this, var_info);
         AP_Param::setup_object_defaults(this, var_info2);
-        if (_s_instance != nullptr) {
+        if (_singleton != nullptr) {
             AP_HAL::panic("Too many SITL instances");
         }
-        _s_instance = this;
+        _singleton = this;
     }
 
     /* Do not allow copies */
     SITL(const SITL &other) = delete;
     SITL &operator=(const SITL&) = delete;
 
-    static SITL *_s_instance;
-    static SITL *get_instance() { return _s_instance; }
+    static SITL *_singleton;
+    static SITL *get_singleton() { return _singleton; }
+
+    enum SITL_RCFail {
+        SITL_RCFail_None = 0,
+        SITL_RCFail_NoPulses = 1,
+        SITL_RCFail_Throttle950 = 2,
+    };
 
     enum GPSType {
         GPS_TYPE_NONE  = 0,
@@ -148,6 +172,11 @@ public:
     AP_Int16 pin_mask; // for GPIO emulation
     AP_Float speedup; // simulation speedup
     AP_Int8  odom_enable; // enable visual odomotry data
+    AP_Int8  telem_baudlimit_enable; // enable baudrate limiting on links
+    AP_Float flow_noise; // optical flow measurement noise (rad/sec)
+    AP_Int8  baro_count; // number of simulated baros to create
+    AP_Int8 gps_hdg_enabled; // enable the output of a NMEA heading HDT sentence
+    AP_Int32 loop_delay; // extra delay to add to every loop
 
     // wind control
     enum WindType {
@@ -197,11 +226,62 @@ public:
     // differential pressure sensor tube order
     AP_Int8 arspd_signflip;
 
+    // weight on wheels pin
+    AP_Int8 wow_pin;
+
+    // vibration frequencies in Hz on each axis
+    AP_Vector3f vibe_freq;
+
+    // gyro and accel fail masks
+    AP_Int8 gyro_fail_mask;
+    AP_Int8 accel_fail_mask;
+
+    struct {
+        AP_Float x;
+        AP_Float y;
+        AP_Float z;
+        AP_Int32 t;
+
+        uint32_t start_ms;
+    } shove;
+
+    struct {
+        AP_Float x;
+        AP_Float y;
+        AP_Float z;
+        AP_Int32 t;
+
+        uint32_t start_ms;
+    } twist;
+
+    AP_Int8 gnd_behav;
+
+    struct {
+        AP_Int8 enable;     // 0: disabled, 1: roll and pitch, 2: roll, pitch and heave
+        AP_Float length;    // m
+        AP_Float amp;       // m
+        AP_Float direction; // deg (direction wave is coming from)
+        AP_Float speed;     // m/s
+    } wave;
+
+    struct {
+        AP_Float direction; // deg (direction tide is coming from)
+        AP_Float speed;     // m/s
+    } tide;
+
+    // original simulated position
+    struct {
+        AP_Float lat;
+        AP_Float lng;
+        AP_Float alt; // metres
+        AP_Float hdg; // 0 to 360
+    } opos;
+
     uint16_t irlock_port;
 
     void simstate_send(mavlink_channel_t chan);
 
-    void Log_Write_SIMSTATE(DataFlash_Class *dataflash);
+    void Log_Write_SIMSTATE();
 
     // convert a set of roll rates from earth frame to body frame
     static void convert_body_frame(double rollDeg, double pitchDeg,
@@ -215,6 +295,9 @@ public:
 
     Gripper_Servo gripper_sim;
     Gripper_EPM gripper_epm_sim;
+
+    Parachute parachute_sim;
+    SIM_Precland precland_sim;
 };
 
 } // namespace SITL
