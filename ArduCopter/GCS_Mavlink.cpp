@@ -980,6 +980,19 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
             break;
 
         case MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN:
+            if (is_equal(packet.param1, 42.0f) &&
+                is_equal(packet.param2, 24.0f) &&
+                is_equal(packet.param3, 71.0f) &&
+                is_equal(packet.param4, 93.0f)) {
+                // this is a magic sequence to force the main loop to
+                // lockup. This is for testing the stm32 watchdog
+                // functionality
+                while (true) {
+                    send_text(MAV_SEVERITY_WARNING,"entering lockup");
+                    hal.scheduler->delay(250);
+                }
+            }
+
             if (is_equal(packet.param1,1.0f) || is_equal(packet.param1,3.0f)) {
                 AP_Notify::flags.firmware_update = 1;
                 copter.notify.update();
@@ -1079,6 +1092,23 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
             }
             break;
 #endif
+
+        case MAV_CMD_AIRFRAME_CONFIGURATION: {
+            // Param 1: Select which gear, not used in ArduPilot
+            // Param 2: 0 = Deploy, 1 = Retract
+            // For safety, anything other than 1 will deploy
+            switch ((uint8_t)packet.param2) {
+                case 1:
+                    copter.landinggear.set_position(AP_LandingGear::LandingGear_Retract);
+                    result = MAV_RESULT_ACCEPTED;
+                    break;
+                default:
+                    copter.landinggear.set_position(AP_LandingGear::LandingGear_Deploy);
+                    result = MAV_RESULT_ACCEPTED;
+                    break;
+            }
+        break;
+        }
 
         /* Solo user presses Fly button */
         case MAV_CMD_SOLO_BTN_FLY_CLICK: {
@@ -1704,4 +1734,14 @@ bool GCS_MAVLINK_Copter::set_mode(const uint8_t mode)
     }
 #endif
     return copter.set_mode((control_mode_t)mode, MODE_REASON_GCS_COMMAND);
+}
+
+float GCS_MAVLINK_Copter::vfr_hud_alt() const
+{
+    if (copter.g2.dev_options.get() & DevOptionVFR_HUDRelativeAlt) {
+        // compatability option for older mavlink-aware devices that
+        // assume Copter returns a relative altitude in VFR_HUD.alt
+        return copter.current_loc.alt / 100.0f;
+    }
+    return GCS_MAVLINK::vfr_hud_alt();
 }

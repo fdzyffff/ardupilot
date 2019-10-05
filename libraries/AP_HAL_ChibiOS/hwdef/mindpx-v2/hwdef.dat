@@ -29,8 +29,8 @@ FLASH_RESERVE_START_KB 16
 FLASH_RESERVE_END_KB 0
 
 # serial port for stdout
-STDOUT_SERIAL SD7
-STDOUT_BAUDRATE 57600
+#STDOUT_SERIAL SD7
+#STDOUT_BAUDRATE 57600
 
 # order of I2C buses
 I2C_ORDER I2C1 I2C2
@@ -172,6 +172,7 @@ SPIDEV radio      SPI2  DEVID6 NRF_CS       MODE3   2*MHZ  2*MHZ
 define HAL_CHIBIOS_ARCH_MINDPXV2 1
 
 define HAL_BOARD_LOG_DIRECTORY "/APM/LOGS"
+define HAL_BOARD_TERRAIN_DIRECTORY "/APM/TERRAIN"
 
 define HAL_STORAGE_SIZE 16384
 
@@ -180,6 +181,9 @@ define HAL_WITH_RAMTRON 1
 
 # fallback to flash storage
 define STORAGE_FLASH_PAGE 22
+
+# allow to have have a dedicated safety switch pin
+define HAL_HAVE_SAFETY_SWITCH 1
 
 # enable FAT filesystem
 define HAL_OS_FATFS_IO 1

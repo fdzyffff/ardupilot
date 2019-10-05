@@ -1469,8 +1469,8 @@ void GCS_MAVLINK::send_opticalflow(const OpticalFlow &optflow)
         0, // sensor id is zero
         flowRate.x,
         flowRate.y,
-        bodyRate.x,
-        bodyRate.y,
+        flowRate.x - bodyRate.x,
+        flowRate.y - bodyRate.y,
         optflow.quality(),
         hagl,  // ground distance (in meters) set to zero
         flowRate.x,
@@ -1751,6 +1751,11 @@ float GCS_MAVLINK::vfr_hud_climbrate() const
     return -vfr_hud_velned.z;
 }
 
+float GCS_MAVLINK::vfr_hud_alt() const
+{
+    return global_position_current_loc.alt * 0.01f; // cm -> m
+}
+
 void GCS_MAVLINK::send_vfr_hud()
 {
     AP_AHRS &ahrs = AP::ahrs();
@@ -1765,7 +1770,7 @@ void GCS_MAVLINK::send_vfr_hud()
         ahrs.groundspeed(),
         (ahrs.yaw_sensor / 100) % 360,
         vfr_hud_throttle(),
-        global_position_current_loc.alt * 0.01f, // cm -> m
+        vfr_hud_alt(),
         vfr_hud_climbrate());
 }
 
@@ -1779,6 +1784,24 @@ void GCS_MAVLINK::send_vfr_hud()
  */
 MAV_RESULT GCS_MAVLINK::handle_preflight_reboot(const mavlink_command_long_t &packet, bool disable_overrides)
 {
+    if (is_equal(packet.param1, 42.0f) &&
+        is_equal(packet.param2, 24.0f) &&
+        is_equal(packet.param3, 71.0f) &&
+        is_equal(packet.param4, 93.0f)) {
+        // this is a magic sequence to force the main loop to
+        // lockup. This is for testing the stm32 watchdog
+        // functionality
+        while (true) {
+            send_text(MAV_SEVERITY_WARNING,"entering lockup");
+            hal.scheduler->delay(250);
+        }
+    }
+
+    if (hal.util->get_soft_armed()) {
+        // refuse reboot when armed
+        return MAV_RESULT_FAILED;
+    }
+    
     if (is_equal(packet.param1,1.0f) || is_equal(packet.param1,3.0f)) {
         if (disable_overrides) {
 #if CONFIG_HAL_BOARD == HAL_BOARD_PX4 || CONFIG_HAL_BOARD == HAL_BOARD_VRBRAIN
@@ -1798,7 +1821,7 @@ MAV_RESULT GCS_MAVLINK::handle_preflight_reboot(const mavlink_command_long_t &pa
 #endif
         }
 
-        // force safety on 
+        // force safety on
         hal.rcout->force_safety_on();
         hal.rcout->force_safety_no_wait();
         hal.scheduler->delay(200);

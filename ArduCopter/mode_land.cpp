@@ -35,6 +35,9 @@ bool Copter::ModeLand::init(bool ignore_checks)
     // reset flag indicating if pilot has applied roll or pitch inputs during landing
     ap.land_repo_active = false;
 
+    // initialise yaw
+    auto_yaw.set_mode(AUTO_YAW_HOLD);
+
     return true;
 }
 
@@ -57,6 +60,7 @@ void Copter::ModeLand::gps_run()
     // if not auto armed or landed or motor interlock not enabled set throttle to zero and exit immediately
     if (!motors->armed() || !ap.auto_armed || ap.land_complete || !motors->get_interlock()) {
         zero_throttle_and_relax_ac();
+        loiter_nav->clear_pilot_desired_acceleration();
         loiter_nav->init_target();
 
         // disarm when the landing detector says we've landed
@@ -104,6 +108,9 @@ void Copter::ModeLand::nogps_run()
 
         // get pilot's desired yaw rate
         target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
+        if (!is_zero(target_yaw_rate)) {
+            auto_yaw.set_mode(AUTO_YAW_HOLD);
+        }
     }
 
     // if not auto armed or landed or motor interlock not enabled set throttle to zero and exit immediately

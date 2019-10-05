@@ -20,6 +20,7 @@
 #include <AP_HAL/utility/RingBuffer.h>
 #include "GPIO.h"
 #include "hwdef/common/stm32_util.h"
+#include "hwdef/common/watchdog.h"
 
 #if HAL_USE_PWM == TRUE
 
@@ -805,7 +806,9 @@ void RCOutput::dma_allocate(Shared_DMA *ctx)
     for (uint8_t i = 0; i < NUM_GROUPS; i++ ) {
         pwm_group &group = pwm_group_list[i];
         if (group.dma_handle == ctx) {
+            chSysLock();
             dmaStreamAllocate(group.dma, 10, dma_irq_callback, &group);
+            chSysUnlock();
         }
     }
 }
@@ -818,7 +821,9 @@ void RCOutput::dma_deallocate(Shared_DMA *ctx)
     for (uint8_t i = 0; i < NUM_GROUPS; i++ ) {
         pwm_group &group = pwm_group_list[i];
         if (group.dma_handle == ctx) {
+            chSysLock();
             dmaStreamRelease(group.dma);
+            chSysUnlock();
         }
     }
 }
@@ -1326,9 +1331,14 @@ AP_HAL::Util::safety_state RCOutput::_safety_switch_state(void)
 {
 #if HAL_WITH_IO_MCU
     if (AP_BoardConfig::io_enabled()) {
-        return iomcu.get_safety_switch_state();
+        safety_state = iomcu.get_safety_switch_state();
     }
 #endif
+    if (safety_state == AP_HAL::Util::SAFETY_ARMED) {
+        stm32_set_backup_safety_state(false);
+    } else if (safety_state == AP_HAL::Util::SAFETY_DISARMED) {
+        stm32_set_backup_safety_state(true);
+    }
     return safety_state;
 }
 
@@ -1411,11 +1421,11 @@ void RCOutput::safety_update(void)
         safety_pressed = false;
     }
     if (safety_state==AP_HAL::Util::SAFETY_DISARMED &&
-        !(safety_options & AP_BoardConfig::BOARD_SAFETY_OPTION_BUTTON_ACTIVE_SAFETY_ON)) {
+        !(safety_options & AP_BoardConfig::BOARD_SAFETY_OPTION_BUTTON_ACTIVE_SAFETY_OFF)) {
         safety_pressed = false;        
     }
     if (safety_state==AP_HAL::Util::SAFETY_ARMED &&
-        !(safety_options & AP_BoardConfig::BOARD_SAFETY_OPTION_BUTTON_ACTIVE_SAFETY_OFF)) {
+        !(safety_options & AP_BoardConfig::BOARD_SAFETY_OPTION_BUTTON_ACTIVE_SAFETY_ON)) {
         safety_pressed = false;        
     }
     if (safety_pressed) {
