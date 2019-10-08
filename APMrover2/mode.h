@@ -523,6 +523,8 @@ protected:
     bool _enter() override;
 
     bool sent_notification; // used to send one time notification to ground station
+    bool _loitering;        // true if loitering at end of RTL
+
 };
 
 class ModeSmartRTL : public Mode
@@ -560,8 +562,10 @@ protected:
 
     bool _enter() override;
     bool _load_point;
+    bool _loitering;        // true if loitering at end of SRTL
 };
 
+   
 
 class ModeSteering : public Mode
 {
@@ -630,6 +634,7 @@ public:
 protected:
 
     bool _enter() override;
+    void _exit() override;
 };
 
 class ModeSimple : public Mode
