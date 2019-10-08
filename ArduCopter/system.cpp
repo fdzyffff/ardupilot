@@ -285,6 +285,7 @@ void Copter::init_ardupilot()
 
     // default enable RC override
     copter.ap.rc_override_enable = true;
+    copter.infoZQCC.init();
     
     hal.console->printf("\nReady to FLY ");
 

@@ -24,6 +24,7 @@ Copter::Mode::Mode(void) :
     channel_yaw(copter.channel_yaw),
     G_Dt(copter.G_Dt),
     ap(copter.ap),
+    infoZQCC(copter.infoZQCC),
     ekfGndSpdLimit(copter.ekfGndSpdLimit),
 #if FRAME_CONFIG == HELI_FRAME
     heli_flags(copter.heli_flags),
@@ -152,6 +153,12 @@ Copter::Mode *Copter::mode_from_mode_num(const uint8_t mode)
 #if MODE_FOLLOW_ENABLED == ENABLED
         case FOLLOW:
             ret = &mode_follow;
+            break;
+#endif
+
+#if MODE_ZQCC_ENABLED == ENABLED
+        case ZQCC:
+            ret = &mode_zqcc;
             break;
 #endif
 

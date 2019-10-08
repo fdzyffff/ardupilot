@@ -349,6 +349,10 @@
 # define MODE_THROW_ENABLED ENABLED
 #endif
 
+#ifndef MODE_ZQCC_ENABLED
+# define MODE_ZQCC_ENABLED ENABLED
+#endif
+
 //////////////////////////////////////////////////////////////////////////////
 // Beacon support - support for local positioning systems
 #ifndef BEACON_ENABLED

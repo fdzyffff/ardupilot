@@ -986,6 +986,13 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_SUBGROUPINFO(follow, "FOLL", 27, ParametersG2, AP_Follow),
 #endif
 
+    AP_GROUPINFO("ZQ_PRINT", 28, ParametersG2, zqcc_print, 1),
+    AP_GROUPINFO("ZQ_TIMEOUT", 29, ParametersG2, zqcc_timeout, 0),
+    AP_GROUPINFO("ZQ_PITCH", 30, ParametersG2, zqcc_pitch, 3000.f),
+    AP_GROUPINFO("ZQ_ROLL_F", 31, ParametersG2, zqcc_roll_factor, 1.0f),
+    AP_GROUPINFO("ZQ_LEN", 32, ParametersG2, zqcc_sensor_length, 1000),
+    AP_GROUPINFO("ZQ_ANG", 33, ParametersG2, zqcc_sensor_angle, 110),
+
     AP_GROUPEND
 };
 

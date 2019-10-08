@@ -595,6 +595,9 @@ private:
     // setup the var_info table
     AP_Param param_loader;
 
+#include "zqccinfo.h"
+    infoZQCC_class infoZQCC;
+
 #if FRAME_CONFIG == HELI_FRAME
     // Mode filter to reject RC Input glitches.  Filter size is 5, and it draws the 4th element, so it can reject 3 low glitches,
     // and 1 high glitch.  This is because any "off" glitches can be highly problematic for a helicopter running an ESC
@@ -1005,6 +1008,9 @@ private:
 #endif
 #if MODE_SMARTRTL_ENABLED == ENABLED
     ModeSmartRTL mode_smartrtl;
+#endif
+#if MODE_ZQCC_ENABLED == ENABLED
+    ModeZQCC mode_zqcc;
 #endif
 #if !HAL_MINIMIZE_FEATURES && OPTFLOW == ENABLED
     ModeFlowHold mode_flowhold;

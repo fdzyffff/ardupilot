@@ -586,6 +586,12 @@ public:
     // follow
     AP_Follow follow;
 #endif
+    AP_Int8 zqcc_print;
+    AP_Int32 zqcc_timeout;
+    AP_Float zqcc_pitch;
+    AP_Float zqcc_roll_factor;
+    AP_Float zqcc_sensor_length;
+    AP_Float zqcc_sensor_angle;
 
 };
 

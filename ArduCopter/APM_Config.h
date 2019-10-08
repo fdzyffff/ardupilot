@@ -42,6 +42,7 @@
 //#define MODE_SMARTRTL_ENABLED DISABLED            // disable smartrtl mode support
 //#define MODE_SPORT_ENABLED DISABLED               // disable sport mode support
 //#define MODE_THROW_ENABLED    DISABLED            // disable throw mode support
+//#define MODE_ZQCC_ENABLED     DISABLED            // disable ZQCC mode support
 //#define DEVO_TELEM_ENABLED DISABLED               // disable DEVO telemetry, if you don't use Walkera RX-707 (or newer) receivers
 
 

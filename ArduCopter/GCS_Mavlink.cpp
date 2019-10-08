@@ -808,6 +808,11 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
 
         switch(packet.command) {
 
+        case MAV_CMD_USER_1: {
+            copter.infoZQCC.update(packet.param1, packet.param2);
+            break;
+        }
+
         case MAV_CMD_NAV_TAKEOFF: {
             // param3 : horizontal navigation by pilot acceptable
             // param4 : yaw angle   (not supported)

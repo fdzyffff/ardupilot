@@ -132,6 +132,7 @@ protected:
     RC_Channel *&channel_yaw;
     float &G_Dt;
     ap_t &ap;
+    infoZQCC_class &infoZQCC;
 
     // auto-takeoff support; takeoff state is shared across all mode instances
     class _TakeOff {
@@ -1238,4 +1239,30 @@ protected:
     bool get_wp(Location_Class &loc) override;
 
     uint32_t last_log_ms;   // system time of last time desired velocity was logging
+};
+
+class ModeZQCC : public Mode {
+
+public:
+    // inherit constructor
+    using Copter::Mode::Mode;
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    bool requires_GPS() const override { return false; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(bool from_gcs) const override { return true; };
+    bool is_autopilot() const override { return false; }
+    bool has_user_takeoff(bool must_navigate) const override {
+        return !must_navigate;
+    }
+
+protected:
+
+    const char *name() const override { return "ZuanQuan"; }
+    const char *name4() const override { return "ZQCC"; }
+
+private:
+
 };
