@@ -992,6 +992,7 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("ZQ_ROLL_F", 31, ParametersG2, zqcc_roll_factor, 1.0f),
     AP_GROUPINFO("ZQ_LEN", 32, ParametersG2, zqcc_sensor_length, 1000),
     AP_GROUPINFO("ZQ_ANG", 33, ParametersG2, zqcc_sensor_angle, 110),
+    AP_GROUPINFO("ZQ_CLBR_F", 34, ParametersG2, zqcc_climbrate_factor, 1.0f),
 
     AP_GROUPEND
 };

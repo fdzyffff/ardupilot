@@ -592,6 +592,7 @@ public:
     AP_Float zqcc_roll_factor;
     AP_Float zqcc_sensor_length;
     AP_Float zqcc_sensor_angle;
+    AP_Float zqcc_climbrate_factor;
 
 };
 

@@ -30,6 +30,27 @@ bool Copter::infoZQCC_class::adjust_roll_pitch(float &roll, float &pitch, float 
     return true;
 }
 
+
+bool Copter::infoZQCC_class::adjust_climb_rate(float &target_climb_rate)
+{
+    if (copter.g2.zqcc_pitch <= 0.0f) {
+        return false;
+    }
+    if (copter.g2.zqcc_climbrate_factor < 0.0f) {
+        return false;
+    }
+    if (is_zero(copter.ahrs.cos_pitch())) {
+        return false;
+    }
+    float sensor_angle_rad = copter.g2.zqcc_sensor_angle*(M_PI/180.f);
+    float ratio = _pixel_y*2.0f/copter.g2.zqcc_sensor_length * tanf(sensor_angle_rad/2.0f);
+    float vel_x_estimate;
+    vel_x_estimate = 2000.f * fabsf(copter.ahrs.sin_pitch()/copter.ahrs.cos_pitch() );
+    //vel_x_estimate = vel_x_estimate / sqrt(vel_x_estimate);
+    target_climb_rate = ratio * vel_x_estimate * copter.g2.zqcc_climbrate_factor;
+    return true;
+}
+
 void Copter::infoZQCC_class::update(float pixel_raw_x_in, float pixel_raw_y_in)
 {
     if (pixel_raw_x_in > copter.g2.zqcc_sensor_length || pixel_raw_y_in > copter.g2.zqcc_sensor_length) {

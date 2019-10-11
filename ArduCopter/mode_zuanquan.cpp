@@ -22,7 +22,7 @@ bool Copter::ModeZQCC::init(bool ignore_checks)
 void Copter::ModeZQCC::run()
 {
     if (!infoZQCC.running()) {
-        gcs().send_text(MAV_SEVERITY_CRITICAL,"ZQCC exit");
+        gcs().send_text(MAV_SEVERITY_CRITICAL,"ZQCC err 0");
         set_mode(ALT_HOLD, MODE_REASON_UNKNOWN);
         return;
     }
@@ -139,16 +139,22 @@ void Copter::ModeZQCC::run()
         break;
 
     case ZQCC_Flying:
-        if ( !(is_zero(target_roll) && is_zero(target_roll)) ) {
-            gcs().send_text(MAV_SEVERITY_CRITICAL,"ZQCC exit, interrupted");
+        if ( !(is_zero(target_roll) && is_zero(target_roll) && is_zero(target_climb_rate)) ) {
+            gcs().send_text(MAV_SEVERITY_CRITICAL,"ZQCC exit, err 1");
             set_mode(ALT_HOLD, MODE_REASON_UNKNOWN);
             return;            
         }
         if (!infoZQCC.adjust_roll_pitch(target_roll, target_pitch, attitude_control->get_althold_lean_angle_max())) {
-            gcs().send_text(MAV_SEVERITY_CRITICAL,"ZQCC exit, para error");
+            gcs().send_text(MAV_SEVERITY_CRITICAL,"ZQCC exit, err 2");
             set_mode(ALT_HOLD, MODE_REASON_UNKNOWN);
             return;              
         }
+        if (!infoZQCC.adjust_climb_rate(target_climb_rate)) {
+            gcs().send_text(MAV_SEVERITY_CRITICAL,"ZQCC exit, err 3");
+            set_mode(ALT_HOLD, MODE_REASON_UNKNOWN);
+            return;           
+        }
+        target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
         motors->set_desired_spool_state(AP_Motors::DESIRED_THROTTLE_UNLIMITED);
 
 #if AC_AVOID_ENABLED == ENABLED

@@ -23,6 +23,7 @@ public:
   bool running();
   void update(float pixel_raw_x_in, float pixel_raw_y_in);
   bool adjust_roll_pitch(float &roll, float &pitch, float angle_max);
+  bool adjust_climb_rate(float &target_climb_rate);
 
   infoZQCC_class(void);
 
