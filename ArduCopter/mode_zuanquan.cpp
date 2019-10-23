@@ -13,7 +13,7 @@ bool Copter::ModeZQCC::init(bool ignore_checks)
         pos_control->set_alt_target_to_current_alt();
         pos_control->set_desired_velocity_z(inertial_nav.get_velocity_z());
     }
-
+    infoZQCC.reset_lean();
     return infoZQCC.running();
 }
 
@@ -23,7 +23,7 @@ void Copter::ModeZQCC::run()
 {
     if (!infoZQCC.running()) {
         gcs().send_text(MAV_SEVERITY_CRITICAL,"ZQCC err 0");
-        set_mode(ALT_HOLD, MODE_REASON_UNKNOWN);
+        set_mode(LAND, MODE_REASON_UNKNOWN);
         return;
     }
     ZQCCModeState zqcc_state;
@@ -81,6 +81,18 @@ void Copter::ModeZQCC::run()
         break;
 
     case ZQCC_Takeoff:
+        if ( !(is_zero(target_roll) && is_zero(target_roll) && is_zero(target_yaw_rate) ) ) {
+            gcs().send_text(MAV_SEVERITY_CRITICAL,"ZQCC exit, err 01");
+            set_mode(LAND, MODE_REASON_UNKNOWN);
+            return;            
+        }
+        if (!infoZQCC.adjust_roll_pitch_yaw(target_roll, target_pitch, attitude_control->get_althold_lean_angle_max(), target_yaw_rate)) {
+            gcs().send_text(MAV_SEVERITY_CRITICAL,"ZQCC exit, err 02");
+            set_mode(LAND, MODE_REASON_UNKNOWN);
+            return;              
+        }
+        target_roll = 0.0f;
+        target_pitch = 0.0f;
 #if FRAME_CONFIG == HELI_FRAME    
         if (heli_flags.init_targets_on_arming) {
             heli_flags.init_targets_on_arming=false;
@@ -91,6 +103,7 @@ void Copter::ModeZQCC::run()
 
         // initiate take-off
         if (!takeoff.running()) {
+            gcs().send_text(MAV_SEVERITY_CRITICAL,"ZQCC tak start running");
             takeoff.start(constrain_float(g.pilot_takeoff_alt,0.0f,1000.0f));
             // indicate we are taking off
             set_land_complete(false);
@@ -139,22 +152,23 @@ void Copter::ModeZQCC::run()
         break;
 
     case ZQCC_Flying:
-        if ( !(is_zero(target_roll) && is_zero(target_roll) && is_zero(target_climb_rate)) ) {
+        if ( !(is_zero(target_roll) && is_zero(target_roll) && is_zero(target_yaw_rate) ) ) {
             gcs().send_text(MAV_SEVERITY_CRITICAL,"ZQCC exit, err 1");
-            set_mode(ALT_HOLD, MODE_REASON_UNKNOWN);
+            set_mode(LAND, MODE_REASON_UNKNOWN);
             return;            
         }
-        if (!infoZQCC.adjust_roll_pitch(target_roll, target_pitch, attitude_control->get_althold_lean_angle_max())) {
+        if (!infoZQCC.adjust_roll_pitch_yaw(target_roll, target_pitch, attitude_control->get_althold_lean_angle_max(), target_yaw_rate)) {
             gcs().send_text(MAV_SEVERITY_CRITICAL,"ZQCC exit, err 2");
-            set_mode(ALT_HOLD, MODE_REASON_UNKNOWN);
+            set_mode(LAND, MODE_REASON_UNKNOWN);
             return;              
         }
         if (!infoZQCC.adjust_climb_rate(target_climb_rate)) {
             gcs().send_text(MAV_SEVERITY_CRITICAL,"ZQCC exit, err 3");
-            set_mode(ALT_HOLD, MODE_REASON_UNKNOWN);
+            set_mode(LAND, MODE_REASON_UNKNOWN);
             return;           
         }
         target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
+        infoZQCC.update_sonar_alt();
         motors->set_desired_spool_state(AP_Motors::DESIRED_THROTTLE_UNLIMITED);
 
 #if AC_AVOID_ENABLED == ENABLED
@@ -174,6 +188,7 @@ void Copter::ModeZQCC::run()
         // call position controller
         pos_control->set_alt_target_from_climb_rate_ff(target_climb_rate, G_Dt, false);
         pos_control->update_z_controller();
+        infoZQCC.accumulate_lean(target_roll, target_pitch, G_Dt);
         break;
     }
 }

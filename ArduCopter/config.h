@@ -109,7 +109,7 @@
 #endif
 
 #ifndef RANGEFINDER_GLITCH_ALT_CM
- # define RANGEFINDER_GLITCH_ALT_CM  200      // amount of rangefinder change to be considered a glitch
+ # define RANGEFINDER_GLITCH_ALT_CM  600      // amount of rangefinder change to be considered a glitch
 #endif
 
 #ifndef RANGEFINDER_GLITCH_NUM_SAMPLES
@@ -417,7 +417,7 @@
  # define LAND_WITH_DELAY_MS        4000    // default delay (in milliseconds) when a land-with-delay is triggered during a failsafe event
 #endif
 #ifndef LAND_CANCEL_TRIGGER_THR
- # define LAND_CANCEL_TRIGGER_THR   700     // land is cancelled by input throttle above 700
+ # define LAND_CANCEL_TRIGGER_THR   800     // land is cancelled by input throttle above 700
 #endif
 #ifndef LAND_RANGEFINDER_MIN_ALT_CM
 #define LAND_RANGEFINDER_MIN_ALT_CM 200

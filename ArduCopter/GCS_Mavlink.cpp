@@ -809,7 +809,10 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
         switch(packet.command) {
 
         case MAV_CMD_USER_1: {
-            copter.infoZQCC.update(packet.param1, packet.param2);
+            if (int32_t(packet.param3) != 0) {
+                copter.infoZQCC.update(packet.param1, packet.param2, int32_t(packet.param4) );
+            }
+            //copter.send_zuanquan();
             break;
         }
 

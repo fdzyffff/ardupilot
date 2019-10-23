@@ -104,6 +104,7 @@ void Copter::ModeLand::nogps_run()
 
             // get pilot desired lean angles
             get_pilot_desired_lean_angles(target_roll, target_pitch, copter.aparm.angle_max, attitude_control->get_althold_lean_angle_max());
+            infoZQCC.release_lean(target_roll, target_pitch, G_Dt);
         }
 
         // get pilot's desired yaw rate

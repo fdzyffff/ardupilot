@@ -573,4 +573,24 @@ void Copter::update_altitude()
     }
 }
 
+void Copter::send_zuanquan()
+{
+    for (uint8_t i=0; i < gcs().num_gcs(); i++) {
+        if (gcs().chan(i).initialised) {
+            // request air pressure
+            mavlink_channel_t chan = (mavlink_channel_t)(i- MAVLINK_COMM_0);
+            if (HAVE_PAYLOAD_SPACE(chan, COMMAND_LONG)) {
+                mavlink_msg_command_long_send(
+                        chan,
+                        0,
+                        0,
+                        MAV_CMD_USER_1,
+                        0,
+                        100,
+                        100,
+                        0, 0, 0, 0, 0);
+            }
+        }
+    }
+}
 AP_HAL_MAIN_CALLBACKS(&copter);

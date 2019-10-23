@@ -593,6 +593,10 @@ public:
     AP_Float zqcc_sensor_length;
     AP_Float zqcc_sensor_angle;
     AP_Float zqcc_climbrate_factor;
+    AP_Float zqcc_yawrate_factor;
+    AP_Int8 zqcc_use_alt;
+    AP_Int32 zqcc_alt_update_delay;
+    AP_Float zqcc_brake_factor;
 
 };
 

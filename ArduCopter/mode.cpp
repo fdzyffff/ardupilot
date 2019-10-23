@@ -314,6 +314,9 @@ void Copter::exit_mode(Copter::Mode *&old_flightmode,
         }
     }
 #endif //HELI_FRAME
+    if (old_flightmode != &mode_zqcc) {
+        infoZQCC.reset_lean();
+    }
 }
 
 // notify_flight_mode - sets notify object based on current flight mode.  Only used for OreoLED notify device

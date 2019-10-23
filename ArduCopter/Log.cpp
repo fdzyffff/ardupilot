@@ -486,6 +486,33 @@ void Copter::Log_Write_GuidedTarget(uint8_t target_type, const Vector3f& pos_tar
     DataFlash.WriteBlock(&pkt, sizeof(pkt));
 }
 
+// Zuanquan info
+struct PACKED log_ZQCCINFO {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    uint8_t running;
+    float raw_target_x;
+    float raw_target_y;
+    float ret_target_x;
+    float ret_target_y;
+    float delta_climb_rate;
+};
+
+// Write a Zuanquan
+void Copter::Log_Write_ZQCCINFO()
+{
+    struct log_ZQCCINFO pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_ZQCCINFO_MSG),
+        time_us         : AP_HAL::micros64(),
+        running         : (uint8_t)infoZQCC.running(),
+        raw_target_x    : infoZQCC.get_raw_x(),
+        raw_target_y    : infoZQCC.get_raw_y(),
+        ret_target_x    : infoZQCC.get_x(),
+        ret_target_y    : infoZQCC.get_y(),
+        delta_climb_rate: infoZQCC.get_delta_climb_rate()
+    };
+    DataFlash.WriteBlock(&pkt, sizeof(pkt));
+}
 // type and unit information can be found in
 // libraries/DataFlash/Logstructure.h; search for "log_Units" for
 // units and "Format characters" for field type information
@@ -531,6 +558,8 @@ const struct LogStructure Copter::log_structure[] = {
 #endif
     { LOG_GUIDEDTARGET_MSG, sizeof(log_GuidedTarget),
       "GUID",  "QBffffff",    "TimeUS,Type,pX,pY,pZ,vX,vY,vZ", "s-mmmnnn", "F-000000" },
+    { LOG_ZQCCINFO_MSG, sizeof(log_ZQCCINFO),
+      "ZQCC",  "QBfffff",    "TimeUS,Running,rawX,rawY,retX,retY,DClbmt", "s-----n", "F-00000" },
 };
 
 void Copter::Log_Write_Vehicle_Startup_Messages()
@@ -570,6 +599,7 @@ void Copter::Log_Sensor_Health() {}
 void Copter::Log_Write_Precland() {}
 void Copter::Log_Write_GuidedTarget(uint8_t target_type, const Vector3f& pos_target, const Vector3f& vel_target) {}
 void Copter::Log_Write_Vehicle_Startup_Messages() {}
+void Copter::Log_Write_ZQCCINFO() {}
 
 #if FRAME_CONFIG == HELI_FRAME
 void Copter::Log_Write_Heli() {}
