@@ -94,10 +94,10 @@ void Copter::infoZQCC_class::update_sonar_alt()
 
 void Copter::infoZQCC_class::accumulate_lean(float roll, float pitch, float g_Dt)
 {
-    _acc_roll += roll * g_Dt;
-    _acc_pitch += pitch * g_Dt;
-    float lim_roll = MAX(1000.f , fabsf(2.0f * roll) );
-    float lim_pitch = MAX(1000.f , fabsf(2.0f * pitch) );
+    _acc_roll += roll * g_Dt * copter.g2.zqcc_brake_factor;
+    _acc_pitch += pitch * g_Dt * copter.g2.zqcc_brake_factor;
+    float lim_roll = MAX(1000.f , fabsf(2.0f * roll * copter.g2.zqcc_brake_factor) );
+    float lim_pitch = MAX(1000.f , fabsf(2.0f * pitch * copter.g2.zqcc_brake_factor) );
     _acc_roll = constrain_float(_acc_roll, -lim_roll, lim_roll);
     _acc_pitch = constrain_float(_acc_pitch, -lim_pitch, lim_pitch);
     _lean_running = true;
@@ -108,8 +108,8 @@ void Copter::infoZQCC_class::release_lean(float &roll, float &pitch, float g_Dt)
     if( is_zero(roll) && is_zero(pitch) && _lean_running){
         roll = -constrain_float(_acc_roll, -2000.f, 2000.f);
         pitch = -constrain_float(_acc_pitch, -2000.f, 2000.f);
-        _acc_roll += roll * g_Dt * copter.g2.zqcc_brake_factor;
-        _acc_pitch += pitch * g_Dt* copter.g2.zqcc_brake_factor;
+        _acc_roll += roll * g_Dt;
+        _acc_pitch += pitch * g_Dt;
         if (fabsf(roll) < 1000.f && fabsf(pitch) < 1000.f) {
             reset_lean();
         }
