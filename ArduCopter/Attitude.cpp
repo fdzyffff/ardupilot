@@ -219,6 +219,7 @@ float Copter::get_surface_tracking_climb_rate(int16_t target_rate, float current
     velocity_correction = distance_error * g.rangefinder_gain;
     velocity_correction = constrain_float(velocity_correction, -THR_SURFACE_TRACKING_VELZ_MAX, THR_SURFACE_TRACKING_VELZ_MAX);
 
+    //gcs().send_text(MAV_SEVERITY_INFO, "### %.2f, %.2f, %.2f, %.2f)",(float)target_rangefinder_alt, (float)rangefinder_state.alt_cm, (float)current_alt_target, (float)current_alt);
     // return combined pilot climb rate + rate to correct rangefinder alt error
     return (target_rate + velocity_correction);
 #else

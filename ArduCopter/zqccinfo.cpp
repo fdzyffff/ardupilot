@@ -37,9 +37,6 @@ bool Copter::infoZQCC_class::adjust_climb_rate(float &target_climb_rate)
     if (copter.g2.zqcc_pitch <= 0.0f) {
         return false;
     }
-    if (copter.g2.zqcc_climbrate_factor < 0.0f) {
-        return false;
-    }
     if (is_zero(copter.ahrs.cos_pitch())) {
         return false;
     }
@@ -49,6 +46,9 @@ bool Copter::infoZQCC_class::adjust_climb_rate(float &target_climb_rate)
     vel_x_estimate = 2000.f * fabsf(copter.ahrs.sin_pitch()/copter.ahrs.cos_pitch() );
     //vel_x_estimate = vel_x_estimate / sqrt(vel_x_estimate);
     target_climb_rate = ratio * vel_x_estimate * copter.g2.zqcc_climbrate_factor;
+    if (copter.g2.zqcc_use_alt > 0) {
+        target_climb_rate = 0.0f;
+    }
     _delta_climb_rate = target_climb_rate - raw_climb_rate;
     return true;
 }
@@ -64,7 +64,7 @@ void Copter::infoZQCC_class::update(float pixel_raw_x_in, float pixel_raw_y_in, 
     _pixel_x =  _pixel_raw_x * copter.ahrs.cos_roll() + _pixel_raw_y * copter.ahrs.sin_roll();
     _pixel_y = -_pixel_raw_x * copter.ahrs.sin_roll() + _pixel_raw_y * copter.ahrs.cos_roll();
     last_update = millis();
-    if (copter.g2.zqcc_print) {
+    if (copter.g2.zqcc_print & 1) {
         copter.gcs().send_text(MAV_SEVERITY_INFO, "Raw(%.2f, %.2f), Ret(%.2f, %.2f)", _pixel_raw_x, _pixel_raw_y, _pixel_x, _pixel_y);
     }
     copter.Log_Write_ZQCCINFO();
@@ -73,7 +73,7 @@ void Copter::infoZQCC_class::update(float pixel_raw_x_in, float pixel_raw_y_in, 
     return;
 }
 
-void Copter::infoZQCC_class::update_sonar_alt()
+void Copter::infoZQCC_class::update_sonar_alt(float &target_climb_rate)
 {
     if (copter.g2.zqcc_use_alt < 0) {
         return;
@@ -84,11 +84,17 @@ void Copter::infoZQCC_class::update_sonar_alt()
         _sonar_target_alt_update_ms = millis();
         copter.gcs().send_text(MAV_SEVERITY_INFO, "new alt in : (%.2f %d)", _sonar_target_alt_cm, copter.g2.zqcc_alt_update_delay);
     }
-    if (_alt_avaliable && (millis() - _sonar_target_alt_update_ms > (uint32_t)copter.g2.zqcc_alt_update_delay)) {
-        copter.target_rangefinder_alt = _sonar_target_alt_cm;
-        _alt_avaliable = false;       
-        copter.gcs().send_text(MAV_SEVERITY_INFO, "new alt updated : (%.2f)", copter.target_rangefinder_alt);
- 
+    if (_alt_avaliable)
+    {
+        if (millis() - _sonar_target_alt_update_ms > (uint32_t)copter.g2.zqcc_alt_update_delay) {
+            _alt_avaliable = false;       
+            if (copter.g2.zqcc_use_alt > 0) {
+                copter.target_rangefinder_alt = _sonar_target_alt_cm;
+                copter.gcs().send_text(MAV_SEVERITY_INFO, "new alt updated : (%.2f)", copter.target_rangefinder_alt);
+            }
+        } else {
+            target_climb_rate = 0.0f;
+        }
     }
 }
 

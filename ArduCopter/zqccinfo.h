@@ -24,7 +24,7 @@ public:
   void update(float pixel_raw_x_in, float pixel_raw_y_in, float alt_cm_in);
   bool adjust_roll_pitch_yaw(float &roll, float &pitch, float angle_max, float &yaw_rate);
   bool adjust_climb_rate(float &target_climb_rate);
-  void update_sonar_alt();
+  void update_sonar_alt(float &target_climb_rate);
   void accumulate_lean(float roll, float pitch, float g_Dt);
   void release_lean(float &roll, float &pitch, float g_Dt);
   void reset_lean();

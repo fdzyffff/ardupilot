@@ -168,7 +168,7 @@ void Copter::ModeZQCC::run()
             return;           
         }
         target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
-        infoZQCC.update_sonar_alt();
+        infoZQCC.update_sonar_alt(target_climb_rate);
         motors->set_desired_spool_state(AP_Motors::DESIRED_THROTTLE_UNLIMITED);
 
 #if AC_AVOID_ENABLED == ENABLED
