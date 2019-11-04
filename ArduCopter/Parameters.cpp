@@ -997,6 +997,7 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("ZQ_USE_H", 36, ParametersG2, zqcc_use_alt, 0),
     AP_GROUPINFO("ZQ_H_DELAY", 37, ParametersG2, zqcc_alt_update_delay, 1500),
     AP_GROUPINFO("ZQ_BRAKE_F", 38, ParametersG2, zqcc_brake_factor, 1.0f),
+    AP_GROUPINFO("ZQ_ROLL_COMP", 39, ParametersG2, zqcc_roll_comp, 0.0f),
 
 
     AP_GROUPEND

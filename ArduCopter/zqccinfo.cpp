@@ -1,7 +1,5 @@
 #include "Copter.h"
 
-//Copter::infoZQCC_class Copter::infoZQCC;
-
 Copter::infoZQCC_class::infoZQCC_class(void) {};
 
 bool Copter::infoZQCC_class::adjust_roll_pitch_yaw(float &roll, float &pitch, float angle_max, float &yaw_rate)
@@ -20,7 +18,7 @@ bool Copter::infoZQCC_class::adjust_roll_pitch_yaw(float &roll, float &pitch, fl
     }
 
     float sensor_angle_rad = copter.g2.zqcc_sensor_angle*(M_PI/180.f);
-    Vector2f rp_out(_pixel_x*2.0f/copter.g2.zqcc_sensor_length * tanf(sensor_angle_rad/2.0f) * copter.g2.zqcc_roll_factor * copter.g2.zqcc_pitch, -copter.g2.zqcc_pitch);
+    Vector2f rp_out(_pixel_x*2.0f/copter.g2.zqcc_sensor_length * tanf(sensor_angle_rad/2.0f) * copter.g2.zqcc_roll_factor * copter.g2.zqcc_pitch + copter.g2.zqcc_roll_comp, -copter.g2.zqcc_pitch);
     float rp_length = rp_out.length();
     if (rp_length > angle_max) {
         rp_out *= (angle_max / rp_length);

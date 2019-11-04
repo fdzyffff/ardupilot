@@ -812,7 +812,7 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
             if (int32_t(packet.param3) != 0) {
                 copter.infoZQCC.update(packet.param1, packet.param2, int32_t(packet.param4) );
                 if (copter.g2.zqcc_print & 2) {
-                    copter.gcs().send_text(MAV_SEVERITY_INFO, "p1: %.2f, p2: %.2f, p3: %.2f, p4: %.2f", packet.param1, packet.param2, packet.param3, packet.param4);
+                    copter.gcs().send_text(MAV_SEVERITY_INFO, "%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f", packet.param1, packet.param2, packet.param3, packet.param4, packet.param5, packet.param6, packet.param7);
                 }
             }
             //copter.send_zuanquan();

@@ -597,6 +597,7 @@ public:
     AP_Int8 zqcc_use_alt;
     AP_Int32 zqcc_alt_update_delay;
     AP_Float zqcc_brake_factor;
+    AP_Float zqcc_roll_comp;
 
 };
 
