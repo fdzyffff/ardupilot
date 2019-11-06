@@ -33,6 +33,8 @@ public:
   float get_x() {return _pixel_x;}
   float get_y() {return _pixel_y;}
   float get_delta_climb_rate() {return _delta_climb_rate;}
+  float get_alt_in() {return _alt_cm_in;}
+  bool get_alt_avaliable() {return _alt_avaliable;}
 
   infoZQCC_class(void);
 

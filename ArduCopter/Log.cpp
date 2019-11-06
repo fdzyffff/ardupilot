@@ -496,6 +496,8 @@ struct PACKED log_ZQCCINFO {
     float ret_target_x;
     float ret_target_y;
     float delta_climb_rate;
+    float alt_in;
+    uint8_t alt_avaliable;
 };
 
 // Write a Zuanquan
@@ -509,7 +511,9 @@ void Copter::Log_Write_ZQCCINFO()
         raw_target_y    : infoZQCC.get_raw_y(),
         ret_target_x    : infoZQCC.get_x(),
         ret_target_y    : infoZQCC.get_y(),
-        delta_climb_rate: infoZQCC.get_delta_climb_rate()
+        delta_climb_rate: infoZQCC.get_delta_climb_rate(),
+        alt_in          : infoZQCC.get_alt_in(),
+        alt_avaliable   : infoZQCC.get_alt_avaliable()
     };
     DataFlash.WriteBlock(&pkt, sizeof(pkt));
 }
@@ -559,7 +563,7 @@ const struct LogStructure Copter::log_structure[] = {
     { LOG_GUIDEDTARGET_MSG, sizeof(log_GuidedTarget),
       "GUID",  "QBffffff",    "TimeUS,Type,pX,pY,pZ,vX,vY,vZ", "s-mmmnnn", "F-000000" },
     { LOG_ZQCCINFO_MSG, sizeof(log_ZQCCINFO),
-      "ZQCC",  "QBfffff",    "TimeUS,Running,rawX,rawY,retX,retY,DClbmt", "s-----n", "F-00000" },
+      "ZQCC",  "QBffffffB",    "TimeUS,Running,rawX,rawY,retX,retY,DClbmt,Hin,Hnew", "s-----nm-", "F-00000B-" },
 };
 
 void Copter::Log_Write_Vehicle_Startup_Messages()
