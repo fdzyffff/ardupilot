@@ -81,7 +81,7 @@ void Copter::ModeZQCC::run()
         break;
 
     case ZQCC_Takeoff:
-        if ( !(is_zero(target_roll) && is_zero(target_roll) && is_zero(target_yaw_rate) ) ) {
+        if ( !(is_zero(target_roll) && is_zero(target_pitch) && is_zero(target_yaw_rate) ) ) {
             gcs().send_text(MAV_SEVERITY_CRITICAL,"ZQCC exit, err 01");
             set_mode(LAND, MODE_REASON_UNKNOWN);
             return;            
@@ -124,6 +124,10 @@ void Copter::ModeZQCC::run()
         pos_control->set_alt_target_from_climb_rate_ff(target_climb_rate, G_Dt, false);
         pos_control->add_takeoff_climb_rate(takeoff_climb_rate, G_Dt);
         pos_control->update_z_controller();
+
+        if (float(inertial_nav.get_altitude()) > constrain_float(g.pilot_takeoff_alt,0.0f,1000.0f) &&  float(copter.rangefinder_state.alt_cm)> constrain_float(g.pilot_takeoff_alt,0.0f,1000.0f)) {
+            takeoff.stop();
+        }
         break;
 
     case ZQCC_Landed:
@@ -152,7 +156,7 @@ void Copter::ModeZQCC::run()
         break;
 
     case ZQCC_Flying:
-        if ( !(is_zero(target_roll) && is_zero(target_roll) && is_zero(target_yaw_rate) ) ) {
+        if ( !(is_zero(target_roll) && is_zero(target_pitch) && is_zero(target_yaw_rate) ) ) {
             gcs().send_text(MAV_SEVERITY_CRITICAL,"ZQCC exit, err 1");
             set_mode(LAND, MODE_REASON_UNKNOWN);
             return;            

@@ -114,7 +114,7 @@ void Copter::infoZQCC_class::release_lean(float &roll, float &pitch, float g_Dt)
         pitch = -constrain_float(_acc_pitch, -2000.f, 2000.f);
         _acc_roll += roll * g_Dt;
         _acc_pitch += pitch * g_Dt;
-        if (fabsf(roll) < 1000.f && fabsf(pitch) < 1000.f) {
+        if (fabsf(_acc_roll) < 1000.f && fabsf(_acc_pitch) < 1000.f) {
             reset_lean();
         }
     } else {
