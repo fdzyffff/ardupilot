@@ -23,11 +23,25 @@ void Copter::crash_check()
         return;
     }
 
+    // exit immediately if in standby
+    if (standby_active) {
+        crash_counter = 0;
+        return;
+    }
+
     // return immediately if we are not in an angle stabilize flight mode or we are flipping
     if (control_mode == Mode::Number::ACRO || control_mode == Mode::Number::FLIP) {
         crash_counter = 0;
         return;
     }
+
+#if MODE_AUTOROTATE_ENABLED == ENABLED
+    //return immediately if in autorotation mode
+    if (control_mode == Mode::Number::AUTOROTATE) {
+        crash_counter = 0;
+        return;
+    }
+#endif
 
     // vehicle not crashed if 1hz filtered acceleration is more than 3m/s (1G on Z-axis has been subtracted)
     if (land_accel_ef_filter.get().length() >= CRASH_CHECK_ACCEL_MAX) {
@@ -53,7 +67,7 @@ void Copter::crash_check()
         // send message to gcs
         gcs().send_text(MAV_SEVERITY_EMERGENCY,"Crash: Disarming");
         // disarm motors
-        copter.arming.disarm();
+        copter.arming.disarm(AP_Arming::Method::CRASH);
     }
 }
 
@@ -70,6 +84,11 @@ void Copter::thrust_loss_check()
     // return immediately if disarmed
     if (!motors->armed() || ap.land_complete) {
         thrust_loss_counter = 0;
+        return;
+    }
+
+    // exit immediately if in standby
+    if (standby_active) {
         return;
     }
 
@@ -134,11 +153,16 @@ void Copter::thrust_loss_check()
 // called at MAIN_LOOP_RATE
 void Copter::parachute_check()
 {
-    static uint16_t control_loss_count;	// number of iterations we have been out of control
+    static uint16_t control_loss_count; // number of iterations we have been out of control
     static int32_t baro_alt_start;
 
     // exit immediately if parachute is not enabled
     if (!parachute.enabled()) {
+        return;
+    }
+
+    // exit immediately if in standby
+    if (standby_active) {
         return;
     }
 
@@ -210,7 +234,7 @@ void Copter::parachute_check()
 void Copter::parachute_release()
 {
     // disarm motors
-    arming.disarm();
+    arming.disarm(AP_Arming::Method::PARACHUTE_RELEASE);
 
     // release parachute
     parachute.release();

@@ -68,20 +68,6 @@ protected:
     // return true if we have a good position estimate
     virtual bool position_ok();
 
-    enum at_event {
-        EVENT_AUTOTUNE_INITIALISED   =  0,
-        EVENT_AUTOTUNE_OFF           =  1,
-        EVENT_AUTOTUNE_RESTART       =  2,
-        EVENT_AUTOTUNE_SUCCESS       =  3,
-        EVENT_AUTOTUNE_FAILED        =  4,
-        EVENT_AUTOTUNE_REACHED_LIMIT =  5,
-        EVENT_AUTOTUNE_PILOT_TESTING =  6,
-        EVENT_AUTOTUNE_SAVEDGAINS    =  7
-    };
-
-    // write a log event
-    virtual void Log_Write_Event(enum at_event id) = 0;
-
     // internal init function, should be called from init()
     bool init_internals(bool use_poshold,
                         AC_AttitudeControl_Multi *attitude_control,
@@ -170,7 +156,6 @@ private:
         GAIN_INTRA_TEST = 2,
         GAIN_TUNED      = 3,
     };
-    enum GainType current_gain_type;
     void load_gains(enum GainType gain_type);
 
     TuneMode mode                : 2;    // see TuneMode for what modes are allowed

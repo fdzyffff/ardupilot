@@ -29,6 +29,7 @@
 #include <mmsystem.h>
 #endif
 
+#include <GCS_MAVLink/GCS.h>
 #include <AP_Logger/AP_Logger.h>
 #include <AP_Param/AP_Param.h>
 #include <AP_Declination/AP_Declination.h>
@@ -55,6 +56,7 @@ Aircraft::Aircraft(const char *frame_str) :
     rate_hz(1200.0f),
     autotest_dir(nullptr),
     frame(frame_str),
+    num_motors(1),
 #if defined(__CYGWIN__) || defined(__CYGWIN64__)
     min_sleep_time(20000)
 #else
@@ -72,6 +74,13 @@ Aircraft::Aircraft(const char *frame_str) :
     // allow for orientation settings, such as with tailsitters
     enum ap_var_type ptype;
     ahrs_orientation = (AP_Int8 *)AP_Param::find("AHRS_ORIENTATION", &ptype);
+
+    // ahrs_orientation->get() returns ROTATION_NONE here, regardless of the actual value
+    enum Rotation imu_rotation = ahrs_orientation?(enum Rotation)ahrs_orientation->get():ROTATION_NONE;
+    sitl->ahrs_rotation.from_rotation(imu_rotation);
+    sitl->ahrs_rotation_inv = sitl->ahrs_rotation.transposed();
+    last_imu_rotation = imu_rotation;
+
     terrain = reinterpret_cast<AP_Terrain *>(AP_Param::find_object("TERRAIN_"));
 }
 
@@ -141,6 +150,18 @@ void Aircraft::update_position(void)
 #if 0
     // logging of raw sitl data
     Vector3f accel_ef = dcm * accel_body;
+// @LoggerMessage: SITL
+// @Description: Simulation data
+// @Field: TimeUS: Time since system startup
+// @Field: VN: Velocity - North component
+// @Field: VE: Velocity - East component
+// @Field: VD: Velocity - Down component
+// @Field: AN: Acceleration - North component
+// @Field: AE: Acceleration - East component
+// @Field: AD: Acceleration - Down component
+// @Field: PN: Position - North component
+// @Field: PE: Position - East component
+// @Field: PD: Position - Down component
     AP::logger().Write("SITL", "TimeUS,VN,VE,VD,AN,AE,AD,PN,PE,PD", "Qfffffffff",
                                            AP_HAL::micros64(),
                                            velocity_ef.x, velocity_ef.y, velocity_ef.z,
@@ -341,8 +362,8 @@ void Aircraft::fill_fdm(struct sitl_fdm &fdm)
     fdm.airspeed = airspeed_pitot;
     fdm.battery_voltage = battery_voltage;
     fdm.battery_current = battery_current;
-    fdm.rpm1 = rpm1;
-    fdm.rpm2 = rpm2;
+    fdm.num_motors = num_motors;
+    memcpy(fdm.rpm, rpm, num_motors * sizeof(float));
     fdm.rcin_chan_count = rcin_chan_count;
     fdm.range = range;
     memcpy(fdm.rcin, rcin, rcin_chan_count * sizeof(float));
@@ -369,12 +390,31 @@ void Aircraft::fill_fdm(struct sitl_fdm &fdm)
 
     if (ahrs_orientation != nullptr) {
         enum Rotation imu_rotation = (enum Rotation)ahrs_orientation->get();
-
+        if (imu_rotation != last_imu_rotation) {
+            // Surprisingly, Matrix3<T>::from_rotation(ROTATION_CUSTOM) is the identity matrix
+            // so we must deal with that here
+            if (imu_rotation == ROTATION_CUSTOM) {
+                if ((custom_roll == nullptr) || (custom_pitch == nullptr) || (custom_yaw == nullptr)) {
+                    enum ap_var_type ptype;
+                    custom_roll = (AP_Float *)AP_Param::find("AHRS_CUSTOM_ROLL", &ptype);
+                    custom_pitch = (AP_Float *)AP_Param::find("AHRS_CUSTOM_PIT", &ptype);
+                    custom_yaw = (AP_Float *)AP_Param::find("AHRS_CUSTOM_YAW", &ptype);
+                }
+                if ((custom_roll != nullptr) && (custom_pitch != nullptr) && (custom_yaw != nullptr)) {
+                    sitl->ahrs_rotation.from_euler(radians(*custom_roll), radians(*custom_pitch), radians(*custom_yaw));
+                    sitl->ahrs_rotation_inv = sitl->ahrs_rotation.transposed();
+                } else {
+                    AP_HAL::panic("could not find one or more of parameters AHRS_CUSTOM_ROLL/PITCH/YAW");
+                }
+            } else {
+                sitl->ahrs_rotation.from_rotation(imu_rotation);
+                sitl->ahrs_rotation_inv = sitl->ahrs_rotation.transposed();
+                last_imu_rotation = imu_rotation;
+            }
+        }
         if (imu_rotation != ROTATION_NONE) {
             Matrix3f m = dcm;
-            Matrix3f rot;
-            rot.from_rotation(imu_rotation);
-            m = m * rot.transposed();
+            m = m * sitl->ahrs_rotation_inv;
 
             m.to_euler(&r, &p, &y);
             fdm.rollDeg  = degrees(r);
@@ -491,7 +531,7 @@ void Aircraft::update_dynamics(const Vector3f &rot_accel)
     // constrain height to the ground
     if (on_ground()) {
         if (!was_on_ground && AP_HAL::millis() - last_ground_contact_ms > 1000) {
-            printf("Hit ground at %f m/s\n", velocity_ef.z);
+            gcs().send_text(MAV_SEVERITY_INFO, "SIM Hit ground at %f m/s", velocity_ef.z);
             last_ground_contact_ms = AP_HAL::millis();
         }
         position.z = -(ground_level + frame_height - home.alt * 0.01f + ground_height_difference());
@@ -567,6 +607,8 @@ void Aircraft::update_wind(const struct sitl_input &input)
                        sinf(radians(input.wind.direction))*cosf(radians(input.wind.dir_z)), 
                        sinf(radians(input.wind.dir_z))) * input.wind.speed;
 
+    wind_ef.z += get_local_updraft(position);
+
     const float wind_turb = input.wind.turbulence * 10.0f;  // scale input.wind.turbulence to match standard deviation when using iir_coef=0.98
     const float iir_coef = 0.98f;  // filtering high frequencies from turbulence
 
@@ -638,6 +680,21 @@ void Aircraft::smooth_sensors(void)
     dcm.to_euler(&R2, &P2, &Y2);
 
 #if 0
+// @LoggerMessage: SMOO
+// @Description: Smoothed sensor data fed to EKF to avoid inconsistencies
+// @Field: TimeUS: Time since system startup
+// @Field: AEx: Angular Velocity (around x-axis)
+// @Field: AEy: Angular Velocity (around y-axis)
+// @Field: AEz: Angular Velocity (around z-axis)
+// @Field: DPx: Velocity (along x-axis)
+// @Field: DPy: Velocity (along y-axis)
+// @Field: DPz: Velocity (along z-axis)
+// @Field: R: Roll
+// @Field: P: Pitch
+// @Field: Y: Yaw
+// @Field: R2: DCM Roll
+// @Field: P2: DCM Pitch
+// @Field: Y2: DCM Yaw
     AP::logger().Write("SMOO", "TimeUS,AEx,AEy,AEz,DPx,DPy,DPz,R,P,Y,R2,P2,Y2",
                                            "Qffffffffffff",
                                            AP_HAL::micros64(),
@@ -731,6 +788,11 @@ void Aircraft::update_external_payload(const struct sitl_input &input)
         external_payload_mass += sprayer->payload_mass();
     }
 
+    // update buzzer
+    if (buzzer && buzzer->is_enabled()) {
+        buzzer->update(input);
+    }
+
     // update grippers
     if (gripper && gripper->is_enabled()) {
         gripper->set_alt(hagl());
@@ -774,6 +836,62 @@ void Aircraft::add_shove_forces(Vector3f &rot_accel, Vector3f &body_accel)
         sitl->shove.start_ms = 0;
         sitl->shove.t = 0;
     }
+}
+
+float Aircraft::get_local_updraft(Vector3f currentPos)
+{
+    int scenario = sitl->thermal_scenario;
+
+    #define MAX_THERMALS 10
+
+    float thermals_w[MAX_THERMALS];
+    float thermals_r[MAX_THERMALS];
+    float thermals_x[MAX_THERMALS];
+    float thermals_y[MAX_THERMALS];
+
+    int n_thermals = 0;
+
+    switch (scenario) {
+        case 1:
+            n_thermals = 1;
+            thermals_w[0] =  2.0;
+            thermals_r[0] =  80.0;
+            thermals_x[0] = -180.0;
+            thermals_y[0] = -260.0;
+            break;
+        case 2:
+            n_thermals = 1;
+            thermals_w[0] =  4.0;
+            thermals_r[0] =  30.0;
+            thermals_x[0] = -180.0;
+            thermals_y[0] = -260.0;
+            break;
+        case 3:
+            n_thermals = 1;
+            thermals_w[0] =  2.0;
+            thermals_r[0] =  30.0;
+            thermals_x[0] = -180.0;
+            thermals_y[0] = -260.0;
+            break;
+    }
+
+    // Wind drift at this altitude
+    float driftX = sitl->wind_speed * (currentPos.z+100) * cosf(sitl->wind_direction * DEG_TO_RAD);
+    float driftY = sitl->wind_speed * (currentPos.z+100) * sinf(sitl->wind_direction * DEG_TO_RAD);
+
+    int iThermal;
+    float w = 0.0f;
+    float r2;
+    for (iThermal=0;iThermal<n_thermals;iThermal++) {
+        Vector3f thermalPos(thermals_x[iThermal] + driftX/thermals_w[iThermal],
+                            thermals_y[iThermal] + driftY/thermals_w[iThermal],
+                            0);
+        Vector3f relVec = currentPos - thermalPos;
+        r2 = relVec.x*relVec.x + relVec.y*relVec.y;
+        w += thermals_w[iThermal]*exp(-r2/(thermals_r[iThermal]*thermals_r[iThermal]));
+    }
+
+    return w;
 }
 
 void Aircraft::add_twist_forces(Vector3f &rot_accel)

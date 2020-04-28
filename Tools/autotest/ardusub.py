@@ -51,6 +51,9 @@ class AutoTestSub(AutoTest):
     def test_filepath(self):
          return os.path.realpath(__file__)
 
+    def set_current_test_name(self, name):
+        self.current_test_name_directory = "ArduSub_Tests/" + name + "/"
+
     def default_mode(self):
         return 'MANUAL'
 
@@ -69,8 +72,95 @@ class AutoTestSub(AutoTest):
     def is_sub(self):
         return True
 
-    def arming_test_mission(self):
-        return os.path.join(testdir, "ArduSub-Missions", "test_arming.txt")
+    def watch_altitude_maintained(self, delta=0.5, timeout=5.0):
+        """Watch and wait for the actual altitude to be maintained
+
+        Keyword Arguments:
+            delta {float} -- Maximum altitude range to be allowed from actual point (default: {0.5})
+            timeout {float} -- Timeout time in simulation seconds (default: {5.0})
+
+        Raises:
+            NotAchievedException: Exception when altitude fails to hold inside the time and
+                altitude range
+        """
+        tstart = self.get_sim_time_cached()
+        previous_altitude = self.mav.recv_match(type='VFR_HUD', blocking=True).alt
+        self.progress('Altitude to be watched: %f' % (previous_altitude))
+        while True:
+            m = self.mav.recv_match(type='VFR_HUD', blocking=True)
+            if self.get_sim_time_cached() - tstart > timeout:
+                self.progress('Altitude hold done: %f' % (previous_altitude))
+                return
+            if abs(m.alt - previous_altitude) > delta:
+                raise NotAchievedException("Altitude not maintained: want %.2f (+/- %.2f) got=%.2f" % (previous_altitude, delta, m.alt))
+
+    def test_alt_hold(self):
+        """Test ALT_HOLD mode
+        """
+        self.wait_ready_to_arm()
+        self.arm_vehicle()
+        self.mavproxy.send('mode ALT_HOLD\n')
+        self.wait_mode('ALT_HOLD')
+
+        msg = self.mav.recv_match(type='GLOBAL_POSITION_INT', blocking=True, timeout=5)
+        if msg is None:
+            raise NotAchievedException("Did not get GLOBAL_POSITION_INT")
+        pwm = 1000
+        if msg.relative_alt/1000.0 < -5.5:
+            # need to g`o up, not down!
+            pwm = 2000
+        self.set_rc(Joystick.Throttle, pwm)
+        self.wait_altitude(altitude_min=-6, altitude_max=-5)
+        self.set_rc(Joystick.Throttle, 1500)
+
+        # let the vehicle settle (momentum / stopping point shenanigans....)
+        self.delay_sim_time(1)
+
+        self.watch_altitude_maintained()
+
+        self.set_rc(Joystick.Throttle, 1000)
+        self.wait_altitude(altitude_min=-20, altitude_max=-19)
+        self.set_rc(Joystick.Throttle, 1500)
+
+        # let the vehicle settle (momentum / stopping point shenanigans....)
+        self.delay_sim_time(1)
+
+        self.watch_altitude_maintained()
+
+        self.set_rc(Joystick.Throttle, 1900)
+        self.wait_altitude(altitude_min=-14, altitude_max=-13)
+        self.set_rc(Joystick.Throttle, 1500)
+
+        # let the vehicle settle (momentum / stopping point shenanigans....)
+        self.delay_sim_time(1)
+
+        self.watch_altitude_maintained()
+
+        self.set_rc(Joystick.Throttle, 1900)
+        self.wait_altitude(altitude_min=-5, altitude_max=-4)
+        self.set_rc(Joystick.Throttle, 1500)
+
+        # let the vehicle settle (momentum / stopping point shenanigans....)
+        self.delay_sim_time(1)
+
+        self.watch_altitude_maintained()
+
+        self.disarm_vehicle()
+
+    def test_mot_thst_hover_ignore(self):
+        """Test if we are ignoring MOT_THST_HOVER parameter
+        """
+
+        # Test default parameter value
+        mot_thst_hover_value = self.get_parameter("MOT_THST_HOVER")
+        if mot_thst_hover_value != 0.5:
+            raise NotAchievedException("Unexpected default MOT_THST_HOVER parameter value {}".format(mot_thst_hover_value))
+
+        # Test if parameter is being ignored
+        for value in [0.25, 0.75]:
+            self.set_parameter("MOT_THST_HOVER", value)
+            self.test_alt_hold()
+
 
     def dive_manual(self):
         self.wait_ready_to_arm()
@@ -107,8 +197,7 @@ class AutoTestSub(AutoTest):
 
         self.arm_vehicle()
 
-        self.mavproxy.send('mode auto\n')
-        self.wait_mode('AUTO')
+        self.change_mode('AUTO')
 
         self.wait_waypoint(1, 5, max_dist=5)
 
@@ -130,8 +219,7 @@ class AutoTestSub(AutoTest):
             self.mavproxy.send('mode loiter\n')
             self.wait_ready_to_arm()
             self.arm_vehicle()
-            self.mavproxy.send('mode auto\n')
-            self.wait_mode('AUTO')
+            self.change_mode('AUTO')
             self.mavproxy.expect("Gripper Grabbed")
             self.mavproxy.expect("Gripper Released")
         except Exception as e:
@@ -197,7 +285,7 @@ class AutoTestSub(AutoTest):
     def disabled_tests(self):
         ret = super(AutoTestSub, self).disabled_tests()
         ret.update({
-            "SensorConfigErrorLoop": "Sub does not instantiate AP_Stats.  Also see https://github.com/ArduPilot/ardupilot/issues/10247",
+            "ConfigErrorLoop": "Sub does not instantiate AP_Stats.  Also see https://github.com/ArduPilot/ardupilot/issues/10247",
         })
         return ret
 
@@ -208,6 +296,8 @@ class AutoTestSub(AutoTest):
         ret.extend([
             ("DiveManual", "Dive manual", self.dive_manual),
 
+            ("AltitudeHold", "Test altitude holde mode", self.test_alt_hold),
+
             ("DiveMission",
              "Dive mission",
              lambda: self.dive_mission("sub_mission.txt")),
@@ -215,6 +305,8 @@ class AutoTestSub(AutoTest):
             ("GripperMission",
              "Test gripper mission items",
              self.test_gripper_mission),
+
+            ("MotorThrustHoverParameterIgnore", "Test if we are ignoring MOT_THST_HOVER", self.test_mot_thst_hover_ignore),
 
             ("SET_POSITION_TARGET_GLOBAL_INT",
              "Move vehicle using SET_POSITION_TARGET_GLOBAL_INT",

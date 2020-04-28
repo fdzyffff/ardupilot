@@ -72,8 +72,11 @@ public:
         uint8_t fault_thd_prio;
         uint32_t fault_addr;
         uint32_t fault_icsr;
+        uint32_t fault_lr;
     };
     struct PersistentData persistent_data;
+    // last_persistent_data is only filled in if we've suffered a watchdog reset
+    struct PersistentData last_persistent_data;
 
     /*
       return state of safety switch, if applicable
@@ -90,8 +93,15 @@ public:
      */
     virtual uint64_t get_hw_rtc() const;
 
+    enum class FlashBootloader {
+        OK=0,
+        NO_CHANGE=1,
+        FAIL=2,
+        NOT_AVAILABLE=3,
+    };
+
     // overwrite bootloader (probably with one from ROMFS)
-    virtual bool flash_bootloader() { return false; }
+    virtual FlashBootloader flash_bootloader() { return FlashBootloader::NOT_AVAILABLE; }
 
     /*
       get system identifier (eg. serial number)
@@ -151,7 +161,13 @@ public:
     // heap functions, note that a heap once alloc'd cannot be dealloc'd
     virtual void *allocate_heap_memory(size_t size) = 0;
     virtual void *heap_realloc(void *heap, void *ptr, size_t new_size) = 0;
+#if USE_LIBC_REALLOC
+    virtual void *std_realloc(void *ptr, size_t new_size) { return realloc(ptr, new_size); }
+#else
+    virtual void *std_realloc(void *ptr, size_t new_size) = 0;
+#endif // USE_LIBC_REALLOC
 #endif // ENABLE_HEAP
+
 
     /**
        how much free memory do we have in bytes. If unknown return 4096
@@ -162,6 +178,9 @@ public:
       initialise (or re-initialise) filesystem storage
      */
     virtual bool fs_init(void) { return false; }
+
+    // attempt to trap the processor, presumably to enter an attached debugger
+    virtual bool trap() const { return false; }
 
 protected:
     // we start soft_armed false, so that actuators don't send any

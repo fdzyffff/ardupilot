@@ -79,7 +79,9 @@ void UARTDriver::begin(uint32_t b, uint16_t rxS, uint16_t txS)
 
     if (!_connected) {
         _connected = _device->open();
-        _device->set_blocking(false);
+        if (_connected) {
+            _device->set_blocking(false);
+        }
     }
     _initialised = false;
 
@@ -328,12 +330,12 @@ size_t UARTDriver::write(const uint8_t *buffer, size_t size)
         /*
           use the per-byte delay loop in write() above for blocking writes
          */
+        _write_mutex.give();
         size_t ret = 0;
         while (size--) {
             if (write(*buffer++) != 1) break;
             ret++;
         }
-        _write_mutex.give();
         return ret;
     }
 

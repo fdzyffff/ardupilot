@@ -111,6 +111,21 @@ bool NavEKF2_core::setup_core(uint8_t _imu_index, uint8_t _core_index)
         return false;
     }
 
+    if ((yawEstimator == nullptr) && (frontend->_gsfRunMask & (1U<<core_index))) {
+        // check if there is enough memory to create the EKF-GSF object
+        if (hal.util->available_memory() < sizeof(EKFGSF_yaw) + 1024) {
+            gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF2 IMU%u GSF: not enough memory",(unsigned)imu_index);
+            return false;
+        }
+
+        // try to instantiate
+        yawEstimator = new EKFGSF_yaw();
+        if (yawEstimator == nullptr) {
+            gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF2 IMU%uGSF: allocation failed",(unsigned)imu_index);
+            return false;
+        }
+    }
+    
     return true;
 }
     
@@ -241,8 +256,7 @@ void NavEKF2_core::InitialiseVariables()
     gpsVertVelFilt = 0.0f;
     gpsHorizVelFilt = 0.0f;
     memset(&statesArray, 0, sizeof(statesArray));
-    posDownDerivative = 0.0f;
-    posDown = 0.0f;
+    memset(&vertCompFiltState, 0, sizeof(vertCompFiltState));
     posVelFusionDelayed = false;
     optFlowFusionDelayed = false;
     airSpdFusionDelayed = false;
@@ -337,7 +351,16 @@ void NavEKF2_core::InitialiseVariables()
     yawAlignComplete = false;
     have_table_earth_field = false;
 
+    // initialise pre-arm message
+    hal.util->snprintf(prearm_fail_string, sizeof(prearm_fail_string), "EKF2 still initialising");
+
     InitialiseVariablesMag();
+
+    // emergency reset of yaw to EKFGSF estimate
+    EKFGSF_yaw_reset_ms = 0;
+    EKFGSF_yaw_reset_request_ms = 0;
+    EKFGSF_yaw_reset_count = 0;
+    EKFGSF_run_filterbank = false;
 }
 
 
@@ -357,9 +380,7 @@ void NavEKF2_core::InitialiseVariablesMag()
 
     inhibitMagStates = true;
 
-    if (_ahrs->get_compass()) {
-        magSelectIndex = _ahrs->get_compass()->get_primary();
-    }
+    magSelectIndex = 0;
     lastMagOffsetsValid = false;
     magStateResetRequest = false;
     magStateInitComplete = false;
@@ -567,11 +588,21 @@ void NavEKF2_core::UpdateFilter(bool predict)
         // Predict the covariance growth
         CovariancePrediction();
 
+        // Run the IMU prediction step for the GSF yaw estimator algorithm
+        // using IMU and optionally true airspeed data.
+        // Must be run before SelectMagFusion() to provide an up to date yaw estimate
+        runYawEstimatorPrediction();
+
         // Update states using  magnetometer data
         SelectMagFusion();
 
         // Update states using GPS and altimeter data
         SelectVelPosFusion();
+
+        // Run the GPS velocity correction step for the GSF yaw estimator algorithm
+        // and use the yaw estimate to reset the main EKF yaw if requested
+        // Muat be run after SelectVelPosFusion() so that fresh GPS data is available
+        runYawEstimatorCorrection();
 
         // Update states using range beacon data
         SelectRngBcnFusion();
@@ -750,6 +781,24 @@ void NavEKF2_core::calcOutputStates()
 
     // sum delta velocities to get velocity
     outputDataNew.velocity += delVelNav;
+
+    // Implement third order complementary filter for height and height rate
+    // Reference Paper :
+    // Optimizing the Gains of the Baro-Inertial Vertical Channel
+    // Widnall W.S, Sinha P.K,
+    // AIAA Journal of Guidance and Control, 78-1307R
+
+    // Perform filter calculation using backwards Euler integration
+    // Coefficients selected to place all three filter poles at omega
+    const float CompFiltOmega = M_2PI * constrain_float(frontend->_hrt_filt_freq, 0.1f, 30.0f);
+    float omega2 = CompFiltOmega * CompFiltOmega;
+    float pos_err = outputDataNew.position.z - vertCompFiltState.pos;
+    float integ1_input = pos_err * omega2 * CompFiltOmega * imuDataNew.delVelDT;
+    vertCompFiltState.acc += integ1_input;
+    float integ2_input = delVelNav.z + (vertCompFiltState.acc + pos_err * omega2 * 3.0f) * imuDataNew.delVelDT;
+    vertCompFiltState.vel += integ2_input;
+    float integ3_input = (vertCompFiltState.vel + pos_err * CompFiltOmega * 3.0f) * imuDataNew.delVelDT;
+    vertCompFiltState.pos += integ3_input; 
 
     // apply a trapezoidal integration to velocities to calculate position
     outputDataNew.position += (outputDataNew.velocity + lastVelocity) * (imuDataNew.delVelDT*0.5f);
@@ -1406,8 +1455,8 @@ void NavEKF2_core::StoreOutputReset()
     }
     outputDataDelayed = outputDataNew;
     // reset the states for the complementary filter used to provide a vertical position dervative output
-    posDown = stateStruct.position.z;
-    posDownDerivative = stateStruct.velocity.z;
+    vertCompFiltState.pos = stateStruct.position.z;
+    vertCompFiltState.vel = stateStruct.velocity.z;
 }
 
 // Reset the stored output quaternion history to current EKF state

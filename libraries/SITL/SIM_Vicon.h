@@ -24,9 +24,11 @@
 
 #include <AP_HAL/utility/RingBuffer.h>
 
+#include "SIM_SerialDevice.h"
+
 namespace SITL {
 
-class Vicon {
+class Vicon : public SerialDevice {
 public:
 
     Vicon();
@@ -34,23 +36,15 @@ public:
     // update state
     void update(const Location &loc, const Vector3f &position, const Quaternion &attitude);
 
-    // return fd on which data from the device can be read, and data
-    // to the device can be written
-    int fd() { return fd_their_end; }
-
 private:
-
-    SITL *_sitl;
 
     // TODO: make these parameters:
     const uint8_t system_id = 17;
     const uint8_t component_id = 18;
 
     // we share channels with the ArduPilot binary!
+    // Beware: the mavlink rangefinder shares this channel.
     const mavlink_channel_t mavlink_ch = (mavlink_channel_t)(MAVLINK_COMM_0+5);
-
-    int fd_their_end;
-    int fd_my_end;
 
     uint64_t last_observation_usec;
     uint64_t time_send_us;
@@ -69,8 +63,6 @@ private:
 
     void maybe_send_heartbeat();
     uint32_t last_heartbeat_ms;
-
-    bool init_sitl_pointer();
 };
 
 }

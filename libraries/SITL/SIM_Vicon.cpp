@@ -29,23 +29,9 @@ using namespace SITL;
 #define USE_VISION_POSITION_ESTIMATE 1
 
 
-Vicon::Vicon()
+Vicon::Vicon() :
+    SerialDevice::SerialDevice()
 {
-    int tmp[2];
-    if (pipe(tmp) == -1) {
-        AP_HAL::panic("pipe() failed");
-    }
-    fd_my_end    = tmp[1];
-    fd_their_end = tmp[0];
-
-    // close file descriptors on exec:
-    fcntl(fd_my_end, F_SETFD, FD_CLOEXEC);
-    fcntl(fd_their_end, F_SETFD, FD_CLOEXEC);
-
-    // make sure we don't screw the simulation up by blocking:
-    fcntl(fd_my_end, F_SETFL, fcntl(fd_my_end, F_GETFL, 0) | O_NONBLOCK);
-    fcntl(fd_their_end, F_SETFL, fcntl(fd_their_end, F_GETFL, 0) | O_NONBLOCK);
-
     if (!valid_channel(mavlink_ch)) {
         AP_HAL::panic("Invalid mavlink channel");
     }
@@ -107,6 +93,13 @@ void Vicon::update_vicon_position_estimate(const Location &loc,
     float yaw;
     attitude.to_euler(roll, pitch, yaw);
 
+    // calculate sensor offset in earth frame and add to position
+    const Vector3f& pos_offset = _sitl->vicon_pos_offset.get();
+    Matrix3f rot;
+    rot.from_euler(radians(_sitl->state.rollDeg), radians(_sitl->state.pitchDeg), radians(_sitl->state.yawDeg));
+    Vector3f pos_offset_ef = rot * pos_offset;
+    const Vector3f pos_corrected = position + pos_offset_ef;
+
 #if USE_VISION_POSITION_ESTIMATE
     // use the more recent VISION_POSITION_ESTIMATE message
     mavlink_msg_vision_position_estimate_pack_chan(
@@ -115,9 +108,9 @@ void Vicon::update_vicon_position_estimate(const Location &loc,
         mavlink_ch,
         &obs_msg,
         now_us + time_offset_us,
-        position.x,
-        position.y,
-        position.z,
+        pos_corrected.x,
+        pos_corrected.y,
+        pos_corrected.z,
         roll,
         pitch,
         yaw,
@@ -129,9 +122,9 @@ void Vicon::update_vicon_position_estimate(const Location &loc,
         mavlink_ch,
         &obs_msg,
         now_us + time_offset_us,
-        position.x,
-        position.y,
-        position.z,
+        pos_corrected.x,
+        pos_corrected.y,
+        pos_corrected.z,
         roll,
         pitch,
         yaw,
@@ -140,17 +133,6 @@ void Vicon::update_vicon_position_estimate(const Location &loc,
 
     uint32_t delay_ms = 25 + unsigned(random()) % 300;
     time_send_us = now_us + delay_ms * 1000UL;
-}
-
-bool Vicon::init_sitl_pointer()
-{
-    if (_sitl == nullptr) {
-        _sitl = AP::sitl();
-        if (_sitl == nullptr) {
-            return false;
-        }
-    }
-    return true;
 }
 
 /*

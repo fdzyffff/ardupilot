@@ -31,12 +31,6 @@ void Copter::init_rc_in()
     channel_yaw->set_angle(ROLL_PITCH_YAW_INPUT_MAX);
     channel_throttle->set_range(1000);
 
-    // set auxiliary servo ranges
-    rc().channel(CH_5)->set_range(1000);
-    rc().channel(CH_6)->set_range(1000);
-    rc().channel(CH_7)->set_range(1000);
-    rc().channel(CH_8)->set_range(1000);
-
     // set default dead zones
     default_dead_zones();
 
@@ -59,7 +53,7 @@ void Copter::init_rc_out()
 #if FRAME_CONFIG != HELI_FRAME
     motors->set_throttle_range(channel_throttle->get_radio_min(), channel_throttle->get_radio_max());
 #else
-    // setup correct scaling for ESCs like the UAVCAN PX4ESC which
+    // setup correct scaling for ESCs like the UAVCAN ESCs which
     // take a proportion of speed.
     hal.rcout->set_esc_scaling(channel_throttle->get_radio_min(), channel_throttle->get_radio_max());
 #endif

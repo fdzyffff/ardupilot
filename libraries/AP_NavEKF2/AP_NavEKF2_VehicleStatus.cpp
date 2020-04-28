@@ -388,11 +388,24 @@ void NavEKF2_core::detectFlight()
 
             // If more than 5 seconds since likely_flying was set
             // true, then set inFlight true
-            if (_ahrs->get_time_flying_ms() > 5000) {
+            const AP_Vehicle *vehicle = AP::vehicle();
+            if (vehicle->get_time_flying_ms() > 5000) {
                 inFlight = true;
             }
         }
 
+    }
+
+    // handle reset of counters used to control how many times we will try to reset the yaw to the EKF-GSF value per flight
+    if (!prevOnGround && onGround) {
+        // landed so disable filter bank
+        EKFGSF_run_filterbank = false;
+    } else if (!prevInFlight && inFlight) {
+        // started flying so reset counters and enable filter bank
+        EKFGSF_yaw_reset_ms = 0;
+        EKFGSF_yaw_reset_request_ms = 0;
+        EKFGSF_yaw_reset_count = 0;
+        EKFGSF_run_filterbank = true;
     }
 
     // store current on-ground  and in-air status for next time

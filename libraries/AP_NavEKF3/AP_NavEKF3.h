@@ -25,7 +25,6 @@
 #include <AP_NavEKF/AP_Nav_Common.h>
 #include <AP_Airspeed/AP_Airspeed.h>
 #include <AP_Compass/AP_Compass.h>
-#include <AP_RangeFinder/AP_RangeFinder.h>
 #include <AP_Logger/LogStructure.h>
 
 class NavEKF3_core;
@@ -35,7 +34,7 @@ class NavEKF3 {
     friend class NavEKF3_core;
 
 public:
-    NavEKF3(const AP_AHRS *ahrs, const RangeFinder &rng);
+    NavEKF3();
 
     /* Do not allow copies */
     NavEKF3(const NavEKF3 &other) = delete;
@@ -233,6 +232,7 @@ public:
      * timeStamp_ms is the time when the rotation was last measured (msec)
      * posOffset is the XYZ body frame position of the wheel hub (m)
      * radius is the effective rolling radius of the wheel (m)
+     * this should not be called at more than the EKF's update rate (50hz or 100hz)
     */
     void writeWheelOdom(float delAng, float delTime, uint32_t timeStamp_ms, const Vector3f &posOffset, float radius);
 
@@ -335,7 +335,7 @@ public:
     void getFilterStatus(int8_t instance, nav_filter_status &status) const;
 
     // send an EKF_STATUS_REPORT message to GCS
-    void send_status_report(mavlink_channel_t chan);
+    void send_status_report(mavlink_channel_t chan) const;
 
     // provides the height limit to be observed by the control loops
     // returns false if no height limiting is required
@@ -381,15 +381,30 @@ public:
      */
     void checkLaneSwitch(void);
 
+    /*
+      Request a reset of the EKF yaw. This is called when the vehicle code is about to
+      trigger an EKF failsafe, and it would like to avoid that.
+     */
+    void requestYawReset(void);
+
     // write EKF information to on-board logs
     void Log_Write();
+
+    // are we using an external yaw source? This is needed by AHRS attitudes_consistent check
+    bool using_external_yaw(void) const;
+    
+    // Writes the default equivalent airspeed in m/s to be used in forward flight if a measured airspeed is required and not available.
+    void writeDefaultAirSpeed(float airspeed);
+
+    // log debug data for yaw estimator
+    // return false if data not available
+    bool getDataEKFGSF(int8_t instance, float &yaw_composite, float &yaw_composite_variance, float yaw[N_MODELS_EKFGSF], float innov_VN[N_MODELS_EKFGSF], float innov_VE[N_MODELS_EKFGSF], float weight[N_MODELS_EKFGSF]) const;
 
 private:
     uint8_t num_cores; // number of allocated cores
     uint8_t primary;   // current primary core
     NavEKF3_core *core = nullptr;
     const AP_AHRS *_ahrs;
-    const RangeFinder &_rng;
 
     uint32_t _frameTimeUsec;        // time per IMU frame
     uint8_t  _framesPerPrediction;  // expected number of IMU frames per prediction
@@ -411,7 +426,7 @@ private:
     AP_Float _gyroBiasProcessNoise; // gyro bias state process noise : rad/s
     AP_Float _accelBiasProcessNoise;// accel bias state process noise : m/s^2
     AP_Int16 _hgtDelay_ms;          // effective average delay of Height measurements relative to inertial measurements (msec)
-    AP_Int8  _fusionModeGPS;        // 0 = use 3D velocity, 1 = use 2D velocity, 2 = use no velocity
+    AP_Int8  _fusionModeGPS;        // 0 = use 3D velocity, 1 = use 2D velocity, 2 = use no velocity, 3 = do not use GPS
     AP_Int16  _gpsVelInnovGate;     // Percentage number of standard deviations applied to GPS velocity innovation consistency check
     AP_Int16  _gpsPosInnovGate;     // Percentage number of standard deviations applied to GPS position innovation consistency check
     AP_Int16  _hgtInnovGate;        // Percentage number of standard deviations applied to height innovation consistency check
@@ -447,6 +462,12 @@ private:
     AP_Float _visOdmVelErrMin;      // Observation 1-STD velocity error assumed for visual odometry sensor at highest reported quality (m/s)
     AP_Float _wencOdmVelErr;        // Observation 1-STD velocity error assumed for wheel odometry sensor (m/s)
     AP_Int8  _flowUse;              // Controls if the optical flow data is fused into the main navigation estimator and/or the terrain estimator.
+    AP_Float _hrt_filt_freq;        // frequency of output observer height rate complementary filter in Hz
+    AP_Int16 _mag_ef_limit;         // limit on difference between WMM tables and learned earth field.
+    AP_Int8 _gsfRunMask;            // mask controlling which EKF3 instances run a separate EKF-GSF yaw estimator
+    AP_Int8 _gsfUseMask;            // mask controlling which EKF3 instances will use EKF-GSF yaw estimator data to assit with yaw resets
+    AP_Int16 _gsfResetDelay;        // number of mSec from loss of navigation to requesting a reset using EKF-GSF yaw estimator data
+    AP_Int8 _gsfResetMaxCount;      // maximum number of times the EKF3 is allowed to reset it's yaw to the EKF-GSF estimate
 
 // Possible values for _flowUse
 #define FLOW_USE_NONE    0
@@ -543,13 +564,15 @@ private:
     void updateLaneSwitchPosDownResetData(uint8_t new_primary, uint8_t old_primary);
 
     // logging functions shared by cores:
-    void Log_Write_EKF1(uint8_t core, LogMessages msg_id, uint64_t time_us) const;
-    void Log_Write_NKF2a(uint8_t core, LogMessages msg_id, uint64_t time_us) const;
-    void Log_Write_NKF3(uint8_t core, LogMessages msg_id, uint64_t time_us) const;
-    void Log_Write_NKF4(uint8_t core, LogMessages msg_id, uint64_t time_us) const;
-    void Log_Write_NKF5(uint64_t time_us) const;
-    void Log_Write_Quaternion(uint8_t core, LogMessages msg_id, uint64_t time_us) const;
+    void Log_Write_XKF1(uint8_t core, uint64_t time_us) const;
+    void Log_Write_XKF2(uint8_t core, uint64_t time_us) const;
+    void Log_Write_XKF3(uint8_t core, uint64_t time_us) const;
+    void Log_Write_XKF4(uint8_t core, uint64_t time_us) const;
+    void Log_Write_XKF5(uint64_t time_us) const;
+    void Log_Write_Quaternion(uint8_t core, uint64_t time_us) const;
     void Log_Write_Beacon(uint64_t time_us) const;
     void Log_Write_BodyOdom(uint64_t time_us) const;
     void Log_Write_State_Variances(uint64_t time_us) const;
+    void Log_Write_GSF(uint8_t core, uint64_t time_us) const;
+
 };

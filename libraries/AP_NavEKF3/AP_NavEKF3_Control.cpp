@@ -40,14 +40,16 @@ void NavEKF3_core::controlFilterModes()
 /*
   return effective value for _magCal for this core
  */
-uint8_t NavEKF3_core::effective_magCal(void) const
+NavEKF3_core::MagCal NavEKF3_core::effective_magCal(void) const
 {
+    MagCal magcal = MagCal(frontend->_magCal.get());
+
     // force use of simple magnetic heading fusion for specified cores
-    if (frontend->_magMask & core_index) {
-        return 2;
-    } else {
-        return frontend->_magCal;
+    if ((magcal != MagCal::EXTERNAL_YAW) && (magcal != MagCal::EXTERNAL_YAW_FALLBACK) && (magcal != MagCal::GSF_YAW) && (frontend->_magMask & core_index)) {
+        return MagCal::NEVER;
     }
+
+    return magcal;
 }
 
 // Determine if learning of wind and magnetic field will be enabled and set corresponding indexing limits to
@@ -92,16 +94,16 @@ void NavEKF3_core::setWindMagStateLearningMode()
     }
 
     // Determine if learning of magnetic field states has been requested by the user
-    uint8_t magCal = effective_magCal();
     bool magCalRequested =
-            ((magCal == 0) && inFlight) || // when flying
-            ((magCal == 1) && manoeuvring)  || // when manoeuvring
-            ((magCal == 3) && finalInflightYawInit && finalInflightMagInit) || // when initial in-air yaw and mag field reset is complete
-            (magCal == 4); // all the time
+        ((effectiveMagCal == MagCal::WHEN_FLYING) && inFlight) || // when flying
+        ((effectiveMagCal == MagCal::WHEN_MANOEUVRING) && manoeuvring)  || // when manoeuvring
+        ((effectiveMagCal == MagCal::AFTER_FIRST_CLIMB) && finalInflightYawInit && finalInflightMagInit) || // when initial in-air yaw and mag field reset is complete
+        ((effectiveMagCal == MagCal::EXTERNAL_YAW_FALLBACK) && inFlight) ||
+        (effectiveMagCal == MagCal::ALWAYS); // all the time
 
     // Deny mag calibration request if we aren't using the compass, it has been inhibited by the user,
     // we do not have an absolute position reference or are on the ground (unless explicitly requested by the user)
-    bool magCalDenied = !use_compass() || (magCal == 2) || (onGround && magCal != 4);
+    bool magCalDenied = !use_compass() || (effectiveMagCal == MagCal::NEVER) || (onGround && effectiveMagCal != MagCal::ALWAYS);
 
     // Inhibit the magnetic field calibration if not requested or denied
     bool setMagInhibit = !magCalRequested || magCalDenied;
@@ -270,6 +272,7 @@ void NavEKF3_core::setAidingMode()
 
             // Check if the loss of position accuracy has become critical
             bool posAidLossCritical = false;
+            bool posAidLossPending = false;
             if (!posAiding ) {
                 uint16_t maxLossTime_ms;
                 if (!velAiding) {
@@ -279,6 +282,8 @@ void NavEKF3_core::setAidingMode()
                 }
                 posAidLossCritical = (imuSampleTime_ms - lastRngBcnPassTime_ms > maxLossTime_ms) &&
                         (imuSampleTime_ms - lastPosPassTime_ms > maxLossTime_ms);
+                posAidLossPending = (imuSampleTime_ms - lastRngBcnPassTime_ms > (uint32_t)frontend->_gsfResetDelay) &&
+                        (imuSampleTime_ms - lastPosPassTime_ms > (uint32_t)frontend->_gsfResetDelay);
             }
 
             if (attAidLossCritical) {
@@ -295,6 +300,10 @@ void NavEKF3_core::setAidingMode()
                 velTimeout = true;
                 rngBcnTimeout = true;
                 gpsNotAvailable = true;
+
+            } else if (posAidLossPending) {
+                // attempt to reset the yaw to the estimate from the EKF-GSF algorithm
+                EKFGSF_yaw_reset_request_ms = imuSampleTime_ms;
             }
             break;
         }
@@ -450,7 +459,20 @@ bool NavEKF3_core::readyToUseRangeBeacon(void) const
 // return true if we should use the compass
 bool NavEKF3_core::use_compass(void) const
 {
-    return (frontend->_magCal != 5) && _ahrs->get_compass() && _ahrs->get_compass()->use_for_yaw(magSelectIndex) && !allMagSensorsFailed;
+    return effectiveMagCal != MagCal::EXTERNAL_YAW &&
+           effectiveMagCal != MagCal::GSF_YAW &&
+           _ahrs->get_compass() &&
+           _ahrs->get_compass()->use_for_yaw(magSelectIndex) &&
+           !allMagSensorsFailed;
+}
+
+// are we using a yaw source other than the magnetomer?
+bool NavEKF3_core::using_external_yaw(void) const
+{
+    if (effectiveMagCal == MagCal::EXTERNAL_YAW || effectiveMagCal == MagCal::EXTERNAL_YAW_FALLBACK || effectiveMagCal == MagCal::GSF_YAW) {
+        return imuSampleTime_ms - last_gps_yaw_fusion_ms < 5000 || imuSampleTime_ms - lastSynthYawTime_ms < 5000;
+    }
+    return false;
 }
 
 /*
@@ -511,9 +533,18 @@ void NavEKF3_core::checkGyroCalStatus(void)
 {
     // check delta angle bias variances
     const float delAngBiasVarMax = sq(radians(0.15f * dtEkfAvg));
-    delAngBiasLearned = (P[10][10] <= delAngBiasVarMax) &&
-                        (P[11][11] <= delAngBiasVarMax) &&
-                        (P[12][12] <= delAngBiasVarMax);
+    if (effectiveMagCal == MagCal::GSF_YAW) {
+        // rotate the variances into earth frame and evaluate horizontal terms only as yaw component is poorly observable without a compass
+        // which can make this check fail
+        Vector3f delAngBiasVarVec = Vector3f(P[10][10],P[11][11],P[12][12]);
+        Vector3f temp = prevTnb * delAngBiasVarVec;
+        delAngBiasLearned = (fabsf(temp.x) < delAngBiasVarMax) &&
+                            (fabsf(temp.y) < delAngBiasVarMax);
+    } else {
+        delAngBiasLearned = (P[10][10] <= delAngBiasVarMax) &&
+                            (P[11][11] <= delAngBiasVarMax) &&
+                            (P[12][12] <= delAngBiasVarMax);
+    }
 }
 
 // Commands the EKF to not use GPS.
@@ -563,5 +594,46 @@ void  NavEKF3_core::updateFilterStatus(void)
     filterStatus.flags.using_gps = ((imuSampleTime_ms - lastPosPassTime_ms) < 4000) && (PV_AidingMode == AID_ABSOLUTE);
     filterStatus.flags.gps_glitching = !gpsAccuracyGood && (PV_AidingMode == AID_ABSOLUTE) && (frontend->_fusionModeGPS != 3); // GPS glitching is affecting navigation accuracy
     filterStatus.flags.gps_quality_good = gpsGoodToAlign;
+    filterStatus.flags.initalized = filterStatus.flags.initalized || healthy();
 }
 
+void NavEKF3_core::runYawEstimatorPrediction()
+{
+    if (yawEstimator != nullptr && frontend->_fusionModeGPS <= 1) {
+        float trueAirspeed;
+        if (is_positive(defaultAirSpeed) && assume_zero_sideslip()) {
+            if (imuDataDelayed.time_ms - tasDataDelayed.time_ms < 5000) {
+                trueAirspeed = tasDataDelayed.tas;
+            } else {
+                trueAirspeed = defaultAirSpeed * AP::ahrs().get_EAS2TAS();
+            }
+        } else {
+            trueAirspeed = 0.0f;
+        }
+
+        yawEstimator->update(imuDataDelayed.delAng, imuDataDelayed.delVel, imuDataDelayed.delAngDT, imuDataDelayed.delVelDT, EKFGSF_run_filterbank, trueAirspeed);
+    }
+}
+
+void NavEKF3_core::runYawEstimatorCorrection()
+{
+    if (yawEstimator != nullptr && frontend->_fusionModeGPS <= 1) {
+        if (gpsDataToFuse) {
+            Vector2f gpsVelNE = Vector2f(gpsDataDelayed.vel.x, gpsDataDelayed.vel.y);
+            float gpsVelAcc = fmaxf(gpsSpdAccuracy, frontend->_gpsHorizVelNoise);
+            yawEstimator->pushVelData(gpsVelNE, gpsVelAcc);
+        }
+
+        // action an external reset request
+        if (EKFGSF_yaw_reset_request_ms > 0 && imuSampleTime_ms - EKFGSF_yaw_reset_request_ms < YAW_RESET_TO_GSF_TIMEOUT_MS) {
+            EKFGSF_resetMainFilterYaw();
+        }
+    }
+}
+
+// request a reset the yaw to the GSF estimate
+// request times out after YAW_RESET_TO_GSF_TIMEOUT_MS if it cannot be actioned
+void NavEKF3_core::EKFGSF_requestYawReset()
+{
+    EKFGSF_yaw_reset_request_ms = imuSampleTime_ms;
+}

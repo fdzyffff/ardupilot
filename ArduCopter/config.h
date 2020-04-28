@@ -207,12 +207,9 @@
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
-//  OPTICAL_FLOW & VISUAL ODOMETRY
+//  OPTICAL_FLOW
 #ifndef OPTFLOW
  # define OPTFLOW       ENABLED
-#endif
-#ifndef VISUAL_ODOMETRY_ENABLED
-# define VISUAL_ODOMETRY_ENABLED !HAL_MINIMIZE_FEATURES
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
@@ -224,7 +221,7 @@
 //////////////////////////////////////////////////////////////////////////////
 //  Crop Sprayer - enabled only on larger firmwares
 #ifndef SPRAYER_ENABLED
- # define SPRAYER_ENABLED  !HAL_MINIMIZE_FEATURES
+ # define SPRAYER_ENABLED  HAL_SPRAYER_ENABLED
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
@@ -254,7 +251,7 @@
 //////////////////////////////////////////////////////////////////////////////
 // Parachute release
 #ifndef PARACHUTE
- # define PARACHUTE ENABLED
+ # define PARACHUTE HAL_PARACHUTE_ENABLED
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
@@ -354,6 +351,12 @@
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
+// System ID - conduct system identification tests on vehicle
+#ifndef MODE_SYSTEMID_ENABLED
+# define MODE_SYSTEMID_ENABLED !HAL_MINIMIZE_FEATURES
+#endif
+
+//////////////////////////////////////////////////////////////////////////////
 // Throw - fly vehicle after throwing it in the air
 #ifndef MODE_THROW_ENABLED
 # define MODE_THROW_ENABLED ENABLED
@@ -364,8 +367,27 @@
 #ifndef MODE_ZIGZAG_ENABLED
 # define MODE_ZIGZAG_ENABLED !HAL_MINIMIZE_FEATURES
 #endif
+#if MODE_ZIGZAG_ENABLED == ENABLED && HAL_SPRAYER_ENABLED
+# define ZIGZAG_AUTO_PUMP_ENABLED DISABLED
+#endif
 
 //////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////
+// Autorotate - autonomous auto-rotation - helicopters only
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+    #if FRAME_CONFIG == HELI_FRAME
+        #ifndef MODE_AUTOROTATE_ENABLED
+        # define MODE_AUTOROTATE_ENABLED !HAL_MINIMIZE_FEATURES
+        #endif
+    #else
+        # define MODE_AUTOROTATE_ENABLED DISABLED
+    #endif
+#else
+    # define MODE_AUTOROTATE_ENABLED DISABLED
+#endif
+//////////////////////////////////////////////////////////////////////////////
+
 // Beacon support - support for local positioning systems
 #ifndef BEACON_ENABLED
 # define BEACON_ENABLED !HAL_MINIMIZE_FEATURES
@@ -515,7 +537,7 @@
 #endif
 
 #ifndef RTL_ALT
- # define RTL_ALT 				    1500    // default alt to return to home in cm, 0 = Maintain current altitude
+ # define RTL_ALT                   1500    // default alt to return to home in cm, 0 = Maintain current altitude
 #endif
 
 #ifndef RTL_ALT_MIN

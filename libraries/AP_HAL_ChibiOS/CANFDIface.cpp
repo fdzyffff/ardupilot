@@ -69,6 +69,8 @@
 
 extern const AP_HAL::HAL& hal;
 
+static_assert(STM32_FDCANCLK <= 80U*1000U*1000U, "FDCAN clock must be max 80MHz");
+
 namespace ChibiOS_CAN
 {
 namespace
@@ -86,9 +88,9 @@ inline void handleInterrupt(uavcan::uint8_t iface_index, uavcan::uint8_t line_in
     UAVCAN_ASSERT(iface_index < UAVCAN_STM32_NUM_IFACES);
     if (ifaces[iface_index] == UAVCAN_NULLPTR) {
         //Just reset all the interrupts and return
-        ifaces[iface_index]->can_reg()->IR = FDCAN_IR_RF0N;
-        ifaces[iface_index]->can_reg()->IR = FDCAN_IR_RF1N;
-        ifaces[iface_index]->can_reg()->IR = FDCAN_IR_TEFN;
+        fdcan::Can[iface_index]->IR = FDCAN_IR_RF0N;
+        fdcan::Can[iface_index]->IR = FDCAN_IR_RF1N;
+        fdcan::Can[iface_index]->IR = FDCAN_IR_TEFN;
         UAVCAN_ASSERT(0);
         return;
     }
@@ -200,7 +202,8 @@ int CanIface::computeTimings(const uavcan::uint32_t target_bitrate, Timings& out
     /*
      * Hardware configuration
      */
-    const uavcan::uint32_t pclk = STM32_PLL1_Q_CK;
+    const uavcan::uint32_t pclk = STM32_FDCANCLK;
+
 
     static const int MaxBS1 = 16;
     static const int MaxBS2 = 8;

@@ -11,7 +11,7 @@
  *
  * You should have received a copy of the GNU General Public License along
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Code by Andrew Tridgell and Siddharth Bharat Purohit
  */
 #include <AP_HAL/AP_HAL.h>
@@ -225,7 +225,7 @@ void Scheduler::register_io_process(AP_HAL::MemberProc proc)
             return;
         }
     }
-    
+
     if (_num_io_procs < CHIBIOS_SCHEDULER_MAX_TIMER_PROCS) {
         _io_proc[_num_io_procs] = proc;
         _num_io_procs++;
@@ -268,7 +268,7 @@ void Scheduler::reboot(bool hold_in_bootloader)
 
     // disable all interrupt sources
     port_disable();
-    
+
     // reboot
     NVIC_SystemReset();
 }
@@ -321,13 +321,25 @@ void Scheduler::_timer_thread(void *arg)
         // process any pending RC output requests
         hal.rcout->timer_tick();
 
-        if (sched->expect_delay_start != 0) {
-            uint32_t now = AP_HAL::millis();
-            if (now - sched->expect_delay_start <= sched->expect_delay_length) {
-                sched->watchdog_pat();
-            }
+        if (sched->in_expected_delay()) {
+            sched->watchdog_pat();
         }
     }
+}
+
+/*
+  return true if we are in a period of expected delay. This can be
+  used to suppress error messages
+*/
+bool Scheduler::in_expected_delay(void) const
+{
+    if (expect_delay_start != 0) {
+        uint32_t now = AP_HAL::millis();
+        if (now - expect_delay_start <= expect_delay_length) {
+            return true;
+        }
+    }
+    return false;
 }
 
 #ifndef HAL_NO_MONITOR_THREAD
@@ -352,17 +364,19 @@ void Scheduler::_monitor_thread(void *arg)
             // the main loop has been stuck for at least
             // 200ms. Starting logging the main loop state
             const AP_HAL::Util::PersistentData &pd = hal.util->persistent_data;
-            AP::logger().Write("MON", "TimeUS,LDelay,Task,IErr,IErrCnt,MavMsg,MavCmd,SemLine,SPICnt,I2CCnt", "QIbIIHHHII",
-                               AP_HAL::micros64(),
-                               loop_delay,
-                               pd.scheduler_task,
-                               pd.internal_errors,
-                               pd.internal_error_count,
-                               pd.last_mavlink_msgid,
-                               pd.last_mavlink_cmd,
-                               pd.semaphore_line,
-                               pd.spi_count,
-                               pd.i2c_count);
+            if (AP_Logger::get_singleton()) {
+                AP::logger().Write("MON", "TimeUS,LDelay,Task,IErr,IErrCnt,MavMsg,MavCmd,SemLine,SPICnt,I2CCnt", "QIbIIHHHII",
+                                   AP_HAL::micros64(),
+                                   loop_delay,
+                                   pd.scheduler_task,
+                                   pd.internal_errors,
+                                   pd.internal_error_count,
+                                   pd.last_mavlink_msgid,
+                                   pd.last_mavlink_cmd,
+                                   pd.semaphore_line,
+                                   pd.spi_count,
+                                   pd.i2c_count);
+                }
         }
         if (loop_delay >= 500) {
             // at 500ms we declare an internal error
@@ -537,12 +551,18 @@ bool Scheduler::thread_create(AP_HAL::MemberProc proc, const char *name, uint32_
   be used to prevent watchdog reset during expected long delays
   A value of zero cancels the previous expected delay
 */
-void Scheduler::expect_delay_ms(uint32_t ms)
+void Scheduler::_expect_delay_ms(uint32_t ms)
 {
     if (!in_main_thread()) {
         // only for main thread
         return;
     }
+
+    // pat once immediately
+    watchdog_pat();
+
+    WITH_SEMAPHORE(expect_delay_sem);
+
     if (ms == 0) {
         if (expect_delay_nesting > 0) {
             expect_delay_nesting--;
@@ -566,6 +586,18 @@ void Scheduler::expect_delay_ms(uint32_t ms)
         // also put our priority below timer thread if we are boosted
         boost_end();
     }
+}
+
+/*
+  this is _expect_delay_ms() with check that we are in the main thread
+ */
+void Scheduler::expect_delay_ms(uint32_t ms)
+{
+    if (!in_main_thread()) {
+        // only for main thread
+        return;
+    }
+    _expect_delay_ms(ms);
 }
 
 // pat the watchdog

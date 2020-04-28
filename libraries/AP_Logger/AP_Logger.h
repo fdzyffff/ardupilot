@@ -4,6 +4,9 @@
 #pragma once
 
 #include <AP_HAL/AP_HAL.h>
+#include <AP_AHRS/AP_AHRS.h>
+#include <AP_AHRS/AP_AHRS_DCM.h>
+#include <AP_AHRS/AP_AHRS_NavEKF.h>
 #include <AP_Common/AP_Common.h>
 #include <AP_Param/AP_Param.h>
 #include <AP_InertialSensor/AP_InertialSensor.h>
@@ -15,6 +18,7 @@
 #include <AP_Beacon/AP_Beacon.h>
 #include <AP_Proximity/AP_Proximity.h>
 #include <AP_InertialSensor/AP_InertialSensor_Backend.h>
+#include <AP_Vehicle/ModeReason.h>
 
 #include <stdint.h>
 
@@ -26,70 +30,75 @@ class AP_AHRS_View;
 
 // do not do anything here apart from add stuff; maintaining older
 // entries means log analysis is easier
-enum Log_Event : uint8_t {
-    DATA_AP_STATE = 7,
-// DATA_SYSTEM_TIME_SET = 8,
-    DATA_INIT_SIMPLE_BEARING = 9,
-    DATA_ARMED = 10,
-    DATA_DISARMED = 11,
-    DATA_AUTO_ARMED = 15,
-    DATA_LAND_COMPLETE_MAYBE = 17,
-    DATA_LAND_COMPLETE = 18,
-    DATA_NOT_LANDED = 28,
-    DATA_LOST_GPS = 19,
-    DATA_FLIP_START = 21,
-    DATA_FLIP_END = 22,
-    DATA_SET_HOME = 25,
-    DATA_SET_SIMPLE_ON = 26,
-    DATA_SET_SIMPLE_OFF = 27,
-    DATA_SET_SUPERSIMPLE_ON = 29,
-    DATA_AUTOTUNE_INITIALISED = 30,
-    DATA_AUTOTUNE_OFF = 31,
-    DATA_AUTOTUNE_RESTART = 32,
-    DATA_AUTOTUNE_SUCCESS = 33,
-    DATA_AUTOTUNE_FAILED = 34,
-    DATA_AUTOTUNE_REACHED_LIMIT = 35,
-    DATA_AUTOTUNE_PILOT_TESTING = 36,
-    DATA_AUTOTUNE_SAVEDGAINS = 37,
-    DATA_SAVE_TRIM = 38,
-    DATA_SAVEWP_ADD_WP = 39,
-    DATA_FENCE_ENABLE = 41,
-    DATA_FENCE_DISABLE = 42,
-    DATA_ACRO_TRAINER_DISABLED = 43,
-    DATA_ACRO_TRAINER_LEVELING = 44,
-    DATA_ACRO_TRAINER_LIMITED = 45,
-    DATA_GRIPPER_GRAB = 46,
-    DATA_GRIPPER_RELEASE = 47,
-    DATA_PARACHUTE_DISABLED = 49,
-    DATA_PARACHUTE_ENABLED = 50,
-    DATA_PARACHUTE_RELEASED = 51,
-    DATA_LANDING_GEAR_DEPLOYED = 52,
-    DATA_LANDING_GEAR_RETRACTED = 53,
-    DATA_MOTORS_EMERGENCY_STOPPED = 54,
-    DATA_MOTORS_EMERGENCY_STOP_CLEARED = 55,
-    DATA_MOTORS_INTERLOCK_DISABLED = 56,
-    DATA_MOTORS_INTERLOCK_ENABLED = 57,
-    DATA_ROTOR_RUNUP_COMPLETE = 58, // Heli only
-    DATA_ROTOR_SPEED_BELOW_CRITICAL = 59, // Heli only
-    DATA_EKF_ALT_RESET = 60,
-    DATA_LAND_CANCELLED_BY_PILOT = 61,
-    DATA_EKF_YAW_RESET = 62,
-    DATA_AVOIDANCE_ADSB_ENABLE = 63,
-    DATA_AVOIDANCE_ADSB_DISABLE = 64,
-    DATA_AVOIDANCE_PROXIMITY_ENABLE = 65,
-    DATA_AVOIDANCE_PROXIMITY_DISABLE = 66,
-    DATA_GPS_PRIMARY_CHANGED = 67,
-    DATA_WINCH_RELAXED = 68,
-    DATA_WINCH_LENGTH_CONTROL = 69,
-    DATA_WINCH_RATE_CONTROL = 70,
-    DATA_ZIGZAG_STORE_A = 71,
-    DATA_ZIGZAG_STORE_B = 72,
-    DATA_LAND_REPO_ACTIVE = 73,
+enum class LogEvent : uint8_t {
+    ARMED = 10,
+    DISARMED = 11,
+    AUTO_ARMED = 15,
+    LAND_COMPLETE_MAYBE = 17,
+    LAND_COMPLETE = 18,
+    NOT_LANDED = 28,
+    LOST_GPS = 19,
+    FLIP_START = 21,
+    FLIP_END = 22,
+    SET_HOME = 25,
+    SET_SIMPLE_ON = 26,
+    SET_SIMPLE_OFF = 27,
+    SET_SUPERSIMPLE_ON = 29,
+    AUTOTUNE_INITIALISED = 30,
+    AUTOTUNE_OFF = 31,
+    AUTOTUNE_RESTART = 32,
+    AUTOTUNE_SUCCESS = 33,
+    AUTOTUNE_FAILED = 34,
+    AUTOTUNE_REACHED_LIMIT = 35,
+    AUTOTUNE_PILOT_TESTING = 36,
+    AUTOTUNE_SAVEDGAINS = 37,
+    SAVE_TRIM = 38,
+    SAVEWP_ADD_WP = 39,
+    FENCE_ENABLE = 41,
+    FENCE_DISABLE = 42,
+    ACRO_TRAINER_OFF = 43,
+    ACRO_TRAINER_LEVELING = 44,
+    ACRO_TRAINER_LIMITED = 45,
+    GRIPPER_GRAB = 46,
+    GRIPPER_RELEASE = 47,
+    PARACHUTE_DISABLED = 49,
+    PARACHUTE_ENABLED = 50,
+    PARACHUTE_RELEASED = 51,
+    LANDING_GEAR_DEPLOYED = 52,
+    LANDING_GEAR_RETRACTED = 53,
+    MOTORS_EMERGENCY_STOPPED = 54,
+    MOTORS_EMERGENCY_STOP_CLEARED = 55,
+    MOTORS_INTERLOCK_DISABLED = 56,
+    MOTORS_INTERLOCK_ENABLED = 57,
+    ROTOR_RUNUP_COMPLETE = 58, // Heli only
+    ROTOR_SPEED_BELOW_CRITICAL = 59, // Heli only
+    EKF_ALT_RESET = 60,
+    LAND_CANCELLED_BY_PILOT = 61,
+    EKF_YAW_RESET = 62,
+    AVOIDANCE_ADSB_ENABLE = 63,
+    AVOIDANCE_ADSB_DISABLE = 64,
+    AVOIDANCE_PROXIMITY_ENABLE = 65,
+    AVOIDANCE_PROXIMITY_DISABLE = 66,
+    GPS_PRIMARY_CHANGED = 67,
+    WINCH_RELAXED = 68,
+    WINCH_LENGTH_CONTROL = 69,
+    WINCH_RATE_CONTROL = 70,
+    ZIGZAG_STORE_A = 71,
+    ZIGZAG_STORE_B = 72,
+    LAND_REPO_ACTIVE = 73,
+    STANDBY_ENABLE = 74,
+    STANDBY_DISABLE = 75,
 
-    DATA_SURFACED = 163,
-    DATA_NOT_SURFACED = 164,
-    DATA_BOTTOMED = 165,
-    DATA_NOT_BOTTOMED = 166,
+    SURFACED = 163,
+    NOT_SURFACED = 164,
+    BOTTOMED = 165,
+    NOT_BOTTOMED = 166,
+};
+
+enum class LogDataID : uint8_t {
+    AP_STATE = 7,
+// SYSTEM_TIME_SET = 8,
+    INIT_SIMPLE_BEARING = 9,
 };
 
 enum class LogErrorSubsystem : uint8_t {
@@ -121,6 +130,7 @@ enum class LogErrorSubsystem : uint8_t {
     FAILSAFE_SENSORS = 26,
     FAILSAFE_LEAK = 27,
     PILOT_INPUT = 28,
+    FAILSAFE_VIBE = 29,
 };
 
 // bizarrely this enumeration has lots of duplicate values, offering
@@ -149,6 +159,7 @@ enum class LogErrorCode : uint8_t {
     RESTARTED_RTL = 3,
     FAILED_CIRCLE_INIT = 4,
     DEST_OUTSIDE_FENCE = 5,
+    RTL_MISSING_RNGFND = 6,
 
 // parachute failed to deploy because of low altitude or landed
     PARACHUTE_TOO_LOW = 2,
@@ -214,7 +225,7 @@ public:
     void StopLogging();
 
     void Write_Parameter(const char *name, float value);
-    void Write_Event(Log_Event id);
+    void Write_Event(LogEvent id);
     void Write_Error(LogErrorSubsystem sub_system,
                      LogErrorCode error_code);
     void Write_GPS(uint8_t instance, uint64_t time_us=0);
@@ -239,20 +250,22 @@ public:
     void Write_Rally();
     void Write_Baro(uint64_t time_us=0);
     void Write_Power(void);
-    void Write_AHRS2(AP_AHRS &ahrs);
-    void Write_POS(AP_AHRS &ahrs);
+    void Write_AHRS2();
+    void Write_POS();
     void Write_Radio(const mavlink_radio_t &packet);
     void Write_Message(const char *message);
     void Write_MessageF(const char *fmt, ...);
     void Write_CameraInfo(enum LogMessages msg, const Location &current_loc, uint64_t timestamp_us=0);
     void Write_Camera(const Location &current_loc, uint64_t timestamp_us=0);
     void Write_Trigger(const Location &current_loc);
-    void Write_ESC(uint8_t id, uint64_t time_us, int32_t rpm, uint16_t voltage, uint16_t current, int16_t temperature, uint16_t current_tot);
-    void Write_Attitude(AP_AHRS &ahrs, const Vector3f &targets);
+    void Write_ESC(uint8_t id, uint64_t time_us, int32_t rpm, uint16_t voltage, uint16_t current, int16_t esc_temp, uint16_t current_tot, int16_t motor_temp);
+    void Write_ServoStatus(uint64_t time_us, uint8_t id, float position, float force, float speed, uint8_t power_pct);
+    void Write_ESCStatus(uint64_t time_us, uint8_t id, uint32_t error_count, float voltage, float current, float temperature, int32_t rpm, uint8_t power_pct);
+    void Write_Attitude(const Vector3f &targets);
     void Write_AttitudeView(AP_AHRS_View &ahrs, const Vector3f &targets);
     void Write_Current();
     void Write_Compass(uint64_t time_us=0);
-    void Write_Mode(uint8_t mode, uint8_t reason);
+    void Write_Mode(uint8_t mode, const ModeReason reason);
 
     void Write_EntireMission();
     void Write_Command(const mavlink_command_int_t &packet, MAV_RESULT result, bool was_command_long=false);
@@ -268,6 +281,7 @@ public:
                           uint8_t sequence,
                           const RallyLocation &rally_point);
     void Write_VisualOdom(float time_delta, const Vector3f &angle_delta, const Vector3f &position_delta, float confidence);
+    void Write_VisualPosition(uint64_t remote_time_us, uint32_t time_ms, float x, float y, float z, float roll, float pitch, float yaw, uint8_t reset_counter);
     void Write_AOA_SSA(AP_AHRS &ahrs);
     void Write_Beacon(AP_Beacon &beacon);
     void Write_Proximity(AP_Proximity &proximity);
@@ -349,7 +363,9 @@ public:
     bool vehicle_is_armed() const { return _armed; }
 
     void handle_log_send();
-    bool in_log_download() const { return transfer_activity != IDLE; }
+    bool in_log_download() const {
+        return transfer_activity != TransferActivity::IDLE;
+    }
 
     float quiet_nanf() const { return nanf("0x4152"); } // "AR"
     double quiet_nan() const { return nan("0x4152445550490a"); } // "ARDUPI"
@@ -404,6 +420,7 @@ private:
         const char *units;
         const char *mults;
     } *log_write_fmts;
+    HAL_Semaphore log_write_fmts_sem;
 
     // return (possibly allocating) a log_write_fmt for a name
     struct log_write_fmt *msg_fmt_for_name(const char *name, const char *labels, const char *units, const char *mults, const char *fmt);
@@ -430,10 +447,7 @@ private:
     void Write_Compass_instance(uint64_t time_us,
                                     uint8_t mag_instance,
                                     enum LogMessages type);
-    void Write_Current_instance(uint64_t time_us,
-                                    uint8_t battery_instance,
-                                    enum LogMessages type,
-                                    enum LogMessages celltype);
+    void Write_Current_instance(uint64_t time_us, uint8_t battery_instance);
     void Write_IMUDT_instance(uint64_t time_us,
                                   uint8_t imu_instance,
                                   enum LogMessages type);
@@ -456,6 +470,7 @@ private:
     const char* unit_name(const uint8_t unit_id);
     double multiplier_name(const uint8_t multiplier_id);
     bool seen_ids[256] = { };
+    bool labels_string_is_good(const char *labels) const;
 #endif
 
     // possibly expensive calls to start log system:
@@ -466,11 +481,11 @@ private:
 
     /* support for retrieving logs via mavlink: */
 
-    enum transfer_activity_t : uint8_t {
+    enum class TransferActivity {
         IDLE,    // not doing anything, all file descriptors closed
         LISTING, // actively sending log_entry packets
         SENDING, // actively sending log_sending packets
-    } transfer_activity = IDLE;
+    } transfer_activity = TransferActivity::IDLE;
 
     // next log list entry to send
     uint16_t _log_next_list_entry;
@@ -497,7 +512,7 @@ private:
     uint32_t _log_data_page;
 
     GCS_MAVLINK *_log_sending_link;
-    HAL_Semaphore_Recursive _log_send_sem;
+    HAL_Semaphore _log_send_sem;
 
     // last time arming failed, for backends
     uint32_t _last_arming_failure_ms;

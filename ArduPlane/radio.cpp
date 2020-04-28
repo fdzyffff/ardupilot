@@ -41,11 +41,11 @@ void Plane::set_control_channels(void)
     }
 
     if (!arming.is_armed() && arming.arming_required() == AP_Arming::Required::YES_MIN_PWM) {
-        SRV_Channels::set_safety_limit(SRV_Channel::k_throttle, have_reverse_thrust()?SRV_Channel::SRV_CHANNEL_LIMIT_TRIM:SRV_Channel::SRV_CHANNEL_LIMIT_MIN);
+        SRV_Channels::set_safety_limit(SRV_Channel::k_throttle, have_reverse_thrust()?SRV_Channel::Limit::TRIM:SRV_Channel::Limit::MIN);
     }
 
     if (!quadplane.enable) {
-        // setup correct scaling for ESCs like the UAVCAN PX4ESC which
+        // setup correct scaling for ESCs like the UAVCAN ESCs which
         // take a proportion of speed. For quadplanes we use AP_Motors
         // scaling
         g2.servo_channels.set_esc_scaling_for(SRV_Channel::k_throttle);
@@ -79,15 +79,15 @@ void Plane::init_rc_out_main()
         SRV_Channels::set_trim_to_min_for(SRV_Channel::k_throttle);
     }
 
-    SRV_Channels::set_failsafe_limit(SRV_Channel::k_aileron, SRV_Channel::SRV_CHANNEL_LIMIT_TRIM);
-    SRV_Channels::set_failsafe_limit(SRV_Channel::k_elevator, SRV_Channel::SRV_CHANNEL_LIMIT_TRIM);
-    SRV_Channels::set_failsafe_limit(SRV_Channel::k_throttle, SRV_Channel::SRV_CHANNEL_LIMIT_TRIM);
-    SRV_Channels::set_failsafe_limit(SRV_Channel::k_rudder, SRV_Channel::SRV_CHANNEL_LIMIT_TRIM);
+    SRV_Channels::set_failsafe_limit(SRV_Channel::k_aileron, SRV_Channel::Limit::TRIM);
+    SRV_Channels::set_failsafe_limit(SRV_Channel::k_elevator, SRV_Channel::Limit::TRIM);
+    SRV_Channels::set_failsafe_limit(SRV_Channel::k_throttle, SRV_Channel::Limit::TRIM);
+    SRV_Channels::set_failsafe_limit(SRV_Channel::k_rudder, SRV_Channel::Limit::TRIM);
     
-    // setup PX4 to output the min throttle when safety off if arming
+    // setup flight controller to output the min throttle when safety off if arming
     // is setup for min on disarm
     if (arming.arming_required() == AP_Arming::Required::YES_MIN_PWM) {
-        SRV_Channels::set_safety_limit(SRV_Channel::k_throttle, have_reverse_thrust()?SRV_Channel::SRV_CHANNEL_LIMIT_TRIM:SRV_Channel::SRV_CHANNEL_LIMIT_MIN);
+        SRV_Channels::set_safety_limit(SRV_Channel::k_throttle, have_reverse_thrust()?SRV_Channel::Limit::TRIM:SRV_Channel::Limit::MIN);
     }
 }
 
@@ -165,7 +165,7 @@ void Plane::rudder_arm_disarm_check()
                 }
 			} else {
 				//time to disarm!
-				arming.disarm();
+				arming.disarm(AP_Arming::Method::RUDDER);
 				rudder_arm_timer = 0;
 			}
 		} else {
