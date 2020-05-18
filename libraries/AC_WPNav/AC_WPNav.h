@@ -29,7 +29,7 @@
 
 #define WPNAV_WP_FAST_OVERSHOOT_MAX     200.0f      // 2m overshoot is allowed during fast waypoints to allow for smooth transitions to next waypoint
 
-#define WPNAV_YAW_DIST_MIN                 200      // minimum track length which will lead to target yaw being updated to point at next waypoint.  Under this distance the yaw target will be frozen at the current heading
+#define WPNAV_YAW_DIST_MIN                 100      // minimum track length which will lead to target yaw being updated to point at next waypoint.  Under this distance the yaw target will be frozen at the current heading
 #define WPNAV_YAW_LEASH_PCT_MIN         0.134f      // target point must be at least this distance from the vehicle (expressed as a percentage of the maximum distance it can be from the vehicle - i.e. the leash length)
 
 #define WPNAV_RANGEFINDER_FILT_Z         0.25f      // range finder distance filtered at 0.25hz
@@ -138,9 +138,18 @@ public:
 
     /// reached_destination - true when we have come within RADIUS cm of the waypoint
     bool reached_wp_destination() const { return _flags.reached_destination; }
+    bool in_scurve() const { return _flags.in_scurve; }
+
+    void set_reached_wp_destination(bool ret)  { _flags.reached_destination = ret; }
+    void set_reached_wp_destination_pre(bool ret)  { _flags.reached_destination_pre = ret; }
+
+    /// reached_destination - true when we have come within RADIUS cm of the waypoint
+    bool reached_wp_destination_pre() const { return _flags.reached_destination_pre; }
 
     /// set_fast_waypoint - set to true to ignore the waypoint radius and consider the waypoint 'reached' the moment the intermediate point reaches it
     void set_fast_waypoint(bool fast) { _flags.fast_waypoint = fast; }
+
+    void set_wp_radius_cm_pre(float v) { _wp_radius_cm_pre = v; }
 
     /// update_wpnav - run the wp controller - should be called at 100hz or higher
     bool update_wpnav();
@@ -200,6 +209,11 @@ public:
     /// update_spline - update spline controller
     bool update_spline();
 
+    void set_wp_speed_min_cms(float v) {_wp_speed_min_cms = MAX(0.0f, v);}
+
+    bool update_radius(const Vector2f& curr_xy, float delta_angle);
+    bool init_radius(const Vector2f& curr_xy);
+
     ///
     /// shared methods
     ///
@@ -214,8 +228,36 @@ public:
     /// return the crosstrack_error - horizontal error of the actual position vs the desired position
     float crosstrack_error() const { return _track_error_xy;}
 
+    bool cale_scurve_init(const Vector2f& posA_xy, const Vector2f& posB_xy, const Vector2f& posC_xy);
+
+    bool cale_scurve_init(const Location_Class& B_loc, const Location_Class& C_loc);
+
+    bool calc_target_angle();
+
     static const struct AP_Param::GroupInfo var_info[];
 
+    float rad_BC = 0.0f;
+    float rad_AB = 0.0f;
+    float _delta_rad = 0.0f;
+    Vector2f _delta_k = Vector2f(0.0f, 0.0f);
+
+    float _target_angle = 0.0f;
+    float _local_angle = 0.0f;
+    float _angle = 0.0f;
+    float _scurive_head_angle = 0.0f;
+    float _rate_dir = 1.0f;
+    float _velocity_max = 0.0f;
+    float _angular_vel = 0.0f;
+    float _scurve_radius = 10.0f;
+    float _scurve_radius_start = 10.0f;
+    float _scurve_radius_end = 10.0f;
+    float _scurve_trig = -9.9f;
+    Vector2f _scurve_center_xy = Vector2f(0.0f, 0.0f);
+    Vector2f _scurve_start_pos = Vector2f(0.0f, 0.0f);
+    Vector2f _scurve_end_pos = Vector2f(0.0f, 0.0f);
+    Vector2f _posA_xy = Vector2f(0.0f, 0.0f);
+    Vector2f _posB_xy = Vector2f(0.0f, 0.0f);
+    Vector2f _posC_xy = Vector2f(0.0f, 0.0f);
 protected:
 
     // segment types, either straight or spine
@@ -226,6 +268,8 @@ protected:
 
     // flags structure
     struct wpnav_flags {
+        uint8_t in_scurve               : 1;
+        uint8_t reached_destination_pre : 1;
         uint8_t reached_destination     : 1;    // true if we have reached the destination
         uint8_t fast_waypoint           : 1;    // true if we should ignore the waypoint radius and consider the waypoint complete once the intermediate target has reached the waypoint
         uint8_t slowing_down            : 1;    // true when target point is slowing down before reaching the destination
@@ -277,6 +321,8 @@ protected:
     AP_Float    _wp_speed_up_cms;       // climb speed target in cm/s
     AP_Float    _wp_speed_down_cms;     // descent speed target in cm/s
     AP_Float    _wp_radius_cm;          // distance from a waypoint in cm that, when crossed, indicates the wp has been reached
+    AP_Float    _wp_radius_cm_pre;
+    AP_Float    _wp_speed_min_cms_factor;
     AP_Float    _wp_accel_cmss;          // horizontal acceleration in cm/s/s during missions
     AP_Float    _wp_accel_z_cmss;        // vertical acceleration in cm/s/s during missions
 
@@ -312,4 +358,9 @@ protected:
     AP_Int8     _rangefinder_use;
     bool        _rangefinder_healthy = false;
     float       _rangefinder_alt_cm = 0.0f;
+    float       _wp_speed_min_cms = 50.f;
+
+
+
+
 };

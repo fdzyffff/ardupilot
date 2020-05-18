@@ -22,7 +22,11 @@ bool Copter::ModeLoiter::init(bool ignore_checks)
             // clear out pilot desired acceleration in case radio failsafe event occurs and we do not switch to RTL for some reason
             loiter_nav->clear_pilot_desired_acceleration();
         }
-        loiter_nav->init_target();
+        if (pos_control->is_active_xy()) {
+            loiter_nav->init_target_soft();
+        } else {
+            loiter_nav->init_target();
+        }
 
         // initialise position and desired velocity
         if (!pos_control->is_active_z()) {

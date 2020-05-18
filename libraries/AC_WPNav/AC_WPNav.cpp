@@ -23,7 +23,6 @@ const AP_Param::GroupInfo AC_WPNav::var_info[] = {
     // @Increment: 1
     // @User: Standard
     AP_GROUPINFO("RADIUS",      1, AC_WPNav, _wp_radius_cm, WPNAV_WP_RADIUS),
-
     // @Param: SPEED_UP
     // @DisplayName: Waypoint Climb Speed Target
     // @Description: Defines the speed in cm/s which the aircraft will attempt to maintain while climbing during a WP mission
@@ -66,6 +65,8 @@ const AP_Param::GroupInfo AC_WPNav::var_info[] = {
     // @Values: 0:Disable,1:Enable
     // @User: Advanced
     AP_GROUPINFO("RFND_USE",   10, AC_WPNav, _rangefinder_use, 1),
+    AP_GROUPINFO("RADIUSPRE",  11, AC_WPNav, _wp_radius_cm_pre, WPNAV_WP_RADIUS),
+    AP_GROUPINFO("SPEEDF",   12, AC_WPNav, _wp_speed_min_cms_factor, 1.0f),
 
     AP_GROUPEND
 };
@@ -84,15 +85,17 @@ AC_WPNav::AC_WPNav(const AP_InertialNav& inav, const AP_AHRS_View& ahrs, AC_PosC
 
     // init flags
     _flags.reached_destination = false;
+    _flags.reached_destination_pre = false;
     _flags.fast_waypoint = false;
     _flags.slowing_down = false;
     _flags.recalc_wp_leash = false;
     _flags.new_wp_destination = false;
     _flags.segment_type = SEGMENT_STRAIGHT;
+    _flags.in_scurve = false;
 
     // sanity check some parameters
     _wp_accel_cmss = MIN(_wp_accel_cmss, GRAVITY_MSS * 100.0f * tanf(ToRad(_attitude_control.lean_angle_max() * 0.01f)));
-    _wp_radius_cm = MAX(_wp_radius_cm, WPNAV_WP_RADIUS_MIN);
+    //_wp_radius_cm = MAX(_wp_radius_cm, WPNAV_WP_RADIUS_MIN);
 }
 
 
@@ -157,6 +160,11 @@ void AC_WPNav::wp_and_spline_init()
 
     // initialise yaw heading to current heading target
     _flags.wp_yaw_set = false;
+
+    _flags.reached_destination_pre = false;
+    _flags.reached_destination = false;
+    _flags.in_scurve = false;
+    _wp_speed_min_cms = 0.0f;
 }
 
 /// set_speed_xy - allows main code to pass target horizontal velocity for wp navigation
@@ -211,7 +219,7 @@ bool AC_WPNav::set_wp_destination(const Vector3f& destination, bool terrain_alt)
         _pos_control.get_stopping_point_xy(origin);
         _pos_control.get_stopping_point_z(origin);
     }
-
+    
     // convert origin to alt-above-terrain
     if (terrain_alt) {
         float origin_terr_offset;
@@ -271,11 +279,15 @@ bool AC_WPNav::set_wp_origin_and_destination(const Vector3f& origin, const Vecto
     _pos_control.set_pos_target(origin + Vector3f(0,0,origin_terr_offset));
     _track_desired = 0;             // target is at beginning of track
     _flags.reached_destination = false;
+    _flags.reached_destination_pre = false;
+    _flags.in_scurve = false;
     _flags.fast_waypoint = false;   // default waypoint back to slow
     _flags.slowing_down = false;    // target is not slowing down yet
     _flags.segment_type = SEGMENT_STRAIGHT;
     _flags.new_wp_destination = true;   // flag new waypoint so we can freeze the pos controller's feed forward and smooth the transition
     _flags.wp_yaw_set = false;
+    _scurve_trig = -9.9f;
+    _wp_speed_min_cms = 0.0f;
 
     // initialise the limited speed to current speed along the track
     const Vector3f &curr_vel = _inav.get_velocity();
@@ -397,7 +409,7 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
     }else{
         // increase intermediate target point's velocity if not yet at the leash limit
         if(dt > 0 && !reached_leash_limit) {
-            _limited_speed_xy_cms += 2.0f * _track_accel * dt;
+            _limited_speed_xy_cms += 1.0f * _track_accel * dt;
         }
         // do not allow speed to be below zero or over top speed
         _limited_speed_xy_cms = constrain_float(_limited_speed_xy_cms, 0.0f, _track_speed);
@@ -405,20 +417,24 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
         // check if we should begin slowing down
         if (!_flags.fast_waypoint) {
             float dist_to_dest = _track_length - _track_desired;
-            if (!_flags.slowing_down && dist_to_dest <= _slow_down_dist) {
+            if (!_flags.slowing_down && dist_to_dest <= (_slow_down_dist + 2.0f*MAX(_scurve_trig, 0.0f)) ) {
                 _flags.slowing_down = true;
             }
             // if target is slowing down, limit the speed
             if (_flags.slowing_down) {
-                _limited_speed_xy_cms = MIN(_limited_speed_xy_cms, get_slow_down_speed(dist_to_dest, _track_accel));
+                _limited_speed_xy_cms = MIN(_limited_speed_xy_cms, get_slow_down_speed(dist_to_dest - 2.0f*MAX(_scurve_trig, 0.0f), _track_accel));
+                _limited_speed_xy_cms = MAX(_limited_speed_xy_cms, _wp_speed_min_cms);
             }
         }
 
         // if our current velocity is within the linear velocity range limit the intermediate point's velocity to be no more than the linear_velocity above or below our current velocity
-        if (fabsf(speed_along_track) < linear_velocity) {
-            _limited_speed_xy_cms = constrain_float(_limited_speed_xy_cms,speed_along_track-linear_velocity,speed_along_track+linear_velocity);
+        if (!_flags.slowing_down) {        
+            if (fabsf(speed_along_track) < linear_velocity) {
+                _limited_speed_xy_cms = constrain_float(_limited_speed_xy_cms,WPNAV_WP_TRACK_SPEED_MIN,speed_along_track+linear_velocity);
+            }
         }
     }
+    //float delta_track_advanced = _limited_speed_xy_cms * dt;
     // advance the current target
     if (!reached_leash_limit) {
     	_track_desired += _limited_speed_xy_cms * dt;
@@ -442,6 +458,29 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
 
     // recalculate the desired position
     Vector3f final_target = _origin + _pos_delta_unit * _track_desired;
+
+    Vector2f dest_to_start = Vector2f(curr_pos.x - _scurve_start_pos.x, curr_pos.y - _scurve_start_pos.y);
+    dest_to_start.length();
+    Vector2f curr_xy(curr_pos.x, curr_pos.y);
+    Vector2f next_xy(_pos_control.get_pos_target().x, _pos_control.get_pos_target().y);
+
+    if (_flags.in_scurve || _flags.reached_destination_pre) {
+        // angular_velocity in radians per second
+        _angular_vel = degrees(_rate_dir * _velocity_max/_scurve_radius);
+        float angle_change = _angular_vel * dt;
+        update_radius(curr_xy, fabsf(angle_change));
+        _local_angle += angle_change;
+
+        if (fabsf(_local_angle) > fabsf(_target_angle)){
+            _flags.in_scurve = false;
+            //_local_angle = _target_angle;
+            _scurve_trig = -9.9f;
+        }
+
+        final_target.x = _scurve_center_xy.x + _scurve_radius * cosf(radians(_local_angle + _angle)); 
+        final_target.y = _scurve_center_xy.y + _scurve_radius * sinf(radians(_local_angle + _angle));
+    }
+
     // convert final_target.z to altitude above the ekf origin
     final_target.z += terr_offset;
     _pos_control.set_pos_target(final_target);
@@ -455,27 +494,35 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
             }else{
                 // regular waypoints also require the copter to be within the waypoint radius
                 Vector3f dist_to_dest = (curr_pos - Vector3f(0,0,terr_offset)) - _destination;
-                if( dist_to_dest.length() <= _wp_radius_cm ) {
+                if( dist_to_dest.length() <= _wp_radius_cm && (_scurve_trig < 0.0f)) {
                     _flags.reached_destination = true;
                 }
             }
         }
-    }
-
-    // update the target yaw if origin and destination are at least 2m apart horizontally
-    if (_track_length_xy >= WPNAV_YAW_DIST_MIN) {
-        if (_pos_control.get_leash_xy() < WPNAV_YAW_DIST_MIN) {
-            // if the leash is short (i.e. moving slowly) and destination is at least 2m horizontally, point along the segment from origin to destination
-            set_yaw_cd(get_bearing_cd(_origin, _destination));
-        } else {
-            Vector3f horiz_leash_xy = final_target - curr_pos;
-            horiz_leash_xy.z = 0;
-            if (horiz_leash_xy.length() > MIN(WPNAV_YAW_DIST_MIN, _pos_control.get_leash_xy()*WPNAV_YAW_LEASH_PCT_MIN)) {
-                set_yaw_cd(RadiansToCentiDegrees(atan2f(horiz_leash_xy.y,horiz_leash_xy.x)));
-            }
+        if (_flags.reached_destination_pre && !_flags.in_scurve) {
+            _flags.reached_destination = true;
         }
     }
 
+    // update the target yaw if origin and destination are at least 2m apart horizontally
+    if (_flags.in_scurve || _flags.reached_destination_pre) {
+        set_yaw_cd(_scurive_head_angle * 100.f);
+    } else {
+        if (_track_length_xy >= WPNAV_YAW_DIST_MIN) {
+            // if the leash is short (i.e. moving slowly) and destination is at least 2m horizontally, point along the segment from origin to destination
+            set_yaw_cd(get_bearing_cd(_origin, _destination));   
+        }
+    }
+
+    if (!_flags.in_scurve && !_flags.reached_destination_pre && (_scurve_trig > 0.0f) && (_track_length - _track_desired <= _scurve_trig)) {
+        _velocity_max = MAX(fabsf(_limited_speed_xy_cms), 50.0f);
+        init_radius(next_xy);
+        _angular_vel = degrees(_rate_dir * _velocity_max/_scurve_radius);
+        //float angle_change = _angular_vel * dt;
+        _local_angle = 0.0f;//angle_change;
+        _flags.in_scurve = true;
+        _flags.reached_destination_pre = true;
+    }
     // successfully advanced along track
     return true;
 }
@@ -770,6 +817,7 @@ bool AC_WPNav::set_spline_origin_and_destination(const Vector3f& origin, const V
     // initialise intermediate point to the origin
     _pos_control.set_pos_target(origin + Vector3f(0,0,terr_offset));
     _flags.reached_destination = false;
+    _flags.in_scurve = false;
     _flags.segment_type = SEGMENT_SPLINE;
     _flags.new_wp_destination = true;   // flag new waypoint so we can freeze the pos controller's feed forward and smooth the transition
     _flags.wp_yaw_set = false;
@@ -1032,7 +1080,7 @@ float AC_WPNav::get_slow_down_speed(float dist_from_dest_cm, float accel_cmss)
     }
 
     // calculate desired speed near destination
-    float target_speed = safe_sqrt(dist_from_dest_cm * 4.0f * accel_cmss);
+    float target_speed = safe_sqrt(dist_from_dest_cm * 2.0f * accel_cmss);
 
     // ensure desired speed never becomes too low
     if (target_speed < WPNAV_WP_TRACK_SPEED_MIN) {
@@ -1040,4 +1088,107 @@ float AC_WPNav::get_slow_down_speed(float dist_from_dest_cm, float accel_cmss)
     } else {
         return target_speed;
     }
+}
+
+bool AC_WPNav::calc_target_angle()
+{
+    Vector2f _dir_start_vec = Vector2f(_scurve_start_pos.x - _scurve_center_xy.x, _scurve_start_pos.y - _scurve_center_xy.y);
+    Vector2f _dir_end_vec = Vector2f(_scurve_end_pos.x - _scurve_center_xy.x, _scurve_end_pos.y - _scurve_center_xy.y);
+
+    float rad_start = atan2f(_dir_start_vec.y, _dir_start_vec.x);
+    float rad_end = atan2f(_dir_end_vec.y, _dir_end_vec.x);
+
+    _target_angle = degrees(wrap_PI(rad_end - rad_start));
+    _angle = degrees(rad_start);
+
+    _rate_dir = 1.0f;
+    if (_target_angle < 0.0f) {_rate_dir = -1.0f;}
+    _local_angle = 0.0f;
+    return true;
+}
+
+bool AC_WPNav::update_radius(const Vector2f& curr_xy, float delta_angle)
+{
+    Vector2f _dir_curr_vec = Vector2f(curr_xy.x - _scurve_center_xy.x, curr_xy.y - _scurve_center_xy.y);
+    Vector2f _dir_start_vec = Vector2f(_scurve_start_pos.x - _scurve_center_xy.x, _scurve_start_pos.y - _scurve_center_xy.y);
+    //Vector2f _dir_end_vec = Vector2f(_scurve_end_pos.x - _scurve_center_xy.x, _scurve_end_pos.y - _scurve_center_xy.y);
+
+    float rad_start = atan2f(_dir_start_vec.y, _dir_start_vec.x);
+    float rad_curr = atan2f(_dir_curr_vec.y, _dir_curr_vec.x);
+
+    float covered_angle = (degrees(wrap_PI(rad_curr - rad_start))) * _rate_dir;
+    covered_angle = constrain_float(covered_angle, 0.0f, _target_angle * _rate_dir);
+    if (is_zero(_target_angle)) {
+        _scurve_radius = _scurve_radius_end; 
+        return true; 
+    }
+    _scurve_radius = _scurve_radius_start + (_scurve_radius_end - _scurve_radius_start) * fabsf(covered_angle/_target_angle);
+    _scurive_head_angle = wrap_360( _angle + (covered_angle + 90.f) * _rate_dir);
+    return true;
+}
+
+bool AC_WPNav::init_radius(const Vector2f& next_xy)
+{
+    Vector2f _dir_start_vec = Vector2f(_scurve_start_pos.x - _scurve_center_xy.x, _scurve_start_pos.y - _scurve_center_xy.y);
+    Vector2f _dir_next_vec = Vector2f(next_xy.x - _scurve_center_xy.x, next_xy.y - _scurve_center_xy.y);
+    Vector2f _dir_end_vec = Vector2f(_scurve_end_pos.x - _scurve_center_xy.x, _scurve_end_pos.y - _scurve_center_xy.y);
+
+    _dir_start_vec.normalize();
+    _scurve_radius_start = _dir_next_vec.x * _dir_start_vec.x + _dir_next_vec.y * _dir_start_vec.y;
+    _scurve_radius_start = _dir_next_vec.length();
+    _scurve_radius_end = _dir_end_vec.length();
+
+    return true;
+}
+
+bool AC_WPNav::cale_scurve_init(const Location_Class& B_loc, const Location_Class& C_loc)
+{
+    Vector3f tmp_posB;
+    Vector3f tmp_posC;
+
+    // convert destination location to vector
+    bool tmp_terrain;
+    if (!get_vector_NEU(B_loc, tmp_posB, tmp_terrain)) {return false;}
+    if (!get_vector_NEU(C_loc, tmp_posC, tmp_terrain)) {return false;}
+
+    _posA_xy = Vector2f(get_wp_origin().x, get_wp_origin().y);
+    _posB_xy = Vector2f(tmp_posB.x, tmp_posB.y);
+    _posC_xy = Vector2f(tmp_posC.x, tmp_posC.y);
+
+    return cale_scurve_init(_posA_xy, _posB_xy, _posC_xy);
+}
+
+bool AC_WPNav::cale_scurve_init(const Vector2f& posA_xy, const Vector2f& posB_xy, const Vector2f& posC_xy)
+{
+    Vector2f delta_BC = Vector2f(posC_xy.x - posB_xy.x, posC_xy.y - posB_xy.y);
+    Vector2f delta_AB = Vector2f(posB_xy.x - posA_xy.x, posB_xy.y - posA_xy.y); 
+    rad_BC = wrap_2PI(atan2f(delta_BC.y, delta_BC.x));
+    rad_AB = wrap_2PI(atan2f(delta_AB.y, delta_AB.x));
+    float leng_limit = MIN(delta_BC.length()*0.40f, delta_AB.length());
+    _scurve_trig = MIN(leng_limit, _wp_radius_cm_pre);
+    _delta_rad = fabsf(wrap_PI(rad_BC-rad_AB));
+
+    if ( delta_BC.length() <= 150.f || delta_AB.length() <= 150.f ) {
+        _scurve_trig = -9.9f;
+        return false;
+    }
+    if ( is_zero( sinf(_delta_rad) ) ) {
+        _scurve_trig = -9.9f;
+        return false;
+    }
+    delta_BC.normalize();
+    delta_AB.normalize();
+    _scurve_start_pos = posB_xy - (delta_AB * _scurve_trig); 
+    _scurve_end_pos = posB_xy + (delta_BC * _scurve_trig); 
+    _delta_k = Vector2f( (_scurve_start_pos.x + _scurve_end_pos.x)*0.5f - posB_xy.x, (_scurve_start_pos.y + _scurve_end_pos.y)*0.5f - posB_xy.y );
+    _delta_k.normalize();
+    float k_length = _scurve_trig / sinf(_delta_rad * 0.5f);
+    _scurve_radius = safe_sqrt(k_length* k_length - _scurve_trig*_scurve_trig);
+    _scurve_radius_start = _scurve_radius;
+    _scurve_radius_end = _scurve_radius;
+    _scurve_center_xy = posB_xy + (_delta_k * k_length);
+
+    calc_target_angle();
+    set_wp_speed_min_cms(constrain_float(_scurve_radius*_wp_speed_min_cms_factor, 50.f, 400.f) );
+    return true;
 }

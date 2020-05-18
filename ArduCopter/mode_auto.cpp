@@ -177,6 +177,8 @@ void Copter::ModeAuto::takeoff_start(const Location& dest_loc)
 
     // get initial alt for WP_NAVALT_MIN
     copter.auto_takeoff_set_start_alt();
+
+    copter.set_auto_armed(true);
 }
 
 // auto_wp_start - initialises waypoint controller to implement flying to a particular destination
@@ -803,6 +805,10 @@ void Copter::ModeAuto::wp_run()
     // call z-axis position controller (wpnav should have already updated it's alt target)
     pos_control->update_z_controller();
 
+/*    if (wp_nav->reached_wp_destination_pre() || wp_nav->_scurive_head_angle > 100.f) 
+    {
+        gcs().send_text(MAV_SEVERITY_INFO, "_scurive_head_angle: %0.3f",wp_nav->_scurive_head_angle);
+    }*/
     // call attitude controller
     if (auto_yaw.mode() == AUTO_YAW_HOLD) {
         // roll & pitch from waypoint controller, yaw rate from pilot
@@ -1102,6 +1108,14 @@ void Copter::ModeAuto::do_nav_wp(const AP_Mission::Mission_Command& cmd)
         // whether vehicle should stop at the target position depends upon the next command
         switch (temp_cmd.id) {
             case MAV_CMD_NAV_WAYPOINT:
+            case MAV_CMD_NAV_RETURN_TO_LAUNCH:{
+                Location_Class B_loc(cmd.content.location);
+                Location_Class C_loc(temp_cmd.content.location);
+                if (temp_cmd.id == 20) {
+                    C_loc = Location_Class(ahrs.get_home());
+                }
+                wp_nav->cale_scurve_init(B_loc, C_loc);
+                break;}
             case MAV_CMD_NAV_LOITER_UNLIM:
             case MAV_CMD_NAV_LOITER_TURNS:
             case MAV_CMD_NAV_LOITER_TIME:
@@ -1111,10 +1125,6 @@ void Copter::ModeAuto::do_nav_wp(const AP_Mission::Mission_Command& cmd)
                 if ((temp_cmd.content.location.lat != 0) || (temp_cmd.content.location.lng != 0)) {
                     fast_waypoint = true;
                 }
-                break;
-            case MAV_CMD_NAV_RETURN_TO_LAUNCH:
-                // do not stop for RTL
-                fast_waypoint = true;
                 break;
             case MAV_CMD_NAV_TAKEOFF:
             default:
@@ -1911,4 +1921,12 @@ bool Copter::ModeAuto::verify_nav_delay(const AP_Mission::Mission_Command& cmd)
     return false;
 }
 
+bool Copter::ModeAuto::mission_have_next_nav()
+{
+/*    uint16_t curr_nav_cmd_index = copter.mission.get_current_nav_index();
+    next_nav_cmd_index = copter.mission.get_next_nav_cmd_index(curr_nva_cmd_index+1);
+    return curr_nav_cmd_index != next_nav_cmd_index;*/
+    AP_Mission::Mission_Command temp_cmd;
+    return copter.mission.get_next_nav_cmd(copter.mission.get_current_nav_index(), temp_cmd);
+}
 #endif

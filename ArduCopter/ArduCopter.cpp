@@ -451,6 +451,56 @@ void Copter::one_hz_loop()
     // indicates that the sensor or subsystem is present but not
     // functioning correctly
     update_sensor_status_flags();
+
+/*    static int8_t timer = 0;
+    if (timer > 2) {
+        timer = 0;
+        Location my_loc;
+        ahrs.get_position(my_loc);
+
+        Vector3f my_vel;
+        ahrs.get_velocity_NED(my_vel);
+        Matrix3f my_dcm_matrix;
+        my_dcm_matrix.from_euler(ahrs.roll, ahrs.pitch, ahrs.yaw);
+        Quaternion my_quat;
+        my_quat.from_euler(ahrs.roll, ahrs.pitch, ahrs.yaw);
+        Matrix3f my_dcm_matrix_2;
+        my_quat.rotation_matrix(my_dcm_matrix_2);
+        //my_quat.
+        gcs().send_text(MAV_SEVERITY_INFO, "tar_pos_x: %f", pos_control->get_pos_target().x);
+        gcs().send_text(MAV_SEVERITY_INFO, "tar_pos_y: %f", pos_control->get_pos_target().y);
+        gcs().send_text(MAV_SEVERITY_INFO, "tar_pos_z: %f", pos_control->get_pos_target().z);
+        gcs().send_text(MAV_SEVERITY_INFO, "       ###   ");
+        gcs().send_text(MAV_SEVERITY_INFO, "speedN: %f", my_vel.x);
+        gcs().send_text(MAV_SEVERITY_INFO, "speedE: %f", my_vel.y);
+        gcs().send_text(MAV_SEVERITY_INFO, "speedD: %f", my_vel.z);
+        gcs().send_text(MAV_SEVERITY_INFO, "       ###   ");
+        gcs().send_text(MAV_SEVERITY_INFO, "rollRate: %.2f", ahrs.get_gyro().x);
+        gcs().send_text(MAV_SEVERITY_INFO, "pitchRate: %.2f", ahrs.get_gyro().y);
+        gcs().send_text(MAV_SEVERITY_INFO, "yawRate: %.2f", ahrs.get_gyro().z);
+        gcs().send_text(MAV_SEVERITY_INFO, "       ###   ");
+        gcs().send_text(MAV_SEVERITY_INFO, "rollDeg: %.2f", (float)ahrs.roll_sensor);
+        gcs().send_text(MAV_SEVERITY_INFO, "pitchDeg: %.2f", (float)ahrs.pitch_sensor);
+        gcs().send_text(MAV_SEVERITY_INFO, "yawDeg: %.2f", (float)ahrs.yaw_sensor);
+        gcs().send_text(MAV_SEVERITY_INFO, "       ###   ");
+        gcs().send_text(MAV_SEVERITY_INFO, "xAccel: %.2f", ahrs.get_accel_ef().x);
+        gcs().send_text(MAV_SEVERITY_INFO, "yAccel: %.2f", ahrs.get_accel_ef().y);
+        gcs().send_text(MAV_SEVERITY_INFO, "zAccel: %.2f", ahrs.get_accel_ef().z);
+        gcs().send_text(MAV_SEVERITY_INFO, "  apm_dcm (dcm) (quat)    ");
+        gcs().send_text(MAV_SEVERITY_INFO, "a.x: %.2f(%.2f)(%.2f)", ahrs.get_rotation_body_to_ned().a.x, my_dcm_matrix.a.x, my_dcm_matrix_2.a.x);
+        gcs().send_text(MAV_SEVERITY_INFO, "a.y: %.2f(%.2f)(%.2f)", ahrs.get_rotation_body_to_ned().a.y, my_dcm_matrix.a.y, my_dcm_matrix_2.a.y);
+        gcs().send_text(MAV_SEVERITY_INFO, "a.z: %.2f(%.2f)(%.2f)", ahrs.get_rotation_body_to_ned().a.z, my_dcm_matrix.a.z, my_dcm_matrix_2.a.z);
+        gcs().send_text(MAV_SEVERITY_INFO, "b.x: %.2f(%.2f)(%.2f)", ahrs.get_rotation_body_to_ned().b.x, my_dcm_matrix.b.x, my_dcm_matrix_2.b.x);
+        gcs().send_text(MAV_SEVERITY_INFO, "b.y: %.2f(%.2f)(%.2f)", ahrs.get_rotation_body_to_ned().b.y, my_dcm_matrix.b.y, my_dcm_matrix_2.b.y);
+        gcs().send_text(MAV_SEVERITY_INFO, "b.z: %.2f(%.2f)(%.2f)", ahrs.get_rotation_body_to_ned().b.z, my_dcm_matrix.b.z, my_dcm_matrix_2.b.z);
+        gcs().send_text(MAV_SEVERITY_INFO, "c.x: %.2f(%.2f)(%.2f)", ahrs.get_rotation_body_to_ned().c.x, my_dcm_matrix.c.x, my_dcm_matrix_2.c.x);
+        gcs().send_text(MAV_SEVERITY_INFO, "c.y: %.2f(%.2f)(%.2f)", ahrs.get_rotation_body_to_ned().c.y, my_dcm_matrix.c.y, my_dcm_matrix_2.c.y);
+        gcs().send_text(MAV_SEVERITY_INFO, "c.z: %.2f(%.2f)(%.2f)", ahrs.get_rotation_body_to_ned().c.z, my_dcm_matrix.c.z, my_dcm_matrix_2.c.z);
+        gcs().send_text(MAV_SEVERITY_INFO, "       ###   ");
+
+    } else {
+        timer++;
+    }*/
 }
 
 // called at 50hz

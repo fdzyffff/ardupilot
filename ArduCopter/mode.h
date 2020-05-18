@@ -304,6 +304,7 @@ public:
 
     // for GCS_MAVLink to call:
     bool do_guided(const AP_Mission::Mission_Command& cmd);
+    bool mission_have_next_nav();
 
 protected:
 

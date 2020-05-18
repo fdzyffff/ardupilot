@@ -25,6 +25,8 @@ public:
     /// initialize's position and feed-forward velocity from current pos and velocity
     void init_target();
 
+    void init_target_soft();
+
     /// reduce response for landing
     void soften_for_landing();
 

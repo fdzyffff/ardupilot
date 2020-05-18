@@ -140,6 +140,36 @@ void AC_Loiter::init_target()
     _pos_control.init_xy_controller();
 }
 
+/// initialize's position and feed-forward velocity from current pos and velocity
+void AC_Loiter::init_target_soft()
+{
+    _brake_timer = AP_HAL::millis();
+    const Vector3f& curr_pos = _inav.get_position();
+    const Vector3f& curr_vel = _inav.get_velocity();
+
+    sanity_check_params();
+
+    // initialise pos controller speed and acceleration
+    _pos_control.set_speed_xy(LOITER_VEL_CORRECTION_MAX);
+    _pos_control.set_accel_xy(_accel_cmss);
+    _pos_control.set_leash_length_xy(LOITER_POS_CORRECTION_MAX);
+
+    _predicted_accel = _desired_accel;
+    // update angle targets that will be passed to stabilize controller
+    float roll_cd, pitch_cd;
+    _pos_control.accel_to_lean_angles(_predicted_accel.x, _predicted_accel.y, roll_cd, pitch_cd);
+    _predicted_euler_angle.x = radians(roll_cd*0.01);
+    _predicted_euler_angle.y = radians(pitch_cd*0.01);
+    // set target position
+    _pos_control.set_xy_target(curr_pos.x, curr_pos.y);
+
+    // set vehicle velocity and acceleration to current state
+    _pos_control.set_desired_velocity_xy(curr_vel.x, curr_vel.y);
+    _pos_control.set_desired_accel_xy(_desired_accel.x, _desired_accel.y);
+
+    // initialise position controller
+    _pos_control.init_xy_controller();
+}
 /// reduce response for landing
 void AC_Loiter::soften_for_landing()
 {
@@ -272,7 +302,7 @@ void AC_Loiter::calc_desired_velocity(float nav_dt, float ekfGndSpdLimit)
         // calculate a braking acceleration if sticks are at zero
         float loiter_brake_accel = 0.0f;
         if (_desired_accel.is_zero()) {
-            if ((AP_HAL::millis()-_brake_timer) > _brake_delay * 1000.0f) {
+            if ((AP_HAL::millis()-_brake_timer) > _brake_delay * 1500.0f) {
                 float brake_gain = _pos_control.get_vel_xy_pid().kP() * 0.5f;
                 loiter_brake_accel = constrain_float(AC_AttitudeControl::sqrt_controller(desired_speed, brake_gain, _brake_jerk_max_cmsss, nav_dt), 0.0f, _brake_accel_cmss);
             }
