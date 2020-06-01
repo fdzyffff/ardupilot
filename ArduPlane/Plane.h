@@ -125,6 +125,7 @@
 #include <SITL/SITL.h>
 #endif
 
+#include <YANG_UART/YANG_UART.h>
 /*
   main APM:Plane class
  */
@@ -142,6 +143,7 @@ public:
     friend class GCS_Plane;
     friend class RC_Channel_Plane;
     friend class RC_Channels_Plane;
+    friend class YANG_UART;
 
     friend class Mode;
     friend class ModeCircle;
@@ -175,7 +177,7 @@ public:
     void loop() override;
 
 private:
-
+    YANG_UART yang_uart;
     // key aircraft parameters passed to multiple libraries
     AP_Vehicle::FixedWing aparm;
 
@@ -1083,6 +1085,11 @@ private:
         Failsafe_Action_QLand     = 4,
         Failsafe_Action_Parachute = 5
     };
+
+    void yang_uart_update();
+    void yang_uart_test(uint8_t msg_id);
+    void yang_uart_test_msg1();
+    void yang_uart_test_msg2();
 
     // list of priorities, highest priority first
     static constexpr int8_t _failsafe_priorities[] = {

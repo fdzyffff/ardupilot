@@ -187,6 +187,8 @@ void Plane::init_ardupilot()
 #if AP_PARAM_KEY_DUMP
     AP_Param::show_all(hal.console, true);
 #endif
+
+    yang_uart.init();
 }
 
 //********************************************************************************

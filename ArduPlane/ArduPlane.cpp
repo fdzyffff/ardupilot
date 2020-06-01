@@ -58,6 +58,7 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     SCHED_TASK_CLASS(AP_Baro, &plane.barometer, accumulate, 50, 150),
     SCHED_TASK_CLASS(AP_Notify,      &plane.notify,  update, 50, 300),
     SCHED_TASK(read_rangefinder,       50,    100),
+    SCHED_TASK(yang_uart_update,       50,    100),
     SCHED_TASK_CLASS(AP_ICEngine, &plane.g2.ice_control, update, 10, 100),
     SCHED_TASK_CLASS(Compass,          &plane.compass,              cal_update, 50, 50),
     SCHED_TASK(accel_cal_update,       10,    50),
@@ -252,8 +253,8 @@ extern AP_IOMCU iomcu;
 void Plane::one_second_loop()
 {
 
-    gcs().send_text(MAV_SEVERITY_NOTICE, "Landing aborted, climbing to %dm",
-                        int(auto_state.takeoff_altitude_rel_cm/100));
+    //gcs().send_text(MAV_SEVERITY_NOTICE, "Landing aborted, climbing to %dm",
+    //                    int(auto_state.takeoff_altitude_rel_cm/100));
     // make it possible to change control channel ordering at runtime
     set_control_channels();
 
