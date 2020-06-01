@@ -166,6 +166,8 @@ public:
         int32_t  rtk_baseline_z_mm;        ///< Current baseline in ECEF z or NED down component in mm
         uint32_t rtk_accuracy;             ///< Current estimate of 3D baseline accuracy (receiver dependent, typical 0 to 9999)
         int32_t  rtk_iar_num_hypotheses;   ///< Current number of integer ambiguity hypotheses
+        float heading_deg;
+        float heading_dev_deg;
     };
 
     /// Startup initialisation.
@@ -439,6 +441,19 @@ public:
     // handle possibly fragmented RTCM injection data
     void handle_gps_rtcm_fragment(uint8_t flags, const uint8_t *data, uint8_t len);
 
+    float get_heading_deg(uint8_t instance) const {
+        return state[instance].heading_deg;
+    }
+    float get_heading_deg() const {
+        return get_heading_deg(primary_instance);
+    }
+
+    float get_heading_dev_deg(uint8_t instance) const {
+        return state[instance].heading_dev_deg;
+    }
+    float get_heading_dev_deg() const {
+        return get_heading_dev_deg(primary_instance);
+    }
 protected:
 
     // configuration parameters

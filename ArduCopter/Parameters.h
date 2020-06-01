@@ -616,6 +616,8 @@ public:
     // Failsafe options bitmask #36
     AP_Int32 fs_options;
 
+    AP_Int8 gps_heading_print;
+
 #if MODE_AUTOROTATE_ENABLED == ENABLED
     // Autonmous autorotation
     AC_Autorotation arot;

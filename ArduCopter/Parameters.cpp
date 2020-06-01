@@ -961,6 +961,8 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_SUBGROUPINFO(arot, "AROT_", 37, ParametersG2, AC_Autorotation),
 #endif
 
+    AP_GROUPINFO("GPS_HEADING", 38, ParametersG2, gps_heading_print, 1),
+
 
 
     AP_GROUPEND

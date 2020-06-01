@@ -469,6 +469,8 @@ void Copter::one_hz_loop()
 #endif
 
     AP_Notify::flags.flying = !ap.land_complete;
+
+    send_gps_heading_deg();
 }
 
 // called at 50hz
@@ -601,6 +603,16 @@ void Copter::publish_osd_info()
     osd.set_nav_info(nav_info);
 }
 #endif
+
+void Copter::send_gps_heading_deg()
+{
+    if (g2.gps_heading_print)
+    {
+        float gps_heading_deg = gps.get_heading_deg();
+        float gps_heading_dev_deg = gps.get_heading_dev_deg();
+        gcs().send_text(MAV_SEVERITY_INFO, "GPS heading : %0.3f, dev : %0.3f", (gps_heading_deg, gps_heading_dev_deg));
+    }
+}
 
 /*
   constructor for main Copter class

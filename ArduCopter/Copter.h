@@ -1001,6 +1001,8 @@ private:
     Mode *mode_from_mode_num(const Mode::Number mode);
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);
 
+    void send_gps_heading_deg();
+
 public:
     void mavlink_delay_cb();    // GCS_Mavlink.cpp
     void failsafe_check();      // failsafe.cpp
