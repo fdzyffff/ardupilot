@@ -251,6 +251,9 @@ extern AP_IOMCU iomcu;
 
 void Plane::one_second_loop()
 {
+
+    gcs().send_text(MAV_SEVERITY_NOTICE, "Landing aborted, climbing to %dm",
+                        int(auto_state.takeoff_altitude_rel_cm/100));
     // make it possible to change control channel ordering at runtime
     set_control_channels();
 
@@ -290,6 +293,18 @@ void Plane::one_second_loop()
             
             // reset the landing altitude correction
             landing.alt_offset = 0;
+    }
+
+    send_gps_heading_deg();
+}
+
+void Plane::send_gps_heading_deg()
+{
+    if (g2.gps_heading_print)
+    {
+        float gps_heading_deg = gps.get_heading_deg();
+        float gps_heading_dev_deg = gps.get_heading_dev_deg();
+        gcs().send_text(MAV_SEVERITY_INFO, "GPS heading : %0.3f, dev : %0.3f", (gps_heading_deg, gps_heading_dev_deg));
     }
 }
 

@@ -1073,6 +1073,8 @@ private:
     bool avoid_adsb_init(bool ignore_checks);
     void avoid_adsb_run();
 
+    void send_gps_heading_deg();
+
     enum Failsafe_Action {
         Failsafe_Action_None      = 0,
         Failsafe_Action_RTL       = 1,

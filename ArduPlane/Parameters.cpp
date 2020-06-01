@@ -1239,6 +1239,9 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("DSPOILER_AILMTCH", 21, ParametersG2, crow_flap_aileron_matching, 100),
 
+    AP_GROUPINFO("GPS_HEADING", 22, ParametersG2, gps_heading_print, 1),
+
+
     AP_GROUPEND
 };
 
