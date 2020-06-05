@@ -1090,6 +1090,7 @@ private:
     void yang_uart_test(uint8_t msg_id);
     void yang_uart_test_msg1();
     void yang_uart_test_msg2();
+    void yang_uart_test_msg3();
 
     // list of priorities, highest priority first
     static constexpr int8_t _failsafe_priorities[] = {
