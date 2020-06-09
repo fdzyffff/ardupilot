@@ -633,6 +633,38 @@ private:
         GCS_CONTINUE_IF_PILOT_CONTROL   = (1<<4),   // 16
     };
 
+    // genren msg_1
+    struct {
+        uint32_t last_update_ms; 
+        bool valid;
+
+        float raw_x;
+        float raw_y;
+        float corr_x;
+        float corr_y;
+        //ned(front, right, down) in body frame
+        Vector3f out;
+    } genren_msg_follow;
+    
+    // genren msg_1
+    struct {
+        uint32_t last_update_ms; 
+        bool valid;
+
+        float raw_x;
+        float raw_y;
+        float corr_x;
+        float corr_y;
+        //ned(front, right, down) in body frame
+        Vector3f out;
+    } genren_msg_avoid;
+
+    enum genren_state_t
+    {
+        genren_STANDBY = 0,
+        genren_FOLLOWING = 1,
+    } genren_state;
+
     static constexpr int8_t _failsafe_priorities[] = {
                                                       Failsafe_Action_Terminate,
                                                       Failsafe_Action_Land,
@@ -650,6 +682,10 @@ private:
                   "_failsafe_priorities is missing the sentinel");
 
 
+    void genren_init();
+    void genren_follow_handle(float input_x, float input_y);
+    void genren_avoid_handle(float input_x, float input_y);
+    void genren_status_update();
 
     // AP_State.cpp
     void set_auto_armed(bool b);

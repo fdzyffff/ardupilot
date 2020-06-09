@@ -623,6 +623,16 @@ bool GCS_MAVLINK_Copter::allow_disarm() const
 MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_long_t &packet)
 {
     switch(packet.command) {
+        
+    case MAV_CMD_USER_1: {
+        copter.genren_follow_handle(packet.param1, packet.param2 );
+        return MAV_RESULT_ACCEPTED;
+    }
+
+    case MAV_CMD_USER_2: {
+        copter.genren_avoid_handle(packet.param1, packet.param2 );
+        return MAV_RESULT_ACCEPTED;
+    }
 
     case MAV_CMD_NAV_TAKEOFF: {
         // param3 : horizontal navigation by pilot acceptable

@@ -41,11 +41,11 @@
 //#define MODE_LOITER_ENABLED   DISABLED            // disable loiter mode support
 //#define MODE_POSHOLD_ENABLED  DISABLED            // disable poshold mode support
 //#define MODE_RTL_ENABLED      DISABLED            // disable rtl mode support
-//#define MODE_SMARTRTL_ENABLED DISABLED            // disable smartrtl mode support
-//#define MODE_SPORT_ENABLED    DISABLED            // disable sport mode support
+#define MODE_SMARTRTL_ENABLED DISABLED            // disable smartrtl mode support
+#define MODE_SPORT_ENABLED    DISABLED            // disable sport mode support
 //#define MODE_SYSTEMID_ENABLED DISABLED            // disable system ID mode support
 //#define MODE_THROW_ENABLED    DISABLED            // disable throw mode support
-//#define MODE_ZIGZAG_ENABLED   DISABLED            // disable zigzag mode support
+#define MODE_ZIGZAG_ENABLED   DISABLED            // disable zigzag mode support
 //#define OSD_ENABLED           DISABLED            // disable on-screen-display support
 //#define BUTTON_ENABLED        DISABLED            // disable button support
 
@@ -64,11 +64,11 @@
 // Put your variable definitions into the UserVariables.h file (or another file name and then change the #define below).
 //#define USERHOOK_VARIABLES "UserVariables.h"
 // Put your custom code into the UserCode.cpp with function names matching those listed below and ensure the appropriate #define below is uncommented below
-//#define USERHOOK_INIT userhook_init();                      // for code to be run once at startup
+#define USERHOOK_INIT userhook_init();                      // for code to be run once at startup
 //#define USERHOOK_FASTLOOP userhook_FastLoop();            // for code to be run at 100hz
-//#define USERHOOK_50HZLOOP userhook_50Hz();                  // for code to be run at 50hz
+#define USERHOOK_50HZLOOP userhook_50Hz();                  // for code to be run at 50hz
 //#define USERHOOK_MEDIUMLOOP userhook_MediumLoop();        // for code to be run at 10hz
 //#define USERHOOK_SLOWLOOP userhook_SlowLoop();            // for code to be run at 3.3hz
 //#define USERHOOK_SUPERSLOWLOOP userhook_SuperSlowLoop();  // for code to be run at 1hz
 //#define USERHOOK_AUXSWITCH ENABLED                        // for code to handle user aux switches
-//#define USER_PARAMS_ENABLED ENABLED                       // to enable user parameters
+#define USER_PARAMS_ENABLED ENABLED                       // to enable user parameters
