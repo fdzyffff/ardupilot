@@ -28,4 +28,7 @@ public:
     AP_Int8 genren_info_level;
     AP_Int16 genren_cam1_timeout;
     AP_Int16 genren_cam2_timeout;
+    AP_Float genren_follow_yawrate_max;
+    AP_Int8 vel_channel;
+    AP_Int8 vel_corr_enable;
 };

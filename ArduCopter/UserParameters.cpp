@@ -17,6 +17,9 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     AP_GROUPINFO("_INFOLV", 9, UserParameters, genren_info_level, 2),
     AP_GROUPINFO("_C1TIMEOUT", 10, UserParameters, genren_cam1_timeout, 1000),
     AP_GROUPINFO("_C2TIMEOUT", 11, UserParameters, genren_cam2_timeout, 1000),
+    AP_GROUPINFO("_FLYAWTC", 12, UserParameters, genren_follow_yawrate_max, 200.f),
+    AP_GROUPINFO("_FLVELCH", 13, UserParameters, vel_channel, 8),
+    AP_GROUPINFO("_FLVELCORR", 14, UserParameters, vel_corr_enable, 0),
     
     AP_GROUPEND
 };

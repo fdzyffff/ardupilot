@@ -38,6 +38,15 @@ void Copter::userhook_50Hz()
         genren_state = genren_STANDBY;
     }
 
+    
+    float vel_max = g2.user_parameters.genren_follow_vel;
+    if (g2.user_parameters.vel_channel-1 > 5) {
+        int16_t tune_in = rc().get_radio_in(g2.user_parameters.vel_channel-1) - 1000;
+        float vel_factor = constrain_float((float)tune_in / 1000.0f, 0.0f, 1.0f);
+        vel_max = vel_max * vel_factor;
+    }
+
+
     switch(genren_state){
         case genren_STANDBY:
             v_foward = 0.0f;
@@ -51,24 +60,29 @@ void Copter::userhook_50Hz()
             break;
         case genren_FOLLOWING:{
             v_right = 0.0f;
-            yaw_cd = degrees(wrap_2PI(atan2f(genren_msg_follow.out.y, genren_msg_follow.out.x))) * 100.f;
+            float target_yaw_cd = degrees(wrap_2PI(atan2f(genren_msg_follow.out.y, genren_msg_follow.out.x))) * 100.f;
             float curr_yaw_cd = float(ahrs_view->yaw_sensor);
-            float forward_factor = 1.0f - fabsf(constrain_float(wrap_180_cd(curr_yaw_cd - yaw_cd)/12000.f, -1.0, 1.0f));
-            v_foward = g2.user_parameters.genren_follow_vel * forward_factor;
+            float forward_factor = 1.0f - fabsf(constrain_float(wrap_180_cd(curr_yaw_cd - target_yaw_cd)/18000.f, -1.0, 1.0f));
+            v_foward = vel_max * forward_factor;
             if (genren_msg_avoid.valid) {
-                float right_factor = genren_msg_avoid.corr_x/(constrain_float(g2.user_parameters.cam2_xlength, 60.0f, 1080.f)*0.25f);
-                right_factor = constrain_float(right_factor, -1.0f, 1.0f);
-                right_factor = 1.0f - fabsf(right_factor);
+                float right_factor = 1.0f;
+                if (g2.user_parameters.vel_corr_enable) {
+                    right_factor = genren_msg_avoid.corr_x/(constrain_float(g2.user_parameters.cam2_xlength, 60.0f, 1080.f)*0.25f);
+                    right_factor = constrain_float(right_factor, -1.0f, 1.0f);
+                    right_factor = 1.0f - fabsf(right_factor);
+                }
                 if (genren_msg_avoid.corr_x < 0) {
-                    v_right = g2.user_parameters.genren_follow_vel * right_factor;
+                    v_right = vel_max * right_factor;
                 } else {
-                    v_right = -g2.user_parameters.genren_follow_vel * right_factor;
+                    v_right = -vel_max * right_factor;
                 }
             }
+            float yaw_rate_tc = MAX(0.1f, fabsf(g2.user_parameters.genren_follow_yawrate_max));
+            yaw_cd = 0.0f;
             v_down = 0.0f;
-            use_yaw = true;
-            use_yaw_rate = false;
-            yaw_rate_cds = 0.0f;
+            use_yaw = false;
+            use_yaw_rate = true;
+            yaw_rate_cds = wrap_180_cd(target_yaw_cd - attitude_control->get_att_target_euler_cd().z)/yaw_rate_tc;
             yaw_relative = false;
             }
             break;

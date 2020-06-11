@@ -476,6 +476,13 @@ void ModeGuided::vel_control_run()
     // set motors to full range
     motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
 
+    float target_clime_rate = copter.surface_tracking.adjust_climb_rate(guided_vel_target_cms.z);
+
+    Vector3f tmp_guided_vel_target_cms = guided_vel_target_cms;
+    tmp_guided_vel_target_cms.z = target_clime_rate;
+    // adjust climb rate using rangefinder
+    //guided_vel_target_cms.z = copter.surface_tracking.adjust_climb_rate(guided_vel_target_cms.z);
+
     // set velocity to zero and stop rotating if no updates received for 3 seconds
     uint32_t tnow = millis();
     if (tnow - vel_update_time_ms > GUIDED_POSVEL_TIMEOUT_MS) {
@@ -486,8 +493,10 @@ void ModeGuided::vel_control_run()
             auto_yaw.set_rate(0.0f);
         }
     } else {
-        set_desired_velocity_with_accel_and_fence_limits(guided_vel_target_cms);
+        set_desired_velocity_with_accel_and_fence_limits(tmp_guided_vel_target_cms);
     }
+
+    //guided_vel_target_cms.z = copter.surface_tracking.adjust_climb_rate(guided_vel_target_cms.z);
 
     // call velocity controller which includes z axis controller
     pos_control->update_vel_controller_xyz();
@@ -666,7 +675,6 @@ void ModeGuided::set_desired_velocity_with_accel_and_fence_limits(const Vector3f
     // get avoidance adjusted climb rate
     curr_vel_des.z = get_avoidance_adjusted_climbrate(curr_vel_des.z);
 #endif
-
     // update position controller with new target
     pos_control->set_desired_velocity(curr_vel_des);
 }
