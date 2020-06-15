@@ -87,6 +87,7 @@ public:
         k_param_notify,
         k_param_BoardConfig_CAN,
         k_param_battery,
+        k_param_guided_delay,
 
         //
         // 150: Telemetry control
@@ -159,6 +160,7 @@ public:
     AP_Int16 gcs_pid_mask;
     AP_Int8  initial_mode;
     AP_Int8 disarm_pwm;
+    AP_Int16 guided_delay;
 
     // Waypoints
     //

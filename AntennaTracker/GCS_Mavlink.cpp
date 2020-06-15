@@ -75,6 +75,26 @@ MAV_STATE GCS_MAVLINK_Tracker::vehicle_system_status() const
     return MAV_STATE_ACTIVE;
 }
 
+void GCS_MAVLINK_Tracker::send_position_target_global_int()
+{
+    mavlink_msg_position_target_global_int_send(
+        chan,
+        AP_HAL::millis(), // time_boot_ms
+        MAV_FRAME_GLOBAL, // targets are always global altitude
+        0x7BF8, // ignore everything except the x/y/z components
+        tracker.current_loc.lat, // latitude as 1e7
+        tracker.current_loc.lng, // longitude as 1e7
+        tracker.current_loc.alt * 0.01f, // altitude is sent as a float
+        0.0f, // vx
+        0.0f, // vy
+        0.0f, // vz
+        0.0f, // afx
+        0.0f, // afy
+        0.0f, // afz
+        tracker.ahrs.yaw, // yaw
+        0.0f); // yaw_rate
+}
+
 void GCS_MAVLINK_Tracker::send_nav_controller_output() const
 {
 	float alt_diff = (tracker.g.alt_source == ALT_SOURCE_BARO) ? tracker.nav_status.alt_difference_baro : tracker.nav_status.alt_difference_gps;

@@ -32,6 +32,8 @@ protected:
     void send_nav_controller_output() const override;
     void send_pid_tuning() override;
 
+    void send_position_target_global_int() override;
+
 private:
 
     void packetReceived(const mavlink_status_t &status, const mavlink_message_t &msg) override;

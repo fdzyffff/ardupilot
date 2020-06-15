@@ -263,6 +263,8 @@ private:
     void tracking_manual_control(const mavlink_manual_control_t &msg);
     void update_armed_disarmed();
 
+    void update_guided_target_position();
+
     // Mission library
     AP_Mission mission{
             FUNCTOR_BIND_MEMBER(&Tracker::start_command_callback, bool, const AP_Mission::Mission_Command &),

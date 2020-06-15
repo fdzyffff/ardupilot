@@ -413,6 +413,9 @@ const AP_Param::Info Tracker::var_info[] = {
     // @Path: ../libraries/AP_Stats/AP_Stats.cpp
     GOBJECT(stats, "STAT",  AP_Stats),
 
+
+    GSCALAR(guided_delay,          "GUIDED_DELAY",   300),
+
     AP_VAREND
 };
 
