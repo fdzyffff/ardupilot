@@ -183,9 +183,11 @@ bool ModeGuided::set_destination(const Vector3f& destination, bool use_yaw, floa
         pos_control_start();
     }
 
+    Vector3f tmp_destnation = destination;
+    tmp_destnation.z = g2.user_parameters.luoche_follow_alt;
 #if AC_FENCE == ENABLED
     // reject destination if outside the fence
-    const Location dest_loc(destination);
+    const Location dest_loc(tmp_destnation);
     if (!copter.fence.check_destination_within_fence(dest_loc)) {
         AP::logger().Write_Error(LogErrorSubsystem::NAVIGATION, LogErrorCode::DEST_OUTSIDE_FENCE);
         // failure is propagated to GCS with NAK
@@ -197,10 +199,10 @@ bool ModeGuided::set_destination(const Vector3f& destination, bool use_yaw, floa
     set_yaw_state(use_yaw, yaw_cd, use_yaw_rate, yaw_rate_cds, relative_yaw);
 
     // no need to check return status because terrain data is not used
-    wp_nav->set_wp_destination(destination, false);
+    wp_nav->set_wp_destination(tmp_destnation, false);
 
     // log target
-    copter.Log_Write_GuidedTarget(guided_mode, destination, Vector3f());
+    copter.Log_Write_GuidedTarget(guided_mode, tmp_destnation, Vector3f());
     return true;
 }
 
@@ -219,20 +221,23 @@ bool ModeGuided::set_destination(const Location& dest_loc, bool use_yaw, float y
 {
     // ensure we are in position control mode
     if (guided_mode != Guided_WP) {
+        return false;
         pos_control_start();
     }
 
+    Location tmp_dest_loc = dest_loc;
+    tmp_dest_loc.set_alt_cm(g2.user_parameters.luoche_follow_alt, Location::AltFrame::ABOVE_HOME);
 #if AC_FENCE == ENABLED
     // reject destination outside the fence.
     // Note: there is a danger that a target specified as a terrain altitude might not be checked if the conversion to alt-above-home fails
-    if (!copter.fence.check_destination_within_fence(dest_loc)) {
+    if (!copter.fence.check_destination_within_fence(tmp_dest_loc)) {
         AP::logger().Write_Error(LogErrorSubsystem::NAVIGATION, LogErrorCode::DEST_OUTSIDE_FENCE);
         // failure is propagated to GCS with NAK
         return false;
     }
 #endif
 
-    if (!wp_nav->set_wp_destination(dest_loc)) {
+    if (!wp_nav->set_wp_destination(tmp_dest_loc)) {
         // failure to set destination can only be because of missing terrain data
         AP::logger().Write_Error(LogErrorSubsystem::NAVIGATION, LogErrorCode::FAILED_TO_SET_DESTINATION);
         // failure is propagated to GCS with NAK
@@ -243,7 +248,7 @@ bool ModeGuided::set_destination(const Location& dest_loc, bool use_yaw, float y
     set_yaw_state(use_yaw, yaw_cd, use_yaw_rate, yaw_rate_cds, relative_yaw);
 
     // log target
-    copter.Log_Write_GuidedTarget(guided_mode, Vector3f(dest_loc.lat, dest_loc.lng, dest_loc.alt),Vector3f());
+    copter.Log_Write_GuidedTarget(guided_mode, Vector3f(tmp_dest_loc.lat, tmp_dest_loc.lng, dest_loc.alt),Vector3f());
     return true;
 }
 

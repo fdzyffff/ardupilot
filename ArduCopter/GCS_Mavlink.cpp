@@ -625,14 +625,10 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_
     switch(packet.command) {
         
     case MAV_CMD_USER_1: {
-        copter.genren_follow_handle(packet.param1, packet.param2 );
+        copter.luoche_follow_handle(packet.param1, packet.param2 );
         return MAV_RESULT_ACCEPTED;
     }
 
-    case MAV_CMD_USER_2: {
-        copter.genren_avoid_handle(packet.param1, packet.param2 );
-        return MAV_RESULT_ACCEPTED;
-    }
 
     case MAV_CMD_NAV_TAKEOFF: {
         // param3 : horizontal navigation by pilot acceptable
@@ -1052,6 +1048,7 @@ void GCS_MAVLINK_Copter::handleMessage(const mavlink_message_t &msg)
         float yaw_cd = 0.0f;
         bool yaw_relative = false;
         float yaw_rate_cds = 0.0f;
+        copter.luoche_state_yaw_cd = yaw_cd = ToDeg(packet.yaw) * 100.0f;
         if (!yaw_ignore) {
             yaw_cd = ToDeg(packet.yaw) * 100.0f;
             yaw_relative = packet.coordinate_frame == MAV_FRAME_BODY_NED || packet.coordinate_frame == MAV_FRAME_BODY_OFFSET_NED;
@@ -1121,6 +1118,8 @@ void GCS_MAVLINK_Copter::handleMessage(const mavlink_message_t &msg)
         float yaw_cd = 0.0f;
         bool yaw_relative = false;
         float yaw_rate_cds = 0.0f;
+
+        copter.luoche_state_yaw_cd = yaw_cd = ToDeg(packet.yaw) * 100.0f;
         if (!yaw_ignore) {
             yaw_cd = ToDeg(packet.yaw) * 100.0f;
             yaw_relative = packet.coordinate_frame == MAV_FRAME_BODY_NED || packet.coordinate_frame == MAV_FRAME_BODY_OFFSET_NED;
@@ -1136,6 +1135,8 @@ void GCS_MAVLINK_Copter::handleMessage(const mavlink_message_t &msg)
         } else if (!pos_ignore && vel_ignore && acc_ignore) {
             copter.mode_guided.set_destination(pos_neu_cm, !yaw_ignore, yaw_cd, !yaw_rate_ignore, yaw_rate_cds, yaw_relative);
         }
+
+        //copter.gcs().send_text()
 
         break;
     }

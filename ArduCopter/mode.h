@@ -790,6 +790,8 @@ public:
     void angle_control_start();
     void angle_control_run();
 
+    void pos_control_start();
+    void vel_control_start();
 protected:
 
     const char *name() const override { return "GUIDED"; }
@@ -801,8 +803,6 @@ protected:
 
 private:
 
-    void pos_control_start();
-    void vel_control_start();
     void posvel_control_start();
     void takeoff_run();
     void pos_control_run();

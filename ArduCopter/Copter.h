@@ -633,7 +633,7 @@ private:
         GCS_CONTINUE_IF_PILOT_CONTROL   = (1<<4),   // 16
     };
 
-    // genren msg_1
+    // luoche msg_1
     struct {
         uint32_t last_update_ms; 
         bool valid;
@@ -644,26 +644,18 @@ private:
         float corr_y;
         //ned(front, right, down) in body frame
         Vector3f out;
-    } genren_msg_follow;
+    } luoche_msg_follow;
     
-    // genren msg_1
-    struct {
-        uint32_t last_update_ms; 
-        bool valid;
+    float luoche_state_yaw_cd;
 
-        float raw_x;
-        float raw_y;
-        float corr_x;
-        float corr_y;
-        //ned(front, right, down) in body frame
-        Vector3f out;
-    } genren_msg_avoid;
-
-    enum genren_state_t
+    enum luoche_state_t
     {
-        genren_STANDBY = 0,
-        genren_FOLLOWING = 1,
-    } genren_state;
+        luoche_NONE = 0,
+        luoche_TAKEOFF = 1,
+        luoche_FOLLOWING = 2,
+        luoche_LANDING = 3,
+        luoche_FINAL = 4,
+    } luoche_state;
 
     static constexpr int8_t _failsafe_priorities[] = {
                                                       Failsafe_Action_Terminate,
@@ -682,10 +674,14 @@ private:
                   "_failsafe_priorities is missing the sentinel");
 
 
-    void genren_init();
-    void genren_follow_handle(float input_x, float input_y);
-    void genren_avoid_handle(float input_x, float input_y);
-    void genren_status_update();
+    void luoche_init();
+    void luoche_follow_handle(float input_x, float input_y);
+    void luoche_avoid_handle(float input_x, float input_y);
+    void luoche_status_update();
+    bool luoche_final_trigger();
+    void luoche_set_state(luoche_state_t new_state);
+    float luoche_get_speed(float input_x, float input_z);
+    void luoche_sanity_check_para();
 
     // AP_State.cpp
     void set_auto_armed(bool b);
