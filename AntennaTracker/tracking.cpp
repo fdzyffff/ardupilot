@@ -233,6 +233,7 @@ void Tracker::update_guided_target_position() {
 
     if (tnow - last_update_ms > (uint32_t)g.guided_delay) {
         gcs().send_message(MSG_POSITION_TARGET_GLOBAL_INT);
+        last_update_ms = tnow;
     }
     //mavlink_msg_set_position_target_global_int_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
     //                           uint32_t time_boot_ms, uint8_t target_system, uint8_t target_component, uint8_t coordinate_frame, uint16_t type_mask, int32_t lat_int, int32_t lon_int, float alt, float vx, float vy, float vz, float afx, float afy, float afz, float yaw, float yaw_rate)
