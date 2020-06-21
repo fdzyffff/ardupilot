@@ -1241,6 +1241,15 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
 
     AP_GROUPINFO("GPS_HEADING", 22, ParametersG2, gps_heading_print, 0),
 
+    // @Param: HB1_TYPE
+    // @DisplayName: 飞控类型
+    // @Description:  光电型:0 基础型：1
+    // @Range: 0 1
+    // @Units: int
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("HB1_TYPE", 23, ParametersG2, hb1_pilot_type, 0),
+
 
     AP_GROUPEND
 };

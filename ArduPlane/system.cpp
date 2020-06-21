@@ -188,7 +188,7 @@ void Plane::init_ardupilot()
     AP_Param::show_all(hal.console, true);
 #endif
 
-    yang_uart.init();
+    HB1_uart_init();
 }
 
 //********************************************************************************

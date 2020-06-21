@@ -381,7 +381,12 @@ void AP_SerialManager::init()
                 case SerialProtocol_Aerotenna_uLanding:
                     state[i].protocol.set_and_save(SerialProtocol_Rangefinder);
                     break;
-                case SerialProtocol_YANGUart:
+                case SerialProtocol_HB1_MISSION:
+                case SerialProtocol_HB1_CAM:
+                case SerialProtocol_HB1_POWER:
+                    state[i].uart->begin(map_baudrate(state[i].baud),
+                                         AP_YANGUART_BUFSIZE_RX,
+                                         AP_YANGUART_BUFSIZE_TX);
                     break;
                 case SerialProtocol_Volz:
                                     // Note baudrate is hardcoded to 115200

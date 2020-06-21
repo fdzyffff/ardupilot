@@ -79,6 +79,10 @@
 #define AP_SERIALMANAGER_SLCAN_BUFSIZE_RX       128
 #define AP_SERIALMANAGER_SLCAN_BUFSIZE_TX       128
 
+#define AP_YANGUART_BAUD        115200
+#define AP_YANGUART_BUFSIZE_RX  256
+#define AP_YANGUART_BUFSIZE_TX  256
+
 class AP_SerialManager {
 public:
     AP_SerialManager();
@@ -113,7 +117,9 @@ public:
         SerialProtocol_WindVane = 21,
         SerialProtocol_SLCAN = 22,
         SerialProtocol_RCIN = 23,
-        SerialProtocol_YANGUart = 24,
+        SerialProtocol_HB1_MISSION = 24,
+        SerialProtocol_HB1_CAM = 25,
+        SerialProtocol_HB1_POWER = 26,
     };
 
     // get singleton instance

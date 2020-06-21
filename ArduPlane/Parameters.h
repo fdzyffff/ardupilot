@@ -566,6 +566,7 @@ public:
     AP_Int8 crow_flap_aileron_matching;
 
     AP_Int8 gps_heading_print;
+    AP_Int8 hb1_pilot_type;
 };
 
 extern const AP_Param::Info var_info[];

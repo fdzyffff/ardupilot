@@ -125,7 +125,7 @@
 #include <SITL/SITL.h>
 #endif
 
-#include <YANG_UART/YANG_UART.h>
+#include <HB1_UART/HB1_UART.h>
 /*
   main APM:Plane class
  */
@@ -143,7 +143,7 @@ public:
     friend class GCS_Plane;
     friend class RC_Channel_Plane;
     friend class RC_Channels_Plane;
-    friend class YANG_UART;
+    friend class HB1_UART;
 
     friend class Mode;
     friend class ModeCircle;
@@ -177,7 +177,9 @@ public:
     void loop() override;
 
 private:
-    YANG_UART yang_uart;
+    HB1_UART HB1_uart_mission{AP_SerialManager::SerialProtocol_HB1_MISSION};
+    HB1_UART HB1_uart_cam{AP_SerialManager::SerialProtocol_HB1_CAM};
+    HB1_UART HB1_uart_power{AP_SerialManager::SerialProtocol_HB1_POWER};
     // key aircraft parameters passed to multiple libraries
     AP_Vehicle::FixedWing aparm;
 
@@ -1086,12 +1088,6 @@ private:
         Failsafe_Action_Parachute = 5
     };
 
-    void yang_uart_update();
-    void yang_uart_test(uint8_t msg_id);
-    void yang_uart_test_msg1();
-    void yang_uart_test_msg2();
-    void yang_uart_test_msg3();
-
     // list of priorities, highest priority first
     static constexpr int8_t _failsafe_priorities[] = {
                                                       Failsafe_Action_Terminate,
@@ -1104,6 +1100,36 @@ private:
                                                      };
     static_assert(_failsafe_priorities[ARRAY_SIZE(_failsafe_priorities) - 1] == -1,
                   "_failsafe_priorities is missing the sentinel");
+
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    enum HB1_Power_Action_t {
+        HB1_PoserAction_None            = 0,
+        HB1_PoserAction_RocketON        = 1,
+        HB1_PoserAction_EngineON        = 2,
+        HB1_PoserAction_EngineOFF       = 3,
+        HB1_PoserAction_ParachuteON     = 4,
+    } HB_Power_Action;
+
+
+    void HB1_uart_init();
+    void HB1_uart_update_50Hz();
+    void HB1_uart_update_10Hz();
+    void HB1_msg_apm2cam_send();
+    void HB1_msg_apm2power_send();
+    void HB1_msg_apm2mission_send();
+    void HB1_msg_power2apm_handle();
+    void HB1_msg_mission2apm_v2_handle();
+    void HB1_msg_mission2apm_v1_handle();
+
+    void HB1_uart_test(uint8_t msg_id);
+    void HB1_uart_test_msg1();
+    void HB1_uart_test_msg2();
+    void HB1_uart_test_msg3();
+
+    void HB1_status_init();
+    void HB1_status_update_20Hz();
+    void HB1_Power_update();
+    void HB1_status_set_HB_Power_Action(HB1_Power_Action_t action);
 
 public:
     void mavlink_delay_cb();
