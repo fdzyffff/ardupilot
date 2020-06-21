@@ -125,7 +125,7 @@ void Plane::HB1_msg_apm2mission_send() {
 }
 
 void Plane::HB1_msg_apm2cam_send() {
-    HB1_apm2cam &tmp_msg = HB1_uart_mission.get_msg_apm2cam();
+    HB1_apm2cam &tmp_msg = HB1_uart_cam.get_msg_apm2cam();
     tmp_msg._msg_1.need_send = true;
     tmp_msg._msg_1.content.msg.header.head_1 = HB1_apm2cam::PREAMBLE1;
     tmp_msg._msg_1.content.msg.header.head_2 = HB1_apm2cam::PREAMBLE2;
@@ -167,7 +167,7 @@ void Plane::HB1_msg_apm2cam_send() {
 }
 
 void Plane::HB1_msg_apm2power_send() {
-    HB1_apm2power &tmp_msg = HB1_uart_mission.get_msg_apm2power();
+    HB1_apm2power &tmp_msg = HB1_uart_power.get_msg_apm2power();
     tmp_msg._msg_1.need_send = true;
     tmp_msg._msg_1.content.msg.header.head_1 = HB1_apm2power::PREAMBLE1;
     tmp_msg._msg_1.content.msg.header.head_2 = HB1_apm2power::PREAMBLE2;
