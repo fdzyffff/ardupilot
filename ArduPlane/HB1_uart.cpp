@@ -76,9 +76,9 @@ void Plane::HB1_uart_update_50Hz()
 
 void Plane::HB1_uart_update_10Hz()
 {
-    //HB1_msg_apm2mission_send();
-    //HB1_msg_apm2cam_send();
-    //HB1_msg_apm2power_send();
+    HB1_msg_apm2mission_send();
+    HB1_msg_apm2cam_send();
+    HB1_msg_apm2power_send();
 }
 
 void Plane::HB1_msg_mission2apm_v1_handle() {

@@ -50,7 +50,7 @@ void Plane::HB1_uart_test_msg2(){
     tmp_msg._msg_1.need_send = true;
     tmp_msg._msg_1.content.msg.header.head_1 = HB1_mission2cam::PREAMBLE1;
     tmp_msg._msg_1.content.msg.header.head_2 = HB1_mission2cam::PREAMBLE2;
-    for (int8_t i = 2; i < tmp_msg._msg_1.length - 2; i++) {
+    for (int8_t i = 2; i < tmp_msg._msg_1.length - 1; i++) {
         tmp_msg._msg_1.content.data[i] = i;
     }
     tmp_msg._msg_1.content.msg.sum_check = 0;
