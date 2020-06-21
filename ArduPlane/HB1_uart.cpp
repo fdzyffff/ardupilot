@@ -42,10 +42,12 @@ void Plane::HB1_uart_update_50Hz()
     }
 
     if (HB1_uart_mission.get_msg_mission2cam()._msg_1.updated) {
-        memcpy(HB1_uart_cam.get_msg_mission2cam()._msg_1.content.data, 
+        if (HB1_uart_mission.get_msg_mission2cam()._msg_1.content.msg.header.index == g.sysid_this_mav) {
+            memcpy(HB1_uart_cam.get_msg_mission2cam()._msg_1.content.data, 
                 HB1_uart_mission.get_msg_mission2cam()._msg_1.content.data, 
                 HB1_uart_mission.get_msg_mission2cam()._msg_1.length*sizeof(uint8_t));
-        HB1_uart_cam.get_msg_mission2cam()._msg_1.need_send = true;
+            HB1_uart_cam.get_msg_mission2cam()._msg_1.need_send = true;
+        }
         HB1_uart_mission.get_msg_mission2cam()._msg_1.updated = false;
     }
 
