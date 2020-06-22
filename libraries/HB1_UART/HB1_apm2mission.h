@@ -11,17 +11,19 @@ public:
     // message structure
     struct PACKED MSG_Command_1 {
         HB1_mission2apm_header header;
-        int32_t longitude;
-        int32_t latitude;
-        int16_t alt;
-        int16_t ptich;
-        int16_t roll;
-        int16_t yaw;
-        int16_t ground_spd;
-        int16_t error_code;
+        double longitude;
+        double latitude;
+        float alt;
+        float ptich;
+        float roll;
+        float yaw;
+        float air_speed;
+        uint16_t error_code;
         int8_t  rc_code;
         int8_t  target_wp_index;
         uint8_t console_type;
+        float leader_balt;
+        float leader_ralt;
         uint8_t unused[4];
         uint8_t sum_check;
     };
@@ -73,6 +75,12 @@ public:
     void process_message(void) override;
     void parse(uint8_t temp) override;
     void swap_message() override {};
+
+    const double SF_LL = 1.19304647056;
+    const float SF_ALT = 3.2767;
+    const float SF_DIST = 32.767;
+    const float SF_ANG = 182.0389;
+    const float SF_VEL = 327.67;
 
     HB1UART_MSG_1 _msg_1;
 };

@@ -1118,8 +1118,8 @@ private:
     void HB1_msg_apm2power_send();
     void HB1_msg_apm2mission_send();
     void HB1_msg_power2apm_handle();
-    void HB1_msg_mission2apm_v2_handle();
-    void HB1_msg_mission2apm_v1_handle();
+    void HB1_msg_mission2apm_handle();
+    //void HB1_msg_mission2apm_v1_handle();
 
     void HB1_uart_test(uint8_t msg_id);
     void HB1_uart_test_msg1();

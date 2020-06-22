@@ -25,8 +25,8 @@ void HB1_UART::read(void)
     }
     while (_port->available() > 0) {
         uint8_t temp = _port->read();
-        if (_msg_mission2apm_v1.enable())   {_msg_mission2apm_v1.parse(temp);}
-        if (_msg_mission2apm_v2.enable())   {_msg_mission2apm_v2.parse(temp);}
+        //if (_msg_mission2apm_v1.enable())   {_msg_mission2apm_v1.parse(temp);}
+        if (_msg_mission2apm.enable())   {_msg_mission2apm.parse(temp);}
         if (_msg_mission2cam.enable())      {_msg_mission2cam.parse(temp);}
         if (_msg_cam2mission.enable())      {_msg_cam2mission.parse(temp);}
         if (_msg_power2apm.enable())        {_msg_power2apm.parse(temp);}
@@ -42,24 +42,14 @@ void HB1_UART::write(void)
         return ;
     }
     int16_t i = 0;
-    if (_msg_mission2apm_v1._msg_1.need_send)
+    if (_msg_mission2apm._msg_1.need_send)
     {
-        _msg_mission2apm_v1.swap_message();
-        for(i = 0;i < _msg_mission2apm_v1._msg_1.length ; i ++) {
-            _port->write(_msg_mission2apm_v1._msg_1.content.data[i]);
+        _msg_mission2apm.swap_message();
+        for(i = 0;i < _msg_mission2apm._msg_1.length ; i ++) {
+            _port->write(_msg_mission2apm._msg_1.content.data[i]);
         }
-        _msg_mission2apm_v1._msg_1.updated = false;
-        _msg_mission2apm_v1._msg_1.need_send = false;
-    }
-
-    if (_msg_mission2apm_v2._msg_1.need_send)
-    {
-        _msg_mission2apm_v2.swap_message();
-        for(i = 0;i < _msg_mission2apm_v2._msg_1.length ; i ++) {
-            _port->write(_msg_mission2apm_v2._msg_1.content.data[i]);
-        }
-        _msg_mission2apm_v2._msg_1.updated = false;
-        _msg_mission2apm_v2._msg_1.need_send = false;
+        _msg_mission2apm._msg_1.updated = false;
+        _msg_mission2apm._msg_1.need_send = false;
     }
 
     if (_msg_mission2cam._msg_1.need_send)

@@ -2,11 +2,7 @@
 
 void Plane::HB1_uart_init() {
     HB1_uart_mission.init();
-    if (g2.hb1_pilot_type == 0) {
-        HB1_uart_mission.get_msg_mission2apm_v1().set_enable();
-    } else {
-        HB1_uart_mission.get_msg_mission2apm_v2().set_enable();
-    }
+    HB1_uart_mission.get_msg_mission2apm().set_enable();
     HB1_uart_mission.get_msg_mission2cam().set_enable();
 
     HB1_uart_cam.init();
@@ -29,16 +25,9 @@ void Plane::HB1_uart_update_50Hz()
     }
 
     // uart mission
-    if (g2.hb1_pilot_type == 0) {
-        if (HB1_uart_mission.get_msg_mission2apm_v1()._msg_1.updated) {
-            HB1_msg_mission2apm_v1_handle();
-            HB1_uart_mission.get_msg_mission2apm_v1()._msg_1.updated = false;
-        }
-    } else {
-        if (HB1_uart_mission.get_msg_mission2apm_v2()._msg_1.updated) {
-            HB1_msg_mission2apm_v2_handle();
-            HB1_uart_mission.get_msg_mission2apm_v2()._msg_1.updated = false;
-        }
+    if (HB1_uart_mission.get_msg_mission2apm()._msg_1.updated) {
+        HB1_msg_mission2apm_handle();
+        HB1_uart_mission.get_msg_mission2apm()._msg_1.updated = false;
     }
 
     if (HB1_uart_mission.get_msg_mission2cam()._msg_1.updated) {
@@ -83,11 +72,7 @@ void Plane::HB1_uart_update_10Hz()
     HB1_msg_apm2power_send();
 }
 
-void Plane::HB1_msg_mission2apm_v1_handle() {
-    ;
-}
-
-void Plane::HB1_msg_mission2apm_v2_handle() {
+void Plane::HB1_msg_mission2apm_handle() {
     ;
 }
 
@@ -102,19 +87,23 @@ void Plane::HB1_msg_apm2mission_send() {
     tmp_msg._msg_1.content.msg.header.head_2 = HB1_apm2mission::PREAMBLE2;
     tmp_msg._msg_1.content.msg.header.index = HB1_apm2mission::INDEX1;
 
-    tmp_msg._msg_1.content.msg.longitude = current_loc.lng;
-    tmp_msg._msg_1.content.msg.latitude = current_loc.lat;
+    tmp_msg._msg_1.content.msg.longitude = (double)current_loc.lng * tmp_msg.SF_LL;
+    tmp_msg._msg_1.content.msg.latitude = (double)current_loc.lat * tmp_msg.SF_LL;
         int32_t temp_alt;
         if (!current_loc.get_alt_cm(Location::AltFrame::ABSOLUTE, temp_alt)) {temp_alt = 0;}
-    tmp_msg._msg_1.content.msg.alt = (int16_t)temp_alt;
-    tmp_msg._msg_1.content.msg.ptich = (int16_t)ahrs.get_pitch();
-    tmp_msg._msg_1.content.msg.roll = (int16_t)ahrs.get_roll();
-    tmp_msg._msg_1.content.msg.yaw = (int16_t)ahrs.get_yaw();
-    tmp_msg._msg_1.content.msg.ground_spd = (int16_t)ahrs.groundspeed_vector().length();
+    tmp_msg._msg_1.content.msg.alt = (float)temp_alt * tmp_msg.SF_ALT;
+    tmp_msg._msg_1.content.msg.ptich = (float)ahrs.pitch_sensor * tmp_msg.SF_ANG;
+    tmp_msg._msg_1.content.msg.roll = (float)ahrs.roll_sensor * tmp_msg.SF_ANG;
+    tmp_msg._msg_1.content.msg.yaw = (float)wrap_180_cd(ahrs.yaw_sensor) * tmp_msg.SF_ANG;
+        float airspeed_measured = 0;
+        if (!ahrs.airspeed_estimate(&airspeed_measured)) {airspeed_measured = 0.0f;}
+    tmp_msg._msg_1.content.msg.air_speed = (float)airspeed_measured * tmp_msg.SF_VEL;
     tmp_msg._msg_1.content.msg.error_code = 0;
     tmp_msg._msg_1.content.msg.rc_code = 0;
     tmp_msg._msg_1.content.msg.target_wp_index = mission.get_current_nav_index();
     tmp_msg._msg_1.content.msg.console_type = 1;
+    tmp_msg._msg_1.content.msg.leader_balt = 0.0f;
+    tmp_msg._msg_1.content.msg.leader_ralt = 0.0f;
     tmp_msg._msg_1.content.msg.unused[0] = 0;
     tmp_msg._msg_1.content.msg.unused[1] = 0;
     tmp_msg._msg_1.content.msg.unused[2] = 0;

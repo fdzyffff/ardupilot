@@ -1,13 +1,13 @@
-#include "HB1_mission2apm_v2.h"
+#include "HB1_mission2apm.h"
 
-HB1_mission2apm_v2::HB1_mission2apm_v2(void)
+HB1_mission2apm::HB1_mission2apm(void)
 {
     _enable = false;
     _msg_1.need_send = false;
     _msg_1.updated = false;
 }
 
-void HB1_mission2apm_v2::parse(uint8_t temp)
+void HB1_mission2apm::parse(uint8_t temp)
 {
     switch (_msg.msg_state)
     {
@@ -73,7 +73,7 @@ void HB1_mission2apm_v2::parse(uint8_t temp)
     }
 }
 
-void HB1_mission2apm_v2::process_message(void)
+void HB1_mission2apm::process_message(void)
 {
     int16_t i = 0;
     switch (_msg.header.index) {

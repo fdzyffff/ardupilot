@@ -1,6 +1,6 @@
 #include "HB1_message.h"
 
-class HB1_mission2apm_v2 : public HB1_message{
+class HB1_mission2apm : public HB1_message{
 public:
     struct PACKED HB1_mission2apm_header {
         uint8_t head_1;
@@ -60,22 +60,24 @@ public:
         uint8_t console_type;
         uint8_t remote_index;
         Remote_CMD remote_cmd;
-        int16_t youshang_target_gspd;
-        int16_t youshang_target_orthdist;
-        int16_t youshang_target_alt;
-        int16_t apm_deltaX;
-        int16_t apm_deltaY;
-        int16_t apm_deltaZ;
-        int32_t leader_lon;
-        int32_t leader_lat;
-        int16_t leader_alt;
+        float youshang_target_gspd;
+        float youshang_target_orthdist;
+        float youshang_target_alt;
+        float apm_deltaX;
+        float apm_deltaY;
+        float apm_deltaZ;
+        double leader_lon;
+        double leader_lat;
+        float leader_alt;
+        float leader_balt;
+        float leader_ralt;
         uint8_t unused[5];
         uint8_t sum_check;
     };
 
     union PACKED Content_1 {
         MSG_Command_1 msg;
-        uint8_t data[45];
+        uint8_t data[49];
     };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -83,7 +85,7 @@ public:
     struct PACKED HB1UART_MSG_1 {
         bool updated;
         bool need_send;
-        const uint16_t length = 45;
+        const uint16_t length = 49;
         Content_1 content;
     };
 
@@ -106,11 +108,11 @@ public:
         uint8_t data[60];;
     } _msg;
 
-    HB1_mission2apm_v2();
+    HB1_mission2apm();
     
     /* Do not allow copies */
-    HB1_mission2apm_v2(const HB1_mission2apm_v2 &other) = delete;
-    HB1_mission2apm_v2 &operator=(const HB1_mission2apm_v2&) = delete;
+    HB1_mission2apm(const HB1_mission2apm &other) = delete;
+    HB1_mission2apm &operator=(const HB1_mission2apm&) = delete;
 
     static const uint8_t PREAMBLE1 = 0xEB;
     static const uint8_t PREAMBLE2 = 0x90;
@@ -120,6 +122,12 @@ public:
     void process_message(void) override;
     void parse(uint8_t temp) override;
     void swap_message() override {};
+
+    const double SF_LL = 1.19304647056;
+    const float SF_ALT = 3.2767;
+    const float SF_DIST = 32.767;
+    const float SF_ANG = 182.0389;
+    const float SF_VEL = 327.67;
 
     HB1UART_MSG_1 _msg_1;
 };
