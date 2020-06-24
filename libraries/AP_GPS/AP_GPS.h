@@ -452,6 +452,9 @@ public:
         return get_heading_dev_deg(primary_instance);
     }
 
+    void get_BeijingTime(uint8_t &year_out, uint8_t &month_out, uint8_t &day_out, uint8_t &hour_out, uint8_t &minute_out, uint8_t &second_out, uint16_t &millisecond_out);
+
+
 protected:
 
     // configuration parameters

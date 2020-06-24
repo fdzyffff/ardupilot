@@ -11,19 +11,19 @@ public:
     // message structure
     struct PACKED MSG_Command_1 {
         HB1_mission2apm_header header;
-        double longitude;
-        double latitude;
-        float alt;
-        float ptich;
-        float roll;
-        float yaw;
-        float air_speed;
+        int32_t longitude;
+        int32_t latitude;
+        int16_t alt;
+        int16_t ptich;
+        int16_t roll;
+        int16_t yaw;
+        int16_t air_speed;
         uint16_t error_code;
         int8_t  rc_code;
         int8_t  target_wp_index;
         uint8_t console_type;
-        float leader_balt;
-        float leader_ralt;
+        int16_t leader_balt;
+        int16_t leader_ralt;
         uint8_t unused[4];
         uint8_t sum_check;
     };

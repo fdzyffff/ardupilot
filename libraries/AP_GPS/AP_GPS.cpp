@@ -1656,6 +1656,167 @@ bool AP_GPS::prepare_for_arming(void) {
     return all_passed;
 }
 
+void AP_GPS::get_BeijingTime(uint8_t &year_out, uint8_t &month_out, uint8_t &day_out, uint8_t &hour_out, uint8_t &minute_out, uint8_t &second_out, uint16_t &millisecond_out)
+{
+    /*定义中间变量*/
+    uint32_t days;
+
+    /* 定义要输出的变量，即现在的年月日时分秒 */
+    uint32_t year;
+    uint32_t month;
+    uint32_t date;
+    uint32_t hour;
+    uint32_t minute;
+    uint32_t second;//有可能出现小数
+    uint32_t weekday;//周日为0，周一至周六为1-6
+
+    /*记录下开机第一次计算时的数据*/
+    static uint32_t old_year;
+    static uint32_t old_month;
+    static uint32_t old_date;
+    static uint32_t old_week = -1;
+
+    uint32_t days_of_month[13] = { 0,31,28,31,30,31,30,31,31,30,31,30,31 };//平年每月的天数，此数组在下面两步骤中都可能用到
+
+    uint16_t GPS_week = time_week();
+    uint32_t time_of_week_s = time_week_ms() / 1000;
+    millisecond_out = time_week_ms() - (time_of_week_s * 1000);
+                                                                         // 转换为北京时间
+    //time_of_week_s += 28800;  // 北京时间，加8个小时,8*60*60
+    if (time_of_week_s >= 604800)  // 超过一周，7 * 24 * 60 *60 = 604800
+    {
+        time_of_week_s -= 604800;
+        GPS_week++;
+    }
+
+    /* 由于实际单次开机连续使用过程中week数据一般不变，故为了缩短计算时间，记录下开机第一次计算得出的(GPS_week,1)对应的年月日
+                  之后计算时只要week数据不变，直接使用存储的数据，即跳过第一部分程序
+    */
+    if (GPS_week != old_week)//第一次运算时week必然不等于初值为-1的old_week
+    {
+        year = 1980;
+        month = 1;
+        date = 6;
+
+        days = GPS_week * 7;
+
+        while (1)//确定year
+        {
+            if (year % 4 == 0)
+            {
+                if (days >= 366)
+                {
+                    days -= 366;
+                    year++;
+                }
+                else
+                    break;
+            }
+            else
+            {
+                if (days >= 365)
+                {
+                    days -= 365;
+                    year++;
+                }
+                else
+                    break;
+            }
+        }
+
+        while (1)//确定month
+        {
+            if (month == 2 && (year % 4 == 0))//如果将要加上的是闰年的2月
+                if (days >= (days_of_month[month] + 1))
+                {
+                    days -= days_of_month[month] + 1;
+                    month++;
+                }
+                else
+                    break;
+            else
+                if (days >= (days_of_month[month]))
+                {
+                    days -= days_of_month[month];
+                    month++;
+                }
+                else
+                    break;
+        }
+
+        date += days;//确定date
+
+        old_year = year;//记录数据
+        old_month = month;
+        old_date = date;
+        old_week = GPS_week;
+    }
+    else
+    {
+        year = old_year;//读取之前的数据
+        month = old_month;
+        date = old_date;
+    }
+
+    hour = 0;
+    minute = 0;
+    second = 0;
+    weekday = 0;
+
+    while (1)//确定date及weekday，以及可能发生变化的month和year
+    {
+        if (time_of_week_s >= 24 * 3600)
+        {
+            time_of_week_s -= 24 * 3600;
+            date++;
+            weekday++;
+            if (date> (((year % 4 == 0) && month == 2) ? days_of_month[month] + 1 : days_of_month[month]))//如果date超过当月天数
+            {
+                date = 1;
+                month++;
+                if (month>12)//如果month超过一年月数
+                {
+                    month = 1;
+                    year++;
+                }
+            }
+        }
+        else
+            break;
+    }
+
+    while (1)//确定hour
+    {
+        if (time_of_week_s >= 3600)
+        {
+            time_of_week_s -= 3600;
+            hour++;
+        }
+        else
+            break;
+    }
+
+    while (1)//确定minute
+    {
+        if (time_of_week_s >= 60)
+        {
+            time_of_week_s -= 60;
+            minute++;
+        }
+        else
+            break;
+    }
+
+    second += time_of_week_s;//确定second
+
+    year_out = (uint8_t)(year - 2000);
+    month_out = month;
+    day_out = date;
+    hour_out = hour;
+    minute_out = minute;
+    second_out = second;
+}
+
 namespace AP {
 
 AP_GPS &gps()

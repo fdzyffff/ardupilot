@@ -87,23 +87,23 @@ void Plane::HB1_msg_apm2mission_send() {
     tmp_msg._msg_1.content.msg.header.head_2 = HB1_apm2mission::PREAMBLE2;
     tmp_msg._msg_1.content.msg.header.index = HB1_apm2mission::INDEX1;
 
-    tmp_msg._msg_1.content.msg.longitude = (double)current_loc.lng * tmp_msg.SF_LL;
-    tmp_msg._msg_1.content.msg.latitude = (double)current_loc.lat * tmp_msg.SF_LL;
+    tmp_msg._msg_1.content.msg.longitude = (int32_t)((double)current_loc.lng * tmp_msg.SF_LL);
+    tmp_msg._msg_1.content.msg.latitude = (int32_t)((double)current_loc.lat * tmp_msg.SF_LL);
         int32_t temp_alt;
         if (!current_loc.get_alt_cm(Location::AltFrame::ABSOLUTE, temp_alt)) {temp_alt = 0;}
-    tmp_msg._msg_1.content.msg.alt = (float)temp_alt * tmp_msg.SF_ALT;
-    tmp_msg._msg_1.content.msg.ptich = (float)ahrs.pitch_sensor * tmp_msg.SF_ANG;
-    tmp_msg._msg_1.content.msg.roll = (float)ahrs.roll_sensor * tmp_msg.SF_ANG;
-    tmp_msg._msg_1.content.msg.yaw = (float)wrap_180_cd(ahrs.yaw_sensor) * tmp_msg.SF_ANG;
+    tmp_msg._msg_1.content.msg.alt = (int16_t)((float)temp_alt * tmp_msg.SF_ALT);
+    tmp_msg._msg_1.content.msg.ptich = (int16_t)((float)ahrs.pitch_sensor * tmp_msg.SF_ANG);
+    tmp_msg._msg_1.content.msg.roll = (int16_t)((float)ahrs.roll_sensor * tmp_msg.SF_ANG);
+    tmp_msg._msg_1.content.msg.yaw = (int16_t)((float)wrap_180_cd(ahrs.yaw_sensor) * tmp_msg.SF_ANG);
         float airspeed_measured = 0;
         if (!ahrs.airspeed_estimate(&airspeed_measured)) {airspeed_measured = 0.0f;}
-    tmp_msg._msg_1.content.msg.air_speed = (float)airspeed_measured * tmp_msg.SF_VEL;
+    tmp_msg._msg_1.content.msg.air_speed = (int16_t)airspeed_measured * tmp_msg.SF_VEL;
     tmp_msg._msg_1.content.msg.error_code = 0;
     tmp_msg._msg_1.content.msg.rc_code = 0;
     tmp_msg._msg_1.content.msg.target_wp_index = mission.get_current_nav_index();
     tmp_msg._msg_1.content.msg.console_type = 1;
-    tmp_msg._msg_1.content.msg.leader_balt = 0.0f;
-    tmp_msg._msg_1.content.msg.leader_ralt = 0.0f;
+    tmp_msg._msg_1.content.msg.leader_balt = 0;
+    tmp_msg._msg_1.content.msg.leader_ralt = 0;
     tmp_msg._msg_1.content.msg.unused[0] = 0;
     tmp_msg._msg_1.content.msg.unused[1] = 0;
     tmp_msg._msg_1.content.msg.unused[2] = 0;
@@ -125,30 +125,32 @@ void Plane::HB1_msg_apm2cam_send() {
     } else {
         tmp_msg._msg_1.content.msg.position_status = 1<<2;
     }
-    tmp_msg._msg_1.content.msg.gps_year = 0;
-    tmp_msg._msg_1.content.msg.gps_month = 0;
-    tmp_msg._msg_1.content.msg.gps_day = 0;
-    tmp_msg._msg_1.content.msg.gps_hour = 0;
-    tmp_msg._msg_1.content.msg.gps_minute = 0;
-    tmp_msg._msg_1.content.msg.gps_second = 0;
-    tmp_msg._msg_1.content.msg.gps_micros = 0;;
+        uint8_t gps_year, gps_month, gps_day, gps_hour, gps_minute, gps_second; uint16_t gps_millis;
+        gps.get_BeijingTime(gps_year, gps_month, gps_day, gps_hour, gps_minute, gps_second, gps_millis);
+    tmp_msg._msg_1.content.msg.gps_month = gps_month;
+    tmp_msg._msg_1.content.msg.gps_day = gps_day;
+    tmp_msg._msg_1.content.msg.gps_hour = gps_hour;
+    tmp_msg._msg_1.content.msg.gps_minute = gps_minute;
+    tmp_msg._msg_1.content.msg.gps_second = gps_second;
+    tmp_msg._msg_1.content.msg.gps_millis = gps_millis;
+    tmp_msg._msg_1.content.msg.gps_millis = gps_millis;
     tmp_msg._msg_1.content.msg.longitude = current_loc.lng;
     tmp_msg._msg_1.content.msg.latitude = current_loc.lat;
         int32_t temp_alt;
         if (!current_loc.get_alt_cm(Location::AltFrame::ABSOLUTE, temp_alt)) {temp_alt = 0;}
-    tmp_msg._msg_1.content.msg.gps_alt = temp_alt;
-    tmp_msg._msg_1.content.msg.ground_spd = (int16_t)ahrs.groundspeed_vector().length();
+    tmp_msg._msg_1.content.msg.gps_alt = (int16_t)(temp_alt / 20);
+    tmp_msg._msg_1.content.msg.ground_spd = (int16_t)(ahrs.groundspeed_vector().length() / 20.0f);
     tmp_msg._msg_1.content.msg.ptich_cd = (int16_t)ahrs.pitch_sensor;
     tmp_msg._msg_1.content.msg.roll_cd = (int16_t)ahrs.roll_sensor;
     tmp_msg._msg_1.content.msg.yaw_cd = (int16_t)ahrs.yaw_sensor;
         float airspeed_measured = 0;
         if (!ahrs.airspeed_estimate(&airspeed_measured)) {airspeed_measured = 0.0f;}
-    tmp_msg._msg_1.content.msg.air_speed = (int16_t)airspeed_measured;
-    tmp_msg._msg_1.content.msg.baro_alt = barometer.get_altitude();
+    tmp_msg._msg_1.content.msg.air_speed = (int16_t)airspeed_measured * 2;
+    tmp_msg._msg_1.content.msg.baro_alt = barometer.get_altitude() / 20;
         float gps_yaw = 0;
         float gps_yaw_acc = 0;
         if (!gps.gps_yaw_deg(gps_yaw, gps_yaw_acc)) {gps_yaw = 0.0f; gps_yaw_acc = 0.0f;}
-    tmp_msg._msg_1.content.msg.gps_yaw = (uint16_t)wrap_360(gps_yaw);
+    tmp_msg._msg_1.content.msg.gps_yaw = (uint16_t)wrap_360(gps_yaw) * 10;
     tmp_msg._msg_1.content.msg.gps_nstats = gps.num_sats();
     tmp_msg._msg_1.content.msg.sum_check = 0;
     

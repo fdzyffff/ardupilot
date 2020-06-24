@@ -17,7 +17,7 @@ public:
         uint8_t gps_hour;
         uint8_t gps_minute;
         uint8_t gps_second;
-        uint16_t gps_micros;
+        uint16_t gps_millis;
         int32_t longitude;
         int32_t latitude;
         int16_t gps_alt;
