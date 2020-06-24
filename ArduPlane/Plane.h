@@ -1117,7 +1117,7 @@ private:
     } HB1_test;
 
     Location HB1_follow_loc;
-    
+
     void HB1_uart_init();
     void HB1_uart_update_50Hz();
     void HB1_uart_update_10Hz();
@@ -1142,7 +1142,8 @@ private:
     void test_HB1_uart_msg3();
 
     void test_HB1_follow_update();
-    void test_HB1_follow_target_update(float t_ms);
+    void test_HB1_follow_target_update_1(float t_ms);
+    void test_HB1_follow_target_update_2(float t_ms);
     void test_HB1_follow(uint8_t msg_id);
     void test_HB1_init();
     void test_HB1_follow_target_reset();

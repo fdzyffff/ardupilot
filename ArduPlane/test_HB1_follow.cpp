@@ -17,7 +17,8 @@ void Plane::test_HB1_follow_update(void)
     uint32_t tnow = millis();
     if (HB1_test.status == 1) {
         if (tnow - tlast < DELTAT) {
-            test_HB1_follow_target_update(float(tnow - tlast));
+            //test_HB1_follow_target_update_1(float(tnow - tlast));
+            test_HB1_follow_target_update_2(float(tnow - tlast));
         } else {
             test_HB1_follow_target_reset();
         }
@@ -25,7 +26,7 @@ void Plane::test_HB1_follow_update(void)
     }
 }
 
-void Plane::test_HB1_follow_target_update(float t_ms)
+void Plane::test_HB1_follow_target_update_1(float t_ms)
 {
     const float x_len = 50000.0f;
     const float y_len = 100000.0f;
@@ -76,6 +77,78 @@ void Plane::test_HB1_follow_target_update(float t_ms)
         default:
             break;
     }
+    if (HB1_test.state <= 3) {
+        tmp_target.z = 10000.f;
+        Location loc(tmp_target);
+        HB1_test.follow_loc.lng = loc.lng;
+        HB1_test.follow_loc.lat = loc.lat;
+        HB1_test.follow_loc.set_alt_cm(tmp_target.z, Location::AltFrame::ABOVE_HOME);
+    }
+
+    // pack up msg
+    HB1_mission2apm &tmp_msg = HB1_uart_mission.get_msg_mission2apm();
+    tmp_msg._msg_1.updated = true;
+    tmp_msg._msg_1.need_send = false;
+    tmp_msg._msg_1.content.msg.header.head_1 = HB1_mission2apm::PREAMBLE1;
+    tmp_msg._msg_1.content.msg.header.head_2 = HB1_mission2apm::PREAMBLE2;
+    tmp_msg._msg_1.content.msg.header.index = HB1_mission2apm::INDEX1;
+        
+    tmp_msg._msg_1.content.msg.console_type = 0;
+    tmp_msg._msg_1.content.msg.remote_index = 6;
+    tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[0] = 0;
+    tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[1] = 0;
+    tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[2] = 0;
+    tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[3] = 0;
+    tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[4] = 0;
+    tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[5] = 0;
+    tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[6] = 0;
+    tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[7] = 0;
+    tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[8] = 0;
+    tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[9] = 0;
+    tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[10] = 0;
+    tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[11] = 0;
+    tmp_msg._msg_1.content.msg.youshang_target_gspd = 0;
+    tmp_msg._msg_1.content.msg.youshang_target_orthdist = 0;
+    tmp_msg._msg_1.content.msg.youshang_target_alt = 0;
+    tmp_msg._msg_1.content.msg.apm_deltaX = 0;
+    tmp_msg._msg_1.content.msg.apm_deltaY = 0;
+    tmp_msg._msg_1.content.msg.apm_deltaZ = 0;
+    tmp_msg._msg_1.content.msg.leader_lng = (int32_t)((double)HB1_test.follow_loc.lng*tmp_msg.SF_LL);
+    tmp_msg._msg_1.content.msg.leader_lat = (int32_t)((double)HB1_test.follow_loc.lat*tmp_msg.SF_LL);
+    tmp_msg._msg_1.content.msg.leader_alt = (int16_t)((float)HB1_test.follow_loc.alt*tmp_msg.SF_ALT);
+    tmp_msg._msg_1.content.msg.leader_balt = 0;
+    tmp_msg._msg_1.content.msg.leader_ralt = 0;
+    tmp_msg._msg_1.content.msg.unused[0] = 0;
+    tmp_msg._msg_1.content.msg.unused[1] = 0;
+    tmp_msg._msg_1.content.msg.unused[2] = 0;
+    tmp_msg._msg_1.content.msg.unused[3] = 0;
+    tmp_msg._msg_1.content.msg.unused[4] = 0;
+    
+    for (int8_t i = 2; i < tmp_msg._msg_1.length - 1; i++) {
+        tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
+    }
+}
+
+
+void Plane::test_HB1_follow_target_update_2(float t_ms)
+{
+    float tmp_vel = 2000.0f;
+    float _radius = 10000.f;
+    float _angular_vel = tmp_vel / _radius;
+    float dt = t_ms * 0.001f;
+    Vector3f tmp_last_pos;
+    if (!HB1_test.follow_loc.get_vector_from_origin_NEU(tmp_last_pos)) {
+        return;
+    }
+    Vector3f tmp_target;
+    static float _angle = 0.0f;
+    float angle_change = _angular_vel * dt;
+    _angle += angle_change;
+    _angle = wrap_PI(_angle);
+
+    tmp_target.x = 0.0f + _radius * cosf(-_angle);
+    tmp_target.y = 0.0f - _radius * sinf(-_angle);
+
     if (HB1_test.state <= 3) {
         tmp_target.z = 10000.f;
         Location loc(tmp_target);
