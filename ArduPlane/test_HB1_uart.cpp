@@ -1,24 +1,24 @@
 #include "Plane.h"
 
 
-void Plane::HB1_uart_test(uint8_t msg_id)
+void Plane::test_HB1_uart(uint8_t msg_id)
 {
     switch (msg_id) {
         case 1:
-            HB1_uart_test_msg1();
+            test_HB1_uart_msg1();
             break;
         case 2:
-            HB1_uart_test_msg2();
+            test_HB1_uart_msg2();
             break;
         case 3:
-            HB1_uart_test_msg3();
+            test_HB1_uart_msg3();
             break;
         default:
             break;
     }
 }
 
-void Plane::HB1_uart_test_msg1(){
+void Plane::test_HB1_uart_msg1(){
     HB1_mission2apm &tmp_msg = HB1_uart_mission.get_msg_mission2apm();
     tmp_msg._msg_1.updated = true;
     tmp_msg._msg_1.need_send = true;
@@ -35,7 +35,7 @@ void Plane::HB1_uart_test_msg1(){
     }
 }
 
-void Plane::HB1_uart_test_msg2(){
+void Plane::test_HB1_uart_msg2(){
     HB1_mission2cam &tmp_msg = HB1_uart_mission.get_msg_mission2cam();
     tmp_msg._msg_1.updated = true;
     tmp_msg._msg_1.need_send = true;
@@ -52,7 +52,7 @@ void Plane::HB1_uart_test_msg2(){
     }
 }
 
-void Plane::HB1_uart_test_msg3(){
+void Plane::test_HB1_uart_msg3(){
 /*    HB1_UART::YANGUART_MSG_1 tmp_msg = HB1_uart.get_msg_1();
     tmp_msg.updated = true;
     tmp_msg.content.msg.header.head_1 = HB1_UART::PREAMBLE1;

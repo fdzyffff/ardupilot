@@ -1110,7 +1110,14 @@ private:
         HB1_PoserAction_ParachuteON     = 4,
     } HB_Power_Action;
 
+    struct {
+        Location follow_loc;
+        uint8_t status;
+        uint16_t state;
+    } HB1_test;
 
+    Location HB1_follow_loc;
+    
     void HB1_uart_init();
     void HB1_uart_update_50Hz();
     void HB1_uart_update_10Hz();
@@ -1121,16 +1128,24 @@ private:
     void HB1_msg_mission2apm_handle();
     //void HB1_msg_mission2apm_v1_handle();
 
-    void HB1_uart_test(uint8_t msg_id);
-    void HB1_uart_test_msg1();
-    void HB1_uart_test_msg2();
-    void HB1_uart_test_msg3();
-
     void HB1_status_init();
     void HB1_status_update_20Hz();
     void HB1_Power_update();
     void HB1_status_set_HB_Power_Action(HB1_Power_Action_t action);
 
+    void HB1_update_follow();
+
+    // test ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    void test_HB1_uart(uint8_t msg_id);
+    void test_HB1_uart_msg1();
+    void test_HB1_uart_msg2();
+    void test_HB1_uart_msg3();
+
+    void test_HB1_follow_update();
+    void test_HB1_follow_target_update(float t_ms);
+    void test_HB1_follow(uint8_t msg_id);
+    void test_HB1_init();
+    void test_HB1_follow_target_reset();
 public:
     void mavlink_delay_cb();
     void failsafe_check(void);

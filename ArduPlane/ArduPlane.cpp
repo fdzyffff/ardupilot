@@ -50,7 +50,8 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     SCHED_TASK(adjust_altitude_target, 10,    200),
     SCHED_TASK(HB1_uart_update_50Hz,   50,    150),
     SCHED_TASK(HB1_uart_update_10Hz,   10,    50),
-    SCHED_TASK(HB1_status_update_20Hz, 20,    200),
+    SCHED_TASK(test_HB1_follow_update, 10,    50),
+    SCHED_TASK(HB1_status_update_20Hz, 20,    100),
 #if ADVANCED_FAILSAFE == ENABLED
     SCHED_TASK(afs_fs_check,           10,    100),
 #endif
@@ -516,6 +517,10 @@ void Plane::update_navigation()
     case Mode::Number::CRUISE:
         update_cruise();
         break;
+/*
+    case Mode::Number::HB1_FOLLOW:
+        HB1_update_follow();
+        break;*/
 
     case Mode::Number::MANUAL:
     case Mode::Number::STABILIZE:

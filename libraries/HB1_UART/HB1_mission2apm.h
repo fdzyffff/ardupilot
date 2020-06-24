@@ -66,7 +66,7 @@ public:
         int16_t apm_deltaX;
         int16_t apm_deltaY;
         int16_t apm_deltaZ;
-        int32_t leader_lon;
+        int32_t leader_lng;
         int32_t leader_lat;
         int16_t leader_alt;
         int16_t leader_balt;
