@@ -11,15 +11,17 @@ public:
     // message structure
     struct PACKED MSG_Command_1 {
         HB1_mission2apm_header header;
-        uint8_t payload_control_id;
+        uint8_t length;
+        uint8_t uav_id;
         int16_t cmd_1;
         int16_t cmd_2;
+        uint8_t unused;
         uint8_t sum_check;
     };
 
     union PACKED Content_1 {
         MSG_Command_1 msg;
-        uint8_t data[9];
+        uint8_t data[12];
     };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -27,7 +29,7 @@ public:
     struct PACKED HB1UART_MSG_1 {
         bool updated;
         bool need_send;
-        const uint16_t length = 9;
+        const uint16_t length = 12;
         Content_1 content;
     };
 
@@ -59,8 +61,7 @@ public:
     static const uint8_t PREAMBLE1 = 0xEB;
     static const uint8_t PREAMBLE2 = 0x90;
 
-    static const uint8_t INDEX1_no = 0x55;
-    static const uint8_t INDEX2_no = 0xAA;
+    static const uint8_t INDEX1 = 0xC3;
 
     void process_message(void) override;
     void parse(uint8_t temp) override;

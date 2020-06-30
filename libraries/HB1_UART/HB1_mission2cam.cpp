@@ -37,14 +37,13 @@ void HB1_mission2cam::parse(uint8_t temp)
             _msg.sum_check += temp;
             _msg.header.index = temp;
             switch (_msg.header.index) {
-                case INDEX1_no:
-                case INDEX2_no:
-                    _msg.msg_state = HB1UART_msg_parser::HB1UART_PREAMBLE1;
-                    break;
-                default:
+                case INDEX1:
                     _msg.length = _msg_1.length;
                     _msg.read = 3;
                     _msg.msg_state = HB1UART_msg_parser::HB1UART_DATA;
+                    break;
+                default:
+                    _msg.msg_state = HB1UART_msg_parser::HB1UART_PREAMBLE1;
                     break;
             }
             break;
@@ -80,10 +79,7 @@ void HB1_mission2cam::process_message(void)
 {
     int16_t i = 0;
     switch (_msg.header.index) {
-        case INDEX1_no:
-        case INDEX2_no:
-            break;
-        default:
+        case INDEX1:
             _msg_1.content.data[0] = _msg.header.head_1;
             _msg_1.content.data[1] = _msg.header.head_2;
             _msg_1.content.data[2] = _msg.header.index;
@@ -93,6 +89,7 @@ void HB1_mission2cam::process_message(void)
             swap_message();
             _msg_1.updated = true;
             _msg_1.need_send = false;
+        default:
             break;
     }
 }

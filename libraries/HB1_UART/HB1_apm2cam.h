@@ -5,11 +5,13 @@ public:
     struct PACKED HB1_mission2apm_header {
         uint8_t head_1;
         uint8_t head_2;
+        uint8_t index;
     };
 
     // message structure
     struct PACKED MSG_Command_1 {
         HB1_mission2apm_header header;
+        uint8_t length;
         uint8_t position_status;
         uint8_t gps_year;
         uint8_t gps_month;
@@ -29,12 +31,13 @@ public:
         int16_t baro_alt;
         uint16_t gps_yaw;
         uint8_t gps_nstats;
+        uint8_t unused;
         uint8_t sum_check;
     };
 
     union PACKED Content_1 {
         MSG_Command_1 msg;
-        uint8_t data[37];
+        uint8_t data[40];
     };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -42,7 +45,7 @@ public:
     struct PACKED HB1UART_MSG_1 {
         bool updated;
         bool need_send;
-        const uint16_t length = 37;
+        const uint16_t length = 40;
         Content_1 content;
     };
 
@@ -72,7 +75,9 @@ public:
     HB1_apm2cam &operator=(const HB1_apm2cam&) = delete;
 
     static const uint8_t PREAMBLE1 = 0xEB;
-    static const uint8_t PREAMBLE2 = 0x91;
+    static const uint8_t PREAMBLE2 = 0x90;
+
+    static const uint8_t INDEX1 = 0x96;
 
     void process_message(void) override;
     void parse(uint8_t temp) override;

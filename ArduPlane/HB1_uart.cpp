@@ -31,7 +31,7 @@ void Plane::HB1_uart_update_50Hz()
     }
 
     if (HB1_uart_mission.get_msg_mission2cam()._msg_1.updated) {
-        if (HB1_uart_mission.get_msg_mission2cam()._msg_1.content.msg.header.index == g.sysid_this_mav) {
+        if (HB1_uart_mission.get_msg_mission2cam()._msg_1.content.msg.uav_id == g.sysid_this_mav) {
             memcpy(HB1_uart_cam.get_msg_mission2cam()._msg_1.content.data, 
                 HB1_uart_mission.get_msg_mission2cam()._msg_1.content.data, 
                 HB1_uart_mission.get_msg_mission2cam()._msg_1.length*sizeof(uint8_t));
@@ -111,6 +111,7 @@ void Plane::HB1_msg_apm2mission_send() {
     tmp_msg._msg_1.content.msg.header.head_1 = HB1_apm2mission::PREAMBLE1;
     tmp_msg._msg_1.content.msg.header.head_2 = HB1_apm2mission::PREAMBLE2;
     tmp_msg._msg_1.content.msg.header.index = HB1_apm2mission::INDEX1;
+    tmp_msg._msg_1.content.msg.length = tmp_msg._msg_1.length-3;
 
     tmp_msg._msg_1.content.msg.longitude = (int32_t)((double)current_loc.lng * tmp_msg.SF_LL);
     tmp_msg._msg_1.content.msg.latitude = (int32_t)((double)current_loc.lat * tmp_msg.SF_LL);
@@ -143,6 +144,8 @@ void Plane::HB1_msg_apm2cam_send() {
     tmp_msg._msg_1.need_send = true;
     tmp_msg._msg_1.content.msg.header.head_1 = HB1_apm2cam::PREAMBLE1;
     tmp_msg._msg_1.content.msg.header.head_2 = HB1_apm2cam::PREAMBLE2;
+    tmp_msg._msg_1.content.msg.header.index = HB1_apm2cam::INDEX1;
+    tmp_msg._msg_1.content.msg.length = tmp_msg._msg_1.length-3;
     if (gps.status() < AP_GPS::GPS_OK_FIX_3D) {
         tmp_msg._msg_1.content.msg.position_status = 0;
     } else {

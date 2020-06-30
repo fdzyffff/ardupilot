@@ -57,6 +57,7 @@ public:
     // message structure
     struct PACKED MSG_Command_1 {
         HB1_mission2apm_header header;
+        uint8_t length;
         uint8_t console_type;
         uint8_t remote_index;
         Remote_CMD remote_cmd;
@@ -77,7 +78,7 @@ public:
 
     union PACKED Content_1 {
         MSG_Command_1 msg;
-        uint8_t data[49];
+        uint8_t data[50];
     };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -85,7 +86,7 @@ public:
     struct PACKED HB1UART_MSG_1 {
         bool updated;
         bool need_send;
-        const uint16_t length = 49;
+        const uint16_t length = 50;
         Content_1 content;
     };
 
@@ -114,8 +115,8 @@ public:
     HB1_mission2apm(const HB1_mission2apm &other) = delete;
     HB1_mission2apm &operator=(const HB1_mission2apm&) = delete;
 
-    static const uint8_t PREAMBLE1 = 0xEB;
-    static const uint8_t PREAMBLE2 = 0x90;
+    static const uint8_t PREAMBLE1 = 0xEE;
+    static const uint8_t PREAMBLE2 = 0x16;
 
     static const uint8_t INDEX1 = 0xAA;
 

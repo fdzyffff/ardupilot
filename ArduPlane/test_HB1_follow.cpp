@@ -17,7 +17,14 @@ void Plane::test_HB1_follow_update(void)
     uint32_t tnow = millis();
     if (HB1_test.status == 1) {
         if (tnow - tlast < DELTAT) {
-            //test_HB1_follow_target_update_1(float(tnow - tlast));
+            test_HB1_follow_target_update_1(float(tnow - tlast));
+        } else {
+            test_HB1_follow_target_reset();
+        }
+        tlast = tnow;
+    }
+    else if (HB1_test.status == 2) {
+        if (tnow - tlast < DELTAT) {
             test_HB1_follow_target_update_2(float(tnow - tlast));
         } else {
             test_HB1_follow_target_reset();
@@ -92,6 +99,7 @@ void Plane::test_HB1_follow_target_update_1(float t_ms)
     tmp_msg._msg_1.content.msg.header.head_1 = HB1_mission2apm::PREAMBLE1;
     tmp_msg._msg_1.content.msg.header.head_2 = HB1_mission2apm::PREAMBLE2;
     tmp_msg._msg_1.content.msg.header.index = HB1_mission2apm::INDEX1;
+    tmp_msg._msg_1.content.msg.length = tmp_msg._msg_1.length-3;
         
     tmp_msg._msg_1.content.msg.console_type = 0;
     tmp_msg._msg_1.content.msg.remote_index = 6;

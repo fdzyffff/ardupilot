@@ -25,8 +25,9 @@ void Plane::test_HB1_uart_msg1(){
     tmp_msg._msg_1.content.msg.header.head_1 = HB1_mission2apm::PREAMBLE1;
     tmp_msg._msg_1.content.msg.header.head_2 = HB1_mission2apm::PREAMBLE2;
     tmp_msg._msg_1.content.msg.header.index = HB1_mission2apm::INDEX1;
+    tmp_msg._msg_1.content.msg.length = tmp_msg._msg_1.length-3;
 
-    for (int8_t i = 3; i < tmp_msg._msg_1.length - 1; i++) {
+    for (int8_t i = 4; i < tmp_msg._msg_1.length - 1; i++) {
         tmp_msg._msg_1.content.data[i] = i;
     }
     
@@ -41,10 +42,13 @@ void Plane::test_HB1_uart_msg2(){
     tmp_msg._msg_1.need_send = true;
     tmp_msg._msg_1.content.msg.header.head_1 = HB1_mission2cam::PREAMBLE1;
     tmp_msg._msg_1.content.msg.header.head_2 = HB1_mission2cam::PREAMBLE2;
+    tmp_msg._msg_1.content.msg.header.index = HB1_mission2apm::INDEX1;
+    tmp_msg._msg_1.content.msg.length = tmp_msg._msg_1.length-3;
 
-    for (int8_t i = 2; i < tmp_msg._msg_1.length - 1; i++) {
+    for (int8_t i = 4; i < tmp_msg._msg_1.length - 1; i++) {
         tmp_msg._msg_1.content.data[i] = i;
     }
+    tmp_msg._msg_1.content.msg.uav_id = g.sysid_this_mav;
     tmp_msg._msg_1.content.msg.sum_check = 0;
     
     for (int8_t i = 2; i < tmp_msg._msg_1.length - 1; i++) {

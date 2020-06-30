@@ -21,40 +21,54 @@ void HB1_cam2mission::parse(uint8_t temp)
             break;
         case HB1UART_msg_parser::HB1UART_PREAMBLE2:
             if (temp == PREAMBLE2)
-            {        
-                _msg.length = _msg_1.length;
-                _msg.read = 2;
-                _msg.msg_state = HB1UART_msg_parser::HB1UART_DATA;
+            {
+                _msg.msg_state = HB1UART_msg_parser::HB1UART_INDEX;
             }
             else
             {
                 _msg.msg_state = HB1UART_msg_parser::HB1UART_PREAMBLE1;
             }
             break;
+        case HB1UART_msg_parser::HB1UART_INDEX:
+            _msg.header.head_1 = PREAMBLE1;
+            _msg.header.head_2 = PREAMBLE2;
+            _msg.sum_check += temp;
+            _msg.header.index = temp;
+            switch (_msg.header.index) {
+                case INDEX1:
+                    _msg.length = _msg_1.length;
+                    _msg.read = 3;
+                    _msg.msg_state = HB1UART_msg_parser::HB1UART_DATA;
+                    break;
+                default:
+                    _msg.msg_state = HB1UART_msg_parser::HB1UART_PREAMBLE1;
+                    break;
+            }
+            break;
+
         case HB1UART_msg_parser::HB1UART_DATA:
             if (_msg.read >= sizeof(_msg.data)) {
                 _msg.msg_state = HB1UART_msg_parser::HB1UART_PREAMBLE1;
                 break;
             }
-            _msg.data[_msg.read-2] = temp;
+            _msg.data[_msg.read-3] = temp;
 
             _msg.sum_check += temp;
 
             _msg.read++;
-            if (_msg.read >= (_msg.length - 2))
+            if (_msg.read >= (_msg.length - 1))
             {
-                _msg.msg_state = HB1UART_msg_parser::HB1UART_CRC1;
+                _msg.msg_state = HB1UART_msg_parser::HB1UART_SUM;
             }
             break;
-        case HB1UART_msg_parser::HB1UART_CRC1:
-            _msg.data[_msg.read-2] = temp;
-            _msg.read++;
-            _msg.msg_state = HB1UART_msg_parser::HB1UART_CRC2;
-            break;
-        case HB1UART_msg_parser::HB1UART_CRC2:
-            _msg.data[_msg.read-2] = temp;
+        case HB1UART_msg_parser::HB1UART_SUM:
+            _msg.data[_msg.read-3] = temp;
             _msg.msg_state = HB1UART_msg_parser::HB1UART_PREAMBLE1;
-            process_message();
+
+            if (_msg.sum_check == temp)
+            {
+                process_message();
+            }
             break;
     }
 }
