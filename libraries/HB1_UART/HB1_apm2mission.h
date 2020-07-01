@@ -23,9 +23,9 @@ public:
         int8_t  rc_code;
         int8_t  target_wp_index;
         uint8_t console_type;
-        int16_t leader_balt;
-        int16_t leader_ralt;
-        uint8_t unused[8];
+        int16_t gspd;
+        int16_t gspd_dir;
+        uint8_t unused[4];
         uint8_t sum_check;
     };
 

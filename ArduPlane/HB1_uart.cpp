@@ -83,22 +83,18 @@ void Plane::HB1_msg_mission2apm_handle() {
     loc.lat = (int32_t)((double)tmp_msg._msg_1.content.msg.leader_lat/tmp_msg.SF_LL);
     loc.lng = (int32_t)((double)tmp_msg._msg_1.content.msg.leader_lng/tmp_msg.SF_LL);
     loc.set_alt_cm((int32_t)((double)tmp_msg._msg_1.content.msg.leader_alt/tmp_msg.SF_ALT), Location::AltFrame::ABOVE_HOME);
-    HB1_follow_loc = loc;
     if (plane.control_mode != &plane.mode_guided) {
-        plane.set_mode(plane.mode_guided, MODE_REASON_GCS_COMMAND);
+        //plane.set_mode(plane.mode_guided, MODE_REASON_GCS_COMMAND);
+        return;
     }
-    float delta_dist = loc.get_distance(current_loc)*100.f - 5000.f;
-    float spd_kp = 0.2f;
-    float target_spd = 1800.f + constrain_float(delta_dist*spd_kp, -800.f, 1300.f);
-    aparm.airspeed_cruise_cm.set(target_spd);
+    float target_dir = ((float)tmp_msg._msg_1.content.msg.leader_dir)/tmp_msg.SF_ANG;
+    HB1_follow_loc = loc;
 
     Vector3f tmp_target;
     if (!HB1_follow_loc.get_vector_from_origin_NEU(tmp_target)) {
         tmp_target.zero();
     }
-    //gcs().send_text(MAV_SEVERITY_INFO, "Dist %0.1f, V:%0.1f, Z : %0.2f", delta_dist, target_spd, tmp_target.z);
-    //gcs().send_text(MAV_SEVERITY_INFO, "POS X: %0.1f, Y: %0.1f, V:%0.1f", tmp_target.x, tmp_target.y, target_spd);
-    HB1_update_follow();
+    HB1_update_follow(target_dir);
 }
 
 void Plane::HB1_msg_power2apm_handle() {
@@ -126,8 +122,11 @@ void Plane::HB1_msg_apm2mission_send() {
     tmp_msg._msg_1.content.msg.rc_code = 0;
     tmp_msg._msg_1.content.msg.target_wp_index = mission.get_current_nav_index();
     tmp_msg._msg_1.content.msg.console_type = 1;
-    tmp_msg._msg_1.content.msg.leader_balt = 0;
-    tmp_msg._msg_1.content.msg.leader_ralt = 0;
+    tmp_msg._msg_1.content.msg.gspd = (int16_t)(ahrs.groundspeed_vector().length() * 0.01f * tmp_msg.SF_VEL);
+        float gps_yaw = 0;
+        float gps_yaw_acc = 0;
+        if (!gps.gps_yaw_deg(gps_yaw, gps_yaw_acc)) {gps_yaw = 0.0f; gps_yaw_acc = 0.0f;}
+    tmp_msg._msg_1.content.msg.gspd_dir = (int16_t)(gps_yaw * tmp_msg.SF_ANG);
     tmp_msg._msg_1.content.msg.unused[0] = 0;
     tmp_msg._msg_1.content.msg.unused[1] = 0;
     tmp_msg._msg_1.content.msg.unused[2] = 0;

@@ -1133,7 +1133,7 @@ private:
     void HB1_Power_update();
     void HB1_status_set_HB_Power_Action(HB1_Power_Action_t action);
 
-    void HB1_update_follow();
+    void HB1_update_follow(float target_dir);
 
     // test ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     void test_HB1_uart(uint8_t msg_id);

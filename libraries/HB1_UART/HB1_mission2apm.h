@@ -61,7 +61,8 @@ public:
         uint8_t console_type;
         uint8_t remote_index;
         Remote_CMD remote_cmd;
-        int16_t youshang_target_gspd;
+        uint8_t control_id;
+        int16_t youshang_target_airspeed;
         int16_t youshang_target_orthdist;
         int16_t youshang_target_alt;
         int16_t apm_deltaX;
@@ -70,15 +71,14 @@ public:
         int32_t leader_lng;
         int32_t leader_lat;
         int16_t leader_alt;
-        int16_t leader_balt;
-        int16_t leader_ralt;
-        uint8_t unused[5];
+        int16_t leader_dir;
+        uint8_t unused[7];
         uint8_t sum_check;
     };
 
     union PACKED Content_1 {
         MSG_Command_1 msg;
-        uint8_t data[50];
+        uint8_t data[51];
     };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -86,7 +86,7 @@ public:
     struct PACKED HB1UART_MSG_1 {
         bool updated;
         bool need_send;
-        const uint16_t length = 50;
+        const uint16_t length = 51;
         Content_1 content;
     };
 

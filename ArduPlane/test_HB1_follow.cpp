@@ -9,6 +9,7 @@ void Plane::test_HB1_init(){
 void Plane::test_HB1_follow(uint8_t msg_id)
 {
     HB1_test.status = msg_id;
+    HB1_test.state = 0;
 }
 
 void Plane::test_HB1_follow_update(void)
@@ -44,42 +45,51 @@ void Plane::test_HB1_follow_target_update_1(float t_ms)
         return;
     }
     Vector3f tmp_target;
+    float tmp_dir_ang = 0.0f;
     switch (HB1_test.state) {
         case 0:
             if (tmp_last_pos.x - tmp_length < -x_len) {
                 tmp_target.x = -x_len;
                 tmp_target.y = -x_len - (tmp_last_pos.x - tmp_length);
                 HB1_test.state = 1;
+                tmp_dir_ang = 90.0f;
             }
             tmp_target.x = tmp_last_pos.x - tmp_length;
             tmp_target.y = 0.0f;
+            tmp_dir_ang = 180.0f;
             break;
         case 1:
             if (tmp_last_pos.y + tmp_length > y_len) {
                 tmp_target.x = -x_len + tmp_length + tmp_last_pos.y - y_len;
                 tmp_target.y = y_len;
                 HB1_test.state = 2;
+                tmp_dir_ang = 0.0f;
             }
             tmp_target.x = -x_len;
             tmp_target.y = tmp_last_pos.y + tmp_length;
+            tmp_dir_ang = 90.0f;
             break;
         case 2:
             if (tmp_last_pos.x + tmp_length > 0.0f) {
                 tmp_target.x = 0.0f;
                 tmp_target.y = y_len - (tmp_last_pos.x + tmp_length);
                 HB1_test.state = 3;
+                tmp_dir_ang = 270.0f;
             }
             tmp_target.x = tmp_last_pos.x + tmp_length;
             tmp_target.y = y_len;
+            tmp_dir_ang = 0.0f;
             break;
         case 3:
             if (tmp_last_pos.y - tmp_length < 0.0f) {
                 tmp_target.x = (tmp_last_pos.y - tmp_length);
                 tmp_target.y = 0.0f;
                 HB1_test.state = 0;
+                tmp_dir_ang = 180.0f;
             }
             tmp_target.x = 0.0f;
             tmp_target.y = tmp_last_pos.y - tmp_length;
+            tmp_dir_ang = 270.0f;
             break;
         default:
             break;
@@ -115,7 +125,7 @@ void Plane::test_HB1_follow_target_update_1(float t_ms)
     tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[9] = 0;
     tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[10] = 0;
     tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[11] = 0;
-    tmp_msg._msg_1.content.msg.youshang_target_gspd = 0;
+    tmp_msg._msg_1.content.msg.youshang_target_airspeed = 0;
     tmp_msg._msg_1.content.msg.youshang_target_orthdist = 0;
     tmp_msg._msg_1.content.msg.youshang_target_alt = 0;
     tmp_msg._msg_1.content.msg.apm_deltaX = 0;
@@ -124,8 +134,7 @@ void Plane::test_HB1_follow_target_update_1(float t_ms)
     tmp_msg._msg_1.content.msg.leader_lng = (int32_t)((double)HB1_test.follow_loc.lng*tmp_msg.SF_LL);
     tmp_msg._msg_1.content.msg.leader_lat = (int32_t)((double)HB1_test.follow_loc.lat*tmp_msg.SF_LL);
     tmp_msg._msg_1.content.msg.leader_alt = (int16_t)((float)HB1_test.follow_loc.alt*tmp_msg.SF_ALT);
-    tmp_msg._msg_1.content.msg.leader_balt = 0;
-    tmp_msg._msg_1.content.msg.leader_ralt = 0;
+    tmp_msg._msg_1.content.msg.leader_dir = (int16_t)(wrap_180(tmp_dir_ang)*tmp_msg.SF_ANG);
     tmp_msg._msg_1.content.msg.unused[0] = 0;
     tmp_msg._msg_1.content.msg.unused[1] = 0;
     tmp_msg._msg_1.content.msg.unused[2] = 0;
@@ -164,6 +173,7 @@ void Plane::test_HB1_follow_target_update_2(float t_ms)
         HB1_test.follow_loc.lat = loc.lat;
         HB1_test.follow_loc.set_alt_cm(tmp_target.z, Location::AltFrame::ABOVE_HOME);
     }
+    float tmp_dir_ang = degrees(_angle) + 90.0f;
 
     // pack up msg
     HB1_mission2apm &tmp_msg = HB1_uart_mission.get_msg_mission2apm();
@@ -187,7 +197,7 @@ void Plane::test_HB1_follow_target_update_2(float t_ms)
     tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[9] = 0;
     tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[10] = 0;
     tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[11] = 0;
-    tmp_msg._msg_1.content.msg.youshang_target_gspd = 0;
+    tmp_msg._msg_1.content.msg.youshang_target_airspeed = 0;
     tmp_msg._msg_1.content.msg.youshang_target_orthdist = 0;
     tmp_msg._msg_1.content.msg.youshang_target_alt = 0;
     tmp_msg._msg_1.content.msg.apm_deltaX = 0;
@@ -196,8 +206,7 @@ void Plane::test_HB1_follow_target_update_2(float t_ms)
     tmp_msg._msg_1.content.msg.leader_lng = (int32_t)((double)HB1_test.follow_loc.lng*tmp_msg.SF_LL);
     tmp_msg._msg_1.content.msg.leader_lat = (int32_t)((double)HB1_test.follow_loc.lat*tmp_msg.SF_LL);
     tmp_msg._msg_1.content.msg.leader_alt = (int16_t)((float)HB1_test.follow_loc.alt*tmp_msg.SF_ALT);
-    tmp_msg._msg_1.content.msg.leader_balt = 0;
-    tmp_msg._msg_1.content.msg.leader_ralt = 0;
+    tmp_msg._msg_1.content.msg.leader_dir = (int16_t)(wrap_180(tmp_dir_ang)*tmp_msg.SF_ANG);
     tmp_msg._msg_1.content.msg.unused[0] = 0;
     tmp_msg._msg_1.content.msg.unused[1] = 0;
     tmp_msg._msg_1.content.msg.unused[2] = 0;
