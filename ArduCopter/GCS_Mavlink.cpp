@@ -807,6 +807,11 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
         mavlink_msg_command_long_decode(msg, &packet);
 
         switch(packet.command) {
+        case MAV_CMD_USER_1: {
+            copter.set_find_obj();
+            result = MAV_RESULT_ACCEPTED;
+            break;
+        }
 
         case MAV_CMD_NAV_TAKEOFF: {
             // param3 : horizontal navigation by pilot acceptable

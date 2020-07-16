@@ -943,6 +943,24 @@ private:
     void userhook_auxSwitch2(uint8_t ch_flag);
     void userhook_auxSwitch3(uint8_t ch_flag);
 
+    void init_find_obj();
+    void update_find_obj();
+    void run_obj_wp();
+    void set_find_obj();
+
+    void run_teststar();
+    void init_TestStart();
+
+    Vector3f calculate_step1();
+    Vector3f calculate_step2();
+    Vector3f calculate_step3();
+
+    struct 
+    {
+        uint32_t last_ms;
+        bool find_obj;
+    } find_obj;
+
 #include "mode.h"
 
     Mode *flightmode;
@@ -1009,6 +1027,7 @@ private:
 #if !HAL_MINIMIZE_FEATURES && OPTFLOW == ENABLED
     ModeFlowHold mode_flowhold;
 #endif
+    ModeTestStar mode_teststar;
 
     // mode.cpp
     Mode *mode_from_mode_num(const uint8_t mode);

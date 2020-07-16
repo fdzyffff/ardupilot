@@ -154,7 +154,8 @@ Copter::Mode *Copter::mode_from_mode_num(const uint8_t mode)
             ret = &mode_follow;
             break;
 #endif
-
+        case TESTSTAR:
+            ret = &mode_teststar;
         default:
             break;
     }
