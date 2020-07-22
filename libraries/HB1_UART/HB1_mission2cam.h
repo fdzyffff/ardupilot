@@ -2,7 +2,7 @@
 
 class HB1_mission2cam : public HB1_message{
 public:
-    struct PACKED HB1_mission2apm_header {
+    struct PACKED HB1_mission2cam_header {
         uint8_t head_1;
         uint8_t head_2;
         uint8_t index;
@@ -10,11 +10,11 @@ public:
 
     // message structure
     struct PACKED MSG_Command_1 {
-        HB1_mission2apm_header header;
+        HB1_mission2cam_header header;
         uint8_t length;
         uint8_t uav_id;
-        int16_t cmd_1;
-        int16_t cmd_2;
+        uint8_t cmd_id;
+        int32_t cmd_1;
         uint8_t unused;
         uint8_t sum_check;
     };
@@ -49,7 +49,7 @@ public:
         uint16_t length;
         uint16_t read;
         uint8_t sum_check;
-        HB1_mission2apm_header header;
+        HB1_mission2cam_header header;
         uint8_t data[60];;
     } _msg;
 

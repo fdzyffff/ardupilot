@@ -1141,6 +1141,10 @@ private:
     void test_HB1_uart_msg1();
     void test_HB1_uart_msg2();
     void test_HB1_uart_msg3();
+    void test_HB1_uart_msg4();
+    void test_HB1_uart_msg5();
+    void test_HB1_uart_msg6();
+    void test_HB1_uart_msg7();
 
     void test_HB1_follow_update();
     void test_HB1_follow_target_update_1(float t_ms);

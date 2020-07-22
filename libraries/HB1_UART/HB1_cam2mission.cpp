@@ -79,8 +79,9 @@ void HB1_cam2mission::process_message(void)
 
     _msg_1.content.data[0] = _msg.header.head_1;
     _msg_1.content.data[1] = _msg.header.head_2;
-    for (i = 0; i < _msg_1.length - 2; i ++) {
-        _msg_1.content.data[i+2] = _msg.data[i];
+    _msg_1.content.data[2] = _msg.header.index;
+    for (i = 0; i < _msg_1.length - 3; i ++) {
+        _msg_1.content.data[i+3] = _msg.data[i];
     }
     swap_message();
     _msg_1.print = true;

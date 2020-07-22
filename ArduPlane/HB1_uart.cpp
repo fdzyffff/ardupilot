@@ -182,7 +182,7 @@ void Plane::HB1_msg_apm2cam_send() {
     tmp_msg._msg_1.content.msg.gps_nstats = gps.num_sats();
     tmp_msg._msg_1.content.msg.sum_check = 0;
     
-    for (int8_t i = 0; i < tmp_msg._msg_1.length - 1; i++) {
+    for (int8_t i = 2; i < tmp_msg._msg_1.length - 1; i++) {
         tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
     };
 
@@ -234,7 +234,7 @@ void Plane::HB1_uart_print(){
         if (g2.hb1_msg_print.get() & (1<<0)) {
             gcs().send_text(MAV_SEVERITY_INFO, "power2apm :");
             for (int8_t i = 0; i < HB1_uart_power.get_msg_power2apm()._msg_1.length; i++) {
-                gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i , HB1_uart_power.get_msg_power2apm()._msg_1.content.data[i]);
+                gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i+1 , HB1_uart_power.get_msg_power2apm()._msg_1.content.data[i]);
             }
         }
         HB1_uart_power.get_msg_power2apm()._msg_1.print = false;
@@ -244,7 +244,7 @@ void Plane::HB1_uart_print(){
         if (g2.hb1_msg_print.get() & (1<<1)) {
             gcs().send_text(MAV_SEVERITY_INFO, "mission2cam :");
             for (int8_t i = 0; i < HB1_uart_mission.get_msg_mission2cam()._msg_1.length; i++) {
-                gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i , HB1_uart_mission.get_msg_mission2cam()._msg_1.content.data[i]);
+                gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i+1 , HB1_uart_mission.get_msg_mission2cam()._msg_1.content.data[i]);
             }
         }
         HB1_uart_mission.get_msg_mission2cam()._msg_1.print = false;
@@ -254,7 +254,7 @@ void Plane::HB1_uart_print(){
         if (g2.hb1_msg_print.get() & (1<<2)) {
             gcs().send_text(MAV_SEVERITY_INFO, "mission2apm :");
             for (int8_t i = 0; i < HB1_uart_mission.get_msg_mission2apm()._msg_1.length; i++) {
-                gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i , HB1_uart_mission.get_msg_mission2apm()._msg_1.content.data[i]);
+                gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i+1 , HB1_uart_mission.get_msg_mission2apm()._msg_1.content.data[i]);
             }
         }
         HB1_uart_mission.get_msg_mission2apm()._msg_1.print = false;
@@ -263,28 +263,28 @@ void Plane::HB1_uart_print(){
     if (HB1_uart_cam.get_msg_cam2mission()._msg_1.print) {
         if (g2.hb1_msg_print.get() & (1<<3)) {
             gcs().send_text(MAV_SEVERITY_INFO, "cam2mission :");
-            for (int8_t i = 0; i < HB1_uart_mission.get_msg_cam2mission()._msg_1.length; i++) {
-                gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i , HB1_uart_mission.get_msg_cam2mission()._msg_1.content.data[i]);
+            for (int8_t i = 0; i < HB1_uart_cam.get_msg_cam2mission()._msg_1.length; i++) {
+                gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i+1 , HB1_uart_cam.get_msg_cam2mission()._msg_1.content.data[i]);
             }
         }
-        HB1_uart_mission.get_msg_cam2mission()._msg_1.print = false;
+        HB1_uart_cam.get_msg_cam2mission()._msg_1.print = false;
     }
 
     if (HB1_uart_power.get_msg_apm2power()._msg_1.print) {
         if (g2.hb1_msg_print.get() & (1<<4)) {
             gcs().send_text(MAV_SEVERITY_INFO, "apm2power :");
-            for (int8_t i = 0; i < HB1_uart_mission.get_msg_apm2power()._msg_1.length; i++) {
-                gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i , HB1_uart_mission.get_msg_apm2power()._msg_1.content.data[i]);
+            for (int8_t i = 0; i < HB1_uart_power.get_msg_apm2power()._msg_1.length; i++) {
+                gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i+1 , HB1_uart_power.get_msg_apm2power()._msg_1.content.data[i]);
             }
         }
-        HB1_uart_mission.get_msg_apm2power()._msg_1.print = false;
+        HB1_uart_power.get_msg_apm2power()._msg_1.print = false;
     }
 
     if (HB1_uart_mission.get_msg_apm2mission()._msg_1.print) {
         if (g2.hb1_msg_print.get() & (1<<5)) {
             gcs().send_text(MAV_SEVERITY_INFO, "apm2mission :");
             for (int8_t i = 0; i < HB1_uart_mission.get_msg_apm2mission()._msg_1.length; i++) {
-                gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i , HB1_uart_mission.get_msg_apm2mission()._msg_1.content.data[i]);
+                gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i+1 , HB1_uart_mission.get_msg_apm2mission()._msg_1.content.data[i]);
             }
         }
         HB1_uart_mission.get_msg_apm2mission()._msg_1.print = false;
@@ -293,11 +293,11 @@ void Plane::HB1_uart_print(){
     if (HB1_uart_cam.get_msg_apm2cam()._msg_1.print) {
         if (g2.hb1_msg_print.get() & (1<<6)) {
             gcs().send_text(MAV_SEVERITY_INFO, "apm2cam :");
-            for (int8_t i = 0; i < HB1_uart_mission.get_msg_apm2cam()._msg_1.length; i++) {
-                gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i , HB1_uart_mission.get_msg_apm2cam()._msg_1.content.data[i]);
+            for (int8_t i = 0; i < HB1_uart_cam.get_msg_apm2cam()._msg_1.length; i++) {
+                gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i+1 , HB1_uart_cam.get_msg_apm2cam()._msg_1.content.data[i]);
             }
         }
-        HB1_uart_mission.get_msg_apm2cam()._msg_1.print = false;
+        HB1_uart_cam.get_msg_apm2cam()._msg_1.print = false;
     }
 
 }
