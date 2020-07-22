@@ -567,6 +567,7 @@ public:
 
     AP_Int8 gps_heading_print;
     AP_Int8 hb1_pilot_type;
+    AP_Int8 hb1_msg_print;
 };
 
 extern const AP_Param::Info var_info[];

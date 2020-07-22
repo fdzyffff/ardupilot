@@ -72,5 +72,6 @@ void HB1_power2apm::process_message(void)
     swap_message();
     _msg_1.updated = true;
     _msg_1.need_send = false;
+    _msg_1.print = true;
 
 }

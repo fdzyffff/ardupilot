@@ -1249,6 +1249,21 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @Increment: 1
     // @User: Advanced
     AP_GROUPINFO("HB1_TYPE", 23, ParametersG2, hb1_pilot_type, 0),
+    // @Param: HB1_TYPE
+    // @DisplayName: 飞控类型
+    // @Description:  bit8: all 
+    //                bit7: apm2cam
+    //                bit6: apm2mission
+    //                bit5: apm2power
+    //                bit4: cam2mission
+    //                bit3: mission2apm
+    //                bit2: mission2cam
+    //                bit1: power2apm 
+    // @Range: 0 1
+    // @Units: int
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("HB1_PRINT", 24, ParametersG2, hb1_msg_print, 0),
 
 
     AP_GROUPEND

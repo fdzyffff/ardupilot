@@ -83,6 +83,7 @@ void HB1_cam2mission::process_message(void)
         _msg_1.content.data[i+2] = _msg.data[i];
     }
     swap_message();
+    _msg_1.print = true;
     _msg_1.updated = true;
     _msg_1.need_send = false;
 }

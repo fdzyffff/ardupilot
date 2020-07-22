@@ -85,6 +85,7 @@ void HB1_mission2apm_v1::process_message(void)
                 _msg_1.content.data[i+3] = _msg.data[i];
             }
             swap_message();
+            _msg_1.print = true;
             _msg_1.updated = true;
             _msg_1.need_send = false;
             break;

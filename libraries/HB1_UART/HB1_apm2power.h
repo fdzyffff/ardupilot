@@ -22,6 +22,7 @@ public:
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // message structure
     struct PACKED HB1UART_MSG_1 {
+        bool print;
         bool updated;
         bool need_send;
         const uint16_t length = 4;

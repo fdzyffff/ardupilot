@@ -1126,6 +1126,7 @@ private:
     void HB1_msg_apm2mission_send();
     void HB1_msg_power2apm_handle();
     void HB1_msg_mission2apm_handle();
+    void HB1_uart_print();
     //void HB1_msg_mission2apm_v1_handle();
 
     void HB1_status_init();

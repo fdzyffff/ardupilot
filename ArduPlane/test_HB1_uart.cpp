@@ -22,6 +22,7 @@ void Plane::test_HB1_uart_msg1(){
     HB1_mission2apm &tmp_msg = HB1_uart_mission.get_msg_mission2apm();
     tmp_msg._msg_1.updated = true;
     tmp_msg._msg_1.need_send = true;
+    tmp_msg._msg_1.print = true;
     tmp_msg._msg_1.content.msg.header.head_1 = HB1_mission2apm::PREAMBLE1;
     tmp_msg._msg_1.content.msg.header.head_2 = HB1_mission2apm::PREAMBLE2;
     tmp_msg._msg_1.content.msg.header.index = HB1_mission2apm::INDEX1;
@@ -40,6 +41,7 @@ void Plane::test_HB1_uart_msg2(){
     HB1_mission2cam &tmp_msg = HB1_uart_mission.get_msg_mission2cam();
     tmp_msg._msg_1.updated = true;
     tmp_msg._msg_1.need_send = true;
+    tmp_msg._msg_1.print = true;
     tmp_msg._msg_1.content.msg.header.head_1 = HB1_mission2cam::PREAMBLE1;
     tmp_msg._msg_1.content.msg.header.head_2 = HB1_mission2cam::PREAMBLE2;
     tmp_msg._msg_1.content.msg.header.index = HB1_mission2apm::INDEX1;
