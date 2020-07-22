@@ -67,10 +67,10 @@ void HB1_mission2cam::parse(uint8_t temp)
             _msg.data[_msg.read-3] = temp;
             _msg.msg_state = HB1UART_msg_parser::HB1UART_PREAMBLE1;
 
-            if (_msg.sum_check == temp)
-            {
+            //if (_msg.sum_check == temp)
+            //{
                 process_message();
-            }
+            //}
             break;
     }
 }
