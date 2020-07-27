@@ -58,7 +58,7 @@ public:
     struct PACKED MSG_Command_1 {
         HB1_mission2apm_header header;
         uint8_t length;
-        uint8_t console_type;
+        bool in_group;
         uint8_t remote_index;
         Remote_CMD remote_cmd;
         uint8_t control_id;
@@ -72,7 +72,9 @@ public:
         int32_t leader_lat;
         int16_t leader_alt;
         int16_t leader_dir;
-        uint8_t unused[7];
+        uint8_t leader_target_id;
+        bool net_timeout;
+        uint8_t unused[5];
         uint8_t sum_check;
     };
 

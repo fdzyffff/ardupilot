@@ -1127,12 +1127,14 @@ private:
 
     struct {
         Location follow_loc;
+        float follow_dir;
         uint8_t status;
         uint8_t cmd_type;
         uint16_t state;
     } HB1_test;
 
     Location HB1_follow_loc;
+    float HB1_follow_dir;
 
     struct {
         uint32_t timer;
@@ -1164,7 +1166,7 @@ private:
     void HB1_status_init();
     void HB1_status_update_20Hz();
 
-    void HB1_update_follow(float target_dir);
+    void HB1_update_follow();
 
     // test ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     void test_HB1_uart(uint8_t msg_id);
@@ -1179,7 +1181,7 @@ private:
     void test_HB1_follow_update();
     void test_HB1_follow_target_update_1(float t_ms);
     void test_HB1_follow_target_update_2(float t_ms);
-    void test_HB1_follow(uint8_t msg_id);
+    void test_HB1_follow(int16_t msg_id, int16_t msg_id_second);
     void test_HB1_init();
     void test_HB1_follow_target_reset();
     void test_HB1_mission_send_msg();

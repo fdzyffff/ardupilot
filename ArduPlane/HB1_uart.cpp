@@ -126,7 +126,7 @@ void Plane::HB1_msg_apm2mission_send() {
     tmp_msg._msg_1.content.msg.error_code = 0;
     tmp_msg._msg_1.content.msg.rc_code = 0;
     tmp_msg._msg_1.content.msg.target_wp_index = mission.get_current_nav_index();
-    tmp_msg._msg_1.content.msg.console_type = 1;
+    tmp_msg._msg_1.content.msg.in_group = (HB1_Status.state == HB1_Mission_Follow);
     tmp_msg._msg_1.content.msg.gspd = (int16_t)(ahrs.groundspeed_vector().length() * 0.01f * tmp_msg.SF_VEL);
         float gps_yaw = 0;
         float gps_yaw_acc = 0;
@@ -197,7 +197,7 @@ void Plane::HB1_msg_apm2power_send() {
     tmp_msg._msg_1.content.msg.header.head_1 = HB1_apm2power::PREAMBLE1;
     tmp_msg._msg_1.content.msg.header.head_2 = HB1_apm2power::PREAMBLE2;
     tmp_msg._msg_1.content.msg.ctrl_cmd = 0;
-    switch (HB_Power_Action) {
+    switch (HB1_Power.state) {
         case HB1_PoserAction_None:
             tmp_msg._msg_1.content.msg.ctrl_cmd = 4;
             break;

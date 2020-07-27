@@ -22,7 +22,7 @@ public:
         uint16_t error_code;
         int8_t  rc_code;
         int8_t  target_wp_index;
-        uint8_t console_type;
+        bool in_group;
         int16_t gspd;
         int16_t gspd_dir;
         uint8_t unused[4];

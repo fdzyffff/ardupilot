@@ -3,9 +3,10 @@
 void Plane::HB1_status_init() {
     HB1_status_set_HB_Power_Action(HB1_PoserAction_None);
     HB1_status_set_HB_Mission_Action(HB1_Mission_None);
-    num_wp = 0;
-    num_interim = 0;
-    num_attack = 0;
+    HB1_Status.num_wp = 0;
+    HB1_Status.num_interim = 0;
+    HB1_Status.num_attack = 0;
+    HB1_follow_dir = 0.0f;
 }
 
 void Plane::HB1_status_update_20Hz() {
