@@ -75,6 +75,7 @@ void Plane::HB1_uart_update_10Hz()
 }
 
 void Plane::HB1_msg_mission2apm_handle() {
+    HB1_Status.last_update_ms = millis();
     // pack up msg
     HB1_mission2apm &tmp_msg = HB1_uart_mission.get_msg_mission2apm();
 

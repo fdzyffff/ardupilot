@@ -338,7 +338,7 @@ private:
     ModeQAcro mode_qacro;
     ModeQAutotune mode_qautotune;
     ModeTakeoff mode_takeoff;
-    ModeTakeoff mode_gg;
+    ModeGG mode_gg;
 
     // This is the state of the flight control system
     // There are multiple states defined such as MANUAL, FBW-A, AUTO
@@ -1141,6 +1141,7 @@ private:
         uint16_t num_wp;
         uint16_t num_interim;
         uint16_t num_attack;
+        uint32_t last_update_ms;
         bool mission_complete;
         HB1_Mission_t state;
     } HB1_Status;
@@ -1150,7 +1151,7 @@ private:
         HB1_Power_Action_t state;
     } HB1_Power;
 
-    AP_Mission::Mission_Command& HB1_attack_cmd;
+    AP_Mission::Mission_Command HB1_attack_cmd;
 
     void HB1_uart_init();
     void HB1_uart_update_50Hz();

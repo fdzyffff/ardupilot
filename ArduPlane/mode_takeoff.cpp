@@ -12,7 +12,7 @@ const AP_Param::GroupInfo ModeTakeoff::var_info[] = {
     // @Increment: 1
     // @Units: m
     // @User: User
-    AP_GROUPINFO("ALT", 1, ModeTakeoff, target_alt, 50),
+    AP_GROUPINFO("ALT", 1, ModeTakeoff, target_alt, 70),
 
     // @Param: LVL_ALT
     // @DisplayName: Takeoff mode altitude level altitude
@@ -21,7 +21,7 @@ const AP_Param::GroupInfo ModeTakeoff::var_info[] = {
     // @Increment: 1
     // @Units: m
     // @User: User
-    AP_GROUPINFO("LVL_ALT", 2, ModeTakeoff, level_alt, 20),
+    AP_GROUPINFO("LVL_ALT", 2, ModeTakeoff, level_alt, 50),
 
     // @Param: LVL_PITCH
     // @DisplayName: Takeoff mode altitude initial pitch
@@ -30,7 +30,7 @@ const AP_Param::GroupInfo ModeTakeoff::var_info[] = {
     // @Increment: 1
     // @Units: deg
     // @User: User
-    AP_GROUPINFO("LVL_PITCH", 3, ModeTakeoff, level_pitch, 15),
+    AP_GROUPINFO("LVL_PITCH", 3, ModeTakeoff, level_pitch, 35),
 
     // @Param: DIST
     // @DisplayName: Takeoff mode distance

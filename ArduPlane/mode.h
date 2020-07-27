@@ -454,24 +454,6 @@ protected:
     void _exit() override;
 };
 
-class ModeGG : public Mode
-{
-public:
-
-    Number mode_number() const override { return Number::GG; }
-    const char *name() const override { return "GGWP"; }
-    const char *name4() const override { return "GGWP"; }
-
-    // methods that affect movement of the vehicle in this mode
-    void update() override;
-
-    bool _enter() override;
-
-protected:
-
-};
-
-
 class ModeTakeoff: public Mode
 {
 public:
@@ -495,6 +477,22 @@ protected:
 
     bool takeoff_started;
     Location start_loc;
+
+    bool _enter() override;
+};
+
+class ModeGG : public Mode
+{
+public:
+
+    Number mode_number() const override { return Number::GG; }
+    const char *name() const override { return "GGWP"; }
+    const char *name4() const override { return "GGWP"; }
+
+    // methods that affect movement of the vehicle in this mode
+    void update() override;
+
+protected:
 
     bool _enter() override;
 };

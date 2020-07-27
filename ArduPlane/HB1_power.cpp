@@ -14,17 +14,18 @@ void Plane::HB1_Power_pwm_update() {
         HB1_throttle = thr_min;
         HB1_status_set_HB_Power_Action(HB1_PoserAction_None);
     } else {
-        HB1_throttle = throttle_pwm;
+        HB1_throttle = throttle;
 
         if (!plane.throttle_suppressed) {
             if ( (HB1_Power.state == HB1_PoserAction_None) && (control_mode == &mode_takeoff) ) {
                 HB1_status_set_HB_Power_Action(HB1_PoserAction_RocketON);
             }
         } else {
-            if ( (HB1_Power.state != HB1_PoserAction_None)) {
-                HB1_status_set_HB_Power_Action(HB1_PoserAction_EngineOFF);
-            }
             HB1_throttle = thr_min;
+        }
+        
+        if ( plane.parachute.released() && HB1_Power.state != HB1_PoserAction_ParachuteON) {
+            HB1_status_set_HB_Power_Action(HB1_PoserAction_EngineOFF);
         }
 
         if (HB1_Power.state == HB1_PoserAction_RocketON) {

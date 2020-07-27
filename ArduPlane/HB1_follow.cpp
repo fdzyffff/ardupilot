@@ -8,12 +8,12 @@ void Plane::HB1_msg_mission2apm_follow_handle() {
     loc.lat = (int32_t)((double)tmp_msg._msg_1.content.msg.leader_lat/tmp_msg.SF_LL);
     loc.lng = (int32_t)((double)tmp_msg._msg_1.content.msg.leader_lng/tmp_msg.SF_LL);
     loc.set_alt_cm((int32_t)((double)tmp_msg._msg_1.content.msg.leader_alt/tmp_msg.SF_ALT), Location::AltFrame::ABOVE_HOME);
-    if (plane.control_mode != &plane.mode_guided) {
+/*    if (plane.control_mode != &plane.mode_guided) {
         //plane.set_mode(plane.mode_guided, MODE_REASON_GCS_COMMAND);
         return;
-    }
+    }*/
     HB1_follow_loc = loc;
-    HB1_follow_loc.offset(tmp_msg._msg_1.content.msg.apm_deltaX, tmp_msg._msg_1.content.msg.apm_deltaY);
+    HB1_follow_loc.offset(tmp_msg._msg_1.content.msg.apm_deltaX*0.01f, tmp_msg._msg_1.content.msg.apm_deltaY*0.01f);
     HB1_follow_loc.alt += (int32_t)tmp_msg._msg_1.content.msg.apm_deltaZ;
     HB1_follow_dir = ((float)tmp_msg._msg_1.content.msg.leader_dir)/tmp_msg.SF_ANG;
 

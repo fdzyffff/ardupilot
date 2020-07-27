@@ -225,28 +225,28 @@ void Plane::test_HB1_mission_send_msg() {
             break;
         case 12: // insert interim
             tmp_msg._msg_1.content.msg.remote_index = 0x66;
-            tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.p1 = 0;
-            tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.interim_point_index = 0;
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.p1 = 0;
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.interim_point_index = 0;
             tmp_loc = test_HB1_generate_interim_attack();
-            tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.longitude = (int32_t)((double)tmp_loc.lng*tmp_msg.SF_LL);
-            tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.latitude = (int32_t)((double)tmp_loc.lat*tmp_msg.SF_LL);
-            tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.alt = (int16_t)((float)tmp_loc.alt*tmp_msg.SF_ALT);
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.longitude = (int32_t)((double)tmp_loc.lng*tmp_msg.SF_LL);
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.latitude = (int32_t)((double)tmp_loc.lat*tmp_msg.SF_LL);
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.alt = (int16_t)((float)tmp_loc.alt*tmp_msg.SF_ALT);
             gcs().send_text(MAV_SEVERITY_INFO, "SIM set interim");
             break;
         case 13: // insert attack
             tmp_msg._msg_1.content.msg.remote_index = 0x33;
-            tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.p1 = 0;
-            tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.attack_point_index = 0;
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.p1 = 0;
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.attack_point_index = 0;
             tmp_loc = test_HB1_generate_interim_attack();
-            tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.longitude = (int32_t)((double)tmp_loc.lng*tmp_msg.SF_LL);
-            tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.latitude = (int32_t)((double)tmp_loc.lat*tmp_msg.SF_LL);
-            tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.alt = (int16_t)((float)tmp_loc.alt*tmp_msg.SF_ALT);
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.longitude = (int32_t)((double)tmp_loc.lng*tmp_msg.SF_LL);
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.latitude = (int32_t)((double)tmp_loc.lat*tmp_msg.SF_LL);
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.alt = (int16_t)((float)tmp_loc.alt*tmp_msg.SF_ALT);
             gcs().send_text(MAV_SEVERITY_INFO, "SIM set attack");
             break;
         case 21: 
-            apm_deltaX = 500.0f;
-            apm_deltaY = 500.0f;
-            apm_deltaZ = 500.0f;
+            apm_deltaX = 1500.0f;
+            apm_deltaY = 1500.0f;
+            apm_deltaZ = 1500.0f;
             gcs().send_text(MAV_SEVERITY_INFO, "SIM Offset");
         default:
             break;
@@ -265,15 +265,16 @@ Location Plane::test_HB1_generate_wp() {
     Vector3f tmp_xyz = Vector3f(0.0f, 0.0f, alt);
     switch (index_loc) {
         case 0 :
-            tmp_xyz = Vector3f(1000.0f, 0.0f, alt);
+            tmp_xyz = Vector3f(20000.0f, 0.0f, alt);
             break;
         case 1 :
-            tmp_xyz = Vector3f(0.0f, 1000.0f, alt);
+            tmp_xyz = Vector3f(0.0f, 20000.0f, alt);
             break;
         default:
-            tmp_xyz = Vector3f(500.0f * (float)index_loc, 500.0f * (float)index_loc, alt);
+            tmp_xyz = Vector3f(20000.0f * (float)index_loc, 20000.0f * (float)index_loc, alt);
             break;
     }
+    index_loc++;
     Location tmp_loc(tmp_xyz);
     return tmp_loc;
 }
@@ -284,15 +285,16 @@ Location Plane::test_HB1_generate_interim_attack() {
     Vector3f tmp_xyz = Vector3f(0.0f, 0.0f, alt);
     switch (index_loc) {
         case 0 :
-            tmp_xyz = Vector3f(-1000.0f, 0.0f, alt);
+            tmp_xyz = Vector3f(-20000.0f, 0.0f, alt);
             break;
         case 1 :
-            tmp_xyz = Vector3f(0.0f, -1000.0f, alt);
+            tmp_xyz = Vector3f(0.0f, -20000.0f, alt);
             break;
         default:
-            tmp_xyz = Vector3f(-500.0f * (float)index_loc, -500.0f * (float)index_loc, alt);
+            tmp_xyz = Vector3f(-20000.0f * (float)index_loc, -20000.0f * (float)index_loc, alt);
             break;
     }
+    index_loc++;
     Location tmp_loc(tmp_xyz);
     return tmp_loc;
 }

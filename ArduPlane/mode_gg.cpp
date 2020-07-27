@@ -7,6 +7,7 @@ bool ModeGG::_enter()
     plane.auto_throttle_mode = false;
     plane.auto_navigation_mode = false;
 
+	gcs().send_text(MAV_SEVERITY_INFO, "GG wp");
     return true;
 }
 
