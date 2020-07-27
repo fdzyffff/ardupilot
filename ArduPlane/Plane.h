@@ -1163,7 +1163,6 @@ private:
 
     void HB1_status_init();
     void HB1_status_update_20Hz();
-    void HB1_status_set_HB_Power_Action(HB1_Power_Action_t action);
 
     void HB1_update_follow(float target_dir);
 
