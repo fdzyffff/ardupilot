@@ -77,26 +77,29 @@ void Plane::HB1_uart_update_10Hz()
 void Plane::HB1_msg_mission2apm_handle() {
     // pack up msg
     HB1_mission2apm &tmp_msg = HB1_uart_mission.get_msg_mission2apm();
-        
-    //tmp_msg._msg_1.content.msg.console_type = 0;
-    //tmp_msg._msg_1.content.msg.remote_index = 6;
 
-    Location loc;
-    loc.lat = (int32_t)((double)tmp_msg._msg_1.content.msg.leader_lat/tmp_msg.SF_LL);
-    loc.lng = (int32_t)((double)tmp_msg._msg_1.content.msg.leader_lng/tmp_msg.SF_LL);
-    loc.set_alt_cm((int32_t)((double)tmp_msg._msg_1.content.msg.leader_alt/tmp_msg.SF_ALT), Location::AltFrame::ABOVE_HOME);
-    if (plane.control_mode != &plane.mode_guided) {
-        //plane.set_mode(plane.mode_guided, MODE_REASON_GCS_COMMAND);
-        return;
+    if (tmp_msg._msg_1.content.msg.in_group) {
+        HB1_msg_mission2apm_follow_handle();
     }
-    float target_dir = ((float)tmp_msg._msg_1.content.msg.leader_dir)/tmp_msg.SF_ANG;
-    HB1_follow_loc = loc;
-
-    Vector3f tmp_target;
-    if (!HB1_follow_loc.get_vector_from_origin_NEU(tmp_target)) {
-        tmp_target.zero();
+    switch (tmp_msg._msg_1.content.msg.remote_index) {
+        case 0x63:
+            HB1_msg_mission2apm_takeoff_handle();
+            break;
+        case 0x9C:
+            HB1_msg_mission2apm_set_wp_handle();
+            break;
+        case 0x66:
+            HB1_msg_mission2apm_set_interim_handle();
+            break;
+        case 0x33:
+            HB1_msg_mission2apm_set_attack_handle();
+            break;
+        case 0xA3:
+            HB1_msg_mission2apm_away_handle();
+            break;
+        default:
+            break;
     }
-    HB1_update_follow(target_dir);
 }
 
 void Plane::HB1_msg_power2apm_handle() {

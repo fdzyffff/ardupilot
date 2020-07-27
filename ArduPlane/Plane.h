@@ -169,6 +169,7 @@ public:
     friend class ModeQAcro;
     friend class ModeQAutotune;
     friend class ModeTakeoff;
+    friend class ModeGG;
 
     Plane(void);
 
@@ -337,6 +338,7 @@ private:
     ModeQAcro mode_qacro;
     ModeQAutotune mode_qautotune;
     ModeTakeoff mode_takeoff;
+    ModeTakeoff mode_gg;
 
     // This is the state of the flight control system
     // There are multiple states defined such as MANUAL, FBW-A, AUTO
@@ -1105,18 +1107,48 @@ private:
     enum HB1_Power_Action_t {
         HB1_PoserAction_None            = 0,
         HB1_PoserAction_RocketON        = 1,
-        HB1_PoserAction_EngineON        = 2,
-        HB1_PoserAction_EngineOFF       = 3,
-        HB1_PoserAction_ParachuteON     = 4,
-    } HB_Power_Action;
+        HB1_PoserAction_EngineSTART     = 2,
+        HB1_PoserAction_EngineON        = 3,
+        HB1_PoserAction_EngineOFF       = 4,
+        HB1_PoserAction_ParachuteON     = 5,
+    };
+
+    enum HB1_Mission_t {
+        HB1_Mission_None                = 0,
+        HB1_Mission_Takeoff             = 1,
+        HB1_Mission_WP                  = 2,
+        HB1_Mission_Attack              = 3,
+        HB1_Mission_Hover               = 4,
+        HB1_Mission_GG                  = 5,
+        HB1_Mission_Follow              = 6,
+        HB1_Mission_FsGPS               = 7,
+        HB1_Mission_FsNoGPS             = 8,
+    };
 
     struct {
         Location follow_loc;
         uint8_t status;
+        uint8_t cmd_type;
         uint16_t state;
     } HB1_test;
 
     Location HB1_follow_loc;
+
+    struct {
+        uint32_t timer;
+        uint16_t num_wp;
+        uint16_t num_interim;
+        uint16_t num_attack;
+        bool mission_complete;
+        HB1_Mission_t state;
+    } HB1_Status;
+
+    struct {
+        uint32_t timer;
+        HB1_Power_Action_t state;
+    } HB1_Power;
+
+    AP_Mission::Mission_Command& HB1_attack_cmd;
 
     void HB1_uart_init();
     void HB1_uart_update_50Hz();
@@ -1131,7 +1163,6 @@ private:
 
     void HB1_status_init();
     void HB1_status_update_20Hz();
-    void HB1_Power_update();
     void HB1_status_set_HB_Power_Action(HB1_Power_Action_t action);
 
     void HB1_update_follow(float target_dir);
@@ -1152,6 +1183,26 @@ private:
     void test_HB1_follow(uint8_t msg_id);
     void test_HB1_init();
     void test_HB1_follow_target_reset();
+    void test_HB1_mission_send_msg();
+    Location test_HB1_generate_wp();
+    Location test_HB1_generate_interim_attack();
+
+    void HB1_msg_mission2apm_takeoff_handle();
+    void HB1_msg_mission2apm_set_wp_handle();
+    void HB1_msg_mission2apm_set_interim_handle();
+    void HB1_msg_mission2apm_set_attack_handle();
+    void HB1_msg_mission2apm_away_handle();
+    void HB1_msg_mission2apm_follow_handle();
+
+    void HB1_status_set_HB_Mission_Action(HB1_Mission_t action);
+    void HB1_Mission_update();
+
+    void HB1_Power_update();
+    void HB1_Power_pwm_update();
+    void HB1_Power_status_update();
+    void HB1_status_set_HB_Power_Action(HB1_Power_Action_t action);
+
+
 public:
     void mavlink_delay_cb();
     void failsafe_check(void);

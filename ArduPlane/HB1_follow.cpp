@@ -1,6 +1,30 @@
 #include "Plane.h"
 
-void Plane::HB1_update_follow(float target_dir)
+void Plane::HB1_msg_mission2apm_follow_handle() {
+    // pack up msg
+    HB1_mission2apm &tmp_msg = HB1_uart_mission.get_msg_mission2apm();
+        
+    Location loc;
+    loc.lat = (int32_t)((double)tmp_msg._msg_1.content.msg.leader_lat/tmp_msg.SF_LL);
+    loc.lng = (int32_t)((double)tmp_msg._msg_1.content.msg.leader_lng/tmp_msg.SF_LL);
+    loc.set_alt_cm((int32_t)((double)tmp_msg._msg_1.content.msg.leader_alt/tmp_msg.SF_ALT), Location::AltFrame::ABOVE_HOME);
+    if (plane.control_mode != &plane.mode_guided) {
+        //plane.set_mode(plane.mode_guided, MODE_REASON_GCS_COMMAND);
+        return;
+    }
+    HB1_follow_loc = loc;
+    HB1_follow_loc.offset(tmp_msg._msg_1.content.msg.apm_deltaX, tmp_msg._msg_1.content.msg.apm_deltaY);
+    HB1_follow_loc.alt += (int32_t)tmp_msg._msg_1.content.msg.apm_deltaZ;
+    HB1_follow_dir = ((float)tmp_msg._msg_1.content.msg.leader_dir)/tmp_msg.SF_ANG;
+
+    Vector3f tmp_target;
+    if (!HB1_follow_loc.get_vector_from_origin_NEU(tmp_target)) {
+        tmp_target.zero();
+    }
+    HB1_status_set_HB_Mission_Action(HB1_Mission_Follow);
+}
+
+void Plane::HB1_update_follow()
 {
     float target_dist = HB1_follow_loc.get_distance(current_loc);
     float length_cut = 200.0f; //meter
@@ -13,9 +37,9 @@ void Plane::HB1_update_follow(float target_dir)
     	vel_length = length_cut * 0.7f;
     } else {
     	prev_WP_loc = HB1_follow_loc;
-    	//prev_WP_loc.offset_bearing(target_dir, -100);
+    	//prev_WP_loc.offset_bearing(HB1_follow_dir, -100);
     	guided_WP_loc = HB1_follow_loc;
-    	guided_WP_loc.offset_bearing(target_dir, 200);
+    	guided_WP_loc.offset_bearing(HB1_follow_dir, 200);
     	next_WP_loc = guided_WP_loc;
     	auto_state.crosstrack = true;
     	vel_length = 200.f;
@@ -28,14 +52,14 @@ void Plane::HB1_update_follow(float target_dir)
     //gcs().send_text(MAV_SEVERITY_INFO, "POS X: %0.1f, Y: %0.1f, V:%0.1f", tmp_target.x, tmp_target.y, target_spd);
 }
 
-/*void Plane::HB1_update_follow(float target_dir)
+/*void Plane::HB1_update_follow(float HB1_follow_dir)
 {
     guided_WP_loc = HB1_follow_loc;
 
     prev_WP_loc = HB1_follow_loc;//current_loc;
-    //prev_WP_loc.offset_bearing(target_dir, -100);
+    //prev_WP_loc.offset_bearing(HB1_follow_dir, -100);
     // always look 100m ahead
-    guided_WP_loc.offset_bearing(target_dir, 200);
+    guided_WP_loc.offset_bearing(HB1_follow_dir, 200);
     auto_state.crosstrack = false;
     next_WP_loc = guided_WP_loc;
 
@@ -46,3 +70,4 @@ void Plane::HB1_update_follow(float target_dir)
     gcs().send_text(MAV_SEVERITY_INFO, "Dist : %0.2f, V : %0.2f", delta_dist, target_spd);
     //gcs().send_text(MAV_SEVERITY_INFO, "POS X: %0.1f, Y: %0.1f, V:%0.1f", tmp_target.x, tmp_target.y, target_spd);
 }*/
+

@@ -38,6 +38,7 @@ public:
         QRTL          = 21,
         QAUTOTUNE     = 22,
         QACRO         = 23,
+        GG            = 24,
     };
 
     // Constructor
@@ -451,6 +452,23 @@ protected:
 
     bool _enter() override;
     void _exit() override;
+};
+
+class ModeGG : public Mode
+{
+public:
+
+    Number mode_number() const override { return Number::GG; }
+    const char *name() const override { return "GGWP"; }
+    const char *name4() const override { return "GGWP"; }
+
+    // methods that affect movement of the vehicle in this mode
+    void update() override;
+
+    bool _enter() override;
+
+protected:
+
 };
 
 

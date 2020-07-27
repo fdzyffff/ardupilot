@@ -27,6 +27,8 @@ bool ModeAuto::_enter()
     plane.g2.soaring_controller.init_cruising();
 #endif
 
+    HB1_Status.mission_complete = false;
+
     return true;
 }
 
