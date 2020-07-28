@@ -1142,6 +1142,7 @@ private:
         uint16_t num_interim;
         uint16_t num_attack;
         uint32_t last_update_ms;
+        uint32_t time_out;
         bool mission_complete;
         HB1_Mission_t state;
     } HB1_Status;
@@ -1203,6 +1204,7 @@ private:
     void HB1_Power_pwm_update();
     void HB1_Power_status_update();
     void HB1_status_set_HB_Power_Action(HB1_Power_Action_t action);
+    bool HB1_status_noGPS_check();
 
 
 public:

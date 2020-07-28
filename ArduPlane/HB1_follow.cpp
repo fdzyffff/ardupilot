@@ -46,7 +46,7 @@ void Plane::HB1_update_follow()
     }
     float delta_dist = (guided_WP_loc.get_distance(current_loc) - vel_length)*100.f;
     float spd_kp = 0.15f;
-    float target_spd = 1800.f + constrain_float(delta_dist*spd_kp, -800.f, 1300.f);
+    float target_spd = g2.hb1_follow_speed*100.f + constrain_float(delta_dist*spd_kp, -g2.hb1_follow_speed_range*100.f, g2.hb1_follow_speed_range*100.f);
     aparm.airspeed_cruise_cm.set(target_spd);
     //gcs().send_text(MAV_SEVERITY_INFO, "tDist : %0.2f , Dist : %0.2f, V : %0.2f", target_dist, delta_dist, target_spd);
     //gcs().send_text(MAV_SEVERITY_INFO, "POS X: %0.1f, Y: %0.1f, V:%0.1f", tmp_target.x, tmp_target.y, target_spd);

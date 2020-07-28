@@ -568,6 +568,14 @@ public:
     AP_Int8 gps_heading_print;
     AP_Int8 hb1_pilot_type;
     AP_Int8 hb1_msg_print;
+
+    AP_Float hb1_follow_speed;
+    AP_Float hb1_follow_speed_range;
+    AP_Float hb1_follow_speed_ratio;
+    AP_Int32 hb1_follow_fs_time;
+    AP_Int32 hb1_follow_nogps_time;
+    AP_Int32 hb1_follow_hover_wp_time;
+    AP_Int32 hb1_follow_hover_attack_time;
 };
 
 extern const AP_Param::Info var_info[];

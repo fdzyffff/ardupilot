@@ -1266,6 +1266,14 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("HB1_PRINT", 24, ParametersG2, hb1_msg_print, 0),
 
 
+    AP_GROUPINFO("HB1_FSPD", 25, ParametersG2, hb1_follow_speed, 20.0f),
+    AP_GROUPINFO("HB1_FSPDE", 26, ParametersG2, hb1_follow_speed_range, 10.0f),
+    AP_GROUPINFO("HB1_FSPDP", 27, ParametersG2, hb1_follow_speed_ratio, 0.1f),
+    AP_GROUPINFO("HB1_FS_T", 28, ParametersG2, hb1_follow_fs_time, 2000),
+    AP_GROUPINFO("HB1_NOGPST", 29, ParametersG2, hb1_follow_nogps_time, 60000),
+    AP_GROUPINFO("HB1_WPT", 30, ParametersG2, hb1_follow_hover_wp_time, 20000),
+    AP_GROUPINFO("HB1_ATTACKT", 31, ParametersG2, hb1_follow_hover_attack_time, 60000),
+
     AP_GROUPEND
 };
 
