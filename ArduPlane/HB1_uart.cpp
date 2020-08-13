@@ -105,7 +105,9 @@ void Plane::HB1_msg_mission2apm_handle() {
 }
 
 void Plane::HB1_msg_power2apm_handle() {
-    ;
+    HB1_power2apm &tmp_msg = HB1_uart_power.get_msg_power2apm();
+    HB1_Power.HB1_engine_rpm = tmp_msg._msg_1.content.msg.rpm;
+    HB1_Power.HB1_engine_temp = tmp_msg._msg_1.content.msg.temp;
 }
 
 void Plane::HB1_msg_apm2mission_send() {

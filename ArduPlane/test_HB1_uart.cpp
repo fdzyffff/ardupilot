@@ -53,6 +53,8 @@ void Plane::test_HB1_uart_msg1(){
         tmp_msg._msg_1.content.data[i] = 0;
     }
     
+    tmp_msg._msg_1.content.msg.rpm = 10000;
+    tmp_msg._msg_1.content.msg.temp = 700;
     for (int8_t i = 0; i < tmp_msg._msg_1.length - 1; i++) {
         tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
     }
@@ -99,6 +101,13 @@ void Plane::test_HB1_uart_msg3(){
     for (int8_t i = 2; i < tmp_msg._msg_1.length - 1; i++) {
         tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
     }
+    tmp_msg._msg_1.content.data[0] = 0xEE;
+    tmp_msg._msg_1.content.data[1] = 0x16;
+    tmp_msg._msg_1.content.data[2] = 0xAA;
+    tmp_msg._msg_1.content.data[3] = 0x2F;
+    tmp_msg._msg_1.content.data[4] = 0x00;
+    tmp_msg._msg_1.content.data[5] = 0x63;
+    tmp_msg._msg_1.content.data[50] = 0x3D;
 }
 
 void Plane::test_HB1_uart_msg4(){

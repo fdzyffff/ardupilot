@@ -1430,3 +1430,11 @@ uint64_t GCS_MAVLINK_Plane::capabilities() const
             MAV_PROTOCOL_CAPABILITY_COMPASS_CALIBRATION |
             GCS_MAVLINK::capabilities());
 }
+
+void GCS_MAVLINK_Plane::send_rpm() const
+{
+    mavlink_msg_rpm_send(
+        chan,
+        plane.HB1_Power.HB1_engine_rpm*0.1f,
+        plane.HB1_Power.HB1_engine_temp*0.1f);
+}

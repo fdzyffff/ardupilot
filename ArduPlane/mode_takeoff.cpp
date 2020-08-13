@@ -118,6 +118,7 @@ void ModeTakeoff::update()
 
         plane.set_flight_stage(AP_Vehicle::FixedWing::FLIGHT_NORMAL);
         plane.complete_auto_takeoff();
+        plane.HB1_status_set_HB_Mission_Action(Plane::HB1_Mission_WP);
     }
 
     if (plane.flight_stage == AP_Vehicle::FixedWing::FLIGHT_TAKEOFF) {

@@ -29,7 +29,9 @@ void Plane::HB1_Power_pwm_update() {
         }
 
         if (HB1_Power.state == HB1_PoserAction_RocketON) {
-            HB1_throttle = thr_max;
+            float timer = millis() - HB1_Power.timer;
+            const float tau = 2000.f;
+            HB1_throttle = constrain_float(20.f + 80.f*timer/tau, thr_min, thr_max);
         }
     }
 
@@ -77,21 +79,45 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action) {
     switch (HB1_Power.state) {
         case HB1_PoserAction_None:
             gcs().send_text(MAV_SEVERITY_INFO, "Power None");
+            relay.off(0);
+            relay.off(1);
+            relay.off(2);
+            relay.off(3);
             break;
         case HB1_PoserAction_RocketON:
             gcs().send_text(MAV_SEVERITY_INFO, "Rocket ON");
+            relay.on(0);
+            relay.off(1);
+            relay.off(2);
+            relay.off(3);
             break;
         case HB1_PoserAction_EngineSTART:
             gcs().send_text(MAV_SEVERITY_INFO, "Engine Starting");
+            relay.on(0);
+            relay.off(1);
+            relay.off(2);
+            relay.off(3);
             break;
         case HB1_PoserAction_EngineON:
             gcs().send_text(MAV_SEVERITY_INFO, "Engine ON");
+            relay.off(0);
+            relay.on(1);
+            relay.off(2);
+            relay.off(3);
             break;
         case HB1_PoserAction_EngineOFF:
             gcs().send_text(MAV_SEVERITY_INFO, "Engine OFF");
+            relay.off(0);
+            relay.off(1);
+            relay.on(2);
+            relay.off(3);
             break;
         case HB1_PoserAction_ParachuteON:
             gcs().send_text(MAV_SEVERITY_INFO, "Parachute ON");
+            relay.off(0);
+            relay.off(1);
+            relay.off(2);
+            relay.on(3);
             break;
         default:
             break;
