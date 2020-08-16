@@ -95,8 +95,8 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action) {
             gcs().send_text(MAV_SEVERITY_INFO, "Engine Starting");
             relay.off(0);
             relay.off(1);
-            relay.on(2);
-            relay.off(3);
+            relay.off(2);
+            relay.on(3);
             break;
         case HB1_PoserAction_EngineON:
             gcs().send_text(MAV_SEVERITY_INFO, "Engine ON");
@@ -109,8 +109,8 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action) {
             gcs().send_text(MAV_SEVERITY_INFO, "Engine OFF");
             relay.off(0);
             relay.off(1);
-            relay.off(2);
-            relay.on(3);
+            relay.on(2);
+            relay.off(3);
             break;
         case HB1_PoserAction_ParachuteON:
             gcs().send_text(MAV_SEVERITY_INFO, "Parachute ON");
