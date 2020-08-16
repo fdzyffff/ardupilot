@@ -28,12 +28,7 @@ void Plane::HB1_Mission_update() {
         case HB1_Mission_None :
             break;
         case HB1_Mission_Takeoff :
-            if (!plane.throttle_suppressed && plane.flight_stage == AP_Vehicle::FixedWing::FLIGHT_NORMAL) {
-                HB1_status_set_HB_Mission_Action(HB1_Mission_WP);
-            }
-            if (HB1_status_noGPS_check()) {
-                HB1_status_set_HB_Mission_Action(HB1_Mission_FsNoGPS);
-            }
+            // do state check in takeoff mode
             break;
         case HB1_Mission_WP :
             if (HB1_Status.mission_complete) {
@@ -109,7 +104,7 @@ void Plane::HB1_status_set_HB_Mission_Action(HB1_Mission_t action) {
             HB1_Status.state = action;
             break;
         case HB1_Mission_Takeoff :
-            if (plane.arming.arm(AP_Arming::Method::MAVLINK, true)) {
+            if (plane.arming.arm(AP_Arming::Method::MAVLINK, true) || plane.arming.is_armed()) {
                 set_mode(plane.mode_takeoff, MODE_REASON_UNAVAILABLE);
                 HB1_Status.state = action;
             }

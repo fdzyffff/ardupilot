@@ -8,6 +8,7 @@ bool ModeGG::_enter()
     plane.auto_navigation_mode = false;
 
 	gcs().send_text(MAV_SEVERITY_INFO, "GG wp");
+    plane.aparm.pitch_limit_min_cd.set(-8500);
     return true;
 }
 

@@ -32,7 +32,7 @@ bool Plane::auto_takeoff_check(void)
     // Check for bad GPS
     if (gps.status() < AP_GPS::GPS_OK_FIX_3D) {
         // no auto takeoff without GPS lock
-        return false;
+        //return false;
     }
 
     if (!takeoff_state.launchTimerStarted && !is_zero(g.takeoff_throttle_min_accel)) {

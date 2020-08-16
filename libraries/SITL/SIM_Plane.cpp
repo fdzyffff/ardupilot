@@ -26,16 +26,14 @@ using namespace SITL;
 Plane::Plane(const char *frame_str) :
     Aircraft(frame_str)
 {
-    mass = 75.0f;//2.0f;对应蜂群75kg飞机
+    mass = 2.0f;
 
     /*
        scaling from motor power to Newtons. Allows the plane to hold
        vertically against gravity when the motor is at hover_throttle
-       这相当于推重比是1，因此做更改。
     */
-    thrust_scale = (43 * GRAVITY_MSS) / hover_throttle;//地面推力/悬停油门，thrust现在单独计算
-    //thrust_scale = (mass * GRAVITY_MSS) / hover_throttle;// 重力/悬停油门
-    frame_height = 1.0f;//0.1f;机体高度
+    thrust_scale = (mass * GRAVITY_MSS) / hover_throttle;
+    frame_height = 0.1f;
 
     ground_behavior = GROUND_BEHAVIOR_FWD_ONLY;
     
@@ -99,7 +97,7 @@ float Plane::liftCoeff(float alpha) const
     const float c_lift_a0 = coefficient.c_lift_a;
 
     // clamp the value of alpha to avoid exp(90) in calculation of sigmoid
-    const float max_alpha_delta = 0.8f;//约40度迎角
+    const float max_alpha_delta = 0.8f;
     if (alpha-alpha0 > max_alpha_delta) {
         alpha = alpha0 + max_alpha_delta;
     } else if (alpha0-alpha > max_alpha_delta) {
@@ -123,7 +121,7 @@ float Plane::dragCoeff(float alpha) const
     const float oswald = coefficient.oswald;
     
 	double AR = pow(b,2)/s;
-	double c_drag_a = c_drag_p + pow(c_lift_0+c_lift_a0*alpha,2)/(M_PI*oswald*AR);//计算阻力=零升阻力+升致阻力，k=1/(pai*AR*e)
+	double c_drag_a = c_drag_p + pow(c_lift_0+c_lift_a0*alpha,2)/(M_PI*oswald*AR);
 
 	return c_drag_a;
 }
@@ -302,7 +300,7 @@ void Plane::calculate_forces(const struct sitl_input &input, Vector3f &rot_accel
         throttle = filtered_servo_range(input, 2);
     }
     
-    float thrust     = throttle;//当前油门位置，是个0-1的，归一化的
+    float thrust     = throttle;
 
     if (ice_engine) {
         thrust = icengine.update(input);
@@ -347,8 +345,7 @@ void Plane::calculate_forces(const struct sitl_input &input, Vector3f &rot_accel
     rpm1 = thrust * 7000;
     
     // scale thrust to newtons
-    //thrust *= thrust_scale;
-	thrust *= GRAVITY_MSS * (-0.5 * airspeed + 43);//考虑推力随速度的变化
+    thrust *= thrust_scale;
 
     accel_body = Vector3f(thrust, 0, 0) + force;
     accel_body /= mass;

@@ -71,6 +71,11 @@ void ModeTakeoff::update()
             plane.next_WP_loc = plane.current_loc;
             takeoff_started = true;
             plane.set_flight_stage(AP_Vehicle::FixedWing::FLIGHT_NORMAL);
+            if (plane.HB1_status_noGPS_check()) {
+                plane.HB1_status_set_HB_Mission_Action(Plane::HB1_Mission_FsNoGPS);
+            } else {
+                plane.HB1_status_set_HB_Mission_Action(Plane::HB1_Mission_WP);
+            }
         }
     }
 
@@ -104,29 +109,26 @@ void ModeTakeoff::update()
     // TKOFF_LVL_ALT or we pass the target location. The check for
     // target location prevents us flying forever if we can't climb
     if (plane.flight_stage == AP_Vehicle::FixedWing::FLIGHT_TAKEOFF &&
-        (plane.current_loc.alt - start_loc.alt >= level_alt*100 ||
-         start_loc.get_distance(plane.current_loc) >= target_dist)) {
+        (plane.current_loc.alt - start_loc.alt >= level_alt*100)) {
         // reached level alt, re-calculate bearing to cope with systems with no compass
         // or with poor initial compass
-        float direction = start_loc.get_bearing_to(plane.current_loc) * 0.01;
-        float dist_done = start_loc.get_distance(plane.current_loc);
-        const float dist = target_dist;
-
-        plane.next_WP_loc = plane.current_loc;
-        plane.next_WP_loc.offset_bearing(direction, MAX(dist-dist_done, 0));
-        plane.next_WP_loc.alt = start_loc.alt + target_alt*100.0;
-
         plane.set_flight_stage(AP_Vehicle::FixedWing::FLIGHT_NORMAL);
         plane.complete_auto_takeoff();
-        plane.HB1_status_set_HB_Mission_Action(Plane::HB1_Mission_WP);
+        if (plane.HB1_status_noGPS_check()) {
+            plane.HB1_status_set_HB_Mission_Action(Plane::HB1_Mission_FsNoGPS);
+        } else {
+            plane.HB1_status_set_HB_Mission_Action(Plane::HB1_Mission_WP);
+        }
     }
 
     if (plane.flight_stage == AP_Vehicle::FixedWing::FLIGHT_TAKEOFF) {
         SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, 100);
         plane.takeoff_calc_roll();
-        plane.takeoff_calc_pitch();
-    } else {
-        plane.calc_nav_roll();
+        //plane.takeoff_calc_pitch();
+        plane.nav_pitch_cd = level_pitch * 100;
+    } else {    
+        plane.nav_roll_cd  = plane.roll_limit_cd / 3;
+        plane.update_load_factor();
         plane.calc_nav_pitch();
         plane.calc_throttle();
     }

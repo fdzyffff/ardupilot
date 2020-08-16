@@ -76,12 +76,14 @@ void Plane::HB1_uart_update_10Hz()
 
 void Plane::HB1_msg_mission2apm_handle() {
     HB1_Status.last_update_ms = millis();
-    if (HB1_status_noGPS_check()) {return;}
+    //if (HB1_status_noGPS_check()) {return;}
     // pack up msg
     HB1_mission2apm &tmp_msg = HB1_uart_mission.get_msg_mission2apm();
 
     if (tmp_msg._msg_1.content.msg.in_group) {
-        HB1_msg_mission2apm_follow_handle();
+        if (!HB1_status_noGPS_check()) {
+            HB1_msg_mission2apm_follow_handle();
+        }
     }
     switch (tmp_msg._msg_1.content.msg.remote_index) {
         case 0x63:
@@ -94,10 +96,14 @@ void Plane::HB1_msg_mission2apm_handle() {
             HB1_msg_mission2apm_set_interim_handle();
             break;
         case 0x33:
-            HB1_msg_mission2apm_set_attack_handle();
+            if (!HB1_status_noGPS_check()) {
+                HB1_msg_mission2apm_set_attack_handle();
+            }
             break;
         case 0xA3:
-            HB1_msg_mission2apm_away_handle();
+            if (!HB1_status_noGPS_check()) {
+                HB1_msg_mission2apm_away_handle();
+            }
             break;
         default:
             break;

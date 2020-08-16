@@ -510,7 +510,6 @@ void Plane::update_navigation()
     case Mode::Number::LOITER:
     case Mode::Number::AVOID_ADSB:
     case Mode::Number::GUIDED:
-    case Mode::Number::TAKEOFF:
         update_loiter(radius);
         break;
 
@@ -539,6 +538,7 @@ void Plane::update_navigation()
     case Mode::Number::QAUTOTUNE:
     case Mode::Number::QACRO:
     case Mode::Number::GG:
+    case Mode::Number::TAKEOFF:
         // nothing to do
         break;
     }
