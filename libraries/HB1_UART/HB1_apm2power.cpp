@@ -16,3 +16,4 @@ void HB1_apm2power::process_message(void)
 {
     ;
 }
+

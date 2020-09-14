@@ -207,21 +207,22 @@ void Plane::HB1_msg_apm2power_send() {
     tmp_msg._msg_1.content.msg.header.head_1 = HB1_apm2power::PREAMBLE1;
     tmp_msg._msg_1.content.msg.header.head_2 = HB1_apm2power::PREAMBLE2;
     tmp_msg._msg_1.content.msg.ctrl_cmd = 0;
+    tmp_msg._msg_1.content.msg.sum_check = 0;
     switch (HB1_Power.state) {
         case HB1_PoserAction_None:
-            tmp_msg._msg_1.content.msg.ctrl_cmd = 4;
+            tmp_msg._msg_1.content.msg.ctrl_cmd = 0;
             break;
         case HB1_PoserAction_RocketON:
-            tmp_msg._msg_1.content.msg.ctrl_cmd = 1;
+            tmp_msg._msg_1.content.msg.ctrl_cmd = 8;
             break;
-        case HB1_PoserAction_EngineON:
-            tmp_msg._msg_1.content.msg.ctrl_cmd = 2;
-            break;
-        case HB1_PoserAction_EngineOFF:
+        case HB1_PoserAction_EngineSTART:
             tmp_msg._msg_1.content.msg.ctrl_cmd = 4;
             break;
+        case HB1_PoserAction_EngineOFF:
+            tmp_msg._msg_1.content.msg.ctrl_cmd = 2;
+            break;
         case HB1_PoserAction_ParachuteON:
-            tmp_msg._msg_1.content.msg.ctrl_cmd = 4 + 8;
+            tmp_msg._msg_1.content.msg.ctrl_cmd = 1;
             break;
         default:
             break;
