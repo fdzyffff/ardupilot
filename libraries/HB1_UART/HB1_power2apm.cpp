@@ -23,6 +23,8 @@ void HB1_power2apm::parse(uint8_t temp)
         case HB1UART_msg_parser::HB1UART_PREAMBLE2:
             if (temp == PREAMBLE2)
             {
+                _msg.header.head_1 = PREAMBLE1;
+                _msg.header.head_2 = PREAMBLE2;
                 _msg.length = _msg_1.length;
                 _msg.read = 2;
                 _msg.sum_check += temp;

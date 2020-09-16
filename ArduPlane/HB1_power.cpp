@@ -29,9 +29,18 @@ void Plane::HB1_Power_pwm_update() {
         }
 
         if (HB1_Power.state == HB1_PoserAction_RocketON) {
+            HB1_throttle = thr_min;
+        }
+        
+        if (HB1_Power.state == HB1_PoserAction_EngineSTART) {
             float timer = millis() - HB1_Power.timer;
-            const float tau = 2000.f;
-            HB1_throttle = constrain_float(20.f + 80.f*timer/tau, thr_min, thr_max);
+            if (timer < 1200.f) {
+                HB1_throttle = constrain_float(35.f*timer/1200.f, thr_min, 35.f);
+            } else if (timer < 2000.f) {
+                HB1_throttle = constrain_float(35.f + 65.f*(timer-1200.f)/800.f, 35.f, thr_max);
+            } else {
+                HB1_throttle = constrain_float(100.f, thr_min, thr_max);
+            }
         }
     }
 
@@ -46,7 +55,16 @@ void Plane::HB1_Power_status_update() {
             break;
         case HB1_PoserAction_RocketON:
             if (timer > 2000) {
-                HB1_status_set_HB_Power_Action(HB1_PoserAction_EngineSTART);
+                float airspeed_measured = 0;
+                if (!ahrs.airspeed_estimate(&airspeed_measured)) {airspeed_measured = 0.0f;}
+                float gspd = ahrs.groundspeed_vector().length();
+                bool speed_reached = (airspeed_measured > 10.0f || gspd > 5.0f);
+                if (speed_reached) {
+                    HB1_status_set_HB_Power_Action(HB1_PoserAction_EngineSTART);
+                } else {
+                    set_mode(plane.mode_fbwa, MODE_REASON_UNAVAILABLE);
+                    HB1_status_set_HB_Power_Action(HB1_PoserAction_None);
+                }
             }
             break;
         case HB1_PoserAction_EngineSTART:
