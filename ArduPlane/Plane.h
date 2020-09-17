@@ -1150,6 +1150,7 @@ private:
     struct {
         uint32_t timer;
         HB1_Power_Action_t state;
+        HB1_Power_Action_t test_state;
         float HB1_engine_rpm;
         float HB1_engine_temp;
     } HB1_Power;

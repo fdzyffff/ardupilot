@@ -227,6 +227,29 @@ void Plane::HB1_msg_apm2power_send() {
         default:
             break;
     }
+    if (HB1_Power.state == HB1_PoserAction_None) {
+        switch (HB1_Power.test_state) {
+            case HB1_PoserAction_RocketON:
+                tmp_msg._msg_1.content.msg.ctrl_cmd = 8;
+                gcs().send_text(MAV_SEVERITY_INFO, "TestRC Rocket ON");
+                break;
+            case HB1_PoserAction_EngineSTART:
+                tmp_msg._msg_1.content.msg.ctrl_cmd = 4;
+                gcs().send_text(MAV_SEVERITY_INFO, "TestRC Engine Starting");
+                break;
+            case HB1_PoserAction_EngineOFF:
+                tmp_msg._msg_1.content.msg.ctrl_cmd = 2;
+                gcs().send_text(MAV_SEVERITY_INFO, "TestRC Engine OFF");
+                break;
+            case HB1_PoserAction_ParachuteON:
+                tmp_msg._msg_1.content.msg.ctrl_cmd = 1;
+                gcs().send_text(MAV_SEVERITY_INFO, "TestRC Parachute ON");
+                break;
+            default:
+                break;
+        }
+        HB1_Power.test_state = HB1_PoserAction_None;
+    }
     for (int8_t i = 0; i < tmp_msg._msg_1.length - 1; i++) {
         tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
     };

@@ -118,6 +118,22 @@ void RC_Channel_Plane::do_aux_function(const aux_func_t ch_option, const aux_swi
         do_aux_function_change_mode(Mode::Number::TAKEOFF, ch_flag);
         break;
 
+    case AUX_FUNC::RELAY:
+        RC_Channel::do_aux_function_relay(0, ch_flag == HIGH);
+        if (ch_flag == HIGH) {plane.HB1_Power.test_state = plane.HB1_PoserAction_RocketON;}
+        break;
+    case AUX_FUNC::RELAY2:
+        RC_Channel::do_aux_function_relay(1, ch_flag == HIGH);
+        if (ch_flag == HIGH) {plane.HB1_Power.test_state = plane.HB1_PoserAction_ParachuteON;}
+        break;
+    case AUX_FUNC::RELAY3:
+        RC_Channel::do_aux_function_relay(2, ch_flag == HIGH);
+        if (ch_flag == HIGH) {plane.HB1_Power.test_state = plane.HB1_PoserAction_EngineOFF;}
+        break;
+    case AUX_FUNC::RELAY4:
+        RC_Channel::do_aux_function_relay(3, ch_flag == HIGH);
+        if (ch_flag == HIGH) {plane.HB1_Power.test_state = plane.HB1_PoserAction_EngineSTART;}
+        break;
 
     default:
         RC_Channel::do_aux_function(ch_option, ch_flag);

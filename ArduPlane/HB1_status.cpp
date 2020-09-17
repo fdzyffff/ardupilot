@@ -2,6 +2,7 @@
 
 void Plane::HB1_status_init() {
     HB1_status_set_HB_Power_Action(HB1_PoserAction_None);
+    HB1_Power.test_state = HB1_PoserAction_None;
     HB1_status_set_HB_Mission_Action(HB1_Mission_None);
     HB1_Status.num_wp = 0;
     HB1_Status.num_interim = 0;
