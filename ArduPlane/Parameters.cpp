@@ -1273,6 +1273,7 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("HB1_NOGPST", 29, ParametersG2, hb1_follow_nogps_time, 60000),
     AP_GROUPINFO("HB1_WPT", 30, ParametersG2, hb1_follow_hover_wp_time, 20000),
     AP_GROUPINFO("HB1_ATTACKT", 31, ParametersG2, hb1_follow_hover_attack_time, 60000),
+    AP_GROUPINFO("HB1_TEST", 32, ParametersG2, hb1_test_mode, 0),
 
     AP_GROUPEND
 };

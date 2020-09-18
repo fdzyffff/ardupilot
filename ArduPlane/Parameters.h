@@ -576,6 +576,8 @@ public:
     AP_Int32 hb1_follow_nogps_time;
     AP_Int32 hb1_follow_hover_wp_time;
     AP_Int32 hb1_follow_hover_attack_time;
+
+    AP_Int8 hb1_test_mode;
 };
 
 extern const AP_Param::Info var_info[];

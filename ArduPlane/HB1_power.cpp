@@ -59,7 +59,7 @@ void Plane::HB1_Power_status_update() {
                 if (!ahrs.airspeed_estimate(&airspeed_measured)) {airspeed_measured = 0.0f;}
                 float gspd = ahrs.groundspeed_vector().length();
                 bool speed_reached = (airspeed_measured > 10.0f || gspd > 5.0f);
-                if (speed_reached) {
+                if (speed_reached || (g2.hb1_test_mode != 0)) {
                     HB1_status_set_HB_Power_Action(HB1_PoserAction_EngineSTART);
                 } else {
                     set_mode(plane.mode_fbwa, MODE_REASON_UNAVAILABLE);

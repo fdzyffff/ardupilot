@@ -62,7 +62,7 @@ public:
 
     void process_message(void) override;
     void parse(uint8_t temp) override;
-    void swap_message() override {};
+    void swap_message() override;
 
     HB1UART_MSG_1 _msg_1;
 };
