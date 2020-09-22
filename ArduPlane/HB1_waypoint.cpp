@@ -11,7 +11,7 @@ void Plane::HB1_msg_mission2apm_set_wp_handle() {
     tmp_cmd.id = MAV_CMD_NAV_WAYPOINT;
     tmp_cmd.content.location.lat = (int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.latitude/tmp_msg.SF_LL);
     tmp_cmd.content.location.lng = (int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.longitude/tmp_msg.SF_LL);
-    tmp_cmd.content.location.set_alt_cm((int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.alt/tmp_msg.SF_ALT), Location::AltFrame::ABOVE_HOME);
+    tmp_cmd.content.location.set_alt_cm((int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.alt*100.f/tmp_msg.SF_ALT), Location::AltFrame::ABOVE_HOME);
 
     tmp_cmd.p1 = 0;
     if (HB1_Status.num_wp == 0) {
@@ -33,7 +33,7 @@ void Plane::HB1_msg_mission2apm_set_interim_handle() {
     tmp_cmd.id = MAV_CMD_NAV_WAYPOINT;
     tmp_cmd.content.location.lat = (int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.latitude/tmp_msg.SF_LL);
     tmp_cmd.content.location.lng = (int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.longitude/tmp_msg.SF_LL);
-    tmp_cmd.content.location.set_alt_cm((int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.alt/tmp_msg.SF_ALT), Location::AltFrame::ABOVE_HOME);
+    tmp_cmd.content.location.set_alt_cm((int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.alt*100.f/tmp_msg.SF_ALT), Location::AltFrame::ABOVE_HOME);
 
     tmp_cmd.p1 = 0;
     if (HB1_Status.num_attack == 0) {
@@ -53,7 +53,7 @@ void Plane::HB1_msg_mission2apm_set_attack_handle() {
     HB1_attack_cmd.id = MAV_CMD_NAV_WAYPOINT;
     HB1_attack_cmd.content.location.lat = (int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.latitude/tmp_msg.SF_LL);
     HB1_attack_cmd.content.location.lng = (int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.longitude/tmp_msg.SF_LL);
-    HB1_attack_cmd.content.location.set_alt_cm((int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.alt/tmp_msg.SF_ALT), Location::AltFrame::ABOVE_HOME);
+    HB1_attack_cmd.content.location.set_alt_cm((int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.alt*100.f/tmp_msg.SF_ALT), Location::AltFrame::ABOVE_HOME);
 
     HB1_attack_cmd.p1 = 0;
     if (HB1_Status.num_attack == 0) {

@@ -126,7 +126,7 @@ void Plane::HB1_msg_apm2mission_send() {
 
     tmp_msg._msg_1.content.msg.longitude = (int32_t)((double)current_loc.lng * tmp_msg.SF_LL);
     tmp_msg._msg_1.content.msg.latitude = (int32_t)((double)current_loc.lat * tmp_msg.SF_LL);
-    tmp_msg._msg_1.content.msg.alt = (int16_t)(relative_ground_altitude(false) * tmp_msg.SF_ALT);
+    tmp_msg._msg_1.content.msg.alt = (int16_t)(relative_ground_altitude(false)*0.01f * tmp_msg.SF_ALT);
     tmp_msg._msg_1.content.msg.ptich = (int16_t)((float)(ahrs.pitch_sensor/100) * tmp_msg.SF_ANG);
     tmp_msg._msg_1.content.msg.roll = (int16_t)((float)(ahrs.roll_sensor/100) * tmp_msg.SF_ANG);
     tmp_msg._msg_1.content.msg.yaw = (int16_t)((float)wrap_180_cd(ahrs.yaw_sensor/100) * tmp_msg.SF_ANG);

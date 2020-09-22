@@ -155,7 +155,7 @@ void Plane::test_HB1_follow_target_reset(void)
 
 void Plane::test_HB1_mission_send_msg() {
     static bool in_group = false;
-    static float apm_deltaX = 0.0f;
+    static float apm_deltaX = 30.0f;
     static float apm_deltaY = 0.0f;
     static float apm_deltaZ = 0.0f;
     Location tmp_loc;
@@ -189,7 +189,7 @@ void Plane::test_HB1_mission_send_msg() {
     tmp_msg._msg_1.content.msg.apm_deltaZ = apm_deltaZ;
     tmp_msg._msg_1.content.msg.leader_lng = (int32_t)((double)HB1_test.follow_loc.lng*tmp_msg.SF_LL);
     tmp_msg._msg_1.content.msg.leader_lat = (int32_t)((double)HB1_test.follow_loc.lat*tmp_msg.SF_LL);
-    tmp_msg._msg_1.content.msg.leader_alt = (int16_t)((float)HB1_test.follow_loc.alt*tmp_msg.SF_ALT);
+    tmp_msg._msg_1.content.msg.leader_alt = (int16_t)((float)HB1_test.follow_loc.alt*0.01f*tmp_msg.SF_ALT);
     tmp_msg._msg_1.content.msg.leader_dir = (int16_t)(wrap_180(HB1_test.follow_dir)*tmp_msg.SF_ANG);
     tmp_msg._msg_1.content.msg.leader_target_id = 0;
     tmp_msg._msg_1.content.msg.net_timeout = false;
@@ -220,7 +220,7 @@ void Plane::test_HB1_mission_send_msg() {
             tmp_loc = test_HB1_generate_wp();
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.longitude = (int32_t)((double)tmp_loc.lng*tmp_msg.SF_LL);
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.latitude = (int32_t)((double)tmp_loc.lat*tmp_msg.SF_LL);
-            tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.alt = (int16_t)((float)tmp_loc.alt*tmp_msg.SF_ALT);
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.alt = (int16_t)((float)tmp_loc.alt*0.01f*tmp_msg.SF_ALT);
             gcs().send_text(MAV_SEVERITY_INFO, "SIM set wp");
             break;
         case 12: // insert interim
@@ -230,7 +230,7 @@ void Plane::test_HB1_mission_send_msg() {
             tmp_loc = test_HB1_generate_interim_attack();
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.longitude = (int32_t)((double)tmp_loc.lng*tmp_msg.SF_LL);
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.latitude = (int32_t)((double)tmp_loc.lat*tmp_msg.SF_LL);
-            tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.alt = (int16_t)((float)tmp_loc.alt*tmp_msg.SF_ALT);
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.alt = (int16_t)((float)tmp_loc.alt*0.01f*tmp_msg.SF_ALT);
             gcs().send_text(MAV_SEVERITY_INFO, "SIM set interim");
             break;
         case 13: // insert attack
@@ -240,7 +240,7 @@ void Plane::test_HB1_mission_send_msg() {
             tmp_loc = test_HB1_generate_interim_attack();
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.longitude = (int32_t)((double)tmp_loc.lng*tmp_msg.SF_LL);
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.latitude = (int32_t)((double)tmp_loc.lat*tmp_msg.SF_LL);
-            tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.alt = (int16_t)((float)tmp_loc.alt*tmp_msg.SF_ALT);
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.alt = (int16_t)((float)tmp_loc.alt*0.01f*tmp_msg.SF_ALT);
             gcs().send_text(MAV_SEVERITY_INFO, "SIM set attack");
             break;
         case 21: 
