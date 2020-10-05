@@ -126,7 +126,7 @@ void ModeTakeoff::update()
         plane.takeoff_calc_roll();
         //plane.takeoff_calc_pitch();
         plane.nav_pitch_cd = level_pitch * 100;
-    } else {    
+    } else {
         plane.nav_roll_cd  = plane.roll_limit_cd / 3;
         plane.update_load_factor();
         plane.calc_nav_pitch();
