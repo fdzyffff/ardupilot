@@ -183,6 +183,7 @@ bool AP_Arming_Plane::arm(const AP_Arming::Method method, const bool do_arming_c
     change_arm_state();
 
     gcs().send_text(MAV_SEVERITY_INFO, "Throttle armed");
+    HB1_status_set_HB_Power_Action(HB1_PowerAction_None);
 
     return true;
 }
@@ -225,6 +226,7 @@ bool AP_Arming_Plane::disarm(void)
         plane.geofence_set_enabled(false, AUTO_TOGGLED);
     }
 #endif
+    HB1_status_set_HB_Power_Action(HB1_PowerAction_None);
     
     return true;
 }

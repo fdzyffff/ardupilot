@@ -1105,12 +1105,12 @@ private:
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     enum HB1_Power_Action_t {
-        HB1_PoserAction_None            = 0,
-        HB1_PoserAction_RocketON        = 1,
-        HB1_PoserAction_EngineSTART     = 2,
-        HB1_PoserAction_EngineON        = 3,
-        HB1_PoserAction_EngineOFF       = 4,
-        HB1_PoserAction_ParachuteON     = 5,
+        HB1_PowerAction_None            = 0,
+        HB1_PowerAction_RocketON        = 1,
+        HB1_PowerAction_EngineSTART     = 2,
+        HB1_PowerAction_EngineON        = 3,
+        HB1_PowerAction_EngineOFF       = 4,
+        HB1_PowerAction_ParachuteON     = 5,
     };
 
     enum HB1_Mission_t {
@@ -1199,6 +1199,8 @@ private:
     void HB1_msg_mission2apm_set_attack_handle();
     void HB1_msg_mission2apm_away_handle();
     void HB1_msg_mission2apm_follow_handle();
+    void HB1_msg_mission2apm_EngineON_handle();
+    void HB1_msg_mission2apm_EngineOFF_handle();
 
     void HB1_status_set_HB_Mission_Action(HB1_Mission_t action);
     void HB1_Mission_update();

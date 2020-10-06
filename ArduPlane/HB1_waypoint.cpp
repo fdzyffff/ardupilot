@@ -74,3 +74,17 @@ void Plane::HB1_msg_mission2apm_away_handle() {
     }
     gcs().send_text(MAV_SEVERITY_INFO, "Away received");
 }
+
+void Plane::HB1_msg_mission2apm_EngineON_handle() {
+    if (!hal.util->get_soft_armed()) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Engine ground start");
+        HB1_status_set_HB_Power_Action(HB1_PowerAction_EngineSTART);
+    } else {
+        gcs().send_text(MAV_SEVERITY_INFO, "Disarm first! for Engine ground start");
+    }
+}
+
+void Plane::HB1_msg_mission2apm_EngineOFF_handle() {
+    gcs().send_text(MAV_SEVERITY_INFO, "Engine ground stop");
+    HB1_status_set_HB_Power_Action(HB1_PowerAction_EngineOFF);
+}

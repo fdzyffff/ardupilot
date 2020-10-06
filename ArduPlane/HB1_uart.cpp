@@ -105,6 +105,12 @@ void Plane::HB1_msg_mission2apm_handle() {
                 HB1_msg_mission2apm_away_handle();
             }
             break;
+        case 0xA5:
+            HB1_msg_mission2apm_EngineON_handle();
+            break;
+        case 0xC6:
+            HB1_msg_mission2apm_EngineOFF_handle();
+            break;
         default:
             break;
     }
@@ -202,7 +208,7 @@ void Plane::HB1_msg_apm2cam_send() {
 }
 
 void Plane::HB1_msg_apm2power_send() {
-    static HB1_Power_Action_t old_state = HB1_PoserAction_None;
+    static HB1_Power_Action_t old_state = HB1_PowerAction_None;
     if (old_state != HB1_Power.state) {
         old_state = HB1_Power.state;
         HB1_apm2power &tmp_msg = HB1_uart_power.get_msg_apm2power();
@@ -212,19 +218,19 @@ void Plane::HB1_msg_apm2power_send() {
         tmp_msg._msg_1.content.msg.ctrl_cmd = 0;
         tmp_msg._msg_1.content.msg.sum_check = 0;
         switch (HB1_Power.state) {
-            case HB1_PoserAction_None:
+            case HB1_PowerAction_None:
                 tmp_msg._msg_1.content.msg.ctrl_cmd = 0;
                 break;
-            case HB1_PoserAction_RocketON:
+            case HB1_PowerAction_RocketON:
                 tmp_msg._msg_1.content.msg.ctrl_cmd = 8;
                 break;
-            case HB1_PoserAction_EngineSTART:
+            case HB1_PowerAction_EngineSTART:
                 tmp_msg._msg_1.content.msg.ctrl_cmd = 4;
                 break;
-            case HB1_PoserAction_EngineOFF:
+            case HB1_PowerAction_EngineOFF:
                 tmp_msg._msg_1.content.msg.ctrl_cmd = 2;
                 break;
-            case HB1_PoserAction_ParachuteON:
+            case HB1_PowerAction_ParachuteON:
                 tmp_msg._msg_1.content.msg.ctrl_cmd = 1;
                 break;
             default:
@@ -237,8 +243,8 @@ void Plane::HB1_msg_apm2power_send() {
         return;
     }
 
-    static HB1_Power_Action_t old_test_state = HB1_PoserAction_None;
-    if (HB1_Power.state == HB1_PoserAction_None && g2.hb1_test_mode != 0) {
+    static HB1_Power_Action_t old_test_state = HB1_PowerAction_None;
+    if (HB1_Power.state == HB1_PowerAction_None && g2.hb1_test_mode != 0) {
         if (old_test_state != HB1_Power.test_state) {
             old_test_state = HB1_Power.test_state;
             HB1_apm2power &tmp_msg = HB1_uart_power.get_msg_apm2power();
@@ -248,16 +254,16 @@ void Plane::HB1_msg_apm2power_send() {
             tmp_msg._msg_1.content.msg.ctrl_cmd = 0;
             tmp_msg._msg_1.content.msg.sum_check = 0;
             switch (HB1_Power.test_state) {
-                case HB1_PoserAction_RocketON:
+                case HB1_PowerAction_RocketON:
                     tmp_msg._msg_1.content.msg.ctrl_cmd = 8;
                     break;
-                case HB1_PoserAction_EngineSTART:
+                case HB1_PowerAction_EngineSTART:
                     tmp_msg._msg_1.content.msg.ctrl_cmd = 4;
                     break;
-                case HB1_PoserAction_EngineOFF:
+                case HB1_PowerAction_EngineOFF:
                     tmp_msg._msg_1.content.msg.ctrl_cmd = 2;
                     break;
-                case HB1_PoserAction_ParachuteON:
+                case HB1_PowerAction_ParachuteON:
                     tmp_msg._msg_1.content.msg.ctrl_cmd = 1;
                     break;
                 default:

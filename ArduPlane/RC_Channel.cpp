@@ -121,33 +121,33 @@ void RC_Channel_Plane::do_aux_function(const aux_func_t ch_option, const aux_swi
     case AUX_FUNC::RELAY:
         RC_Channel::do_aux_function_relay(0, ch_flag == HIGH);
         if (ch_flag == HIGH) {
-            plane.HB1_Power.test_state = plane.HB1_PoserAction_RocketON;
+            plane.HB1_Power.test_state = plane.HB1_PowerAction_RocketON;
             plane.gcs().send_text(MAV_SEVERITY_INFO, "TestRC Rocket ON");
         }
-        else {plane.HB1_Power.test_state = plane.HB1_PoserAction_None;}
+        else {plane.HB1_Power.test_state = plane.HB1_PowerAction_None;}
         break;
     case AUX_FUNC::RELAY2:
         RC_Channel::do_aux_function_relay(1, ch_flag == HIGH);
-        if (ch_flag == HIGH) {plane.HB1_Power.test_state = plane.HB1_PoserAction_ParachuteON;
+        if (ch_flag == HIGH) {plane.HB1_Power.test_state = plane.HB1_PowerAction_ParachuteON;
             plane.gcs().send_text(MAV_SEVERITY_INFO, "TestRC Parachute ON");
             }
-        else {plane.HB1_Power.test_state = plane.HB1_PoserAction_None;}
+        else {plane.HB1_Power.test_state = plane.HB1_PowerAction_None;}
         break;
     case AUX_FUNC::RELAY3:
         RC_Channel::do_aux_function_relay(2, ch_flag == HIGH);
         if (ch_flag == HIGH) {
-            plane.HB1_Power.test_state = plane.HB1_PoserAction_EngineOFF;
+            plane.HB1_Power.test_state = plane.HB1_PowerAction_EngineOFF;
             plane.gcs().send_text(MAV_SEVERITY_INFO, "TestRC Engine OFF");
         }
-        else {plane.HB1_Power.test_state = plane.HB1_PoserAction_None;}
+        else {plane.HB1_Power.test_state = plane.HB1_PowerAction_None;}
         break;
     case AUX_FUNC::RELAY4:
         RC_Channel::do_aux_function_relay(3, ch_flag == HIGH);
         if (ch_flag == HIGH) {
-            plane.HB1_Power.test_state = plane.HB1_PoserAction_EngineSTART;
+            plane.HB1_Power.test_state = plane.HB1_PowerAction_EngineSTART;
             plane.gcs().send_text(MAV_SEVERITY_INFO, "TestRC Engine Starting");
         }
-        else {plane.HB1_Power.test_state = plane.HB1_PoserAction_None;}
+        else {plane.HB1_Power.test_state = plane.HB1_PowerAction_None;}
         break;
 
     default:
