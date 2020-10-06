@@ -94,20 +94,27 @@ void Plane::test_HB1_uart_msg3(){
     tmp_msg._msg_1.content.msg.length = tmp_msg._msg_1.length-4;
     tmp_msg._msg_1.content.msg.sum_check = 0;
 
+    static uint8_t pre_index = 0;
     for (int8_t i = 4; i < tmp_msg._msg_1.length - 1; i++) {
         tmp_msg._msg_1.content.data[i] = 0;
     }
     
+    if (pre_index != 0xA5){
+        tmp_msg._msg_1.content.msg.remote_index = 0xA5;
+    } else {
+        tmp_msg._msg_1.content.msg.remote_index = 0xC6;
+    }
+    pre_index = tmp_msg._msg_1.content.msg.remote_index;
     for (int8_t i = 2; i < tmp_msg._msg_1.length - 1; i++) {
         tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
     }
-    tmp_msg._msg_1.content.data[0] = 0xEE;
+/*    tmp_msg._msg_1.content.data[0] = 0xEE;
     tmp_msg._msg_1.content.data[1] = 0x16;
     tmp_msg._msg_1.content.data[2] = 0xAA;
     tmp_msg._msg_1.content.data[3] = 0x2F;
     tmp_msg._msg_1.content.data[4] = 0x00;
     tmp_msg._msg_1.content.data[5] = 0x63;
-    tmp_msg._msg_1.content.data[50] = 0x3D;
+    tmp_msg._msg_1.content.data[50] = 0x3D;*/
 }
 
 void Plane::test_HB1_uart_msg4(){

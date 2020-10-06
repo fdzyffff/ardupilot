@@ -46,8 +46,8 @@ void Plane::HB1_Power_status_update() {
         case HB1_PowerAction_None:
         if (hal.util->get_soft_armed() && !plane.throttle_suppressed && (control_mode == &mode_takeoff)) {
             HB1_status_set_HB_Power_Action(HB1_PowerAction_RocketON);
-            break;
         }
+        break;
         case HB1_PowerAction_RocketON:
             if (timer > 2000) {
                 float airspeed_measured = 0;

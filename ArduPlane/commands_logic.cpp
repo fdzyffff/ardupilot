@@ -598,7 +598,8 @@ bool Plane::verify_nav_wp(const AP_Mission::Mission_Command& cmd)
     Location flex_next_WP_loc = next_WP_loc;
 
     uint8_t cmd_passby = HIGHBYTE(cmd.p1); // distance in meters to pass beyond the wp
-    uint16_t cmd_acceptance_distance = LOWBYTE(cmd.p1)*10; // radius in meters to accept reaching the wp
+    uint16_t cmd_acceptance_distance = LOWBYTE(cmd.p1); // radius in meters to accept reaching the wp
+    cmd_acceptance_distance += g2.hb1_acc_radius.get();
 
     if (cmd_passby > 0) {
         float dist = prev_WP_loc.get_distance(flex_next_WP_loc);
