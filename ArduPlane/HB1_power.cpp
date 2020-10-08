@@ -71,7 +71,11 @@ void Plane::HB1_Power_status_update() {
             break;
         case HB1_PowerAction_EngineOFF:
             if (timer > 3000) {
-                HB1_status_set_HB_Power_Action(HB1_PowerAction_ParachuteON);
+                if (hal.util->get_soft_armed()) {
+                    HB1_status_set_HB_Power_Action(HB1_PowerAction_ParachuteON);
+                } else {
+                    HB1_status_set_HB_Power_Action(HB1_PowerAction_None);
+                }
             }
             break;
         case HB1_PowerAction_ParachuteON:

@@ -218,6 +218,8 @@ struct PACKED log_AETR {
     int16_t throttle;
     int16_t rudder;
     int16_t flap;
+    int16_t temp;
+    int16_t rpm;
 };
 
 void Plane::Log_Write_AETR()
@@ -230,6 +232,8 @@ void Plane::Log_Write_AETR()
         ,throttle : SRV_Channels::get_output_scaled(SRV_Channel::k_throttle)
         ,rudder   : SRV_Channels::get_output_scaled(SRV_Channel::k_rudder)
         ,flap     : SRV_Channels::get_output_scaled(SRV_Channel::k_flap_auto)
+        ,temp     : (int16_t)(HB1_Power.HB1_engine_temp*0.1f)
+        ,rpm      : (int16_t)HB1_Power.HB1_engine_rpm
         };
 
     logger.WriteBlock(&pkt, sizeof(pkt));
@@ -275,7 +279,7 @@ const struct LogStructure Plane::log_structure[] = {
     { LOG_PIQA_MSG, sizeof(log_PID), \
       "PIQA", PID_FMT,  PID_LABELS, PID_UNITS, PID_MULTS }, \
     { LOG_AETR_MSG, sizeof(log_AETR), \
-      "AETR", "Qhhhhh",  "TimeUS,Ail,Elev,Thr,Rudd,Flap", "s-----", "F-----" },  \
+      "AETR", "Qhhhhhhh",  "TimeUS,Ail,Elev,Thr,Rudd,Flap,Temp,Rpm", "s-------", "F-------" },  \
 };
 
 void Plane::Log_Write_Vehicle_Startup_Messages()
