@@ -11,11 +11,13 @@ void Plane::HB1_status_init() {
     HB1_Status.last_update_ms = 0;
     HB1_Status.mission_complete = false;
     HB1_Status.time_out = g2.hb1_follow_hover_wp_time;
+    HB1_Status.already_takeoff = false;
 }
 
 void Plane::HB1_status_update_20Hz() {
     HB1_Power_update();
     HB1_Mission_update();
+    //HB1_Servo_status_update();
 }
 
 void Plane::HB1_Mission_update() {
@@ -105,39 +107,39 @@ void Plane::HB1_status_set_HB_Mission_Action(HB1_Mission_t action) {
             HB1_Status.state = action;
             break;
         case HB1_Mission_Takeoff :
-            if (plane.arming.arm(AP_Arming::Method::MAVLINK, true) || plane.arming.is_armed()) {
-                set_mode(plane.mode_takeoff, MODE_REASON_UNAVAILABLE);
+            if (arming.arm(AP_Arming::Method::MAVLINK, true) || arming.is_armed()) {
+                set_mode(mode_takeoff, MODE_REASON_UNAVAILABLE);
                 HB1_Status.state = action;
             }
             break;
         case HB1_Mission_WP :
-            set_mode(plane.mode_auto, MODE_REASON_UNAVAILABLE);
-            plane.mission.set_current_cmd(1);
+            set_mode(mode_auto, MODE_REASON_UNAVAILABLE);
+            mission.set_current_cmd(1);
             HB1_Status.state = action;
             break;
         case HB1_Mission_Attack :
-            set_mode(plane.mode_auto, MODE_REASON_UNAVAILABLE);
-            plane.mission.set_current_cmd(HB1_Status.num_wp+1);
+            set_mode(mode_auto, MODE_REASON_UNAVAILABLE);
+            mission.set_current_cmd(HB1_Status.num_wp+1);
             HB1_Status.state = action;
             break;
         case HB1_Mission_FsGPS :
-            set_mode(plane.mode_auto, MODE_REASON_UNAVAILABLE);
+            set_mode(mode_auto, MODE_REASON_UNAVAILABLE);
             HB1_Status.state = action;
             break;
         case HB1_Mission_Hover :
-            set_mode(plane.mode_loiter, MODE_REASON_UNAVAILABLE);
+            set_mode(mode_loiter, MODE_REASON_UNAVAILABLE);
             HB1_Status.state = action;
             break;
         case HB1_Mission_Follow :
-            set_mode(plane.mode_guided, MODE_REASON_UNAVAILABLE);
+            set_mode(mode_guided, MODE_REASON_UNAVAILABLE);
             HB1_Status.state = action;
             break;
         case HB1_Mission_FsNoGPS :
-            set_mode(plane.mode_fbwb, MODE_REASON_UNAVAILABLE);
+            set_mode(mode_fbwb, MODE_REASON_UNAVAILABLE);
             HB1_Status.state = action;
             break;
         case HB1_Mission_GG :
-            set_mode(plane.mode_gg, MODE_REASON_UNAVAILABLE);
+            set_mode(mode_gg, MODE_REASON_UNAVAILABLE);
             HB1_Status.state = action;
             break;
         default:

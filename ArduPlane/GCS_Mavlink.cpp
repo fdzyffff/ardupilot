@@ -37,6 +37,7 @@ MAV_MODE GCS_MAVLINK_Plane::base_mode() const
     case Mode::Number::CRUISE:
     case Mode::Number::QAUTOTUNE:
     case Mode::Number::GG:
+    case Mode::Number::SERVOTEST:
         _base_mode = MAV_MODE_FLAG_STABILIZE_ENABLED;
         break;
     case Mode::Number::AUTO:
@@ -1010,7 +1011,7 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_long_packet(const mavlink_command_l
         return MAV_RESULT_ACCEPTED;
 
     case MAV_CMD_USER_1: {
-        plane.test_HB1_uart((uint8_t)packet.param1);
+        plane.test_HB1_uart((uint8_t)packet.param1, (uint8_t)packet.param2);
         return MAV_RESULT_ACCEPTED;
     }
     case MAV_CMD_USER_2: {

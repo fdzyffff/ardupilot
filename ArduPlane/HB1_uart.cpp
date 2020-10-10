@@ -111,6 +111,15 @@ void Plane::HB1_msg_mission2apm_handle() {
         case 0xC6:
             HB1_msg_mission2apm_EngineOFF_handle();
             break;
+        case 0xE7:
+            HB1_msg_mission2apm_EngineTest_handle();
+            break;
+        case 0xCC:
+            HB1_msg_mission2apm_Disarm_handle();
+            break;
+        case 0x99:
+            HB1_msg_mission2apm_ServoTest_handle();
+            break;
         default:
             break;
     }

@@ -522,6 +522,7 @@ void Plane::update_navigation()
         break;*/
 
     case Mode::Number::MANUAL:
+    case Mode::Number::SERVOTEST:
     case Mode::Number::STABILIZE:
     case Mode::Number::TRAINING:
     case Mode::Number::INITIALISING:

@@ -368,6 +368,12 @@ void Plane::stabilize()
         steer_state.locked_course_err = 0;
         return;
     }
+    if (control_mode == &mode_servotest) {
+        // reset steering controls
+        steer_state.locked_course = false;
+        steer_state.locked_course_err = 0;
+        return;
+    }
     float speed_scaler = get_speed_scaler();
 
     if (quadplane.in_tailsitter_vtol_transition()) {

@@ -1,29 +1,29 @@
 #include "Plane.h"
 
 
-void Plane::test_HB1_uart(uint8_t msg_id)
+void Plane::test_HB1_uart(uint8_t msg_id, uint8_t option)
 {
     switch (msg_id) {
         case 1:
-            test_HB1_uart_msg1();
+            test_HB1_uart_msg1(option);
             break;
         case 2:
-            test_HB1_uart_msg2();
+            test_HB1_uart_msg2(option);
             break;
         case 3:
-            test_HB1_uart_msg3();
+            test_HB1_uart_msg3(option);
             break;
         case 4:
-            test_HB1_uart_msg4();
+            test_HB1_uart_msg4(option);
             break;
         case 5:
-            test_HB1_uart_msg5();
+            test_HB1_uart_msg5(option);
             break;
         case 6:
-            test_HB1_uart_msg6();
+            test_HB1_uart_msg6(option);
             break;
         case 7:
-            test_HB1_uart_msg7();
+            test_HB1_uart_msg7(option);
             break;
         default:
             break;
@@ -39,7 +39,7 @@ void Plane::test_HB1_uart(uint8_t msg_id)
 //msg_2: mission2cam  2
 //msg_1: power2apm    1  
 
-void Plane::test_HB1_uart_msg1(){
+void Plane::test_HB1_uart_msg1(uint8_t option){
     gcs().send_text(MAV_SEVERITY_INFO, "SIM power2apm :");
     HB1_power2apm &tmp_msg = HB1_uart_power.get_msg_power2apm();
     tmp_msg._msg_1.updated = true;
@@ -60,7 +60,7 @@ void Plane::test_HB1_uart_msg1(){
     }
 }
 
-void Plane::test_HB1_uart_msg2(){
+void Plane::test_HB1_uart_msg2(uint8_t option){
     gcs().send_text(MAV_SEVERITY_INFO, "SIM mission2cam :");
     HB1_mission2cam &tmp_msg = HB1_uart_mission.get_msg_mission2cam();
     tmp_msg._msg_1.updated = true;
@@ -82,7 +82,7 @@ void Plane::test_HB1_uart_msg2(){
     }
 }
 
-void Plane::test_HB1_uart_msg3(){
+void Plane::test_HB1_uart_msg3(uint8_t option){
     gcs().send_text(MAV_SEVERITY_INFO, "SIM mission2apm :");
     HB1_mission2apm &tmp_msg = HB1_uart_mission.get_msg_mission2apm();
     tmp_msg._msg_1.updated = true;
@@ -94,17 +94,21 @@ void Plane::test_HB1_uart_msg3(){
     tmp_msg._msg_1.content.msg.length = tmp_msg._msg_1.length-4;
     tmp_msg._msg_1.content.msg.sum_check = 0;
 
-    static uint8_t pre_index = 0;
     for (int8_t i = 4; i < tmp_msg._msg_1.length - 1; i++) {
         tmp_msg._msg_1.content.data[i] = 0;
     }
     
-    if (pre_index != 0xA5){
+    if (option == 1){
         tmp_msg._msg_1.content.msg.remote_index = 0xA5;
-    } else {
+    } else if (option == 2) {
         tmp_msg._msg_1.content.msg.remote_index = 0xC6;
+    } else if (option == 3) {
+        tmp_msg._msg_1.content.msg.remote_index = 0xE7;
+    } else if (option == 4) {
+        tmp_msg._msg_1.content.msg.remote_index = 0xCC;
+    } else if (option == 5) {
+        tmp_msg._msg_1.content.msg.remote_index = 0x99;
     }
-    pre_index = tmp_msg._msg_1.content.msg.remote_index;
     for (int8_t i = 2; i < tmp_msg._msg_1.length - 1; i++) {
         tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
     }
@@ -117,7 +121,7 @@ void Plane::test_HB1_uart_msg3(){
     tmp_msg._msg_1.content.data[50] = 0x3D;*/
 }
 
-void Plane::test_HB1_uart_msg4(){
+void Plane::test_HB1_uart_msg4(uint8_t option){
     gcs().send_text(MAV_SEVERITY_INFO, "SIM cam2mission :");
     HB1_cam2mission &tmp_msg = HB1_uart_cam.get_msg_cam2mission();
     tmp_msg._msg_1.updated = true;
@@ -138,7 +142,7 @@ void Plane::test_HB1_uart_msg4(){
     }
 }
 
-void Plane::test_HB1_uart_msg5(){
+void Plane::test_HB1_uart_msg5(uint8_t option){
     gcs().send_text(MAV_SEVERITY_INFO, "SIM apm2power :");
     HB1_apm2power &tmp_msg = HB1_uart_power.get_msg_apm2power();
     tmp_msg._msg_1.updated = true;
@@ -157,7 +161,7 @@ void Plane::test_HB1_uart_msg5(){
     }
 }
 
-void Plane::test_HB1_uart_msg6(){
+void Plane::test_HB1_uart_msg6(uint8_t option){
     gcs().send_text(MAV_SEVERITY_INFO, "SIM apm2mission :");
     HB1_apm2mission &tmp_msg = HB1_uart_mission.get_msg_apm2mission();
     tmp_msg._msg_1.updated = true;
@@ -178,7 +182,7 @@ void Plane::test_HB1_uart_msg6(){
     }
 }
 
-void Plane::test_HB1_uart_msg7(){
+void Plane::test_HB1_uart_msg7(uint8_t option){
     gcs().send_text(MAV_SEVERITY_INFO, "SIM apm2cam :");
     HB1_apm2cam &tmp_msg = HB1_uart_cam.get_msg_apm2cam();
     tmp_msg._msg_1.updated = true;

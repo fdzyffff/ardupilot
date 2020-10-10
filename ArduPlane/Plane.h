@@ -170,6 +170,7 @@ public:
     friend class ModeQAutotune;
     friend class ModeTakeoff;
     friend class ModeGG;
+    friend class ModeServotest;
 
     Plane(void);
 
@@ -339,6 +340,7 @@ private:
     ModeQAutotune mode_qautotune;
     ModeTakeoff mode_takeoff;
     ModeGG mode_gg;
+    ModeServotest mode_servotest;
 
     // This is the state of the flight control system
     // There are multiple states defined such as MANUAL, FBW-A, AUTO
@@ -1111,6 +1113,9 @@ private:
         HB1_PowerAction_EngineON        = 3,
         HB1_PowerAction_EngineOFF       = 4,
         HB1_PowerAction_ParachuteON     = 5,
+        HB1_PowerAction_GROUND_EngineSTART = 6,
+        HB1_PowerAction_GROUND_EngineOFF   = 7,
+        HB1_PowerAction_GROUND_EngineTEST  = 8,
     };
 
     enum HB1_Mission_t {
@@ -1145,6 +1150,7 @@ private:
         uint32_t time_out;
         bool mission_complete;
         HB1_Mission_t state;
+        bool already_takeoff;
     } HB1_Status;
 
     struct {
@@ -1174,14 +1180,14 @@ private:
     void HB1_update_follow();
 
     // test ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    void test_HB1_uart(uint8_t msg_id);
-    void test_HB1_uart_msg1();
-    void test_HB1_uart_msg2();
-    void test_HB1_uart_msg3();
-    void test_HB1_uart_msg4();
-    void test_HB1_uart_msg5();
-    void test_HB1_uart_msg6();
-    void test_HB1_uart_msg7();
+    void test_HB1_uart(uint8_t msg_id, uint8_t option);
+    void test_HB1_uart_msg1(uint8_t option);
+    void test_HB1_uart_msg2(uint8_t option);
+    void test_HB1_uart_msg3(uint8_t option);
+    void test_HB1_uart_msg4(uint8_t option);
+    void test_HB1_uart_msg5(uint8_t option);
+    void test_HB1_uart_msg6(uint8_t option);
+    void test_HB1_uart_msg7(uint8_t option);
 
     void test_HB1_follow_update();
     void test_HB1_follow_target_update_1(float t_ms);
@@ -1201,6 +1207,9 @@ private:
     void HB1_msg_mission2apm_follow_handle();
     void HB1_msg_mission2apm_EngineON_handle();
     void HB1_msg_mission2apm_EngineOFF_handle();
+    void HB1_msg_mission2apm_EngineTest_handle();
+    void HB1_msg_mission2apm_Disarm_handle();
+    void HB1_msg_mission2apm_ServoTest_handle();
 
     void HB1_status_set_HB_Mission_Action(HB1_Mission_t action);
     void HB1_Mission_update();
@@ -1210,7 +1219,6 @@ private:
     void HB1_Power_status_update();
     void HB1_status_set_HB_Power_Action(HB1_Power_Action_t action);
     bool HB1_status_noGPS_check();
-
 
 public:
     void mavlink_delay_cb();

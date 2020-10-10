@@ -1,8 +1,12 @@
 #include "Plane.h"
 
 void Plane::HB1_msg_mission2apm_takeoff_handle() {
-    HB1_status_set_HB_Mission_Action(HB1_Mission_Takeoff);
-    gcs().send_text(MAV_SEVERITY_INFO, "Takeoff received");
+    if (HB1_Status.already_takeoff) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Already Takeoff");}
+    else {
+        HB1_status_set_HB_Mission_Action(HB1_Mission_Takeoff);
+        gcs().send_text(MAV_SEVERITY_INFO, "Takeoff received");
+    }
 }
 void Plane::HB1_msg_mission2apm_set_wp_handle() {
     HB1_mission2apm &tmp_msg = HB1_uart_mission.get_msg_mission2apm();
@@ -76,9 +80,9 @@ void Plane::HB1_msg_mission2apm_away_handle() {
 }
 
 void Plane::HB1_msg_mission2apm_EngineON_handle() {
-    if (!hal.util->get_soft_armed()) {
+    if (!arming.is_armed()) {
         gcs().send_text(MAV_SEVERITY_INFO, "Engine ground start");
-        HB1_status_set_HB_Power_Action(HB1_PowerAction_EngineSTART);
+        HB1_status_set_HB_Power_Action(HB1_PowerAction_GROUND_EngineSTART);
     } else {
         gcs().send_text(MAV_SEVERITY_INFO, "Disarm first! for Engine ground start");
     }
@@ -86,5 +90,27 @@ void Plane::HB1_msg_mission2apm_EngineON_handle() {
 
 void Plane::HB1_msg_mission2apm_EngineOFF_handle() {
     gcs().send_text(MAV_SEVERITY_INFO, "Engine ground stop");
-    HB1_status_set_HB_Power_Action(HB1_PowerAction_EngineOFF);
+    HB1_status_set_HB_Power_Action(HB1_PowerAction_GROUND_EngineOFF);
+}
+
+void Plane::HB1_msg_mission2apm_EngineTest_handle() {
+    gcs().send_text(MAV_SEVERITY_INFO, "Engine ground test");
+    HB1_status_set_HB_Power_Action(HB1_PowerAction_GROUND_EngineTEST);
+}
+
+void Plane::HB1_msg_mission2apm_Disarm_handle() {
+    gcs().send_text(MAV_SEVERITY_INFO, "plane disarming");
+    arming.disarm();
+}
+
+void Plane::HB1_msg_mission2apm_ServoTest_handle() {
+    if (arming.is_armed()) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Disarm first!");
+        return;
+    }
+    if (set_mode(mode_servotest, MODE_REASON_UNAVAILABLE)) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Servo ground test");
+    } else {
+        gcs().send_text(MAV_SEVERITY_INFO, "Servo ground test failed");
+    }
 }

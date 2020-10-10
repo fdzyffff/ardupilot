@@ -227,6 +227,7 @@ bool AP_Arming_Plane::disarm(void)
     }
 #endif
     plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_None);
+    plane.HB1_Status.already_takeoff = false;
     
     return true;
 }
