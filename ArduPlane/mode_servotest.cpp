@@ -73,4 +73,3 @@ void ModeServotest::update()
     SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, 0);
     plane.steering_control.steering = plane.steering_control.rudder = yaw_in;
 }
-

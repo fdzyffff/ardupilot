@@ -89,6 +89,9 @@ void Plane::HB1_Power_status_update() {
         case HB1_PowerAction_ParachuteON:
             break;
         case HB1_PowerAction_GROUND_EngineSTART:
+            if (timer > 5000) {
+                HB1_status_set_HB_Power_Action(HB1_PowerAction_EngineON);
+            }
             break;
 
         case HB1_PowerAction_GROUND_EngineOFF:

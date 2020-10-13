@@ -234,9 +234,11 @@ void Plane::HB1_msg_apm2power_send() {
                 tmp_msg._msg_1.content.msg.ctrl_cmd = 8;
                 break;
             case HB1_PowerAction_EngineSTART:
+            case HB1_PowerAction_GROUND_EngineSTART:
                 tmp_msg._msg_1.content.msg.ctrl_cmd = 4;
                 break;
             case HB1_PowerAction_EngineOFF:
+            case HB1_PowerAction_GROUND_EngineOFF:
                 tmp_msg._msg_1.content.msg.ctrl_cmd = 2;
                 break;
             case HB1_PowerAction_ParachuteON:
@@ -267,9 +269,11 @@ void Plane::HB1_msg_apm2power_send() {
                     tmp_msg._msg_1.content.msg.ctrl_cmd = 8;
                     break;
                 case HB1_PowerAction_EngineSTART:
+                case HB1_PowerAction_GROUND_EngineSTART:
                     tmp_msg._msg_1.content.msg.ctrl_cmd = 4;
                     break;
                 case HB1_PowerAction_EngineOFF:
+                case HB1_PowerAction_GROUND_EngineOFF:
                     tmp_msg._msg_1.content.msg.ctrl_cmd = 2;
                     break;
                 case HB1_PowerAction_ParachuteON:
