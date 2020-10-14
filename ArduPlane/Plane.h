@@ -1128,6 +1128,7 @@ private:
         HB1_Mission_Follow              = 6,
         HB1_Mission_FsGPS               = 7,
         HB1_Mission_FsNoGPS             = 8,
+        HB1_Mission_FsAuto              = 9,
     };
 
     struct {
@@ -1217,6 +1218,7 @@ private:
     void HB1_Power_update();
     void HB1_Power_pwm_update();
     void HB1_Power_status_update();
+    void HB1_FsAuto_update();
     void HB1_status_set_HB_Power_Action(HB1_Power_Action_t action);
     bool HB1_status_noGPS_check();
 

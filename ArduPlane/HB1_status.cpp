@@ -17,7 +17,7 @@ void Plane::HB1_status_init() {
 void Plane::HB1_status_update_20Hz() {
     HB1_Power_update();
     HB1_Mission_update();
-    //HB1_Servo_status_update();
+    HB1_FsAuto_update();
 }
 
 void Plane::HB1_Mission_update() {
@@ -90,6 +90,7 @@ void Plane::HB1_Mission_update() {
             }
             break;
         case HB1_Mission_GG :
+        case HB1_Mission_FsAuto :
             break;
         default:
             break;
@@ -138,6 +139,10 @@ void Plane::HB1_status_set_HB_Mission_Action(HB1_Mission_t action) {
             set_mode(mode_fbwb, MODE_REASON_UNAVAILABLE);
             HB1_Status.state = action;
             break;
+        case HB1_Mission_FsAuto :
+            set_mode(mode_fsauto, MODE_REASON_UNAVAILABLE);
+            HB1_Status.state = action;
+            break;
         case HB1_Mission_GG :
             set_mode(mode_gg, MODE_REASON_UNAVAILABLE);
             HB1_Status.state = action;
@@ -172,6 +177,9 @@ void Plane::HB1_status_set_HB_Mission_Action(HB1_Mission_t action) {
         case HB1_Mission_FsNoGPS :
             gcs().send_text(MAV_SEVERITY_INFO, "HB1 FsNoGPS");
             break;
+        case HB1_Mission_FsAuto :
+            gcs().send_text(MAV_SEVERITY_INFO, "HB1 FsAuto");
+            break;
         case HB1_Mission_GG :
             gcs().send_text(MAV_SEVERITY_INFO, "HB1 GG");
             break;
@@ -186,4 +194,42 @@ bool Plane::HB1_status_noGPS_check() {
         return true;
     }
     return false;
+}
+
+void Plane::HB1_FsAuto_update() {
+    bool ret = false;
+    Vector2f vec2f_curr;
+    Vector2f vec2f_pre;
+    Vector2f vec2f_next;
+
+    if (control_mode != &plane.mode_auto) {
+        ret = false;
+        return;
+    }
+    if (!prev_WP_loc.get_vector_xy_from_origin_NE(vec2f_pre)) {
+        ret = false;
+        return;
+    }
+    if (!next_WP_loc.get_vector_xy_from_origin_NE(vec2f_next)) {
+        ret = false;
+        return;
+    }
+    if (HB1_status_noGPS_check() || !current_loc.get_vector_xy_from_origin_NE(vec2f_curr)) {
+        ret = false;
+        return;
+    }
+    Vector2f closest_point = Vector2f::closest_point(vec2f_curr, vec2f_pre, vec2f_next);
+    ret = norm(vec2f_curr.x-closest_point.x,vec2f_curr.y-closest_point.y) > 250000.f;
+
+    static uint32_t last_time = millis();
+    uint32_t delta_time = millis() - last_time;
+    static bool pre_ret = false;
+    if (ret != pre_ret) {
+        pre_ret = ret;
+        last_time = millis();
+    }
+
+    if (ret && delta_time > 300000) {
+        HB1_status_set_HB_Mission_Action(HB1_Mission_FsAuto);
+    }
 }
