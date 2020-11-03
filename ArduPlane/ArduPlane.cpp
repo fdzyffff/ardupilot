@@ -540,6 +540,7 @@ void Plane::update_navigation()
     case Mode::Number::QACRO:
     case Mode::Number::GG:
     case Mode::Number::TAKEOFF:
+    case Mode::Number::FSAUTO:
         // nothing to do
         break;
     }

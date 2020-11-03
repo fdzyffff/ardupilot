@@ -170,6 +170,7 @@ public:
     friend class ModeQAutotune;
     friend class ModeTakeoff;
     friend class ModeGG;
+    friend class ModeFsAuto;
     friend class ModeServotest;
 
     Plane(void);
@@ -340,6 +341,7 @@ private:
     ModeQAutotune mode_qautotune;
     ModeTakeoff mode_takeoff;
     ModeGG mode_gg;
+    ModeFsAuto mode_fsauto;
     ModeServotest mode_servotest;
 
     // This is the state of the flight control system

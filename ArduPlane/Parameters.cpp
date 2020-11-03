@@ -1269,12 +1269,13 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("HB1_FSPD", 25, ParametersG2, hb1_follow_speed, 20.0f),
     AP_GROUPINFO("HB1_FSPDE", 26, ParametersG2, hb1_follow_speed_range, 10.0f),
     AP_GROUPINFO("HB1_FSPDP", 27, ParametersG2, hb1_follow_speed_ratio, 0.1f),
-    AP_GROUPINFO("HB1_FS_T", 28, ParametersG2, hb1_follow_fs_time, 2000),
+    AP_GROUPINFO("HB1_FST_GPS", 28, ParametersG2, hb1_follow_fs_time, 2000),
     AP_GROUPINFO("HB1_NOGPST", 29, ParametersG2, hb1_follow_nogps_time, 60000),
     AP_GROUPINFO("HB1_WPT", 30, ParametersG2, hb1_follow_hover_wp_time, 20000),
     AP_GROUPINFO("HB1_ATTACKT", 31, ParametersG2, hb1_follow_hover_attack_time, 60000),
     AP_GROUPINFO("HB1_TEST", 32, ParametersG2, hb1_test_mode, 0),
     AP_GROUPINFO("HB1_ACCRAD", 33, ParametersG2, hb1_acc_radius, 0),
+    AP_GROUPINFO("HB1_FST_AUTO", 34, ParametersG2, hb1_fsauto_time, 0),
 
     AP_GROUPEND
 };

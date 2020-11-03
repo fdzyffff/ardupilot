@@ -76,6 +76,9 @@ Mode *Plane::mode_from_mode_num(const enum Mode::Number num)
     case Mode::Number::GG:
         ret = &mode_gg;
         break;
+    case Mode::Number::FSAUTO:
+        ret = &mode_fsauto;
+        break;
     case Mode::Number::SERVOTEST:
         ret = &mode_servotest;
         break;

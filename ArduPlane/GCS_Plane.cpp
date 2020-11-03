@@ -66,6 +66,7 @@ void GCS_Plane::update_vehicle_sensor_status_flags(void)
     case Mode::Number::CRUISE:
     case Mode::Number::GG:
     case Mode::Number::SERVOTEST:
+    case Mode::Number::FSAUTO:
         rate_controlled = true;
         attitude_stabilized = true;
         break;

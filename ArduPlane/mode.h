@@ -39,7 +39,8 @@ public:
         QAUTOTUNE     = 22,
         QACRO         = 23,
         GG            = 24,
-        SERVOTEST     = 25,
+        FSAUTO        = 25,
+        SERVOTEST     = 26,
     };
 
     // Constructor
@@ -489,6 +490,22 @@ public:
     Number mode_number() const override { return Number::GG; }
     const char *name() const override { return "GGWP"; }
     const char *name4() const override { return "GGWP"; }
+
+    // methods that affect movement of the vehicle in this mode
+    void update() override;
+
+protected:
+
+    bool _enter() override;
+};
+
+class ModeFsAuto : public Mode
+{
+public:
+
+    Number mode_number() const override { return Number::GG; }
+    const char *name() const override { return "MYFS"; }
+    const char *name4() const override { return "MYFS"; }
 
     // methods that affect movement of the vehicle in this mode
     void update() override;

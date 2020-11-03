@@ -197,6 +197,9 @@ bool Plane::HB1_status_noGPS_check() {
 }
 
 void Plane::HB1_FsAuto_update() {
+    if (g2.hb1_fsauto_time.get() <= 0) {
+        return;
+    }
     bool ret = false;
     Vector2f vec2f_curr;
     Vector2f vec2f_pre;
@@ -222,14 +225,17 @@ void Plane::HB1_FsAuto_update() {
     ret = norm(vec2f_curr.x-closest_point.x,vec2f_curr.y-closest_point.y) > 250000.f;
 
     static uint32_t last_time = millis();
-    uint32_t delta_time = millis() - last_time;
     static bool pre_ret = false;
     if (ret != pre_ret) {
         pre_ret = ret;
         last_time = millis();
+        if (ret) {
+            gcs().send_text(MAV_SEVERITY_INFO, "Warining! dist %0.0fm away from wp", norm(vec2f_curr.x-closest_point.x,vec2f_curr.y-closest_point.y)*0.01f);
+        }
     }
+    uint32_t delta_time = millis() - last_time;
 
-    if (ret && delta_time > 300000) {
+    if (ret && ((int32_t)delta_time > g2.hb1_fsauto_time.get()) ) {
         HB1_status_set_HB_Mission_Action(HB1_Mission_FsAuto);
     }
 }
