@@ -1138,6 +1138,7 @@ private:
         float follow_dir;
         uint8_t status;
         uint8_t cmd_type;
+        uint8_t cmd_type2;
         uint16_t state;
     } HB1_test;
 
@@ -1195,9 +1196,10 @@ private:
     void test_HB1_follow_update();
     void test_HB1_follow_target_update_1(float t_ms);
     void test_HB1_follow_target_update_2(float t_ms);
-    void test_HB1_follow(int16_t msg_id, int16_t msg_id_second);
+    void test_HB1_follow(int16_t msg_id, int16_t msg_id_second, int16_t msg_id_third);
     void test_HB1_init();
     void test_HB1_follow_target_reset();
+    void test_HB1_mission_update_msg();
     void test_HB1_mission_send_msg();
     Location test_HB1_generate_wp();
     Location test_HB1_generate_interim_attack();

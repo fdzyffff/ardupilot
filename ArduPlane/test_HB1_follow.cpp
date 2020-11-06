@@ -9,10 +9,11 @@ void Plane::test_HB1_init(){
 // first of all: use MAV_CMD_USER_2 1/2 0 to start a simulated moving target
 // -- then, test module will produce mission msg continiously, include the target loc (leader location)
 // -- sub step 1: use MAV_CMD_USER_2 0 1/2/3/4 to send ONE msg to follow/insert wp/takeoff ...
-void Plane::test_HB1_follow(int16_t msg_id, int16_t msg_id_second)
+void Plane::test_HB1_follow(int16_t msg_id, int16_t msg_id_second, int16_t msg_id_third)
 {
-    if (msg_id_second == 0) {HB1_test.status = msg_id;}
-    if (msg_id == 0) {HB1_test.cmd_type = msg_id_second;}
+    if (msg_id_second == 0 && msg_id_third == 0) {HB1_test.status = msg_id;}
+    if (msg_id == 0 && msg_id_third == 0) {HB1_test.cmd_type = msg_id_second;}
+    if (msg_id == 0 && msg_id_second == 0) {HB1_test.cmd_type2 = msg_id_third;}
 }
 
 void Plane::test_HB1_follow_update(void)
@@ -35,7 +36,7 @@ void Plane::test_HB1_follow_update(void)
         }
         tlast = tnow;
     }
-    if (HB1_test.status != 0) {test_HB1_mission_send_msg();}
+    if (HB1_test.status != 0) {test_HB1_mission_update_msg();}
 }
 
 void Plane::test_HB1_follow_target_update_1(float t_ms)
@@ -153,7 +154,7 @@ void Plane::test_HB1_follow_target_reset(void)
     gcs().send_text(MAV_SEVERITY_INFO, "T follow reset");
 }
 
-void Plane::test_HB1_mission_send_msg() {
+void Plane::test_HB1_mission_update_msg() {
     static bool in_group = false;
     static float apm_deltaX = 30.0f;
     static float apm_deltaY = 0.0f;
@@ -165,6 +166,7 @@ void Plane::test_HB1_mission_send_msg() {
     tmp_msg._msg_1.content.msg.header.head_1 = HB1_mission2apm::PREAMBLE1;
     tmp_msg._msg_1.content.msg.header.head_2 = HB1_mission2apm::PREAMBLE2;
     tmp_msg._msg_1.content.msg.header.index = HB1_mission2apm::INDEX1;
+    tmp_msg._msg_1.content.msg.sum_check = 0;
 
     tmp_msg._msg_1.content.msg.in_group = in_group;
     tmp_msg._msg_1.content.msg.remote_index = 0;
@@ -253,6 +255,114 @@ void Plane::test_HB1_mission_send_msg() {
     }
 
     HB1_test.cmd_type = 0;
+
+    for (int8_t i = 2; i < tmp_msg._msg_1.length - 1; i++) {
+        tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
+    }
+}
+
+void Plane::test_HB1_mission_send_msg() {
+    static bool in_group = false;
+    static float apm_deltaX = 0.0f;
+    static float apm_deltaY = 0.0f;
+    static float apm_deltaZ = 0.0f;
+    Location tmp_loc;
+    HB1_mission2apm &tmp_msg = HB1_uart_mission.get_msg_mission2apm();
+    tmp_msg._msg_1.updated = false;
+    tmp_msg._msg_1.need_send = true;
+    tmp_msg._msg_1.content.msg.header.head_1 = HB1_mission2apm::PREAMBLE1;
+    tmp_msg._msg_1.content.msg.header.head_2 = HB1_mission2apm::PREAMBLE2;
+    tmp_msg._msg_1.content.msg.header.index = HB1_mission2apm::INDEX1;
+    tmp_msg._msg_1.content.msg.sum_check = 0;
+
+    tmp_msg._msg_1.content.msg.in_group = in_group;
+    tmp_msg._msg_1.content.msg.remote_index = 0;
+    tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[0] = 0;
+    tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[1] = 0;
+    tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[2] = 0;
+    tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[3] = 0;
+    tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[4] = 0;
+    tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[5] = 0;
+    tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[6] = 0;
+    tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[7] = 0;
+    tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[8] = 0;
+    tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[9] = 0;
+    tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[10] = 0;
+    tmp_msg._msg_1.content.msg.remote_cmd.cmd_data[11] = 0;
+    tmp_msg._msg_1.content.msg.control_id = 0;
+    tmp_msg._msg_1.content.msg.youshang_target_airspeed = 0;
+    tmp_msg._msg_1.content.msg.youshang_target_orthdist = 0;
+    tmp_msg._msg_1.content.msg.youshang_target_alt = 0;
+    tmp_msg._msg_1.content.msg.apm_deltaX = apm_deltaX;
+    tmp_msg._msg_1.content.msg.apm_deltaY = apm_deltaY;
+    tmp_msg._msg_1.content.msg.apm_deltaZ = apm_deltaZ;
+    tmp_msg._msg_1.content.msg.leader_lng = (int32_t)((double)current_loc.lng * tmp_msg.SF_LL);
+    tmp_msg._msg_1.content.msg.leader_lat = (int32_t)((double)current_loc.lat * tmp_msg.SF_LL);
+    tmp_msg._msg_1.content.msg.leader_alt = (int16_t)(relative_ground_altitude(false) * tmp_msg.SF_ALT);
+
+    tmp_msg._msg_1.content.msg.leader_dir = (int16_t)(gps.ground_course_cd()*0.01f * tmp_msg.SF_ANG);
+    tmp_msg._msg_1.content.msg.leader_target_id = 0;
+    tmp_msg._msg_1.content.msg.net_timeout = false;
+    tmp_msg._msg_1.content.msg.unused[0] = 0;
+    tmp_msg._msg_1.content.msg.unused[1] = 0;
+    tmp_msg._msg_1.content.msg.unused[2] = 0;
+    tmp_msg._msg_1.content.msg.unused[3] = 0;
+    tmp_msg._msg_1.content.msg.unused[4] = 0;
+    
+    switch (HB1_test.cmd_type2) {
+        case 1: // cmd takeoff
+            tmp_msg._msg_1.content.msg.remote_index = 0x63;
+            gcs().send_text(MAV_SEVERITY_INFO, "SIM out takeoff");
+            break;
+        case 2: // cmd follow
+            in_group = true;
+            gcs().send_text(MAV_SEVERITY_INFO, "SIM out follow");
+            break;
+        case 3: // cmd away
+            in_group = false;
+            tmp_msg._msg_1.content.msg.remote_index = 0xA3;
+            gcs().send_text(MAV_SEVERITY_INFO, "SIM out away");
+            break;
+        case 11: // insert wp
+            tmp_msg._msg_1.content.msg.remote_index = 0x9C;
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.line_index = 0;
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.point_index = 0;
+            tmp_loc = test_HB1_generate_wp();
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.longitude = (int32_t)((double)tmp_loc.lng*tmp_msg.SF_LL);
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.latitude = (int32_t)((double)tmp_loc.lat*tmp_msg.SF_LL);
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.alt = (int16_t)((float)tmp_loc.alt*0.01f*tmp_msg.SF_ALT);
+            gcs().send_text(MAV_SEVERITY_INFO, "SIM out set wp");
+            break;
+        case 12: // insert interim
+            tmp_msg._msg_1.content.msg.remote_index = 0x66;
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.p1 = 0;
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.interim_point_index = 0;
+            tmp_loc = test_HB1_generate_interim_attack();
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.longitude = (int32_t)((double)tmp_loc.lng*tmp_msg.SF_LL);
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.latitude = (int32_t)((double)tmp_loc.lat*tmp_msg.SF_LL);
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.alt = (int16_t)((float)tmp_loc.alt*0.01f*tmp_msg.SF_ALT);
+            gcs().send_text(MAV_SEVERITY_INFO, "SIM out set interim");
+            break;
+        case 13: // insert attack
+            tmp_msg._msg_1.content.msg.remote_index = 0x33;
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.p1 = 0;
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.attack_point_index = 0;
+            tmp_loc = test_HB1_generate_interim_attack();
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.longitude = (int32_t)((double)tmp_loc.lng*tmp_msg.SF_LL);
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.latitude = (int32_t)((double)tmp_loc.lat*tmp_msg.SF_LL);
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.alt = (int16_t)((float)tmp_loc.alt*0.01f*tmp_msg.SF_ALT);
+            gcs().send_text(MAV_SEVERITY_INFO, "SIM out set attack");
+            break;
+        case 21: 
+            apm_deltaX = 150.0f;
+            apm_deltaY = 150.0f;
+            apm_deltaZ = 30.0f;
+            gcs().send_text(MAV_SEVERITY_INFO, "SIM out Offset");
+        default:
+            break;
+    }
+
+    HB1_test.cmd_type2 = 0;
 
     for (int8_t i = 2; i < tmp_msg._msg_1.length - 1; i++) {
         tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];

@@ -58,6 +58,12 @@ void Plane::HB1_uart_update_50Hz()
         HB1_uart_power.get_msg_power2apm()._msg_1.updated = false;
     }
 
+    // for test
+    if (HB1_test.status != 0) {
+        test_HB1_mission_send_msg();
+        //gcs().send_text(MAV_SEVERITY_INFO, "SIM out running");
+    }
+
     HB1_uart_mission.write();
     HB1_uart_cam.write();
     HB1_uart_power.write();
@@ -141,7 +147,7 @@ void Plane::HB1_msg_apm2mission_send() {
 
     tmp_msg._msg_1.content.msg.longitude = (int32_t)((double)current_loc.lng * tmp_msg.SF_LL);
     tmp_msg._msg_1.content.msg.latitude = (int32_t)((double)current_loc.lat * tmp_msg.SF_LL);
-    tmp_msg._msg_1.content.msg.alt = (int16_t)(relative_ground_altitude(false)*0.01f * tmp_msg.SF_ALT);
+    tmp_msg._msg_1.content.msg.alt = (int16_t)(relative_ground_altitude(false) * tmp_msg.SF_ALT);
     tmp_msg._msg_1.content.msg.ptich = (int16_t)((float)(ahrs.pitch_sensor/100) * tmp_msg.SF_ANG);
     tmp_msg._msg_1.content.msg.roll = (int16_t)((float)(ahrs.roll_sensor/100) * tmp_msg.SF_ANG);
     tmp_msg._msg_1.content.msg.yaw = (int16_t)((float)wrap_180_cd(ahrs.yaw_sensor/100) * tmp_msg.SF_ANG);
@@ -153,10 +159,7 @@ void Plane::HB1_msg_apm2mission_send() {
     tmp_msg._msg_1.content.msg.target_wp_index = mission.get_current_nav_index();
     tmp_msg._msg_1.content.msg.in_group = (HB1_Status.state == HB1_Mission_Follow);
     tmp_msg._msg_1.content.msg.gspd = (int16_t)(ahrs.groundspeed_vector().length() * 0.01f * tmp_msg.SF_VEL);
-        float gps_yaw = 0;
-        float gps_yaw_acc = 0;
-        if (!gps.gps_yaw_deg(gps_yaw, gps_yaw_acc)) {gps_yaw = 0.0f; gps_yaw_acc = 0.0f;}
-    tmp_msg._msg_1.content.msg.gspd_dir = (int16_t)(gps_yaw * tmp_msg.SF_ANG);
+    tmp_msg._msg_1.content.msg.gspd_dir = (int16_t)(gps.ground_course_cd()*0.01f * tmp_msg.SF_ANG);
     tmp_msg._msg_1.content.msg.unused[0] = 0;
     tmp_msg._msg_1.content.msg.unused[1] = 0;
     tmp_msg._msg_1.content.msg.unused[2] = 0;
@@ -202,10 +205,7 @@ void Plane::HB1_msg_apm2cam_send() {
         if (!ahrs.airspeed_estimate(&airspeed_measured)) {airspeed_measured = 0.0f;}
     tmp_msg._msg_1.content.msg.air_speed = (int16_t)airspeed_measured * 2;
     tmp_msg._msg_1.content.msg.baro_alt = barometer.get_altitude() / 20;
-        float gps_yaw = 0;
-        float gps_yaw_acc = 0;
-        if (!gps.gps_yaw_deg(gps_yaw, gps_yaw_acc)) {gps_yaw = 0.0f; gps_yaw_acc = 0.0f;}
-    tmp_msg._msg_1.content.msg.gps_yaw = (uint16_t)wrap_360(gps_yaw) * 10;
+    tmp_msg._msg_1.content.msg.gps_yaw = (uint16_t)gps.ground_course_cd();
     tmp_msg._msg_1.content.msg.gps_nstats = gps.num_sats();
     tmp_msg._msg_1.content.msg.sum_check = 0;
     

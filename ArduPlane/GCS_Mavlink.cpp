@@ -1016,7 +1016,7 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_long_packet(const mavlink_command_l
         return MAV_RESULT_ACCEPTED;
     }
     case MAV_CMD_USER_2: {
-        plane.test_HB1_follow((int16_t)packet.param1, (int16_t)packet.param2);
+        plane.test_HB1_follow((int16_t)packet.param1, (int16_t)packet.param2, (int16_t)packet.param3);
         return MAV_RESULT_ACCEPTED;
     }
     default:
