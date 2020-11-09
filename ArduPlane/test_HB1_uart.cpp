@@ -112,13 +112,16 @@ void Plane::test_HB1_uart_msg3(uint8_t option){
     for (int8_t i = 2; i < tmp_msg._msg_1.length - 1; i++) {
         tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
     }
-/*    tmp_msg._msg_1.content.data[0] = 0xEE;
-    tmp_msg._msg_1.content.data[1] = 0x16;
-    tmp_msg._msg_1.content.data[2] = 0xAA;
-    tmp_msg._msg_1.content.data[3] = 0x2F;
-    tmp_msg._msg_1.content.data[4] = 0x00;
-    tmp_msg._msg_1.content.data[5] = 0x63;
-    tmp_msg._msg_1.content.data[50] = 0x3D;*/
+
+    tmp_msg._msg_1.content.msg.apm_deltaX = 15.f;
+    tmp_msg._msg_1.content.msg.apm_deltaY = 25.f;
+    tmp_msg._msg_1.content.msg.apm_deltaZ = 35.f;
+    tmp_msg._msg_1.content.msg.leader_lng = (int32_t)(100.2222f * tmp_msg.SF_LL);
+    tmp_msg._msg_1.content.msg.leader_lat = (int32_t)(10.33333f * tmp_msg.SF_LL);
+    tmp_msg._msg_1.content.msg.leader_alt = (int16_t)(100.f * tmp_msg.SF_ALT);
+
+    tmp_msg._msg_1.content.msg.leader_dir = (int16_t)((float)wrap_180_cd(ahrs.yaw_sensor/100) * tmp_msg.SF_ANG);
+
 }
 
 void Plane::test_HB1_uart_msg4(uint8_t option){
@@ -173,9 +176,25 @@ void Plane::test_HB1_uart_msg6(uint8_t option){
     tmp_msg._msg_1.content.msg.length = tmp_msg._msg_1.length-4;
     tmp_msg._msg_1.content.msg.sum_check = 0;
 
+
     for (int8_t i = 4; i < tmp_msg._msg_1.length - 1; i++) {
         tmp_msg._msg_1.content.data[i] = 0;
     }
+
+    tmp_msg._msg_1.content.msg.longitude = (int32_t)(125.2222f * tmp_msg.SF_LL);
+    tmp_msg._msg_1.content.msg.latitude = (int32_t)(143.33333f * tmp_msg.SF_LL);
+    tmp_msg._msg_1.content.msg.alt = (int16_t)(100.f * tmp_msg.SF_ALT);
+    tmp_msg._msg_1.content.msg.ptich = (int16_t)((float)(ahrs.pitch_sensor/100) * tmp_msg.SF_ANG);
+    tmp_msg._msg_1.content.msg.roll = (int16_t)((float)(ahrs.roll_sensor/100) * tmp_msg.SF_ANG);
+    tmp_msg._msg_1.content.msg.yaw = (int16_t)((float)wrap_180_cd(ahrs.yaw_sensor/100) * tmp_msg.SF_ANG);
+    tmp_msg._msg_1.content.msg.air_speed = (int16_t)(100.f * tmp_msg.SF_VEL);
+    tmp_msg._msg_1.content.msg.error_code = 2;
+    tmp_msg._msg_1.content.msg.rc_code = 5;
+    tmp_msg._msg_1.content.msg.target_wp_index = mission.get_current_nav_index();
+    tmp_msg._msg_1.content.msg.in_group = 1;
+    tmp_msg._msg_1.content.msg.gspd = (int16_t)(15.f * tmp_msg.SF_VEL);
+    tmp_msg._msg_1.content.msg.gspd_dir = (int16_t)(333.f * tmp_msg.SF_ANG);
+
     
     for (int8_t i = 2; i < tmp_msg._msg_1.length - 1; i++) {
         tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];

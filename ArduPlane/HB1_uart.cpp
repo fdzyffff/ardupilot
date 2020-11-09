@@ -328,8 +328,16 @@ void Plane::HB1_uart_print(){
             for (int8_t i = 0; i < HB1_uart_mission.get_msg_mission2apm()._msg_1.length; i++) {
                 gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i+1 , HB1_uart_mission.get_msg_mission2apm()._msg_1.content.data[i]);
             }
+            gcs().send_text(MAV_SEVERITY_INFO, "apm_deltaX: %0.2f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.apm_deltaX);
+            gcs().send_text(MAV_SEVERITY_INFO, "apm_deltaY: %0.2f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.apm_deltaY);
+            gcs().send_text(MAV_SEVERITY_INFO, "apm_deltaZ: %0.2f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.apm_deltaZ);
+            gcs().send_text(MAV_SEVERITY_INFO, "leader_lng: %0.6f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.leader_lng);
+            gcs().send_text(MAV_SEVERITY_INFO, "leader_lat: %0.6f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.leader_lat);
+            gcs().send_text(MAV_SEVERITY_INFO, "leader_alt: %0.2f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.leader_alt);
+            gcs().send_text(MAV_SEVERITY_INFO, "leader_dir: %0.2f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.leader_dir);
         }
         HB1_uart_mission.get_msg_mission2apm()._msg_1.print = false;
+
     }
 
     if (HB1_uart_cam.get_msg_cam2mission()._msg_1.print) {
