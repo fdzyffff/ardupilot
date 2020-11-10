@@ -13,8 +13,8 @@ void Plane::HB1_msg_mission2apm_follow_handle() {
         return;
     }*/
     HB1_follow_loc = loc;
-    HB1_follow_loc.offset(tmp_msg._msg_1.content.msg.apm_deltaX, tmp_msg._msg_1.content.msg.apm_deltaY);
-    HB1_follow_loc.alt += (int32_t)tmp_msg._msg_1.content.msg.apm_deltaZ*100.f;
+    HB1_follow_loc.offset((float)tmp_msg._msg_1.content.msg.apm_deltaX/tmp_msg.SF_DIST, (float)tmp_msg._msg_1.content.msg.apm_deltaY/tmp_msg.SF_DIST);
+    HB1_follow_loc.alt += (int32_t)((float)tmp_msg._msg_1.content.msg.apm_deltaZ*100.f/tmp_msg.SF_DIST);
     HB1_follow_dir = ((float)tmp_msg._msg_1.content.msg.leader_dir)/tmp_msg.SF_ANG;
 
     Vector3f tmp_target;
@@ -42,10 +42,10 @@ void Plane::HB1_update_follow()
     	guided_WP_loc.offset_bearing(HB1_follow_dir, 200);
     	next_WP_loc = guided_WP_loc;
     	auto_state.crosstrack = true;
-    	vel_length = 200.f;
+    	vel_length = 190.f;
     }
     float delta_dist = (guided_WP_loc.get_distance(current_loc) - vel_length)*100.f;
-    float spd_kp = 0.15f;
+    float spd_kp = g2.hb1_follow_speed_ratio.get();
     float target_spd = g2.hb1_follow_speed*100.f + constrain_float(delta_dist*spd_kp, -g2.hb1_follow_speed_range*100.f, g2.hb1_follow_speed_range*100.f);
     aparm.airspeed_cruise_cm.set(target_spd);
     //gcs().send_text(MAV_SEVERITY_INFO, "tDist : %0.2f , Dist : %0.2f, V : %0.2f", target_dist, delta_dist, target_spd);

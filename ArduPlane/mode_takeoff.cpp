@@ -75,6 +75,7 @@ void ModeTakeoff::update()
                 plane.HB1_status_set_HB_Mission_Action(Plane::HB1_Mission_FsNoGPS);
             } else {
                 plane.HB1_status_set_HB_Mission_Action(Plane::HB1_Mission_WP);
+                plane.mission.set_current_cmd(1);
             }
         }
     }
@@ -118,6 +119,7 @@ void ModeTakeoff::update()
             plane.HB1_status_set_HB_Mission_Action(Plane::HB1_Mission_FsNoGPS);
         } else {
             plane.HB1_status_set_HB_Mission_Action(Plane::HB1_Mission_WP);
+            plane.mission.set_current_cmd(1);
         }
     }
 

@@ -70,13 +70,28 @@ void Plane::HB1_msg_mission2apm_set_attack_handle() {
     gcs().send_text(MAV_SEVERITY_INFO, "Attack (%d / %d) saved", HB1_Status.num_attack, plane.mission.num_commands());
 }
 
-void Plane::HB1_msg_mission2apm_away_handle() {
-    if (HB1_Status.num_attack > 0) {
-        HB1_status_set_HB_Mission_Action(HB1_Mission_Attack);
+void Plane::HB1_msg_mission2apm_away_handle(HB1_mission2apm &tmp_msg) {
+    HB1_Status.grouped = false;
+    uint16_t target_wp_index = tmp_msg._msg_1.content.msg.leader_target_id;
+
+    if (target_wp_index < mission.num_commands()) {
+        HB1_status_set_HB_Mission_Action(HB1_Mission_WP);
+        gcs().send_text(MAV_SEVERITY_INFO, "Away received (#%d)", target_wp_index);
+        mission.set_current_cmd(target_wp_index);
     } else {
         HB1_status_set_HB_Mission_Action(HB1_Mission_Hover);
+        gcs().send_text(MAV_SEVERITY_INFO, "Away, hover");
     }
-    gcs().send_text(MAV_SEVERITY_INFO, "Away received");
+}
+
+void Plane::HB1_msg_mission2apm_attack_handle() {
+    if (HB1_Status.num_attack > 0) {
+        HB1_status_set_HB_Mission_Action(HB1_Mission_Attack);
+        gcs().send_text(MAV_SEVERITY_INFO, "Attack received (#%d)", HB1_Status.num_wp+1);
+    } else {
+        HB1_status_set_HB_Mission_Action(HB1_Mission_Hover);
+        gcs().send_text(MAV_SEVERITY_INFO, "no attack WP!");
+    }
 }
 
 void Plane::HB1_msg_mission2apm_EngineON_handle() {

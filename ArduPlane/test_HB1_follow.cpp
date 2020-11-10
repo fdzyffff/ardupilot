@@ -215,6 +215,11 @@ void Plane::test_HB1_mission_update_msg() {
             tmp_msg._msg_1.content.msg.remote_index = 0xA3;
             gcs().send_text(MAV_SEVERITY_INFO, "SIM away");
             break;
+        case 4: // cmd away
+            tmp_msg._msg_1.content.msg.remote_index = 0x69;
+            //tmp_msg._msg_1.content.msg.remote_index = 0xA3;
+            gcs().send_text(MAV_SEVERITY_INFO, "SIM attack");
+            break;
         case 11: // insert wp
             tmp_msg._msg_1.content.msg.remote_index = 0x9C;
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.line_index = 0;
@@ -301,7 +306,7 @@ void Plane::test_HB1_mission_send_msg() {
     tmp_msg._msg_1.content.msg.leader_alt = (int16_t)(relative_ground_altitude(false) * tmp_msg.SF_ALT);
 
     tmp_msg._msg_1.content.msg.leader_dir = (int16_t)(gps.ground_course_cd()*0.01f * tmp_msg.SF_ANG);
-    tmp_msg._msg_1.content.msg.leader_target_id = 0;
+    tmp_msg._msg_1.content.msg.leader_target_id = mission.get_current_nav_index();
     tmp_msg._msg_1.content.msg.net_timeout = false;
     tmp_msg._msg_1.content.msg.unused[0] = 0;
     tmp_msg._msg_1.content.msg.unused[1] = 0;
@@ -320,8 +325,13 @@ void Plane::test_HB1_mission_send_msg() {
             break;
         case 3: // cmd away
             in_group = false;
-            tmp_msg._msg_1.content.msg.remote_index = 0xA3;
+            //tmp_msg._msg_1.content.msg.remote_index = 0xA3;
             gcs().send_text(MAV_SEVERITY_INFO, "SIM out away");
+            break;
+        case 4: // cmd away
+            tmp_msg._msg_1.content.msg.remote_index = 0x69;
+            //tmp_msg._msg_1.content.msg.remote_index = 0xA3;
+            gcs().send_text(MAV_SEVERITY_INFO, "SIM out attack");
             break;
         case 11: // insert wp
             tmp_msg._msg_1.content.msg.remote_index = 0x9C;
@@ -354,10 +364,16 @@ void Plane::test_HB1_mission_send_msg() {
             gcs().send_text(MAV_SEVERITY_INFO, "SIM out set attack");
             break;
         case 21: 
-            apm_deltaX = 150.0f;
-            apm_deltaY = 150.0f;
-            apm_deltaZ = 30.0f;
+            apm_deltaX = (int16_t)150.0f*tmp_msg.SF_DIST;
+            apm_deltaY = (int16_t)150.0f*tmp_msg.SF_DIST;
+            apm_deltaZ = (int16_t)30.0f*tmp_msg.SF_DIST;
             gcs().send_text(MAV_SEVERITY_INFO, "SIM out Offset");
+            break;
+        case 22: 
+            apm_deltaX = (int16_t)0.0f*tmp_msg.SF_DIST;
+            apm_deltaY = (int16_t)0.0f*tmp_msg.SF_DIST;
+            apm_deltaZ = (int16_t)0.0f*tmp_msg.SF_DIST;
+            gcs().send_text(MAV_SEVERITY_INFO, "SIM out Offset cancel");
         default:
             break;
     }

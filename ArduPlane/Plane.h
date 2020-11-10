@@ -1126,11 +1126,12 @@ private:
         HB1_Mission_WP                  = 2,
         HB1_Mission_Attack              = 3,
         HB1_Mission_Hover               = 4,
-        HB1_Mission_GG                  = 5,
-        HB1_Mission_Follow              = 6,
-        HB1_Mission_FsGPS               = 7,
-        HB1_Mission_FsNoGPS             = 8,
-        HB1_Mission_FsAuto              = 9,
+        HB1_Mission_Hover2              = 5,
+        HB1_Mission_GG                  = 6,
+        HB1_Mission_Follow              = 7,
+        HB1_Mission_FsGPS               = 8,
+        HB1_Mission_FsNoGPS             = 9,
+        HB1_Mission_FsAuto              = 10,
     };
 
     struct {
@@ -1155,6 +1156,7 @@ private:
         bool mission_complete;
         HB1_Mission_t state;
         bool already_takeoff;
+        bool grouped;
     } HB1_Status;
 
     struct {
@@ -1208,8 +1210,9 @@ private:
     void HB1_msg_mission2apm_set_wp_handle();
     void HB1_msg_mission2apm_set_interim_handle();
     void HB1_msg_mission2apm_set_attack_handle();
-    void HB1_msg_mission2apm_away_handle();
+    void HB1_msg_mission2apm_away_handle(HB1_mission2apm &tmp_msg);
     void HB1_msg_mission2apm_follow_handle();
+    void HB1_msg_mission2apm_attack_handle();
     void HB1_msg_mission2apm_EngineON_handle();
     void HB1_msg_mission2apm_EngineOFF_handle();
     void HB1_msg_mission2apm_EngineTest_handle();

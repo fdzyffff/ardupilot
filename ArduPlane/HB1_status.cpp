@@ -12,6 +12,7 @@ void Plane::HB1_status_init() {
     HB1_Status.mission_complete = false;
     HB1_Status.time_out = g2.hb1_follow_hover_wp_time;
     HB1_Status.already_takeoff = false;
+    HB1_Status.grouped = false;
 }
 
 void Plane::HB1_status_update_20Hz() {
@@ -34,7 +35,7 @@ void Plane::HB1_Mission_update() {
             // do state check in takeoff mode
             break;
         case HB1_Mission_WP :
-            if (HB1_Status.mission_complete) {
+            if (HB1_Status.mission_complete || mission.get_current_nav_index() > HB1_Status.num_wp) {
                 HB1_status_set_HB_Mission_Action(HB1_Mission_Hover);
                 HB1_Status.mission_complete = false;
                 HB1_Status.time_out = g2.hb1_follow_hover_wp_time;
@@ -45,7 +46,7 @@ void Plane::HB1_Mission_update() {
             break;
         case HB1_Mission_Attack :
             if (HB1_Status.mission_complete) {
-                HB1_status_set_HB_Mission_Action(HB1_Mission_Hover);
+                HB1_status_set_HB_Mission_Action(HB1_Mission_Hover2);
                 HB1_Status.mission_complete = false;
                 HB1_Status.time_out = g2.hb1_follow_hover_attack_time;
             }
@@ -64,6 +65,14 @@ void Plane::HB1_Mission_update() {
             }
             break;
         case HB1_Mission_Hover :
+            if (timer > HB1_Status.time_out) {
+                HB1_status_set_HB_Mission_Action(HB1_Mission_Attack);
+            }
+            if (HB1_status_noGPS_check()) {
+                HB1_status_set_HB_Mission_Action(HB1_Mission_FsNoGPS);
+            }
+            break;
+        case HB1_Mission_Hover2 :
             if (timer > HB1_Status.time_out) {
                 HB1_status_set_HB_Mission_Action(HB1_Mission_GG);
             }
@@ -115,7 +124,6 @@ void Plane::HB1_status_set_HB_Mission_Action(HB1_Mission_t action) {
             break;
         case HB1_Mission_WP :
             set_mode(mode_auto, MODE_REASON_UNAVAILABLE);
-            mission.set_current_cmd(1);
             HB1_Status.state = action;
             break;
         case HB1_Mission_Attack :
@@ -128,6 +136,10 @@ void Plane::HB1_status_set_HB_Mission_Action(HB1_Mission_t action) {
             HB1_Status.state = action;
             break;
         case HB1_Mission_Hover :
+            set_mode(mode_loiter, MODE_REASON_UNAVAILABLE);
+            HB1_Status.state = action;
+            break;
+        case HB1_Mission_Hover2 :
             set_mode(mode_loiter, MODE_REASON_UNAVAILABLE);
             HB1_Status.state = action;
             break;
@@ -170,6 +182,9 @@ void Plane::HB1_status_set_HB_Mission_Action(HB1_Mission_t action) {
             break;
         case HB1_Mission_Hover :
             gcs().send_text(MAV_SEVERITY_INFO, "HB1 Hover");
+            break;
+        case HB1_Mission_Hover2 :
+            gcs().send_text(MAV_SEVERITY_INFO, "HB1 Hover2");
             break;
         case HB1_Mission_Follow :
             gcs().send_text(MAV_SEVERITY_INFO, "HB1 Follow");

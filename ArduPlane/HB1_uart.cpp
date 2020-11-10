@@ -90,6 +90,13 @@ void Plane::HB1_msg_mission2apm_handle() {
         if (!HB1_status_noGPS_check()) {
             HB1_msg_mission2apm_follow_handle();
         }
+        HB1_Status.grouped = true;
+    } else {
+        if (HB1_Status.grouped) {
+            if (!HB1_status_noGPS_check()) {
+                HB1_msg_mission2apm_away_handle(tmp_msg);
+            }
+        }
     }
     switch (tmp_msg._msg_1.content.msg.remote_index) {
         case 0x63:
@@ -106,10 +113,13 @@ void Plane::HB1_msg_mission2apm_handle() {
                 HB1_msg_mission2apm_set_attack_handle();
             }
             break;
-        case 0xA3:
-            if (!HB1_status_noGPS_check()) {
-                HB1_msg_mission2apm_away_handle();
-            }
+        // case 0xA3:
+        //     if (!HB1_status_noGPS_check()) {
+        //         HB1_msg_mission2apm_away_handle();
+        //     }
+        //     break;
+        case 0x69:
+            HB1_msg_mission2apm_attack_handle();
             break;
         case 0xA5:
             HB1_msg_mission2apm_EngineON_handle();
@@ -328,13 +338,13 @@ void Plane::HB1_uart_print(){
             for (int8_t i = 0; i < HB1_uart_mission.get_msg_mission2apm()._msg_1.length; i++) {
                 gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i+1 , HB1_uart_mission.get_msg_mission2apm()._msg_1.content.data[i]);
             }
-            gcs().send_text(MAV_SEVERITY_INFO, "apm_deltaX: %0.2f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.apm_deltaX);
-            gcs().send_text(MAV_SEVERITY_INFO, "apm_deltaY: %0.2f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.apm_deltaY);
-            gcs().send_text(MAV_SEVERITY_INFO, "apm_deltaZ: %0.2f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.apm_deltaZ);
-            gcs().send_text(MAV_SEVERITY_INFO, "leader_lng: %0.6f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.leader_lng);
-            gcs().send_text(MAV_SEVERITY_INFO, "leader_lat: %0.6f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.leader_lat);
-            gcs().send_text(MAV_SEVERITY_INFO, "leader_alt: %0.2f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.leader_alt);
-            gcs().send_text(MAV_SEVERITY_INFO, "leader_dir: %0.2f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.leader_dir);
+            gcs().send_text(MAV_SEVERITY_INFO, "apm_deltaX: %0.2f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.apm_deltaX/HB1_uart_mission.get_msg_mission2apm().SF_DIST);
+            gcs().send_text(MAV_SEVERITY_INFO, "apm_deltaY: %0.2f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.apm_deltaY/HB1_uart_mission.get_msg_mission2apm().SF_DIST);
+            gcs().send_text(MAV_SEVERITY_INFO, "apm_deltaZ: %0.2f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.apm_deltaZ/HB1_uart_mission.get_msg_mission2apm().SF_DIST);
+            gcs().send_text(MAV_SEVERITY_INFO, "leader_lng: %0.6f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.leader_lng/HB1_uart_mission.get_msg_mission2apm().SF_LL);
+            gcs().send_text(MAV_SEVERITY_INFO, "leader_lat: %0.6f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.leader_lat/HB1_uart_mission.get_msg_mission2apm().SF_LL);
+            gcs().send_text(MAV_SEVERITY_INFO, "leader_alt: %0.2f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.leader_alt/HB1_uart_mission.get_msg_mission2apm().SF_ALT);
+            gcs().send_text(MAV_SEVERITY_INFO, "leader_dir: %0.2f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.leader_dir/HB1_uart_mission.get_msg_mission2apm().SF_ANG);
         }
         HB1_uart_mission.get_msg_mission2apm()._msg_1.print = false;
 
