@@ -35,7 +35,8 @@ public:
         FOLLOW    =    23,  // follow attempts to follow another vehicle or ground station
         ZIGZAG    =    24,  // ZIGZAG mode is able to fly in a zigzag manner with predefined point A and point B
         SYSTEMID  =    25,  // System ID mode produces automated system identification signals in the controllers
-        AUTOROTATE =   26,  // Autonomous autorotation
+        AUTOROTATE =   26,  // Autonomous 
+        MYPOSCTRL  =   27,  // Autonomous autorotation
     };
 
     // constructor
@@ -1465,3 +1466,28 @@ private:
 
 };
 #endif
+
+
+class ModeMyposctrl : public Mode {
+
+public:
+    // inherit constructor
+    using Mode::Mode;
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    bool requires_GPS() const override { return true; }
+    bool has_manual_throttle() const override { return true; }
+    bool allows_arming(bool from_gcs) const override { return true; };
+    bool is_autopilot() const override { return false; }
+    bool has_user_takeoff(bool must_navigate) const override { return false; }
+
+protected:
+
+    const char *name() const override { return "MYPOSCTRL"; }
+    const char *name4() const override { return "MPOS"; }
+
+    uint32_t wp_distance() const override;
+    int32_t wp_bearing() const override;
+};

@@ -236,6 +236,7 @@ public:
     friend class ModeThrow;
     friend class ModeZigZag;
     friend class ModeAutorotate;
+    friend class ModeMyposctrl;
 
     Copter(void);
 
@@ -992,6 +993,9 @@ private:
 #endif
 #if MODE_AUTOROTATE_ENABLED == ENABLED
     ModeAutorotate mode_autorotate;
+#endif
+#if MODE_MYPOSCTRL_ENABLED == ENABLED
+    ModeMyposctrl mode_myposctrl;
 #endif
 
     // mode.cpp

@@ -171,6 +171,12 @@ Mode *Copter::mode_from_mode_num(const Mode::Number mode)
             break;
 #endif
 
+#if MODE_MYPOSCTRL_ENABLED == ENABLED
+        case Mode::Number::MYPOSCTRL:
+            ret = &mode_myposctrl;
+            break;
+#endif
+
         default:
             break;
     }
