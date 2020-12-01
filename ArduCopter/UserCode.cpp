@@ -68,8 +68,9 @@ void Copter::userhook_50Hz()
                 float right_factor = 1.0f;
                 if (g2.user_parameters.vel_corr_enable) {
                     right_factor = genren_msg_avoid.corr_x/(constrain_float(g2.user_parameters.cam2_xlength, 60.0f, 1080.f)*0.25f);
+                    right_factor = constrain_float(right_factor, -2.0f*fabsf(forward_factor), 2.0f*fabsf(forward_factor));
                     right_factor = constrain_float(right_factor, -1.0f, 1.0f);
-                    right_factor = 1.0f - fabsf(right_factor);
+                    //right_factor = 1.0f - fabsf(right_factor);
                 }
                 if (genren_msg_avoid.corr_x < 0) {
                     v_right = vel_max * right_factor;

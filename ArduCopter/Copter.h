@@ -683,8 +683,8 @@ private:
 
 
     void genren_init();
-    void genren_follow_handle(float input_x, float input_y);
-    void genren_avoid_handle(float input_x, float input_y);
+    void genren_follow_handle(float input_x, float input_y, int16_t healthy);
+    void genren_avoid_handle(float input_x, float input_y, int16_t healthy);
     void genren_status_update();
 
     // AP_State.cpp

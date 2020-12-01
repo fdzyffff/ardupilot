@@ -625,12 +625,12 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_
     switch(packet.command) {
         
     case MAV_CMD_USER_1: {
-        copter.genren_follow_handle(packet.param1, packet.param2 );
+        copter.genren_follow_handle(packet.param1, packet.param2, packet.param3 );
         return MAV_RESULT_ACCEPTED;
     }
 
     case MAV_CMD_USER_2: {
-        copter.genren_avoid_handle(packet.param1, packet.param2 );
+        copter.genren_avoid_handle(packet.param1, packet.param2, packet.param3 );
         return MAV_RESULT_ACCEPTED;
     }
 

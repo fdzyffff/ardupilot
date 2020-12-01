@@ -25,14 +25,17 @@ void Copter::genren_init(void)
     genren_msg_avoid.out.z = 0.0f;
 }
 
-void Copter::genren_follow_handle(float input_x, float input_y)
+void Copter::genren_follow_handle(float input_x, float input_y, int16_t healthy)
 {    
     if (g2.user_parameters.genren_info_level >= 2) {
         gcs().send_text(MAV_SEVERITY_INFO, "C1 in X:%0.2f Y:%0.2f", input_x, input_y);
     }
-    if (is_zero(input_x) && is_zero(input_y)) {
+    if (healthy == 0) {
         return;
     }
+    // if (is_zero(input_x) && is_zero(input_y)) {
+    //     return;
+    // }
     genren_msg_follow.raw_x = input_x;
     genren_msg_follow.raw_y = input_y;
     genren_msg_follow.last_update_ms = millis();
@@ -59,14 +62,17 @@ void Copter::genren_follow_handle(float input_x, float input_y)
     }
 }
 
-void Copter::genren_avoid_handle(float input_x, float input_y)
+void Copter::genren_avoid_handle(float input_x, float input_y, int16_t healthy)
 {
     if (g2.user_parameters.genren_info_level >= 2) {
         gcs().send_text(MAV_SEVERITY_INFO, "C2 in X:%0.2f Y:%0.2f", input_x, input_y);
     }
-    if (is_zero(input_x) && is_zero(input_y)) {
+    if (healthy == 0) {
         return;
     }
+    // if (is_zero(input_x) && is_zero(input_y)) {
+    //     return;
+    // }
     genren_msg_avoid.raw_x = input_x;
     genren_msg_avoid.raw_y = input_y;
     genren_msg_avoid.last_update_ms = millis();
