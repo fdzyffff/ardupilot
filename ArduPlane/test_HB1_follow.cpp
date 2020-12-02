@@ -212,10 +212,11 @@ void Plane::test_HB1_mission_update_msg() {
             break;
         case 3: // cmd away
             in_group = false;
-            tmp_msg._msg_1.content.msg.remote_index = 0xA3;
+            //tmp_msg._msg_1.content.msg.remote_index = 0xA3;
             gcs().send_text(MAV_SEVERITY_INFO, "SIM away");
             break;
         case 4: // cmd away
+            in_group = false;
             tmp_msg._msg_1.content.msg.remote_index = 0x69;
             //tmp_msg._msg_1.content.msg.remote_index = 0xA3;
             gcs().send_text(MAV_SEVERITY_INFO, "SIM attack");
@@ -329,6 +330,7 @@ void Plane::test_HB1_mission_send_msg() {
             gcs().send_text(MAV_SEVERITY_INFO, "SIM out away");
             break;
         case 4: // cmd away
+            in_group = false;
             tmp_msg._msg_1.content.msg.remote_index = 0x69;
             //tmp_msg._msg_1.content.msg.remote_index = 0xA3;
             gcs().send_text(MAV_SEVERITY_INFO, "SIM out attack");

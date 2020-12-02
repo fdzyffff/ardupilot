@@ -1220,6 +1220,7 @@ private:
     void HB1_msg_mission2apm_ServoTest_handle();
 
     void HB1_status_set_HB_Mission_Action(HB1_Mission_t action);
+    uint8_t HB1_status_get_HB_Mission_Action();
     void HB1_Mission_update();
 
     void HB1_Power_update();

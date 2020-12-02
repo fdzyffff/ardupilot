@@ -128,6 +128,7 @@ void Plane::HB1_status_set_HB_Mission_Action(HB1_Mission_t action) {
             break;
         case HB1_Mission_Attack :
             set_mode(mode_auto, MODE_REASON_UNAVAILABLE);
+            auto_state.next_wp_crosstrack = false;
             mission.set_current_cmd(HB1_Status.num_wp+1);
             HB1_Status.state = action;
             break;
@@ -141,6 +142,9 @@ void Plane::HB1_status_set_HB_Mission_Action(HB1_Mission_t action) {
             break;
         case HB1_Mission_Hover2 :
             set_mode(mode_loiter, MODE_REASON_UNAVAILABLE);
+            if (HB1_Status.num_attack > 0) {
+                next_WP_loc = HB1_attack_cmd.content.location;
+            }
             HB1_Status.state = action;
             break;
         case HB1_Mission_Follow :
@@ -203,6 +207,46 @@ void Plane::HB1_status_set_HB_Mission_Action(HB1_Mission_t action) {
             break;
     }
 }
+
+uint8_t Plane::HB1_status_get_HB_Mission_Action() {
+    switch (HB1_Status.state) {
+        case HB1_Mission_None :
+            return 0;
+            break;
+        case HB1_Mission_Takeoff :
+            return 1;
+            break;
+        case HB1_Mission_Follow :
+            return 2;
+            break;
+        case HB1_Mission_WP :
+            return 3;
+            break;
+        case HB1_Mission_Attack :
+            return 4;
+            break;
+        case HB1_Mission_Hover :
+        case HB1_Mission_Hover2 :
+            return 5;
+            break;
+        case HB1_Mission_GG :
+            return 10;
+            break;
+        case HB1_Mission_FsGPS :
+            return 11;
+            break;
+        case HB1_Mission_FsNoGPS :
+            return 12;
+            break;
+        case HB1_Mission_FsAuto :
+            return 13;
+            break;
+        default:
+            return 0;
+            break;
+    }
+}
+
 
 bool Plane::HB1_status_noGPS_check() {
     if (gps.status() < AP_GPS::GPS_OK_FIX_3D) {

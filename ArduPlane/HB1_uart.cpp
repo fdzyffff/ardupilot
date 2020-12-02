@@ -86,18 +86,6 @@ void Plane::HB1_msg_mission2apm_handle() {
     // pack up msg
     HB1_mission2apm &tmp_msg = HB1_uart_mission.get_msg_mission2apm();
 
-    if (tmp_msg._msg_1.content.msg.in_group) {
-        if (!HB1_status_noGPS_check()) {
-            HB1_msg_mission2apm_follow_handle();
-        }
-        HB1_Status.grouped = true;
-    } else {
-        if (HB1_Status.grouped) {
-            if (!HB1_status_noGPS_check()) {
-                HB1_msg_mission2apm_away_handle(tmp_msg);
-            }
-        }
-    }
     switch (tmp_msg._msg_1.content.msg.remote_index) {
         case 0x63:
             HB1_msg_mission2apm_takeoff_handle();
@@ -119,6 +107,7 @@ void Plane::HB1_msg_mission2apm_handle() {
         //     }
         //     break;
         case 0x69:
+            HB1_Status.grouped = false;
             HB1_msg_mission2apm_attack_handle();
             break;
         case 0xA5:
@@ -138,6 +127,19 @@ void Plane::HB1_msg_mission2apm_handle() {
             break;
         default:
             break;
+    }
+
+    if (tmp_msg._msg_1.content.msg.in_group) {
+        if (!HB1_status_noGPS_check()) {
+            HB1_msg_mission2apm_follow_handle();
+        }
+        HB1_Status.grouped = true;
+    } else {
+        if (HB1_Status.grouped) {
+            if (!HB1_status_noGPS_check()) {
+                HB1_msg_mission2apm_away_handle(tmp_msg);
+            }
+        }
     }
 }
 
@@ -170,7 +172,7 @@ void Plane::HB1_msg_apm2mission_send() {
     tmp_msg._msg_1.content.msg.in_group = (HB1_Status.state == HB1_Mission_Follow);
     tmp_msg._msg_1.content.msg.gspd = (int16_t)(ahrs.groundspeed_vector().length() * 0.01f * tmp_msg.SF_VEL);
     tmp_msg._msg_1.content.msg.gspd_dir = (int16_t)(gps.ground_course_cd()*0.01f * tmp_msg.SF_ANG);
-    tmp_msg._msg_1.content.msg.unused[0] = 0;
+    tmp_msg._msg_1.content.msg.unused[0] = HB1_status_get_HB_Mission_Action();
     tmp_msg._msg_1.content.msg.unused[1] = 0;
     tmp_msg._msg_1.content.msg.unused[2] = 0;
     tmp_msg._msg_1.content.msg.unused[3] = 0;

@@ -77,6 +77,7 @@ void Plane::HB1_msg_mission2apm_away_handle(HB1_mission2apm &tmp_msg) {
     if (target_wp_index < mission.num_commands()) {
         HB1_status_set_HB_Mission_Action(HB1_Mission_WP);
         gcs().send_text(MAV_SEVERITY_INFO, "Away received (#%d)", target_wp_index);
+        auto_state.next_wp_crosstrack = false;
         mission.set_current_cmd(target_wp_index);
     } else {
         HB1_status_set_HB_Mission_Action(HB1_Mission_Hover);
@@ -85,7 +86,7 @@ void Plane::HB1_msg_mission2apm_away_handle(HB1_mission2apm &tmp_msg) {
 }
 
 void Plane::HB1_msg_mission2apm_attack_handle() {
-    if (HB1_Status.num_attack > 0) {
+    if (HB1_Status.num_attack > 0 || HB1_Status.num_interim > 0) {
         HB1_status_set_HB_Mission_Action(HB1_Mission_Attack);
         gcs().send_text(MAV_SEVERITY_INFO, "Attack received (#%d)", HB1_Status.num_wp+1);
     } else {
