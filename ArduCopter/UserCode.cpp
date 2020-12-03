@@ -62,21 +62,18 @@ void Copter::userhook_50Hz()
             v_right = 0.0f;
             float target_yaw_cd = degrees(wrap_2PI(atan2f(genren_msg_follow.out.y, genren_msg_follow.out.x))) * 100.f;
             float curr_yaw_cd = float(ahrs_view->yaw_sensor);
-            float forward_factor = 1.0f - fabsf(constrain_float(wrap_180_cd(curr_yaw_cd - target_yaw_cd)/18000.f, -1.0, 1.0f));
+            float forward_factor = 1.0f;
+            if (g2.user_parameters.vel_corr_enable) {
+                forward_factor = 1.0f - fabsf(constrain_float(wrap_180_cd(curr_yaw_cd - target_yaw_cd)/18000.f, 0.0f, 1.0f));
+            }
             v_foward = vel_max * forward_factor;
             if (genren_msg_avoid.valid) {
-                float right_factor = 1.0f;
-                if (g2.user_parameters.vel_corr_enable) {
-                    right_factor = genren_msg_avoid.corr_x/(constrain_float(g2.user_parameters.cam2_xlength, 60.0f, 1080.f)*0.25f);
-                    right_factor = constrain_float(right_factor, -2.0f*fabsf(forward_factor), 2.0f*fabsf(forward_factor));
-                    right_factor = constrain_float(right_factor, -1.0f, 1.0f);
-                    //right_factor = 1.0f - fabsf(right_factor);
-                }
-                if (genren_msg_avoid.corr_x < 0) {
-                    v_right = vel_max * right_factor;
-                } else {
-                    v_right = -vel_max * right_factor;
-                }
+                float right_factor = 0.0f;
+                right_factor = 1.5f*genren_msg_avoid.corr_x/(constrain_float(g2.user_parameters.cam2_xlength, 60.0f, 1080.f)*0.5f);
+                right_factor = constrain_float(right_factor, -2.0f*fabsf(forward_factor), 2.0f*fabsf(forward_factor));
+                right_factor = constrain_float(right_factor, -1.0f, 1.0f);
+
+                v_right = vel_max * right_factor;
             }
             float yaw_rate_tc = MAX(0.1f, fabsf(g2.user_parameters.genren_follow_yawrate_max));
             yaw_cd = 0.0f;
@@ -100,6 +97,9 @@ void Copter::userhook_50Hz()
 void Copter::userhook_MediumLoop()
 {
     // put your 10Hz code here
+
+    Log_Write_GenrenTarget();
+    Log_Write_GenrenAvoid();
 }
 #endif
 

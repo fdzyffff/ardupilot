@@ -454,6 +454,57 @@ void Copter::Log_Write_GuidedTarget(uint8_t target_type, const Vector3f& pos_tar
     logger.WriteBlock(&pkt, sizeof(pkt));
 }
 
+// genren target logging
+struct PACKED log_GenrenTarget {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    uint8_t follow_valid;
+    float follow_raw_x;
+    float follow_raw_y;
+    float follow_corr_x;
+    float follow_corr_y;
+};
+
+// Write a Guided mode target
+void Copter::Log_Write_GenrenTarget()
+{
+    struct log_GenrenTarget pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_GENRENTARGET_MSG),
+        time_us         : AP_HAL::micros64(),
+        follow_valid    : (uint8_t)genren_msg_follow.valid,
+        follow_raw_x    : genren_msg_follow.raw_x,
+        follow_raw_y    : genren_msg_follow.raw_y,
+        follow_corr_x   : genren_msg_follow.corr_x,
+        follow_corr_y   : genren_msg_follow.corr_y
+    };
+    logger.WriteBlock(&pkt, sizeof(pkt));
+}
+
+// genren target logging
+struct PACKED log_GenrenAvoid {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    uint8_t avoid_valid;
+    float avoid_raw_x;
+    float avoid_raw_y;
+    float avoid_corr_x;
+    float avoid_corr_y;
+};
+
+// Write a Guided mode target
+void Copter::Log_Write_GenrenAvoid()
+{
+    struct log_GenrenAvoid pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_GENRENAVOID_MSG),
+        time_us         : AP_HAL::micros64(),
+        avoid_valid     : (uint8_t)genren_msg_avoid.valid,
+        avoid_raw_x     : genren_msg_avoid.raw_x,
+        avoid_raw_y     : genren_msg_avoid.raw_y,
+        avoid_corr_x    : genren_msg_avoid.corr_x,
+        avoid_corr_y    : genren_msg_avoid.corr_y
+    };
+    logger.WriteBlock(&pkt, sizeof(pkt));
+}
 // type and unit information can be found in
 // libraries/AP_Logger/Logstructure.h; search for "log_Units" for
 // units and "Format characters" for field type information
@@ -489,6 +540,10 @@ const struct LogStructure Copter::log_structure[] = {
       "SIDS", "QBfffffff",  "TimeUS,Ax,Mag,FSt,FSp,TFin,TC,TR,TFout", "s--ssssss", "F--------" },
     { LOG_GUIDEDTARGET_MSG, sizeof(log_GuidedTarget),
       "GUID",  "QBffffff",    "TimeUS,Type,pX,pY,pZ,vX,vY,vZ", "s-mmmnnn", "F-000000" },
+    { LOG_GENRENTARGET_MSG, sizeof(log_GenrenTarget),
+      "USR1",  "QBffff", "TimeUS,AON,FrawX,FrawY,FcorrX,FcorrY", "s-----", "F-----" },
+    { LOG_GENRENAVOID_MSG, sizeof(log_GenrenAvoid),
+      "USR2",  "QBffff", "TimeUS,FON,ArawX,ArawY,AcorrX,AcorrY", "s-----", "F-----" },
 };
 
 void Copter::Log_Write_Vehicle_Startup_Messages()
@@ -525,6 +580,8 @@ void Copter::Log_Write_GuidedTarget(uint8_t target_type, const Vector3f& pos_tar
 void Copter::Log_Write_SysID_Setup(uint8_t systemID_axis, float waveform_magnitude, float frequency_start, float frequency_stop, float time_fade_in, float time_const_freq, float time_record, float time_fade_out) {}
 void Copter::Log_Write_SysID_Data(float waveform_time, float waveform_sample, float waveform_freq, float angle_x, float angle_y, float angle_z, float accel_x, float accel_y, float accel_z) {}
 void Copter::Log_Write_Vehicle_Startup_Messages() {}
+void Copter::Log_Write_GenrenTarget() {}
+void Copter::Log_Write_GenrenAvoid() {}
 
 #if FRAME_CONFIG == HELI_FRAME
 void Copter::Log_Write_Heli() {}
