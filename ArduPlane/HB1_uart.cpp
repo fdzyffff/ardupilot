@@ -75,7 +75,7 @@ void Plane::HB1_uart_update_10Hz()
 {
     HB1_msg_apm2mission_send();
     HB1_msg_apm2cam_send();
-    HB1_msg_apm2power_send();
+    //HB1_msg_apm2power_send();
 
     HB1_uart_print();
 }
@@ -111,13 +111,16 @@ void Plane::HB1_msg_mission2apm_handle() {
             HB1_msg_mission2apm_attack_handle();
             break;
         case 0xA5:
-            HB1_msg_mission2apm_EngineON_handle();
+            HB1_msg_mission2apm_EngineSTART_handle();
             break;
         case 0xC6:
             HB1_msg_mission2apm_EngineOFF_handle();
             break;
         case 0xE7:
-            HB1_msg_mission2apm_EngineTest_handle();
+            HB1_msg_mission2apm_EngineFULL_handle();
+            break;
+        case 0xB4:
+            HB1_msg_mission2apm_EngineMID_handle();
             break;
         case 0xCC:
             HB1_msg_mission2apm_Disarm_handle();
@@ -146,7 +149,12 @@ void Plane::HB1_msg_mission2apm_handle() {
 void Plane::HB1_msg_power2apm_handle() {
     HB1_power2apm &tmp_msg = HB1_uart_power.get_msg_power2apm();
     HB1_Power.HB1_engine_rpm = (float)tmp_msg._msg_1.content.msg.rpm;
+    HB1_Power.HB1_engine_rpm*=0.1f;
+    if (HB1_Power.HB1_engine_rpm < 0.0f) {
+        HB1_Power.HB1_engine_rpm += 3276.7;
+    }
     HB1_Power.HB1_engine_temp = (float)tmp_msg._msg_1.content.msg.temp;
+    HB1_Power.HB1_engine_temp*=0.1f;
 }
 
 void Plane::HB1_msg_apm2mission_send() {
@@ -229,79 +237,43 @@ void Plane::HB1_msg_apm2cam_send() {
 }
 
 void Plane::HB1_msg_apm2power_send() {
-    static HB1_Power_Action_t old_state = HB1_PowerAction_None;
-    if (old_state != HB1_Power.state) {
-        old_state = HB1_Power.state;
-        HB1_apm2power &tmp_msg = HB1_uart_power.get_msg_apm2power();
-        tmp_msg._msg_1.need_send = true;
-        tmp_msg._msg_1.content.msg.header.head_1 = HB1_apm2power::PREAMBLE1;
-        tmp_msg._msg_1.content.msg.header.head_2 = HB1_apm2power::PREAMBLE2;
-        tmp_msg._msg_1.content.msg.ctrl_cmd = 0;
-        tmp_msg._msg_1.content.msg.sum_check = 0;
-        switch (HB1_Power.state) {
-            case HB1_PowerAction_None:
-                tmp_msg._msg_1.content.msg.ctrl_cmd = 0;
-                break;
-            case HB1_PowerAction_RocketON:
-                tmp_msg._msg_1.content.msg.ctrl_cmd = 8;
-                break;
-            case HB1_PowerAction_EngineSTART:
-            case HB1_PowerAction_GROUND_EngineSTART:
-                tmp_msg._msg_1.content.msg.ctrl_cmd = 4;
-                break;
-            case HB1_PowerAction_EngineOFF:
-            case HB1_PowerAction_GROUND_EngineOFF:
-                tmp_msg._msg_1.content.msg.ctrl_cmd = 2;
-                break;
-            case HB1_PowerAction_ParachuteON:
-                tmp_msg._msg_1.content.msg.ctrl_cmd = 1;
-                break;
-            default:
-                break;
-        }
-        for (int8_t i = 0; i < tmp_msg._msg_1.length - 1; i++) {
-            tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
-        }
-        tmp_msg._msg_1.print = true;
-        return;
-    }
-
-    static HB1_Power_Action_t old_test_state = HB1_PowerAction_None;
-    if (HB1_Power.state == HB1_PowerAction_None && g2.hb1_test_mode != 0) {
-        if (old_test_state != HB1_Power.test_state) {
-            old_test_state = HB1_Power.test_state;
-            HB1_apm2power &tmp_msg = HB1_uart_power.get_msg_apm2power();
+    HB1_apm2power &tmp_msg = HB1_uart_power.get_msg_apm2power();
+    tmp_msg._msg_1.need_send = false;
+    tmp_msg._msg_1.content.msg.ctrl_cmd = 0;
+    switch (HB1_Power.state) {
+        case HB1_PowerAction_RocketON:
+        case HB1_PowerAction_GROUND_RocketON:
+            tmp_msg._msg_1.content.msg.ctrl_cmd = 8;
             tmp_msg._msg_1.need_send = true;
-            tmp_msg._msg_1.content.msg.header.head_1 = HB1_apm2power::PREAMBLE1;
-            tmp_msg._msg_1.content.msg.header.head_2 = HB1_apm2power::PREAMBLE2;
+            break;
+        case HB1_PowerAction_EngineSTART:
+        case HB1_PowerAction_GROUND_EngineSTART:
+            tmp_msg._msg_1.content.msg.ctrl_cmd = 4;
+            tmp_msg._msg_1.need_send = true;
+            break;
+        case HB1_PowerAction_EngineOFF:
+        case HB1_PowerAction_GROUND_EngineOFF:
+            tmp_msg._msg_1.content.msg.ctrl_cmd = 2;
+            tmp_msg._msg_1.need_send = true;
+            break;
+        case HB1_PowerAction_ParachuteON:
+            tmp_msg._msg_1.content.msg.ctrl_cmd = 1;
+            tmp_msg._msg_1.need_send = true;
+            break;
+        default:
             tmp_msg._msg_1.content.msg.ctrl_cmd = 0;
-            tmp_msg._msg_1.content.msg.sum_check = 0;
-            switch (HB1_Power.test_state) {
-                case HB1_PowerAction_RocketON:
-                    tmp_msg._msg_1.content.msg.ctrl_cmd = 8;
-                    break;
-                case HB1_PowerAction_EngineSTART:
-                case HB1_PowerAction_GROUND_EngineSTART:
-                    tmp_msg._msg_1.content.msg.ctrl_cmd = 4;
-                    break;
-                case HB1_PowerAction_EngineOFF:
-                case HB1_PowerAction_GROUND_EngineOFF:
-                    tmp_msg._msg_1.content.msg.ctrl_cmd = 2;
-                    break;
-                case HB1_PowerAction_ParachuteON:
-                    tmp_msg._msg_1.content.msg.ctrl_cmd = 1;
-                    break;
-                default:
-                    break;
-            }
-
-            for (int8_t i = 0; i < tmp_msg._msg_1.length - 1; i++) {
-                tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
-            }
-            tmp_msg._msg_1.print = true;
-            return;
-        }
+            break;
     }
+    if (!tmp_msg._msg_1.need_send) {return;}
+
+    tmp_msg._msg_1.content.msg.header.head_1 = HB1_apm2power::PREAMBLE1;
+    tmp_msg._msg_1.content.msg.header.head_2 = HB1_apm2power::PREAMBLE2;
+    tmp_msg._msg_1.content.msg.sum_check = 0;
+    for (int8_t i = 0; i < tmp_msg._msg_1.length - 1; i++) {
+        tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
+    }
+    tmp_msg._msg_1.print = true;
+    return;
 }
 
 void Plane::HB1_uart_print(){
@@ -316,30 +288,36 @@ void Plane::HB1_uart_print(){
 
     if (HB1_uart_power.get_msg_power2apm()._msg_1.print) {
         if (g2.hb1_msg_print.get() & (1<<0)) {
+            HB1_uart_power.get_msg_power2apm().swap_message();
             gcs().send_text(MAV_SEVERITY_INFO, "power2apm :");
             for (int8_t i = 0; i < HB1_uart_power.get_msg_power2apm()._msg_1.length; i++) {
                 gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i+1 , HB1_uart_power.get_msg_power2apm()._msg_1.content.data[i]);
             }
+            HB1_uart_power.get_msg_power2apm().swap_message();
         }
         HB1_uart_power.get_msg_power2apm()._msg_1.print = false;
     }
 
     if (HB1_uart_mission.get_msg_mission2cam()._msg_1.print) {
         if (g2.hb1_msg_print.get() & (1<<1)) {
+            HB1_uart_mission.get_msg_mission2cam().swap_message();
             gcs().send_text(MAV_SEVERITY_INFO, "mission2cam :");
             for (int8_t i = 0; i < HB1_uart_mission.get_msg_mission2cam()._msg_1.length; i++) {
                 gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i+1 , HB1_uart_mission.get_msg_mission2cam()._msg_1.content.data[i]);
             }
+            HB1_uart_mission.get_msg_mission2cam().swap_message();
         }
         HB1_uart_mission.get_msg_mission2cam()._msg_1.print = false;
     }
 
     if (HB1_uart_mission.get_msg_mission2apm()._msg_1.print) {
         if (g2.hb1_msg_print.get() & (1<<2)) {
+            HB1_uart_mission.get_msg_mission2apm().swap_message();
             gcs().send_text(MAV_SEVERITY_INFO, "mission2apm :");
             for (int8_t i = 0; i < HB1_uart_mission.get_msg_mission2apm()._msg_1.length; i++) {
                 gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i+1 , HB1_uart_mission.get_msg_mission2apm()._msg_1.content.data[i]);
             }
+            HB1_uart_mission.get_msg_mission2apm().swap_message();
             gcs().send_text(MAV_SEVERITY_INFO, "apm_deltaX: %0.2f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.apm_deltaX/HB1_uart_mission.get_msg_mission2apm().SF_DIST);
             gcs().send_text(MAV_SEVERITY_INFO, "apm_deltaY: %0.2f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.apm_deltaY/HB1_uart_mission.get_msg_mission2apm().SF_DIST);
             gcs().send_text(MAV_SEVERITY_INFO, "apm_deltaZ: %0.2f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.apm_deltaZ/HB1_uart_mission.get_msg_mission2apm().SF_DIST);
@@ -354,40 +332,48 @@ void Plane::HB1_uart_print(){
 
     if (HB1_uart_cam.get_msg_cam2mission()._msg_1.print) {
         if (g2.hb1_msg_print.get() & (1<<3)) {
+            HB1_uart_cam.get_msg_cam2mission().swap_message();
             gcs().send_text(MAV_SEVERITY_INFO, "cam2mission :");
             for (int8_t i = 0; i < HB1_uart_cam.get_msg_cam2mission()._msg_1.length; i++) {
                 gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i+1 , HB1_uart_cam.get_msg_cam2mission()._msg_1.content.data[i]);
             }
+            HB1_uart_cam.get_msg_cam2mission().swap_message();
         }
         HB1_uart_cam.get_msg_cam2mission()._msg_1.print = false;
     }
 
     if (HB1_uart_power.get_msg_apm2power()._msg_1.print) {
         if (g2.hb1_msg_print.get() & (1<<4)) {
+            HB1_uart_power.get_msg_apm2power().swap_message();
             gcs().send_text(MAV_SEVERITY_INFO, "apm2power :");
             for (int8_t i = 0; i < HB1_uart_power.get_msg_apm2power()._msg_1.length; i++) {
                 gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i+1 , HB1_uart_power.get_msg_apm2power()._msg_1.content.data[i]);
             }
+            HB1_uart_power.get_msg_apm2power().swap_message();
         }
         HB1_uart_power.get_msg_apm2power()._msg_1.print = false;
     }
 
     if (HB1_uart_mission.get_msg_apm2mission()._msg_1.print) {
         if (g2.hb1_msg_print.get() & (1<<5)) {
+            HB1_uart_mission.get_msg_apm2mission().swap_message();
             gcs().send_text(MAV_SEVERITY_INFO, "apm2mission :");
             for (int8_t i = 0; i < HB1_uart_mission.get_msg_apm2mission()._msg_1.length; i++) {
                 gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i+1 , HB1_uart_mission.get_msg_apm2mission()._msg_1.content.data[i]);
             }
+            HB1_uart_mission.get_msg_apm2mission().swap_message();
         }
         HB1_uart_mission.get_msg_apm2mission()._msg_1.print = false;
     }
 
     if (HB1_uart_cam.get_msg_apm2cam()._msg_1.print) {
         if (g2.hb1_msg_print.get() & (1<<6)) {
+            HB1_uart_cam.get_msg_apm2cam().swap_message();
             gcs().send_text(MAV_SEVERITY_INFO, "apm2cam :");
             for (int8_t i = 0; i < HB1_uart_cam.get_msg_apm2cam()._msg_1.length; i++) {
                 gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i+1 , HB1_uart_cam.get_msg_apm2cam()._msg_1.content.data[i]);
             }
+            HB1_uart_cam.get_msg_apm2cam().swap_message();
         }
         HB1_uart_cam.get_msg_apm2cam()._msg_1.print = false;
     }

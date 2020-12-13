@@ -1438,5 +1438,5 @@ void GCS_MAVLINK_Plane::send_rpm() const
     mavlink_msg_rpm_send(
         chan,
         plane.HB1_Power.HB1_engine_rpm,
-        plane.HB1_Power.HB1_engine_temp*0.1f);
+        plane.HB1_Power.HB1_engine_temp);
 }

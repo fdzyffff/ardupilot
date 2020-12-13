@@ -95,10 +95,13 @@ void Plane::HB1_msg_mission2apm_attack_handle() {
     }
 }
 
-void Plane::HB1_msg_mission2apm_EngineON_handle() {
+void Plane::HB1_msg_mission2apm_EngineSTART_handle() {
     if (!arming.is_armed()) {
-        gcs().send_text(MAV_SEVERITY_INFO, "Engine ground start");
-        HB1_status_set_HB_Power_Action(HB1_PowerAction_GROUND_EngineSTART);
+        // check if need to re send start cmd
+        if (fabsf(plane.HB1_Power.HB1_engine_rpm) < 50.f) {
+            gcs().send_text(MAV_SEVERITY_INFO, "Engine ground start");
+            HB1_status_set_HB_Power_Action(HB1_PowerAction_GROUND_EngineSTART, true);
+        }
     } else {
         gcs().send_text(MAV_SEVERITY_INFO, "Disarm first! for Engine ground start");
     }
@@ -109,9 +112,22 @@ void Plane::HB1_msg_mission2apm_EngineOFF_handle() {
     HB1_status_set_HB_Power_Action(HB1_PowerAction_GROUND_EngineOFF);
 }
 
-void Plane::HB1_msg_mission2apm_EngineTest_handle() {
-    gcs().send_text(MAV_SEVERITY_INFO, "Engine ground test");
-    HB1_status_set_HB_Power_Action(HB1_PowerAction_GROUND_EngineTEST);
+void Plane::HB1_msg_mission2apm_EngineFULL_handle() {
+    if (!arming.is_armed()) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Engine ground full");
+        HB1_status_set_HB_Power_Action(HB1_PowerAction_GROUND_EngineFULL);
+    } else {
+        gcs().send_text(MAV_SEVERITY_INFO, "Disarm first! for Engine ground full");
+    }
+}
+
+void Plane::HB1_msg_mission2apm_EngineMID_handle() {
+    if (!arming.is_armed()) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Engine ground mid");
+        HB1_status_set_HB_Power_Action(HB1_PowerAction_GROUND_EngineMID);
+    } else {
+        gcs().send_text(MAV_SEVERITY_INFO, "Disarm first! for Engine ground mid");
+    }
 }
 
 void Plane::HB1_msg_mission2apm_Disarm_handle() {

@@ -1115,9 +1115,11 @@ private:
         HB1_PowerAction_EngineON        = 3,
         HB1_PowerAction_EngineOFF       = 4,
         HB1_PowerAction_ParachuteON     = 5,
-        HB1_PowerAction_GROUND_EngineSTART = 6,
-        HB1_PowerAction_GROUND_EngineOFF   = 7,
-        HB1_PowerAction_GROUND_EngineTEST  = 8,
+        HB1_PowerAction_GROUND_RocketON    = 6,
+        HB1_PowerAction_GROUND_EngineSTART = 7,
+        HB1_PowerAction_GROUND_EngineOFF   = 8,
+        HB1_PowerAction_GROUND_EngineFULL  = 9,
+        HB1_PowerAction_GROUND_EngineMID   = 10,
     };
 
     enum HB1_Mission_t {
@@ -1162,7 +1164,6 @@ private:
     struct {
         uint32_t timer;
         HB1_Power_Action_t state;
-        HB1_Power_Action_t test_state;
         float HB1_engine_rpm;
         float HB1_engine_temp;
     } HB1_Power;
@@ -1213,9 +1214,10 @@ private:
     void HB1_msg_mission2apm_away_handle(HB1_mission2apm &tmp_msg);
     void HB1_msg_mission2apm_follow_handle();
     void HB1_msg_mission2apm_attack_handle();
-    void HB1_msg_mission2apm_EngineON_handle();
+    void HB1_msg_mission2apm_EngineSTART_handle();
     void HB1_msg_mission2apm_EngineOFF_handle();
-    void HB1_msg_mission2apm_EngineTest_handle();
+    void HB1_msg_mission2apm_EngineFULL_handle();
+    void HB1_msg_mission2apm_EngineMID_handle();
     void HB1_msg_mission2apm_Disarm_handle();
     void HB1_msg_mission2apm_ServoTest_handle();
 
@@ -1227,7 +1229,7 @@ private:
     void HB1_Power_pwm_update();
     void HB1_Power_status_update();
     void HB1_FsAuto_update();
-    void HB1_status_set_HB_Power_Action(HB1_Power_Action_t action);
+    void HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force_set = false);
     bool HB1_status_noGPS_check();
 
 public:

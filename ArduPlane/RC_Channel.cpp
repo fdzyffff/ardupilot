@@ -119,35 +119,48 @@ void RC_Channel_Plane::do_aux_function(const aux_func_t ch_option, const aux_swi
         break;
 
     case AUX_FUNC::RELAY:
+        if ((plane.g2.hb1_test_mode == 0)) {
+            plane.gcs().send_text(MAV_SEVERITY_INFO, "HB1_TEST invalid");
+            break;
+        }
         RC_Channel::do_aux_function_relay(0, ch_flag == HIGH);
         if (ch_flag == HIGH) {
-            plane.HB1_Power.test_state = plane.HB1_PowerAction_RocketON;
-            plane.gcs().send_text(MAV_SEVERITY_INFO, "TestRC Rocket ON");
+            plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_GROUND_RocketON);
         }
-        else {plane.HB1_Power.test_state = plane.HB1_PowerAction_None;}
+        else {plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_None);}
         break;
     case AUX_FUNC::RELAY2:
+        if ((plane.g2.hb1_test_mode == 0)) {
+            plane.gcs().send_text(MAV_SEVERITY_INFO, "HB1_TEST invalid");
+            break;
+        }
         RC_Channel::do_aux_function_relay(1, ch_flag == HIGH);
-        if (ch_flag == HIGH) {plane.HB1_Power.test_state = plane.HB1_PowerAction_ParachuteON;
-            plane.gcs().send_text(MAV_SEVERITY_INFO, "TestRC Parachute ON");
+        if (ch_flag == HIGH) {
+            plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_ParachuteON);
             }
-        else {plane.HB1_Power.test_state = plane.HB1_PowerAction_None;}
+        else {plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_None);}
         break;
     case AUX_FUNC::RELAY3:
+        if ((plane.g2.hb1_test_mode == 0)) {
+            plane.gcs().send_text(MAV_SEVERITY_INFO, "HB1_TEST invalid");
+            break;
+        }
         RC_Channel::do_aux_function_relay(2, ch_flag == HIGH);
         if (ch_flag == HIGH) {
-            plane.HB1_Power.test_state = plane.HB1_PowerAction_EngineOFF;
-            plane.gcs().send_text(MAV_SEVERITY_INFO, "TestRC Engine OFF");
+            plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_GROUND_EngineOFF);
         }
-        else {plane.HB1_Power.test_state = plane.HB1_PowerAction_None;}
+        else {plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_None);}
         break;
     case AUX_FUNC::RELAY4:
+        if ((plane.g2.hb1_test_mode == 0)) {
+            plane.gcs().send_text(MAV_SEVERITY_INFO, "HB1_TEST invalid");
+            break;
+        }
         RC_Channel::do_aux_function_relay(3, ch_flag == HIGH);
         if (ch_flag == HIGH) {
-            plane.HB1_Power.test_state = plane.HB1_PowerAction_EngineSTART;
-            plane.gcs().send_text(MAV_SEVERITY_INFO, "TestRC Engine Starting");
+            plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_GROUND_EngineSTART);
         }
-        else {plane.HB1_Power.test_state = plane.HB1_PowerAction_None;}
+        else {plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_None);}
         break;
 
     default:

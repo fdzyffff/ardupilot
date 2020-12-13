@@ -2,7 +2,6 @@
 
 void Plane::HB1_status_init() {
     HB1_status_set_HB_Power_Action(HB1_PowerAction_None);
-    HB1_Power.test_state = HB1_PowerAction_None;
     HB1_status_set_HB_Mission_Action(HB1_Mission_None);
     HB1_Status.num_wp = 0;
     HB1_Status.num_interim = 0;
@@ -13,6 +12,9 @@ void Plane::HB1_status_init() {
     HB1_Status.time_out = g2.hb1_follow_hover_wp_time;
     HB1_Status.already_takeoff = false;
     HB1_Status.grouped = false;
+
+    HB1_Power.HB1_engine_rpm = 0.0f;
+    HB1_Power.HB1_engine_temp = 0.0f;
 }
 
 void Plane::HB1_status_update_20Hz() {
@@ -118,8 +120,10 @@ void Plane::HB1_status_set_HB_Mission_Action(HB1_Mission_t action) {
             break;
         case HB1_Mission_Takeoff :
             if (arming.arm(AP_Arming::Method::MAVLINK, true) || arming.is_armed()) {
-                set_mode(mode_takeoff, MODE_REASON_UNAVAILABLE);
-                HB1_Status.state = action;
+                if (set_mode(mode_takeoff, MODE_REASON_UNAVAILABLE)) {
+                    HB1_Status.state = action;
+                    HB1_status_set_HB_Power_Action(HB1_PowerAction_None);
+                }
             }
             break;
         case HB1_Mission_WP :

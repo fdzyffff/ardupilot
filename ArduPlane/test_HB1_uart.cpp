@@ -98,17 +98,29 @@ void Plane::test_HB1_uart_msg3(uint8_t option){
         tmp_msg._msg_1.content.data[i] = 0;
     }
     
-    if (option == 1){
-        tmp_msg._msg_1.content.msg.remote_index = 0xA5;
-    } else if (option == 2) {
-        tmp_msg._msg_1.content.msg.remote_index = 0xC6;
-    } else if (option == 3) {
-        tmp_msg._msg_1.content.msg.remote_index = 0xE7;
-    } else if (option == 4) {
-        tmp_msg._msg_1.content.msg.remote_index = 0xCC;
-    } else if (option == 5) {
-        tmp_msg._msg_1.content.msg.remote_index = 0x99;
+    switch (option) {
+        case 1: // EngineON
+            tmp_msg._msg_1.content.msg.remote_index = 0xA5;
+            break;
+        case 2: // EngineOFF
+            tmp_msg._msg_1.content.msg.remote_index = 0xC6;
+            break;
+        case 3: // EngineFULL
+            tmp_msg._msg_1.content.msg.remote_index = 0xE7;
+            break;
+        case 4: // EngineMID
+            tmp_msg._msg_1.content.msg.remote_index = 0xB4;
+            break;
+        case 5: // Disarm
+            tmp_msg._msg_1.content.msg.remote_index = 0xCC;
+            break;
+        case 6: // ServoTest
+            tmp_msg._msg_1.content.msg.remote_index = 0x99;
+            break;
+        default:
+            break;
     }
+
     for (int8_t i = 2; i < tmp_msg._msg_1.length - 1; i++) {
         tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
     }

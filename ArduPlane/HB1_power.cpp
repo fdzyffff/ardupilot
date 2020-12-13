@@ -10,17 +10,24 @@ void Plane::HB1_Power_pwm_update() {
     float HB1_throttle = 0.0f;
     float thr_min = 0.0f;
     float thr_max = 100.0f;
+    float timer = (millis() - HB1_Power.timer);
     if (!arming.is_armed()) {
         HB1_throttle = thr_min;
-        if (HB1_Power.state == HB1_PowerAction_GROUND_EngineTEST) {
-            float timer = millis() - HB1_Power.timer;
-            if (timer < 1200.f) {
-                HB1_throttle = constrain_float(35.f*timer/1200.f, thr_min, 35.f);
-            } else if (timer < 2000.f) {
-                HB1_throttle = constrain_float(35.f + 65.f*(timer-1200.f)/800.f, 35.f, thr_max);
-            } else if (timer < 7000.f) {
-                HB1_throttle = constrain_float(100.f, thr_min, thr_max);
-            }
+        switch (HB1_Power.state) {
+            case HB1_PowerAction_GROUND_EngineFULL:
+                if (timer < 1200.f) {
+                    HB1_throttle = constrain_float(35.f*timer/1200.f, thr_min, 35.f);
+                } else if (timer < 2000.f) {
+                    HB1_throttle = constrain_float(35.f + 65.f*(timer-1200.f)/800.f, 35.f, thr_max);
+                } else {
+                    HB1_throttle = constrain_float(100.f, thr_min, thr_max);
+                }
+                break;
+            case HB1_PowerAction_GROUND_EngineMID:
+                HB1_throttle = constrain_float(30.f, thr_min, thr_max);
+                break;
+            default:
+                break;
         }
     } else {
         HB1_throttle = throttle;
@@ -34,7 +41,6 @@ void Plane::HB1_Power_pwm_update() {
         }
         
         if (HB1_Power.state == HB1_PowerAction_EngineSTART) {
-            float timer = millis() - HB1_Power.timer;
             if (timer < 1200.f) {
                 HB1_throttle = constrain_float(35.f*timer/1200.f, thr_min, 35.f);
             } else if (timer < 2000.f) {
@@ -76,6 +82,10 @@ void Plane::HB1_Power_status_update() {
             }
             break;
         case HB1_PowerAction_EngineON:
+            if (fabsf(plane.HB1_Power.HB1_engine_rpm) < 50.f) {
+                gcs().send_text(MAV_SEVERITY_INFO, "WARNING, Restart engine in air");
+                HB1_status_set_HB_Power_Action(HB1_PowerAction_EngineSTART, true);
+            }
             break;
         case HB1_PowerAction_EngineOFF:
             if (timer > 3000) {
@@ -86,21 +96,14 @@ void Plane::HB1_Power_status_update() {
                 }
             }
             break;
+        case HB1_PowerAction_GROUND_EngineFULL:
+            break;
         case HB1_PowerAction_ParachuteON:
             break;
-        case HB1_PowerAction_GROUND_EngineSTART:
-            if (timer > 5000) {
-                HB1_status_set_HB_Power_Action(HB1_PowerAction_EngineON);
-            }
+        case HB1_PowerAction_GROUND_EngineSTART: // triggered by RC OR cmd
             break;
-
-        case HB1_PowerAction_GROUND_EngineOFF:
-            if (timer > 3000) {
-                HB1_status_set_HB_Power_Action(HB1_PowerAction_None);
-            }
-            break;
-
-        case HB1_PowerAction_GROUND_EngineTEST:
+        case HB1_PowerAction_GROUND_RocketON: // triggered by RC
+        case HB1_PowerAction_GROUND_EngineOFF: // triggered by RC OR cmd
             break;
         default:
             break;
@@ -111,8 +114,8 @@ void Plane::HB1_Power_status_update() {
     }
 }
 
-void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action) {
-    if (HB1_Power.state == action) {
+void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force_set) {
+    if ((HB1_Power.state == action) && !Force_set) {
         return;
     } else {
         HB1_Power.state = action;
@@ -128,6 +131,7 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action) {
             relay.off(3);
             break;
         case HB1_PowerAction_RocketON:
+        case HB1_PowerAction_GROUND_RocketON:
             HB1_Status.already_takeoff = true;
             gcs().send_text(MAV_SEVERITY_INFO, "Rocket ON");
             relay.on(0);
@@ -168,4 +172,5 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action) {
         default:
             break;
     }
+    HB1_msg_apm2power_send();
 }
