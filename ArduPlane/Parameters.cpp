@@ -1276,6 +1276,9 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("HB1_TEST", 32, ParametersG2, hb1_test_mode, 0),
     AP_GROUPINFO("HB1_ACCRAD", 33, ParametersG2, hb1_acc_radius, 0),
     AP_GROUPINFO("HB1_FST_AUTO", 34, ParametersG2, hb1_fsauto_time, 0),
+    AP_GROUPINFO("HB1_POW_TYPE", 35, ParametersG2, hb1_power_type, 0),
+    AP_GROUPINFO("HB1_RPM_USED", 36, ParametersG2, hb1_rpm_used, 0),
+    AP_GROUPINFO("HB1_GG_SEC", 37, ParametersG2, hb1_gg_sec, 0.5f),
 
     AP_GROUPEND
 };

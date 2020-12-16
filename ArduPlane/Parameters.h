@@ -578,8 +578,11 @@ public:
     AP_Int32 hb1_follow_hover_attack_time;
     AP_Int16 hb1_acc_radius;
     AP_Int32 hb1_fsauto_time;
+    AP_Int16 hb1_power_type;
+    AP_Float hb1_gg_sec;
 
     AP_Int8 hb1_test_mode;
+    AP_Int8 hb1_rpm_used;
 };
 
 extern const AP_Param::Info var_info[];

@@ -15,6 +15,8 @@ void Plane::HB1_status_init() {
 
     HB1_Power.HB1_engine_rpm = 0.0f;
     HB1_Power.HB1_engine_temp = 0.0f;
+
+    HB1_GG_final = false;
 }
 
 void Plane::HB1_status_update_20Hz() {
@@ -48,9 +50,13 @@ void Plane::HB1_Mission_update() {
             break;
         case HB1_Mission_Attack :
             if (HB1_Status.mission_complete) {
-                HB1_status_set_HB_Mission_Action(HB1_Mission_Hover2);
-                HB1_Status.mission_complete = false;
-                HB1_Status.time_out = g2.hb1_follow_hover_attack_time;
+                if (g2.hb1_follow_hover_attack_time > 10000) {
+                    HB1_status_set_HB_Mission_Action(HB1_Mission_Hover2);
+                    HB1_Status.mission_complete = false;
+                    HB1_Status.time_out = g2.hb1_follow_hover_attack_time;
+                } else {
+                    HB1_status_set_HB_Mission_Action(HB1_Mission_GG);
+                }
             }
             if (HB1_status_noGPS_check()) {
                 HB1_status_set_HB_Mission_Action(HB1_Mission_FsNoGPS);

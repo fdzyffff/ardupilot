@@ -96,6 +96,12 @@ void Plane::HB1_msg_mission2apm_handle() {
         case 0x66:
             HB1_msg_mission2apm_set_interim_handle();
             break;
+        case 0x3A:
+            HB1_msg_mission2apm_speed_up_handle();
+            break;
+        case 0xA7:
+            HB1_msg_mission2apm_speed_down_handle();
+            break;
         case 0x33:
             if (!HB1_status_noGPS_check()) {
                 HB1_msg_mission2apm_set_attack_handle();
@@ -148,13 +154,46 @@ void Plane::HB1_msg_mission2apm_handle() {
 
 void Plane::HB1_msg_power2apm_handle() {
     HB1_power2apm &tmp_msg = HB1_uart_power.get_msg_power2apm();
-    HB1_Power.HB1_engine_rpm = (float)tmp_msg._msg_1.content.msg.rpm;
-    HB1_Power.HB1_engine_rpm*=0.1f;
+    switch (g2.hb1_power_type.get()) {
+        case 0:
+            HB1_Power.HB1_engine_rpm = (float)tmp_msg._msg_1.content.msg.v1;
+            HB1_Power.HB1_engine_rpm*=0.1f;
+            HB1_Power.HB1_engine_temp = (float)tmp_msg._msg_1.content.msg.v2;
+            HB1_Power.HB1_engine_temp*=0.1f;
+            break;
+
+        case 1:
+            HB1_Power.HB1_engine_rpm = (float)tmp_msg._msg_1.content.msg.v2;
+            HB1_Power.HB1_engine_rpm*=0.1f;
+            HB1_Power.HB1_engine_temp = (float)tmp_msg._msg_1.content.msg.v1;
+            HB1_Power.HB1_engine_temp*=0.1f;
+            break;
+
+        case 10:
+            HB1_Power.HB1_engine_rpm = (float)tmp_msg._msg_1.content.msg.v1;
+            HB1_Power.HB1_engine_temp = (float)tmp_msg._msg_1.content.msg.v2;
+            HB1_Power.HB1_engine_temp*=0.1f;
+            break;
+
+        case 11:
+            HB1_Power.HB1_engine_rpm = (float)tmp_msg._msg_1.content.msg.v2;
+            HB1_Power.HB1_engine_temp = (float)tmp_msg._msg_1.content.msg.v1;
+            HB1_Power.HB1_engine_temp*=0.1f;
+            break;
+
+        default:
+            HB1_Power.HB1_engine_rpm = (float)tmp_msg._msg_1.content.msg.v1;
+            HB1_Power.HB1_engine_rpm*=0.1f;
+            HB1_Power.HB1_engine_temp = (float)tmp_msg._msg_1.content.msg.v2;
+            HB1_Power.HB1_engine_temp*=0.1f;
+            break;
+    }
     if (HB1_Power.HB1_engine_rpm < 0.0f) {
         HB1_Power.HB1_engine_rpm += 3276.7;
     }
-    HB1_Power.HB1_engine_temp = (float)tmp_msg._msg_1.content.msg.temp;
-    HB1_Power.HB1_engine_temp*=0.1f;
+    if (HB1_Power.HB1_engine_temp < 0.0f) {
+        HB1_Power.HB1_engine_temp += 3276.7;
+    }
 }
 
 void Plane::HB1_msg_apm2mission_send() {
@@ -262,6 +301,7 @@ void Plane::HB1_msg_apm2power_send() {
             break;
         default:
             tmp_msg._msg_1.content.msg.ctrl_cmd = 0;
+            tmp_msg._msg_1.need_send = true;
             break;
     }
     if (!tmp_msg._msg_1.need_send) {return;}
@@ -318,9 +358,9 @@ void Plane::HB1_uart_print(){
                 gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i+1 , HB1_uart_mission.get_msg_mission2apm()._msg_1.content.data[i]);
             }
             HB1_uart_mission.get_msg_mission2apm().swap_message();
-            gcs().send_text(MAV_SEVERITY_INFO, "apm_deltaX: %0.2f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.apm_deltaX/HB1_uart_mission.get_msg_mission2apm().SF_DIST);
-            gcs().send_text(MAV_SEVERITY_INFO, "apm_deltaY: %0.2f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.apm_deltaY/HB1_uart_mission.get_msg_mission2apm().SF_DIST);
-            gcs().send_text(MAV_SEVERITY_INFO, "apm_deltaZ: %0.2f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.apm_deltaZ/HB1_uart_mission.get_msg_mission2apm().SF_DIST);
+            gcs().send_text(MAV_SEVERITY_INFO, "apm_deltaX: %0.2f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.apm_deltaX);
+            gcs().send_text(MAV_SEVERITY_INFO, "apm_deltaY: %0.2f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.apm_deltaY);
+            gcs().send_text(MAV_SEVERITY_INFO, "apm_deltaZ: %0.2f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.apm_deltaZ);
             gcs().send_text(MAV_SEVERITY_INFO, "leader_lng: %0.6f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.leader_lng/HB1_uart_mission.get_msg_mission2apm().SF_LL);
             gcs().send_text(MAV_SEVERITY_INFO, "leader_lat: %0.6f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.leader_lat/HB1_uart_mission.get_msg_mission2apm().SF_LL);
             gcs().send_text(MAV_SEVERITY_INFO, "leader_alt: %0.2f", (double)HB1_uart_mission.get_msg_mission2apm()._msg_1.content.msg.leader_alt/HB1_uart_mission.get_msg_mission2apm().SF_ALT);

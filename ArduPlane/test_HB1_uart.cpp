@@ -53,8 +53,8 @@ void Plane::test_HB1_uart_msg1(uint8_t option){
         tmp_msg._msg_1.content.data[i] = 0;
     }
     
-    tmp_msg._msg_1.content.msg.rpm = 10000;
-    tmp_msg._msg_1.content.msg.temp = 700;
+    tmp_msg._msg_1.content.msg.v1 = 10000;
+    tmp_msg._msg_1.content.msg.v2 = 700;
     for (int8_t i = 0; i < tmp_msg._msg_1.length - 1; i++) {
         tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
     }
@@ -99,22 +99,28 @@ void Plane::test_HB1_uart_msg3(uint8_t option){
     }
     
     switch (option) {
-        case 1: // EngineON
+        case 1: // Speed up
+            tmp_msg._msg_1.content.msg.remote_index = 0x3A;
+            break;
+        case 2: // Speed up
+            tmp_msg._msg_1.content.msg.remote_index = 0xA7;
+            break;
+        case 11: // EngineON
             tmp_msg._msg_1.content.msg.remote_index = 0xA5;
             break;
-        case 2: // EngineOFF
+        case 12: // EngineOFF
             tmp_msg._msg_1.content.msg.remote_index = 0xC6;
             break;
-        case 3: // EngineFULL
+        case 13: // EngineFULL
             tmp_msg._msg_1.content.msg.remote_index = 0xE7;
             break;
-        case 4: // EngineMID
+        case 14: // EngineMID
             tmp_msg._msg_1.content.msg.remote_index = 0xB4;
             break;
-        case 5: // Disarm
+        case 15: // Disarm
             tmp_msg._msg_1.content.msg.remote_index = 0xCC;
             break;
-        case 6: // ServoTest
+        case 16: // ServoTest
             tmp_msg._msg_1.content.msg.remote_index = 0x99;
             break;
         default:

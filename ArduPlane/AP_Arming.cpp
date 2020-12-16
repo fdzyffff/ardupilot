@@ -176,7 +176,7 @@ void AP_Arming_Plane::change_arm_state(void)
 
 bool AP_Arming_Plane::arm(const AP_Arming::Method method, const bool do_arming_checks)
 {
-    if (fabsf(plane.HB1_Power.HB1_engine_rpm) > 50.f) {
+    if ((fabsf(plane.HB1_Power.HB1_engine_rpm) > 50.f) && (plane.g2.hb1_rpm_used == 1)) {
         plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_EngineOFF);
         gcs().send_text(MAV_SEVERITY_INFO, "!!Closing engine, arm again");
         return false;

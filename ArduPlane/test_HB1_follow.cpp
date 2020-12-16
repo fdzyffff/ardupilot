@@ -366,15 +366,15 @@ void Plane::test_HB1_mission_send_msg() {
             gcs().send_text(MAV_SEVERITY_INFO, "SIM out set attack");
             break;
         case 21: 
-            apm_deltaX = (int16_t)150.0f*tmp_msg.SF_DIST;
-            apm_deltaY = (int16_t)150.0f*tmp_msg.SF_DIST;
-            apm_deltaZ = (int16_t)30.0f*tmp_msg.SF_DIST;
+            apm_deltaX = (int16_t)150.0f;
+            apm_deltaY = (int16_t)150.0f;
+            apm_deltaZ = (int16_t)30.0f;
             gcs().send_text(MAV_SEVERITY_INFO, "SIM out Offset");
             break;
         case 22: 
-            apm_deltaX = (int16_t)0.0f*tmp_msg.SF_DIST;
-            apm_deltaY = (int16_t)0.0f*tmp_msg.SF_DIST;
-            apm_deltaZ = (int16_t)0.0f*tmp_msg.SF_DIST;
+            apm_deltaX = (int16_t)0.0f;
+            apm_deltaY = (int16_t)0.0f;
+            apm_deltaZ = (int16_t)0.0f;
             gcs().send_text(MAV_SEVERITY_INFO, "SIM out Offset cancel");
         default:
             break;

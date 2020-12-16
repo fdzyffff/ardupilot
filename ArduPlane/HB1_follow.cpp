@@ -13,8 +13,8 @@ void Plane::HB1_msg_mission2apm_follow_handle() {
         return;
     }*/
     HB1_follow_loc = loc;
-    HB1_follow_loc.offset((float)tmp_msg._msg_1.content.msg.apm_deltaX/tmp_msg.SF_DIST, (float)tmp_msg._msg_1.content.msg.apm_deltaY/tmp_msg.SF_DIST);
-    HB1_follow_loc.alt += (int32_t)((float)tmp_msg._msg_1.content.msg.apm_deltaZ*100.f/tmp_msg.SF_DIST);
+    HB1_follow_loc.offset((float)tmp_msg._msg_1.content.msg.apm_deltaX, (float)tmp_msg._msg_1.content.msg.apm_deltaY);
+    HB1_follow_loc.alt += (int32_t)((float)tmp_msg._msg_1.content.msg.apm_deltaZ*100.f);
     HB1_follow_dir = ((float)tmp_msg._msg_1.content.msg.leader_dir)/tmp_msg.SF_ANG;
 
     Vector3f tmp_target;

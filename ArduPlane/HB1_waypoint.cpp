@@ -85,6 +85,26 @@ void Plane::HB1_msg_mission2apm_away_handle(HB1_mission2apm &tmp_msg) {
     }
 }
 
+void Plane::HB1_msg_mission2apm_speed_up_handle() {
+    if (HB1_Status.grouped) {
+        return;
+    }
+    float current_spd = aparm.airspeed_cruise_cm.get();
+    current_spd += 200.f;
+    aparm.airspeed_cruise_cm.set(current_spd);
+    gcs().send_text(MAV_SEVERITY_INFO, "Spd : %0.1f", current_spd/100.f);
+}
+
+void Plane::HB1_msg_mission2apm_speed_down_handle() {
+    if (HB1_Status.grouped) {
+        return;
+    }
+    float current_spd = aparm.airspeed_cruise_cm.get();
+    current_spd -= 200.f;
+    aparm.airspeed_cruise_cm.set(current_spd);
+    gcs().send_text(MAV_SEVERITY_INFO, "Spd : %0.1f", current_spd/100.f);
+}
+
 void Plane::HB1_msg_mission2apm_attack_handle() {
     if (HB1_Status.num_attack > 0 || HB1_Status.num_interim > 0) {
         HB1_status_set_HB_Mission_Action(HB1_Mission_Attack);
@@ -98,7 +118,7 @@ void Plane::HB1_msg_mission2apm_attack_handle() {
 void Plane::HB1_msg_mission2apm_EngineSTART_handle() {
     if (!arming.is_armed()) {
         // check if need to re send start cmd
-        if (fabsf(plane.HB1_Power.HB1_engine_rpm) < 50.f) {
+        if ((fabsf(plane.HB1_Power.HB1_engine_rpm) < 50.f) || (g2.hb1_rpm_used == 0)) {
             gcs().send_text(MAV_SEVERITY_INFO, "Engine ground start");
             HB1_status_set_HB_Power_Action(HB1_PowerAction_GROUND_EngineSTART, true);
         }

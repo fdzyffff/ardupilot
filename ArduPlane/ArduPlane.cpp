@@ -308,7 +308,7 @@ void Plane::send_gps_heading_deg()
     {
         float gps_heading_deg = gps.get_heading_deg();
         float gps_heading_dev_deg = gps.get_heading_dev_deg();
-        gcs().send_text(MAV_SEVERITY_INFO, "GPS heading : %0.3f, dev : %0.3f", (gps_heading_deg, gps_heading_dev_deg));
+        gcs().send_text(MAV_SEVERITY_INFO, "GPS heading : %0.2f, dev : %0.2f", (gps_heading_deg, gps_heading_dev_deg));
     }
 }
 

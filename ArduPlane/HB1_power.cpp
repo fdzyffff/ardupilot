@@ -45,7 +45,7 @@ void Plane::HB1_Power_pwm_update() {
                 HB1_throttle = constrain_float(35.f*timer/1200.f, thr_min, 35.f);
             } else if (timer < 2000.f) {
                 HB1_throttle = constrain_float(35.f + 65.f*(timer-1200.f)/800.f, 35.f, thr_max);
-            } else {
+            } else if (timer < 22000.f) {
                 HB1_throttle = constrain_float(100.f, thr_min, thr_max);
             }
         }
@@ -82,7 +82,7 @@ void Plane::HB1_Power_status_update() {
             }
             break;
         case HB1_PowerAction_EngineON:
-            if (fabsf(plane.HB1_Power.HB1_engine_rpm) < 50.f) {
+            if ((fabsf(plane.HB1_Power.HB1_engine_rpm) < 50.f) && (g2.hb1_rpm_used == 1)) {
                 gcs().send_text(MAV_SEVERITY_INFO, "WARNING, Restart engine in air");
                 HB1_status_set_HB_Power_Action(HB1_PowerAction_EngineSTART, true);
             }
@@ -101,6 +101,9 @@ void Plane::HB1_Power_status_update() {
         case HB1_PowerAction_ParachuteON:
             break;
         case HB1_PowerAction_GROUND_EngineSTART: // triggered by RC OR cmd
+            if (timer > 10000) {
+                HB1_status_set_HB_Power_Action(HB1_PowerAction_None);
+            }
             break;
         case HB1_PowerAction_GROUND_RocketON: // triggered by RC
         case HB1_PowerAction_GROUND_EngineOFF: // triggered by RC OR cmd

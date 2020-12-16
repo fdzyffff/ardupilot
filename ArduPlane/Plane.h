@@ -1170,6 +1170,8 @@ private:
 
     AP_Mission::Mission_Command HB1_attack_cmd;
 
+    bool HB1_GG_final;
+
     void HB1_uart_init();
     void HB1_uart_update_50Hz();
     void HB1_uart_update_10Hz();
@@ -1214,6 +1216,8 @@ private:
     void HB1_msg_mission2apm_away_handle(HB1_mission2apm &tmp_msg);
     void HB1_msg_mission2apm_follow_handle();
     void HB1_msg_mission2apm_attack_handle();
+    void HB1_msg_mission2apm_speed_up_handle();
+    void HB1_msg_mission2apm_speed_down_handle();
     void HB1_msg_mission2apm_EngineSTART_handle();
     void HB1_msg_mission2apm_EngineOFF_handle();
     void HB1_msg_mission2apm_EngineFULL_handle();

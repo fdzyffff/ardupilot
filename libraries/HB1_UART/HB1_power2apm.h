@@ -12,8 +12,8 @@ public:
         HB1_mission2apm_header header;
         uint8_t batt_volt;
         uint8_t batt_curr;
-        uint16_t temp;
-        uint16_t rpm;
+        uint16_t v1;
+        uint16_t v2;
         uint8_t sum_check;
     };
 
