@@ -74,7 +74,14 @@ void Plane::HB1_Mission_update() {
             break;
         case HB1_Mission_Hover :
             if (timer > HB1_Status.time_out) {
-                HB1_status_set_HB_Mission_Action(HB1_Mission_Attack);
+                if (HB1_Status.num_attack > 0) {
+                    HB1_Status.mission_complete = false;
+                    HB1_status_set_HB_Mission_Action(HB1_Mission_Attack);
+                } else {
+                    HB1_attack_cmd.content.location = next_WP_loc;
+                    HB1_status_set_HB_Mission_Action(HB1_Mission_GG);
+                }
+
             }
             if (HB1_status_noGPS_check()) {
                 HB1_status_set_HB_Mission_Action(HB1_Mission_FsNoGPS);

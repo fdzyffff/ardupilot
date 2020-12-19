@@ -13,7 +13,7 @@ bool ModeGG::_enter()
     plane.aparm.roll_limit_cd.set(7000);
 
     plane.prev_WP_loc = plane.current_loc;
-    plane.next_WP_loc = plane.HB1_attack_cmd.content.location;
+    //plane.next_WP_loc = plane.HB1_attack_cmd.content.location;
     //plane.next_WP_loc.set_alt_cm(0, Location::AltFrame::ABOVE_HOME);
     plane.setup_glide_slope();
     //plane.setup_turn_angle();
