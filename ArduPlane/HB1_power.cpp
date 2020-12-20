@@ -63,15 +63,19 @@ void Plane::HB1_Power_status_update() {
             }
             break;
         case HB1_PowerAction_RocketON:
-            if (timer > 2000) {
+            if (timer > 3500) {
                 float airspeed_measured = 0;
                 if (!ahrs.airspeed_estimate(&airspeed_measured)) {airspeed_measured = 0.0f;}
                 float gspd = ahrs.groundspeed_vector().length();
                 bool speed_reached = (airspeed_measured > 10.0f || gspd > 5.0f);
                 if (speed_reached || (g2.hb1_test_mode != 0)) {
-                    HB1_status_set_HB_Power_Action(HB1_PowerAction_EngineSTART);
+//                    if (timer > 4000 || (ins.get_accel().x < 10.0f)) {
+                        gcs().send_text(MAV_SEVERITY_INFO, "timer: %d ax %0.2f", timer, ins.get_accel().x);
+                        HB1_status_set_HB_Power_Action(HB1_PowerAction_EngineSTART);
+//                    }
                 } else {
                     set_mode(plane.mode_fbwa, MODE_REASON_UNAVAILABLE);
+                    gcs().send_text(MAV_SEVERITY_INFO, "WARNING, low spd %0.2f, %0.2f", airspeed_measured, gspd);
                     HB1_status_set_HB_Power_Action(HB1_PowerAction_None);
                 }
             }

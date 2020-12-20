@@ -8,6 +8,7 @@ void Plane::HB1_msg_mission2apm_takeoff_handle() {
         gcs().send_text(MAV_SEVERITY_INFO, "Takeoff received");
     }
 }
+
 void Plane::HB1_msg_mission2apm_set_wp_handle() {
     HB1_mission2apm &tmp_msg = HB1_uart_mission.get_msg_mission2apm();
 
