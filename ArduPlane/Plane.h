@@ -1150,9 +1150,6 @@ private:
 
     struct {
         uint32_t timer;
-        uint16_t num_wp;
-        uint16_t num_interim;
-        uint16_t num_attack;
         uint32_t last_update_ms;
         uint32_t time_out;
         bool mission_complete;

@@ -1279,6 +1279,9 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("HB1_POW_TYPE", 35, ParametersG2, hb1_power_type, 0),
     AP_GROUPINFO("HB1_RPM_USED", 36, ParametersG2, hb1_rpm_used, 0),
     AP_GROUPINFO("HB1_GG_SEC", 37, ParametersG2, hb1_gg_sec, 0.5f),
+    AP_GROUPINFO("MIS_N_WP", 38, ParametersG2, hb1_num_wp, 0),
+    AP_GROUPINFO("MIS_N_INTERIM", 39, ParametersG2, hb1_num_interim, 0),
+    AP_GROUPINFO("MIS_N_ATTACK", 40, ParametersG2, hb1_num_attack, 0),
 
     AP_GROUPEND
 };

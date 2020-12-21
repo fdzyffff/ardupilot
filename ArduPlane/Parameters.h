@@ -583,6 +583,9 @@ public:
 
     AP_Int8 hb1_test_mode;
     AP_Int8 hb1_rpm_used;
+    AP_Int16 hb1_num_wp;
+    AP_Int16 hb1_num_interim;
+    AP_Int16 hb1_num_attack;
 };
 
 extern const AP_Param::Info var_info[];

@@ -190,6 +190,11 @@ bool AP_Arming_Plane::arm(const AP_Arming::Method method, const bool do_arming_c
 
     gcs().send_text(MAV_SEVERITY_INFO, "Throttle armed");
     plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_None);
+    plane.HB1_status_set_HB_Mission_Action(plane.HB1_Mission_None);
+    plane.HB1_Status.mission_complete = false;
+    plane.HB1_Status.time_out = plane.g2.hb1_follow_hover_wp_time;
+    plane.HB1_Status.already_takeoff = false;
+    plane.HB1_Status.grouped = false;
 
     return true;
 }
@@ -234,7 +239,10 @@ bool AP_Arming_Plane::disarm(void)
 #endif
     plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_None);
     plane.HB1_status_set_HB_Mission_Action(plane.HB1_Mission_None);
+    plane.HB1_Status.mission_complete = false;
+    plane.HB1_Status.time_out = plane.g2.hb1_follow_hover_wp_time;
     plane.HB1_Status.already_takeoff = false;
+    plane.HB1_Status.grouped = false;
     
     return true;
 }

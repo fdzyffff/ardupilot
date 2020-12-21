@@ -3,9 +3,9 @@
 void Plane::HB1_status_init() {
     HB1_status_set_HB_Power_Action(HB1_PowerAction_None);
     HB1_status_set_HB_Mission_Action(HB1_Mission_None);
-    HB1_Status.num_wp = 0;
-    HB1_Status.num_interim = 0;
-    HB1_Status.num_attack = 0;
+    g2.hb1_num_wp.set_and_save(0);
+    g2.hb1_num_interim.set_and_save(0);
+    g2.hb1_num_attack.set_and_save(0);
     HB1_follow_dir = 0.0f;
     HB1_Status.last_update_ms = 0;
     HB1_Status.mission_complete = false;
@@ -39,7 +39,7 @@ void Plane::HB1_Mission_update() {
             // do state check in takeoff mode
             break;
         case HB1_Mission_WP :
-            if (HB1_Status.mission_complete || mission.get_current_nav_index() > HB1_Status.num_wp) {
+            if (HB1_Status.mission_complete || mission.get_current_nav_index() > g2.hb1_num_wp) {
                 HB1_status_set_HB_Mission_Action(HB1_Mission_Hover);
                 HB1_Status.mission_complete = false;
                 HB1_Status.time_out = g2.hb1_follow_hover_wp_time;
@@ -74,7 +74,7 @@ void Plane::HB1_Mission_update() {
             break;
         case HB1_Mission_Hover :
             if (timer > HB1_Status.time_out) {
-                if (HB1_Status.num_attack > 0) {
+                if (g2.hb1_num_attack > 0) {
                     HB1_Status.mission_complete = false;
                     HB1_status_set_HB_Mission_Action(HB1_Mission_Attack);
                 } else {
@@ -146,7 +146,7 @@ void Plane::HB1_status_set_HB_Mission_Action(HB1_Mission_t action) {
         case HB1_Mission_Attack :
             set_mode(mode_auto, MODE_REASON_UNAVAILABLE);
             auto_state.next_wp_crosstrack = false;
-            mission.set_current_cmd(HB1_Status.num_wp+1);
+            mission.set_current_cmd(g2.hb1_num_wp+1);
             HB1_Status.state = action;
             break;
         case HB1_Mission_FsGPS :
@@ -159,7 +159,7 @@ void Plane::HB1_status_set_HB_Mission_Action(HB1_Mission_t action) {
             break;
         case HB1_Mission_Hover2 :
             set_mode(mode_loiter, MODE_REASON_UNAVAILABLE);
-            if (HB1_Status.num_attack > 0) {
+            if (g2.hb1_num_attack > 0) {
                 next_WP_loc = HB1_attack_cmd.content.location;
             }
             HB1_Status.state = action;

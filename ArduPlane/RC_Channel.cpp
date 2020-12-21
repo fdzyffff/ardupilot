@@ -119,10 +119,6 @@ void RC_Channel_Plane::do_aux_function(const aux_func_t ch_option, const aux_swi
         break;
 
     case AUX_FUNC::RELAY:
-        if ((plane.g2.hb1_test_mode == 0)) {
-            plane.gcs().send_text(MAV_SEVERITY_INFO, "HB1_TEST invalid");
-            break;
-        }
         RC_Channel::do_aux_function_relay(0, ch_flag == HIGH);
         if (ch_flag == HIGH) {
             plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_GROUND_RocketON);
@@ -130,10 +126,6 @@ void RC_Channel_Plane::do_aux_function(const aux_func_t ch_option, const aux_swi
         else {plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_None);}
         break;
     case AUX_FUNC::RELAY2:
-        if ((plane.g2.hb1_test_mode == 0)) {
-            plane.gcs().send_text(MAV_SEVERITY_INFO, "HB1_TEST invalid");
-            break;
-        }
         RC_Channel::do_aux_function_relay(1, ch_flag == HIGH);
         if (ch_flag == HIGH) {
             plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_ParachuteON);
@@ -141,10 +133,6 @@ void RC_Channel_Plane::do_aux_function(const aux_func_t ch_option, const aux_swi
         else {plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_None);}
         break;
     case AUX_FUNC::RELAY3:
-        if ((plane.g2.hb1_test_mode == 0)) {
-            plane.gcs().send_text(MAV_SEVERITY_INFO, "HB1_TEST invalid");
-            break;
-        }
         RC_Channel::do_aux_function_relay(2, ch_flag == HIGH);
         if (ch_flag == HIGH) {
             plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_GROUND_EngineOFF);
@@ -152,15 +140,20 @@ void RC_Channel_Plane::do_aux_function(const aux_func_t ch_option, const aux_swi
         else {plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_None);}
         break;
     case AUX_FUNC::RELAY4:
-        if ((plane.g2.hb1_test_mode == 0)) {
-            plane.gcs().send_text(MAV_SEVERITY_INFO, "HB1_TEST invalid");
-            break;
-        }
         RC_Channel::do_aux_function_relay(3, ch_flag == HIGH);
         if (ch_flag == HIGH) {
-            plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_GROUND_EngineSTART);
+            if (plane.arming.is_armed() && plane.is_flying()) {
+                plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_EngineSTART);
+            } else {
+                plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_GROUND_EngineSTART);
+            }
+        } else {
+            if (plane.arming.is_armed()) {
+                ;
+            } else {
+                plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_None);
+            }
         }
-        else {plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_None);}
         break;
 
     default:

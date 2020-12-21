@@ -70,7 +70,7 @@ void Plane::HB1_Power_status_update() {
                 bool speed_reached = (airspeed_measured > 10.0f || gspd > 5.0f);
                 if (speed_reached || (g2.hb1_test_mode != 0)) {
 //                    if (timer > 4000 || (ins.get_accel().x < 10.0f)) {
-                        gcs().send_text(MAV_SEVERITY_INFO, "timer: %d ax %0.2f", timer, ins.get_accel().x);
+                        gcs().send_text(MAV_SEVERITY_INFO, "timer: %d ax %0.2f", (int32_t)timer, ins.get_accel().x);
                         HB1_status_set_HB_Power_Action(HB1_PowerAction_EngineSTART);
 //                    }
                 } else {
@@ -138,17 +138,29 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force
             relay.off(3);
             break;
         case HB1_PowerAction_RocketON:
-        case HB1_PowerAction_GROUND_RocketON:
-            HB1_Status.already_takeoff = true;
             gcs().send_text(MAV_SEVERITY_INFO, "Rocket ON");
+            relay.on(0);
+            relay.off(1);
+            relay.off(2);
+            relay.off(3);
+            HB1_Status.already_takeoff = true;
+            break;
+        case HB1_PowerAction_GROUND_RocketON:
+            gcs().send_text(MAV_SEVERITY_INFO, "G Rocket ON");
             relay.on(0);
             relay.off(1);
             relay.off(2);
             relay.off(3);
             break;
         case HB1_PowerAction_EngineSTART:
-        case HB1_PowerAction_GROUND_EngineSTART:
             gcs().send_text(MAV_SEVERITY_INFO, "Engine Starting");
+            relay.off(0);
+            relay.off(1);
+            relay.off(2);
+            relay.on(3);
+            break;
+        case HB1_PowerAction_GROUND_EngineSTART:
+            gcs().send_text(MAV_SEVERITY_INFO, "G Engine Starting");
             relay.off(0);
             relay.off(1);
             relay.off(2);
@@ -162,8 +174,14 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force
             relay.off(3);
             break;
         case HB1_PowerAction_EngineOFF:
-        case HB1_PowerAction_GROUND_EngineOFF:
             gcs().send_text(MAV_SEVERITY_INFO, "Engine OFF");
+            relay.off(0);
+            relay.off(1);
+            relay.on(2);
+            relay.off(3);
+            break;
+        case HB1_PowerAction_GROUND_EngineOFF:
+            gcs().send_text(MAV_SEVERITY_INFO, "G Engine OFF");
             relay.off(0);
             relay.off(1);
             relay.on(2);
