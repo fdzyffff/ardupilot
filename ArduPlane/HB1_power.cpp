@@ -19,8 +19,10 @@ void Plane::HB1_Power_pwm_update() {
                     HB1_throttle = constrain_float(35.f*timer/1200.f, thr_min, 35.f);
                 } else if (timer < 2000.f) {
                     HB1_throttle = constrain_float(35.f + 65.f*(timer-1200.f)/800.f, 35.f, thr_max);
-                } else {
+                } else if (timer < 22000.f) {
                     HB1_throttle = constrain_float(100.f, thr_min, thr_max);
+                } else {
+                    HB1_throttle = thr_min;
                 }
                 break;
             case HB1_PowerAction_GROUND_EngineMID:
@@ -41,11 +43,12 @@ void Plane::HB1_Power_pwm_update() {
         }
         
         if (HB1_Power.state == HB1_PowerAction_EngineSTART) {
-            if (timer < 1200.f) {
-                HB1_throttle = constrain_float(35.f*timer/1200.f, thr_min, 35.f);
-            } else if (timer < 2000.f) {
-                HB1_throttle = constrain_float(35.f + 65.f*(timer-1200.f)/800.f, 35.f, thr_max);
-            } else if (timer < 22000.f) {
+            float timer_delay = MAX(timer - 0.0f, 0.0f);
+            if (timer_delay < 1200.f) {
+                HB1_throttle = constrain_float(35.f*timer_delay/1200.f, thr_min, 35.f);
+            } else if (timer_delay < 2000.f) {
+                HB1_throttle = constrain_float(35.f + 65.f*(timer_delay-1200.f)/800.f, 35.f, thr_max);
+            } else if (timer_delay < 5000.f) {
                 HB1_throttle = constrain_float(100.f, thr_min, thr_max);
             }
         }
