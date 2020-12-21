@@ -143,7 +143,7 @@ void RC_Channel_Plane::do_aux_function(const aux_func_t ch_option, const aux_swi
         RC_Channel::do_aux_function_relay(3, ch_flag == HIGH);
         if (ch_flag == HIGH) {
             if (plane.arming.is_armed() && plane.is_flying()) {
-                plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_EngineSTART);
+                plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_EngineSTART, true);
             } else {
                 plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_GROUND_EngineSTART);
             }
@@ -151,7 +151,8 @@ void RC_Channel_Plane::do_aux_function(const aux_func_t ch_option, const aux_swi
             if (plane.arming.is_armed()) {
                 ;
             } else {
-                plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_None);
+                //plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_None);
+                ;
             }
         }
         break;

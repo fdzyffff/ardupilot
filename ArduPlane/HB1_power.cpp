@@ -41,7 +41,7 @@ void Plane::HB1_Power_pwm_update() {
         if (HB1_Power.state == HB1_PowerAction_RocketON) {
             HB1_throttle = thr_min;
         }
-        
+
         if (HB1_Power.state == HB1_PowerAction_EngineSTART) {
             float timer_delay = MAX(timer - 0.0f, 0.0f);
             if (timer_delay < 1200.f) {
@@ -54,7 +54,6 @@ void Plane::HB1_Power_pwm_update() {
         }
     }
     SRV_Channels::set_output_scaled(SRV_Channel::k_throttle_HB1, HB1_throttle);
-
 }
 
 void Plane::HB1_Power_status_update() {
