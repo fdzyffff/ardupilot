@@ -6,14 +6,7 @@ bool ModeGG::_enter()
     plane.throttle_allows_nudging = true;
     plane.auto_throttle_mode = true;
     plane.auto_navigation_mode = true;
-    plane.prev_WP_loc = plane.current_loc;
 
-    gcs().send_text(MAV_SEVERITY_INFO, "GG wp");
-    plane.aparm.pitch_limit_min_cd.set(-8500);
-    plane.aparm.roll_limit_cd.set(7000);
-
-    plane.prev_WP_loc = plane.current_loc;
-    //plane.next_WP_loc = plane.HB1_attack_cmd.content.location;
     //plane.next_WP_loc.set_alt_cm(0, Location::AltFrame::ABOVE_HOME);
     plane.setup_glide_slope();
     //plane.setup_turn_angle();
@@ -21,80 +14,97 @@ bool ModeGG::_enter()
     //plane.set_target_altitude_location(plane.next_WP_loc);
 
     // disable crosstrack, head directly to the point
-    plane.auto_state.crosstrack = true;
+    plane.auto_state.crosstrack = false;
 
     // reset loiter start time.
     plane.loiter.start_time_ms = 0;
 
     // start in non-VTOL mode
     plane.auto_state.vtol_loiter = false;
-    plane.HB1_GG_final = false;
+    // // zero out our loiter vals to watch for missed waypoints
+    // loiter_angle_reset();
+
+    // setup_glide_slope();
+    // setup_turn_angle();
+
+    _track_covered = 0.0f;
+    _track_dist = 0.0f;
+    if (!plane.HB1_status_noGPS_check()) {
+        plane.prev_WP_loc = plane.current_loc;
+        plane.next_WP_loc = plane.HB1_attack_cmd.content.location;
+        plane.next_WP_loc.alt = plane.prev_WP_loc.alt;
+        _dir_unit = plane.prev_WP_loc.get_distance_NE(plane.next_WP_loc);
+        _track_dist = _dir_unit.length() * 100.f;
+        _dir_unit.normalize();
+        gcs().send_text(MAV_SEVERITY_INFO, "_track_dist :%0.1f, (%0.2f, %0.2f)", _track_dist, _dir_unit.x, _dir_unit.y);
+        set_HB1_GG_state(HB1_GG_STEP1);
+    } else {
+        set_HB1_GG_state(HB1_GG_STEP2);
+    }
     return true;
 }
 
 void ModeGG::update()
 {
-    float final_gg_sec = constrain_float(plane.g2.hb1_gg_sec, 1.5f, 10.f);
+    static int16_t print_counter = 0;
+    print_counter++;
+    if (print_counter > 400) {
+        print_counter = 0;
+    }
+
+    float final_gg_sec = constrain_float(plane.g2.hb1_gg_sec, 0.5f, 10.f);
     // set nav_roll and nav_pitch using sticks
     float final_speed_cm = 100.f* (plane.g2.hb1_follow_speed + plane.g2.hb1_follow_speed_range);
-    float delta_xy_cm = 100.f * plane.current_loc.get_distance(plane.HB1_attack_cmd.content.location);
-
-    if (!plane.HB1_status_noGPS_check() && (delta_xy_cm > final_speed_cm)) { // GPS is OK
-        plane.nav_controller->update_waypoint(plane.prev_WP_loc, plane.next_WP_loc);
-
-        if ((delta_xy_cm > MAX(3.0f,final_gg_sec) * final_speed_cm) && (!plane.HB1_GG_final)) {
+    switch(HB1_GG_state) {
+        case HB1_GG_STEP1:
+            if (plane.HB1_status_noGPS_check()) {
+                set_HB1_GG_state(HB1_GG_STEP2);
+            }
+            plane.nav_controller->update_waypoint(plane.prev_WP_loc, plane.next_WP_loc);
             plane.calc_nav_roll();
             plane.calc_throttle();
             plane.calc_nav_pitch();
-        } else if ((delta_xy_cm > final_gg_sec * final_speed_cm) && (!plane.HB1_GG_final)) {
 
-            int16_t current_cd = plane.ahrs.yaw_sensor;//plane.gps.ground_course_cd();
-            int16_t target_cd = plane.current_loc.get_bearing_to(plane.HB1_attack_cmd.content.location);
-            float delta_yaw = (float)constrain_int16(wrap_180_cd(target_cd - current_cd), -4500,4500) / 4500.f;
-            float target_roll = 0.0f;
-            if (delta_yaw < 0.0f) {
-                target_roll = 0.8f * delta_yaw * delta_yaw + 1.8f * delta_yaw;
-                target_roll *= 7000.f;
-                plane.nav_roll_cd = constrain_int16((int16_t)target_roll, -7000, 7000);
-            } else {
-                target_roll = -0.8f * delta_yaw * delta_yaw + 1.8f * delta_yaw;
-                target_roll *= 7000.f;
-                plane.nav_roll_cd = constrain_int16((int16_t)target_roll, -7000, 7000);
+            _track_covered = _dir_unit * (plane.prev_WP_loc.get_distance_NE(plane.current_loc));
+            _track_covered *= 100.f;
+            
+            if ((_track_dist - _track_covered) < (MAX(0.5f,final_gg_sec) * final_speed_cm)) {
+                set_HB1_GG_state(HB1_GG_STEP2);
             }
-            //plane.nav_roll_cd = 0;
-            //gcs().send_text(MAV_SEVERITY_INFO, "target_roll : %0.2f", target_roll);
-            //gcs().send_text(MAV_SEVERITY_INFO, "c_cd %d, t_cd: %d, d_cd: %d", current_cd, target_cd, plane.nav_roll_cd);
-
-            plane.nav_pitch_cd = -1000;
-            //gcs().send_text(MAV_SEVERITY_INFO, "P_cd : %d", plane.nav_pitch_cd);
-            plane.aparm.airspeed_cruise_cm.set(final_speed_cm);
-            plane.update_load_factor();
-            plane.adjust_nav_pitch_throttle();
-            //SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, 100);
-        } else {
-            plane.HB1_GG_final = true;
+            if (print_counter%133 == 0) {                
+                gcs().send_text(MAV_SEVERITY_INFO, "_track_dist ; _track_rest : %0.2f, %0.2f", _track_dist, _track_dist - _track_covered);
+            }
+            break;
+        case HB1_GG_STEP2:
             plane.nav_roll_cd = 0;
             plane.nav_pitch_cd = -8500;
             SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, 100);
             plane.update_load_factor();
             plane.adjust_nav_pitch_throttle();
-        }
-    } else {
-        plane.HB1_GG_final = true;
-        plane.nav_roll_cd = 0;
-        plane.nav_pitch_cd = -8500;
-        SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, 100);
-        plane.update_load_factor();
-        plane.adjust_nav_pitch_throttle();
+            break;
     }
 
     if (plane.arming.is_armed()) {
-        if (plane.ins.get_accel_peak_hold_neg_x() < -(plane.g.crash_accel_threshold)){
+        if (plane.ins.get_accel_peak_hold_neg_x() < -(10.0f)){
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
             plane.arming.disarm();
-    //SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, 0);
+            gcs().send_text(MAV_SEVERITY_INFO, "Disarm motors [SITL]");
 #endif
-            gcs().send_text(MAV_SEVERITY_INFO, "Disarm motors [SITL], (%0.2f) M", plane.current_loc.get_distance(plane.HB1_attack_cmd.content.location));
+            gcs().send_text(MAV_SEVERITY_INFO, "Hit at (%0.2f) M", plane.current_loc.get_distance(plane.next_WP_loc));
         }
+    }
+}
+
+void ModeGG::set_HB1_GG_state(HB1_GG_t action) {
+    HB1_GG_state = action;
+    switch (action) {
+        case HB1_GG_STEP1:
+            gcs().send_text(MAV_SEVERITY_INFO, "GG step1");
+            break;
+        case HB1_GG_STEP2:
+            plane.aparm.pitch_limit_min_cd.set(-8500);
+            //plane.aparm.roll_limit_cd.set(2000);
+            gcs().send_text(MAV_SEVERITY_INFO, "GG step2");
+            break;
     }
 }

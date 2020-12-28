@@ -494,9 +494,19 @@ public:
     // methods that affect movement of the vehicle in this mode
     void update() override;
 
-protected:
+    enum HB1_GG_t {
+        HB1_GG_STEP1=0,
+        HB1_GG_STEP2=1
+    };
 
+    HB1_GG_t HB1_GG_state;
+
+    void set_HB1_GG_state(HB1_GG_t action);
+protected:
     bool _enter() override;
+    float _track_dist;
+    float _track_covered;
+    Vector2f _dir_unit;
 };
 
 class ModeFsAuto : public Mode

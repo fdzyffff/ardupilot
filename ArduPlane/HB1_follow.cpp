@@ -16,6 +16,7 @@ void Plane::HB1_msg_mission2apm_follow_handle() {
     HB1_follow_loc.offset((float)tmp_msg._msg_1.content.msg.apm_deltaX, (float)tmp_msg._msg_1.content.msg.apm_deltaY);
     HB1_follow_loc.alt += (int32_t)((float)tmp_msg._msg_1.content.msg.apm_deltaZ*100.f);
     HB1_follow_dir = ((float)tmp_msg._msg_1.content.msg.leader_dir)/tmp_msg.SF_ANG;
+    //HB1_follow_spd = tmp_msg._msg_1.content.msg.apm_deltaZ*100.f / *tmp_msg.SF_VEL;
 
     Vector3f tmp_target;
     if (!HB1_follow_loc.get_vector_from_origin_NEU(tmp_target)) {
@@ -27,7 +28,7 @@ void Plane::HB1_msg_mission2apm_follow_handle() {
 void Plane::HB1_update_follow()
 {
     float target_dist = HB1_follow_loc.get_distance(current_loc);
-    float length_cut = 200.0f; //meter
+    float length_cut = 400.0f; //meter
     float vel_length = 0.f;
     if (target_dist > length_cut) {
     	prev_WP_loc = current_loc;
@@ -39,14 +40,23 @@ void Plane::HB1_update_follow()
     	prev_WP_loc = HB1_follow_loc;
     	//prev_WP_loc.offset_bearing(HB1_follow_dir, -100);
     	guided_WP_loc = HB1_follow_loc;
-    	guided_WP_loc.offset_bearing(HB1_follow_dir, 200);
+    	guided_WP_loc.offset_bearing(HB1_follow_dir, 400);
     	next_WP_loc = guided_WP_loc;
     	auto_state.crosstrack = true;
-    	vel_length = 190.f;
+    	vel_length = 390.f;
     }
     float delta_dist = (guided_WP_loc.get_distance(current_loc) - vel_length)*100.f;
     float spd_kp = g2.hb1_follow_speed_ratio.get();
     float target_spd = g2.hb1_follow_speed*100.f + constrain_float(delta_dist*spd_kp, -g2.hb1_follow_speed_range*100.f, g2.hb1_follow_speed_range*100.f);
+    
+    // float spd_kd = spd_kp * 0.5f;
+    // float airspeed_measured = 0.0f;
+    // if (!ahrs.airspeed_estimate(&airspeed_measured)) 
+    // {
+    //     airspeed_measured = 0.0f;
+    // } else {
+    //     target_spd += (g2.hb1_follow_speed - airspeed_measured) * spd_kd * 100.f;
+    // }
     aparm.airspeed_cruise_cm.set(target_spd);
     //gcs().send_text(MAV_SEVERITY_INFO, "tDist : %0.2f , Dist : %0.2f, V : %0.2f", target_dist, delta_dist, target_spd);
     //gcs().send_text(MAV_SEVERITY_INFO, "POS X: %0.1f, Y: %0.1f, V:%0.1f", tmp_target.x, tmp_target.y, target_spd);
