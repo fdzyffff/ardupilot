@@ -507,6 +507,8 @@ protected:
     float _track_dist;
     float _track_covered;
     Vector2f _dir_unit;
+    Location _HB1_attack_prev_WP_loc;
+    Location _HB1_attack_next_WP_loc;
 };
 
 class ModeFsAuto : public Mode

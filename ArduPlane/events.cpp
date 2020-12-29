@@ -20,8 +20,10 @@ void Plane::failsafe_short_on_event(enum failsafe_state fstype, mode_reason_t re
         failsafe.saved_mode_set = true;
         if(g.fs_action_short == FS_ACTION_SHORT_FBWA) {
             set_mode(mode_fbwa, reason);
-        } else {
+        } else if (g.fs_action_short == FS_ACTION_SHORT_CIRCLE) {
             set_mode(mode_circle, reason);
+        } else {
+            ;
         }
         break;
 
@@ -48,8 +50,10 @@ void Plane::failsafe_short_on_event(enum failsafe_state fstype, mode_reason_t re
             failsafe.saved_mode_set = true;
             if(g.fs_action_short == FS_ACTION_SHORT_FBWA) {
                 set_mode(mode_fbwa, reason);
-            } else {
+            } else if (g.fs_action_short == FS_ACTION_SHORT_CIRCLE) {
                 set_mode(mode_circle, reason);
+            } else {
+                ;
             }
         }
         break;
@@ -92,8 +96,10 @@ void Plane::failsafe_long_on_event(enum failsafe_state fstype, mode_reason_t rea
 #endif
         } else if (g.fs_action_long == FS_ACTION_LONG_GLIDE) {
             set_mode(mode_fbwa, reason);
-        } else {
+        } else if (g.fs_action_long == FS_ACTION_LONG_RTL) {
             set_mode(mode_rtl, reason);
+        } else {
+            ;
         }
         break;
 

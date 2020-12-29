@@ -7,11 +7,11 @@ bool ModeGG::_enter()
     plane.auto_throttle_mode = true;
     plane.auto_navigation_mode = true;
 
-    //plane.next_WP_loc.set_alt_cm(0, Location::AltFrame::ABOVE_HOME);
+    //_HB1_attack_next_WP_loc.set_alt_cm(0, Location::AltFrame::ABOVE_HOME);
     plane.setup_glide_slope();
     //plane.setup_turn_angle();
     plane.auto_state.next_turn_angle = 0;
-    //plane.set_target_altitude_location(plane.next_WP_loc);
+    //plane.set_target_altitude_location(_HB1_attack_next_WP_loc);
 
     // disable crosstrack, head directly to the point
     plane.auto_state.crosstrack = false;
@@ -30,10 +30,12 @@ bool ModeGG::_enter()
     _track_covered = 0.0f;
     _track_dist = 0.0f;
     if (!plane.HB1_status_noGPS_check()) {
-        plane.prev_WP_loc = plane.current_loc;
-        plane.next_WP_loc = plane.HB1_attack_cmd.content.location;
-        plane.next_WP_loc.alt = plane.prev_WP_loc.alt;
-        _dir_unit = plane.prev_WP_loc.get_distance_NE(plane.next_WP_loc);
+        _HB1_attack_prev_WP_loc = plane.current_loc;
+        _HB1_attack_next_WP_loc = plane.current_loc;
+        _HB1_attack_next_WP_loc.lat = plane.HB1_attack_cmd.content.location.lat;
+        _HB1_attack_next_WP_loc.lng = plane.HB1_attack_cmd.content.location.lng;
+        //_HB1_attack_final_alt = (float)plane.HB1_attack_cmd.content.location.alt;
+        _dir_unit = _HB1_attack_prev_WP_loc.get_distance_NE(_HB1_attack_next_WP_loc);
         _track_dist = _dir_unit.length() * 100.f;
         _dir_unit.normalize();
         gcs().send_text(MAV_SEVERITY_INFO, "_track_dist :%0.1f, (%0.2f, %0.2f)", _track_dist, _dir_unit.x, _dir_unit.y);
@@ -60,14 +62,19 @@ void ModeGG::update()
             if (plane.HB1_status_noGPS_check()) {
                 set_HB1_GG_state(HB1_GG_STEP2);
             }
-            plane.nav_controller->update_waypoint(plane.prev_WP_loc, plane.next_WP_loc);
+            // use to update wp_distance in navigation.
+            plane.prev_WP_loc = _HB1_attack_prev_WP_loc;
+            plane.next_WP_loc = _HB1_attack_next_WP_loc;
+            // update waypoint controller
+            plane.nav_controller->update_waypoint(_HB1_attack_prev_WP_loc, _HB1_attack_next_WP_loc);
             plane.calc_nav_roll();
             plane.calc_throttle();
             plane.calc_nav_pitch();
 
-            _track_covered = _dir_unit * (plane.prev_WP_loc.get_distance_NE(plane.current_loc));
+            _track_covered = _dir_unit * (_HB1_attack_prev_WP_loc.get_distance_NE(plane.current_loc));
             _track_covered *= 100.f;
             
+            // once track covered, go final stage
             if ((_track_dist - _track_covered) < (MAX(0.5f,final_gg_sec) * final_speed_cm)) {
                 set_HB1_GG_state(HB1_GG_STEP2);
             }
@@ -90,7 +97,7 @@ void ModeGG::update()
             plane.arming.disarm();
             gcs().send_text(MAV_SEVERITY_INFO, "Disarm motors [SITL]");
 #endif
-            gcs().send_text(MAV_SEVERITY_INFO, "Hit at (%0.2f) M", plane.current_loc.get_distance(plane.next_WP_loc));
+            gcs().send_text(MAV_SEVERITY_INFO, "Hit at (%0.2f) M", plane.current_loc.get_distance(_HB1_attack_next_WP_loc));
         }
     }
 }
