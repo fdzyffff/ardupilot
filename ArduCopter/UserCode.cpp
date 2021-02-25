@@ -19,6 +19,9 @@ void Copter::userhook_FastLoop()
 void Copter::userhook_50Hz()
 {
     // put your 50Hz code here
+    Ucam.update();
+    Ugcs.update();
+    Ugcs_state_update();
 }
 #endif
 
@@ -26,6 +29,7 @@ void Copter::userhook_50Hz()
 void Copter::userhook_MediumLoop()
 {
     // put your 10Hz code here
+    Ugcs_Log_Write_UCamTarget();
 }
 #endif
 
@@ -40,6 +44,9 @@ void Copter::userhook_SlowLoop()
 void Copter::userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
+    if (g2.user_parameters.cam_print.get()!=0) {
+        gcs().send_text(MAV_SEVERITY_WARNING, "x:%0.0f, y:%0.0f, on:%d", Ucam.get_raw_info().x, Ucam.get_raw_info().y, Ucam.is_active());
+    }
 }
 #endif
 
@@ -47,6 +54,11 @@ void Copter::userhook_SuperSlowLoop()
 void Copter::userhook_auxSwitch1(uint8_t ch_flag)
 {
     // put your aux switch #1 handler here (CHx_OPT = 47)
+    if (ch_flag == 2) {
+        copter.set_mode(Mode::Number::ATTACK, ModeReason::UNKNOWN);
+    } else {
+        copter.set_mode(Mode::Number::STABILIZE, ModeReason::UNKNOWN);
+    }
 }
 
 void Copter::userhook_auxSwitch2(uint8_t ch_flag)

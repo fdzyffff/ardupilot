@@ -174,6 +174,9 @@ void ModeLoiter::run()
         // run loiter controller
         loiter_nav->update();
 
+        if (is_zero(target_yaw_rate)) {
+            target_yaw_rate = my_get_target_yaw_rate();
+        }
         // call attitude controller
         attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(loiter_nav->get_roll(), loiter_nav->get_pitch(), target_yaw_rate);
 
@@ -197,6 +200,18 @@ uint32_t ModeLoiter::wp_distance() const
 int32_t ModeLoiter::wp_bearing() const
 {
     return loiter_nav->get_bearing_to_target();
+}
+
+float ModeLoiter::my_get_target_yaw_rate() {
+    float info_x = copter.Ucam.get_raw_info().x;
+    float x_length = copter.g2.user_parameters.cam_pixel_x;
+    float x_angle = copter.g2.user_parameters.cam_angle_x;
+    float yaw_rate_tc = copter.g2.user_parameters.fly_yaw_tc;
+    float yaw_rate_cds = 100.f * (x_angle * info_x / x_length / yaw_rate_tc);
+    if (!copter.Ucam.is_active()) {
+        yaw_rate_cds = 0.0f;
+    }
+    return yaw_rate_cds;
 }
 
 #endif

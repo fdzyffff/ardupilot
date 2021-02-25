@@ -72,6 +72,9 @@
 #include "defines.h"
 #include "config.h"
 
+#include "UCam.h"
+#include "UGround.h"
+
 #if FRAME_CONFIG == HELI_FRAME
     #define AC_AttitudeControl_t AC_AttitudeControl_Heli
 #else
@@ -236,6 +239,10 @@ public:
     friend class ModeThrow;
     friend class ModeZigZag;
     friend class ModeAutorotate;
+    friend class ModeAttack;
+
+    friend class UCam;
+    friend class UGround;
 
     Copter(void);
 
@@ -913,6 +920,28 @@ private:
     void userhook_auxSwitch2(uint8_t ch_flag);
     void userhook_auxSwitch3(uint8_t ch_flag);
 
+
+    // User_cam
+    enum My_state_t {
+        My_state_None            = 0,
+        My_state_Takeoff         = 1,
+        My_state_Cruise          = 2,
+        My_state_Lockon          = 3,
+        My_state_Search          = 4,
+        My_state_Attack          = 5,
+    };
+
+    UCam Ucam;
+    UGround Ugcs;
+    void Ugcs_handel_msg();
+    void Ugcs_state_update();
+    void Ugcs_do_takeoff(); // takeoff
+    void Ugcs_do_cruise();  // fly and search
+    void Ugcs_do_lockon();  // lock on target
+    void Ugcs_do_search();   // stand by and look around
+    void Ugcs_do_attack();
+    void Ugcs_Log_Write_UCamTarget();
+
 #if OSD_ENABLED == ENABLED
     void publish_osd_info();
 #endif
@@ -993,6 +1022,7 @@ private:
 #if MODE_AUTOROTATE_ENABLED == ENABLED
     ModeAutorotate mode_autorotate;
 #endif
+    ModeAttack mode_attack;
 
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);

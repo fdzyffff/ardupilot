@@ -962,7 +962,6 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
 #endif
 
 
-
     AP_GROUPEND
 };
 

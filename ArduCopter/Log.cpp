@@ -454,6 +454,32 @@ void Copter::Log_Write_GuidedTarget(uint8_t target_type, const Vector3f& pos_tar
     logger.WriteBlock(&pkt, sizeof(pkt));
 }
 
+// genren target logging
+struct PACKED log_UCamTarget {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    uint8_t target_valid;
+    float target_raw_x;
+    float target_raw_y;
+    float target_corr_x;
+    float target_corr_y;
+};
+
+// Write a Guided mode target
+void Copter::Ugcs_Log_Write_UCamTarget()
+{
+    struct log_UCamTarget pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_UCAMTARGET_MSG),
+        time_us         : AP_HAL::micros64(),
+        target_valid    : (uint8_t)Ucam.is_active(),
+        target_raw_x    : Ucam.get_raw_info().x,
+        target_raw_y    : Ucam.get_raw_info().y,
+        target_corr_x   : Ucam.get_correct_info().x,
+        target_corr_y   : Ucam.get_correct_info().y
+    };
+    logger.WriteBlock(&pkt, sizeof(pkt));
+}
+
 // type and unit information can be found in
 // libraries/AP_Logger/Logstructure.h; search for "log_Units" for
 // units and "Format characters" for field type information
@@ -489,6 +515,8 @@ const struct LogStructure Copter::log_structure[] = {
       "SIDS", "QBfffffff",  "TimeUS,Ax,Mag,FSt,FSp,TFin,TC,TR,TFout", "s--ssssss", "F--------" },
     { LOG_GUIDEDTARGET_MSG, sizeof(log_GuidedTarget),
       "GUID",  "QBffffff",    "TimeUS,Type,pX,pY,pZ,vX,vY,vZ", "s-mmmnnn", "F-000000" },
+    { LOG_UCAMTARGET_MSG, sizeof(log_UCamTarget),
+      "UCAM",  "QBffff", "TimeUS,AON,FrawX,FrawY,FcorrX,FcorrY", "s-----", "F-----" },
 };
 
 void Copter::Log_Write_Vehicle_Startup_Messages()
