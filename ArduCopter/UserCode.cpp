@@ -46,6 +46,7 @@ void Copter::userhook_SuperSlowLoop()
     // put your 1Hz code here
     if (g2.user_parameters.cam_print.get()!=0) {
         gcs().send_text(MAV_SEVERITY_WARNING, "x:%0.0f, y:%0.0f, on:%d", Ucam.get_raw_info().x, Ucam.get_raw_info().y, Ucam.is_active());
+        gcs().send_text(MAV_SEVERITY_WARNING, "P:%0.0f, D:%0.0f", g2.user_parameters.Ucam_pid.get_p(), g2.user_parameters.Ucam_pid.get_d());
     }
 }
 #endif

@@ -14,6 +14,8 @@ bool ModeAttack::init(bool ignore_checks)
             pos_control->set_alt_target_to_current_alt();
             pos_control->set_desired_velocity_z(inertial_nav.get_velocity_z());
         }
+        copter.g2.user_parameters.Ucam_pid.reset_I();
+        copter.g2.user_parameters.Ucam_pid.reset_filter();
         return true;
     }
     return false;
@@ -73,14 +75,24 @@ void ModeAttack::run()
 
 void ModeAttack::my_get_target_angles(float &target_roll, float &target_pitch)
 {
-    float pitch_target = (180.0f/M_PI) * atanf(copter.Ucam.get_raw_info().y/(0.5f*copter.g2.user_parameters.cam_pixel_y)*tanf(0.5f*copter.g2.user_parameters.cam_angle_y*(M_PI/180.f)));
-    float pitch_limit = copter.g2.user_parameters.cam_angle_y*0.35f;
-    float delta_pitch = constrain_float(pitch_target - pitch_limit, -copter.g2.user_parameters.cam_angle_y*0.5f, 5.0f)*copter.g2.user_parameters.fly_pitch_factor;
-    target_pitch = (degrees(copter.ahrs_view->pitch) + delta_pitch)*100.f;
+    // float pitch_target = (180.0f/M_PI) * atanf(copter.Ucam.get_raw_info().y/(0.5f*copter.g2.user_parameters.cam_pixel_y)*tanf(0.5f*copter.g2.user_parameters.cam_angle_y*(M_PI/180.f)));
+    // float pitch_limit = copter.g2.user_parameters.cam_angle_y*0.35f;
+    // float delta_pitch = constrain_float(pitch_target - pitch_limit, -copter.g2.user_parameters.cam_angle_y*0.5f, 5.0f)*copter.g2.user_parameters.fly_pitch_factor;
+    // target_pitch = (degrees(copter.ahrs_view->pitch) + delta_pitch)*100.f;
+    // float angle_limit = constrain_float(copter.aparm.angle_max, 1000.0f, attitude_control->get_althold_lean_angle_max());
+    // angle_limit = MIN(angle_limit, copter.g2.user_parameters.fly_pitch_limit);
+    // target_pitch = constrain_float(target_pitch,-angle_limit,angle_limit);
+
+
+    float measurement = (copter.Ucam.get_raw_info().y)/(0.5f*copter.g2.user_parameters.cam_pixel_y); //-1 to +0.1
+    float my_target_pitch = -1.0f*copter.g2.user_parameters.Ucam_pid.update_all(0.5f, measurement, false)*copter.g2.user_parameters.fly_pitch_limit.get();
+    if (my_target_pitch > 0.0f) {
+        my_target_pitch *= 1.0f;
+    }
+    target_pitch = degrees(copter.ahrs_view->pitch)*100.f + my_target_pitch ;
     float angle_limit = constrain_float(copter.aparm.angle_max, 1000.0f, attitude_control->get_althold_lean_angle_max());
     angle_limit = MIN(angle_limit, copter.g2.user_parameters.fly_pitch_limit);
     target_pitch = constrain_float(target_pitch,-angle_limit,angle_limit);
-
     target_roll = 0.0f;
     //my_get_pilot_desired_lean_angles(target_roll, target_pitch, copter.aparm.angle_max, attitude_control->get_althold_lean_angle_max());
 }
