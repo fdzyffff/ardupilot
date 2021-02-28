@@ -173,6 +173,9 @@ Mode *Copter::mode_from_mode_num(const Mode::Number mode)
         case Mode::Number::ATTACK:
             ret = &mode_attack;
             break;
+        case Mode::Number::ATTACK_ATT:
+            ret = &mode_attack_att;
+            break;
 
         default:
             break;

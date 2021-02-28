@@ -37,6 +37,7 @@ public:
         SYSTEMID  =    25,  // System ID mode produces automated system identification signals in the controllers
         AUTOROTATE =   26,  // Autonomous autorotation
         ATTACK     =   27,  // Attack
+        ATTACK_ATT =   28,  // Attack
         //AUTOROTATE =   28,  // Attack
     };
 
@@ -1495,6 +1496,38 @@ protected:
     void my_get_target_angles(float &target_roll, float &target_pitch);
     float my_get_target_yaw_rate();
     float my_get_target_climb_rate();
+
+private:
+
+};
+
+
+
+class ModeAttack_att : public Mode {
+
+public:
+    // inherit constructor
+    using Mode::Mode;
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    bool requires_GPS() const override { return false; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(bool from_gcs) const override { return true; };
+    bool is_autopilot() const override { return false; }
+    bool has_user_takeoff(bool must_navigate) const override {
+        return !must_navigate;
+    }
+
+protected:
+
+    const char *name() const override { return "ATTACK2"; }
+    const char *name4() const override { return "ATK2"; }
+    void my_get_pilot_desired_lean_angles(float &roll_out, float &pitch_out, float angle_max, float angle_limit) const;
+    void my_get_target_angles(float &target_roll, float &target_pitch);
+    float my_get_target_yaw_rate();
+    float my_get_throttle_boosted(float throttle_in);
 
 private:
 

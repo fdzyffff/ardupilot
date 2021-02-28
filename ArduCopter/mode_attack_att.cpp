@@ -6,16 +6,9 @@
  */
 
 // althold_init - initialise althold controller
-bool ModeAttack::init(bool ignore_checks)
+bool ModeAttack_att::init(bool ignore_checks)
 {
     if (copter.Ucam.is_active()) {
-        // initialise position and desired velocity
-        if (!pos_control->is_active_z()) {
-            pos_control->set_alt_target_to_current_alt();
-            pos_control->set_desired_velocity_z(inertial_nav.get_velocity_z());
-        }
-        copter.g2.user_parameters.Ucam_pid.reset_I();
-        copter.g2.user_parameters.Ucam_pid.reset_filter();
         return true;
     }
     return false;
@@ -23,12 +16,8 @@ bool ModeAttack::init(bool ignore_checks)
 
 // althold_run - runs the althold controller
 // should be called at 100hz or more
-void ModeAttack::run()
+void ModeAttack_att::run()
 {
-    // initialize vertical speeds and acceleration
-    pos_control->set_max_speed_z(-get_pilot_speed_dn(), g.pilot_speed_up);
-    pos_control->set_max_accel_z(g.pilot_accel_z);
-
     // apply SIMPLE mode transform to pilot inputs
     update_simple_mode();
 
@@ -40,40 +29,18 @@ void ModeAttack::run()
     // get target yaw rate
     float target_yaw_rate = my_get_target_yaw_rate();
 
-    // get target climb rate
-    float target_climb_rate = my_get_target_climb_rate();
-
-    target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
-
-    // Alt Hold State Machine Determination
-    AltHoldModeState althold_state = get_alt_hold_state(target_climb_rate);
-
-    // Alt Hold State Machine
-    switch (althold_state) {
-    case AltHold_Flying:
-        motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
-
-        // adjust climb rate using rangefinder
-        target_climb_rate = copter.surface_tracking.adjust_climb_rate(target_climb_rate);
-
-        // get avoidance adjusted climb rate
-        target_climb_rate = get_avoidance_adjusted_climbrate(target_climb_rate);
-
-        pos_control->set_alt_target_from_climb_rate_ff(target_climb_rate, G_Dt, false);
-        break;
-    default:
-        copter.set_mode(Mode::Number::STABILIZE, ModeReason::UNKNOWN);
-    }
+    motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
 
     // call attitude controller
     attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_roll, target_pitch, target_yaw_rate);
 
-    // call z-axis position controller
-    pos_control->update_z_controller();
-
+    // output pilot's throttle
+    attitude_control->set_throttle_out(my_get_throttle_boosted(motors->get_throttle_hover()),
+                                       false,
+                                       g.throttle_filt);
 }
 
-void ModeAttack::my_get_target_angles(float &target_roll, float &target_pitch)
+void ModeAttack_att::my_get_target_angles(float &target_roll, float &target_pitch)
 {
     // float pitch_target = (180.0f/M_PI) * atanf(copter.Ucam.get_raw_info().y/(0.5f*copter.g2.user_parameters.cam_pixel_y)*tanf(0.5f*copter.g2.user_parameters.cam_angle_y*(M_PI/180.f)));
     // float pitch_limit = copter.g2.user_parameters.cam_angle_y*0.35f;
@@ -99,7 +66,7 @@ void ModeAttack::my_get_target_angles(float &target_roll, float &target_pitch)
 
 // get_pilot_desired_angle - transform pilot's roll or pitch input into a desired lean angle
 // returns desired angle in centi-degrees
-void ModeAttack::my_get_pilot_desired_lean_angles(float &roll_out, float &pitch_out, float angle_max, float angle_limit) const
+void ModeAttack_att::my_get_pilot_desired_lean_angles(float &roll_out, float &pitch_out, float angle_max, float angle_limit) const
 {
     // limit max lean angle
     angle_limit = constrain_float(angle_limit, 1000.0f, angle_max);
@@ -123,7 +90,7 @@ void ModeAttack::my_get_pilot_desired_lean_angles(float &roll_out, float &pitch_
     // roll_out and pitch_out are returned
 }
 
-float ModeAttack::my_get_target_yaw_rate() {
+float ModeAttack_att::my_get_target_yaw_rate() {
     float info_x = copter.Ucam.get_raw_info().x;
     float x_length = copter.g2.user_parameters.cam_pixel_x;
     float x_angle = copter.g2.user_parameters.cam_angle_x;
@@ -132,12 +99,12 @@ float ModeAttack::my_get_target_yaw_rate() {
     return yaw_rate_cds;
 }
 
-float ModeAttack::my_get_target_climb_rate() {
-    float climb_rate_factor = (copter.Ucam.get_raw_info().y - 0.25f*copter.g2.user_parameters.cam_pixel_y)/(0.5f*copter.g2.user_parameters.cam_pixel_y);
-    climb_rate_factor *= copter.g2.user_parameters.fly_climb_factor; // -1.5f ~ 0.5f
-    float pitch_scalar = copter.g2.user_parameters.fly_pitch_scalar*constrain_float(fabsf(attitude_control->get_att_target_euler_cd().y/copter.aparm.angle_max), 0.0f, 1.0f);
+float ModeAttack_att::my_get_throttle_boosted(float throttle_in)
+{
+    float cos_tilt = copter.ahrs_view->cos_pitch() * copter.ahrs_view->cos_roll();
+    float inverted_factor = 1.0f;
+    float boost_factor = 1.0f / constrain_float(cos_tilt, cosf(ToRad(copter.g2.user_parameters.fly_pitch_limit*0.01f*0.67f)), 1.0f);
 
-    float final_climb_rate = climb_rate_factor * get_pilot_speed_dn() * pitch_scalar;
-    if (final_climb_rate > 0.33f*g.pilot_speed_up) {final_climb_rate = 0.33f*g.pilot_speed_up;}
-    return final_climb_rate;
+    float throttle_out = throttle_in * inverted_factor * boost_factor;
+    return throttle_out;
 }

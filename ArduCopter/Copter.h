@@ -240,6 +240,7 @@ public:
     friend class ModeZigZag;
     friend class ModeAutorotate;
     friend class ModeAttack;
+    friend class ModeAttack_att;
 
     friend class UCam;
     friend class UGround;
@@ -1023,6 +1024,7 @@ private:
     ModeAutorotate mode_autorotate;
 #endif
     ModeAttack mode_attack;
+    ModeAttack_att mode_attack_att;
 
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);
