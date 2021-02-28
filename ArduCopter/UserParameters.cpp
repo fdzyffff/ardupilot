@@ -21,8 +21,8 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     //AP_GROUPINFO("_PITCH_P"         , 10, UserParameters, fly_pitch_p, 1.0f),
     //AP_GROUPINFO("_PITCH_D"         , 11, UserParameters, fly_pitch_d, 0.1f),
     AP_GROUPINFO("_P_LIMIT"         , 10, UserParameters, fly_pitch_limit, 3000.0f),
-    AP_GROUPINFO("_HP_SCALAR"       , 11, UserParameters, fly_pitch_scalar, 2.0f),
-    AP_GROUPINFO("_HCLB_FACTOR"     , 12, UserParameters, fly_climb_factor, 2.0f),
+    AP_GROUPINFO("_HP_SCALAR"       , 11, UserParameters, fly_pitch_scalar, 1.0f),
+    AP_GROUPINFO("_HCLB_FACTOR"     , 12, UserParameters, fly_climb_factor, 1.0f),
 
     AP_SUBGROUPINFO(Ucam_pid, "_PITCH_", 13, UserParameters, AC_PID),
 

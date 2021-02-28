@@ -11,6 +11,8 @@ bool ModeAttack_att::init(bool ignore_checks)
     if (copter.Ucam.is_active()) {
         return true;
     }
+    copter.g2.user_parameters.Ucam_pid.reset_I();
+    copter.g2.user_parameters.Ucam_pid.reset_filter();
     return false;
 }
 
@@ -22,9 +24,9 @@ void ModeAttack_att::run()
     update_simple_mode();
 
     // get target lean angles
-    float target_roll, target_pitch;
+    float target_roll_ang, target_pitch_rate;
 
-    my_get_target_angles(target_roll, target_pitch);
+    my_get_target_angles(target_roll_ang, target_pitch_rate);
 
     // get target yaw rate
     float target_yaw_rate = my_get_target_yaw_rate();
@@ -32,7 +34,7 @@ void ModeAttack_att::run()
     motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
 
     // call attitude controller
-    attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_roll, target_pitch, target_yaw_rate);
+    attitude_control->input_euler_angle_roll_euler_rate_pitch_yaw(target_roll_ang, target_pitch_rate, target_yaw_rate);
 
     // output pilot's throttle
     attitude_control->set_throttle_out(my_get_throttle_boosted(motors->get_throttle_hover()),
@@ -40,54 +42,20 @@ void ModeAttack_att::run()
                                        g.throttle_filt);
 }
 
-void ModeAttack_att::my_get_target_angles(float &target_roll, float &target_pitch)
+void ModeAttack_att::my_get_target_angles(float &target_roll_ang, float &target_pitch_rate)
 {
-    // float pitch_target = (180.0f/M_PI) * atanf(copter.Ucam.get_raw_info().y/(0.5f*copter.g2.user_parameters.cam_pixel_y)*tanf(0.5f*copter.g2.user_parameters.cam_angle_y*(M_PI/180.f)));
-    // float pitch_limit = copter.g2.user_parameters.cam_angle_y*0.35f;
-    // float delta_pitch = constrain_float(pitch_target - pitch_limit, -copter.g2.user_parameters.cam_angle_y*0.5f, 5.0f)*copter.g2.user_parameters.fly_pitch_factor;
-    // target_pitch = (degrees(copter.ahrs_view->pitch) + delta_pitch)*100.f;
-    // float angle_limit = constrain_float(copter.aparm.angle_max, 1000.0f, attitude_control->get_althold_lean_angle_max());
-    // angle_limit = MIN(angle_limit, copter.g2.user_parameters.fly_pitch_limit);
-    // target_pitch = constrain_float(target_pitch,-angle_limit,angle_limit);
-
-
     float measurement = (copter.Ucam.get_raw_info().y)/(0.5f*copter.g2.user_parameters.cam_pixel_y); //-1 to +0.1
-    float my_target_pitch = -1.0f*copter.g2.user_parameters.Ucam_pid.update_all(0.5f, measurement, false)*copter.g2.user_parameters.fly_pitch_limit.get();
-    if (my_target_pitch > 0.0f) {
-        my_target_pitch *= 1.0f;
+    float my_target_pitch_rate = -1.0f*copter.g2.user_parameters.Ucam_pid.update_all(0.5f, measurement, false)*copter.g2.user_parameters.fly_pitch_limit.get();
+    if (my_target_pitch_rate > 0.0f) {
+        my_target_pitch_rate *= 1.0f;
     }
-    target_pitch = degrees(copter.ahrs_view->pitch)*100.f + my_target_pitch ;
-    float angle_limit = constrain_float(copter.aparm.angle_max, 1000.0f, attitude_control->get_althold_lean_angle_max());
-    angle_limit = MIN(angle_limit, copter.g2.user_parameters.fly_pitch_limit);
-    target_pitch = constrain_float(target_pitch,-angle_limit,angle_limit);
-    target_roll = 0.0f;
-    //my_get_pilot_desired_lean_angles(target_roll, target_pitch, copter.aparm.angle_max, attitude_control->get_althold_lean_angle_max());
-}
-
-// get_pilot_desired_angle - transform pilot's roll or pitch input into a desired lean angle
-// returns desired angle in centi-degrees
-void ModeAttack_att::my_get_pilot_desired_lean_angles(float &roll_out, float &pitch_out, float angle_max, float angle_limit) const
-{
-    // limit max lean angle
-    angle_limit = constrain_float(angle_limit, 1000.0f, angle_max);
-
-    // scale roll and pitch inputs to ANGLE_MAX parameter range
-    float scaler = angle_max/(float)ROLL_PITCH_YAW_INPUT_MAX;
-    roll_out *= scaler;
-    pitch_out *= scaler;
-
-    // do circular limit
-    float total_in = norm(pitch_out, roll_out);
-    if (total_in > angle_limit) {
-        float ratio = angle_limit / total_in;
-        roll_out *= ratio;
-        pitch_out *= ratio;
+    if ( (degrees(copter.ahrs_view->pitch)*100.f + my_target_pitch_rate*G_Dt) > copter.g2.user_parameters.fly_pitch_limit.get() ) {
+        my_target_pitch_rate = MIN(0.0f,my_target_pitch_rate);
+    } else if ( (degrees(copter.ahrs_view->pitch)*100.f + my_target_pitch_rate*G_Dt) < -copter.g2.user_parameters.fly_pitch_limit.get() ) {
+        my_target_pitch_rate = MAX(0.0f,my_target_pitch_rate);
     }
-
-    // do lateral tilt to euler roll conversion
-    roll_out = (18000/M_PI) * atanf(cosf(pitch_out*(M_PI/18000))*tanf(roll_out*(M_PI/18000)));
-
-    // roll_out and pitch_out are returned
+    target_pitch_rate = my_target_pitch_rate ;
+    target_roll_ang = 0.0f;
 }
 
 float ModeAttack_att::my_get_target_yaw_rate() {
