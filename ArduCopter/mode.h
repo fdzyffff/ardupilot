@@ -1492,8 +1492,6 @@ protected:
 
     const char *name() const override { return "ATTACK"; }
     const char *name4() const override { return "ATAK"; }
-    void my_get_pilot_desired_lean_angles(float &roll_out, float &pitch_out, float angle_max, float angle_limit) const;
-    void my_get_target_angles(float &target_roll, float &target_pitch);
     float my_get_target_yaw_rate();
     float my_get_target_climb_rate();
 
@@ -1524,7 +1522,6 @@ protected:
 
     const char *name() const override { return "ATTACK2"; }
     const char *name4() const override { return "ATK2"; }
-    void my_get_target_angles(float &target_roll, float &target_pitch);
     float my_get_target_yaw_rate();
     float my_get_throttle_boosted(float throttle_in);
 

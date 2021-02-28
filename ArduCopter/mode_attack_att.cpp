@@ -24,10 +24,14 @@ void ModeAttack_att::run()
     update_simple_mode();
 
     // get target lean angles
-    float target_roll_ang, target_pitch_rate;
+    float target_roll_ang = 0.0f;
+    float target_pitch_rate = copter.Ucam.get_target_pitch_rate();
 
-    my_get_target_angles(target_roll_ang, target_pitch_rate);
-
+    if ( (degrees(copter.ahrs_view->pitch)*100.f + target_pitch_rate*G_Dt) > copter.g2.user_parameters.fly_pitch_limit.get() ) {
+        target_pitch_rate = MIN(0.0f,target_pitch_rate);
+    } else if ( (degrees(copter.ahrs_view->pitch)*100.f + target_pitch_rate*G_Dt) < -copter.g2.user_parameters.fly_pitch_limit.get() ) {
+        target_pitch_rate = MAX(0.0f,target_pitch_rate);
+    }
     // get target yaw rate
     float target_yaw_rate = my_get_target_yaw_rate();
 
@@ -37,25 +41,9 @@ void ModeAttack_att::run()
     attitude_control->input_euler_angle_roll_euler_rate_pitch_yaw(target_roll_ang, target_pitch_rate, target_yaw_rate);
 
     // output pilot's throttle
-    attitude_control->set_throttle_out(my_get_throttle_boosted(motors->get_throttle_hover()),
+    attitude_control->set_throttle_out(my_get_throttle_boosted(motors->get_throttle_hover()*1.1f),
                                        false,
                                        g.throttle_filt);
-}
-
-void ModeAttack_att::my_get_target_angles(float &target_roll_ang, float &target_pitch_rate)
-{
-    float measurement = (copter.Ucam.get_raw_info().y)/(0.5f*copter.g2.user_parameters.cam_pixel_y); //-1 to +0.1
-    float my_target_pitch_rate = -1.0f*copter.g2.user_parameters.Ucam_pid.update_all(0.5f, measurement, false)*copter.g2.user_parameters.fly_pitch_limit.get();
-    if (my_target_pitch_rate > 0.0f) {
-        my_target_pitch_rate *= 1.0f;
-    }
-    if ( (degrees(copter.ahrs_view->pitch)*100.f + my_target_pitch_rate*G_Dt) > copter.g2.user_parameters.fly_pitch_limit.get() ) {
-        my_target_pitch_rate = MIN(0.0f,my_target_pitch_rate);
-    } else if ( (degrees(copter.ahrs_view->pitch)*100.f + my_target_pitch_rate*G_Dt) < -copter.g2.user_parameters.fly_pitch_limit.get() ) {
-        my_target_pitch_rate = MAX(0.0f,my_target_pitch_rate);
-    }
-    target_pitch_rate = my_target_pitch_rate ;
-    target_roll_ang = 0.0f;
 }
 
 float ModeAttack_att::my_get_target_yaw_rate() {

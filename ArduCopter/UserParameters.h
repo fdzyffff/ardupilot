@@ -8,7 +8,7 @@ class UserParameters {
 
 public:
     UserParameters() :
-        Ucam_pid(0.0f, 0.0f, 0.0f, 0.0f, 0.2f, 5.0f, 5.0f, 5.0f, 0.0025f)
+        Ucam_pid(0.0f, 0.0f, 0.0f, 0.0f, 0.2f, 3.0f, 3.0f, 3.0f, 0.02f)
         {}
     static const struct AP_Param::GroupInfo var_info[];
     AP_Float cam_angle_x;
