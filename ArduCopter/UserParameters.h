@@ -25,11 +25,12 @@ public:
     AP_Int32 gcs_print;
 
 	AP_Float fly_yaw_tc;
-	//AP_Float fly_pitch_p;
-    //AP_Float fly_pitch_d;
     AP_Float fly_pitch_limit;
+    AP_Float fly_roll_limit;
+    AP_Float fly_roll_factor;
 	AP_Float fly_pitch_scalar;
 	AP_Float fly_climb_factor;
+    AP_Float fly_climb_rate_offset;
 
     AC_PID   Ucam_pid;
 };

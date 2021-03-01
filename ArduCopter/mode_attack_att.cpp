@@ -24,7 +24,7 @@ void ModeAttack_att::run()
     update_simple_mode();
 
     // get target lean angles
-    float target_roll_ang = 0.0f;
+    float target_roll_ang = copter.Ucam.get_target_roll_angle();
     float target_pitch_rate = copter.Ucam.get_target_pitch_rate();
 
     if ( (degrees(copter.ahrs_view->pitch)*100.f + target_pitch_rate*G_Dt) > copter.g2.user_parameters.fly_pitch_limit.get() ) {

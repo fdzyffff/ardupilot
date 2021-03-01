@@ -20,13 +20,14 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     AP_GROUPINFO("_GCS_PRINT"       , 10, UserParameters, gcs_print, 0),
 
     AP_GROUPINFO("_YAW_TC"          , 11, UserParameters, fly_yaw_tc, 2.0f),
-    //AP_GROUPINFO("_PITCH_P"         , 10, UserParameters, fly_pitch_p, 1.0f),
-    //AP_GROUPINFO("_PITCH_D"         , 11, UserParameters, fly_pitch_d, 0.1f),
     AP_GROUPINFO("_P_LIMIT"         , 12, UserParameters, fly_pitch_limit, 3000.0f),
-    AP_GROUPINFO("_HP_SCALAR"       , 13, UserParameters, fly_pitch_scalar, 1.0f),
-    AP_GROUPINFO("_HCLB_FACTOR"     , 14, UserParameters, fly_climb_factor, 1.0f),
+    AP_GROUPINFO("_R_LIMIT"         , 13, UserParameters, fly_roll_limit, 1500.0f),
+    AP_GROUPINFO("_R_FACTOR"        , 14, UserParameters, fly_roll_factor, 1.0f),
+    AP_GROUPINFO("_HP_SCALAR"       , 15, UserParameters, fly_pitch_scalar, 1.0f),
+    AP_GROUPINFO("_HCLB_FACTOR"     , 16, UserParameters, fly_climb_factor, 1.0f),
+    AP_GROUPINFO("_HCLB_OFFSET"     , 17, UserParameters, fly_climb_rate_offset, 0.0f),
 
-    AP_SUBGROUPINFO(Ucam_pid, "_PITCH_", 15, UserParameters, AC_PID),
+    AP_SUBGROUPINFO(Ucam_pid, "_PITCH_", 18, UserParameters, AC_PID),
 
     AP_GROUPEND
 };
