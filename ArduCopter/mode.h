@@ -903,7 +903,6 @@ protected:
     bool do_precision_loiter();
     void precision_loiter_xy();
 #endif
-    float my_get_target_yaw_rate();
 
 private:
 
@@ -1492,7 +1491,6 @@ protected:
 
     const char *name() const override { return "ATTACK"; }
     const char *name4() const override { return "ATAK"; }
-    float my_get_target_yaw_rate();
     float my_get_target_climb_rate();
 
 private:
@@ -1522,7 +1520,6 @@ protected:
 
     const char *name() const override { return "ATTACK2"; }
     const char *name4() const override { return "ATK2"; }
-    float my_get_target_yaw_rate();
     float my_get_throttle_boosted(float throttle_in);
 
 private:

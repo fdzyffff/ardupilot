@@ -18,6 +18,8 @@ public:
     AP_Float cam_pitch_offset;
     AP_Int32 cam_time_out;
 	AP_Int32 cam_print;
+    AP_Float cam_target_x;
+    AP_Float cam_target_y;
 
     AP_Int32 gcs_time_out;
     AP_Int32 gcs_print;

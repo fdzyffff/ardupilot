@@ -21,12 +21,16 @@ public:
     void update();
 
     float get_target_pitch_rate() {return _target_pitch_rate;}
+    float get_target_yaw_rate() {return _target_yaw_rate_cds;}
 
 private:
+    void update_target_pitch_rate();
+    void update_target_yaw_rate();
 
     Vector2f raw_info;
     Vector2f correct_info;
     bool _active;
     uint32_t _last_update_ms;
     float _target_pitch_rate;
+    float _target_yaw_rate_cds;
 };

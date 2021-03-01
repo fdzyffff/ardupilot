@@ -43,7 +43,7 @@ void ModeAttack::run()
     }
 
     // get target yaw rate
-    float target_yaw_rate = my_get_target_yaw_rate();
+    float target_yaw_rate = copter.Ucam.get_target_yaw_rate();
 
     // get target climb rate
     float target_climb_rate = my_get_target_climb_rate();
@@ -78,22 +78,13 @@ void ModeAttack::run()
 
 }
 
-float ModeAttack::my_get_target_yaw_rate() {
-    float info_x = copter.Ucam.get_raw_info().x;
-    float x_length = copter.g2.user_parameters.cam_pixel_x;
-    float x_angle = copter.g2.user_parameters.cam_angle_x;
-    float yaw_rate_tc = copter.g2.user_parameters.fly_yaw_tc;
-    float yaw_rate_cds = 100.f * (x_angle * info_x / x_length / yaw_rate_tc);
-    return yaw_rate_cds;
-}
-
 float ModeAttack::my_get_target_climb_rate() {
     float climb_rate_factor = (copter.Ucam.get_raw_info().y)/(0.5f*copter.g2.user_parameters.cam_pixel_y);
-    climb_rate_factor = constrain_float(climb_rate_factor - 0.5f, -1.0f, 1.0f);
+    climb_rate_factor = -constrain_float(climb_rate_factor - copter.g2.user_parameters.cam_target_y - 0.1f, -1.0f, 1.0f);
     climb_rate_factor *= copter.g2.user_parameters.fly_climb_factor; // -1.5f ~ 0.5f
-    float pitch_scalar = copter.g2.user_parameters.fly_pitch_scalar*constrain_float(fabsf(degrees(copter.ahrs_view->pitch)*100.f/copter.aparm.angle_max), 0.0f, 1.0f);
+    float pitch_scalar = copter.g2.user_parameters.fly_pitch_scalar*constrain_float(fabsf(degrees(copter.ahrs_view->pitch)*100.f/copter.g2.user_parameters.fly_pitch_limit.get()), 0.3f, 1.0f);
 
     float final_climb_rate = climb_rate_factor * get_pilot_speed_dn() * pitch_scalar;
-    if (final_climb_rate > 0.33f*g.pilot_speed_up) {final_climb_rate = 0.33f*g.pilot_speed_up;}
-    return final_climb_rate;
+    //if (final_climb_rate > 0.33f*g.pilot_speed_up) {final_climb_rate = 0.33f*g.pilot_speed_up;}
+    return constrain_float(final_climb_rate, -get_pilot_speed_dn() , get_pilot_speed_dn() );
 }

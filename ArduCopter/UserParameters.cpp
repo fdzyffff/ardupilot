@@ -13,16 +13,18 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     AP_GROUPINFO("_CAM_PITCH"       , 4 , UserParameters, cam_pitch_offset, 320.0f),
     AP_GROUPINFO("_CAM_TIMEOUT"     , 5 , UserParameters, cam_time_out, 500),
     AP_GROUPINFO("_CAM_PRINT"       , 6 , UserParameters, cam_print, 0),
+    AP_GROUPINFO("_CAM_TARGETX"     , 7 , UserParameters, cam_target_x, 0.0f),
+    AP_GROUPINFO("_CAM_TARGETY"     , 8 , UserParameters, cam_target_y, 0.0f),
 
-    AP_GROUPINFO("_GCS_TIMEOUT"     , 7 , UserParameters, gcs_time_out, 500),
-    AP_GROUPINFO("_GCS_PRINT"       , 8 , UserParameters, gcs_print, 0),
+    AP_GROUPINFO("_GCS_TIMEOUT"     , 9 , UserParameters, gcs_time_out, 500),
+    AP_GROUPINFO("_GCS_PRINT"       , 10, UserParameters, gcs_print, 0),
 
-    AP_GROUPINFO("_YAW_TC"          , 9 , UserParameters, fly_yaw_tc, 2.0f),
+    AP_GROUPINFO("_YAW_TC"          , 11, UserParameters, fly_yaw_tc, 2.0f),
     //AP_GROUPINFO("_PITCH_P"         , 10, UserParameters, fly_pitch_p, 1.0f),
     //AP_GROUPINFO("_PITCH_D"         , 11, UserParameters, fly_pitch_d, 0.1f),
-    AP_GROUPINFO("_P_LIMIT"         , 10, UserParameters, fly_pitch_limit, 3000.0f),
-    AP_GROUPINFO("_HP_SCALAR"       , 11, UserParameters, fly_pitch_scalar, 1.0f),
-    AP_GROUPINFO("_HCLB_FACTOR"     , 12, UserParameters, fly_climb_factor, 1.0f),
+    AP_GROUPINFO("_P_LIMIT"         , 12, UserParameters, fly_pitch_limit, 3000.0f),
+    AP_GROUPINFO("_HP_SCALAR"       , 13, UserParameters, fly_pitch_scalar, 1.0f),
+    AP_GROUPINFO("_HCLB_FACTOR"     , 14, UserParameters, fly_climb_factor, 1.0f),
 
     AP_SUBGROUPINFO(Ucam_pid, "_PITCH_", 13, UserParameters, AC_PID),
 

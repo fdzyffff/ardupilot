@@ -33,7 +33,7 @@ void ModeAttack_att::run()
         target_pitch_rate = MAX(0.0f,target_pitch_rate);
     }
     // get target yaw rate
-    float target_yaw_rate = my_get_target_yaw_rate();
+    float target_yaw_rate = copter.Ucam.get_target_yaw_rate();
 
     motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
 

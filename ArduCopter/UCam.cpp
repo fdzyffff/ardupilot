@@ -28,6 +28,7 @@ void UCam::init()
     correct_info.y = 0.0f;
     _last_update_ms = 0;
     _target_pitch_rate = 0.0f;
+    _target_yaw_rate_cds = 0.0f;
 }
 
 // clear return path and set home location.  This should be called as part of the arming procedure
@@ -53,10 +54,24 @@ void UCam::update()
     if (!_active) {
         return;
     }
+    update_target_pitch_rate();
+    update_target_yaw_rate();
+}
+
+void UCam::update_target_pitch_rate() {
     float measurement = (get_raw_info().y)/(0.5f*copter.g2.user_parameters.cam_pixel_y); //-1 to +0.1
     float my_target_pitch_rate = -1.0f*copter.g2.user_parameters.Ucam_pid.update_all(0.5f, measurement, false)*copter.g2.user_parameters.fly_pitch_limit.get();
     if (my_target_pitch_rate > 0.0f) {
         my_target_pitch_rate *= 1.0f;
     }
     _target_pitch_rate = my_target_pitch_rate ;
+}
+
+void UCam::update_target_yaw_rate() {
+    float info_x = copter.Ucam.get_raw_info().x;
+    float x_length = copter.g2.user_parameters.cam_pixel_x;
+    float x_angle = copter.g2.user_parameters.cam_angle_x;
+    float yaw_rate_tc = copter.g2.user_parameters.fly_yaw_tc;
+    float yaw_rate_cds = 100.f * (x_angle * info_x / x_length / yaw_rate_tc);
+    _target_yaw_rate_cds;
 }
