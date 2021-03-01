@@ -26,7 +26,7 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     AP_GROUPINFO("_HP_SCALAR"       , 13, UserParameters, fly_pitch_scalar, 1.0f),
     AP_GROUPINFO("_HCLB_FACTOR"     , 14, UserParameters, fly_climb_factor, 1.0f),
 
-    AP_SUBGROUPINFO(Ucam_pid, "_PITCH_", 13, UserParameters, AC_PID),
+    AP_SUBGROUPINFO(Ucam_pid, "_PITCH_", 15, UserParameters, AC_PID),
 
     AP_GROUPEND
 };

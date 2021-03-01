@@ -174,7 +174,7 @@ void ModeLoiter::run()
         // run loiter controller
         loiter_nav->update();
 
-        if (is_zero(target_yaw_rate)) {
+        if (is_zero(target_yaw_rate) && copter.Ucam.is_active()) {
             target_yaw_rate = copter.Ucam.get_target_yaw_rate();
         }
         // call attitude controller

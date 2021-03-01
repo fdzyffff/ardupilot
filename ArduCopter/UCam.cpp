@@ -60,7 +60,7 @@ void UCam::update()
 
 void UCam::update_target_pitch_rate() {
     float measurement = (get_raw_info().y)/(0.5f*copter.g2.user_parameters.cam_pixel_y); //-1 to +0.1
-    float my_target_pitch_rate = -1.0f*copter.g2.user_parameters.Ucam_pid.update_all(0.5f, measurement, false)*copter.g2.user_parameters.fly_pitch_limit.get();
+    float my_target_pitch_rate = -1.0f*copter.g2.user_parameters.Ucam_pid.update_all(copter.g2.user_parameters.cam_target_y, measurement, false)*copter.g2.user_parameters.fly_pitch_limit.get();
     if (my_target_pitch_rate > 0.0f) {
         my_target_pitch_rate *= 1.0f;
     }
@@ -68,10 +68,10 @@ void UCam::update_target_pitch_rate() {
 }
 
 void UCam::update_target_yaw_rate() {
-    float info_x = copter.Ucam.get_raw_info().x;
-    float x_length = copter.g2.user_parameters.cam_pixel_x;
+    float info_x = copter.g2.user_parameters.cam_target_x.get() - copter.Ucam.get_raw_info().x/(0.5f*copter.g2.user_parameters.cam_pixel_x);
+    info_x = constrain_float(info_x, -1.0f, 1.0f);
     float x_angle = copter.g2.user_parameters.cam_angle_x;
     float yaw_rate_tc = copter.g2.user_parameters.fly_yaw_tc;
-    float yaw_rate_cds = 100.f * (x_angle * info_x / x_length / yaw_rate_tc);
-    _target_yaw_rate_cds;
+    float yaw_rate_cds = 100.f * (x_angle * info_x / yaw_rate_tc);
+    _target_yaw_rate_cds = yaw_rate_cds;
 }

@@ -86,7 +86,7 @@ void ModeAltHold::run()
         // apply avoidance
         copter.avoid.adjust_roll_pitch(target_roll, target_pitch, copter.aparm.angle_max);
 #endif
-        if (is_zero(target_yaw_rate)) {
+        if (is_zero(target_yaw_rate) && copter.Ucam.is_active()) {
             target_yaw_rate = copter.Ucam.get_target_yaw_rate();
         }
 

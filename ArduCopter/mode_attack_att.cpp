@@ -46,15 +46,6 @@ void ModeAttack_att::run()
                                        g.throttle_filt);
 }
 
-float ModeAttack_att::my_get_target_yaw_rate() {
-    float info_x = copter.Ucam.get_raw_info().x;
-    float x_length = copter.g2.user_parameters.cam_pixel_x;
-    float x_angle = copter.g2.user_parameters.cam_angle_x;
-    float yaw_rate_tc = copter.g2.user_parameters.fly_yaw_tc;
-    float yaw_rate_cds = 100.f * (x_angle * info_x / x_length / yaw_rate_tc);
-    return yaw_rate_cds;
-}
-
 float ModeAttack_att::my_get_throttle_boosted(float throttle_in)
 {
     float cos_tilt = copter.ahrs_view->cos_pitch() * copter.ahrs_view->cos_roll();

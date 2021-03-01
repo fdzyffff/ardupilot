@@ -80,7 +80,7 @@ void ModeAttack::run()
 
 float ModeAttack::my_get_target_climb_rate() {
     float climb_rate_factor = (copter.Ucam.get_raw_info().y)/(0.5f*copter.g2.user_parameters.cam_pixel_y);
-    climb_rate_factor = -constrain_float(climb_rate_factor - copter.g2.user_parameters.cam_target_y - 0.1f, -1.0f, 1.0f);
+    climb_rate_factor = constrain_float(climb_rate_factor - copter.g2.user_parameters.cam_target_y + 0.1f, -1.0f, 1.0f);
     climb_rate_factor *= copter.g2.user_parameters.fly_climb_factor; // -1.5f ~ 0.5f
     float pitch_scalar = copter.g2.user_parameters.fly_pitch_scalar*constrain_float(fabsf(degrees(copter.ahrs_view->pitch)*100.f/copter.g2.user_parameters.fly_pitch_limit.get()), 0.3f, 1.0f);
 
