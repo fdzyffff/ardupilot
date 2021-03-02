@@ -8,7 +8,7 @@ class UserParameters {
 
 public:
     UserParameters() :
-        Ucam_pid(0.0f, 0.0f, 0.0f, 0.0f, 0.2f, 3.0f, 3.0f, 3.0f, 0.02f)
+        Ucam_pid(1.0f, 0.0f, 0.0f, 0.0f, 0.2f, 3.0f, 3.0f, 3.0f, 0.02f)
         {}
     static const struct AP_Param::GroupInfo var_info[];
     AP_Float cam_angle_x;
@@ -31,6 +31,8 @@ public:
 	AP_Float fly_pitch_scalar;
 	AP_Float fly_climb_factor;
     AP_Float fly_climb_rate_offset;
+
+    AP_Float fly_attack_angle;
 
     AC_PID   Ucam_pid;
 };

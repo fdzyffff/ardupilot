@@ -38,6 +38,7 @@ public:
         AUTOROTATE =   26,  // Autonomous autorotation
         ATTACK     =   27,  // Attack
         ATTACK_ATT =   28,  // Attack
+        ATTACK_ANGLE = 29,  // Attack
         //AUTOROTATE =   28,  // Attack
     };
 
@@ -1525,3 +1526,32 @@ protected:
 private:
 
 };
+
+
+class ModeAttack_angle : public Mode {
+
+public:
+    // inherit constructor
+    using Mode::Mode;
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    bool requires_GPS() const override { return false; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(bool from_gcs) const override { return true; };
+    bool is_autopilot() const override { return false; }
+    bool has_user_takeoff(bool must_navigate) const override {
+        return !must_navigate;
+    }
+
+protected:
+
+    const char *name() const override { return "ATTACK3"; }
+    const char *name4() const override { return "ATK3"; }
+    float my_get_target_climb_rate();
+
+private:
+
+};
+

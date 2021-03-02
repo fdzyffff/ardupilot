@@ -241,6 +241,7 @@ public:
     friend class ModeAutorotate;
     friend class ModeAttack;
     friend class ModeAttack_att;
+    friend class ModeAttack_angle;
 
     friend class UCam;
     friend class UGround;
@@ -1025,6 +1026,7 @@ private:
 #endif
     ModeAttack mode_attack;
     ModeAttack_att mode_attack_att;
+    ModeAttack_angle mode_attack_angle;
 
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);
