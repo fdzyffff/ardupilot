@@ -44,9 +44,17 @@ void Copter::userhook_SlowLoop()
 void Copter::userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
-    if (g2.user_parameters.cam_print.get()!=0) {
-        gcs().send_text(MAV_SEVERITY_WARNING, "x:%0.0f, y:%0.0f, on:%d", Ucam.get_raw_info().x, Ucam.get_raw_info().y, Ucam.is_active());
-        gcs().send_text(MAV_SEVERITY_WARNING, "X:%0.0f, Y:%0.0f", Ucam.get_correct_info().x,Ucam.get_correct_info().y);
+    if (g2.user_parameters.cam_print.get() & (1<<0)) { // 1
+        gcs().send_text(MAV_SEVERITY_WARNING, "Raw (%0.0f,%0.0f) on:%d", Ucam.get_raw_info().x, Ucam.get_raw_info().y, Ucam.is_active());
+    }
+    if (g2.user_parameters.cam_print.get() & (1<<1)) { // 2
+        gcs().send_text(MAV_SEVERITY_WARNING, "Corr (%0.0f,%0.0f) on:%d", Ucam.get_correct_info().x,Ucam.get_correct_info().y, Ucam.is_active());
+    }
+    if (g2.user_parameters.cam_print.get() & (1<<2)) { // 4
+        gcs().send_text(MAV_SEVERITY_WARNING, "rpy (%0.1f,%0.1f,%0.1f)", Ucam.get_target_roll_angle()*0.01f, Ucam.get_target_pitch_rate()*0.01f, Ucam.get_target_yaw_rate()*0.01f);
+    }
+    if (g2.user_parameters.cam_print.get() & (1<<3)) { // 8
+        gcs().send_text(MAV_SEVERITY_WARNING, "Track Angle (%0.1f)", Ucam.get_current_angle_deg());
     }
 }
 #endif

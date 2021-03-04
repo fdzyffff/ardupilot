@@ -23,11 +23,13 @@ public:
     float get_target_pitch_rate() {return _target_pitch_rate;}
     float get_target_roll_angle() {return _target_roll_angle;}
     float get_target_yaw_rate() {return _target_yaw_rate_cds;}
+    float get_current_angle_deg() {return _current_angle_deg;}
 
 private:
     void update_target_pitch_rate();
     void update_target_roll_angle();
     void update_target_yaw_rate();
+    void update_target_track_angle();
 
     Vector2f raw_info;
     Vector2f correct_info;
@@ -36,4 +38,5 @@ private:
     float _target_pitch_rate;
     float _target_roll_angle;
     float _target_yaw_rate_cds;
+    float _current_angle_deg;
 };

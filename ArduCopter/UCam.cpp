@@ -30,6 +30,7 @@ void UCam::init()
     _target_pitch_rate = 0.0f;
     _target_yaw_rate_cds = 0.0f;
     _target_roll_angle = 0.0f;
+    _current_angle_deg = 0.0f;
 }
 
 // clear return path and set home location.  This should be called as part of the arming procedure
@@ -73,6 +74,7 @@ void UCam::update()
     update_target_pitch_rate();
     update_target_roll_angle();
     update_target_yaw_rate();
+    update_target_track_angle();
 }
 
 void UCam::update_target_pitch_rate() {
@@ -97,4 +99,8 @@ void UCam::update_target_yaw_rate() {
     float yaw_rate_tc = copter.g2.user_parameters.fly_yaw_tc;
     float yaw_rate_cds = 100.f * (x_angle * info_x / yaw_rate_tc);
     _target_yaw_rate_cds = yaw_rate_cds;
+}
+
+void UCam::update_target_track_angle() {
+    _current_angle_deg = -degrees(copter.ahrs_view->pitch) - (copter.g2.user_parameters.cam_pitch_offset)*0.01f-degrees(atanf((copter.Ucam.get_correct_info().y)/(0.5f*copter.g2.user_parameters.cam_pixel_y)*tanf(0.5f*radians(copter.g2.user_parameters.cam_angle_y))));
 }

@@ -79,7 +79,7 @@ void ModeAttack_angle::run()
 }
 
 float ModeAttack_angle::my_get_target_climb_rate() {
-    float current_angle_deg = -degrees(copter.ahrs_view->pitch) - (copter.g2.user_parameters.cam_pitch_offset)*0.01f-degrees(atanf((copter.Ucam.get_correct_info().y)/(0.5f*copter.g2.user_parameters.cam_pixel_y)*tanf(0.5f*copter.g2.user_parameters.cam_angle_y)));
+    float current_angle_deg = copter.Ucam.get_current_angle_deg();
     float target_angle_deg = copter.g2.user_parameters.fly_attack_angle*0.01f;
     float climb_rate_factor = copter.g2.user_parameters.fly_climb_factor;
     float pitch_scalar = copter.g2.user_parameters.fly_pitch_scalar*constrain_float(fabsf(degrees(copter.ahrs_view->pitch)*100.f/copter.g2.user_parameters.fly_pitch_limit.get()), 0.3f, 1.0f);

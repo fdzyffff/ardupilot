@@ -463,6 +463,10 @@ struct PACKED log_UCamTarget {
     float target_raw_y;
     float target_corr_x;
     float target_corr_y;
+    float target_roll_angle;
+    float target_pitch_rate;
+    float target_yaw_rate;
+    float target_track_angle;
 };
 
 // Write a Guided mode target
@@ -470,12 +474,16 @@ void Copter::Ugcs_Log_Write_UCamTarget()
 {
     struct log_UCamTarget pkt = {
         LOG_PACKET_HEADER_INIT(LOG_UCAMTARGET_MSG),
-        time_us         : AP_HAL::micros64(),
-        target_valid    : (uint8_t)Ucam.is_active(),
-        target_raw_x    : Ucam.get_raw_info().x,
-        target_raw_y    : Ucam.get_raw_info().y,
-        target_corr_x   : Ucam.get_correct_info().x,
-        target_corr_y   : Ucam.get_correct_info().y
+        time_us            : AP_HAL::micros64(),
+        target_valid       : (uint8_t)Ucam.is_active(),
+        target_raw_x       : Ucam.get_raw_info().x,
+        target_raw_y       : Ucam.get_raw_info().y,
+        target_corr_x      : Ucam.get_correct_info().x,
+        target_corr_y      : Ucam.get_correct_info().y,
+        target_roll_angle  : Ucam.get_target_roll_angle()*0.01f,
+        target_pitch_rate  : Ucam.get_target_pitch_rate()*0.01f,
+        target_yaw_rate    : Ucam.get_target_yaw_rate()*0.01f,
+        target_track_angle : Ucam.get_current_angle_deg()
     };
     logger.WriteBlock(&pkt, sizeof(pkt));
 }
@@ -516,7 +524,7 @@ const struct LogStructure Copter::log_structure[] = {
     { LOG_GUIDEDTARGET_MSG, sizeof(log_GuidedTarget),
       "GUID",  "QBffffff",    "TimeUS,Type,pX,pY,pZ,vX,vY,vZ", "s-mmmnnn", "F-000000" },
     { LOG_UCAMTARGET_MSG, sizeof(log_UCamTarget),
-      "UCAM",  "QBffff", "TimeUS,AON,FrawX,FrawY,FcorrX,FcorrY", "s-----", "F-----" },
+      "UCAM",  "QBffffffff", "TimeUS,AON,FrawX,FrawY,FcorrX,FcorrY,Rangle,Prate,Yrate,Track", "s---------", "F---------" },
 };
 
 void Copter::Log_Write_Vehicle_Startup_Messages()
