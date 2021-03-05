@@ -393,13 +393,13 @@ Location Plane::test_HB1_generate_wp() {
     Vector3f tmp_xyz = Vector3f(0.0f, 0.0f, alt);
     switch (index_loc) {
         case 0 :
-            tmp_xyz = Vector3f(20000.0f, 0.0f, alt);
+            tmp_xyz = Vector3f(100000.0f, 0.0f, alt);
             break;
         case 1 :
-            tmp_xyz = Vector3f(0.0f, 20000.0f, alt);
+            tmp_xyz = Vector3f(0.0f, 100000.0f, alt);
             break;
         default:
-            tmp_xyz = Vector3f(20000.0f * (float)index_loc, 20000.0f * (float)index_loc, alt);
+            tmp_xyz = Vector3f(100000.0f * (float)index_loc, 100000.0f * (float)index_loc, alt);
             break;
     }
     index_loc++;
@@ -413,13 +413,13 @@ Location Plane::test_HB1_generate_interim_attack() {
     Vector3f tmp_xyz = Vector3f(0.0f, 0.0f, alt);
     switch (index_loc) {
         case 0 :
-            tmp_xyz = Vector3f(-20000.0f, 0.0f, alt);
+            tmp_xyz = Vector3f(-100000.0f, 0.0f, alt);
             break;
         case 1 :
-            tmp_xyz = Vector3f(0.0f, -20000.0f, alt);
+            tmp_xyz = Vector3f(0.0f, -100000.0f, alt);
             break;
         default:
-            tmp_xyz = Vector3f(-20000.0f * (float)index_loc, -20000.0f * (float)index_loc, alt);
+            tmp_xyz = Vector3f(-100000.0f * (float)index_loc, -100000.0f * (float)index_loc, alt);
             break;
     }
     index_loc++;

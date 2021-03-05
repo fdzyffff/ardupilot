@@ -148,6 +148,7 @@ public:
         k_LED_neopixel3         = 122,
         k_LED_neopixel4         = 123,
         k_throttle_HB1          = 124,
+        k_launcher_HB1          = 125,
         k_nr_aux_servo_functions         ///< This must be the last enum value (only add new values _before_ this one)
     } Aux_servo_function_t;
 

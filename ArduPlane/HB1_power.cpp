@@ -139,6 +139,7 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force
             relay.off(2);
             relay.off(3);
             break;
+            SRV_Channels::set_output_pwm(SRV_Channel::k_launcher_HB1, 1100);
         case HB1_PowerAction_RocketON:
             gcs().send_text(MAV_SEVERITY_INFO, "Rocket ON");
             relay.on(0);
@@ -146,6 +147,7 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force
             relay.off(2);
             relay.off(3);
             HB1_Status.already_takeoff = true;
+            SRV_Channels::set_output_pwm(SRV_Channel::k_launcher_HB1, 1900);
             break;
         case HB1_PowerAction_GROUND_RocketON:
             gcs().send_text(MAV_SEVERITY_INFO, "G Rocket ON");
