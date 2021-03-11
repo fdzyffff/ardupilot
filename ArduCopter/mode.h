@@ -36,7 +36,7 @@ public:
         ZIGZAG    =    24,  // ZIGZAG mode is able to fly in a zigzag manner with predefined point A and point B
         SYSTEMID  =    25,  // System ID mode produces automated system identification signals in the controllers
         AUTOROTATE =   26,  // Autonomous autorotation
-        ATTACK     =   27,  // Attack
+        LOCKON     =   27,  // Lock on
         ATTACK_ATT =   28,  // Attack
         ATTACK_ANGLE = 29,  // Attack
         //AUTOROTATE =   28,  // Attack
@@ -1471,7 +1471,7 @@ private:
 #endif
 
 
-class ModeAttack : public Mode {
+class ModeLockon : public Mode {
 
 public:
     // inherit constructor
@@ -1480,9 +1480,9 @@ public:
     bool init(bool ignore_checks) override;
     void run() override;
 
-    bool requires_GPS() const override { return false; }
+    bool requires_GPS() const override { return true; }
     bool has_manual_throttle() const override { return false; }
-    bool allows_arming(bool from_gcs) const override { return true; };
+    bool allows_arming(bool from_gcs) const override { return false; };
     bool is_autopilot() const override { return false; }
     bool has_user_takeoff(bool must_navigate) const override {
         return !must_navigate;
@@ -1490,10 +1490,11 @@ public:
 
 protected:
 
-    const char *name() const override { return "ATTACK"; }
-    const char *name4() const override { return "ATAK"; }
-    float my_get_target_climb_rate();
+    const char *name() const override { return "LOCKON"; }
+    const char *name4() const override { return "LOCK"; }
 
+    uint32_t wp_distance() const override;
+    int32_t wp_bearing() const override;
 private:
 
 };

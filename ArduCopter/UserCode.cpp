@@ -21,7 +21,6 @@ void Copter::userhook_50Hz()
     // put your 50Hz code here
     Ucam.update();
     Ugcs.update();
-    Ugcs_state_update();
 }
 #endif
 
@@ -64,7 +63,7 @@ void Copter::userhook_auxSwitch1(uint8_t ch_flag)
 {
     // put your aux switch #1 handler here (CHx_OPT = 47)
     if (ch_flag == 2) {
-        copter.set_mode(Mode::Number::ATTACK, ModeReason::UNKNOWN);
+        copter.set_mode(Mode::Number::ATTACK_ANGLE, ModeReason::UNKNOWN);
     } else {
         copter.set_mode(Mode::Number::STABILIZE, ModeReason::UNKNOWN);
     }

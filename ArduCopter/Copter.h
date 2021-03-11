@@ -239,7 +239,7 @@ public:
     friend class ModeThrow;
     friend class ModeZigZag;
     friend class ModeAutorotate;
-    friend class ModeAttack;
+    friend class ModeLockon;
     friend class ModeAttack_att;
     friend class ModeAttack_angle;
 
@@ -936,13 +936,20 @@ private:
     UCam Ucam;
     UGround Ugcs;
     void Ugcs_handel_msg();
-    void Ugcs_state_update();
-    void Ugcs_do_takeoff(); // takeoff
-    void Ugcs_do_cruise();  // fly and search
-    void Ugcs_do_lockon();  // lock on target
-    void Ugcs_do_search();   // stand by and look around
-    void Ugcs_do_attack();
+    bool Ugcs_do_takeoff(); // takeoff
+    bool Ugcs_do_fly();     // fly
+    bool Ugcs_do_standby(); // standby
+    bool Ugcs_do_cruise();  // fly and search
+    bool Ugcs_do_assemble();  // assemble
+    bool Ugcs_do_lockon();  // lock on target
+    bool Ugcs_do_attack();
+    bool Ugcs_do_fs1();     // failsafe type1
     void Ugcs_Log_Write_UCamTarget();
+    void Ugcs_handle_msg(const mavlink_message_t &msg);
+
+    int32_t Ugcs_get_terrain_alt();
+    int32_t Ugcs_get_relative_alt();
+    Vector3f Ugcs_get_velocity_NED();
 
 #if OSD_ENABLED == ENABLED
     void publish_osd_info();
@@ -1024,7 +1031,7 @@ private:
 #if MODE_AUTOROTATE_ENABLED == ENABLED
     ModeAutorotate mode_autorotate;
 #endif
-    ModeAttack mode_attack;
+    ModeLockon mode_lockon;
     ModeAttack_att mode_attack_att;
     ModeAttack_angle mode_attack_angle;
 

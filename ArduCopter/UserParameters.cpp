@@ -18,18 +18,20 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
 
     AP_GROUPINFO("_GCS_TIMEOUT"     , 9 , UserParameters, gcs_time_out, 500),
     AP_GROUPINFO("_GCS_PRINT"       , 10, UserParameters, gcs_print, 0),
+    AP_GROUPINFO("_GCS_NCRUISE"     , 11, UserParameters, gcs_num_cruise, 2),
+    AP_GROUPINFO("_GCS_GROUP_Y"     , 12, UserParameters, gcs_group_yaw, 90.f),
 
-    AP_GROUPINFO("_YAW_TC"          , 11, UserParameters, fly_yaw_tc, 2.0f),
-    AP_GROUPINFO("_P_LIMIT"         , 12, UserParameters, fly_pitch_limit, 3000.0f),
-    AP_GROUPINFO("_R_LIMIT"         , 13, UserParameters, fly_roll_limit, 1500.0f),
-    AP_GROUPINFO("_R_FACTOR"        , 14, UserParameters, fly_roll_factor, 1.0f),
-    AP_GROUPINFO("_H_PSCALAR"       , 15, UserParameters, fly_pitch_scalar, 1.0f),
-    AP_GROUPINFO("_H_CFACTOR"       , 16, UserParameters, fly_climb_factor, 1.0f),
-    AP_GROUPINFO("_H_COFFSET"       , 17, UserParameters, fly_climb_rate_offset, 0.0f),
+    AP_GROUPINFO("_YAW_TC"          , 13, UserParameters, fly_yaw_tc, 2.0f),
+    AP_GROUPINFO("_P_LIMIT"         , 14, UserParameters, fly_pitch_limit, 3000.0f),
+    AP_GROUPINFO("_R_LIMIT"         , 15, UserParameters, fly_roll_limit, 1500.0f),
+    AP_GROUPINFO("_R_FACTOR"        , 16, UserParameters, fly_roll_factor, 1.0f),
+    AP_GROUPINFO("_H_PSCALAR"       , 17, UserParameters, fly_pitch_scalar, 1.0f),
+    AP_GROUPINFO("_H_CFACTOR"       , 18, UserParameters, fly_climb_factor, 1.0f),
+    AP_GROUPINFO("_H_COFFSET"       , 19, UserParameters, fly_climb_rate_offset, 0.0f),
 
-    AP_GROUPINFO("_ATK_ANGLE"       , 18, UserParameters, fly_attack_angle, 2000.0f),
+    AP_GROUPINFO("_ATK_ANGLE"       , 20, UserParameters, fly_attack_angle, 2000.0f),
 
-    AP_SUBGROUPINFO(Ucam_pid, "_PITCH_", 19, UserParameters, AC_PID),
+    AP_SUBGROUPINFO(Ucam_pid, "_PITCH_", 21, UserParameters, AC_PID),
 
     AP_GROUPEND
 };

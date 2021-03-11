@@ -35,6 +35,7 @@ private:
     Vector2f correct_info;
     bool _active;
     uint32_t _last_update_ms;
+    int16_t _n_count;
     float _target_pitch_rate;
     float _target_roll_angle;
     float _target_yaw_rate_cds;

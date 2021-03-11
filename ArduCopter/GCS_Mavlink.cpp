@@ -290,6 +290,40 @@ bool GCS_MAVLINK_Copter::try_send_message(enum ap_message id)
         break;
     }
 
+    case MSG_ATTITUDE: 
+    {
+        CHECK_PAYLOAD_SIZE(COMMAND_LONG);
+        mavlink_msg_command_long_send(
+            chan,
+            0,
+            0,
+            MAV_CMD_USER_3,
+            0,
+            (float)copter.Ucam.is_active(),
+            copter.Ucam.get_raw_info().x, 
+            copter.Ucam.get_raw_info().y, 
+            (float)copter.Ugcs.get_state_num(),
+            (float)copter.Ugcs.get_distance(), 
+            0, 0);
+        GCS_MAVLINK::try_send_message(id);
+        break;
+    }
+
+    case MSG_LOCATION:
+        CHECK_PAYLOAD_SIZE(GLOBAL_POSITION_INT);
+        mavlink_msg_global_position_int_send(
+            chan,
+            AP_HAL::millis(),
+            copter.current_loc.lat,                 // in 1E7 degrees
+            copter.current_loc.lng,                 // in 1E7 degrees
+            copter.Ugcs_get_terrain_alt(),          // millimeters above ground/sea level
+            copter.Ugcs_get_relative_alt(),         // millimeters above home
+            copter.Ugcs_get_velocity_NED().x*100.f, // X speed cm/s (+ve North)
+            copter.Ugcs_get_velocity_NED().y*100.f, // Y speed cm/s (+ve East)
+            copter.Ugcs_get_velocity_NED().z*100.f, // Z speed cm/s (+ve Down)
+            copter.ahrs.yaw_sensor);                // compass heading in 1/100 degree
+    break;
+
     default:
         return GCS_MAVLINK::try_send_message(id);
     }
@@ -502,7 +536,8 @@ void GCS_MAVLINK_Copter::packetReceived(const mavlink_status_t &status,
 #endif
 #if MODE_FOLLOW_ENABLED == ENABLED
     // pass message to follow library
-    copter.g2.follow.handle_msg(msg);
+    //copter.g2.follow.handle_msg(msg);
+    copter.Ugcs_handle_msg(msg);
 #endif
     GCS_MAVLINK::packetReceived(status, msg);
 }
@@ -862,6 +897,11 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_
 
     case MAV_CMD_USER_1: {
         copter.Ucam.handle_info(packet.param1, packet.param2, ((int16_t)packet.param3!=0));
+        return MAV_RESULT_ACCEPTED;
+    }
+
+    case MAV_CMD_USER_2: {
+        copter.Ugcs.handle_info((int16_t)packet.param1, (int16_t)packet.param2, (int16_t)packet.param3, (int16_t)packet.param4);
         return MAV_RESULT_ACCEPTED;
     }
 

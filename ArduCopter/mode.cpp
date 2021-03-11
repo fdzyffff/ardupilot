@@ -170,8 +170,8 @@ Mode *Copter::mode_from_mode_num(const Mode::Number mode)
             ret = &mode_autorotate;
             break;
 #endif
-        case Mode::Number::ATTACK:
-            ret = &mode_attack;
+        case Mode::Number::LOCKON:
+            ret = &mode_lockon;
             break;
         case Mode::Number::ATTACK_ATT:
             ret = &mode_attack_att;

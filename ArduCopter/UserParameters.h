@@ -23,6 +23,8 @@ public:
 
     AP_Int32 gcs_time_out;
     AP_Int32 gcs_print;
+    AP_Int16 gcs_num_cruise;
+    AP_Float gcs_group_yaw;
 
 	AP_Float fly_yaw_tc;
     AP_Float fly_pitch_limit;

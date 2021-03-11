@@ -31,12 +31,16 @@ void UCam::init()
     _target_yaw_rate_cds = 0.0f;
     _target_roll_angle = 0.0f;
     _current_angle_deg = 0.0f;
+    _n_count = 0;
 }
 
 // clear return path and set home location.  This should be called as part of the arming procedure
 void UCam::handle_info(float input_x, float input_y, bool valid)
 {
-    if (!valid) {return;}
+    if (!valid) {
+        _n_count = 0;
+        return;
+    }
     raw_info.x = input_x;
     raw_info.y = input_y;
     Matrix3f tmp_m;
@@ -50,6 +54,9 @@ void UCam::handle_info(float input_x, float input_y, bool valid)
     correct_info.x = tmp_output.y;
     correct_info.y = -tmp_output.z;
     _last_update_ms = millis();
+    if (!_active) {
+        _n_count += 1;
+    }
 }
 
 // update
@@ -58,9 +65,12 @@ void UCam::update()
     const uint32_t now = millis();
     uint32_t _time_out = (uint32_t)copter.g2.user_parameters.cam_time_out.get();
     if ( _time_out!=0 && ((now - _last_update_ms) > _time_out) ) {
+        _n_count = 0;
         _active = false;
-    } else {
+    } else if (_n_count > 10) {
         _active = true;
+    } else {
+        _active = false;
     }
 
     if (!_active) {
