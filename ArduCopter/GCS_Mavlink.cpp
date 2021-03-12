@@ -299,9 +299,9 @@ bool GCS_MAVLINK_Copter::try_send_message(enum ap_message id)
             0,
             MAV_CMD_USER_3,
             0,
-            (float)copter.Ucam.is_active(),
-            copter.Ucam.get_raw_info().x, 
-            copter.Ucam.get_raw_info().y, 
+            copter.Ucam.is_active()?(copter.Ugcs.is_lockon()?2.0f:1.0f):0.0f,
+            copter.Ucam.is_active()?copter.Ucam.get_raw_info().x:0.0f, 
+            copter.Ucam.is_active()?copter.Ucam.get_raw_info().y:0.0f, 
             (float)copter.Ugcs.get_state_num(),
             (float)copter.Ugcs.get_distance(), 
             0, 0);
