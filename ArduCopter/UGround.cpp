@@ -57,7 +57,9 @@ void UGround::do_cmd(int16_t cmd, bool force_set) {
             set_state(UGCS_Fly, force_set);
             break;
         case 4:
-            set_state(UGCS_Curise, force_set);
+            if (!is_leader()) {
+                set_state(UGCS_Assemble, force_set);
+            }
             break;
         case 5:
             if (!is_leader()) {
@@ -173,6 +175,7 @@ void UGround::state_update()
         case UGCS_Assemble:
         {
             if (!is_leader()) {
+                //copter.mode_guided.set_destination(_dest_loc_vec, true, _dest_yaw_cd, false, 0.0f, false);
                 if (copter.flightmode->wp_distance() < 100.f) {
                     set_state(UGCS_Lockon);
                     _state_timer_ms = 300000;
@@ -296,14 +299,15 @@ int16_t UGround::get_state_num() {
                 ret = 1;
                 break;
             case UGCS_Fly:
+            case UGCS_Standby1:
                 ret = 2;
                 break;
             case UGCS_Standby2:
             case UGCS_Curise:
                 ret = 4;
                 break;
-            case UGCS_Assemble:
             case UGCS_Lockon:
+            case UGCS_Assemble:
                 ret = 5;
                 break;
             case UGCS_Attack:
