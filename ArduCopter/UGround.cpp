@@ -34,6 +34,7 @@ void UGround::init()
     _dest_loc_vec.zero();
     _dest_vel_vec.zero();
     _dest_yaw_cd = 0.0f;
+    _offset_position.zero();
 }
 
 void UGround::handle_info(int16_t cmd, int16_t group_id, int16_t distance, int16_t free)
@@ -53,15 +54,20 @@ void UGround::do_cmd(int16_t cmd, bool force_set) {
             set_state(UGCS_Takeoff);
             break;
         case 3:
-            set_state(UGCS_Curise, force_set);
+            set_state(UGCS_Fly, force_set);
             break;
         case 4:
-            set_state(UGCS_Assemble, force_set);
+            set_state(UGCS_Curise, force_set);
             break;
         case 5:
-            set_state(UGCS_Attack);
+            if (!is_leader()) {
+                set_state(UGCS_Assemble, force_set);
+            }
             break;
         case 6:
+            set_state(UGCS_Attack);
+            break;
+        case 7:
             set_state(UGCS_FS1);
             break;
         default:
@@ -75,13 +81,13 @@ void UGround::refresh_cmd() {
 }
 
 void UGround::set_up_offset(int8_t sender_id, Vector3f target_postion, Vector3f target_velocity, float target_heading) {
-    Vector3f offset_position = Vector3f(0.0f, 0.0f, 0.0f);
+    _offset_position.zero();
     switch (_group_id) {
         case 1:
-            offset_position = my_group1.get_offset(copter.g.sysid_this_mav, sender_id);
+            _offset_position = my_group1.get_offset(copter.g.sysid_this_mav, sender_id);
             break;
         case 2:
-            offset_position = my_group2.get_offset(copter.g.sysid_this_mav, sender_id);
+            _offset_position = my_group2.get_offset(copter.g.sysid_this_mav, sender_id);
             break;
         default:
             break;
@@ -89,9 +95,9 @@ void UGround::set_up_offset(int8_t sender_id, Vector3f target_postion, Vector3f 
 
     Matrix3f tmp_m;
     tmp_m.from_euler(0.0f, 0.0f, radians(copter.g2.user_parameters.gcs_group_yaw));
-    offset_position = tmp_m*offset_position;
+    _offset_position = tmp_m*_offset_position;
 
-    _dest_loc_vec = target_postion + offset_position;
+    _dest_loc_vec = target_postion + _offset_position;
     _dest_vel_vec = target_velocity;
     _dest_yaw_cd = target_heading*100.f;
 }
@@ -123,14 +129,14 @@ void UGround::state_update()
         {
             if ( (copter.control_mode == Mode::Number::GUIDED) && (copter.mode_guided.mode() == Guided_WP) && timer>_state_timer_ms) {
                 set_state(UGCS_Standby1);
-                _state_timer_ms = 3000;
+                _state_timer_ms = 300000;
             }
             break;
         }
         case UGCS_Standby1:
         {
             if (timer>_state_timer_ms) {
-                set_state(UGCS_Fly);
+                set_state(UGCS_FS1);
             }
             break;
         }
@@ -142,7 +148,7 @@ void UGround::state_update()
                     _state_timer_ms = 300000;
                 }
             } else {
-                copter.mode_guided.set_destination_posvel(_dest_loc_vec, _dest_vel_vec, true, _dest_yaw_cd, false, 0.0f, false);
+                ;//copter.mode_guided.set_destination_posvel(_dest_loc_vec, _dest_vel_vec, true, _dest_yaw_cd, false, 0.0f, false);
             }
             break;
         }
@@ -160,14 +166,14 @@ void UGround::state_update()
                 _state_timer_ms = 300000;
             }
             if (!is_leader()) {
-                copter.mode_guided.set_destination_posvel(_dest_loc_vec, _dest_vel_vec, true, _dest_yaw_cd, false, 0.0f, false);
+                ;//copter.mode_guided.set_destination_posvel(_dest_loc_vec, _dest_vel_vec, true, _dest_yaw_cd, false, 0.0f, false);
             }
             break;
         }
         case UGCS_Assemble:
         {
             if (!is_leader()) {
-                copter.mode_guided.set_destination(_dest_loc_vec, true, _dest_yaw_cd, false, 0.0f, false);
+                ;//copter.mode_guided.set_destination(_dest_loc_vec, true, _dest_yaw_cd, false, 0.0f, false);
             }
             if (copter.flightmode->wp_distance() < 100.f) {
                 set_state(UGCS_Lockon);
@@ -209,7 +215,7 @@ void UGround::set_state(UGCS_state_t new_state, bool force_set)
             ret = true;
             break;
         case UGCS_Takeoff:
-            ret = (copter.arming.arm(AP_Arming::Method::MAVLINK) && copter.Ugcs_do_takeoff());
+            ret = copter.Ugcs_do_takeoff();
             _state_timer_ms = 1000;
             break;
         case UGCS_Fly:
@@ -287,22 +293,26 @@ int16_t UGround::get_state_num() {
                 ret = 0;
                 break;
             case UGCS_Takeoff:
+            case UGCS_Standby1:
                 ret = 1;
                 break;
             case UGCS_Fly:
-            case UGCS_Standby1:
-            case UGCS_Curise:
-            case UGCS_Assemble:
-            case UGCS_Lockon:
                 ret = 2;
                 break;
             case UGCS_Standby2:
+            case UGCS_Curise:
                 ret = 4;
                 break;
-            case UGCS_Attack:
+            case UGCS_Assemble:
+            case UGCS_Lockon:
                 ret = 5;
                 break;
+            case UGCS_Attack:
+                ret = 6;
+                break;
             case UGCS_FS1:
+                ret = 7;
+                break;
             default:
                 break;
         }
@@ -312,20 +322,24 @@ int16_t UGround::get_state_num() {
                 ret = 0;
                 break;
             case UGCS_Takeoff:
+            case UGCS_Standby1:
                 ret = 1;
                 break;
             case UGCS_Fly:
-            case UGCS_Standby1:
             case UGCS_Standby2:
             case UGCS_Curise:
-            case UGCS_Assemble:
-            case UGCS_Lockon:
                 ret = 3;
                 break;
-            case UGCS_Attack:
+            case UGCS_Assemble:
+            case UGCS_Lockon:
                 ret = 5;
                 break;
+            case UGCS_Attack:
+                ret = 6;
+                break;
             case UGCS_FS1:
+                ret = 7;
+                break;
             default:
                 break;
         }
@@ -335,11 +349,10 @@ int16_t UGround::get_state_num() {
 
 bool Copter::Ugcs_do_takeoff() // takeoff
 {
-    if (set_mode(Mode::Number::GUIDED, ModeReason::TOY_MODE)) {
-        mode_guided.do_user_takeoff(constrain_float(g.pilot_takeoff_alt,0.0f,1000.0f),true);
-        return true;
-    }
-    return false;
+    return (set_mode(Mode::Number::GUIDED, ModeReason::TOY_MODE) 
+            && copter.arming.arm(AP_Arming::Method::MAVLINK)
+            && set_mode(Mode::Number::GUIDED, ModeReason::TOY_MODE)
+            && mode_guided.do_user_takeoff(constrain_float(g.pilot_takeoff_alt,0.0f,1000.0f),true)) ;
 }
 
 bool Copter::Ugcs_do_fly()     // fly
@@ -350,7 +363,7 @@ bool Copter::Ugcs_do_fly()     // fly
             return true;
         }
     } else {
-        return set_mode(Mode::Number::GUIDED, ModeReason::TOY_MODE);
+        return set_mode(Mode::Number::FOLLOW, ModeReason::TOY_MODE);
     }
     return false;
 }
@@ -369,7 +382,7 @@ bool Copter::Ugcs_do_cruise()  // fly and search
             return true;
         }
     } else {
-        return set_mode(Mode::Number::GUIDED, ModeReason::TOY_MODE);
+        return set_mode(Mode::Number::FOLLOW, ModeReason::TOY_MODE);
     }
     return false;
 }
@@ -379,7 +392,7 @@ bool Copter::Ugcs_do_assemble()  // assemble
     if (Ugcs.is_leader()) {
         return set_mode(Mode::Number::LOCKON, ModeReason::TOY_MODE);;
     } else {
-        return set_mode(Mode::Number::GUIDED, ModeReason::TOY_MODE);
+        return set_mode(Mode::Number::FOLLOW, ModeReason::TOY_MODE);
     }
     return false;
 }
@@ -400,7 +413,7 @@ bool Copter::Ugcs_do_attack()
 
 bool Copter::Ugcs_do_fs1()     // failsafe type1
 {
-    bool ret = set_mode(Mode::Number::RTL, ModeReason::TOY_MODE);
+    bool ret = set_mode(Mode::Number::LAND, ModeReason::TOY_MODE);
     if (!ret) {
         set_mode(Mode::Number::LAND, ModeReason::TOY_MODE);
     }
@@ -463,6 +476,8 @@ void Copter::Ugcs_handle_msg(const mavlink_message_t &msg) {
             _target_postion_ned.z = (float)(packet.relative_alt / 10);
         }
         Ugcs.set_up_offset(msg.sysid, _target_postion_ned, _target_velocity_ned, _target_heading);
+        g2.follow.set_offset(Ugcs.get_offset_position()*0.01f);
+        g2.follow.handle_msg(msg, Ugcs.get_dest_loc_vec().z);
     }
 }
 

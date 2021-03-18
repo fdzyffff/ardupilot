@@ -292,6 +292,11 @@ bool GCS_MAVLINK_Copter::try_send_message(enum ap_message id)
 
     case MSG_ATTITUDE: 
     {
+        GCS_MAVLINK::try_send_message(id);
+        break;
+    }
+
+    case MSG_LOCATION:
         CHECK_PAYLOAD_SIZE(COMMAND_LONG);
         mavlink_msg_command_long_send(
             chan,
@@ -299,17 +304,12 @@ bool GCS_MAVLINK_Copter::try_send_message(enum ap_message id)
             0,
             MAV_CMD_USER_3,
             0,
-            (float)copter.Ucam.is_active(),
-            copter.Ucam.get_raw_info().x, 
-            copter.Ucam.get_raw_info().y, 
+            (float)copter.Ucam.is_active()?(copter.Ugcs.is_lockon()?2.0f:1.0f):0.0f,
+            copter.Ucam.is_active()?copter.Ucam.get_raw_info().x:0.0f, 
+            copter.Ucam.is_active()?copter.Ucam.get_raw_info().y:0.0f, 
             (float)copter.Ugcs.get_state_num(),
             (float)copter.Ugcs.get_distance(), 
             0, 0);
-        GCS_MAVLINK::try_send_message(id);
-        break;
-    }
-
-    case MSG_LOCATION:
         CHECK_PAYLOAD_SIZE(GLOBAL_POSITION_INT);
         mavlink_msg_global_position_int_send(
             chan,
@@ -324,6 +324,9 @@ bool GCS_MAVLINK_Copter::try_send_message(enum ap_message id)
             copter.ahrs.yaw_sensor);                // compass heading in 1/100 degree
     break;
 
+    case MSG_HEARTBEAT:
+        GCS_MAVLINK::try_send_message(id);
+        break;
     default:
         return GCS_MAVLINK::try_send_message(id);
     }

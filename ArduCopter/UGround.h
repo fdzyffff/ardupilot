@@ -39,8 +39,11 @@ public:
 
     bool is_leader() {return _is_leader;}
     void is_leader(bool b) {_is_leader = b;}
+    bool is_lockon() {return (_state == UGCS_Lockon);}
     float get_distance() {return _distance;}
     int16_t get_group_id() {return _group_id;}
+    Vector3f get_offset_position() {return _offset_position;}
+    Vector3f get_dest_loc_vec() {return _dest_loc_vec;}
 
     void set_up_offset(int8_t sender_id, Vector3f target_postion, Vector3f target_velocity, float target_heading);
 
@@ -58,6 +61,7 @@ private:
     Vector2f correct_info;
     Vector3f _dest_loc_vec;
     Vector3f _dest_vel_vec;
+    Vector3f _offset_position;
     float _dest_yaw_cd;
     float _distance;
     bool _active;
