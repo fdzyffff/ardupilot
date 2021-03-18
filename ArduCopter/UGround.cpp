@@ -173,11 +173,10 @@ void UGround::state_update()
         case UGCS_Assemble:
         {
             if (!is_leader()) {
-                ;//copter.mode_guided.set_destination(_dest_loc_vec, true, _dest_yaw_cd, false, 0.0f, false);
-            }
-            if (copter.flightmode->wp_distance() < 100.f) {
-                set_state(UGCS_Lockon);
-                _state_timer_ms = 300000;
+                if (copter.flightmode->wp_distance() < 100.f) {
+                    set_state(UGCS_Lockon);
+                    _state_timer_ms = 300000;
+                }
             }
             break;
         }
