@@ -57,13 +57,15 @@ void UGround::do_cmd(int16_t cmd, bool force_set) {
             set_state(UGCS_Fly, force_set);
             break;
         case 4:
-            if (!is_leader()) {
-                set_state(UGCS_Assemble, force_set);
-            }
+            set_state(UGCS_Curise, force_set);
             break;
         case 5:
             if (!is_leader()) {
-                set_state(UGCS_Assemble, force_set);
+                if (!is_lockon()) {
+                    set_state(UGCS_Assemble, force_set);
+                }
+            } else {
+                set_state(UGCS_Lockon, force_set);
             }
             break;
         case 6:
@@ -131,7 +133,7 @@ void UGround::state_update()
         {
             if ( (copter.control_mode == Mode::Number::GUIDED) && (copter.mode_guided.mode() == Guided_WP) && timer>_state_timer_ms) {
                 set_state(UGCS_Standby1);
-                _state_timer_ms = 300000;
+                _state_timer_ms = 3000000;
             }
             break;
         }
@@ -147,7 +149,7 @@ void UGround::state_update()
             if (is_leader()){
                 if ((copter.mode_auto.mission.get_current_nav_index() > copter.g2.user_parameters.gcs_num_cruise) ) {
                     set_state(UGCS_Standby2);
-                    _state_timer_ms = 300000;
+                    _state_timer_ms = 3000000;
                 }
             } else {
                 ;//copter.mode_guided.set_destination_posvel(_dest_loc_vec, _dest_vel_vec, true, _dest_yaw_cd, false, 0.0f, false);
@@ -299,7 +301,6 @@ int16_t UGround::get_state_num() {
                 ret = 1;
                 break;
             case UGCS_Fly:
-            case UGCS_Standby1:
                 ret = 2;
                 break;
             case UGCS_Standby2:
@@ -427,8 +428,8 @@ void Copter::Ugcs_handle_msg(const mavlink_message_t &msg) {
     if (msg.sysid == 233) { return; }
 
     Location _target_location;      // last known location of target
-    Vector3f _target_velocity_ned;  // last known velocity of target in NED frame in m/s
-    Vector3f _target_postion_ned;
+    Vector3f _target_velocity_neu;  // last known velocity of target in NED frame in m/s
+    Vector3f _target_postion_neu;
     float _target_heading = 0.0f;          // heading in degrees
 
     if (msg.msgid == MAVLINK_MSG_ID_GLOBAL_POSITION_INT) {
@@ -452,9 +453,9 @@ void Copter::Ugcs_handle_msg(const mavlink_message_t &msg) {
         _target_location.alt = packet.relative_alt / 10;        // convert millimeters to cm
         _target_location.relative_alt = 1;                // set relative_alt flag
 
-        _target_velocity_ned.x = packet.vx * 0.01f; // velocity north
-        _target_velocity_ned.y = packet.vy * 0.01f; // velocity east
-        _target_velocity_ned.z = 0.0f;//packet.vz * 0.01f; // velocity down
+        _target_velocity_neu.x = packet.vx * 0.01f; // velocity north
+        _target_velocity_neu.y = packet.vy * 0.01f; // velocity east
+        _target_velocity_neu.z = 0.0f;//packet.vz * 0.01f; // velocity down
 
         if (packet.hdg <= 36000) {                  // heading (UINT16_MAX if unknown)
             _target_heading = packet.hdg * 0.01f;   // convert centi-degrees to degrees
@@ -468,19 +469,19 @@ void Copter::Ugcs_handle_msg(const mavlink_message_t &msg) {
 
         Vector2f res_vec;
         if (!_target_location.get_vector_xy_from_origin_NE(res_vec)) {return;}
-        _target_postion_ned.x = res_vec.x;
-        _target_postion_ned.y = res_vec.y;
+        _target_postion_neu.x = res_vec.x;
+        _target_postion_neu.y = res_vec.y;
         if (packet.alt > 0 && rangefinder_alt_ok() ) {
             float rng_offset = Ugcs_get_relative_alt()*0.1f - rangefinder_state.alt_cm;
-            _target_postion_ned.z = rng_offset + (float)(packet.alt/10);
+            _target_postion_neu.z = rng_offset + (float)(packet.alt/10);
 
-            //copter.gcs().send_text(MAV_SEVERITY_WARNING, "Z: %0.2f",_target_postion_ned.z);
+            //copter.gcs().send_text(MAV_SEVERITY_WARNING, "Z: %0.2f",_target_postion_neu.z);
         } else {
-            _target_postion_ned.z = (float)(packet.relative_alt / 10);
+            _target_postion_neu.z = (float)(packet.relative_alt / 10);
         }
-        Ugcs.set_up_offset(msg.sysid, _target_postion_ned, _target_velocity_ned, _target_heading);
+        Ugcs.set_up_offset(msg.sysid, _target_postion_neu, _target_velocity_neu, _target_heading);
         g2.follow.set_offset(Ugcs.get_offset_position()*0.01f);
-        g2.follow.handle_msg(msg, Ugcs.get_dest_loc_vec().z);
+        g2.follow.handle_msg(msg, (int32_t)Ugcs.get_dest_loc_vec().z);
     }
 }
 

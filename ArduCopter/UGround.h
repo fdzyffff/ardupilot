@@ -34,7 +34,6 @@ public:
     void set_state(UGCS_state_t new_state, bool force_set = false);
     void refresh_cmd();
 
-    bool is_lockon() {return (_state == UGCS_Lockon);}
     UGCS_state_t get_state() {return _state;}
     void update();
     void state_update();
