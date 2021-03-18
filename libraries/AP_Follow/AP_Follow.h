@@ -76,6 +76,8 @@ public:
     // parse mavlink messages which may hold target's position, velocity and attitude
     void handle_msg(const mavlink_message_t &msg);
 
+    // parse mavlink messages which may hold target's position, velocity and attitude
+    void handle_msg(const mavlink_message_t &msg, int32_t target_alt);
     //
     // GCS reporting functions
     //
@@ -86,6 +88,7 @@ public:
     // get bearing to target (including offset) in degrees (for reporting purposes)
     float get_bearing_to_target() const { return _bearing_to_target; }
 
+    void set_offset(Vector3f offset_in) { _offset= offset_in; }
     // parameter list
     static const struct AP_Param::GroupInfo var_info[];
 

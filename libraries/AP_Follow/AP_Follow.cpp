@@ -341,6 +341,76 @@ void AP_Follow::handle_msg(const mavlink_message_t &msg)
     }
 }
 
+// handle mavlink DISTANCE_SENSOR messages
+void AP_Follow::handle_msg(const mavlink_message_t &msg, int32_t target_alt)
+{
+    // exit immediately if not enabled
+    if (!_enabled) {
+        return;
+    }
+
+    // decode global-position-int message
+    if (msg.msgid == MAVLINK_MSG_ID_GLOBAL_POSITION_INT) {
+
+        // get estimated location and velocity (for logging)
+        Location loc_estimate{};
+        Vector3f vel_estimate;
+        UNUSED_RESULT(get_target_location_and_velocity(loc_estimate, vel_estimate));
+
+        // decode message
+        mavlink_global_position_int_t packet;
+        mavlink_msg_global_position_int_decode(&msg, &packet);
+
+        // ignore message if lat and lon are (exactly) zero
+        if ((packet.lat == 0 && packet.lon == 0)) {
+            return;
+        }
+
+        _target_location.lat = packet.lat;
+        _target_location.lng = packet.lon;
+
+        // select altitude source based on FOLL_ALT_TYPE param 
+        //if (packet.alt<0) {
+            // relative altitude
+            _target_location.alt = target_alt;        // convert millimeters to cm
+            _target_location.relative_alt = 1;                // set relative_alt flag
+        // } else {
+        //     // absolute altitude
+        //     _target_location.alt = target_alt;                 // convert millimeters to cm
+        //     _target_location.relative_alt = 0;                // reset relative_alt flag
+        // }
+
+        _target_velocity_ned.x = packet.vx * 0.01f; // velocity north
+        _target_velocity_ned.y = packet.vy * 0.01f; // velocity east
+        _target_velocity_ned.z = 0.0f; // velocity down
+
+        // get a local timestamp with correction for transport jitter
+        _last_location_update_ms = _jitter.correct_offboard_timestamp_msec(packet.time_boot_ms, AP_HAL::millis());
+        if (packet.hdg <= 36000) {                  // heading (UINT16_MAX if unknown)
+            _target_heading = packet.hdg * 0.01f;   // convert centi-degrees to degrees
+            _last_heading_update_ms = _last_location_update_ms;
+        }
+
+        // log lead's estimated vs reported position
+        AP::logger().Write("FOLL",
+                                               "TimeUS,Lat,Lon,Alt,VelN,VelE,VelD,LatE,LonE,AltE",  // labels
+                                               "sDUmnnnDUm",    // units
+                                               "F--B000--B",    // mults
+                                               "QLLifffLLi",    // fmt
+                                               AP_HAL::micros64(),
+                                               _target_location.lat,
+                                               _target_location.lng,
+                                               _target_location.alt,
+                                               (double)_target_velocity_ned.x,
+                                               (double)_target_velocity_ned.y,
+                                               (double)_target_velocity_ned.z,
+                                               loc_estimate.lat,
+                                               loc_estimate.lng,
+                                               packet.alt/10
+                                               );
+    }
+}
+
 // get velocity estimate in m/s in NED frame using dt since last update
 bool AP_Follow::get_velocity_ned(Vector3f &vel_ned, float dt) const
 {
