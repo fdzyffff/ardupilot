@@ -215,7 +215,14 @@ void Plane::test_HB1_mission_update_msg() {
             //tmp_msg._msg_1.content.msg.remote_index = 0xA3;
             gcs().send_text(MAV_SEVERITY_INFO, "SIM away");
             break;
-        case 4: // cmd away
+        case 4: // cmd pre attack
+            in_group = false;
+            tmp_msg._msg_1.content.msg.remote_index = 0xE5;
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_preattack.time_s = 30;
+            //tmp_msg._msg_1.content.msg.remote_index = 0xA3;
+            gcs().send_text(MAV_SEVERITY_INFO, "SIM pre attack");
+            break;
+        case 5: // cmd attack
             in_group = false;
             tmp_msg._msg_1.content.msg.remote_index = 0x69;
             //tmp_msg._msg_1.content.msg.remote_index = 0xA3;
@@ -329,7 +336,13 @@ void Plane::test_HB1_mission_send_msg() {
             //tmp_msg._msg_1.content.msg.remote_index = 0xA3;
             gcs().send_text(MAV_SEVERITY_INFO, "SIM out away");
             break;
-        case 4: // cmd away
+        case 4: // cmd pre attack
+            in_group = false;
+            tmp_msg._msg_1.content.msg.remote_index = 0xE5;
+            //tmp_msg._msg_1.content.msg.remote_index = 0xA3;
+            gcs().send_text(MAV_SEVERITY_INFO, "SIM out pre attack attack");
+            break;
+        case 5: // cmd attack
             in_group = false;
             tmp_msg._msg_1.content.msg.remote_index = 0x69;
             //tmp_msg._msg_1.content.msg.remote_index = 0xA3;
@@ -413,13 +426,13 @@ Location Plane::test_HB1_generate_interim_attack() {
     Vector3f tmp_xyz = Vector3f(0.0f, 0.0f, alt);
     switch (index_loc) {
         case 0 :
-            tmp_xyz = Vector3f(-100000.0f, 0.0f, alt);
+            tmp_xyz = Vector3f(-200000.0f, 0.0f, alt);
             break;
         case 1 :
-            tmp_xyz = Vector3f(0.0f, -100000.0f, alt);
+            tmp_xyz = Vector3f(0.0f, -200000.0f, alt);
             break;
         default:
-            tmp_xyz = Vector3f(-100000.0f * (float)index_loc, -100000.0f * (float)index_loc, alt);
+            tmp_xyz = Vector3f(-200000.0f * (float)index_loc, -200000.0f * (float)index_loc, alt);
             break;
     }
     index_loc++;

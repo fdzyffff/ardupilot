@@ -11,12 +11,13 @@ public:
     struct PACKED MSG_Command_1 {
         HB1_mission2apm_header header;
         uint8_t ctrl_cmd;
+        int16_t thr_value;
         uint8_t sum_check;
     };
 
     union PACKED Content_1 {
         MSG_Command_1 msg;
-        uint8_t data[4];
+        uint8_t data[6];
     };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -25,7 +26,7 @@ public:
         bool print;
         bool updated;
         bool need_send;
-        const uint16_t length = 4;
+        const uint16_t length = 6;
         Content_1 content;
     };
 

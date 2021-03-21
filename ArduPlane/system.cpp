@@ -190,6 +190,7 @@ void Plane::init_ardupilot()
 
     HB1_uart_init();
     HB1_status_init();
+    HB1_Power_on_send();
 }
 
 //********************************************************************************

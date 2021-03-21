@@ -15,11 +15,9 @@ void Plane::HB1_Power_pwm_update() {
         HB1_throttle = thr_min;
         switch (HB1_Power.state) {
             case HB1_PowerAction_GROUND_EngineFULL:
-                if (timer < 1200.f) {
-                    HB1_throttle = constrain_float(35.f*timer/1200.f, thr_min, 35.f);
-                } else if (timer < 2000.f) {
-                    HB1_throttle = constrain_float(35.f + 65.f*(timer-1200.f)/800.f, 35.f, thr_max);
-                } else if (timer < 22000.f) {
+                if (timer < 2000.f) {
+                    HB1_throttle = constrain_float(100.f*timer/2000.f, thr_min, thr_max);
+                } else if (timer < 20000.f) {
                     HB1_throttle = constrain_float(100.f, thr_min, thr_max);
                 } else {
                     HB1_throttle = thr_min;
@@ -38,18 +36,16 @@ void Plane::HB1_Power_pwm_update() {
             HB1_throttle = thr_min;
         }
 
-        if (HB1_Power.state == HB1_PowerAction_RocketON) {
+        if ( (HB1_Power.state == HB1_PowerAction_RocketON) ) {
             HB1_throttle = thr_min;
         }
 
         if (HB1_Power.state == HB1_PowerAction_EngineSTART) {
             float timer_delay = MAX(timer - 0.0f, 0.0f);
-            if (timer_delay < 1200.f) {
-                HB1_throttle = constrain_float(35.f*timer_delay/1200.f, thr_min, 35.f);
-            } else if (timer_delay < 2000.f) {
-                HB1_throttle = constrain_float(35.f + 65.f*(timer_delay-1200.f)/800.f, 35.f, thr_max);
-            } else if (timer_delay < 5000.f) {
-                HB1_throttle = constrain_float(100.f, thr_min, thr_max);
+            if (timer_delay < 400.f) {
+                HB1_throttle = constrain_float(35.f*timer_delay/400.f, thr_min, 35.f);
+            } else if (timer_delay < 1000.f) {
+                HB1_throttle = constrain_float(35.f + 65.f*(timer_delay-400.f)/600.f, 35.f, thr_max);
             }
         }
     }
@@ -107,7 +103,7 @@ void Plane::HB1_Power_status_update() {
         case HB1_PowerAction_ParachuteON:
             break;
         case HB1_PowerAction_GROUND_EngineSTART: // triggered by RC OR cmd
-            if (timer > 10000) {
+            if (timer > 1000) {
                 HB1_status_set_HB_Power_Action(HB1_PowerAction_None);
             }
             break;
@@ -138,8 +134,8 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force
             relay.off(1);
             relay.off(2);
             relay.off(3);
-            break;
             SRV_Channels::set_output_pwm(SRV_Channel::k_launcher_HB1, 1100);
+            break;
         case HB1_PowerAction_RocketON:
             gcs().send_text(MAV_SEVERITY_INFO, "Rocket ON");
             relay.on(0);
@@ -202,4 +198,37 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force
             break;
     }
     HB1_msg_apm2power_send();
+}
+
+void Plane::HB1_Power_throttle_update() {
+    float throttle_out = 10.f*SRV_Channels::get_output_scaled(SRV_Channel::k_throttle_HB1);
+    HB1_apm2power &tmp_msg = HB1_uart_power.get_msg_apm2power();
+    tmp_msg._msg_1.need_send = true;
+    tmp_msg._msg_1.content.msg.ctrl_cmd = 0;
+    tmp_msg._msg_1.content.msg.thr_value = constrain_int16((int16_t)throttle_out, 0, 999);
+
+    tmp_msg._msg_1.content.msg.header.head_1 = HB1_apm2power::PREAMBLE1;
+    tmp_msg._msg_1.content.msg.header.head_2 = HB1_apm2power::PREAMBLE2;
+    tmp_msg._msg_1.content.msg.sum_check = 0;
+    for (int8_t i = 0; i < tmp_msg._msg_1.length - 1; i++) {
+        tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
+    }
+    tmp_msg._msg_1.print = false;
+    return;
+}
+
+void Plane::HB1_Power_on_send() {
+    HB1_apm2power &tmp_msg = HB1_uart_power.get_msg_apm2power();
+    tmp_msg._msg_1.need_send = true;
+    tmp_msg._msg_1.content.msg.ctrl_cmd = 11;
+    tmp_msg._msg_1.content.msg.thr_value = 0;
+
+    tmp_msg._msg_1.content.msg.header.head_1 = HB1_apm2power::PREAMBLE1;
+    tmp_msg._msg_1.content.msg.header.head_2 = HB1_apm2power::PREAMBLE2;
+    tmp_msg._msg_1.content.msg.sum_check = 0;
+    for (int8_t i = 0; i < tmp_msg._msg_1.length - 1; i++) {
+        tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
+    }
+    tmp_msg._msg_1.print = true;
+    return;
 }

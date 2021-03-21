@@ -40,17 +40,24 @@ public:
         uint16_t alt;
     };
 
+    //0x33
+    struct PACKED Remote_CMD_PREATTACK {
+        uint8_t time_s;
+        uint8_t temp_data[11];
+    };
+
     //0xA3
     struct PACKED Remote_CMD_AWAY {
         uint8_t temp_data[12];
     };
 
     union PACKED Remote_CMD {
-        Remote_CMD_TAKEOFF  cmd_takeoff;
-        Remote_CMD_WP       cmd_wp;
-        Remote_CMD_INTERIM  cmd_interim;
-        Remote_CMD_ATTACK   cmd_attack;
-        Remote_CMD_AWAY     cmd_away;
+        Remote_CMD_TAKEOFF   cmd_takeoff;
+        Remote_CMD_WP        cmd_wp;
+        Remote_CMD_INTERIM   cmd_interim;
+        Remote_CMD_ATTACK    cmd_attack;
+        Remote_CMD_AWAY      cmd_away;
+        Remote_CMD_PREATTACK cmd_preattack;
         uint8_t cmd_data[12];
     };
 

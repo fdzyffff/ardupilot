@@ -1126,10 +1126,10 @@ private:
         HB1_Mission_None                = 0,
         HB1_Mission_Takeoff             = 1,
         HB1_Mission_WP                  = 2,
-        HB1_Mission_Attack              = 3,
+        HB1_Mission_PreAttack           = 3,
         HB1_Mission_Hover               = 4,
         HB1_Mission_Hover2              = 5,
-        HB1_Mission_GG                  = 6,
+        HB1_Mission_Attack              = 6,
         HB1_Mission_Follow              = 7,
         HB1_Mission_FsGPS               = 8,
         HB1_Mission_FsNoGPS             = 9,
@@ -1166,6 +1166,7 @@ private:
     } HB1_Power;
 
     AP_Mission::Mission_Command HB1_attack_cmd;
+    AP_Mission::Mission_Command HB1_interim_cmd;
 
     bool HB1_GG_final;
 
@@ -1213,6 +1214,7 @@ private:
     void HB1_msg_mission2apm_away_handle(HB1_mission2apm &tmp_msg);
     void HB1_msg_mission2apm_follow_handle();
     void HB1_msg_mission2apm_attack_handle();
+    void HB1_msg_mission2apm_preattack_handle(int32_t time_s);
     void HB1_msg_mission2apm_speed_up_handle();
     void HB1_msg_mission2apm_speed_down_handle();
     void HB1_msg_mission2apm_EngineSTART_handle();
@@ -1229,6 +1231,8 @@ private:
     void HB1_Power_update();
     void HB1_Power_pwm_update();
     void HB1_Power_status_update();
+    void HB1_Power_throttle_update();
+    void HB1_Power_on_send();
     void HB1_FsAuto_update();
     void HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force_set = false);
     bool HB1_status_noGPS_check();

@@ -79,7 +79,12 @@ void HB1_power2apm::process_message(void)
 
 void HB1_power2apm::swap_message(void)
 {
-    ;
     swap_message_sub(_msg_1.content.data[4], _msg_1.content.data[5]);
     swap_message_sub(_msg_1.content.data[6], _msg_1.content.data[7]);
+    swap_message_sub(_msg_1.content.data[9], _msg_1.content.data[10]);
+    swap_message_sub(_msg_1.content.data[13], _msg_1.content.data[14]);
+    swap_message_sub(_msg_1.content.data[16], _msg_1.content.data[17]);
+    swap_message_sub(_msg_1.content.data[18], _msg_1.content.data[19]);
+    swap_message_sub(_msg_1.content.data[20], _msg_1.content.data[21]);
+    swap_message_sub(_msg_1.content.data[22], _msg_1.content.data[23]);
 }

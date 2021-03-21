@@ -66,16 +66,17 @@ void Plane::HB1_uart_update_50Hz()
 
     HB1_uart_mission.write();
     HB1_uart_cam.write();
+
+    if (!HB1_uart_power.get_msg_apm2power()._msg_1.need_send) {
+        HB1_Power_throttle_update();
+    }
     HB1_uart_power.write();
-
 }
-
 
 void Plane::HB1_uart_update_10Hz()
 {
     HB1_msg_apm2mission_send();
     HB1_msg_apm2cam_send();
-    //HB1_msg_apm2power_send();
 
     HB1_uart_print();
 }
@@ -112,6 +113,10 @@ void Plane::HB1_msg_mission2apm_handle() {
         //         HB1_msg_mission2apm_away_handle();
         //     }
         //     break;
+        case 0xE5:
+            HB1_Status.grouped = false;
+            HB1_msg_mission2apm_preattack_handle(tmp_msg._msg_1.content.msg.remote_cmd.cmd_preattack.time_s);
+            break;
         case 0x69:
             HB1_Status.grouped = false;
             HB1_msg_mission2apm_attack_handle();
@@ -156,43 +161,24 @@ void Plane::HB1_msg_power2apm_handle() {
     HB1_power2apm &tmp_msg = HB1_uart_power.get_msg_power2apm();
     switch (g2.hb1_power_type.get()) {
         case 0:
-            HB1_Power.HB1_engine_rpm = (float)tmp_msg._msg_1.content.msg.v1;
-            HB1_Power.HB1_engine_rpm*=0.1f;
-            HB1_Power.HB1_engine_temp = (float)tmp_msg._msg_1.content.msg.v2;
-            HB1_Power.HB1_engine_temp*=0.1f;
-            break;
-
-        case 1:
-            HB1_Power.HB1_engine_rpm = (float)tmp_msg._msg_1.content.msg.v2;
-            HB1_Power.HB1_engine_rpm*=0.1f;
-            HB1_Power.HB1_engine_temp = (float)tmp_msg._msg_1.content.msg.v1;
-            HB1_Power.HB1_engine_temp*=0.1f;
+            HB1_Power.HB1_engine_rpm = (float)tmp_msg._msg_1.content.msg.CYS350_rpm;
+            HB1_Power.HB1_engine_temp = 0.1f*(float)tmp_msg._msg_1.content.msg.CYS350_temp;
             break;
 
         case 10:
-            HB1_Power.HB1_engine_rpm = (float)tmp_msg._msg_1.content.msg.v1;
-            HB1_Power.HB1_engine_temp = (float)tmp_msg._msg_1.content.msg.v2;
-            HB1_Power.HB1_engine_temp*=0.1f;
+            HB1_Power.HB1_engine_rpm = (float)tmp_msg._msg_1.content.msg.FQ340_rpm;
+            HB1_Power.HB1_engine_temp = (float)tmp_msg._msg_1.content.msg.FQ340_temp1;
             break;
 
         case 11:
-            HB1_Power.HB1_engine_rpm = (float)tmp_msg._msg_1.content.msg.v2;
-            HB1_Power.HB1_engine_temp = (float)tmp_msg._msg_1.content.msg.v1;
-            HB1_Power.HB1_engine_temp*=0.1f;
+            HB1_Power.HB1_engine_rpm = (float)tmp_msg._msg_1.content.msg.FQ340_rpm;
+            HB1_Power.HB1_engine_temp = (float)tmp_msg._msg_1.content.msg.FQ340_temp2;
             break;
 
         default:
-            HB1_Power.HB1_engine_rpm = (float)tmp_msg._msg_1.content.msg.v1;
-            HB1_Power.HB1_engine_rpm*=0.1f;
-            HB1_Power.HB1_engine_temp = (float)tmp_msg._msg_1.content.msg.v2;
-            HB1_Power.HB1_engine_temp*=0.1f;
+            HB1_Power.HB1_engine_rpm = (float)tmp_msg._msg_1.content.msg.CYS350_rpm;
+            HB1_Power.HB1_engine_temp = 0.1f*(float)tmp_msg._msg_1.content.msg.CYS350_temp;
             break;
-    }
-    if (HB1_Power.HB1_engine_rpm < 0.0f) {
-        HB1_Power.HB1_engine_rpm += 3276.7;
-    }
-    if (HB1_Power.HB1_engine_temp < 0.0f) {
-        HB1_Power.HB1_engine_temp += 3276.7;
     }
 }
 
@@ -279,6 +265,7 @@ void Plane::HB1_msg_apm2power_send() {
     HB1_apm2power &tmp_msg = HB1_uart_power.get_msg_apm2power();
     tmp_msg._msg_1.need_send = false;
     tmp_msg._msg_1.content.msg.ctrl_cmd = 0;
+    tmp_msg._msg_1.content.msg.thr_value = 0;
     switch (HB1_Power.state) {
         case HB1_PowerAction_RocketON:
         case HB1_PowerAction_GROUND_RocketON:
@@ -301,7 +288,7 @@ void Plane::HB1_msg_apm2power_send() {
             break;
         default:
             tmp_msg._msg_1.content.msg.ctrl_cmd = 0;
-            tmp_msg._msg_1.need_send = true;
+            tmp_msg._msg_1.need_send = false;
             break;
     }
     if (!tmp_msg._msg_1.need_send) {return;}

@@ -10,16 +10,26 @@ public:
     // message structure
     struct PACKED MSG_Command_1 {
         HB1_mission2apm_header header;
-        uint8_t batt_volt;
-        uint8_t batt_curr;
-        uint16_t v1;
-        uint16_t v2;
+        uint8_t batt_currstatus;
+        uint8_t batt_voltstatus;
+        uint16_t CYS350_rpm;
+        int16_t CYS350_temp;
+        uint8_t FQ340_status;
+        uint16_t FQ340_rpm;
+        int8_t FQ340_airtemp;
+        uint8_t FQ340_pluswidth;
+        uint16_t FQ340_throttle;
+        uint8_t FQ340_ECUvolt;
+        uint16_t FQ340_airpressure;
+        uint16_t FQ340_fuelpressure;
+        int16_t FQ340_temp1;
+        int16_t FQ340_temp2;
         uint8_t sum_check;
     };
 
     union PACKED Content_1 {
         MSG_Command_1 msg;
-        uint8_t data[9];
+        uint8_t data[25];
     };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -28,7 +38,7 @@ public:
         bool print;
         bool updated;
         bool need_send;
-        const uint16_t length = 9;
+        const uint16_t length = 25;
         Content_1 content;
     };
 
