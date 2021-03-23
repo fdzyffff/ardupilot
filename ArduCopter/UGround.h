@@ -41,6 +41,7 @@ public:
     bool is_leader() {return _is_leader;}
     void is_leader(bool b) {_is_leader = b;}
     bool is_lockon() {return (_state == UGCS_Lockon);}
+
     float get_distance() {return _distance;}
     int16_t get_group_id() {return _group_id;}
     Vector3f get_offset_position() {return _offset_position;}
@@ -50,6 +51,8 @@ public:
 
     int16_t get_state_num();
     float get_dest_yaw_cd() {return _dest_yaw_cd;}
+    float get_dist_to_target() {return _dist_to_target;}
+    float get_bearing_to_target() {return _bearing_to_target;}
 
     int16_t _group_id;
     int16_t _position_id;
@@ -70,6 +73,8 @@ private:
     int16_t _cmd;
     uint32_t _state_timer_ms;
     uint32_t _last_state_update_ms;
+    float _dist_to_target;
+    float _bearing_to_target;
 
     my_group_1_t my_group1;
     my_group_2_t my_group2;

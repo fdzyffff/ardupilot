@@ -35,6 +35,8 @@ void UGround::init()
     _dest_vel_vec.zero();
     _dest_yaw_cd = 0.0f;
     _offset_position.zero();
+    _dist_to_target = 0.0f;
+    _bearing_to_target = 0.0f;
 }
 
 void UGround::handle_info(int16_t cmd, int16_t group_id, int16_t distance, int16_t free)
@@ -60,19 +62,16 @@ void UGround::do_cmd(int16_t cmd, bool force_set) {
             set_state(UGCS_Curise, force_set);
             break;
         case 5:
-            if (!is_leader()) {
-                if (!is_lockon()) {
-                    set_state(UGCS_Assemble, force_set);
-                }
-            } else {
-                set_state(UGCS_Lockon, force_set);
-            }
+            set_state(UGCS_Assemble, force_set);
             break;
         case 6:
             set_state(UGCS_Attack);
             break;
         case 7:
             set_state(UGCS_FS1);
+            break;
+        case 255:
+            copter.arming.disarm();
             break;
         default:
             break;
@@ -104,6 +103,12 @@ void UGround::set_up_offset(int8_t sender_id, Vector3f target_postion, Vector3f 
     _dest_loc_vec = target_postion + _offset_position;
     _dest_vel_vec = target_velocity;
     _dest_yaw_cd = target_heading*100.f;
+
+
+    Vector2f res_vec;
+    if (!copter.ahrs.get_relative_position_NE_origin(res_vec)) {return;}
+    _dist_to_target = norm(_dest_loc_vec.x - res_vec.x*100.f, _dest_loc_vec.y - res_vec.y*100.f);
+    _bearing_to_target = degrees(atan2f(_dest_loc_vec.y - res_vec.y*100.f, _dest_loc_vec.x - res_vec.x*100.f))*100.f;
 }
 
 // update
@@ -128,10 +133,11 @@ void UGround::state_update()
 
     float sonar_height = -10.0f;
     if (copter.rangefinder_alt_ok()) {sonar_height = copter.rangefinder_state.alt_cm;}
+    bool _reached_position = copter.Ugcs_reached_position();
     switch (get_state()) {
         case UGCS_Takeoff:
         {
-            if ( (copter.control_mode == Mode::Number::GUIDED) && (copter.mode_guided.mode() == Guided_WP) && timer>_state_timer_ms) {
+            if ( timer>_state_timer_ms) {
                 set_state(UGCS_Standby1);
                 _state_timer_ms = 3000000;
             }
@@ -169,19 +175,18 @@ void UGround::state_update()
                 set_state(UGCS_Lockon);
                 _state_timer_ms = 300000;
             }
-            if (!is_leader()) {
-                ;//copter.mode_guided.set_destination_posvel(_dest_loc_vec, _dest_vel_vec, true, _dest_yaw_cd, false, 0.0f, false);
-            }
             break;
         }
         case UGCS_Assemble:
         {
             if (!is_leader()) {
-                //copter.mode_guided.set_destination(_dest_loc_vec, true, _dest_yaw_cd, false, 0.0f, false);
-                if (copter.flightmode->wp_distance() < 100.f) {
+                if (_reached_position) {
                     set_state(UGCS_Lockon);
                     _state_timer_ms = 300000;
                 }
+            } else {
+                set_state(UGCS_Lockon);
+                _state_timer_ms = 300000;
             }
             break;
         }
@@ -220,7 +225,7 @@ void UGround::set_state(UGCS_state_t new_state, bool force_set)
             break;
         case UGCS_Takeoff:
             ret = copter.Ugcs_do_takeoff();
-            _state_timer_ms = 1000;
+            _state_timer_ms = 10000;
             break;
         case UGCS_Fly:
             ret = copter.Ugcs_do_fly();
@@ -351,6 +356,18 @@ int16_t UGround::get_state_num() {
     return ret;
 }
 
+bool Copter::Ugcs_reached_position() {
+    static uint32_t _last_ms = millis();
+    if (flightmode->wp_distance() > 100.f) {
+        _last_ms = millis();
+    } else {
+        if (millis() - _last_ms > 1000) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool Copter::Ugcs_do_takeoff() // takeoff
 {
     return (set_mode(Mode::Number::GUIDED, ModeReason::TOY_MODE) 
@@ -393,12 +410,11 @@ bool Copter::Ugcs_do_cruise()  // fly and search
 
 bool Copter::Ugcs_do_assemble()  // assemble
 {
-    if (Ugcs.is_leader()) {
-        return set_mode(Mode::Number::LOCKON, ModeReason::TOY_MODE);;
+    if(Ugcs.is_leader()) {
+        return set_mode(Mode::Number::LOCKON, ModeReason::TOY_MODE);
     } else {
         return set_mode(Mode::Number::FOLLOW, ModeReason::TOY_MODE);
     }
-    return false;
 }
 
 bool Copter::Ugcs_do_lockon()  // lock on target
@@ -460,9 +476,6 @@ void Copter::Ugcs_handle_msg(const mavlink_message_t &msg) {
         if (packet.hdg <= 36000) {                  // heading (UINT16_MAX if unknown)
             _target_heading = packet.hdg * 0.01f;   // convert centi-degrees to degrees
         }
-        if (Ugcs.get_state() == UGround::UGCS_Assemble) {
-            _target_heading = Ugcs.get_dest_yaw_cd();
-        }
 
         // get a local timestamp with correction for transport jitter
         Ugcs._last_update_ms = millis();
@@ -471,9 +484,10 @@ void Copter::Ugcs_handle_msg(const mavlink_message_t &msg) {
         if (!_target_location.get_vector_xy_from_origin_NE(res_vec)) {return;}
         _target_postion_neu.x = res_vec.x;
         _target_postion_neu.y = res_vec.y;
+        if (packet.alt > 0) { Ugcs_last_valid_alt_cm.apply(0.1f*(float)packet.alt, 0.1f); }
         if (packet.alt > 0 && rangefinder_alt_ok() ) {
             float rng_offset = Ugcs_get_relative_alt()*0.1f - rangefinder_state.alt_cm;
-            _target_postion_neu.z = rng_offset + (float)(packet.alt/10);
+            _target_postion_neu.z = rng_offset + Ugcs_last_valid_alt_cm.get();
 
             //copter.gcs().send_text(MAV_SEVERITY_WARNING, "Z: %0.2f",_target_postion_neu.z);
         } else {
@@ -481,7 +495,7 @@ void Copter::Ugcs_handle_msg(const mavlink_message_t &msg) {
         }
         Ugcs.set_up_offset(msg.sysid, _target_postion_neu, _target_velocity_neu, _target_heading);
         g2.follow.set_offset(Ugcs.get_offset_position()*0.01f);
-        g2.follow.handle_msg(msg, (int32_t)Ugcs.get_dest_loc_vec().z);
+        g2.follow.handle_msg(msg, (int32_t)Ugcs_last_valid_alt_cm.get());
     }
 }
 

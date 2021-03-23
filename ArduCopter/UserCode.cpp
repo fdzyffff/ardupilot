@@ -43,8 +43,9 @@ void Copter::userhook_SlowLoop()
 void Copter::userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
-    if (g2.user_parameters.cam_print.get() & (1<<0)) { // 1
-        gcs().send_text(MAV_SEVERITY_WARNING, "Raw (%0.0f,%0.0f) on:%d", Ucam.get_raw_info().x, Ucam.get_raw_info().y, Ucam.is_active());
+    if ((g2.user_parameters.cam_print.get() & (1<<0)) && Ucam.display_info_new) { // 1
+        gcs().send_text(MAV_SEVERITY_WARNING, "Raw (%0.0f,%0.0f) on:%0.0f", Ucam.display_info_p1, Ucam.display_info_p2, Ucam.display_info_p3);
+        Ucam.display_info_new = false;
     }
     if (g2.user_parameters.cam_print.get() & (1<<1)) { // 2
         gcs().send_text(MAV_SEVERITY_WARNING, "Corr (%0.0f,%0.0f) on:%d", Ucam.get_correct_info().x,Ucam.get_correct_info().y, Ucam.is_active());

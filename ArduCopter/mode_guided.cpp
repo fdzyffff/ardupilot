@@ -197,7 +197,9 @@ bool ModeGuided::set_destination(const Vector3f& destination, bool use_yaw, floa
     set_yaw_state(use_yaw, yaw_cd, use_yaw_rate, yaw_rate_cds, relative_yaw);
 
     // no need to check return status because terrain data is not used
-    wp_nav->set_wp_destination(destination, false);
+    if (!wp_nav->set_wp_destination(destination, true)) {
+        !wp_nav->set_wp_destination(destination, false);
+    }
 
     // log target
     copter.Log_Write_GuidedTarget(guided_mode, destination, Vector3f());
@@ -374,7 +376,16 @@ void ModeGuided::takeoff_run()
         copter.landinggear.retract_after_takeoff();
 
         // switch to position control mode but maintain current target
-        const Vector3f& target = wp_nav->get_wp_destination();
+        const Vector3f& tmp_target = wp_nav->get_wp_destination();
+        Vector3f target = Vector3f(tmp_target.x, tmp_target.y, copter.g.pilot_takeoff_alt.get());
+        // float posD = 0.0f;
+        // copter.ahrs.get_relative_position_D_origin(posD);
+        // posD *= -100.0f;
+        // float rng_offset = 0.0f;
+        // if ( copter.rangefinder_alt_ok() ) {
+        //     rng_offset = posD - (float)copter.rangefinder_state.alt_cm;
+        // }
+        // target.z = copter.g.pilot_takeoff_alt.get() + rng_offset;
         set_destination(target);
     }
 }
@@ -408,6 +419,33 @@ void Mode::auto_takeoff_run()
     // run waypoint controller
     copter.failsafe_terrain_set_status(wp_nav->update_wpnav());
 
+    // if (copter.rangefinder_alt_ok()) {
+    //     float tmp_off_z = 0.0f;
+    //     tmp_off_z = copter.g.pilot_takeoff_alt.get() - (float)copter.rangefinder_state.alt_cm;
+
+    //     const float kp = g2.follow.get_pos_p().kP();
+    //     float target_climb_rate = (tmp_off_z * kp);
+
+    //     const float des_vel_z_max = copter.avoid.get_max_speed(pos_control->get_pos_z_p().kP().get(), pos_control->get_max_accel_z() * 0.5f, fabsf(tmp_off_z), copter.G_Dt);
+    //     target_climb_rate = constrain_float(target_climb_rate, -des_vel_z_max, des_vel_z_max);
+
+    //     pos_control->set_alt_target_from_climb_rate_ff(target_climb_rate, copter.G_Dt, false);
+
+
+    //     float posD = 0.0f;
+    //     copter.ahrs.get_relative_position_D_origin(posD);
+    //     posD *= -100.0f;
+    //     float rng_offset = 0.0f;
+    //     if ( copter.rangefinder_alt_ok() ) {
+    //         rng_offset = posD - (float)copter.rangefinder_state.alt_cm;
+    //     }
+
+    //     const Vector3f& tmp_target = wp_nav->get_wp_destination();
+    //     Vector3f target = Vector3f(tmp_target.x, tmp_target.y, tmp_target.z);
+    //     target.z = copter.g.pilot_takeoff_alt.get() + rng_offset;
+
+    //     wp_nav->set_wp_destination(target, false);
+    // }
     // call z-axis position controller (wpnav should have already updated it's alt target)
     copter.pos_control->update_z_controller();
 

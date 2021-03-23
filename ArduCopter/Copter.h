@@ -935,7 +935,9 @@ private:
 
     UCam Ucam;
     UGround Ugcs;
+    LowPassFilterFloat Ugcs_last_valid_alt_cm;
     void Ugcs_handel_msg();
+    bool Ugcs_reached_position();
     bool Ugcs_do_takeoff(); // takeoff
     bool Ugcs_do_fly();     // fly
     bool Ugcs_do_standby(); // standby

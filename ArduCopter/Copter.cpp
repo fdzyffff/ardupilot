@@ -620,6 +620,7 @@ Copter::Copter(void)
     // init sensor error logging flags
     sensor_health.baro = true;
     sensor_health.compass = true;
+    Ugcs_last_valid_alt_cm.set_cutoff_frequency(0.5f);
 }
 
 Copter copter;

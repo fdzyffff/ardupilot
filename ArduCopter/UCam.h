@@ -25,6 +25,10 @@ public:
     float get_target_yaw_rate() {return _target_yaw_rate_cds;}
     float get_current_angle_deg() {return _current_angle_deg;}
 
+    bool display_info_new;
+    float display_info_p1;
+    float display_info_p2;
+    float display_info_p3;
 private:
     void update_target_pitch_rate();
     void update_target_roll_angle();

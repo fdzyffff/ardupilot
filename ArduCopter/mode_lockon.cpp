@@ -40,8 +40,8 @@ void ModeLockon::run()
         target_yaw_rate = copter.Ucam.get_target_yaw_rate();
     }
 
-    if (copter.rangefinder_alt_ok() && copter.rangefinder_state.alt_cm < 180.f) {
-        target_climb_rate = 100.f;
+    if (copter.rangefinder_alt_ok() && (float)copter.rangefinder_state.alt_cm < 100.f) {
+        target_climb_rate = 50.f;
     }
     target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
 
@@ -72,6 +72,10 @@ void ModeLockon::run()
 
     case AltHold_Flying:
     default:
+        if (!copter.Ugcs.is_leader()) {
+            pos_control->set_xy_target(copter.Ugcs.get_dest_loc_vec().x, copter.Ugcs.get_dest_loc_vec().y);
+
+        }
         // set motors to full range
         motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
 

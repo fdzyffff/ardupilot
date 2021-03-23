@@ -26,6 +26,10 @@ void UCam::init()
     raw_info.y = 0.0f;
     correct_info.x = 0.0f;
     correct_info.y = 0.0f;
+    display_info_new = false;
+    display_info_p1 = 0.0f;
+    display_info_p2 = 0.0f;
+    display_info_p3 = 0.0f;
     _last_update_ms = 0;
     _target_pitch_rate = 0.0f;
     _target_yaw_rate_cds = 0.0f;
@@ -37,6 +41,10 @@ void UCam::init()
 // clear return path and set home location.  This should be called as part of the arming procedure
 void UCam::handle_info(float input_x, float input_y, bool valid)
 {
+    display_info_p1 = input_x;
+    display_info_p2 = input_y;
+    display_info_p3 = (float)valid;
+    display_info_new = true;
     if (!valid) {
         _n_count = 0;
         return;

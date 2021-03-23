@@ -54,14 +54,18 @@ void ModeFollow::run()
     Vector3f dist_vec_offs;  // vector to lead vehicle + offset
     Vector3f vel_of_target;  // velocity of lead vehicle
     if (g2.follow.get_target_dist_and_vel_ned(dist_vec, dist_vec_offs, vel_of_target)) {
+        float tmp_off_z = 0.0f;
+        if (copter.rangefinder_alt_ok()) {
+            tmp_off_z = copter.Ugcs_last_valid_alt_cm.get() - (float)copter.rangefinder_state.alt_cm;
+        }
         // convert dist_vec_offs to cm in NEU
-        const Vector3f dist_vec_offs_neu(dist_vec_offs.x * 100.0f, dist_vec_offs.y * 100.0f, -dist_vec_offs.z * 100.0f);
+        const Vector3f dist_vec_offs_neu(dist_vec_offs.x * 100.0f, dist_vec_offs.y * 100.0f, tmp_off_z);
 
         // calculate desired velocity vector in cm/s in NEU
         const float kp = g2.follow.get_pos_p().kP();
         desired_velocity_neu_cms.x = (vel_of_target.x * 100.0f) + (dist_vec_offs_neu.x * kp);
         desired_velocity_neu_cms.y = (vel_of_target.y * 100.0f) + (dist_vec_offs_neu.y * kp);
-        desired_velocity_neu_cms.z = (-vel_of_target.z * 100.0f) + (dist_vec_offs_neu.z * kp);
+        desired_velocity_neu_cms.z = (0.0f * 100.0f) + (dist_vec_offs_neu.z * kp);
 
         // scale desired velocity to stay within horizontal speed limit
         float desired_speed_xy = safe_sqrt(sq(desired_velocity_neu_cms.x) + sq(desired_velocity_neu_cms.y));
@@ -161,12 +165,14 @@ void ModeFollow::run()
 
 uint32_t ModeFollow::wp_distance() const
 {
-    return g2.follow.get_distance_to_target() * 100;
+    return copter.Ugcs.get_dist_to_target();
+    //return g2.follow.get_distance_to_target() * 100;
 }
 
 int32_t ModeFollow::wp_bearing() const
 {
-    return g2.follow.get_bearing_to_target() * 100;
+    return copter.Ugcs.get_bearing_to_target();
+    //return g2.follow.get_bearing_to_target() * 100;
 }
 
 /*
