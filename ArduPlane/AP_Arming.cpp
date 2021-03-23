@@ -244,6 +244,9 @@ bool AP_Arming_Plane::disarm(void)
     plane.HB1_Status.already_takeoff = false;
     plane.HB1_Status.grouped = false;
     
+    if (plane.control_mode != &plane.mode_manual) {
+        plane.set_mode(plane.mode_fbwa, MODE_REASON_UNAVAILABLE);
+    }
     return true;
 }
 

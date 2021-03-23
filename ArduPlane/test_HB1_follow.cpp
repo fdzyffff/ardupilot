@@ -217,14 +217,14 @@ void Plane::test_HB1_mission_update_msg() {
             break;
         case 4: // cmd pre attack
             in_group = false;
-            tmp_msg._msg_1.content.msg.remote_index = 0xE5;
+            tmp_msg._msg_1.content.msg.remote_index = 0x69;
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_preattack.time_s = 30;
             //tmp_msg._msg_1.content.msg.remote_index = 0xA3;
             gcs().send_text(MAV_SEVERITY_INFO, "SIM pre attack");
             break;
         case 5: // cmd attack
             in_group = false;
-            tmp_msg._msg_1.content.msg.remote_index = 0x69;
+            tmp_msg._msg_1.content.msg.remote_index = 0xE5;
             //tmp_msg._msg_1.content.msg.remote_index = 0xA3;
             gcs().send_text(MAV_SEVERITY_INFO, "SIM attack");
             break;
@@ -338,13 +338,13 @@ void Plane::test_HB1_mission_send_msg() {
             break;
         case 4: // cmd pre attack
             in_group = false;
-            tmp_msg._msg_1.content.msg.remote_index = 0xE5;
+            tmp_msg._msg_1.content.msg.remote_index = 0x69;
             //tmp_msg._msg_1.content.msg.remote_index = 0xA3;
             gcs().send_text(MAV_SEVERITY_INFO, "SIM out pre attack attack");
             break;
         case 5: // cmd attack
             in_group = false;
-            tmp_msg._msg_1.content.msg.remote_index = 0x69;
+            tmp_msg._msg_1.content.msg.remote_index = 0xE5;
             //tmp_msg._msg_1.content.msg.remote_index = 0xA3;
             gcs().send_text(MAV_SEVERITY_INFO, "SIM out attack");
             break;

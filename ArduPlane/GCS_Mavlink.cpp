@@ -1435,8 +1435,15 @@ uint64_t GCS_MAVLINK_Plane::capabilities() const
 
 void GCS_MAVLINK_Plane::send_rpm() const
 {
-    mavlink_msg_rpm_send(
-        chan,
-        plane.HB1_Power.HB1_engine_rpm,
-        plane.HB1_Power.HB1_engine_temp);
+    if (plane.g2.hb1_power_type.get() == 99) {
+        mavlink_msg_rpm_send(
+            chan,
+            constrain_float( (float)(millis() - plane.HB1_Power.last_update_ms),0, 1000000.f),
+            plane.HB1_Power.HB1_engine_temp);
+    } else {
+        mavlink_msg_rpm_send(
+            chan,
+            plane.HB1_Power.HB1_engine_rpm,
+            plane.HB1_Power.HB1_engine_temp);
+    }
 }

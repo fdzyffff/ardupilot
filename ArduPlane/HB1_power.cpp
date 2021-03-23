@@ -42,10 +42,10 @@ void Plane::HB1_Power_pwm_update() {
 
         if (HB1_Power.state == HB1_PowerAction_EngineSTART) {
             float timer_delay = MAX(timer - 0.0f, 0.0f);
-            if (timer_delay < 400.f) {
-                HB1_throttle = constrain_float(35.f*timer_delay/400.f, thr_min, 35.f);
+            if (timer_delay < 600.f) {
+                HB1_throttle = constrain_float(35.f*timer_delay/600.f, thr_min, 35.f);
             } else if (timer_delay < 1000.f) {
-                HB1_throttle = constrain_float(35.f + 65.f*(timer_delay-400.f)/600.f, 35.f, thr_max);
+                HB1_throttle = constrain_float(35.f + 65.f*(timer_delay-600.f)/900.f, 35.f, thr_max);
             }
         }
     }
@@ -61,7 +61,7 @@ void Plane::HB1_Power_status_update() {
             }
             break;
         case HB1_PowerAction_RocketON:
-            if (timer > 3500) {
+            if (timer > 2000) {
                 float airspeed_measured = 0;
                 if (!ahrs.airspeed_estimate(&airspeed_measured)) {airspeed_measured = 0.0f;}
                 float gspd = ahrs.groundspeed_vector().length();

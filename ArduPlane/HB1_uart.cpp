@@ -113,11 +113,11 @@ void Plane::HB1_msg_mission2apm_handle() {
         //         HB1_msg_mission2apm_away_handle();
         //     }
         //     break;
-        case 0xE5:
+        case 0x69:
             HB1_Status.grouped = false;
             HB1_msg_mission2apm_preattack_handle(tmp_msg._msg_1.content.msg.remote_cmd.cmd_preattack.time_s);
             break;
-        case 0x69:
+        case 0xE5:
             HB1_Status.grouped = false;
             HB1_msg_mission2apm_attack_handle();
             break;
@@ -175,11 +175,17 @@ void Plane::HB1_msg_power2apm_handle() {
             HB1_Power.HB1_engine_temp = (float)tmp_msg._msg_1.content.msg.FQ340_temp2;
             break;
 
+        case 100:
+            HB1_Power.HB1_engine_rpm = (float)(millis() - HB1_Power.last_update_ms);
+            HB1_Power.HB1_engine_temp = 0.1f*(float)tmp_msg._msg_1.content.msg.CYS350_temp;
+            break;
+
         default:
             HB1_Power.HB1_engine_rpm = (float)tmp_msg._msg_1.content.msg.CYS350_rpm;
             HB1_Power.HB1_engine_temp = 0.1f*(float)tmp_msg._msg_1.content.msg.CYS350_temp;
             break;
     }
+    HB1_Power.last_update_ms = millis();
 }
 
 void Plane::HB1_msg_apm2mission_send() {
