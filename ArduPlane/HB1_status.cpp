@@ -15,6 +15,7 @@ void Plane::HB1_status_init() {
 
     HB1_Power.HB1_engine_rpm = 0.0f;
     HB1_Power.HB1_engine_temp = 0.0f;
+    HB1_Power.send_counter = 0;
 
     HB1_GG_final = false;
 }
@@ -81,7 +82,6 @@ void Plane::HB1_Mission_update() {
                     HB1_attack_cmd.content.location = next_WP_loc;
                     HB1_status_set_HB_Mission_Action(HB1_Mission_Attack);
                 }
-
             }
             if (HB1_status_noGPS_check()) {
                 HB1_status_set_HB_Mission_Action(HB1_Mission_FsNoGPS);
@@ -121,8 +121,8 @@ void Plane::HB1_Mission_update() {
     }
 }
 
-void Plane::HB1_status_set_HB_Mission_Action(HB1_Mission_t action) {
-    if (HB1_Status.state == action) {
+void Plane::HB1_status_set_HB_Mission_Action(HB1_Mission_t action, bool Force_set) {
+    if ((HB1_Status.state == action) && (!Force_set)) {
         return;
     }
     uint32_t tnow = millis();

@@ -26,14 +26,16 @@ using namespace SITL;
 Plane::Plane(const char *frame_str) :
     Aircraft(frame_str)
 {
-    mass = 6.0f;
+    mass = 75.0f;//2.0f;对应蜂群75kg飞机
 
     /*
        scaling from motor power to Newtons. Allows the plane to hold
        vertically against gravity when the motor is at hover_throttle
+       这相当于推重比是1，因此做更改。
     */
-    thrust_scale = (mass * GRAVITY_MSS) / hover_throttle;
-    frame_height = 0.1f;
+    thrust_scale = (45 * GRAVITY_MSS) / hover_throttle;//地面推力/悬停油门，thrust现在单独计算
+    //thrust_scale = (mass * GRAVITY_MSS) / hover_throttle;// 重力/悬停油门
+    frame_height = 1.0f;//0.1f;机体高度
 
     ground_behavior = GROUND_BEHAVIOR_FWD_ONLY;
     
@@ -65,8 +67,8 @@ Plane::Plane(const char *frame_str) :
     }
     if (strstr(frame_str, "-bungee")) {
         have_launcher = true;
-        launch_accel = 20;
-        launch_time = 2;
+        launch_accel = 1000;
+        launch_time = 3;
     }
     if (strstr(frame_str, "-throw")) {
         have_launcher = true;
@@ -97,7 +99,7 @@ float Plane::liftCoeff(float alpha) const
     const float c_lift_a0 = coefficient.c_lift_a;
 
     // clamp the value of alpha to avoid exp(90) in calculation of sigmoid
-    const float max_alpha_delta = 0.8f;
+    const float max_alpha_delta = 0.8f;//约40度迎角
     if (alpha-alpha0 > max_alpha_delta) {
         alpha = alpha0 + max_alpha_delta;
     } else if (alpha0-alpha > max_alpha_delta) {
@@ -121,7 +123,7 @@ float Plane::dragCoeff(float alpha) const
     const float oswald = coefficient.oswald;
     
 	double AR = pow(b,2)/s;
-	double c_drag_a = c_drag_p + pow(c_lift_0+c_lift_a0*alpha,2)/(M_PI*oswald*AR);
+	double c_drag_a = c_drag_p + pow(c_lift_0+c_lift_a0*alpha,2)/(M_PI*oswald*AR);//计算阻力=零升阻力+升致阻力，k=1/(pai*AR*e)
 
 	return c_drag_a;
 }
@@ -189,7 +191,7 @@ Vector3f Plane::getTorque(float inputAileron, float inputElevator, float inputRu
 
 
 	// Add torque to to force misalignment with CG
-	// r x F, where r is the distance from CoG to CoL
+	// r x F, where r is the distance from CoG to CoL 也就是稳定裕度，重心和焦点，但cm里已经是对重心取力矩，因此r=0
 	la +=  CGOffset.y * force.z - CGOffset.z * force.y;
 	ma += -CGOffset.x * force.z + CGOffset.z * force.x;
 	na += -CGOffset.y * force.x + CGOffset.x * force.y;
@@ -300,7 +302,7 @@ void Plane::calculate_forces(const struct sitl_input &input, Vector3f &rot_accel
         throttle = filtered_servo_range(input, 2);
     }
     
-    float thrust     = throttle;
+    float thrust = throttle;//当前油门位置，是个0-1的，归一化的
 
     if (ice_engine) {
         thrust = icengine.update(input);
@@ -333,7 +335,7 @@ void Plane::calculate_forces(const struct sitl_input &input, Vector3f &rot_accel
             }
             if (now - launch_start_ms < launch_time*1000) {
                 force.x += launch_accel;
-                force.z += launch_accel/3;
+                force.z += launch_accel*-0.2;
             }
         } else {
             // allow reset of catapult
@@ -342,17 +344,18 @@ void Plane::calculate_forces(const struct sitl_input &input, Vector3f &rot_accel
     }
     
     // simulate engine RPM
-    rpm1 = thrust * 7000;
+    rpm1 = thrust * 3000;
     
     // scale thrust to newtons
-    thrust *= thrust_scale;
+    //thrust *= thrust_scale;
+	thrust *= GRAVITY_MSS * (-0.5 * airspeed + 43);//考虑推力随速度的变化
 
     accel_body = Vector3f(thrust, 0, 0) + force;
     accel_body /= mass;
 
     // add some noise
     if (thrust_scale > 0) {
-        add_noise(fabsf(thrust) / thrust_scale / 3.0f);
+        add_noise(fabsf(thrust) / thrust_scale);
     }
 
     if (on_ground() && !tailsitter) {

@@ -513,6 +513,11 @@ void Plane::update_navigation()
         update_loiter(radius);
         break;
 
+    case Mode::Number::GG:
+        if (mode_gg.HB1_GG_state == ModeGG::HB1_GG_STEP1) {
+            nav_controller->update_waypoint(prev_WP_loc, next_WP_loc);
+        }
+        break;
     case Mode::Number::CRUISE:
         update_cruise();
         break;
@@ -538,7 +543,6 @@ void Plane::update_navigation()
     case Mode::Number::QRTL:
     case Mode::Number::QAUTOTUNE:
     case Mode::Number::QACRO:
-    case Mode::Number::GG:
     case Mode::Number::TAKEOFF:
     case Mode::Number::FSAUTO:
         // nothing to do

@@ -34,6 +34,7 @@ void Plane::HB1_msg_mission2apm_set_wp_handle() {
 }
 
 void Plane::HB1_msg_mission2apm_set_interim_handle() {
+    if (HB1_Status.state == HB1_Mission_Hover2 || HB1_Status.state == HB1_Mission_Attack) {return;}
     HB1_mission2apm &tmp_msg = HB1_uart_mission.get_msg_mission2apm();
 
     HB1_interim_cmd.id = MAV_CMD_NAV_WAYPOINT;
@@ -58,10 +59,16 @@ void Plane::HB1_msg_mission2apm_set_interim_handle() {
             plane.mission.replace_cmd(plane.mission.num_commands()-2, HB1_interim_cmd);
         }
     }
-    gcs().send_text(MAV_SEVERITY_INFO, "Interim (%d / %d) saved", g2.hb1_num_interim.get(), plane.mission.num_commands());
+    if ((HB1_Status.state == HB1_Mission_PreAttack) && (control_mode == &mode_auto) ) {
+        HB1_status_set_HB_Mission_Action(HB1_Mission_PreAttack,true);
+        gcs().send_text(MAV_SEVERITY_INFO, "Interim (%d / %d) reset and saved", g2.hb1_num_interim.get(), plane.mission.num_commands());
+    } else {
+        gcs().send_text(MAV_SEVERITY_INFO, "Interim (%d / %d) saved", g2.hb1_num_interim.get(), plane.mission.num_commands());
+    }
 }
 
 void Plane::HB1_msg_mission2apm_set_attack_handle() {
+    if (HB1_Status.state == HB1_Mission_Hover2 || HB1_Status.state == HB1_Mission_Attack) {return;}
     HB1_mission2apm &tmp_msg = HB1_uart_mission.get_msg_mission2apm();
 
     HB1_attack_cmd.id = MAV_CMD_NAV_WAYPOINT;

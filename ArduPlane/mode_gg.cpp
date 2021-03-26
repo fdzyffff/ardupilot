@@ -66,7 +66,6 @@ void ModeGG::update()
             plane.prev_WP_loc = _HB1_attack_prev_WP_loc;
             plane.next_WP_loc = _HB1_attack_next_WP_loc;
             // update waypoint controller
-            plane.nav_controller->update_waypoint(_HB1_attack_prev_WP_loc, _HB1_attack_next_WP_loc);
             plane.calc_nav_roll();
             plane.calc_throttle();
             plane.calc_nav_pitch();
@@ -77,6 +76,7 @@ void ModeGG::update()
             // once track covered, go final stage
             if ((_track_dist - _track_covered) < (MAX(0.5f,final_gg_sec) * final_speed_cm)) {
                 set_HB1_GG_state(HB1_GG_STEP2);
+                gcs().send_text(MAV_SEVERITY_INFO, "Final");
             }
             if (print_counter%133 == 0) {                
                 gcs().send_text(MAV_SEVERITY_INFO, "_track_dist ; _track_rest : %0.2f, %0.2f", _track_dist, _track_dist - _track_covered);
@@ -92,12 +92,17 @@ void ModeGG::update()
     }
 
     if (plane.arming.is_armed()) {
-        if (plane.ins.get_accel_peak_hold_neg_x() < -(10.0f)){
-#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-            plane.arming.disarm();
-            gcs().send_text(MAV_SEVERITY_INFO, "Disarm motors [SITL]");
-#endif
-            gcs().send_text(MAV_SEVERITY_INFO, "Hit at (%0.2f) M", plane.current_loc.get_distance(_HB1_attack_next_WP_loc));
+        if (plane.ins.get_accel_peak_hold_neg_x() < -(20.0f)){
+// #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+//             plane.arming.disarm();
+//             gcs().send_text(MAV_SEVERITY_INFO, "Disarm motors [SITL]");
+//             gcs().send_text(MAV_SEVERITY_INFO, "Hit at (%0.2f) M", plane.current_loc.get_distance(_HB1_attack_next_WP_loc));
+
+// #else
+            if (print_counter%400 == 0) {  
+                gcs().send_text(MAV_SEVERITY_INFO, "Hit at (%0.2f) M", plane.current_loc.get_distance(_HB1_attack_next_WP_loc));
+            }
+// #endif
         }
     }
 }

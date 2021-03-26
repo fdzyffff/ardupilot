@@ -197,6 +197,7 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force
         default:
             break;
     }
+    HB1_Power.send_counter = 3;
     HB1_msg_apm2power_send();
 }
 

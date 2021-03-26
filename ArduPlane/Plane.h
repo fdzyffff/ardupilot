@@ -1164,6 +1164,7 @@ private:
         float HB1_engine_rpm;
         float HB1_engine_temp;
         uint32_t last_update_ms;
+        int8_t send_counter;
     } HB1_Power;
 
     AP_Mission::Mission_Command HB1_attack_cmd;
@@ -1225,7 +1226,7 @@ private:
     void HB1_msg_mission2apm_Disarm_handle();
     void HB1_msg_mission2apm_ServoTest_handle();
 
-    void HB1_status_set_HB_Mission_Action(HB1_Mission_t action);
+    void HB1_status_set_HB_Mission_Action(HB1_Mission_t action, bool Force_set=false);
     uint8_t HB1_status_get_HB_Mission_Action();
     void HB1_Mission_update();
 

@@ -67,10 +67,6 @@ void Plane::HB1_uart_update_50Hz()
     HB1_uart_mission.write();
     HB1_uart_cam.write();
 
-    if (!HB1_uart_power.get_msg_apm2power()._msg_1.need_send) {
-        HB1_Power_throttle_update();
-    }
-    HB1_uart_power.write();
 }
 
 void Plane::HB1_uart_update_10Hz()
@@ -78,6 +74,16 @@ void Plane::HB1_uart_update_10Hz()
     HB1_msg_apm2mission_send();
     HB1_msg_apm2cam_send();
 
+    if (HB1_uart_power.get_msg_apm2power()._msg_1.need_send && HB1_Power.send_counter > 0) {
+        HB1_uart_power.write();
+        if (HB1_Power.send_counter > 1) {
+            HB1_Power.send_counter--;
+            HB1_uart_power.get_msg_apm2power()._msg_1.need_send = true;
+        }
+    } else {
+        HB1_Power_throttle_update();
+        HB1_uart_power.write();
+    }
     HB1_uart_print();
 }
 
