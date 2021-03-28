@@ -74,12 +74,11 @@ void Plane::HB1_Mission_update() {
             }
             break;
         case HB1_Mission_Hover :
-            if (timer > HB1_Status.time_out) {
+            if ( (HB1_Status.time_out==0) && (timer > HB1_Status.time_out) ) {
                 if (g2.hb1_num_attack > 0) {
                     HB1_Status.mission_complete = false;
                     HB1_status_set_HB_Mission_Action(HB1_Mission_PreAttack);
                 } else {
-                    HB1_attack_cmd.content.location = next_WP_loc;
                     HB1_status_set_HB_Mission_Action(HB1_Mission_Attack);
                 }
             }
@@ -155,6 +154,7 @@ void Plane::HB1_status_set_HB_Mission_Action(HB1_Mission_t action, bool Force_se
             break;
         case HB1_Mission_Hover :
             set_mode(mode_loiter, MODE_REASON_UNAVAILABLE);
+            next_WP_loc = HB1_lastWP_cmd.content.location;
             HB1_Status.state = action;
             break;
         case HB1_Mission_Hover2 :
@@ -179,7 +179,7 @@ void Plane::HB1_status_set_HB_Mission_Action(HB1_Mission_t action, bool Force_se
             break;
         case HB1_Mission_Attack :
             if (g2.hb1_num_attack == 0) {
-                HB1_attack_cmd.content.location = current_loc;
+                HB1_attack_cmd.content.location = next_WP_loc;
             }
             set_mode(mode_gg, MODE_REASON_UNAVAILABLE);
             HB1_Status.state = action;

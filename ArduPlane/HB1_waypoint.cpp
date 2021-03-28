@@ -30,6 +30,7 @@ void Plane::HB1_msg_mission2apm_set_wp_handle() {
     if (plane.mission.add_cmd(tmp_cmd)) {
         g2.hb1_num_wp.set_and_save(g2.hb1_num_wp.get()+1);
         gcs().send_text(MAV_SEVERITY_INFO, "WP (%d / %d) saved", g2.hb1_num_wp.get(), plane.mission.num_commands());
+        HB1_lastWP_cmd = tmp_cmd;
     }
 }
 

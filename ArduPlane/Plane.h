@@ -1167,8 +1167,9 @@ private:
         int8_t send_counter;
     } HB1_Power;
 
-    AP_Mission::Mission_Command HB1_attack_cmd;
+    AP_Mission::Mission_Command HB1_lastWP_cmd;
     AP_Mission::Mission_Command HB1_interim_cmd;
+    AP_Mission::Mission_Command HB1_attack_cmd;
 
     bool HB1_GG_final;
 
