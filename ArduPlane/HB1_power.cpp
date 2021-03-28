@@ -40,6 +40,10 @@ void Plane::HB1_Power_pwm_update() {
             HB1_throttle = thr_min;
         }
 
+        if ( (HB1_Status.state == HB1_Mission_Takeoff) && (HB1_Power.state == HB1_PowerAction_None) ) {
+            HB1_throttle = thr_min;
+        }
+
         if (HB1_Power.state == HB1_PowerAction_EngineSTART) {
             float timer_delay = MAX(timer - 0.0f, 0.0f);
             if (timer_delay < 600.f) {
@@ -157,7 +161,7 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force
             relay.off(0);
             relay.off(1);
             relay.off(2);
-            relay.on(3);
+            relay.off(3);
             break;
         case HB1_PowerAction_GROUND_EngineSTART:
             gcs().send_text(MAV_SEVERITY_INFO, "G Engine Starting");

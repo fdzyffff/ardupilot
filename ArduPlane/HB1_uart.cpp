@@ -284,7 +284,6 @@ void Plane::HB1_msg_apm2power_send() {
             tmp_msg._msg_1.content.msg.ctrl_cmd = 8;
             tmp_msg._msg_1.need_send = true;
             break;
-        case HB1_PowerAction_EngineSTART:
         case HB1_PowerAction_GROUND_EngineSTART:
             tmp_msg._msg_1.content.msg.ctrl_cmd = 4;
             tmp_msg._msg_1.need_send = true;
@@ -298,6 +297,7 @@ void Plane::HB1_msg_apm2power_send() {
             tmp_msg._msg_1.content.msg.ctrl_cmd = 1;
             tmp_msg._msg_1.need_send = true;
             break;
+        case HB1_PowerAction_EngineSTART:
         default:
             tmp_msg._msg_1.content.msg.ctrl_cmd = 0;
             tmp_msg._msg_1.need_send = false;
