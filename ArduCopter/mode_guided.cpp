@@ -198,7 +198,7 @@ bool ModeGuided::set_destination(const Vector3f& destination, bool use_yaw, floa
 
     // no need to check return status because terrain data is not used
     if (!wp_nav->set_wp_destination(destination, true)) {
-        !wp_nav->set_wp_destination(destination, false);
+        wp_nav->set_wp_destination(destination, false);
     }
 
     // log target
@@ -590,6 +590,17 @@ void ModeGuided::posvel_control_run()
 
     // advance position target using velocity target
     guided_pos_target_cm += guided_vel_target_cms * dt;
+
+    // float posD = 0.0f;
+    // if (ahrs.get_relative_position_D_origin(posD)) {
+    //     posD*=-10.f;
+    // }
+
+    // float tmp_off_z = 0.0f;
+    // if (copter.rangefinder_alt_ok()) {
+    //     tmp_off_z = posD - (float)copter.rangefinder_state.alt_cm;
+    //     guided_pos_target_cm.z = copter.Ugcs_last_valid_alt_cm.get() + tmp_off_z;
+    // }
 
     // send position and velocity targets to position controller
     pos_control->set_pos_target(guided_pos_target_cm);

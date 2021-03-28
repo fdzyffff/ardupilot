@@ -56,14 +56,17 @@ void ModeBrake::run()
     // update altitude target and call position controller
     // protects heli's from inflight motor interlock disable
     float target_climb_rate = 0.0f;
-    if (copter.rangefinder_alt_ok() && (float)copter.rangefinder_state.alt_cm < 180.f) {
-        target_climb_rate = 50.f;
-    }
+    // if (copter.rangefinder_alt_ok() && (float)copter.rangefinder_state.alt_cm < 180.f) {
+    //     target_climb_rate = 50.f;
+    // }
+    target_climb_rate = copter.surface_tracking.adjust_climb_rate(target_climb_rate);
     if (motors->get_desired_spool_state() == AP_Motors::DesiredSpoolState::GROUND_IDLE && !copter.ap.land_complete) {
         pos_control->set_alt_target_from_climb_rate(-abs(g.land_speed), G_Dt, false);
     } else {
         pos_control->set_alt_target_from_climb_rate_ff(target_climb_rate, G_Dt, false);
     }
+
+    // adjust climb rate using rangefinder
     pos_control->update_z_controller();
 
     if (_timeout_ms != 0 && millis()-_timeout_start >= _timeout_ms) {

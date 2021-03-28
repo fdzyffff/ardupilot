@@ -158,7 +158,7 @@ void UGround::state_update()
                     _state_timer_ms = 3000000;
                 }
             } else {
-                ;//copter.mode_guided.set_destination_posvel(_dest_loc_vec, _dest_vel_vec, true, _dest_yaw_cd, false, 0.0f, false);
+                copter.mode_guided.set_destination_posvel(_dest_loc_vec, _dest_vel_vec, true, _dest_yaw_cd, false, 0.0f, false);
             }
             break;
         }
@@ -175,6 +175,9 @@ void UGround::state_update()
                 set_state(UGCS_Lockon);
                 _state_timer_ms = 300000;
             }
+            if (!is_leader()) {
+                copter.mode_guided.set_destination_posvel(_dest_loc_vec, _dest_vel_vec, true, _dest_yaw_cd, false, 0.0f, false);
+            }
             break;
         }
         case UGCS_Assemble:
@@ -184,6 +187,7 @@ void UGround::state_update()
                     set_state(UGCS_Lockon);
                     _state_timer_ms = 300000;
                 }
+                copter.mode_guided.set_destination_posvel(_dest_loc_vec, _dest_vel_vec, true, _dest_yaw_cd, false, 0.0f, false);
             } else {
                 set_state(UGCS_Lockon);
                 _state_timer_ms = 300000;
@@ -230,7 +234,6 @@ void UGround::set_state(UGCS_state_t new_state, bool force_set)
         case UGCS_Fly:
             ret = copter.Ugcs_do_fly();
             break;
-        case UGCS_Standby1:
         case UGCS_Standby2:
             ret = copter.Ugcs_do_standby();
             break;
@@ -249,6 +252,8 @@ void UGround::set_state(UGCS_state_t new_state, bool force_set)
         case UGCS_FS1:
             ret = copter.Ugcs_do_fs1();
             break;
+        case UGCS_Standby1:
+            ret = (copter.control_mode == Mode::Number::GUIDED);
         default:
             break;
     }
@@ -384,7 +389,7 @@ bool Copter::Ugcs_do_fly()     // fly
             return true;
         }
     } else {
-        return set_mode(Mode::Number::FOLLOW, ModeReason::TOY_MODE);
+        return set_mode(Mode::Number::GUIDED, ModeReason::TOY_MODE);
     }
     return false;
 }
@@ -403,7 +408,7 @@ bool Copter::Ugcs_do_cruise()  // fly and search
             return true;
         }
     } else {
-        return set_mode(Mode::Number::FOLLOW, ModeReason::TOY_MODE);
+        return set_mode(Mode::Number::GUIDED, ModeReason::TOY_MODE);
     }
     return false;
 }
@@ -413,7 +418,7 @@ bool Copter::Ugcs_do_assemble()  // assemble
     if(Ugcs.is_leader()) {
         return set_mode(Mode::Number::LOCKON, ModeReason::TOY_MODE);
     } else {
-        return set_mode(Mode::Number::FOLLOW, ModeReason::TOY_MODE);
+        return set_mode(Mode::Number::GUIDED, ModeReason::TOY_MODE);
     }
 }
 
@@ -510,6 +515,7 @@ int32_t Copter::Ugcs_get_terrain_alt() {
 int32_t Copter::Ugcs_get_relative_alt() {
     float posD = 0.0f;
     ahrs.get_relative_position_D_home(posD);
+    ahrs.get_relative_position_D_origin(posD);
     posD *= -1000.0f;
     return (int32_t)posD;
 }
