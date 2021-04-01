@@ -36,6 +36,8 @@ public:
         ZIGZAG    =    24,  // ZIGZAG mode is able to fly in a zigzag manner with predefined point A and point B
         SYSTEMID  =    25,  // System ID mode produces automated system identification signals in the controllers
         AUTOROTATE =   26,  // Autonomous autorotation
+        MYATT      =   27,  // Autonomous autorotation
+        MYVEL      =   28,  // Autonomous autorotation
     };
 
     // constructor
@@ -1465,3 +1467,68 @@ private:
 
 };
 #endif
+
+
+
+class ModeMyAtt : public Mode {
+
+public:
+    // inherit constructor
+    using Mode::Mode;
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    bool requires_GPS() const override { return false; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(bool from_gcs) const override { return true; };
+    bool is_autopilot() const override { return false; }
+    bool has_user_takeoff(bool must_navigate) const override {
+        return !must_navigate;
+    }
+
+protected:
+
+    const char *name() const override { return "MYATT"; }
+    const char *name4() const override { return "MATT"; }
+
+    void myget_pilot_desired_lean_angles(float &roll_out, float &pitch_out, float angle_max, float angle_limit) const;
+
+private:
+
+};
+
+
+class ModeMyVel : public Mode {
+public:
+    // need a constructor for parameters
+    using Mode::Mode;
+
+    bool init(bool ignore_checks) override;
+    void run(void) override;
+
+    bool requires_GPS() const override { return false; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(bool from_gcs) const override { return true; };
+    bool is_autopilot() const override { return false; }
+    bool has_user_takeoff(bool must_navigate) const override {
+        return !must_navigate;
+    }
+
+    static const struct AP_Param::GroupInfo var_info[];
+
+protected:
+    const char *name() const override { return "MYVEL"; }
+    const char *name4() const override { return "MVEL"; }
+
+private:
+
+    LowPassFilterVector2f myvel_filter;
+
+    bool myvel_init(bool ignore_checks);
+    void myvel_run();
+    void myvel_vel_to_angle(Vector2f &angle);
+
+    bool limited;
+    Vector2f xy_I;
+};

@@ -473,7 +473,11 @@ void AP_SerialManager::init()
                     AP::RC().add_uart(state[i].uart);
                     break;
 #endif
-                    
+                case SerialProtocol_HIL:
+                    state[i].uart->begin(map_baudrate(state[i].baud),
+                                         AP_SERIALMANAGER_SToRM32_BUFSIZE_RX,
+                                         AP_SERIALMANAGER_SToRM32_BUFSIZE_TX);
+                    break;
                 default:
                     state[i].uart->begin(map_baudrate(state[i].baud));
             }

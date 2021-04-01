@@ -190,6 +190,7 @@
 #endif
 
 #include "mode.h"
+#include <FD1_UART/FD1_UART.h>
 
 class Copter : public AP_Vehicle {
 public:
@@ -236,6 +237,8 @@ public:
     friend class ModeThrow;
     friend class ModeZigZag;
     friend class ModeAutorotate;
+    friend class ModeMyAtt;
+    friend class ModeMyVel;
 
     Copter(void);
 
@@ -913,6 +916,30 @@ private:
     void userhook_auxSwitch2(uint8_t ch_flag);
     void userhook_auxSwitch3(uint8_t ch_flag);
 
+    FD1_UART FD1_uart_msg_hil{AP_SerialManager::SerialProtocol_HIL};
+
+    struct {
+        bool healthy;
+        uint32_t last_update_ms;
+        uint8_t ctrl_mode;
+        float yaw_rad;
+        float vel_x_cms;
+        float vel_y_cms;
+        float ctrl_vel_x_cms;
+        float ctrl_vel_y_cms;
+        float ctrl_vel_z_cms;
+        float ctrl_roll_cd;
+        float ctrl_pitch_cd;
+        float ctrl_yaw_cd;
+        float ctrl_yaw_rate_cd;
+    } FD1_hil;
+
+    void FD1_uart_init();
+    void FD1_uart_hil_handle();
+    void FD1_uart_hil_send();
+    void FD1_uart_update();
+    // /void Log_Write_ATTHOLD();
+
 #if OSD_ENABLED == ENABLED
     void publish_osd_info();
 #endif
@@ -993,6 +1020,8 @@ private:
 #if MODE_AUTOROTATE_ENABLED == ENABLED
     ModeAutorotate mode_autorotate;
 #endif
+    ModeMyAtt mode_myatt;
+    ModeMyVel mode_myvel;
 
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);

@@ -170,6 +170,12 @@ Mode *Copter::mode_from_mode_num(const Mode::Number mode)
             ret = &mode_autorotate;
             break;
 #endif
+        case Mode::Number::MYATT:
+            ret = &mode_myatt;
+            break;
+        case Mode::Number::MYVEL:
+            ret = &mode_myvel;
+            break;
 
         default:
             break;

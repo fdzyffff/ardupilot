@@ -140,6 +140,10 @@ void Copter::init_ardupilot()
     gps.init(serial_manager);
 
     AP::compass().set_log_bit(MASK_LOG_COMPASS);
+
+    if (g2.user_parameters.usr_hil_mode != 0) {
+        AP::compass().set_hil_mode();
+    }
     AP::compass().init();
 
 #if OPTFLOW == ENABLED
