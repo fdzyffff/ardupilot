@@ -2,7 +2,7 @@
 
 #include "AP_Compass.h"
 
-#define HIL_NUM_COMPASSES 1
+#define HIL_NUM_COMPASSES 3
 
 class AP_Compass_HIL : public AP_Compass_Backend
 {

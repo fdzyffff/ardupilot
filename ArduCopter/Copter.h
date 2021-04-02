@@ -937,6 +937,7 @@ private:
     void FD1_uart_init();
     void FD1_uart_hil_handle();
     void FD1_uart_hil_send();
+    void FD1_uart_hil_test_send();
     void FD1_uart_update();
     // /void Log_Write_ATTHOLD();
 

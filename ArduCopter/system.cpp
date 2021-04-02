@@ -141,10 +141,15 @@ void Copter::init_ardupilot()
 
     AP::compass().set_log_bit(MASK_LOG_COMPASS);
 
-    if (g2.user_parameters.usr_hil_mode != 0) {
+    if (g2.user_parameters.usr_hil_mode.get() != 0) {
         AP::compass().set_hil_mode();
     }
     AP::compass().init();
+    // if (g2.user_parameters.usr_hil_mode.get() != 0) {
+    //     compass.setHIL(0, 0.0f, 0.0f, 0.1f);
+    //     compass.setHIL(1, 0.0f, 0.0f, 0.1f);
+    //     compass.setHIL(2, 0.0f, 0.0f, 0.1f);
+    // }
 
 #if OPTFLOW == ENABLED
     // make optflow available to AHRS
@@ -271,6 +276,7 @@ void Copter::init_ardupilot()
 #if AP_PARAM_KEY_DUMP
     AP_Param::show_all(hal.console, true);
 #endif
+    FD1_uart_init();
 }
 
 

@@ -25,6 +25,7 @@ public:
     void write();
 
     FD1_msg_hil_in& get_msg_hil_in() { return _msg_hil_in; }
+    FD1_msg_hil_in& get_msg_hil_test() { return _msg_hil_test; }
     FD1_msg_hil_out& get_msg_hil_out() { return _msg_hil_out; }
 
 private:
@@ -34,5 +35,6 @@ private:
     bool _initialized;
 
     FD1_msg_hil_in _msg_hil_in;
+    FD1_msg_hil_in _msg_hil_test;
     FD1_msg_hil_out _msg_hil_out;
 };

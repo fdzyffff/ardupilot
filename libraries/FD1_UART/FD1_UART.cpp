@@ -44,4 +44,13 @@ void FD1_UART::write(void)
         _msg_hil_out._msg_1.updated = false;
         _msg_hil_out._msg_1.need_send = false;
     }
+    if (_msg_hil_test._msg_1.need_send)
+    {
+        _msg_hil_test.swap_message();
+        for(i = 0;i < _msg_hil_test._msg_1.length ; i ++) {
+            _port->write(_msg_hil_test._msg_1.content.data[i]);
+        }
+        _msg_hil_test._msg_1.updated = false;
+        _msg_hil_test._msg_1.need_send = false;
+    }
 }
