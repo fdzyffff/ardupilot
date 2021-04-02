@@ -44,5 +44,6 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("_FILT_HZ", 2, UserParameters, myvel_filter_hz, 1),
     AP_GROUPINFO("_HIL_TEST", 3, UserParameters, usr_hil_test, 0),
+    AP_GROUPINFO("_PRINT", 4, UserParameters, usr_print, 0),
     AP_GROUPEND
 };

@@ -22,8 +22,12 @@ bool ModeMyVel::init(bool ignore_checks)
 
     copter.g2.user_parameters.myvel_pi_xy.set_dt(1.0/copter.scheduler.get_loop_rate_hz());
 
-    gcs().send_text(MAV_SEVERITY_INFO, "Mode MYVEL");
-
+    if (copter.FD1_hil.healthy) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Mode MYVEL");
+    } else {
+        gcs().send_text(MAV_SEVERITY_INFO, "No Ctrl data");
+        return false;
+    }
     return true;
 }
 

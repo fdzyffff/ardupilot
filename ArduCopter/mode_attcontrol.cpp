@@ -13,7 +13,12 @@ bool ModeMyAtt::init(bool ignore_checks)
         pos_control->set_alt_target_to_current_alt();
         pos_control->set_desired_velocity_z(inertial_nav.get_velocity_z());
     }
-    gcs().send_text(MAV_SEVERITY_INFO, "Mode MYATT");
+    if (copter.FD1_hil.healthy) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Mode MYATT");
+    } else {
+        gcs().send_text(MAV_SEVERITY_INFO, "No Ctrl data");
+        return false;
+    }
 
     return true;
 }

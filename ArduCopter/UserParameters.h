@@ -13,6 +13,7 @@ public:
     // Put your parameter variable definitions here
     AP_Int16 usr_hil_mode;
     AP_Int16 usr_hil_test;
+    AP_Int16 usr_print;
 
     AC_PI_2D myvel_pi_xy{0.2f, 0.3f, 3000, 5, 0.0025f};
     AP_Float myvel_filter_hz;
