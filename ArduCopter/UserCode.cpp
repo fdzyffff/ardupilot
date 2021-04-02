@@ -172,6 +172,7 @@ void Copter::FD1_uart_hil_send() {
     Matrix3f M_ned_to_body = Matrix3f(ahrs.get_rotation_body_to_ned()).transposed();
     Vector3f tmp_acc = M_ned_to_body * ahrs.get_accel_ef();
     tmp_msg._msg_1.need_send = true;
+    tmp_msg._msg_1.content.msg.sum_check = 0;
     tmp_msg._msg_1.content.msg.header.head_1 = FD1_msg_hil_out::PREAMBLE1;
     tmp_msg._msg_1.content.msg.header.head_2 = FD1_msg_hil_out::PREAMBLE2;
     tmp_msg._msg_1.content.msg.ctrl_mode = FD1_hil.ctrl_mode;
@@ -187,12 +188,11 @@ void Copter::FD1_uart_hil_send() {
     tmp_msg._msg_1.content.msg.height_rel_home = 0;
     tmp_msg._msg_1.content.msg.velz = 0;
 
-    for (int8_t i = 0; i < tmp_msg._msg_1.length - 1; i++) {
+    for (int8_t i = 0; i < tmp_msg._msg_1.length - 2; i++) {
         tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
     }
     tmp_msg._msg_1.content.msg.end = FD1_msg_hil_out::POSTAMBLE;
 }
-
 
 void Copter::FD1_uart_hil_test_send() {
     FD1_msg_hil_in &tmp_msg = FD1_uart_msg_hil.get_msg_hil_test();
