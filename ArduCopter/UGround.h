@@ -53,6 +53,7 @@ public:
     float get_dest_yaw_cd() {return _dest_yaw_cd;}
     float get_dist_to_target() {return _dist_to_target;}
     float get_bearing_to_target() {return _bearing_to_target;}
+    float get_cruise_yaw_rate(float yaw_middle_cd);
 
     int16_t _group_id;
     int16_t _position_id;

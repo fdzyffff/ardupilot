@@ -155,7 +155,7 @@ void UGround::state_update()
             if (is_leader()){
                 if ((copter.mode_auto.mission.get_current_nav_index() > copter.g2.user_parameters.gcs_num_cruise) ) {
                     set_state(UGCS_Standby2);
-                    _state_timer_ms = 3000000;
+                    _state_timer_ms = copter.g2.user_parameters.gcs_time_cruise<=0?3600000:copter.g2.user_parameters.gcs_time_cruise;
                 }
             } else {
                 copter.mode_guided.set_destination_posvel(_dest_loc_vec, _dest_vel_vec, true, _dest_yaw_cd, false, 0.0f, false);
@@ -165,6 +165,9 @@ void UGround::state_update()
         case UGCS_Standby2:
         {
             if (timer>_state_timer_ms) {
+                set_state(UGCS_Curise);
+            }
+            if (timer>3600000) {
                 set_state(UGCS_FS1);
             }
             break;
@@ -360,6 +363,28 @@ int16_t UGround::get_state_num() {
     }
     return ret;
 }
+
+float UGround::get_cruise_yaw_rate(float yaw_middle_cd) {
+    if (get_state() != UGCS_Curise || !is_leader()) {return 0.0f;}
+    static uint32_t _last_ms = millis();
+    static float angle_rate = 0.f;
+    float para_angle = fabsf(copter.g2.user_parameters.gcs_search_yangle) * 100.f;
+    float para_angle_rate = fabsf(copter.g2.user_parameters.gcs_search_yrate) * 100.f;
+    uint32_t now = millis();
+    float delta_cd = wrap_180_cd(copter.attitude_control->get_att_target_euler_cd().z - yaw_middle_cd);
+    if (now - _last_ms > 1000) {
+        angle_rate = para_angle_rate;
+    } else {
+        if (delta_cd < -para_angle) {
+            angle_rate = para_angle_rate;
+        } else if (delta_cd > para_angle) {
+            angle_rate = -para_angle_rate;
+        }
+    }
+    _last_ms = now;
+    return angle_rate;
+}
+
 
 bool Copter::Ugcs_reached_position() {
     static uint32_t _last_ms = millis();
