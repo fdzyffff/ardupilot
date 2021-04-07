@@ -38,6 +38,8 @@ void ModeLockon::run()
     // get pilot's desired yaw rate
     if (copter.Ucam.is_active()) {
         target_yaw_rate = copter.Ucam.get_target_yaw_rate();
+    } else {
+        target_yaw_rate = copter.Ugcs.get_cruise_yaw_rate();
     }
 
     if (copter.rangefinder_alt_ok() && (float)copter.rangefinder_state.alt_cm < 100.f) {

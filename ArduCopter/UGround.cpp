@@ -37,6 +37,7 @@ void UGround::init()
     _offset_position.zero();
     _dist_to_target = 0.0f;
     _bearing_to_target = 0.0f;
+    _yaw_middle_cd = 0.0f;
 }
 
 void UGround::handle_info(int16_t cmd, int16_t group_id, int16_t distance, int16_t free)
@@ -364,12 +365,16 @@ int16_t UGround::get_state_num() {
     return ret;
 }
 
+float UGround::get_cruise_yaw_rate() {
+    return get_cruise_yaw_rate(_yaw_middle_cd);
+}
+
 float UGround::get_cruise_yaw_rate(float yaw_middle_cd) {
-    if (get_state() != UGCS_Curise || !is_leader()) {return 0.0f;}
-    static uint32_t _last_ms = millis();
-    static float angle_rate = 0.f;
+    if ((get_state() != UGCS_Curise && get_state() != UGCS_Lockon)|| !is_leader()) {return 0.0f;}
     float para_angle = fabsf(copter.g2.user_parameters.gcs_search_yangle) * 100.f;
     float para_angle_rate = fabsf(copter.g2.user_parameters.gcs_search_yrate) * 100.f;
+    static uint32_t _last_ms = millis();
+    static float angle_rate = para_angle_rate;
     uint32_t now = millis();
     float delta_cd = wrap_180_cd(copter.attitude_control->get_att_target_euler_cd().z - yaw_middle_cd);
     if (now - _last_ms > 1000) {
@@ -411,6 +416,7 @@ bool Copter::Ugcs_do_fly()     // fly
     if (Ugcs.is_leader()) {
         if (set_mode(Mode::Number::AUTO, ModeReason::TOY_MODE)) {
             mode_auto.mission.set_current_cmd(1);
+            Ugcs.set_cruise_yaw_middle_cd(attitude_control->get_att_target_euler_cd().z);
             return true;
         }
     } else {

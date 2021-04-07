@@ -46,6 +46,7 @@ public:
     int16_t get_group_id() {return _group_id;}
     Vector3f get_offset_position() {return _offset_position;}
     Vector3f get_dest_loc_vec() {return _dest_loc_vec;}
+    void set_cruise_yaw_middle_cd(float yaw_middle_cd) {_yaw_middle_cd = yaw_middle_cd;}
 
     void set_up_offset(int8_t sender_id, Vector3f target_postion, Vector3f target_velocity, float target_heading);
 
@@ -53,11 +54,13 @@ public:
     float get_dest_yaw_cd() {return _dest_yaw_cd;}
     float get_dist_to_target() {return _dist_to_target;}
     float get_bearing_to_target() {return _bearing_to_target;}
+    float get_cruise_yaw_rate();
     float get_cruise_yaw_rate(float yaw_middle_cd);
 
     int16_t _group_id;
     int16_t _position_id;
     uint32_t _last_update_ms;
+    float _yaw_middle_cd;
 
 private:
 
