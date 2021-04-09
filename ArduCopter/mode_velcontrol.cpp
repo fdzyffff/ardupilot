@@ -37,11 +37,11 @@ bool ModeMyVel::init(bool ignore_checks)
 void ModeMyVel::myvel_vel_to_angle(Vector2f &bf_angles)
 {
     // filter the flow rate
-    Vector2f input_ef = myvel_filter.apply(Vector2f(copter.FD1_hil.vel_x_cms, copter.FD1_hil.vel_y_cms));
+    Vector2f raw_ef = myvel_filter.apply(Vector2f(copter.FD1_hil.vel_y_cms*0.01f, copter.FD1_hil.vel_x_cms*0.01f));
 
-    input_ef = Vector2f(copter.FD1_hil.ctrl_vel_x_cms, copter.FD1_hil.ctrl_vel_y_cms) - input_ef;
-    input_ef.x *= -1.0f;
-    input_ef.y *= -1.0f;
+    Vector2f input_ef = Vector2f(copter.FD1_hil.ctrl_vel_y_cms*0.01f, copter.FD1_hil.ctrl_vel_x_cms*0.01f) - raw_ef;
+    input_ef.x *= 1.f;
+    input_ef.y *= -1.f;
     // run PI controller
     copter.g2.user_parameters.myvel_pi_xy.set_input(input_ef);
 

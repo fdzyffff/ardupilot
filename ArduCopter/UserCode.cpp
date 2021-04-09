@@ -13,7 +13,7 @@ void Copter::userhook_FastLoop()
 {
     FD1_uart_update();
     // put your 100Hz code here
-    if (g2.user_parameters.usr_hil_mode != 0) {
+    if (g2.user_parameters.usr_hil_compass != 0) {
         compass.setHIL(0, ahrs.roll, ahrs.pitch, FD1_hil.yaw_rad);
         compass.setHIL(1, ahrs.roll, ahrs.pitch, FD1_hil.yaw_rad);
         compass.setHIL(2, ahrs.roll, ahrs.pitch, FD1_hil.yaw_rad);
@@ -131,37 +131,22 @@ void Copter::FD1_uart_hil_handle() {
             // }
             last_control_mode = tmp_msg._msg_1.content.msg.ctrl_mode;
         }
-        switch (FD1_hil.ctrl_mode) {
-            case 1:
-                FD1_hil.ctrl_roll_cd = constrain_float((float)tmp_msg._msg_1.content.msg.ctrl_roll_cd, -4500.f, 4500.f);
-                FD1_hil.ctrl_pitch_cd = constrain_float((float)tmp_msg._msg_1.content.msg.ctrl_pitch_cd, -4500.f, 4500.f);
-                FD1_hil.ctrl_vel_z_cms = (float)tmp_msg._msg_1.content.msg.ctrl_z_vel_cms;
-                FD1_hil.ctrl_yaw_cd = (float)tmp_msg._msg_1.content.msg.ctrl_yaw_cd;
-                break;
-            case 2:
-                FD1_hil.ctrl_roll_cd = constrain_float((float)tmp_msg._msg_1.content.msg.ctrl_roll_cd, -4500.f, 4500.f);
-                FD1_hil.ctrl_pitch_cd = constrain_float((float)tmp_msg._msg_1.content.msg.ctrl_pitch_cd, -4500.f, 4500.f);
-                FD1_hil.ctrl_vel_z_cms = (float)tmp_msg._msg_1.content.msg.ctrl_z_vel_cms;
-                FD1_hil.ctrl_yaw_rate_cd = degrees((float)tmp_msg._msg_1.content.msg.ctrl_yaw_rate_crads);
-                break;
-            case 3:
-                FD1_hil.ctrl_vel_x_cms = (float)tmp_msg._msg_1.content.msg.ctrl_x_vel_cms;
-                FD1_hil.ctrl_vel_y_cms = (float)tmp_msg._msg_1.content.msg.ctrl_y_vel_cms;
-                FD1_hil.ctrl_vel_z_cms = (float)tmp_msg._msg_1.content.msg.ctrl_z_vel_cms;
-                FD1_hil.ctrl_yaw_cd = (float)tmp_msg._msg_1.content.msg.ctrl_yaw_cd;
-                break;
-            case 4:
-                FD1_hil.ctrl_vel_x_cms = (float)tmp_msg._msg_1.content.msg.ctrl_x_vel_cms;
-                FD1_hil.ctrl_vel_y_cms = (float)tmp_msg._msg_1.content.msg.ctrl_y_vel_cms;
-                FD1_hil.ctrl_vel_z_cms = (float)tmp_msg._msg_1.content.msg.ctrl_z_vel_cms;
-                FD1_hil.ctrl_yaw_rate_cd = degrees((float)tmp_msg._msg_1.content.msg.ctrl_yaw_rate_crads);
-                break;
-            default:
-                break;
-        }
+        FD1_hil.ctrl_roll_cd = constrain_float((float)tmp_msg._msg_1.content.msg.ctrl_roll_cd, -4500.f, 4500.f);
+        FD1_hil.ctrl_pitch_cd = constrain_float((float)tmp_msg._msg_1.content.msg.ctrl_pitch_cd, -4500.f, 4500.f);
+        FD1_hil.ctrl_yaw_cd = (float)tmp_msg._msg_1.content.msg.ctrl_yaw_cd;
+        FD1_hil.ctrl_yaw_rate_cd = degrees((float)tmp_msg._msg_1.content.msg.ctrl_yaw_rate_crads);
+        FD1_hil.ctrl_vel_x_cms = (float)tmp_msg._msg_1.content.msg.ctrl_x_vel_cms;
+        FD1_hil.ctrl_vel_y_cms = (float)tmp_msg._msg_1.content.msg.ctrl_y_vel_cms;
+        FD1_hil.ctrl_vel_z_cms = (float)tmp_msg._msg_1.content.msg.ctrl_z_vel_cms;
+
         FD1_hil.yaw_rad = radians(0.01f*(float)tmp_msg._msg_1.content.msg.angle_yaw_cd);
         FD1_hil.vel_x_cms = (float)tmp_msg._msg_1.content.msg.vel_x_cms;
         FD1_hil.vel_y_cms = (float)tmp_msg._msg_1.content.msg.vel_y_cms;
+        Vector3f temp_vel;
+        if (ahrs.get_velocity_NED(temp_vel) && g2.user_parameters.usr_hil_vel.get() == 0) {
+            FD1_hil.vel_x_cms = 100.f*(float)temp_vel.x;
+            FD1_hil.vel_y_cms = 100.f*(float)temp_vel.y;
+        }
         tmp_msg._msg_1.updated = false;
     }
 }
@@ -203,8 +188,8 @@ void Copter::FD1_uart_hil_test_send() {
     tmp_msg._msg_1.content.msg.ctrl_mode = 2;
     tmp_msg._msg_1.content.msg.ctrl_pitch_cd = ahrs.pitch_sensor;
     tmp_msg._msg_1.content.msg.ctrl_roll_cd = ahrs.roll_sensor;
-    tmp_msg._msg_1.content.msg.ctrl_x_vel_cms = ahrs.roll_sensor/450;
-    tmp_msg._msg_1.content.msg.ctrl_y_vel_cms = -ahrs.pitch_sensor/450;
+    tmp_msg._msg_1.content.msg.ctrl_x_vel_cms = -(float)ahrs.pitch_sensor/4.5f;
+    tmp_msg._msg_1.content.msg.ctrl_y_vel_cms = (float)ahrs.roll_sensor/4.5f;
     tmp_msg._msg_1.content.msg.ctrl_z_vel_cms = 0;
     tmp_msg._msg_1.content.msg.ctrl_yaw_cd = ahrs.yaw_sensor;
     tmp_msg._msg_1.content.msg.ctrl_yaw_rate_crads = (int16_t)constrain_float(ahrs.get_yaw_rate_earth()*100.f, -30000.f, 30000.f);

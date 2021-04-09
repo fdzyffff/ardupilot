@@ -141,7 +141,7 @@ void Copter::init_ardupilot()
 
     AP::compass().set_log_bit(MASK_LOG_COMPASS);
 
-    if (g2.user_parameters.usr_hil_mode.get() != 0) {
+    if (g2.user_parameters.usr_hil_compass.get() != 0) {
         AP::compass().set_hil_mode();
     }
     AP::compass().init();

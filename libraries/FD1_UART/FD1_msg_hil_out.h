@@ -1,6 +1,6 @@
 #include "FD1_message.h"
 
-#define FD1_MSG_HIL_OUT_LEN 27
+#define FD1_MSG_HIL_OUT_LEN 28
 class FD1_msg_hil_out : public FD1_message{
 public:
     struct PACKED FD1_msg_header {
@@ -11,7 +11,7 @@ public:
     // message structure
     struct PACKED MSG_Command_1 {
         FD1_msg_header header;
-        uint8_t ctrl_mode;
+        int16_t ctrl_mode;
         int16_t gyrox;
         int16_t gyroy;
         int16_t gyroz;

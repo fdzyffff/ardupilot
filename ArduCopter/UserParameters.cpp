@@ -5,7 +5,8 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     
     // Put your parameters definition here
     // Note the maximum length of parameter name is 13 chars
-    AP_GROUPINFO("_HIL", 0, UserParameters, usr_hil_mode, 0),
+    AP_GROUPINFO("_HIL_COM", 0, UserParameters, usr_hil_compass, 0),
+    AP_GROUPINFO("_HIL_VEL", 1, UserParameters, usr_hil_vel, 0),
     // @Param: _XY_P
     // @DisplayName: MyVel P gain
     // @Description: MyVel (horizontal) P gain.
@@ -34,7 +35,7 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     // @Range: 0 100
     // @Units: Hz
     // @User: Advanced
-    AP_SUBGROUPINFO(myvel_pi_xy, "_XY_",  1, UserParameters, AC_PI_2D),
+    AP_SUBGROUPINFO(myvel_pi_xy, "_XY_",  2, UserParameters, AC_PI_2D),
 
     // @Param: _FILT_HZ
     // @DisplayName: MyVel Filter Frequency
@@ -42,8 +43,8 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     // @Range: 1 100
     // @Units: Hz
     // @User: Standard
-    AP_GROUPINFO("_FILT_HZ", 2, UserParameters, myvel_filter_hz, 1),
-    AP_GROUPINFO("_HIL_TEST", 3, UserParameters, usr_hil_test, 0),
-    AP_GROUPINFO("_PRINT", 4, UserParameters, usr_print, 0),
+    AP_GROUPINFO("_FILT_HZ", 3, UserParameters, myvel_filter_hz, 1),
+    AP_GROUPINFO("_HIL_TEST", 4, UserParameters, usr_hil_test, 0),
+    AP_GROUPINFO("_PRINT", 5, UserParameters, usr_print, 0),
     AP_GROUPEND
 };
