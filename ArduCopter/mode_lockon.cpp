@@ -42,9 +42,9 @@ void ModeLockon::run()
         target_yaw_rate = copter.Ugcs.get_cruise_yaw_rate();
     }
 
-    if (copter.rangefinder_alt_ok() && (float)copter.rangefinder_state.alt_cm < 100.f) {
-        target_climb_rate = 50.f;
-    }
+    // if (copter.rangefinder_alt_ok() && (float)copter.rangefinder_state.alt_cm < 100.f) {
+    //     target_climb_rate = 50.f;
+    // }
     target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
 
 

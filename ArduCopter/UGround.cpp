@@ -131,6 +131,9 @@ void UGround::state_update()
     if (copter.control_mode == Mode::Number::STABILIZE) {
         set_state(UGCS_None);
     }
+    if (copter.control_mode == Mode::Number::ALT_HOLD) {
+        set_state(UGCS_None);
+    }
 
     float sonar_height = -10.0f;
     if (copter.rangefinder_alt_ok()) {sonar_height = copter.rangefinder_state.alt_cm;}
