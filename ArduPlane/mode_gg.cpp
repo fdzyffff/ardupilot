@@ -7,34 +7,37 @@ bool ModeGG::_enter()
     plane.auto_throttle_mode = true;
     plane.auto_navigation_mode = true;
 
-    //_HB1_attack_next_WP_loc.set_alt_cm(0, Location::AltFrame::ABOVE_HOME);
-    plane.setup_glide_slope();
-    //plane.setup_turn_angle();
-    plane.auto_state.next_turn_angle = 0;
-    //plane.set_target_altitude_location(_HB1_attack_next_WP_loc);
-
-    // disable crosstrack, head directly to the point
-    plane.auto_state.crosstrack = false;
-
-    // reset loiter start time.
-    plane.loiter.start_time_ms = 0;
-
-    // start in non-VTOL mode
-    plane.auto_state.vtol_loiter = false;
-    // // zero out our loiter vals to watch for missed waypoints
-    // loiter_angle_reset();
-
-    // setup_glide_slope();
-    // setup_turn_angle();
-
     _track_covered = 0.0f;
     _track_dist = 0.0f;
     if (!plane.HB1_status_noGPS_check()) {
         _HB1_attack_prev_WP_loc = plane.current_loc;
         _HB1_attack_next_WP_loc = plane.current_loc;
-        _HB1_attack_next_WP_loc.lat = plane.HB1_attack_cmd.content.location.lat;
-        _HB1_attack_next_WP_loc.lng = plane.HB1_attack_cmd.content.location.lng;
-        //_HB1_attack_final_alt = (float)plane.HB1_attack_cmd.content.location.alt;
+        _HB1_attack_next_WP_loc = plane.HB1_attack_cmd.content.location;
+        // convert relative alt to absolute alt
+        if (_HB1_attack_next_WP_loc.relative_alt) {
+            _HB1_attack_next_WP_loc.relative_alt = false;
+            _HB1_attack_next_WP_loc.alt += plane.home.alt;
+        }
+        plane.prev_WP_loc = _HB1_attack_prev_WP_loc;
+        plane.next_WP_loc = _HB1_attack_next_WP_loc;
+        //_HB1_attack_next_WP_loc.lng = plane.HB1_attack_cmd.content.location.lng;
+        //_HB1_attack_next_WP_loc.set_alt_cm(0, Location::AltFrame::ABOVE_HOME);
+        plane.setup_glide_slope();
+        //plane.setup_turn_angle();
+        plane.auto_state.next_turn_angle = 0;
+        //plane.set_target_altitude_location(_HB1_attack_next_WP_loc);
+        // disable crosstrack, head directly to the point
+        plane.auto_state.crosstrack = false;
+
+        // reset loiter start time.
+        plane.loiter.start_time_ms = 0;
+
+        // start in non-VTOL mode
+        plane.auto_state.vtol_loiter = false;
+        // // zero out our loiter vals to watch for missed waypoints
+        plane.set_target_altitude_location(plane.next_WP_loc);
+
+        plane.set_offset_altitude_location(plane.next_WP_loc);
         _dir_unit = _HB1_attack_prev_WP_loc.get_distance_NE(_HB1_attack_next_WP_loc);
         _track_dist = _dir_unit.length() * 100.f;
         _dir_unit.normalize();
@@ -74,9 +77,9 @@ void ModeGG::update()
             _track_covered *= 100.f;
             
             // once track covered, go final stage
-            if ((_track_dist - _track_covered) < (MAX(0.5f,final_gg_sec) * final_speed_cm)) {
+            if ((_track_dist - _track_covered) < -(MAX(0.5f,final_gg_sec) * final_speed_cm)) {
                 set_HB1_GG_state(HB1_GG_STEP2);
-                gcs().send_text(MAV_SEVERITY_INFO, "Final");
+                gcs().send_text(MAV_SEVERITY_INFO, "Force Final");
             }
             if (print_counter%133 == 0) {                
                 gcs().send_text(MAV_SEVERITY_INFO, "_track_dist ; _track_rest : %0.2f, %0.2f", _track_dist, _track_dist - _track_covered);

@@ -252,7 +252,7 @@ void Plane::test_HB1_mission_update_msg() {
             tmp_msg._msg_1.content.msg.remote_index = 0x33;
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.p1 = 0;
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.attack_point_index = 0;
-            tmp_loc = test_HB1_generate_interim_attack();
+            tmp_loc = test_HB1_generate_interim_attack(true);
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.longitude = (int32_t)((double)tmp_loc.lng*tmp_msg.SF_LL);
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.latitude = (int32_t)((double)tmp_loc.lat*tmp_msg.SF_LL);
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.alt = (int16_t)((float)tmp_loc.alt*0.01f*tmp_msg.SF_ALT);
@@ -372,7 +372,7 @@ void Plane::test_HB1_mission_send_msg() {
             tmp_msg._msg_1.content.msg.remote_index = 0x33;
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.p1 = 0;
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.attack_point_index = 0;
-            tmp_loc = test_HB1_generate_interim_attack();
+            tmp_loc = test_HB1_generate_interim_attack(true);
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.longitude = (int32_t)((double)tmp_loc.lng*tmp_msg.SF_LL);
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.latitude = (int32_t)((double)tmp_loc.lat*tmp_msg.SF_LL);
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.alt = (int16_t)((float)tmp_loc.alt*0.01f*tmp_msg.SF_ALT);
@@ -420,7 +420,7 @@ Location Plane::test_HB1_generate_wp() {
     return tmp_loc;
 }
 
-Location Plane::test_HB1_generate_interim_attack() {
+Location Plane::test_HB1_generate_interim_attack(bool is_attack) {
     static int16_t index_loc = 0;
     float alt = 15000.0f;
     Vector3f tmp_xyz = Vector3f(0.0f, 0.0f, alt);
@@ -435,6 +435,7 @@ Location Plane::test_HB1_generate_interim_attack() {
             tmp_xyz = Vector3f(-200000.0f * (float)index_loc, -200000.0f * (float)index_loc, alt);
             break;
     }
+    if (is_attack) {tmp_xyz.z = 0.0f;}
     index_loc++;
     Location tmp_loc(tmp_xyz);
     return tmp_loc;

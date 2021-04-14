@@ -1209,7 +1209,7 @@ private:
     void test_HB1_mission_update_msg();
     void test_HB1_mission_send_msg();
     Location test_HB1_generate_wp();
-    Location test_HB1_generate_interim_attack();
+    Location test_HB1_generate_interim_attack(bool is_attack=false);
 
     void HB1_msg_mission2apm_takeoff_handle();
     void HB1_msg_mission2apm_set_wp_handle();
