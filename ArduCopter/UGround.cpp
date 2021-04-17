@@ -135,8 +135,8 @@ void UGround::state_update()
         set_state(UGCS_None);
     }
 
-    float sonar_height = -10.0f;
-    if (copter.rangefinder_alt_ok()) {sonar_height = copter.rangefinder_state.alt_cm;}
+    //float sonar_height = -10.0f;
+    //if (copter.rangefinder_alt_ok()) {sonar_height = copter.rangefinder_state.alt_cm;}
     bool _reached_position = copter.Ugcs_reached_position();
     switch (get_state()) {
         case UGCS_Takeoff:
@@ -210,9 +210,9 @@ void UGround::state_update()
         }
         case UGCS_Attack:
         {
-            if (sonar_height > 0 && sonar_height < 100 && !copter.Ucam.is_active()) {
-                set_state(UGCS_Lockon);
-            }
+            // if (sonar_height > 0 && sonar_height < 100 && !copter.Ucam.is_active()) {
+            //     set_state(UGCS_Lockon);
+            // }
             break;
         }
         case UGCS_FS1:
@@ -265,7 +265,9 @@ void UGround::set_state(UGCS_state_t new_state, bool force_set)
             break;
     }
     if (!ret) {
-        set_state(UGCS_FS1);  
+        if (new_state != UGCS_Attack) {
+            set_state(UGCS_FS1);  
+        }
         return;
     }
     _state = new_state;
