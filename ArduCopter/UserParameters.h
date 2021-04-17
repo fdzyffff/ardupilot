@@ -11,6 +11,9 @@ public:
         Ucam_pid(1.0f, 0.0f, 0.0f, 0.0f, 0.2f, 3.0f, 3.0f, 3.0f, 0.02f)
         {}
     static const struct AP_Param::GroupInfo var_info[];
+    AP_Float fly_attack_angle;
+    AC_PID   Ucam_pid;
+
     AP_Float cam_angle_x;
     AP_Float cam_angle_y;
     AP_Float cam_pixel_x;
@@ -26,7 +29,8 @@ public:
     AP_Int16 gcs_num_cruise;
     AP_Int32 gcs_time_cruise;
     AP_Float gcs_group_yaw;
-    AP_Float gcs_search_yangle;
+    AP_Float gcs_search_yangle_left;
+    AP_Float gcs_search_yangle_right;
     AP_Float gcs_search_yrate;
 
 	AP_Float fly_yaw_tc;
@@ -37,7 +41,4 @@ public:
 	AP_Float fly_climb_factor;
     AP_Float fly_climb_rate_offset;
 
-    AP_Float fly_attack_angle;
-
-    AC_PID   Ucam_pid;
 };

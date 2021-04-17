@@ -135,8 +135,8 @@ void UGround::state_update()
         set_state(UGCS_None);
     }
 
-    //float sonar_height = -10.0f;
-    //if (copter.rangefinder_alt_ok()) {sonar_height = copter.rangefinder_state.alt_cm;}
+    float sonar_height = -10.0f;
+    if (copter.rangefinder_alt_ok()) {sonar_height = copter.rangefinder_state.alt_cm;}
     bool _reached_position = copter.Ugcs_reached_position();
     switch (get_state()) {
         case UGCS_Takeoff:
@@ -210,9 +210,9 @@ void UGround::state_update()
         }
         case UGCS_Attack:
         {
-            // if (sonar_height > 0 && sonar_height < 100 && !copter.Ucam.is_active()) {
-            //     set_state(UGCS_Lockon);
-            // }
+            if (sonar_height > 0 && sonar_height < 100 && !copter.Ucam.is_active()) {
+                set_state(UGCS_Lockon);
+            }
             break;
         }
         case UGCS_FS1:
@@ -376,7 +376,8 @@ float UGround::get_cruise_yaw_rate() {
 
 float UGround::get_cruise_yaw_rate(float yaw_middle_cd) {
     if ((get_state() != UGCS_Curise && get_state() != UGCS_Lockon)|| !is_leader()) {return 0.0f;}
-    float para_angle = fabsf(copter.g2.user_parameters.gcs_search_yangle) * 100.f;
+    float para_angle_right = constrain_float(copter.g2.user_parameters.gcs_search_yangle_right * 100.f, 0.0f, 18000.f);
+    float para_angle_left = constrain_float(copter.g2.user_parameters.gcs_search_yangle_left * 100.f, -18000.f, para_angle_right);
     float para_angle_rate = fabsf(copter.g2.user_parameters.gcs_search_yrate) * 100.f;
     static uint32_t _last_ms = millis();
     static float angle_rate = para_angle_rate;
@@ -385,9 +386,9 @@ float UGround::get_cruise_yaw_rate(float yaw_middle_cd) {
     if (now - _last_ms > 1000) {
         angle_rate = para_angle_rate;
     } else {
-        if (delta_cd < -para_angle) {
+        if (delta_cd < para_angle_left) {
             angle_rate = para_angle_rate;
-        } else if (delta_cd > para_angle) {
+        } else if (delta_cd > para_angle_right) {
             angle_rate = -para_angle_rate;
         }
     }
@@ -395,7 +396,7 @@ float UGround::get_cruise_yaw_rate(float yaw_middle_cd) {
     return angle_rate;
 }
 
-
+//~~~~~~~~~~~~~~~~~~~~~~~ Copter ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 bool Copter::Ugcs_reached_position() {
     static uint32_t _last_ms = millis();
     if (flightmode->wp_distance() > 100.f) {
