@@ -1237,6 +1237,7 @@ private:
     void HB1_Power_status_update();
     void HB1_Power_throttle_update();
     void HB1_Power_on_send();
+    bool HB1_Power_is_old_engine() {return (g2.hb1_power_type = -99);}
     void HB1_FsAuto_update();
     void HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force_set = false);
     bool HB1_status_noGPS_check();

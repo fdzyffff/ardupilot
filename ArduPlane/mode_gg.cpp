@@ -62,6 +62,7 @@ void ModeGG::update()
     float final_speed_cm = 100.f* (plane.g2.hb1_follow_speed + plane.g2.hb1_follow_speed_range);
     switch(HB1_GG_state) {
         case HB1_GG_STEP1:
+        {
             if (plane.HB1_status_noGPS_check()) {
                 set_HB1_GG_state(HB1_GG_STEP2);
             }
@@ -75,16 +76,78 @@ void ModeGG::update()
 
             _track_covered = _dir_unit * (_HB1_attack_prev_WP_loc.get_distance_NE(plane.current_loc));
             _track_covered *= 100.f;
-            
+
+
+
+
+
+
+
+
+
+
+            float delta_xy_cm = 100.f * plane.current_loc.get_distance(plane.HB1_attack_cmd.content.location);
+            static float delta_z_cm = 0.0f;
+            int32_t tmp_curr_alt = 0;
+            int32_t tmp_attack_alt = 0;
+            if (plane.current_loc.get_alt_cm(Location::AltFrame::ABOVE_HOME, tmp_curr_alt) && plane.HB1_attack_cmd.content.location.get_alt_cm(Location::AltFrame::ABOVE_HOME, tmp_attack_alt)) {
+                delta_z_cm = (float)tmp_curr_alt -(float)tmp_attack_alt;
+            }
+            delta_z_cm = MAX(delta_z_cm, 10.0f);
+            int16_t current_cd = plane.ahrs.yaw_sensor;//plane.gps.ground_course_cd();
+            int16_t target_cd = plane.current_loc.get_bearing_to(plane.HB1_attack_cmd.content.location);
+            float delta_yaw = (float)constrain_int16(wrap_180_cd(target_cd - current_cd), -4500,4500) / 4500.f;
+            float target_roll = 0.0f;
+            if (delta_yaw < 0.0f) {
+                target_roll = 0.8f * delta_yaw * delta_yaw + 1.8f * delta_yaw;
+                target_roll *= 7000.f;
+                //plane.nav_roll_cd = constrain_int16((int16_t)target_roll, -7000, 7000);
+            } else {
+                target_roll = -0.8f * delta_yaw * delta_yaw + 1.8f * delta_yaw;
+                target_roll *= 7000.f;
+                //plane.nav_roll_cd = constrain_int16((int16_t)target_roll, -7000, 7000);
+            }
+            //plane.nav_roll_cd = 0;
+
+
+            float target_pitch = -100.0f * ToDeg(atan2f(delta_z_cm, delta_xy_cm));
+            // if (delta_z_cm < 1000.f) {
+            //     plane.nav_pitch_cd = constrain_int16((int16_t)target_pitch, -8500, -6500);
+            // } else {
+            plane.nav_pitch_cd = MIN(plane.nav_pitch_cd, constrain_int16((int16_t)target_pitch, -8500, 500));
+            // }
+            //plane.aparm.airspeed_cruise_cm.set(final_speed_cm);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             // once track covered, go final stage
-            if ((_track_dist - _track_covered) < -(MAX(0.5f,final_gg_sec) * final_speed_cm)) {
+            if ((_track_dist - _track_covered) < -(MAX(0.1f,final_gg_sec) * final_speed_cm)) {
                 set_HB1_GG_state(HB1_GG_STEP2);
                 gcs().send_text(MAV_SEVERITY_INFO, "Force Final");
             }
             if (print_counter%133 == 0) {                
                 gcs().send_text(MAV_SEVERITY_INFO, "_track_dist ; _track_rest : %0.2f, %0.2f", _track_dist, _track_dist - _track_covered);
+                gcs().send_text(MAV_SEVERITY_INFO, "target_roll : %0.2f", target_roll);
+                gcs().send_text(MAV_SEVERITY_INFO, "c_cd %d, t_cd: %d, d_cd: %d", current_cd, target_cd, plane.nav_roll_cd);
+                gcs().send_text(MAV_SEVERITY_INFO, "P_cd : %d", plane.nav_pitch_cd);
             }
             break;
+        }
         case HB1_GG_STEP2:
             plane.nav_roll_cd = 0;
             plane.nav_pitch_cd = -8500;

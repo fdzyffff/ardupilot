@@ -181,6 +181,11 @@ void Plane::HB1_msg_power2apm_handle() {
             HB1_Power.HB1_engine_temp = (float)tmp_msg._msg_1.content.msg.FQ340_temp2;
             break;
 
+        case -99:
+            HB1_Power.HB1_engine_rpm = (float)tmp_msg._msg_1.content.msg.CYS350_rpm;
+            HB1_Power.HB1_engine_temp = 0.1f*(float)tmp_msg._msg_1.content.msg.CYS350_temp;
+            break;
+
         case 100:
             HB1_Power.HB1_engine_rpm = (float)(millis() - HB1_Power.last_update_ms);
             HB1_Power.HB1_engine_temp = 0.1f*(float)tmp_msg._msg_1.content.msg.CYS350_temp;
@@ -289,6 +294,15 @@ void Plane::HB1_msg_apm2power_send() {
             tmp_msg._msg_1.content.msg.ctrl_cmd = 4;
             tmp_msg._msg_1.need_send = true;
             break;
+        case HB1_PowerAction_EngineSTART:
+            if (HB1_Power_is_old_engine()) {
+                tmp_msg._msg_1.content.msg.ctrl_cmd = 4;
+                tmp_msg._msg_1.need_send = true;
+            } else {
+                tmp_msg._msg_1.content.msg.ctrl_cmd = 0;
+                tmp_msg._msg_1.need_send = false;
+            }
+            break;
         case HB1_PowerAction_EngineOFF:
         case HB1_PowerAction_GROUND_EngineOFF:
             tmp_msg._msg_1.content.msg.ctrl_cmd = 2;
@@ -298,7 +312,6 @@ void Plane::HB1_msg_apm2power_send() {
             tmp_msg._msg_1.content.msg.ctrl_cmd = 1;
             tmp_msg._msg_1.need_send = true;
             break;
-        case HB1_PowerAction_EngineSTART:
         default:
             tmp_msg._msg_1.content.msg.ctrl_cmd = 0;
             tmp_msg._msg_1.need_send = false;
