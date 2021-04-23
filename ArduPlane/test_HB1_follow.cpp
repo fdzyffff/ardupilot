@@ -43,7 +43,7 @@ void Plane::test_HB1_follow_target_update_1(float t_ms)
 {
     const float x_len = 50000.0f;
     const float y_len = 100000.0f;
-    float tmp_vel = 2000.0f;
+    float tmp_vel = 4500.0f;
     float tmp_length = tmp_vel * t_ms * 0.001f;
     Vector3f tmp_last_pos;
     if (!HB1_test.follow_loc.get_vector_from_origin_NEU(tmp_last_pos)) {
@@ -113,7 +113,7 @@ void Plane::test_HB1_follow_target_update_1(float t_ms)
 
 void Plane::test_HB1_follow_target_update_2(float t_ms)
 {
-    float tmp_vel = 2000.0f;
+    float tmp_vel = 4500.0f;
     float _radius = 10000.f;
     float _angular_vel = tmp_vel / _radius;
     float dt = t_ms * 0.001f;
@@ -402,7 +402,7 @@ void Plane::test_HB1_mission_send_msg() {
 
 Location Plane::test_HB1_generate_wp() {
     static int16_t index_loc = 0;
-    float alt = 7000.0f;
+    float alt = 17000.0f;
     Vector3f tmp_xyz = Vector3f(0.0f, 0.0f, alt);
     switch (index_loc) {
         case 0 :
@@ -422,7 +422,7 @@ Location Plane::test_HB1_generate_wp() {
 
 Location Plane::test_HB1_generate_interim_attack(bool is_attack) {
     static int16_t index_loc = 0;
-    float alt = 15000.0f;
+    float alt = 35000.0f;
     Vector3f tmp_xyz = Vector3f(0.0f, 0.0f, alt);
     switch (index_loc) {
         case 0 :

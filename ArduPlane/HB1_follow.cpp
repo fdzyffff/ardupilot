@@ -17,6 +17,8 @@ void Plane::HB1_msg_mission2apm_follow_handle() {
     HB1_follow_loc.alt += (int32_t)((float)tmp_msg._msg_1.content.msg.apm_deltaZ*100.f);
     HB1_follow_dir = ((float)tmp_msg._msg_1.content.msg.leader_dir)/tmp_msg.SF_ANG;
     //HB1_follow_spd = tmp_msg._msg_1.content.msg.apm_deltaZ*100.f / *tmp_msg.SF_VEL;
+    // feed forward to compensate delay and spd
+    HB1_follow_loc.offset_bearing(HB1_follow_dir, g2.hb1_follow_speed*0.3);
 
     Vector3f tmp_target;
     if (!HB1_follow_loc.get_vector_from_origin_NEU(tmp_target)) {
@@ -45,9 +47,18 @@ void Plane::HB1_update_follow()
     	auto_state.crosstrack = true;
     	vel_length = 390.f;
     }
-    float delta_dist = (guided_WP_loc.get_distance(current_loc) - vel_length)*100.f;
-    float spd_kp = g2.hb1_follow_speed_ratio.get();
-    float target_spd = g2.hb1_follow_speed*100.f + constrain_float(delta_dist*spd_kp, -g2.hb1_follow_speed_range*100.f, g2.hb1_follow_speed_range*100.f);
+    float delta_dist = (guided_WP_loc.get_distance(current_loc) - vel_length);
+    //float spd_kp = g2.hb1_follow_speed_ratio.get();
+    float accel_mss = g2.hb1_follow_speed_ratio.get();
+
+    float target_delta_vel = 0.0f;
+    if (delta_dist > 0.0f) {
+    	target_delta_vel = safe_sqrt(2.0f * delta_dist * accel_mss);
+    } else if (delta_dist < 0.0f) {
+    	target_delta_vel = -safe_sqrt(-2.0f * delta_dist * accel_mss);
+    }
+
+    float target_spd = g2.hb1_follow_speed*100.f + constrain_float(target_delta_vel*100.f, -g2.hb1_follow_speed_range*100.f, g2.hb1_follow_speed_range*100.f);
     
     // float spd_kd = spd_kp * 0.5f;
     // float airspeed_measured = 0.0f;
