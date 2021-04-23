@@ -444,6 +444,7 @@ bool GCS_MAVLINK_Plane::try_send_message(enum ap_message id)
     case MSG_LANDING:
         plane.landing.send_landing_message(chan);
         break;
+
     default:
         return GCS_MAVLINK::try_send_message(id);
     }
@@ -1446,4 +1447,10 @@ void GCS_MAVLINK_Plane::send_rpm() const
             plane.HB1_Power.HB1_engine_rpm,
             plane.HB1_Power.HB1_engine_temp);
     }
+}
+
+// report battery2 state
+void GCS_MAVLINK_Plane::send_battery2()
+{
+    mavlink_msg_battery2_send(chan, plane.HB1_Power.HB1_engine_fuel*1000.f, 3.4f*100.f);
 }

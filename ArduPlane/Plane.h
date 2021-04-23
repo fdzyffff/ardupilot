@@ -1164,6 +1164,7 @@ private:
         HB1_Power_Action_t state;
         float HB1_engine_rpm;
         float HB1_engine_temp;
+        float HB1_engine_fuel;
         uint32_t last_update_ms;
         int8_t send_counter;
     } HB1_Power;

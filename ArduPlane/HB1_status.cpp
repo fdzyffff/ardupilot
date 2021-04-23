@@ -15,6 +15,7 @@ void Plane::HB1_status_init() {
 
     HB1_Power.HB1_engine_rpm = 0.0f;
     HB1_Power.HB1_engine_temp = 0.0f;
+    HB1_Power.HB1_engine_fuel = 0.0f;
     HB1_Power.send_counter = 0;
 
     HB1_GG_final = false;

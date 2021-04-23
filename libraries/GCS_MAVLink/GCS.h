@@ -192,7 +192,7 @@ public:
     void send_sensor_offsets();
     virtual void send_simstate() const;
     void send_ahrs();
-    void send_battery2();
+    virtual void send_battery2();
     void send_opticalflow();
     virtual void send_attitude() const;
     void send_autopilot_version() const;

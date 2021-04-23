@@ -17,7 +17,7 @@ public:
         uint8_t FQ340_status;
         uint16_t FQ340_rpm;
         int8_t FQ340_airtemp;
-        uint8_t FQ340_pluswidth;
+        uint8_t FQ340_fuel;
         uint16_t FQ340_throttle;
         uint8_t FQ340_ECUvolt;
         uint16_t FQ340_airpressure;

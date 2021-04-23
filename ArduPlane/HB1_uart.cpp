@@ -165,6 +165,7 @@ void Plane::HB1_msg_mission2apm_handle() {
 
 void Plane::HB1_msg_power2apm_handle() {
     HB1_power2apm &tmp_msg = HB1_uart_power.get_msg_power2apm();
+    HB1_Power.HB1_engine_fuel = (float)tmp_msg._msg_1.content.msg.FQ340_fuel;
     switch (g2.hb1_power_type.get()) {
         case 0:
             HB1_Power.HB1_engine_rpm = (float)tmp_msg._msg_1.content.msg.CYS350_rpm;
