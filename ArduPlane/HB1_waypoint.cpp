@@ -19,7 +19,7 @@ void Plane::HB1_msg_mission2apm_set_wp_handle() {
     tmp_cmd.content.location.set_alt_cm((int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.alt*100.f/tmp_msg.SF_ALT), Location::AltFrame::ABOVE_HOME);
 
     tmp_cmd.p1 = 0;
-    if (g2.hb1_num_wp == 0 || g2.hb1_num_interim != 0|| g2.hb1_num_attack != 0) {
+    if (HB1_Status.wp_to_renew || g2.hb1_num_wp == 0 || g2.hb1_num_interim != 0|| g2.hb1_num_attack != 0) {
         plane.mission.clear();
         plane.mission.add_cmd(tmp_cmd);
         plane.mission.write_home_to_storage();

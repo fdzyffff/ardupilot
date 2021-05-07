@@ -1157,6 +1157,7 @@ private:
         HB1_Mission_t state;
         bool already_takeoff;
         bool grouped;
+        bool wp_to_renew;
     } HB1_Status;
 
     struct {

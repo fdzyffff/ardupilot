@@ -198,6 +198,7 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force
             relay.off(1);
             relay.off(2);
             relay.on(3);
+            break;
         case HB1_PowerAction_EnginePrepare:
             gcs().send_text(MAV_SEVERITY_INFO, "R Engine Starting");
             relay.off(0);
