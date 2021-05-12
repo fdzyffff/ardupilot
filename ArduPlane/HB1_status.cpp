@@ -76,7 +76,7 @@ void Plane::HB1_Mission_update() {
             }
             break;
         case HB1_Mission_Hover :
-            if ( (HB1_Status.time_out>0) && (timer > HB1_Status.time_out) ) {
+            if ( (timer>10800000) || (timer > HB1_Status.time_out) ) {
                 if (g2.hb1_num_attack > 0) {
                     HB1_Status.mission_complete = false;
                     HB1_status_set_HB_Mission_Action(HB1_Mission_PreAttack);

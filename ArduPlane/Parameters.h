@@ -586,6 +586,8 @@ public:
     AP_Int16 hb1_num_wp;
     AP_Int16 hb1_num_interim;
     AP_Int16 hb1_num_attack;
+
+    AP_Int8 hil_test;
 };
 
 extern const AP_Param::Info var_info[];

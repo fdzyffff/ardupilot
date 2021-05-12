@@ -573,6 +573,7 @@ void Plane::set_flight_stage(AP_Vehicle::FixedWing::FlightStage fs)
 void Plane::update_alt()
 {
     barometer.update();
+    //gcs().send_text(MAV_SEVERITY_NOTICE, "updating baro");
 
     // calculate the sink rate.
     float sink_rate;

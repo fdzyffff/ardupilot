@@ -445,6 +445,11 @@ bool GCS_MAVLINK_Plane::try_send_message(enum ap_message id)
         plane.landing.send_landing_message(chan);
         break;
 
+    case MSG_ATTITUDE:
+        send_attitude();
+        if (plane.g2.hil_test!=0){send_hil_state();}
+        break;
+
     default:
         return GCS_MAVLINK::try_send_message(id);
     }
@@ -1106,10 +1111,6 @@ void GCS_MAVLINK_Plane::handleMessage(const mavlink_message_t &msg)
         mavlink_hil_state_t packet;
         mavlink_msg_hil_state_decode(&msg, &packet);
 
-        // sanity check location
-        if (!check_latlng(packet.lat, packet.lon)) {
-            break;
-        }
 
         last_hil_state = packet;
 
@@ -1118,12 +1119,24 @@ void GCS_MAVLINK_Plane::handleMessage(const mavlink_message_t &msg)
         Vector3f vel(packet.vx, packet.vy, packet.vz);
         vel *= 0.01f;
 
-        // setup airspeed pressure based on 3D speed, no wind
-        plane.airspeed.setHIL(sq(vel.length()) / 2.0f + 2013);
 
-        plane.gps.setHIL(0, AP_GPS::GPS_OK_FIX_3D,
-                         packet.time_usec/1000,
-                         loc, vel, 10, 0);
+        // sanity check location
+        if (!check_latlng(packet.lat, packet.lon) || (packet.lat==0&&packet.lon==0)) {
+            // setup airspeed pressure based on 3D speed, no wind
+            plane.airspeed.setHIL(sq(vel.length()) / 2.0f + 2013);
+
+            plane.gps.setHIL(0, AP_GPS::NO_FIX,
+                             packet.time_usec/1000,
+                             loc, vel, 10, 0);
+
+        } else {
+            // setup airspeed pressure based on 3D speed, no wind
+            plane.airspeed.setHIL(sq(vel.length()) / 2.0f + 2013);
+
+            plane.gps.setHIL(0, AP_GPS::GPS_OK_FIX_3D,
+                             packet.time_usec/1000,
+                             loc, vel, 10, 0);
+        }
 
         // rad/sec
         Vector3f gyros;
@@ -1151,6 +1164,7 @@ void GCS_MAVLINK_Plane::handleMessage(const mavlink_message_t &msg)
              wrap_PI(fabsf(packet.yaw - plane.ahrs.yaw)) > ToRad(plane.g.hil_err_limit))) {
             plane.ahrs.reset_attitude(packet.roll, packet.pitch, packet.yaw);
         }
+
 #endif
         break;
     }
@@ -1453,4 +1467,56 @@ void GCS_MAVLINK_Plane::send_rpm() const
 void GCS_MAVLINK_Plane::send_battery2()
 {
     mavlink_msg_battery2_send(chan, plane.HB1_Power.HB1_engine_fuel*1000.f, 3.4f*100.f);
+}
+
+void GCS_MAVLINK_Plane::send_hil_state()
+{
+ // * @param roll [rad] Roll angle
+ // * @param pitch [rad] Pitch angle
+ // * @param yaw [rad] Yaw angle
+ // * @param rollspeed [rad/s] Body frame roll / phi angular speed
+ // * @param pitchspeed [rad/s] Body frame pitch / theta angular speed
+ // * @param yawspeed [rad/s] Body frame yaw / psi angular speed
+ // * @param lat [degE7] Latitude
+ // * @param lon [degE7] Longitude
+ // * @param alt [mm] Altitude
+ // * @param vx [cm/s] Ground X Speed (Latitude)
+ // * @param vy [cm/s] Ground Y Speed (Longitude)
+ // * @param vz [cm/s] Ground Z Speed (Altitude)
+ // * @param xacc [mG] X acceleration
+ // * @param yacc [mG] Y acceleration
+ // * @param zacc [mG] Z acceleration
+
+    float roll = radians((float)plane.ahrs.roll_sensor * 0.01f);
+    float pitch = radians((float)plane.ahrs.pitch_sensor * 0.01f);
+    float yaw = radians((float)plane.ahrs.yaw_sensor * 0.01f);
+
+    float rollspeed = plane.ahrs.get_gyro_latest().x;
+    float pitchspeed = plane.ahrs.get_gyro_latest().y;
+    float yawspeed = plane.ahrs.get_gyro_latest().z;
+
+    int32_t lon = plane.current_loc.lng;
+    int32_t lat = plane.current_loc.lat;
+    int32_t alt = plane.current_loc.alt*10;
+
+    Vector3f tmp_velocity;
+    plane.ahrs.get_velocity_NED(tmp_velocity);
+    tmp_velocity = tmp_velocity*100;
+    tmp_velocity.z = -tmp_velocity.z;
+
+    int16_t vx = (int16_t)tmp_velocity.x;
+    int16_t vy = (int16_t)tmp_velocity.y;
+    int16_t vz = (int16_t)tmp_velocity.z;
+
+    int16_t xacc = (int16_t)(plane.ins.get_accel().x/GRAVITY_MSS*1000.f);
+    int16_t yacc = (int16_t)(plane.ins.get_accel().y/GRAVITY_MSS*1000.f);
+    int16_t zacc = (int16_t)(plane.ins.get_accel().z/GRAVITY_MSS*1000.f);
+
+
+mavlink_msg_hil_state_send(chan, micros(), 
+                           roll, pitch, yaw, 
+                           rollspeed, pitchspeed, yawspeed, 
+                           lat, lon, alt, 
+                           vx, vy, vz, 
+                           xacc, yacc, zacc);
 }

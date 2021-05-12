@@ -736,11 +736,11 @@ void AP_Baro::update(void)
         _alt_offset_active = _alt_offset;
     }
 
-    if (!_hil_mode) {
+//    if (!_hil_mode) {
         for (uint8_t i=0; i<_num_drivers; i++) {
             drivers[i]->backend_update(i);
         }
-    }
+//    }
 
     for (uint8_t i=0; i<_num_sensors; i++) {
         if (sensors[i].healthy) {

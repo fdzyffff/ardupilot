@@ -46,6 +46,8 @@ protected:
     void send_rpm() const override;
     void send_battery2() override;
 
+    void send_hil_state();
+
 private:
 
     void send_pid_info(const AP_Logger::PID_Info *pid_info, const uint8_t axis, const float achieved);

@@ -1282,6 +1282,7 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("MIS_N_WP", 38, ParametersG2, hb1_num_wp, 0),
     AP_GROUPINFO("MIS_N_INTERIM", 39, ParametersG2, hb1_num_interim, 0),
     AP_GROUPINFO("MIS_N_ATTACK", 40, ParametersG2, hb1_num_attack, 0),
+    AP_GROUPINFO("HIL_TEST", 41, ParametersG2, hil_test, 0),
 
     AP_GROUPEND
 };
