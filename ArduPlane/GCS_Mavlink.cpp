@@ -233,7 +233,7 @@ void Plane::send_servo_out(mavlink_channel_t chan)
         10000 * (SRV_Channels::get_output_scaled(SRV_Channel::k_rudder) / 4500.0f),
         0,
         0,
-        0,
+        10000 * (constrain_float(SRV_Channels::get_output_norm(SRV_Channel::k_launcher_HB1), -1.f, 1.f)),
         0,
         rssi.read_receiver_rssi_uint8());
 }
@@ -448,6 +448,8 @@ bool GCS_MAVLINK_Plane::try_send_message(enum ap_message id)
     case MSG_ATTITUDE:
         send_attitude();
         if (plane.g2.hil_test!=0){send_hil_state();}
+            // CHECK_PAYLOAD_SIZE(RC_CHANNELS_SCALED);
+            // plane.send_servo_out(chan);
         break;
 
     default:
@@ -580,7 +582,7 @@ static const ap_message STREAM_POSITION_msgs[] = {
     MSG_LOCAL_POSITION
 };
 static const ap_message STREAM_RAW_CONTROLLER_msgs[] = {
-    MSG_SERVO_OUT,
+    MSG_SERVO_OUT
 };
 static const ap_message STREAM_RC_CHANNELS_msgs[] = {
     MSG_SERVO_OUTPUT_RAW,
