@@ -138,7 +138,15 @@ void ModeFlowHold::flowhold_flow_to_angle(Vector2f &bf_angles, bool stick_input)
     sensor_flow *= constrain_float(height_estimate, height_min, height_max);
 
     // rotate controller input to earth frame
-    Vector2f input_ef = copter.ahrs.rotate_body_to_earth2D(sensor_flow);
+    Vector2f tmp_optflow_ef = copter.ahrs.rotate_body_to_earth2D(sensor_flow); 
+    //注意，这里sensor_flow的x对应机体左侧为正，y对应机体前方为正的坐标系，这不是apm常规用到的，这么做只是为了直接与姿态控制的roll，pitch方向对应，不再需要做额外转换。
+    //转换后，tmp_optflow_ef的x对应西方为正，y对应北方为正的坐标系，这样我们定义如下的目标速度（目标速度都为0的话，就还是等效于悬停），为了偷懒，就不再转成apm常用的ned了。
+    float target_vel_west = 0.0;//m/s
+    float target_vel_north = 0.0;//m/s
+    Vector2f input_ef = Vector2f(target_vel_west - tmp_optflow_ef.x, target_vel_north - tmp_optflow_ef.y);
+    //这里还是要换一下符号的，举例：希望向前飞，那pitch要给负值，所以加一个负号。
+    input_ef.x = -input_ef.x;
+    input_ef.y = -input_ef.y;
 
     // run PI controller
     flow_pi_xy.set_input(input_ef);

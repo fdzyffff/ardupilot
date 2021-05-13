@@ -15,7 +15,8 @@
 //#include "UCam.h"
 
 UCam::UCam()
-{    init();
+{
+    init();
 }
 
 // initialise
