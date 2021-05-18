@@ -3,16 +3,12 @@
 void Plane::HB1_status_init() {
     HB1_status_set_HB_Power_Action(HB1_PowerAction_None);
     HB1_status_set_HB_Mission_Action(HB1_Mission_None);
-    //g2.hb1_num_wp.set_and_save(0);
-    //g2.hb1_num_interim.set_and_save(0);
-    //g2.hb1_num_attack.set_and_save(0);
     HB1_follow_dir = 0.0f;
     HB1_Status.last_update_ms = 0;
     HB1_Status.mission_complete = false;
     HB1_Status.time_out = g2.hb1_follow_hover_wp_time;
     HB1_Status.already_takeoff = false;
     HB1_Status.grouped = false;
-    HB1_Status.wp_to_renew = true;
 
     HB1_Power.HB1_engine_rpm = 0.0f;
     HB1_Power.HB1_engine_temp = 0.0f;

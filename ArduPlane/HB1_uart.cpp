@@ -10,6 +10,8 @@ void Plane::HB1_uart_init() {
 
     HB1_uart_power.init();
     HB1_uart_power.get_msg_power2apm().set_enable();
+
+    FD1_mav_init();
 }
 
 void Plane::HB1_uart_update_50Hz()
@@ -67,6 +69,8 @@ void Plane::HB1_uart_update_50Hz()
     HB1_uart_mission.write();
     HB1_uart_cam.write();
 
+    FD1_mav_read();
+    FD1_mav_send();
 }
 
 void Plane::HB1_uart_update_10Hz()

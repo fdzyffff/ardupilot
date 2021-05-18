@@ -406,10 +406,10 @@ bool GCS_MAVLINK_Plane::try_send_message(enum ap_message id)
 
     case MSG_SERVO_OUT:
 #if HIL_SUPPORT
-        if (plane.g.hil_mode == 1) {
-            CHECK_PAYLOAD_SIZE(RC_CHANNELS_SCALED);
-            plane.send_servo_out(chan);
-        }
+        // if (plane.g.hil_mode == 1) {
+        //     CHECK_PAYLOAD_SIZE(RC_CHANNELS_SCALED);
+        //     plane.send_servo_out(chan);
+        // }
 #endif
         break;
 
@@ -448,8 +448,10 @@ bool GCS_MAVLINK_Plane::try_send_message(enum ap_message id)
     case MSG_ATTITUDE:
         send_attitude();
         if (plane.g2.hil_test!=0){send_hil_state();}
-            // CHECK_PAYLOAD_SIZE(RC_CHANNELS_SCALED);
-            // plane.send_servo_out(chan);
+        if (plane.g.hil_mode == 1) {
+            CHECK_PAYLOAD_SIZE(RC_CHANNELS_SCALED);
+            plane.send_servo_out(chan);
+        }
         break;
 
     default:
@@ -1390,12 +1392,15 @@ void Plane::mavlink_delay_cb()
         last_1hz = tnow;
         gcs().send_message(MSG_HEARTBEAT);
         gcs().send_message(MSG_SYS_STATUS);
+        FD1_mav_init();
     }
     if (tnow - last_50hz > 20) {
         last_50hz = tnow;
         gcs().update_receive();
         gcs().update_send();
         notify.update();
+        FD1_mav_read();
+        FD1_mav_send();
     }
     if (tnow - last_5s > 5000) {
         last_5s = tnow;

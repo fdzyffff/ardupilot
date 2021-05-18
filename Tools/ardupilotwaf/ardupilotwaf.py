@@ -87,6 +87,7 @@ COMMON_VEHICLE_DEPENDENT_LIBRARIES = [
     'AP_NMEA_Output',
     'AP_Filesystem',
     'HB1_UART',
+    'FD1_MAV',
 ]
 
 def get_legacy_defines(sketch_name):

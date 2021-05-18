@@ -120,6 +120,7 @@ public:
         SerialProtocol_HB1_MISSION = 24,
         SerialProtocol_HB1_CAM = 25,
         SerialProtocol_HB1_POWER = 26,
+        SerialProtocol_FD1_MAV = 27,
     };
 
     // get singleton instance

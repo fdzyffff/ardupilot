@@ -126,6 +126,7 @@
 #endif
 
 #include <HB1_UART/HB1_UART.h>
+#include <FD1_MAV/FD1_MAV.h>
 /*
   main APM:Plane class
  */
@@ -144,6 +145,7 @@ public:
     friend class RC_Channel_Plane;
     friend class RC_Channels_Plane;
     friend class HB1_UART;
+    friend class FD1_MAV;
 
     friend class Mode;
     friend class ModeCircle;
@@ -180,9 +182,6 @@ public:
     void loop() override;
 
 private:
-    HB1_UART HB1_uart_mission{AP_SerialManager::SerialProtocol_HB1_MISSION};
-    HB1_UART HB1_uart_cam{AP_SerialManager::SerialProtocol_HB1_CAM};
-    HB1_UART HB1_uart_power{AP_SerialManager::SerialProtocol_HB1_POWER};
     // key aircraft parameters passed to multiple libraries
     AP_Vehicle::FixedWing aparm;
 
@@ -1108,6 +1107,12 @@ private:
                   "_failsafe_priorities is missing the sentinel");
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    HB1_UART HB1_uart_mission{AP_SerialManager::SerialProtocol_HB1_MISSION};
+    HB1_UART HB1_uart_cam{AP_SerialManager::SerialProtocol_HB1_CAM};
+    HB1_UART HB1_uart_power{AP_SerialManager::SerialProtocol_HB1_POWER};
+    FD1_MAV FD1_mav{AP_SerialManager::SerialProtocol_FD1_MAV};
+
     enum HB1_Power_Action_t {
         HB1_PowerAction_None            = 0,
         HB1_PowerAction_RocketON        = 1,
@@ -1243,6 +1248,10 @@ private:
     void HB1_FsAuto_update();
     void HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force_set = false);
     bool HB1_status_noGPS_check();
+
+    void FD1_mav_init();
+    void FD1_mav_read();
+    void FD1_mav_send();
 
 public:
     void mavlink_delay_cb();

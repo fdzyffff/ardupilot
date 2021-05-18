@@ -1,5 +1,29 @@
 #include "Plane.h"
 
+void HB1_wp_init() {
+    HB1_Status.wp_to_renew = true;
+    bool read_wp = (g2.hb1_num_wp != 0);
+    bool read_interim = true;
+    bool read_attack = true;
+    if (g2.hb1_num_interim != 0 && ) {
+        read_interim = plane.mission.read_cmd_from_storage(g2.hb1_num_interim,HB1_interim_cmd);     
+    }
+    if (g2.hb1_num_attack != 0 && ) {
+        read_attack = plane.mission.read_cmd_from_storage(g2.hb1_num_attack,HB1_attack_cmd);     
+    }
+    if (!read_wp || !read_interim || !read_attack) {
+        gcs().send_text(MAV_SEVERITY_INFO, "clean mis %d(%d):%d(%d):%d(%d)",read_wp,g2.hb1_num_wp,read_interim,g2.hb1_num_interim,read_attack,g2.hb1_num_attack);
+        g2.hb1_num_wp.set_and_save(0);
+        g2.hb1_num_interim.set_and_save(0);
+        g2.hb1_num_attack.set_and_save(0);
+        plane.mission.clear();
+    } else {
+        gcs().send_text(MAV_SEVERITY_INFO, "recover mis %d(%d):%d(%d):%d(%d)",read_wp,g2.hb1_num_wp,read_interim,g2.hb1_num_interim,read_attack,g2.hb1_num_attack);
+    }
+    
+
+}
+
 void Plane::HB1_msg_mission2apm_takeoff_handle() {
     if (HB1_Status.already_takeoff) {
         gcs().send_text(MAV_SEVERITY_INFO, "Already Takeoff");}
@@ -26,6 +50,7 @@ void Plane::HB1_msg_mission2apm_set_wp_handle() {
         g2.hb1_num_wp.set_and_save(0);
         g2.hb1_num_interim.set_and_save(0);
         g2.hb1_num_attack.set_and_save(0);
+        HB1_Status.wp_to_renew = false;
     }
     if (plane.mission.add_cmd(tmp_cmd)) {
         g2.hb1_num_wp.set_and_save(g2.hb1_num_wp.get()+1);
