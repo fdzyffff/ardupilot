@@ -74,6 +74,7 @@
 
 #include "UCam.h"
 #include "UGround.h"
+#include "UPayload.h"
 
 #if FRAME_CONFIG == HELI_FRAME
     #define AC_AttitudeControl_t AC_AttitudeControl_Heli
@@ -245,6 +246,7 @@ public:
 
     friend class UCam;
     friend class UGround;
+    friend class UPayload;
 
     Copter(void);
 
@@ -935,6 +937,7 @@ private:
 
     UCam Ucam;
     UGround Ugcs;
+    UPayload Upayload;
     LowPassFilterFloat Ugcs_last_valid_alt_cm;
     void Ugcs_handel_msg();
     bool Ugcs_reached_position();

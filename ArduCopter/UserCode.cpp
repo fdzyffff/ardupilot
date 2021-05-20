@@ -21,6 +21,7 @@ void Copter::userhook_50Hz()
     // put your 50Hz code here
     Ucam.update();
     Ugcs.update();
+    Upayload.update();
 }
 #endif
 
@@ -73,6 +74,13 @@ void Copter::userhook_auxSwitch1(uint8_t ch_flag)
 void Copter::userhook_auxSwitch2(uint8_t ch_flag)
 {
     // put your aux switch #2 handler here (CHx_OPT = 48)
+    if (ch_flag == 2) {
+        copter.Upayload.set_state(UPayload::payload_parse);
+        gcs().send_text(MAV_SEVERITY_WARNING, "Payload FIRE");
+    } else {
+        copter.Upayload.set_state(UPayload::payload_none);
+        gcs().send_text(MAV_SEVERITY_WARNING, "Payload NONE");
+    }
 }
 
 void Copter::userhook_auxSwitch3(uint8_t ch_flag)
