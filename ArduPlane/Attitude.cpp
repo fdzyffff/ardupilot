@@ -7,46 +7,47 @@
  */
 float Plane::get_speed_scaler(void)
 {
-    float aspeed, speed_scaler;
-    if (ahrs.airspeed_estimate(&aspeed)) {
-        if (aspeed > auto_state.highest_airspeed) {
-            auto_state.highest_airspeed = aspeed;
-        }
-        if (aspeed > 0.0001f) {
-            speed_scaler = g.scaling_speed / aspeed;
-        } else {
-            speed_scaler = 2.0;
-        }
-        // ensure we have scaling over the full configured airspeed
-        //float scale_min = MIN(0.5, (0.5 * aparm.airspeed_min) / g.scaling_speed);
-        //float scale_max = MAX(2.0, (1.5 * aparm.airspeed_max) / g.scaling_speed);
-        speed_scaler = constrain_float(speed_scaler, 1.0, 2.0);
+    // float aspeed, speed_scaler;
+    // if (ahrs.airspeed_estimate(&aspeed)) {
+    //     if (aspeed > auto_state.highest_airspeed) {
+    //         auto_state.highest_airspeed = aspeed;
+    //     }
+    //     if (aspeed > 0.0001f) {
+    //         speed_scaler = g.scaling_speed / aspeed;
+    //     } else {
+    //         speed_scaler = 2.0;
+    //     }
+    //     // ensure we have scaling over the full configured airspeed
+    //     //float scale_min = MIN(0.5, (0.5 * aparm.airspeed_min) / g.scaling_speed);
+    //     //float scale_max = MAX(2.0, (1.5 * aparm.airspeed_max) / g.scaling_speed);
+    //     speed_scaler = constrain_float(speed_scaler, 1.0, 2.0);
 
-        if (quadplane.in_vtol_mode() && hal.util->get_soft_armed()) {
-            // when in VTOL modes limit surface movement at low speed to prevent instability
-            float threshold = aparm.airspeed_min * 0.5;
-            if (aspeed < threshold) {
-                float new_scaler = linear_interpolate(0, g.scaling_speed / threshold, aspeed, 0, threshold);
-                speed_scaler = MIN(speed_scaler, new_scaler);
+    //     if (quadplane.in_vtol_mode() && hal.util->get_soft_armed()) {
+    //         // when in VTOL modes limit surface movement at low speed to prevent instability
+    //         float threshold = aparm.airspeed_min * 0.5;
+    //         if (aspeed < threshold) {
+    //             float new_scaler = linear_interpolate(0, g.scaling_speed / threshold, aspeed, 0, threshold);
+    //             speed_scaler = MIN(speed_scaler, new_scaler);
 
-                // we also decay the integrator to prevent an integrator from before
-                // we were at low speed persistint at high speed
-                rollController.decay_I();
-                pitchController.decay_I();
-                yawController.decay_I();
-            }
-        }
-    } else if (hal.util->get_soft_armed()) {
-        // scale assumed surface movement using throttle output
-        float throttle_out = MAX(SRV_Channels::get_output_scaled(SRV_Channel::k_throttle), 1);
-        speed_scaler = sqrtf(THROTTLE_CRUISE / throttle_out);
-        // This case is constrained tighter as we don't have real speed info
-        speed_scaler = constrain_float(speed_scaler, 0.6f, 1.67f);
-    } else {
-        // no speed estimate and not armed, use a unit scaling
-        speed_scaler = 1;
-    }
-    return speed_scaler;
+    //             // we also decay the integrator to prevent an integrator from before
+    //             // we were at low speed persistint at high speed
+    //             rollController.decay_I();
+    //             pitchController.decay_I();
+    //             yawController.decay_I();
+    //         }
+    //     }
+    // } else if (hal.util->get_soft_armed()) {
+    //     // scale assumed surface movement using throttle output
+    //     float throttle_out = MAX(SRV_Channels::get_output_scaled(SRV_Channel::k_throttle), 1);
+    //     speed_scaler = sqrtf(THROTTLE_CRUISE / throttle_out);
+    //     // This case is constrained tighter as we don't have real speed info
+    //     speed_scaler = constrain_float(speed_scaler, 0.6f, 1.67f);
+    // } else {
+    //     // no speed estimate and not armed, use a unit scaling
+    //     speed_scaler = 1;
+    // }
+    // return speed_scaler;
+    return 1.0f;
 }
 
 /*

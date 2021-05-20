@@ -71,10 +71,16 @@ void Plane::FD1_mav_read()
                     Vector3f accels;
                     accels.x = packet.xacc * GRAVITY_MSS*0.001f;
                     accels.y = packet.yacc * GRAVITY_MSS*0.001f;
-                    accels.z = packet.zacc * GRAVITY_MSS*0.001f;
+                    accels.z = -packet.zacc * GRAVITY_MSS*0.001f;
+
+                    Vector3f tmp_gravity = Vector3f(0.f,0.f,-GRAVITY_MSS);
+                    Matrix3f tmp_ned_to_body;
+                    tmp_ned_to_body.from_euler(packet.roll, packet.pitch, packet.yaw);
+                    tmp_ned_to_body.transpose();
+                    tmp_gravity = tmp_ned_to_body*tmp_gravity;
     
                     plane.ins.set_gyro(0, gyros);
-                    plane.ins.set_accel(0, accels);
+                    plane.ins.set_accel(0, accels+tmp_gravity);
     
                     plane.barometer.setHIL(packet.alt*0.001f);
                     plane.compass.setHIL(0, packet.roll, packet.pitch, packet.yaw);

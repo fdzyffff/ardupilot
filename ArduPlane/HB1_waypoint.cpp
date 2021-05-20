@@ -1,14 +1,14 @@
 #include "Plane.h"
 
-void HB1_wp_init() {
+void Plane::HB1_wp_init() {
     HB1_Status.wp_to_renew = true;
     bool read_wp = (g2.hb1_num_wp != 0);
     bool read_interim = true;
     bool read_attack = true;
-    if (g2.hb1_num_interim != 0 && ) {
+    if (g2.hb1_num_interim != 0) {
         read_interim = plane.mission.read_cmd_from_storage(g2.hb1_num_interim,HB1_interim_cmd);     
     }
-    if (g2.hb1_num_attack != 0 && ) {
+    if (g2.hb1_num_attack != 0) {
         read_attack = plane.mission.read_cmd_from_storage(g2.hb1_num_attack,HB1_attack_cmd);     
     }
     if (!read_wp || !read_interim || !read_attack) {
@@ -20,8 +20,6 @@ void HB1_wp_init() {
     } else {
         gcs().send_text(MAV_SEVERITY_INFO, "recover mis %d(%d):%d(%d):%d(%d)",read_wp,g2.hb1_num_wp,read_interim,g2.hb1_num_interim,read_attack,g2.hb1_num_attack);
     }
-    
-
 }
 
 void Plane::HB1_msg_mission2apm_takeoff_handle() {

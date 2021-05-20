@@ -1248,6 +1248,7 @@ private:
     void HB1_FsAuto_update();
     void HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force_set = false);
     bool HB1_status_noGPS_check();
+    void HB1_wp_init();
 
     void FD1_mav_init();
     void FD1_mav_read();
