@@ -1116,13 +1116,13 @@ private:
     enum HB1_Power_Action_t {
         HB1_PowerAction_None            = 0,
         HB1_PowerAction_RocketON        = 1,
-        HB1_PowerAction_EnginePrepare   = 2,
-        HB1_PowerAction_EngineSTART     = 3,
-        HB1_PowerAction_EngineON        = 4,
-        HB1_PowerAction_EngineOFF       = 5,
-        HB1_PowerAction_ParachuteON     = 6,
-        HB1_PowerAction_GROUND_RocketON    = 7,
-        HB1_PowerAction_GROUND_EngineSTART = 8,
+        HB1_PowerAction_EngineSTART     = 2,
+        HB1_PowerAction_EngineON        = 3,
+        HB1_PowerAction_EngineOFF       = 4,
+        HB1_PowerAction_ParachuteON     = 5,
+        HB1_PowerAction_GROUND_RocketON    = 6,
+        HB1_PowerAction_GROUND_EngineSTART = 7,
+        HB1_PowerAction_GROUND_EngineON    = 8,
         HB1_PowerAction_GROUND_EngineOFF   = 9,
         HB1_PowerAction_GROUND_EngineFULL  = 10,
         HB1_PowerAction_GROUND_EngineMID   = 11,
@@ -1168,11 +1168,12 @@ private:
     struct {
         uint32_t timer;
         HB1_Power_Action_t state;
-        float HB1_engine_rpm;
+        LowPassFilterFloat HB1_engine_rpm;
         float HB1_engine_temp;
         float HB1_engine_fuel;
         uint32_t last_update_ms;
         int8_t send_counter;
+        int16_t HB1_engine_startcount;
     } HB1_Power;
 
     AP_Mission::Mission_Command HB1_lastWP_cmd;
@@ -1244,6 +1245,7 @@ private:
     void HB1_Power_status_update();
     void HB1_Power_throttle_update();
     void HB1_Power_on_send();
+    bool HB1_Power_running();
     bool HB1_Power_is_old_engine() {return (g2.hb1_power_type == -99);}
     void HB1_FsAuto_update();
     void HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force_set = false);

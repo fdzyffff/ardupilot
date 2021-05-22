@@ -172,32 +172,32 @@ void Plane::HB1_msg_power2apm_handle() {
     HB1_Power.HB1_engine_fuel = (float)tmp_msg._msg_1.content.msg.FQ340_fuel;
     switch (g2.hb1_power_type.get()) {
         case 0:
-            HB1_Power.HB1_engine_rpm = (float)tmp_msg._msg_1.content.msg.CYS350_rpm;
+            HB1_Power.HB1_engine_rpm.apply((float)tmp_msg._msg_1.content.msg.CYS350_rpm);
             HB1_Power.HB1_engine_temp = 0.1f*(float)tmp_msg._msg_1.content.msg.CYS350_temp;
             break;
 
         case 10:
-            HB1_Power.HB1_engine_rpm = (float)tmp_msg._msg_1.content.msg.FQ340_rpm;
+            HB1_Power.HB1_engine_rpm.apply((float)tmp_msg._msg_1.content.msg.FQ340_rpm);
             HB1_Power.HB1_engine_temp = (float)tmp_msg._msg_1.content.msg.FQ340_temp1;
             break;
 
         case 11:
-            HB1_Power.HB1_engine_rpm = (float)tmp_msg._msg_1.content.msg.FQ340_rpm;
+            HB1_Power.HB1_engine_rpm.apply((float)tmp_msg._msg_1.content.msg.FQ340_rpm);
             HB1_Power.HB1_engine_temp = (float)tmp_msg._msg_1.content.msg.FQ340_temp2;
             break;
 
         case -99:
-            HB1_Power.HB1_engine_rpm = (float)tmp_msg._msg_1.content.msg.CYS350_rpm;
+            HB1_Power.HB1_engine_rpm.apply((float)tmp_msg._msg_1.content.msg.CYS350_rpm);
             HB1_Power.HB1_engine_temp = 0.1f*(float)tmp_msg._msg_1.content.msg.CYS350_temp;
             break;
 
         case 100:
-            HB1_Power.HB1_engine_rpm = (float)(millis() - HB1_Power.last_update_ms);
+            HB1_Power.HB1_engine_rpm.reset((float)(millis() - HB1_Power.last_update_ms));
             HB1_Power.HB1_engine_temp = 0.1f*(float)tmp_msg._msg_1.content.msg.CYS350_temp;
             break;
 
         default:
-            HB1_Power.HB1_engine_rpm = (float)tmp_msg._msg_1.content.msg.CYS350_rpm;
+            HB1_Power.HB1_engine_rpm.apply((float)tmp_msg._msg_1.content.msg.CYS350_rpm);
             HB1_Power.HB1_engine_temp = 0.1f*(float)tmp_msg._msg_1.content.msg.CYS350_temp;
             break;
     }
@@ -221,7 +221,8 @@ void Plane::HB1_msg_apm2mission_send() {
         float airspeed_measured = 0;
         if (!ahrs.airspeed_estimate(&airspeed_measured)) {airspeed_measured = 0.0f;}
     tmp_msg._msg_1.content.msg.air_speed = (int16_t)(airspeed_measured * tmp_msg.SF_VEL);
-    tmp_msg._msg_1.content.msg.error_code = 0;
+    tmp_msg._msg_1.content.msg.error_code1 = HB1_Power_running();
+    tmp_msg._msg_1.content.msg.error_code2 = 0;
     tmp_msg._msg_1.content.msg.rc_code = 0;
     tmp_msg._msg_1.content.msg.target_wp_index = mission.get_current_nav_index();
     tmp_msg._msg_1.content.msg.in_group = (HB1_Status.state == HB1_Mission_Follow);
@@ -295,7 +296,6 @@ void Plane::HB1_msg_apm2power_send() {
             tmp_msg._msg_1.need_send = true;
             break;
         case HB1_PowerAction_GROUND_EngineSTART:
-        case HB1_PowerAction_EnginePrepare:
             tmp_msg._msg_1.content.msg.ctrl_cmd = 4;
             tmp_msg._msg_1.need_send = true;
             break;

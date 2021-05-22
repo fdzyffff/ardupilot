@@ -205,7 +205,8 @@ void Plane::test_HB1_uart_msg6(uint8_t option){
     tmp_msg._msg_1.content.msg.roll = (int16_t)((float)(ahrs.roll_sensor/100) * tmp_msg.SF_ANG);
     tmp_msg._msg_1.content.msg.yaw = (int16_t)((float)wrap_180_cd(ahrs.yaw_sensor/100) * tmp_msg.SF_ANG);
     tmp_msg._msg_1.content.msg.air_speed = (int16_t)(100.f * tmp_msg.SF_VEL);
-    tmp_msg._msg_1.content.msg.error_code = 2;
+    tmp_msg._msg_1.content.msg.error_code1 = 1;
+    tmp_msg._msg_1.content.msg.error_code2 = 2;
     tmp_msg._msg_1.content.msg.rc_code = 5;
     tmp_msg._msg_1.content.msg.target_wp_index = mission.get_current_nav_index();
     tmp_msg._msg_1.content.msg.in_group = 1;

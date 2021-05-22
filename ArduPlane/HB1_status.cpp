@@ -10,9 +10,11 @@ void Plane::HB1_status_init() {
     HB1_Status.already_takeoff = false;
     HB1_Status.grouped = false;
 
-    HB1_Power.HB1_engine_rpm = 0.0f;
+    HB1_Power.HB1_engine_rpm.reset(0.0f);
+    HB1_Power.HB1_engine_rpm.set_cutoff_frequency(50.f, 5.f);
     HB1_Power.HB1_engine_temp = 0.0f;
     HB1_Power.HB1_engine_fuel = 0.0f;
+    HB1_Power.HB1_engine_startcount = 0;
     HB1_Power.send_counter = 0;
 
     HB1_GG_final = false;
@@ -72,7 +74,7 @@ void Plane::HB1_Mission_update() {
             }
             break;
         case HB1_Mission_Hover :
-            if ( (timer>10800000) || (timer > HB1_Status.time_out) ) {
+            if ( timer > HB1_Status.time_out ) {
                 if (g2.hb1_num_attack > 0) {
                     HB1_Status.mission_complete = false;
                     HB1_status_set_HB_Mission_Action(HB1_Mission_PreAttack);

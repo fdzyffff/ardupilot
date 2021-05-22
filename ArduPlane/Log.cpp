@@ -234,7 +234,7 @@ void Plane::Log_Write_AETR()
         ,rudder   : SRV_Channels::get_output_scaled(SRV_Channel::k_rudder)
         ,flap     : SRV_Channels::get_output_scaled(SRV_Channel::k_flap_auto)
         ,temp     : (int16_t)(HB1_Power.HB1_engine_temp)
-        ,rpm      : (int16_t)HB1_Power.HB1_engine_rpm
+        ,rpm      : (int16_t)HB1_Power.HB1_engine_rpm.get()
         ,fuel     : (int16_t)HB1_Power.HB1_engine_fuel
         };
 

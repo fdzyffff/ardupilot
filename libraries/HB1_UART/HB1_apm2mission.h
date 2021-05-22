@@ -19,7 +19,8 @@ public:
         int16_t roll;
         int16_t yaw;
         int16_t air_speed;
-        uint16_t error_code;
+        uint8_t error_code1;
+        uint8_t error_code2;
         int8_t  rc_code;
         int8_t  target_wp_index;
         bool in_group;

@@ -44,8 +44,8 @@ void Plane::HB1_Power_pwm_update() {
             HB1_throttle = thr_min;
         }
 
-        if ( (HB1_Power.state == HB1_PowerAction_EnginePrepare) ) {
-            HB1_throttle = constrain_float(10.f, thr_min, thr_max);
+        if ( (HB1_Power.state == HB1_PowerAction_GROUND_EngineON) ) {
+            HB1_throttle = constrain_float(0.f, thr_min, thr_max);
         }
 
         if (HB1_Power.state == HB1_PowerAction_EngineSTART) {
@@ -83,26 +83,17 @@ void Plane::HB1_Power_status_update() {
                 float airspeed_measured = 0;
                 if (!ahrs.airspeed_estimate(&airspeed_measured)) {airspeed_measured = 0.0f;}
                 float gspd = ahrs.groundspeed_vector().length();
-                bool speed_reached = (airspeed_measured > 10.0f || gspd > 5.0f);
-                if (speed_reached || (g2.hb1_test_mode != 0)) {
+                bool speed_reached = (airspeed_measured > 10.0f || gspd > 5.0f) || (g2.hb1_test_mode != 0);
+                if (speed_reached) {
 //                    if (timer > 4000 || (ins.get_accel().x < 10.0f)) {
                         gcs().send_text(MAV_SEVERITY_INFO, "timer: %d ax %0.2f", (int32_t)timer, ins.get_accel().x);
-                        if (!HB1_Power_is_old_engine() && plane.HB1_Power.HB1_engine_rpm < 1500.f && (g2.hb1_rpm_used == 1)) {
-                            HB1_status_set_HB_Power_Action(HB1_PowerAction_EnginePrepare);
-                        } else {
-                            HB1_status_set_HB_Power_Action(HB1_PowerAction_EngineSTART);
-                        }
+                        HB1_status_set_HB_Power_Action(HB1_PowerAction_EngineSTART);
 //                    }
                 } else {
                     set_mode(plane.mode_fbwa, MODE_REASON_UNAVAILABLE);
                     gcs().send_text(MAV_SEVERITY_INFO, "WARNING, low spd %0.2f, %0.2f", airspeed_measured, gspd);
                     HB1_status_set_HB_Power_Action(HB1_PowerAction_None);
                 }
-            }
-            break;
-        case HB1_PowerAction_EnginePrepare:
-            if (timer > 2000) {
-                HB1_status_set_HB_Power_Action(HB1_PowerAction_EngineSTART);
             }
             break;
         case HB1_PowerAction_EngineSTART:
@@ -124,12 +115,28 @@ void Plane::HB1_Power_status_update() {
             }
             break;
         case HB1_PowerAction_GROUND_EngineFULL:
+        case HB1_PowerAction_GROUND_EngineMID:
+            // if (timer > 2000) {
+            //     HB1_status_set_HB_Power_Action(HB1_PowerAction_GROUND_EngineON);
+            // }
+            // break;
+        case HB1_PowerAction_GROUND_EngineON:
+            if (!HB1_Power_is_old_engine() && plane.HB1_Power.HB1_engine_rpm.get() < 1000.f && (g2.hb1_rpm_used == 1)) {
+                if (plane.HB1_Power.HB1_engine_startcount < 6) {
+                    HB1_status_set_HB_Power_Action(HB1_PowerAction_GROUND_EngineSTART);
+                    gcs().send_text(MAV_SEVERITY_INFO, "Restart[%d]: %0.2f", plane.HB1_Power.HB1_engine_startcount, plane.HB1_Power.HB1_engine_rpm.get());
+                    plane.HB1_Power.HB1_engine_startcount += 1;
+                } else {
+                    gcs().send_text(MAV_SEVERITY_INFO, "Restart[%d] fail", plane.HB1_Power.HB1_engine_startcount); 
+                    HB1_status_set_HB_Power_Action(HB1_PowerAction_None);   
+                }
+            }
             break;
         case HB1_PowerAction_ParachuteON:
             break;
         case HB1_PowerAction_GROUND_EngineSTART: // triggered by RC OR cmd
-            if (timer > 1000) {
-                HB1_status_set_HB_Power_Action(HB1_PowerAction_None);
+            if (timer > 7000) {
+                HB1_status_set_HB_Power_Action(HB1_PowerAction_GROUND_EngineON);
             }
             break;
         case HB1_PowerAction_GROUND_RocketON: // triggered by RC
@@ -154,6 +161,7 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force
     HB1_Power.timer = tnow;
     switch (HB1_Power.state) {
         case HB1_PowerAction_None:
+            plane.HB1_Power.HB1_engine_startcount = 0;
             gcs().send_text(MAV_SEVERITY_INFO, "Power None");
             relay.off(0);
             relay.off(1);
@@ -199,12 +207,12 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force
             relay.off(2);
             relay.on(3);
             break;
-        case HB1_PowerAction_EnginePrepare:
-            gcs().send_text(MAV_SEVERITY_INFO, "R Engine Starting");
+        case HB1_PowerAction_GROUND_EngineON:
+            gcs().send_text(MAV_SEVERITY_INFO, "G Engine ON");
             relay.off(0);
             relay.off(1);
             relay.off(2);
-            relay.on(3);
+            relay.off(3);
             break;
         case HB1_PowerAction_EngineON:
             gcs().send_text(MAV_SEVERITY_INFO, "Engine ON");
@@ -272,4 +280,20 @@ void Plane::HB1_Power_on_send() {
     }
     tmp_msg._msg_1.print = true;
     return;
+}
+
+bool Plane::HB1_Power_running() {
+    if (arming.is_armed()) {
+        if (HB1_Power_is_old_engine() && plane.HB1_Power.HB1_engine_rpm.get() < 1000.f && (g2.hb1_rpm_used == 1)) {
+            return false;
+        }
+    } else {
+        if (HB1_Power.state == HB1_PowerAction_None) {
+            return false;
+        }
+        if (HB1_Power.state == HB1_PowerAction_GROUND_EngineSTART) {
+            return false;
+        }
+    }
+    return true;
 }
