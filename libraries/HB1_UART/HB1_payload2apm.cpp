@@ -14,7 +14,7 @@ void HB1_payload2apm::parse(uint8_t temp)
         default:
         case HB1_UART_msg_parser::HB1_UART_PREAMBLE1:
             _msg.read_idx = 0;
-            _msg.sum_check = 0;
+            _msg.sum_check = temp;
             _msg.data[0] = temp;
             if (temp == PREAMBLE1) {
                 _msg.msg_state = HB1_UART_msg_parser::HB1_UART_PREAMBLE2;
@@ -25,7 +25,7 @@ void HB1_payload2apm::parse(uint8_t temp)
             {
                 _msg.read_idx = 2;
                 _msg.length = _msg_1.length;
-                _msg.sum_check = 0;
+                _msg.sum_check += temp;
                 _msg.msg_state = HB1_UART_msg_parser::HB1_UART_DATA;
                 _msg.data[1] = temp;
             }
