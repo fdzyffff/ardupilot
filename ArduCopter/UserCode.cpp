@@ -18,10 +18,12 @@ void Copter::userhook_FastLoop()
         compass.setHIL(1, ahrs.roll, ahrs.pitch, FD1_hil.yaw_rad);
         compass.setHIL(2, ahrs.roll, ahrs.pitch, FD1_hil.yaw_rad);
     }
+
     if (!FD1_hil.healthy) {
         if (control_mode == Mode::Number::MYVEL || control_mode == Mode::Number::MYATT) {
-            set_mode(Mode::Number::STABILIZE, ModeReason::TOY_MODE);
-            gcs().send_text(MAV_SEVERITY_INFO, "#FS land");
+            set_mode(Mode::Number::ALT_HOLD, ModeReason::TOY_MODE);
+            // FD1_hil.ctrl_mode = 1;
+            gcs().send_text(MAV_SEVERITY_INFO, "#FS TIMEOUT");
         }
     }
 }
@@ -68,6 +70,9 @@ void Copter::userhook_SuperSlowLoop()
 void Copter::userhook_auxSwitch1(uint8_t ch_flag)
 {
     // put your aux switch #1 handler here (CHx_OPT = 47)
+    if (ch_flag == 0) {FD1_hil.ctrl_mode = 1;}
+    if (ch_flag == 1) {FD1_hil.ctrl_mode = 2;}
+    if (ch_flag == 2) {FD1_hil.ctrl_mode = 3;}
 }
 
 void Copter::userhook_auxSwitch2(uint8_t ch_flag)
@@ -86,6 +91,8 @@ void Copter::FD1_uart_init() {
     FD1_uart_msg_hil.init();
     FD1_uart_msg_hil.get_msg_hil_in().set_enable();
 
+    FD1_hil.ctrl_mode = 1;
+    FD1_hil.scene_mode = 1;
     FD1_hil.healthy = false;
     FD1_hil.last_update_ms = 0;
     FD1_hil.yaw_rad = 0;
@@ -117,29 +124,41 @@ void Copter::FD1_uart_update() {
 }
 
 void Copter::FD1_uart_hil_handle() {
-    static uint8_t last_control_mode = 0;
+    static int16_t last_control_mode = 0;
     FD1_msg_hil_in &tmp_msg = FD1_uart_msg_hil.get_msg_hil_in();
     if (tmp_msg._msg_1.updated) {
         FD1_hil.last_update_ms = millis();
-        if (last_control_mode != tmp_msg._msg_1.content.msg.ctrl_mode) {
-            FD1_hil.ctrl_mode = tmp_msg._msg_1.content.msg.ctrl_mode;
-            // if (FD1_hil.ctrl_mode == 1 || FD1_hil.ctrl_mode == 2) {
-            //     set_mode(Mode::Number::MYVEL, ModeReason::TOY_MODE);
-            // }
-            // if (FD1_hil.ctrl_mode == 3 || FD1_hil.ctrl_mode == 4) {
-            //     set_mode(Mode::Number::MYATT, ModeReason::TOY_MODE);
-            // }
-            last_control_mode = tmp_msg._msg_1.content.msg.ctrl_mode;
+        if (last_control_mode != FD1_hil.ctrl_mode) {
+            if (FD1_hil.ctrl_mode == tmp_msg._msg_1.content.msg.ctrl_mode
+                || FD1_hil.ctrl_mode == 1) {
+                // if (FD1_hil.ctrl_mode == 1 || FD1_hil.ctrl_mode == 2) {
+                //     set_mode(Mode::Number::MYVEL, ModeReason::TOY_MODE);
+                // }
+                if (FD1_hil.ctrl_mode == 1) {
+                    set_mode(Mode::Number::ALT_HOLD, ModeReason::TOY_MODE);
+                    gcs().send_text(MAV_SEVERITY_INFO, "#MODE %d",FD1_hil.ctrl_mode);
+                    last_control_mode = FD1_hil.ctrl_mode;
+                }
+                if (FD1_hil.ctrl_mode == 2 || FD1_hil.ctrl_mode == 3) {
+                    set_mode(Mode::Number::MYATT, ModeReason::TOY_MODE);
+                    gcs().send_text(MAV_SEVERITY_INFO, "#MODE %d",FD1_hil.ctrl_mode);
+                    last_control_mode = FD1_hil.ctrl_mode;
+                }
+            }
         }
-        FD1_hil.ctrl_roll_cd = constrain_float((float)tmp_msg._msg_1.content.msg.ctrl_roll_cd, -4500.f, 4500.f);
-        FD1_hil.ctrl_pitch_cd = constrain_float((float)tmp_msg._msg_1.content.msg.ctrl_pitch_cd, -4500.f, 4500.f);
+        FD1_hil.scene_mode = tmp_msg._msg_1.content.msg.scene_mode;
+        FD1_get_ctrl_in(tmp_msg._msg_1.content.msg.ctrl_mode,
+                            tmp_msg._msg_1.content.msg.scene_mode,
+                            constrain_float((float)tmp_msg._msg_1.content.msg.ctrl_roll_cd, -4500.f, 4500.f),
+                            constrain_float((float)tmp_msg._msg_1.content.msg.ctrl_pitch_cd, -4500.f, 4500.f),
+                            (float)tmp_msg._msg_1.content.msg.ctrl_yaw_cd,
+                            degrees((float)tmp_msg._msg_1.content.msg.ctrl_yaw_rate_crads),
+                            (float)tmp_msg._msg_1.content.msg.ctrl_z_vel_cms);
         FD1_hil.ctrl_yaw_cd = (float)tmp_msg._msg_1.content.msg.ctrl_yaw_cd;
         FD1_hil.ctrl_yaw_rate_cd = degrees((float)tmp_msg._msg_1.content.msg.ctrl_yaw_rate_crads);
         FD1_hil.ctrl_vel_x_cms = (float)tmp_msg._msg_1.content.msg.ctrl_x_vel_cms;
         FD1_hil.ctrl_vel_y_cms = (float)tmp_msg._msg_1.content.msg.ctrl_y_vel_cms;
-        FD1_hil.ctrl_vel_z_cms = (float)tmp_msg._msg_1.content.msg.ctrl_z_vel_cms;
 
-        FD1_hil.yaw_rad = radians(0.01f*(float)tmp_msg._msg_1.content.msg.angle_yaw_cd);
         FD1_hil.vel_x_cms = (float)tmp_msg._msg_1.content.msg.vel_x_cms;
         FD1_hil.vel_y_cms = (float)tmp_msg._msg_1.content.msg.vel_y_cms;
         Vector3f temp_vel;
@@ -185,12 +204,13 @@ void Copter::FD1_uart_hil_test_send() {
     tmp_msg._msg_1.content.msg.sum_check = 0;
     tmp_msg._msg_1.content.msg.header.head_1 = FD1_msg_hil_in::PREAMBLE1;
     tmp_msg._msg_1.content.msg.header.head_2 = FD1_msg_hil_in::PREAMBLE2;
+    tmp_msg._msg_1.content.msg.scene_mode = 1;
     tmp_msg._msg_1.content.msg.ctrl_mode = 2;
     tmp_msg._msg_1.content.msg.ctrl_pitch_cd = ahrs.pitch_sensor;
     tmp_msg._msg_1.content.msg.ctrl_roll_cd = ahrs.roll_sensor;
     tmp_msg._msg_1.content.msg.ctrl_x_vel_cms = -(float)ahrs.pitch_sensor/4.5f;
     tmp_msg._msg_1.content.msg.ctrl_y_vel_cms = (float)ahrs.roll_sensor/4.5f;
-    tmp_msg._msg_1.content.msg.ctrl_z_vel_cms = 0;
+    tmp_msg._msg_1.content.msg.ctrl_z_vel_cms = 10;
     tmp_msg._msg_1.content.msg.ctrl_yaw_cd = ahrs.yaw_sensor;
     tmp_msg._msg_1.content.msg.ctrl_yaw_rate_crads = (int16_t)constrain_float(ahrs.get_yaw_rate_earth()*100.f, -30000.f, 30000.f);
     tmp_msg._msg_1.content.msg.angle_yaw_cd = wrap_180_cd(ahrs.yaw_sensor);
@@ -200,4 +220,38 @@ void Copter::FD1_uart_hil_test_send() {
         tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
     }
     tmp_msg._msg_1.content.msg.end = FD1_msg_hil_in::POSTAMBLE;
+}
+
+void Copter::FD1_get_ctrl_in(int16_t ctrl_mode, int16_t scene_mode, float ctrl_roll_cd, float ctrl_pitch_cd, float ctrl_yaw_cd, float ctrl_yaw_rate_crads, float ctrl_vel_z_cms) {
+    // get pilot desired lean angles
+    //float pilot_roll = channel_roll->get_control_in();
+    float pilot_pitch = channel_pitch->get_control_in();
+    float pilot_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
+    float pilot_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
+
+    if (ctrl_mode==1) {
+        if (scene_mode == 1) {
+            FD1_hil.ctrl_roll_cd = ctrl_roll_cd;
+            FD1_hil.ctrl_pitch_cd = pilot_pitch;
+            FD1_hil.ctrl_yaw_rate_cd = pilot_yaw_rate;
+            FD1_hil.ctrl_vel_z_cms = pilot_climb_rate;
+        } else {
+            FD1_hil.ctrl_roll_cd = ctrl_roll_cd;
+            FD1_hil.ctrl_pitch_cd = pilot_pitch;
+            FD1_hil.ctrl_yaw_rate_cd = ctrl_yaw_rate_crads;
+            FD1_hil.ctrl_vel_z_cms = ctrl_vel_z_cms;
+        }
+    } else if (ctrl_mode==2) {
+        if (scene_mode == 1) {
+            FD1_hil.ctrl_roll_cd = ctrl_roll_cd;
+            FD1_hil.ctrl_pitch_cd = ctrl_pitch_cd;
+            FD1_hil.ctrl_yaw_rate_cd = ctrl_yaw_rate_crads;
+            FD1_hil.ctrl_vel_z_cms = pilot_climb_rate;
+        } else {
+            FD1_hil.ctrl_roll_cd = ctrl_roll_cd;
+            FD1_hil.ctrl_pitch_cd = ctrl_pitch_cd;
+            FD1_hil.ctrl_yaw_rate_cd = ctrl_yaw_rate_crads;
+            FD1_hil.ctrl_vel_z_cms = ctrl_vel_z_cms;
+        }
+    }
 }

@@ -42,7 +42,7 @@ void ModeMyAtt::run()
 
     // get pilot's desired yaw rate
     float target_yaw_rate = 0.0f;
-    float target_yaw = 0.0f;
+    //float target_yaw = 0.0f;
 
     // get pilot desired climb rate
     float target_climb_rate = 0.0f;
@@ -50,7 +50,7 @@ void ModeMyAtt::run()
         myget_pilot_desired_lean_angles(target_roll, target_pitch, copter.aparm.angle_max, attitude_control->get_althold_lean_angle_max());
         target_climb_rate = constrain_float(copter.FD1_hil.ctrl_vel_z_cms, -get_pilot_speed_dn(), g.pilot_speed_up);
         target_yaw_rate = copter.FD1_hil.ctrl_yaw_rate_cd;
-        target_yaw = copter.FD1_hil.ctrl_yaw_cd;
+        //target_yaw = copter.FD1_hil.ctrl_yaw_cd;
     }
 
     // Alt Hold State Machine Determination
@@ -110,11 +110,11 @@ void ModeMyAtt::run()
     }
 
     // call attitude controller
-    if (copter.FD1_hil.ctrl_mode == 1) {
-        attitude_control->input_euler_angle_roll_pitch_yaw(target_roll, target_pitch, target_yaw, true);
-    } else {
+    // if (copter.FD1_hil.ctrl_mode == 1) {
+    //     attitude_control->input_euler_angle_roll_pitch_yaw(target_roll, target_pitch, target_yaw, true);
+    // } else {
         attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_roll, target_pitch, target_yaw_rate);
-    }
+    // }
 
     // call z-axis position controller
     pos_control->update_z_controller();
