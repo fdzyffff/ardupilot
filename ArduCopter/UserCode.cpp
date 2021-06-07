@@ -73,6 +73,7 @@ void Copter::userhook_auxSwitch1(uint8_t ch_flag)
     if (ch_flag == 0) {FD1_hil.ctrl_mode = 1;}
     if (ch_flag == 1) {FD1_hil.ctrl_mode = 2;}
     if (ch_flag == 2) {FD1_hil.ctrl_mode = 3;}
+    gcs().send_text(MAV_SEVERITY_INFO, "#SW MODE (%d)", FD1_hil.ctrl_mode);
 }
 
 void Copter::userhook_auxSwitch2(uint8_t ch_flag)
@@ -154,10 +155,6 @@ void Copter::FD1_uart_hil_handle() {
                             (float)tmp_msg._msg_1.content.msg.ctrl_yaw_cd,
                             degrees((float)tmp_msg._msg_1.content.msg.ctrl_yaw_rate_crads),
                             (float)tmp_msg._msg_1.content.msg.ctrl_z_vel_cms);
-        FD1_hil.ctrl_yaw_cd = (float)tmp_msg._msg_1.content.msg.ctrl_yaw_cd;
-        FD1_hil.ctrl_yaw_rate_cd = degrees((float)tmp_msg._msg_1.content.msg.ctrl_yaw_rate_crads);
-        FD1_hil.ctrl_vel_x_cms = (float)tmp_msg._msg_1.content.msg.ctrl_x_vel_cms;
-        FD1_hil.ctrl_vel_y_cms = (float)tmp_msg._msg_1.content.msg.ctrl_y_vel_cms;
 
         FD1_hil.vel_x_cms = (float)tmp_msg._msg_1.content.msg.vel_x_cms;
         FD1_hil.vel_y_cms = (float)tmp_msg._msg_1.content.msg.vel_y_cms;
@@ -229,7 +226,7 @@ void Copter::FD1_get_ctrl_in(int16_t ctrl_mode, int16_t scene_mode, float ctrl_r
     float pilot_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
     float pilot_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
 
-    if (ctrl_mode==1) {
+    if (ctrl_mode==2) {
         if (scene_mode == 1) {
             FD1_hil.ctrl_roll_cd = ctrl_roll_cd;
             FD1_hil.ctrl_pitch_cd = pilot_pitch;
@@ -241,7 +238,7 @@ void Copter::FD1_get_ctrl_in(int16_t ctrl_mode, int16_t scene_mode, float ctrl_r
             FD1_hil.ctrl_yaw_rate_cd = ctrl_yaw_rate_crads;
             FD1_hil.ctrl_vel_z_cms = ctrl_vel_z_cms;
         }
-    } else if (ctrl_mode==2) {
+    } else if (ctrl_mode==3) {
         if (scene_mode == 1) {
             FD1_hil.ctrl_roll_cd = ctrl_roll_cd;
             FD1_hil.ctrl_pitch_cd = ctrl_pitch_cd;
@@ -255,3 +252,7 @@ void Copter::FD1_get_ctrl_in(int16_t ctrl_mode, int16_t scene_mode, float ctrl_r
         }
     }
 }
+
+
+// gcs().send_text(MAV_SEVERITY_INFO, "#UP MODE (%d)", tmp_msg._msg.data[26]);
+// gcs().send_text(MAV_SEVERITY_INFO, "##UP MODE (%d)", tmp_msg._msg_1.content.msg.ctrl_mode);
