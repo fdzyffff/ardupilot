@@ -536,8 +536,8 @@ void Copter::Ugcs_handle_msg(const mavlink_message_t &msg) {
             _target_postion_neu.z = (float)(packet.relative_alt / 10);
         }
         Ugcs.set_up_offset(msg.sysid, _target_postion_neu, _target_velocity_neu, _target_heading);
-        g2.follow.set_offset(Ugcs.get_offset_position()*0.01f);
-        g2.follow.handle_msg(msg, (int32_t)Ugcs_last_valid_alt_cm.get());
+        //g2.follow.set_offset(Ugcs.get_offset_position()*0.01f);
+        //g2.follow.handle_msg(msg, (int32_t)Ugcs_last_valid_alt_cm.get());
     }
 }
 
