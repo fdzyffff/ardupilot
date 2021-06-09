@@ -19,9 +19,8 @@ void Plane::FD1_mav_read()
         int8_t temp = FD1_mav.get_port()->read();
         mavlink_message_t msg;
         mavlink_status_t status;
-        if (mavlink_frame_char_buffer(&FD1_mav.mavlink.rxmsg, &FD1_mav.mavlink.status,
-                                        temp,
-                                        &msg, &status) == MAVLINK_FRAMING_OK) {
+        uint8_t ret = mavlink_frame_char_buffer(&FD1_mav.mavlink.rxmsg, &FD1_mav.mavlink.status, temp, &msg, &status);
+        if (ret == MAVLINK_FRAMING_OK || ret == MAVLINK_FRAMING_BAD_CRC) {
             switch (msg.msgid) {
                 case MAVLINK_MSG_ID_HEARTBEAT: {
                     mavlink_heartbeat_t pkt;
