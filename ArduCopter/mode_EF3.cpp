@@ -35,9 +35,10 @@ void ModeEF3::run()
     get_pilot_desired_lean_angles(target_roll, target_pitch, copter.aparm.angle_max, attitude_control->get_althold_lean_angle_max());
 
     // get pilot's desired yaw rate
+    
     float target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
-    if (!is_zero(copter.g2.user_parameters.EF3_yaw_factor)) {
-        target_yaw_rate = User_get_pilot_desired_yaw_rate(target_roll);
+    if (target_pitch < -1500.f) {
+        target_yaw_rate += User_get_pilot_desired_yaw_rate(target_roll);
     } 
 
     // get pilot desired climb rate
@@ -80,6 +81,7 @@ void ModeEF3::run()
         // set position controller targets
         pos_control->set_alt_target_from_climb_rate_ff(target_climb_rate, G_Dt, false);
         pos_control->add_takeoff_climb_rate(takeoff_climb_rate, G_Dt);
+        if (copter.rangefinder_alt_ok()) {takeoff_stop();}
         break;
 
     case AltHold_Flying:
@@ -91,12 +93,16 @@ void ModeEF3::run()
 #endif
         float ef3_target_alt = constrain_float(copter.g2.user_parameters.EF3_target_alt, 30.0f, 600.0f);
 
-        if (!User_rangefinder_check()) {
-            target_climb_rate -= g.pilot_speed_up*0.75f;
-        }
-        if (target_climb_rate > -get_pilot_speed_dn()*0.5f) {
+        // if (!User_rangefinder_check()) {
+        //     target_climb_rate -= g.pilot_speed_up*0.75f;
+        // }
+        if (target_climb_rate > g.pilot_speed_up * 0.9f ) {
+            copter.surface_tracking.set_target_alt_cm(ef3_target_alt);
+        } else if (target_climb_rate > -get_pilot_speed_dn()*0.9f) {
             target_climb_rate = 0.0f;
             copter.surface_tracking.set_target_alt_cm(ef3_target_alt);
+        } else {
+            target_climb_rate = MAX(target_climb_rate, -50.f);
         }
         // adjust climb rate using rangefinder
         target_climb_rate = copter.surface_tracking.adjust_climb_rate(target_climb_rate);

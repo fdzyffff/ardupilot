@@ -77,6 +77,7 @@ void ModeEF2::run()
         // set position controller targets
         pos_control->set_alt_target_from_climb_rate_ff(target_climb_rate, G_Dt, false);
         pos_control->add_takeoff_climb_rate(takeoff_climb_rate, G_Dt);
+        if (copter.rangefinder_alt_ok()) {takeoff_stop();}
         break;
 
     case AltHold_Flying:
@@ -86,10 +87,15 @@ void ModeEF2::run()
         // apply avoidance
         copter.avoid.adjust_roll_pitch(target_roll, target_pitch, copter.aparm.angle_max);
 #endif
-        if (!User_rangefinder_check()) {
-            target_climb_rate -= g.pilot_speed_up*0.75f;
+        // if (!User_rangefinder_check()) {
+        //     target_climb_rate -= g.pilot_speed_up*0.75f;
+        // }
+        if (target_climb_rate > -get_pilot_speed_dn()*0.9f) {
+            User_alt_limit(target_climb_rate);
+        } else {
+            // User_alt_limit(target_climb_rate);  
+            target_climb_rate = MAX(target_climb_rate, -50.f);
         }
-        User_alt_limit(target_climb_rate);
         // adjust climb rate using rangefinder
         target_climb_rate = copter.surface_tracking.adjust_climb_rate(target_climb_rate);
 

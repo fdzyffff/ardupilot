@@ -97,7 +97,7 @@
 #endif
 
 #ifndef SURFACE_TRACKING_VELZ_MAX
- # define SURFACE_TRACKING_VELZ_MAX 150     // max vertical speed change while surface tracking with rangefinder
+ # define SURFACE_TRACKING_VELZ_MAX 250     // max vertical speed change while surface tracking with rangefinder
 #endif
 
 #ifndef SURFACE_TRACKING_TIMEOUT_MS
