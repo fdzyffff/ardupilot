@@ -12,6 +12,8 @@ public:
     // UserCode usage example: g2.user_parameters.get_int8Param()
     AP_Float EF3_target_alt;
     AP_Float EF3_yaw_factor;
+    AP_Float EF2_alt_max;
+    AP_Float EF2_alt_min;
     
 private:
     // Put your parameter variable definitions here

@@ -123,12 +123,14 @@ void ModeEF2::User_alt_limit(float&  target_rate) {
     float accel_cmss = pos_control->get_max_accel_z();
     float rate_max = g.pilot_speed_up;
     float rate_min = -get_pilot_speed_dn();
+    float alt_max = constrain_float(copter.g2.user_parameters.EF2_alt_max, 300.f, 600.f);
+    float alt_min = constrain_float(copter.g2.user_parameters.EF2_alt_min, 60.f, 250.f);
     if (is_zero(kP)) {
-        rate_max = MIN(rate_max, safe_sqrt(2.0f * (600.0f - current_rng_alt) * accel_cmss));
-        rate_min = MAX(rate_min, safe_sqrt(2.0f * (100.0f - current_rng_alt) * accel_cmss));
+        rate_max = MIN(rate_max, safe_sqrt(2.0f * (alt_max - current_rng_alt) * accel_cmss));
+        rate_min = MAX(rate_min, safe_sqrt(2.0f * (alt_min - current_rng_alt) * accel_cmss));
     } else {
-        rate_max = MIN(rate_max, AC_AttitudeControl::sqrt_controller((600.0f - current_rng_alt), kP, accel_cmss, G_Dt));
-        rate_min = MAX(rate_min, AC_AttitudeControl::sqrt_controller((100.0f - current_rng_alt), kP, accel_cmss, G_Dt));
+        rate_max = MIN(rate_max, AC_AttitudeControl::sqrt_controller((alt_max - current_rng_alt), kP, accel_cmss, G_Dt));
+        rate_min = MAX(rate_min, AC_AttitudeControl::sqrt_controller((alt_min - current_rng_alt), kP, accel_cmss, G_Dt));
     }
     rate_max = MAX(rate_min, rate_max);
     target_rate = constrain_float(target_rate, rate_min, rate_max);
