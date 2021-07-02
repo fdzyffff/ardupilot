@@ -69,7 +69,7 @@ void Plane::HB1_uart_update_50Hz()
     HB1_uart_mission.write();
     HB1_uart_cam.write();
 
-    FD1_mav_read();
+    //FD1_mav_read();
     FD1_mav_send();
 }
 

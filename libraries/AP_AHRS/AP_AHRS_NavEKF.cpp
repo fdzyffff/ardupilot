@@ -401,12 +401,12 @@ void AP_AHRS_NavEKF::reset_attitude(const float &_roll, const float &_pitch, con
     
     AP_AHRS_DCM::reset_attitude(_roll, _pitch, _yaw);
     _dcm_attitude(roll, pitch, yaw);
-    if (_ekf2_started) {
-        _ekf2_started = EKF2.InitialiseFilter();
-    }
-    if (_ekf3_started) {
-        _ekf3_started = EKF3.InitialiseFilter();
-    }
+    // if (_ekf2_started) {
+    //     _ekf2_started = EKF2.InitialiseFilter();
+    // }
+    // if (_ekf3_started) {
+    //     _ekf3_started = EKF3.InitialiseFilter();
+    // }
 }
 
 // dead-reckoning support

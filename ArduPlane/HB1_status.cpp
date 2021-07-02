@@ -246,12 +246,12 @@ uint8_t Plane::HB1_status_get_HB_Mission_Action() {
         case HB1_Mission_PreAttack :
             return 4;
             break;
-        case HB1_Mission_Hover :
-        case HB1_Mission_Hover2 :
+        case HB1_Mission_Attack :
             return 5;
             break;
-        case HB1_Mission_Attack :
-            return 10;
+        case HB1_Mission_Hover :
+        case HB1_Mission_Hover2 :
+            return 6;
             break;
         case HB1_Mission_FsGPS :
             return 11;

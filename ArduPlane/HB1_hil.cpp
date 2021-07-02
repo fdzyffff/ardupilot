@@ -33,7 +33,7 @@ void Plane::FD1_mav_read()
                     if (plane.g.hil_mode != 1) {
                         break;
                     }
-            
+
                     mavlink_hil_state_t packet;
                     mavlink_msg_hil_state_decode(&msg, &packet);
             
@@ -50,7 +50,7 @@ void Plane::FD1_mav_read()
                         plane.gps.setHIL(0, AP_GPS::NO_FIX,
                                         packet.time_usec/1000,
                                         loc, vel, 10, 0);
-    
+
                     } else {
                         // setup airspeed pressure based on 3D speed, no wind
                         plane.airspeed.setHIL(sq(vel.length()) / 2.0f + 2013);
@@ -59,13 +59,13 @@ void Plane::FD1_mav_read()
                                         packet.time_usec/1000,
                                         loc, vel, 10, 0);
                     }
-    
+
                     // rad/sec
                     Vector3f gyros;
                     gyros.x = packet.rollspeed;
                     gyros.y = packet.pitchspeed;
                     gyros.z = packet.yawspeed;
-    
+
                     // m/s/s
                     Vector3f accels;
                     accels.x = packet.xacc * GRAVITY_MSS*0.001f;
@@ -77,14 +77,14 @@ void Plane::FD1_mav_read()
                     tmp_ned_to_body.from_euler(packet.roll, packet.pitch, packet.yaw);
                     tmp_ned_to_body.transpose();
                     tmp_gravity = tmp_ned_to_body*tmp_gravity;
-    
+
                     plane.ins.set_gyro(0, gyros);
                     plane.ins.set_accel(0, accels+tmp_gravity);
-    
+
                     plane.barometer.setHIL(packet.alt*0.001f);
                     plane.compass.setHIL(0, packet.roll, packet.pitch, packet.yaw);
                     plane.compass.setHIL(1, packet.roll, packet.pitch, packet.yaw);
-    
+
                     // cope with DCM getting badly off due to HIL lag
                     if (plane.g.hil_err_limit > 0 &&
                         (fabsf(packet.roll - plane.ahrs.roll) > ToRad(plane.g.hil_err_limit) ||
@@ -92,6 +92,7 @@ void Plane::FD1_mav_read()
                         wrap_PI(fabsf(packet.yaw - plane.ahrs.yaw)) > ToRad(plane.g.hil_err_limit))) {
                         plane.ahrs.reset_attitude(packet.roll, packet.pitch, packet.yaw);
                     }
+                    // plane.ahrs.reset_attitude(packet.roll, packet.pitch, packet.yaw);
                     // gcs().send_text(MAV_SEVERITY_INFO, "att: %0.2f, %0.2f %0.2f", packet.roll, packet.pitch, packet.yaw);
                     // gcs().send_text(MAV_SEVERITY_INFO, "gyro: %0.2f, %0.2f %0.2f", gyros.x, gyros.y, gyros.z);
                     // gcs().send_text(MAV_SEVERITY_INFO, "acc: %0.2f, %0.2f %0.2f", accels.x, accels.y, accels.z);
@@ -123,13 +124,13 @@ void Plane::FD1_mav_send()
     uint16_t len;
     mavlink_rc_channels_scaled_t packet;
     packet.time_boot_ms = millis();
-    packet.chan1_scaled = 10000 * (SRV_Channels::get_output_scaled(SRV_Channel::k_aileron) / 4500.0f);
-    packet.chan2_scaled = 10000 * (SRV_Channels::get_output_scaled(SRV_Channel::k_elevator) / 4500.0f);
-    packet.chan3_scaled = 10000 * (SRV_Channels::get_output_scaled(SRV_Channel::k_throttle) / 100.0f);
-    packet.chan4_scaled = 10000 * (SRV_Channels::get_output_scaled(SRV_Channel::k_rudder) / 4500.0f);
+    packet.chan1_scaled = 123;//10000 * (SRV_Channels::get_output_scaled(SRV_Channel::k_aileron) / 4500.0f);
+    packet.chan2_scaled = 321;//10000 * (SRV_Channels::get_output_scaled(SRV_Channel::k_elevator) / 4500.0f);
+    packet.chan3_scaled = 222;//10000 * (SRV_Channels::get_output_scaled(SRV_Channel::k_throttle) / 100.0f);
+    packet.chan4_scaled = 333;//10000 * (SRV_Channels::get_output_scaled(SRV_Channel::k_rudder) / 4500.0f);
     packet.chan5_scaled = 0;
     packet.chan6_scaled = 0;
-    packet.chan7_scaled = 10000 * (constrain_float(SRV_Channels::get_output_norm(SRV_Channel::k_launcher_HB1), -1.f, 1.f));
+    packet.chan7_scaled = 1111;//10000 * (constrain_float(SRV_Channels::get_output_norm(SRV_Channel::k_launcher_HB1), -1.f, 1.f));
     packet.chan8_scaled = 0;
     packet.port = 0;
     packet.rssi = 100;

@@ -136,6 +136,10 @@ void Plane::loop()
 // update AHRS system
 void Plane::ahrs_update()
 {
+
+    if (g.hil_mode == 1) {
+        FD1_mav_read();
+    }
     arming.update_soft_armed();
 
 #if HIL_SUPPORT
