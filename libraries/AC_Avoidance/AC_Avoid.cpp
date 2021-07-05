@@ -896,6 +896,196 @@ void AC_Avoid::get_proximity_roll_pitch_pct(float &roll_positive, float &roll_ne
     }
 }
 
+void AC_Avoid::adjust_fence_roll_pitch(float &roll, float &pitch, float veh_angle_max)
+{
+    // exit immediately if disabled
+    if (_enabled == AC_AVOID_DISABLED) {
+        return;
+    }
+
+    if ((_enabled & AC_AVOID_STOP_AT_FENCE) < 0) {
+        return;
+    }
+    // exit immediately if angle max is zero
+    if (_angle_max <= 0.0f || veh_angle_max <= 0.0f) {
+        return;
+    }
+
+    float roll_positive = 0.0f;    // maximum positive roll value
+    float roll_negative = 0.0f;    // minimum negative roll value
+    float pitch_positive = 0.0f;   // maximum positive pitch value
+    float pitch_negative = 0.0f;   // minimum negative pitch value
+
+    // get maximum positive and negative roll and pitch percentages from proximity sensor
+    get_fence_roll_pitch_pct(roll_positive, roll_negative, pitch_positive, pitch_negative);
+
+    // add maximum positive and negative percentages together for roll and pitch, convert to centi-degrees
+    Vector2f tmp_rp_out((roll_positive + roll_negative) * 4500.0f, (pitch_positive + pitch_negative) * 4500.0f);
+
+    // apply avoidance angular limits
+    // the object avoidance lean angle is never more than 75% of the total angle-limit to allow the pilot to override
+    const float angle_limit = constrain_float(_angle_max, 0.0f, veh_angle_max * 1.0f);
+    float vec_len = tmp_rp_out.length();
+    if (vec_len > angle_limit) {
+        tmp_rp_out *= (angle_limit / vec_len);
+    }
+
+    Vector2f rp_out(0.0f, 0.0f);
+    if (is_zero(roll_positive) && is_zero(roll_negative)) {
+        rp_out.x = roll;
+    } else if (is_zero(roll_positive) && !is_zero(roll_negative)) {
+        rp_out.x = MIN(roll, tmp_rp_out.x);
+    } else if (!is_zero(roll_positive) && is_zero(roll_negative)) {
+        rp_out.x = MAX(roll, tmp_rp_out.x);
+    } else {
+        rp_out.x = tmp_rp_out.x;
+    }
+
+    if (is_zero(pitch_positive) && is_zero(pitch_negative)) {
+        rp_out.y = pitch;
+    } else if (is_zero(pitch_positive) && !is_zero(pitch_negative)) {
+        rp_out.y = MIN(pitch, tmp_rp_out.y);
+    } else if (!is_zero(pitch_positive) && is_zero(pitch_negative)) {
+        rp_out.y = MAX(pitch, tmp_rp_out.y);
+    } else {
+        rp_out.y = tmp_rp_out.y;
+    }
+
+    // apply total angular limits
+    vec_len = rp_out.length();
+    if (vec_len > veh_angle_max) {
+        rp_out *= (veh_angle_max / vec_len);
+    }
+
+    // return adjusted roll, pitch
+    roll = rp_out.x;
+    pitch = rp_out.y;
+}
+
+// returns the maximum positive and negative roll and pitch percentages (in -1 ~ +1 range) based on the proximity sensor
+void AC_Avoid::get_fence_roll_pitch_pct(float &roll_positive, float &roll_negative, float &pitch_positive, float &pitch_negative)
+{
+    const AC_Fence *fence = AP::fence();
+    if (fence == nullptr) {
+        return;
+    }
+
+    // exit if polygon fences are not enabled
+    if ((fence->get_enabled_fences() & AC_FENCE_TYPE_POLYGON) == 0) {
+        return;
+    }
+
+    // iterate through inclusion polygons
+    const uint8_t num_inclusion_polygons = fence->polyfence().get_inclusion_polygon_count();
+    for (uint8_t i = 0; i < num_inclusion_polygons; i++) {
+        uint16_t num_points;
+        const Vector2f* boundary = fence->polyfence().get_inclusion_polygon(i, num_points);
+        if (num_points < 3) {
+            // ignore exclusion polygons with less than 3 points
+            continue;
+        }
+        // get angle pct for each polygons
+        get_fence_roll_pitch_pct_polygon(boundary, num_points, true, fence->get_margin(), true, roll_positive, roll_negative, pitch_positive, pitch_negative);
+    }
+
+    // iterate through exclusion polygons
+    const uint8_t num_exclusion_polygons = fence->polyfence().get_exclusion_polygon_count();
+    for (uint8_t i = 0; i < num_exclusion_polygons; i++) {
+        uint16_t num_points;
+        const Vector2f* boundary = fence->polyfence().get_exclusion_polygon(i, num_points);
+        if (num_points < 3) {
+            // ignore exclusion polygons with less than 3 points
+            continue;
+        }
+        // adjust velocity
+        get_fence_roll_pitch_pct_polygon(boundary, num_points, true, fence->get_margin(), false, roll_positive, roll_negative, pitch_positive, pitch_negative);
+    }
+}
+
+
+/*
+ * Adjusts the desired angle for the polygon fence.
+ */
+void AC_Avoid::get_fence_roll_pitch_pct_polygon(const Vector2f* boundary, uint16_t num_points, bool earth_frame, float margin, bool stay_inside, float &roll_positive, float &roll_negative, float &pitch_positive, float &pitch_negative)
+{
+    // exit if there are no points
+    if (boundary == nullptr || num_points == 0) {
+        return;
+    }
+
+    const AP_AHRS &_ahrs = AP::ahrs();
+
+    Vector2f position_xy;
+    if (earth_frame) {
+        if (!_ahrs.get_relative_position_NE_origin(position_xy)) {
+            // boundary is in earth frame but we have no idea
+            // where we are
+            return;
+        }
+        position_xy = position_xy * 100.0f;  // m to cm
+    }
+
+    // return if we have already breached polygon
+    const bool inside_polygon = !Polygon_outside(position_xy, boundary, num_points);
+    bool reverse = (inside_polygon != stay_inside);
+
+    // calc margin in m
+    const float margin_m = MAX(margin, 0.0f);
+
+    for (uint16_t i=0; i<num_points; i++) {
+        uint16_t j = i+1;
+        if (j >= num_points) {
+            j = 0;
+        }
+        // end points of current edge
+        Vector2f start = boundary[j];
+        Vector2f end = boundary[i];
+        // vector from current position to closest point on current edge
+        Vector2f limit_direction = Vector2f::closest_point(position_xy, start, end) - position_xy;
+        // distance to closest point
+        float limit_distance_cm = limit_direction.length();
+
+        if (!is_zero(limit_distance_cm)) {
+            // We are strictly inside the given edge.
+            // Adjust velocity to not violate this edge.
+            limit_direction /= limit_distance_cm;
+            float dist_m = limit_distance_cm*0.01f;
+            float angle_rad = atan2f(limit_direction.y, limit_direction.x);
+            if (reverse) {
+                dist_m = 0.01f;
+                angle_rad = atan2f(-limit_direction.y, -limit_direction.x);
+            }
+            dist_m = MAX(dist_m - margin_m, 0.01f);
+            angle_rad = wrap_2PI(angle_rad - _ahrs.yaw);
+
+            if (dist_m < _dist_max) {
+                // convert distance to lean angle (in 0 to 1 range)
+                const float lean_pct = distance_to_lean_pct(dist_m);
+                // convert angle to roll and pitch lean percentages
+                const float roll_pct = -sinf(angle_rad) * lean_pct;
+                const float pitch_pct = cosf(angle_rad) * lean_pct;
+                // update roll, pitch maximums
+                if (roll_pct > 0.0f) {
+                    roll_positive = MAX(roll_positive, roll_pct);
+                } else if (roll_pct < 0.0f) {
+                    roll_negative = MIN(roll_negative, roll_pct);
+                }
+                if (pitch_pct > 0.0f) {
+                    pitch_positive = MAX(pitch_positive, pitch_pct);
+                } else if (pitch_pct < 0.0f) {
+                    pitch_negative = MIN(pitch_negative, pitch_pct);
+                }
+            }
+
+        } else {
+            // We are exactly on the edge - treat this as a fence breach.
+            // i.e. do not adjust velocity.
+            return;
+        }
+
+    }
+}
+
 // singleton instance
 AC_Avoid *AC_Avoid::_singleton;
 

@@ -60,8 +60,9 @@ public:
     // adjust roll-pitch to push vehicle away from objects
     // roll and pitch value are in centi-degrees
     // angle_max is the user defined maximum lean angle for the vehicle in centi-degrees
-    void adjust_roll_pitch(float &roll, float &pitch, float angle_max);
+    void adjust_roll_pitch(float &roll, float &pitch, float veh_angle_max);
 
+    void adjust_fence_roll_pitch(float &roll, float &pitch, float veh_angle_max);
     // enable/disable proximity based avoidance
     void proximity_avoidance_enable(bool on_off) { _proximity_enabled = on_off; }
     bool proximity_avoidance_enabled() { return _proximity_enabled; }
@@ -139,6 +140,10 @@ private:
 
     // returns the maximum positive and negative roll and pitch percentages (in -1 ~ +1 range) based on the proximity sensor
     void get_proximity_roll_pitch_pct(float &roll_positive, float &roll_negative, float &pitch_positive, float &pitch_negative);
+
+    void get_fence_roll_pitch_pct(float &roll_positive, float &roll_negative, float &pitch_positive, float &pitch_negative);
+
+    void get_fence_roll_pitch_pct_polygon(const Vector2f* boundary, uint16_t num_points, bool earth_frame, float margin, bool stay_inside, float &roll_positive, float &roll_negative, float &pitch_positive, float &pitch_negative);
 
     // parameters
     AP_Int8 _enabled;
