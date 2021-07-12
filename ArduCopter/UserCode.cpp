@@ -58,6 +58,7 @@ void Copter::userhook_SuperSlowLoop()
     if (g2.user_parameters.usr_print != 0) {
         gcs().send_text(MAV_SEVERITY_INFO, "gyro (%d, %d, %d)",tmp_msg._msg_1.content.msg.gyrox, tmp_msg._msg_1.content.msg.gyroy, tmp_msg._msg_1.content.msg.gyroz);
         gcs().send_text(MAV_SEVERITY_INFO, "acc (%d, %d, %d)",tmp_msg._msg_1.content.msg.accx, tmp_msg._msg_1.content.msg.accy, tmp_msg._msg_1.content.msg.accz);
+        gcs().send_text(MAV_SEVERITY_INFO, "att (%d, %d, %d)",tmp_msg._msg_1.content.msg.eulerx,tmp_msg._msg_1.content.msg.eulery,tmp_msg._msg_1.content.msg.eulerz);
         gcs().send_text(MAV_SEVERITY_INFO, "ctrl_mode %d (%d)",FD1_hil.ctrl_mode, FD1_hil.healthy);
         gcs().send_text(MAV_SEVERITY_INFO, "ctrl_rpy %0.0f, %0.0f, %0.0f",FD1_hil.ctrl_roll_cd , FD1_hil.ctrl_pitch_cd, FD1_hil.ctrl_yaw_rate_cd);
         gcs().send_text(MAV_SEVERITY_INFO, "ctrl_vel %0.0f, %0.0f, %0.0f",FD1_hil.ctrl_vel_x_cms , FD1_hil.ctrl_vel_y_cms, FD1_hil.ctrl_vel_z_cms);
@@ -147,6 +148,7 @@ void Copter::FD1_uart_hil_handle() {
                 }
             }
         }
+        //gcs().send_text(MAV_SEVERITY_INFO, "scene_mode %d",tmp_msg._msg_1.content.msg.scene_mode);
         FD1_hil.scene_mode = tmp_msg._msg_1.content.msg.scene_mode;
         FD1_get_ctrl_in(tmp_msg._msg_1.content.msg.ctrl_mode,
                             tmp_msg._msg_1.content.msg.scene_mode,
@@ -155,7 +157,8 @@ void Copter::FD1_uart_hil_handle() {
                             (float)tmp_msg._msg_1.content.msg.ctrl_yaw_cd,
                             degrees((float)tmp_msg._msg_1.content.msg.ctrl_yaw_rate_crads),
                             (float)tmp_msg._msg_1.content.msg.ctrl_z_vel_cms);
-
+    
+        FD1_hil.yaw_rad = radians(0.01f*(float)tmp_msg._msg_1.content.msg.angle_yaw_cd);
         FD1_hil.vel_x_cms = (float)tmp_msg._msg_1.content.msg.vel_x_cms;
         FD1_hil.vel_y_cms = (float)tmp_msg._msg_1.content.msg.vel_y_cms;
         Vector3f temp_vel;
@@ -185,9 +188,10 @@ void Copter::FD1_uart_hil_send() {
     tmp_msg._msg_1.content.msg.accz = (int16_t)constrain_float(tmp_acc.z*100.f, -30000.f, 30000.f);
     tmp_msg._msg_1.content.msg.eulerx = ahrs.roll_sensor;
     tmp_msg._msg_1.content.msg.eulery = ahrs.pitch_sensor;
-    tmp_msg._msg_1.content.msg.eulerz = ahrs.yaw_sensor;
-    tmp_msg._msg_1.content.msg.height_rel_home = 0;
-    tmp_msg._msg_1.content.msg.velz = 0;
+    tmp_msg._msg_1.content.msg.eulerz = wrap_180_cd(ahrs.yaw_sensor);
+    tmp_msg._msg_1.content.msg.height_rel_home = (int16_t)copter.inertial_nav.get_altitude();
+    tmp_msg._msg_1.content.msg.velz = (int16_t)copter.inertial_nav.get_velocity_z();
+    //gcs().send_text(MAV_SEVERITY_INFO, "att (%d, %d)",ahrs.yaw_sensor, tmp_msg._msg_1.content.msg.eulerz);
 
     for (int8_t i = 0; i < tmp_msg._msg_1.length - 2; i++) {
         tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
