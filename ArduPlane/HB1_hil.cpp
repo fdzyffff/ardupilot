@@ -10,6 +10,7 @@ void Plane::FD1_mav_init()
 
 void Plane::FD1_mav_read()
 {
+    static uint32_t last_update_ms = millis();
     if (!FD1_mav.initialized()) {return;}
     mavlink_status_t *chan0_status = mavlink_get_channel_status(MAVLINK_COMM_0);
     uint8_t saved_seq = chan0_status->current_tx_seq;
@@ -34,6 +35,7 @@ void Plane::FD1_mav_read()
                         break;
                     }
 
+                    uint32_t tnow = millis();
                     mavlink_hil_state_t packet;
                     mavlink_msg_hil_state_decode(&msg, &packet);
             
@@ -48,7 +50,7 @@ void Plane::FD1_mav_read()
                         plane.airspeed.setHIL(sq(vel.length()) / 2.0f + 2013);
             
                         plane.gps.setHIL(0, AP_GPS::NO_FIX,
-                                        packet.time_usec/1000,
+                                        tnow,
                                         loc, vel, 10, 0);
 
                     } else {
@@ -56,7 +58,7 @@ void Plane::FD1_mav_read()
                         plane.airspeed.setHIL(sq(vel.length()) / 2.0f + 2013);
             
                         plane.gps.setHIL(0, AP_GPS::GPS_OK_FIX_3D,
-                                        packet.time_usec/1000,
+                                        tnow,
                                         loc, vel, 10, 0);
                     }
 
@@ -70,16 +72,17 @@ void Plane::FD1_mav_read()
                     Vector3f accels;
                     accels.x = packet.xacc * GRAVITY_MSS*0.001f;
                     accels.y = packet.yacc * GRAVITY_MSS*0.001f;
-                    accels.z = -packet.zacc * GRAVITY_MSS*0.001f;
+                    accels.z = packet.zacc * GRAVITY_MSS*0.001f;
 
                     Vector3f tmp_gravity = Vector3f(0.f,0.f,-GRAVITY_MSS);
                     Matrix3f tmp_ned_to_body;
                     tmp_ned_to_body.from_euler(packet.roll, packet.pitch, packet.yaw);
                     tmp_ned_to_body.transpose();
                     tmp_gravity = tmp_ned_to_body*tmp_gravity;
+                    accels = accels+tmp_gravity;
 
                     plane.ins.set_gyro(0, gyros);
-                    plane.ins.set_accel(0, accels+tmp_gravity);
+                    plane.ins.set_accel(0, accels);
 
                     plane.barometer.setHIL(packet.alt*0.001f);
                     plane.compass.setHIL(0, packet.roll, packet.pitch, packet.yaw);
@@ -93,11 +96,14 @@ void Plane::FD1_mav_read()
                         plane.ahrs.reset_attitude(packet.roll, packet.pitch, packet.yaw);
                     }
                     // plane.ahrs.reset_attitude(packet.roll, packet.pitch, packet.yaw);
-                    // gcs().send_text(MAV_SEVERITY_INFO, "att: %0.2f, %0.2f %0.2f", packet.roll, packet.pitch, packet.yaw);
-                    // gcs().send_text(MAV_SEVERITY_INFO, "gyro: %0.2f, %0.2f %0.2f", gyros.x, gyros.y, gyros.z);
-                    // gcs().send_text(MAV_SEVERITY_INFO, "acc: %0.2f, %0.2f %0.2f", accels.x, accels.y, accels.z);
-                    // gcs().send_text(MAV_SEVERITY_INFO, "pos: %d, %d, %d", packet.lat, packet.lon, packet.alt/10);
-                    // gcs().send_text(MAV_SEVERITY_INFO, "vel: %0.2f, %0.2f %0.2f", vel.x, vel.y, vel.z);
+                    if (tnow - last_update_ms > 2000) {
+                        gcs().send_text(MAV_SEVERITY_INFO, "att: %0.2f, %0.2f %0.2f", packet.roll, packet.pitch, packet.yaw);
+                        gcs().send_text(MAV_SEVERITY_INFO, "gyro: %0.2f, %0.2f %0.2f", gyros.x, gyros.y, gyros.z);
+                        gcs().send_text(MAV_SEVERITY_INFO, "acc: %0.2f, %0.2f %0.2f", accels.x, accels.y, accels.z);
+                        gcs().send_text(MAV_SEVERITY_INFO, "pos: %d, %d, %d", packet.lat, packet.lon, packet.alt/10);
+                        gcs().send_text(MAV_SEVERITY_INFO, "vel: %0.2f, %0.2f %0.2f", vel.x, vel.y, vel.z);
+                        last_update_ms = tnow;
+                    }
 
                     break;
                 }
@@ -124,13 +130,13 @@ void Plane::FD1_mav_send()
     uint16_t len;
     mavlink_rc_channels_scaled_t packet;
     packet.time_boot_ms = millis();
-    packet.chan1_scaled = 123;//10000 * (SRV_Channels::get_output_scaled(SRV_Channel::k_aileron) / 4500.0f);
-    packet.chan2_scaled = 321;//10000 * (SRV_Channels::get_output_scaled(SRV_Channel::k_elevator) / 4500.0f);
-    packet.chan3_scaled = 222;//10000 * (SRV_Channels::get_output_scaled(SRV_Channel::k_throttle) / 100.0f);
-    packet.chan4_scaled = 333;//10000 * (SRV_Channels::get_output_scaled(SRV_Channel::k_rudder) / 4500.0f);
+    packet.chan1_scaled = 10000 * (SRV_Channels::get_output_scaled(SRV_Channel::k_aileron) / 4500.0f);
+    packet.chan2_scaled = 10000 * (SRV_Channels::get_output_scaled(SRV_Channel::k_elevator) / 4500.0f);
+    packet.chan3_scaled = 10000 * (SRV_Channels::get_output_scaled(SRV_Channel::k_throttle) / 100.0f);
+    packet.chan4_scaled = 10000 * (SRV_Channels::get_output_scaled(SRV_Channel::k_rudder) / 4500.0f);
     packet.chan5_scaled = 0;
     packet.chan6_scaled = 0;
-    packet.chan7_scaled = 1111;//10000 * (constrain_float(SRV_Channels::get_output_norm(SRV_Channel::k_launcher_HB1), -1.f, 1.f));
+    packet.chan7_scaled = 10000 * (constrain_float(SRV_Channels::get_output_norm(SRV_Channel::k_launcher_HB1), -1.f, 1.f));
     packet.chan8_scaled = 0;
     packet.port = 0;
     packet.rssi = 100;
