@@ -283,6 +283,18 @@ void NavEKF3_core::SelectVelPosFusion()
         posVelFusionDelayed = false;
     }
 
+    // if the GPS has yaw data then input that as well
+    float yaw_deg, yaw_accuracy_deg;
+    if (AP::fd1_data().get_yaw_deg(yaw_deg, yaw_accuracy_deg)) {
+        // GPS modules are rather too optimistic about their
+        // accuracy. Set to min of 5 degrees here to prevent
+        // the user constantly receiving warnings about high
+        // normalised yaw innovations
+        const float min_yaw_accuracy_deg = 5.0f;
+        yaw_accuracy_deg = MAX(yaw_accuracy_deg, min_yaw_accuracy_deg);
+        writeEulerYawAngle(radians(yaw_deg), radians(yaw_accuracy_deg), gpsDataNew.time_ms, 2);
+    }
+
     // read GPS data from the sensor and check for new data in the buffer
     readGpsData();
     gpsDataToFuse = storedGPS.recall(gpsDataDelayed,imuDataDelayed.time_ms);

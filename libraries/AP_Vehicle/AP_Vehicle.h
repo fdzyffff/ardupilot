@@ -34,6 +34,7 @@
 #include <AP_SerialManager/AP_SerialManager.h>      // Serial manager library
 #include <AP_ServoRelayEvents/AP_ServoRelayEvents.h>
 #include <AP_Hott_Telem/AP_Hott_Telem.h>
+#include <FD1_DATA/FD1_DATA.h>
 
 class AP_Vehicle : public AP_HAL::HAL::Callbacks {
 
@@ -140,7 +141,7 @@ protected:
 #if HAL_HOTT_TELEM_ENABLED
     AP_Hott_Telem hott_telem;
 #endif
-
+    FD1_DATA fd1_data;
     // called from each vehicle
     void vehicle_setup(void);
 

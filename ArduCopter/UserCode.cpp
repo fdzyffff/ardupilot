@@ -13,11 +13,11 @@ void Copter::userhook_FastLoop()
 {
     FD1_uart_update();
     // put your 100Hz code here
-    if (g2.user_parameters.usr_hil_compass != 0) {
-        compass.setHIL(0, ahrs.roll, ahrs.pitch, FD1_hil.yaw_rad);
-        compass.setHIL(1, ahrs.roll, ahrs.pitch, FD1_hil.yaw_rad);
-        compass.setHIL(2, ahrs.roll, ahrs.pitch, FD1_hil.yaw_rad);
-    }
+    // if (g2.user_parameters.usr_hil_compass != 0) {
+    //     compass.setHIL(0, ahrs.roll, ahrs.pitch, FD1_hil.yaw_rad);
+    //     compass.setHIL(1, ahrs.roll, ahrs.pitch, FD1_hil.yaw_rad);
+    //     compass.setHIL(2, ahrs.roll, ahrs.pitch, FD1_hil.yaw_rad);
+    // }
 
     if (!FD1_hil.healthy) {
         if (control_mode == Mode::Number::MYVEL || control_mode == Mode::Number::MYATT) {
@@ -167,6 +167,11 @@ void Copter::FD1_uart_hil_handle() {
             FD1_hil.vel_y_cms = 100.f*(float)temp_vel.y;
         }
         tmp_msg._msg_1.updated = false;
+        if (g2.user_parameters.usr_hil_compass != 0) {
+            float yaw_deg = degrees(FD1_hil.yaw_rad);
+            float yaw_accuracy_deg = 2.f;
+            AP::fd1_data().set_yaw_deg(yaw_deg, yaw_accuracy_deg);
+        }
     }
 }
 
