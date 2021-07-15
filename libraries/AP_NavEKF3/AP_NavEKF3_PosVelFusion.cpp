@@ -810,7 +810,7 @@ void NavEKF3_core::selectHeightForFusion()
 
     // select height source
     if (((frontend->_useRngSwHgt > 0) && (frontend->_altSource == 1)) && (imuSampleTime_ms - rngValidMeaTime_ms < 500)) {
-        if (frontend->_altSource == 1) {
+        if (frontend->_useRngSwHgt < 0) {
             // always use range finder
             activeHgtSource = HGT_SOURCE_RNG;
         } else {
@@ -897,7 +897,7 @@ void NavEKF3_core::selectHeightForFusion()
     if (rangeDataToFuse && (activeHgtSource == HGT_SOURCE_RNG)) {
         // using range finder data
         // correct for tilt using a flat earth model
-        if (prevTnb.c.z >= 0.7) {
+        if (prevTnb.c.z >= 0.5) {
             // calculate height above ground
             hgtMea  = MAX(rangeDataDelayed.rng * prevTnb.c.z, rngOnGnd);
             // correct for terrain position relative to datum
