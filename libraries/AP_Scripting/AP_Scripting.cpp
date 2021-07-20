@@ -43,6 +43,10 @@
 static_assert(SCRIPTING_STACK_SIZE >= SCRIPTING_STACK_MIN_SIZE, "Scripting requires a larger minimum stack size");
 static_assert(SCRIPTING_STACK_SIZE <= SCRIPTING_STACK_MAX_SIZE, "Scripting requires a smaller stack size");
 
+#ifndef SCRIPTING_ENABLE_DEFAULT
+#define SCRIPTING_ENABLE_DEFAULT 0
+#endif
+
 extern const AP_HAL::HAL& hal;
 
 const AP_Param::GroupInfo AP_Scripting::var_info[] = {
@@ -52,7 +56,7 @@ const AP_Param::GroupInfo AP_Scripting::var_info[] = {
     // @Values: 0:None,1:Lua Scripts
     // @RebootRequired: True
     // @User: Advanced
-    AP_GROUPINFO_FLAGS("ENABLE", 1, AP_Scripting, _enable, 0, AP_PARAM_FLAG_ENABLE),
+    AP_GROUPINFO_FLAGS("ENABLE", 1, AP_Scripting, _enable, SCRIPTING_ENABLE_DEFAULT, AP_PARAM_FLAG_ENABLE),
 
     // @Param: VM_I_COUNT
     // @DisplayName: Scripting Virtual Machine Instruction Count
@@ -77,6 +81,38 @@ const AP_Param::GroupInfo AP_Scripting::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("DEBUG_LVL", 4, AP_Scripting, _debug_level, 0),
 
+    // @Param: USER1
+    // @DisplayName: Scripting User Parameter1
+    // @Description: General purpose user variable input for scripts
+    // @User: Standard
+    AP_GROUPINFO("USER1", 5, AP_Scripting, _user[0], 0.0),
+
+    // @Param: USER2
+    // @DisplayName: Scripting User Parameter2
+    // @Description: General purpose user variable input for scripts
+    // @User: Standard
+    AP_GROUPINFO("USER2", 6, AP_Scripting, _user[1], 0.0),
+
+    // @Param: USER3
+    // @DisplayName: Scripting User Parameter3
+    // @Description: General purpose user variable input for scripts
+    // @User: Standard
+    AP_GROUPINFO("USER3", 7, AP_Scripting, _user[2], 0.0),
+
+    // @Param: USER4
+    // @DisplayName: Scripting User Parameter4
+    // @Description: General purpose user variable input for scripts
+    // @User: Standard
+    AP_GROUPINFO("USER4", 8, AP_Scripting, _user[3], 0.0),
+
+    // @Param: DIR_DISABLE
+    // @DisplayName: Directory disable
+    // @Description: This will stop scripts being loaded from the given locations
+    // @Bitmask: 0:ROMFS, 1:APM/scripts
+    // @RebootRequired: True
+    // @User: Advanced
+    AP_GROUPINFO("DIR_DISABLE", 9, AP_Scripting, _dir_disable, 0),
+
     AP_GROUPEND
 };
 
@@ -94,6 +130,13 @@ AP_Scripting::AP_Scripting() {
 void AP_Scripting::init(void) {
     if (!_enable) {
         return;
+    }
+
+    const char *dir_name = SCRIPTING_DIRECTORY;
+    if (AP::FS().mkdir(dir_name)) {
+        if (errno != EEXIST) {
+            gcs().send_text(MAV_SEVERITY_INFO, "Lua: failed to create (%s)", dir_name);
+        }
     }
 
     if (!hal.scheduler->thread_create(FUNCTOR_BIND_MEMBER(&AP_Scripting::thread, void),
@@ -165,6 +208,30 @@ void AP_Scripting::thread(void) {
 
     // only reachable if the lua backend has died for any reason
     gcs().send_text(MAV_SEVERITY_CRITICAL, "Scripting has stopped");
+}
+
+void AP_Scripting::handle_mission_command(const AP_Mission::Mission_Command& cmd_in)
+{
+    if (!_enable) {
+        return;
+    }
+
+    if (mission_data == nullptr) {
+        // load buffer
+        mission_data = new ObjectBuffer<struct AP_Scripting::scripting_mission_cmd>(mission_cmd_queue_size);
+        if (mission_data == nullptr) {
+            gcs().send_text(MAV_SEVERITY_INFO, "scripting: unable to receive mission command");
+            return;
+        }
+    }
+
+    struct scripting_mission_cmd cmd {cmd_in.p1,
+                                      cmd_in.content.scripting.p1,
+                                      cmd_in.content.scripting.p2,
+                                      cmd_in.content.scripting.p3,
+                                      AP_HAL::millis()};
+
+    mission_data->push(cmd);
 }
 
 AP_Scripting *AP_Scripting::_singleton = nullptr;

@@ -27,7 +27,7 @@ void Sub::Log_Write_Control_Tuning()
 {
     // get terrain altitude
     float terr_alt = 0.0f;
-#if AP_TERRAIN_AVAILABLE && AC_TERRAIN
+#if AP_TERRAIN_AVAILABLE
     terrain.height_above_terrain(terr_alt, true);
 #endif
 
@@ -38,13 +38,13 @@ void Sub::Log_Write_Control_Tuning()
         angle_boost         : attitude_control.angle_boost(),
         throttle_out        : motors.get_throttle(),
         throttle_hover      : motors.get_throttle_hover(),
-        desired_alt         : pos_control.get_alt_target() / 100.0f,
+        desired_alt         : pos_control.get_pos_target_z_cm() / 100.0f,
         inav_alt            : inertial_nav.get_altitude() / 100.0f,
         baro_alt            : barometer.get_altitude(),
         desired_rangefinder_alt   : (int16_t)target_rangefinder_alt,
         rangefinder_alt           : rangefinder_state.alt_cm,
         terr_alt            : terr_alt,
-        target_climb_rate   : (int16_t)pos_control.get_vel_target_z(),
+        target_climb_rate   : (int16_t)pos_control.get_vel_target_z_cms(),
         climb_rate          : climb_rate
     };
     logger.WriteBlock(&pkt, sizeof(pkt));
@@ -55,14 +55,14 @@ void Sub::Log_Write_Attitude()
 {
     Vector3f targets = attitude_control.get_att_target_euler_cd();
     targets.z = wrap_360_cd(targets.z);
-    logger.Write_Attitude(targets);
+    ahrs.Write_Attitude(targets);
 
     AP::ahrs_navekf().Log_Write();
-    logger.Write_AHRS2();
+    ahrs.Write_AHRS2();
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
     sitl.Log_Write_SIMSTATE();
 #endif
-    logger.Write_POS();
+    ahrs.Write_POS();
 }
 
 struct PACKED log_MotBatt {
@@ -346,14 +346,13 @@ void Sub::log_init()
 #else // LOGGING_ENABLED
 
 void Sub::Log_Write_Control_Tuning() {}
-void Sub::Log_Write_Performance() {}
 void Sub::Log_Write_Attitude(void) {}
 void Sub::Log_Write_MotBatt() {}
-void Sub::Log_Write_Data(uint8_t id, int32_t value) {}
-void Sub::Log_Write_Data(uint8_t id, uint32_t value) {}
-void Sub::Log_Write_Data(uint8_t id, int16_t value) {}
-void Sub::Log_Write_Data(uint8_t id, uint16_t value) {}
-void Sub::Log_Write_Data(uint8_t id, float value) {}
+void Sub::Log_Write_Data(LogDataID id, int32_t value) {}
+void Sub::Log_Write_Data(LogDataID id, uint32_t value) {}
+void Sub::Log_Write_Data(LogDataID id, int16_t value) {}
+void Sub::Log_Write_Data(LogDataID id, uint16_t value) {}
+void Sub::Log_Write_Data(LogDataID id, float value) {}
 void Sub::Log_Sensor_Health() {}
 void Sub::Log_Write_GuidedTarget(uint8_t target_type, const Vector3f& pos_target, const Vector3f& vel_target) {}
 void Sub::Log_Write_Vehicle_Startup_Messages() {}

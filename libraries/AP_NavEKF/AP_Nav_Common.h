@@ -17,6 +17,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <AP_Math/AP_Math.h>
 
 union nav_filter_status {
     struct {
@@ -76,6 +77,5 @@ struct ekf_timing {
     float delVelDT_max;
     float delVelDT_min;
 };
-void Log_EKF_Timing(const char *name, const uint8_t core, uint64_t time_us, const struct ekf_timing &timing);
 
 #define N_MODELS_EKFGSF 5U

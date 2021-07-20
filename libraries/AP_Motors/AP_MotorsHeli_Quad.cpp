@@ -48,7 +48,7 @@ void AP_MotorsHeli_Quad::set_update_rate( uint16_t speed_hz )
 // init_outputs
 bool AP_MotorsHeli_Quad::init_outputs()
 {
-    if (_flags.initialised_ok) {
+    if (initialised_ok()) {
         return true;
     }
 
@@ -60,7 +60,14 @@ bool AP_MotorsHeli_Quad::init_outputs()
     // set rotor servo range
     _main_rotor.init_servo();
 
-    _flags.initialised_ok = true;
+    // set signal value for main rotor external governor to know when to use autorotation bailout ramp up
+    if (_main_rotor._rsc_mode.get() == ROTOR_CONTROL_MODE_SPEED_SETPOINT  ||  _main_rotor._rsc_mode.get() == ROTOR_CONTROL_MODE_SPEED_PASSTHROUGH) {
+        _main_rotor.set_ext_gov_arot_bail(_main_rotor._ext_gov_arot_pct.get());
+    } else {
+        _main_rotor.set_ext_gov_arot_bail(0);
+    }
+
+    set_initialised_ok(true);
 
     return true;
 }
@@ -116,13 +123,19 @@ void AP_MotorsHeli_Quad::calculate_armed_scalars()
         _heliflags.save_rsc_mode = true;
     }
     // saves rsc mode parameter when disarmed if it had been reset while armed
-    if (_heliflags.save_rsc_mode && !_flags.armed) {
+    if (_heliflags.save_rsc_mode && !armed()) {
         _main_rotor._rsc_mode.save();
         _heliflags.save_rsc_mode = false;
     }
 
     // set bailout ramp time
     _main_rotor.use_bailout_ramp_time(_heliflags.enable_bailout);
+
+    // allow use of external governor autorotation bailout window on main rotor
+    if (_main_rotor._ext_gov_arot_pct.get() > 0  &&  (_main_rotor._rsc_mode.get() == ROTOR_CONTROL_MODE_SPEED_SETPOINT  ||  _main_rotor._rsc_mode.get() == ROTOR_CONTROL_MODE_SPEED_PASSTHROUGH)){
+        // RSC only needs to know that the vehicle is in an autorotation if using the bailout window on an external governor
+        _main_rotor.set_autorotation_flag(_heliflags.in_autorotation);
+    }
 }
 
 // calculate_scalars
@@ -210,9 +223,6 @@ void AP_MotorsHeli_Quad::update_motor_control(RotorControlState state)
 void AP_MotorsHeli_Quad::move_actuators(float roll_out, float pitch_out, float collective_in, float yaw_out)
 {
     // initialize limits flag
-    limit.roll = false;
-    limit.pitch = false;
-    limit.yaw = false;
     limit.throttle_lower = false;
     limit.throttle_upper = false;
 
@@ -232,6 +242,16 @@ void AP_MotorsHeli_Quad::move_actuators(float roll_out, float pitch_out, float c
         collective_out = _collective_mid_pct;
         limit.throttle_lower = true;
     }
+
+    // updates below mid collective flag
+    if (collective_out <= _collective_mid_pct) {
+        _heliflags.below_mid_collective = true;
+    } else {
+        _heliflags.below_mid_collective = false;
+    }
+
+    // updates takeoff collective flag based on 50% hover collective
+    update_takeoff_collective_flag(collective_out);
 
     float collective_range = (_collective_max - _collective_min) * 0.001f;
 
@@ -292,7 +312,7 @@ void AP_MotorsHeli_Quad::move_actuators(float roll_out, float pitch_out, float c
 
 void AP_MotorsHeli_Quad::output_to_motors()
 {
-    if (!_flags.initialised_ok) {
+    if (!initialised_ok()) {
         return;
     }
 

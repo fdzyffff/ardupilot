@@ -30,6 +30,14 @@
   #endif //HAL_OS_FATFS_IO
 #endif // REPL_DIRECTORY
 
+#ifndef SCRIPTING_DIRECTORY
+  #if HAL_OS_FATFS_IO
+    #define SCRIPTING_DIRECTORY "/APM/scripts"
+  #else
+    #define SCRIPTING_DIRECTORY "./scripts"
+  #endif //HAL_OS_FATFS_IO
+#endif // SCRIPTING_DIRECTORY
+
 #ifndef REPL_IN
   #define REPL_IN REPL_DIRECTORY "/in"
 #endif // REPL_IN
@@ -91,7 +99,7 @@ private:
     int pushline(lua_State *L, int firstline);
     int incomplete(lua_State *L, int status);
     const char * get_prompt(lua_State *L, int firstline);
-    int docall(lua_State *L, int narg, int nres);
+    int docall(lua_State *L, int narg, int nres) const;
     int sandbox_ref;
 
     script_info *scripts; // linked list of scripts to be run, sorted by next run time (soonest first)

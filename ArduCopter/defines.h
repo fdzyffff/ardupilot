@@ -18,18 +18,15 @@ enum autopilot_yaw_mode {
     AUTO_YAW_FIXED =            3,  // point towards a particular angle (no pilot input accepted)
     AUTO_YAW_LOOK_AHEAD =       4,  // point in the direction the copter is moving
     AUTO_YAW_RESETTOARMEDYAW =  5,  // point towards heading at time motors were armed
-    AUTO_YAW_RATE =             6,  // turn at a specified rate (held in auto_yaw_rate)
-    AUTO_YAW_CIRCLE =           7,  // use AC_Circle's provided yaw (used during Loiter-Turns commands)
+    AUTO_YAW_ANGLE_RATE =       6,  // turn at a specified rate from a starting angle
+    AUTO_YAW_RATE =             7,  // turn at a specified rate (held in auto_yaw_rate)
+    AUTO_YAW_CIRCLE =           8,  // use AC_Circle's provided yaw (used during Loiter-Turns commands)
 };
 
 // Frame types
 #define UNDEFINED_FRAME 0
 #define MULTICOPTER_FRAME 1
 #define HELI_FRAME 2
-
-// HIL enumerations
-#define HIL_MODE_DISABLED               0
-#define HIL_MODE_SENSORS                1
 
 // Tuning enumeration
 enum tuning_func {
@@ -73,7 +70,7 @@ enum tuning_func {
     TUNING_RATE_YAW_FF =                54, // body frame yaw rate controller FF term
     TUNING_RATE_MOT_YAW_HEADROOM =      55, // motors yaw headroom minimum
     TUNING_RATE_YAW_FILT =              56, // yaw rate input filter
-    TUNING_WINCH =                      57, // winch control (not actually a value to be tuned)
+    UNUSED =                            57, // was winch control
     TUNING_SYSTEM_ID_MAGNITUDE =        58  // magnitude of the system ID signal
 };
 
@@ -83,37 +80,12 @@ enum tuning_func {
 #define WP_YAW_BEHAVIOR_LOOK_AT_NEXT_WP_EXCEPT_RTL    2   // auto pilot will face next waypoint except when doing RTL at which time it will stay in it's last
 #define WP_YAW_BEHAVIOR_LOOK_AHEAD                    3   // auto pilot will look ahead during missions and rtl (primarily meant for traditional helicopters)
 
-// Auto modes
-enum AutoMode {
-    Auto_TakeOff,
-    Auto_WP,
-    Auto_Land,
-    Auto_RTL,
-    Auto_CircleMoveToEdge,
-    Auto_Circle,
-    Auto_Spline,
-    Auto_NavGuided,
-    Auto_Loiter,
-    Auto_LoiterToAlt,
-    Auto_NavPayloadPlace,
-};
 
-// Guided modes
-enum GuidedMode {
-    Guided_TakeOff,
-    Guided_WP,
-    Guided_Velocity,
-    Guided_PosVel,
-    Guided_Angle,
-};
-
-// Safe RTL states
-enum SmartRTLState {
-    SmartRTL_WaitForPathCleanup,
-    SmartRTL_PathFollow,
-    SmartRTL_PreLandPosition,
-    SmartRTL_Descend,
-    SmartRTL_Land
+// Airmode
+enum class AirMode {
+    AIRMODE_NONE,
+    AIRMODE_DISABLED,
+    AIRMODE_ENABLED,
 };
 
 enum PayloadPlaceStateType {
@@ -147,7 +119,6 @@ enum LoggingParameters {
      LOG_MOTBATT_MSG,
      LOG_PARAMTUNE_MSG,
      LOG_HELI_MSG,
-     LOG_PRECLAND_MSG,
      LOG_GUIDEDTARGET_MSG,
      LOG_SYSIDD_MSG,
      LOG_SYSIDS_MSG,
@@ -177,7 +148,7 @@ enum LoggingParameters {
 // Radio failsafe definitions (FS_THR parameter)
 #define FS_THR_DISABLED                            0
 #define FS_THR_ENABLED_ALWAYS_RTL                  1
-#define FS_THR_ENABLED_CONTINUE_MISSION            2    // Deprecated in 4.0+, now use fs_options
+#define FS_THR_ENABLED_CONTINUE_MISSION            2    // Removed in 4.0+, now use fs_options
 #define FS_THR_ENABLED_ALWAYS_LAND                 3
 #define FS_THR_ENABLED_ALWAYS_SMARTRTL_OR_RTL      4
 #define FS_THR_ENABLED_ALWAYS_SMARTRTL_OR_LAND     5
@@ -185,7 +156,7 @@ enum LoggingParameters {
 // GCS failsafe definitions (FS_GCS_ENABLE parameter)
 #define FS_GCS_DISABLED                        0
 #define FS_GCS_ENABLED_ALWAYS_RTL              1
-#define FS_GCS_ENABLED_CONTINUE_MISSION        2    // Deprecated in 4.0+, now use fs_options
+#define FS_GCS_ENABLED_CONTINUE_MISSION        2    // Removed in 4.0+, now use fs_options
 #define FS_GCS_ENABLED_ALWAYS_SMARTRTL_OR_RTL  3
 #define FS_GCS_ENABLED_ALWAYS_SMARTRTL_OR_LAND 4
 #define FS_GCS_ENABLED_ALWAYS_LAND             5
@@ -194,14 +165,6 @@ enum LoggingParameters {
 #define FS_EKF_ACTION_LAND                  1       // switch to LAND mode on EKF failsafe
 #define FS_EKF_ACTION_ALTHOLD               2       // switch to ALTHOLD mode on EKF failsafe
 #define FS_EKF_ACTION_LAND_EVEN_STABILIZE   3       // switch to Land mode on EKF failsafe even if in a manual flight mode like stabilize
-
-// for mavlink SET_POSITION_TARGET messages
-#define MAVLINK_SET_POS_TYPE_MASK_POS_IGNORE      ((1<<0) | (1<<1) | (1<<2))
-#define MAVLINK_SET_POS_TYPE_MASK_VEL_IGNORE      ((1<<3) | (1<<4) | (1<<5))
-#define MAVLINK_SET_POS_TYPE_MASK_ACC_IGNORE      ((1<<6) | (1<<7) | (1<<8))
-#define MAVLINK_SET_POS_TYPE_MASK_FORCE           (1<<9)
-#define MAVLINK_SET_POS_TYPE_MASK_YAW_IGNORE      (1<<10)
-#define MAVLINK_SET_POS_TYPE_MASK_YAW_RATE_IGNORE (1<<11)
 
 // for PILOT_THR_BHV parameter
 #define THR_BEHAVE_FEEDBACK_FROM_MID_STICK (1<<0)

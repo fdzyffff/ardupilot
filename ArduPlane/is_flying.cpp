@@ -48,8 +48,9 @@ void Plane::update_is_flying_5Hz(void)
             // we've flown before, remove GPS constraints temporarily and only use airspeed
             is_flying_bool = airspeed_movement; // moving through the air
         } else {
-            // we've never flown yet, require good GPS movement
-            is_flying_bool = airspeed_movement || // moving through the air
+            // Because ahrs.airspeed_estimate can return a continued high value after landing if flying in
+            // strong winds above stall speed it is necessary to include the IMU based movement check.
+            is_flying_bool = (airspeed_movement && !AP::ins().is_still()) || // moving through the air
                                 gps_confirmed_movement; // locked and we're moving
         }
 
@@ -154,7 +155,9 @@ void Plane::update_is_flying_5Hz(void)
         }
     }
     previous_is_flying = new_is_flying;
+#if HAL_ADSB_ENABLED
     adsb.set_is_flying(new_is_flying);
+#endif
 #if PARACHUTE == ENABLED
     parachute.set_is_flying(new_is_flying);
 #endif

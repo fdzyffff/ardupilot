@@ -68,6 +68,8 @@
 #include <AP_Follow/AP_Follow.h>
 #include <AP_OSD/AP_OSD.h>
 #include <AP_WindVane/AP_WindVane.h>
+#include <AR_Motors/AP_MotorsUGV.h>
+#include <AP_Torqeedo/AP_Torqeedo.h>
 
 #ifdef ENABLE_SCRIPTING
 #include <AP_Scripting/AP_Scripting.h>
@@ -78,7 +80,6 @@
 #endif
 
 // Local modules
-#include "AP_MotorsUGV.h"
 #include "mode.h"
 #include "AP_Arming.h"
 #include "sailboat.h"
@@ -143,6 +144,9 @@ private:
     RC_Channel *channel_steer;
     RC_Channel *channel_throttle;
     RC_Channel *channel_lateral;
+    RC_Channel *channel_roll;
+    RC_Channel *channel_pitch;
+    RC_Channel *channel_walking_height;
 
     AP_Logger logger;
 
@@ -162,7 +166,7 @@ private:
     OpticalFlow optflow;
 #endif
 
-#if OSD_ENABLED == ENABLED
+#if OSD_ENABLED || OSD_PARAM_ENABLED
     AP_OSD osd;
 #endif
 
@@ -186,7 +190,7 @@ private:
 #endif
 
     // Camera/Antenna mount tracking and stabilisation stuff
-#if MOUNT == ENABLED
+#if HAL_MOUNT_ENABLED
     AP_Mount camera_mount;
 #endif
 
@@ -196,7 +200,6 @@ private:
     // This is the state of the flight control system
     // There are multiple states defined such as MANUAL, AUTO, ...
     Mode *control_mode;
-    ModeReason control_mode_reason = ModeReason::UNKNOWN;
 
     // Used to maintain the state of the previous control switch position
     // This is set to -1 when we need to re-read the switch
@@ -208,7 +211,6 @@ private:
         uint32_t start_time;        // start time of the earliest failsafe
         uint8_t triggered;          // bit flags of failsafes that have triggered an action
         uint32_t last_valid_rc_ms;  // system time of most recent RC input from pilot
-        uint32_t last_heartbeat_ms; // system time of most recent heartbeat from ground station
         bool ekf;
     } failsafe;
 
@@ -238,9 +240,6 @@ private:
     // time that rudder/steering arming has been running
     uint32_t rudder_arm_timer;
 
-    // Store the time the last GPS message was received.
-    uint32_t last_gps_msg_ms{0};
-
     // latest wheel encoder values
     float wheel_encoder_last_distance_m[WHEELENCODER_MAX_INSTANCES];    // total distance recorded by wheel encoder (for reporting to GCS)
     bool wheel_encoder_initialised;                                     // true once arrays below have been initialised to sensors initial values
@@ -266,8 +265,8 @@ private:
 
     // cruise throttle and speed learning
     typedef struct {
-        LowPassFilterFloat speed_filt = LowPassFilterFloat(2.0f);
-        LowPassFilterFloat throttle_filt = LowPassFilterFloat(2.0f);
+        LowPassFilterFloat speed_filt{2.0f};
+        LowPassFilterFloat throttle_filt{2.0f};
         uint32_t learn_start_ms;
         uint32_t log_count;
     } cruise_learn_t;
@@ -278,13 +277,14 @@ private:
     // Rover.cpp
     bool set_target_location(const Location& target_loc) override;
     bool set_target_velocity_NED(const Vector3f& vel_ned) override;
+    bool set_steering_and_throttle(float steering, float throttle) override;
+    bool get_control_output(AP_Vehicle::ControlOutput control_output, float &control_value) override;
     void stats_update();
     void ahrs_update();
     void gcs_failsafe_check(void);
     void update_logging1(void);
     void update_logging2(void);
     void one_second_loop(void);
-    void update_GPS(void);
     void update_current_mode(void);
     void update_mission(void);
 
@@ -297,9 +297,6 @@ private:
     bool set_home(const Location& loc, bool lock) WARN_IF_UNUSED;
     void update_home();
 
-    // compat.cpp
-    void delay(uint32_t ms);
-
     // crash_check.cpp
     void crash_check();
 
@@ -307,7 +304,7 @@ private:
     void cruise_learn_start();
     void cruise_learn_update();
     void cruise_learn_complete();
-    void log_write_cruise_learn();
+    void log_write_cruise_learn() const;
 
     // ekf_check.cpp
     void ekf_check();
@@ -389,9 +386,10 @@ private:
     bool should_log(uint32_t mask);
     bool is_boat() const;
 
-#if OSD_ENABLED == ENABLED
-    void publish_osd_info();
-#endif
+    // vehicle specific waypoint info helpers
+    bool get_wp_distance_m(float &distance) const override;
+    bool get_wp_bearing_deg(float &bearing) const override;
+    bool get_wp_crosstrack_error_m(float &xtrack_error) const override;
 
     enum Failsafe_Action {
         Failsafe_Action_None          = 0,
@@ -428,7 +426,7 @@ public:
     void motor_test_stop();
 
     // frame type
-    uint8_t get_frame_type() { return g2.frame_type.get(); }
+    uint8_t get_frame_type() const { return g2.frame_type.get(); }
     AP_WheelRateControl& get_wheel_rate_control() { return g2.wheel_rate_control; }
 
     // Simple mode

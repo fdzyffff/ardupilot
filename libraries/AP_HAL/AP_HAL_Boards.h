@@ -39,6 +39,7 @@
 #define HAL_BOARD_SUBTYPE_LINUX_RST_ZYNQ   1021
 #define HAL_BOARD_SUBTYPE_LINUX_POCKET     1022
 #define HAL_BOARD_SUBTYPE_LINUX_NAVIGATOR  1023
+#define HAL_BOARD_SUBTYPE_LINUX_VNAV       1024
 
 /* HAL CHIBIOS sub-types, starting at 5000
 
@@ -61,7 +62,7 @@
 #define HAL_INS_NONE         0
 #define HAL_INS_MPU60XX_SPI  2
 #define HAL_INS_MPU60XX_I2C  3
-#define HAL_INS_HIL          4
+#define HAL_INS_HIL_UNUSED   4  // unused
 #define HAL_INS_VRBRAIN      8
 #define HAL_INS_MPU9250_SPI  9
 #define HAL_INS_MPU9250_I2C 13
@@ -72,14 +73,14 @@
 
 /* Barometer driver types */
 #define HAL_BARO_NONE        0
-#define HAL_BARO_HIL         6
+#define HAL_BARO_HIL_UNUSED  6  // unused
 #define HAL_BARO_20789_I2C_I2C  14
 #define HAL_BARO_20789_I2C_SPI  15
 #define HAL_BARO_LPS25H_IMU_I2C 17
 
 /* Compass driver types */
 #define HAL_COMPASS_NONE                0
-#define HAL_COMPASS_HIL                 3
+#define HAL_COMPASS_HIL_UNUSED          3  // unused
 
 /* Heat Types */
 #define HAL_LINUX_HEAT_PWM 1
@@ -156,8 +157,8 @@
 #define HAL_COMPASS_HMC5843_I2C_ADDR 0x1E
 #endif
 
-#ifndef HAL_WITH_UAVCAN
-#define HAL_WITH_UAVCAN 0
+#ifndef HAL_NUM_CAN_IFACES
+#define HAL_NUM_CAN_IFACES 0
 #endif
 
 #ifndef HAL_RCINPUT_WITH_AP_RADIO
@@ -215,6 +216,22 @@
 #define HAL_CAN_DRIVER_DEFAULT 0
 #endif
 
+#ifndef HAL_MAX_CAN_PROTOCOL_DRIVERS
+#if defined(HAL_BOOTLOADER_BUILD)
+    #define HAL_MAX_CAN_PROTOCOL_DRIVERS 0
+#else
+    #define HAL_MAX_CAN_PROTOCOL_DRIVERS HAL_NUM_CAN_IFACES
+#endif
+#endif
+
+#ifndef HAL_CANMANAGER_ENABLED
+#define HAL_CANMANAGER_ENABLED ((HAL_MAX_CAN_PROTOCOL_DRIVERS > 0) && !defined(HAL_BUILD_AP_PERIPH))
+#endif
+
+#ifndef HAL_ENABLE_LIBUAVCAN_DRIVERS
+#define HAL_ENABLE_LIBUAVCAN_DRIVERS HAL_CANMANAGER_ENABLED
+#endif
+
 #ifdef HAVE_LIBDL
 #define AP_MODULE_SUPPORTED 1
 #else
@@ -230,7 +247,7 @@
 #define HAL_HAVE_DUAL_USB_CDC 0
 #endif
 
-#if HAL_WITH_UAVCAN && CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
+#if HAL_NUM_CAN_IFACES && CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
 #define AP_UAVCAN_SLCAN_ENABLED 1
 #else
 #define AP_UAVCAN_SLCAN_ENABLED 0
@@ -238,4 +255,12 @@
 
 #ifndef USE_LIBC_REALLOC
 #define USE_LIBC_REALLOC 1
+#endif
+
+#ifndef HAL_ENABLE_THREAD_STATISTICS
+#define HAL_ENABLE_THREAD_STATISTICS 0
+#endif
+
+#ifndef HAL_INS_ENABLED
+#define HAL_INS_ENABLED (!defined(HAL_BUILD_AP_PERIPH))
 #endif

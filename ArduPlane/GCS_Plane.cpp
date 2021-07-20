@@ -8,34 +8,28 @@ uint8_t GCS_Plane::sysid_this_mav() const
 
 void GCS_Plane::update_vehicle_sensor_status_flags(void)
 {
-    // first what sensors/controllers we have
+    // airspeed
     const AP_Airspeed *airspeed = AP_Airspeed::get_singleton();
     if (airspeed && airspeed->enabled()) {
         control_sensors_present |= MAV_SYS_STATUS_SENSOR_DIFFERENTIAL_PRESSURE;
     }
-#if OPTFLOW == ENABLED
-    const OpticalFlow *optflow = AP::opticalflow();
-    if (optflow && optflow->enabled()) {
-        control_sensors_present |= MAV_SYS_STATUS_SENSOR_OPTICAL_FLOW;
-        control_sensors_enabled |= MAV_SYS_STATUS_SENSOR_OPTICAL_FLOW;
-    }
-#endif
-    if (plane.geofence_present()) {
-        control_sensors_present |= MAV_SYS_STATUS_GEOFENCE;
-    }
-
-    if (plane.have_reverse_thrust()) {
-        control_sensors_present |= MAV_SYS_STATUS_REVERSE_MOTOR;
-    }
-
     if (airspeed && airspeed->enabled() && airspeed->use()) {
         control_sensors_enabled |= MAV_SYS_STATUS_SENSOR_DIFFERENTIAL_PRESSURE;
     }
-
-    if (plane.geofence_enabled()) {
-        control_sensors_enabled |= MAV_SYS_STATUS_GEOFENCE;
+    if (airspeed && airspeed->all_healthy()) {
+        control_sensors_health |= MAV_SYS_STATUS_SENSOR_DIFFERENTIAL_PRESSURE;
     }
 
+    // reverse thrust
+    if (plane.have_reverse_thrust()) {
+        control_sensors_present |= MAV_SYS_STATUS_REVERSE_MOTOR;
+    }
+    if (plane.have_reverse_thrust() && SRV_Channels::get_output_scaled(SRV_Channel::k_throttle) < 0) {
+        control_sensors_enabled |= MAV_SYS_STATUS_REVERSE_MOTOR;
+        control_sensors_health |= MAV_SYS_STATUS_REVERSE_MOTOR;
+    }
+
+    // flightmode-specific
     control_sensors_present |=
         MAV_SYS_STATUS_SENSOR_ANGULAR_RATE_CONTROL |
         MAV_SYS_STATUS_SENSOR_ATTITUDE_STABILIZATION |
@@ -83,6 +77,7 @@ void GCS_Plane::update_vehicle_sensor_status_flags(void)
     case Mode::Number::CIRCLE:
     case Mode::Number::TAKEOFF:
     case Mode::Number::QRTL:
+    case Mode::Number::THERMAL:
         rate_controlled = true;
         attitude_stabilized = true;
         control_sensors_enabled |= MAV_SYS_STATUS_SENSOR_YAW_POSITION;
@@ -107,22 +102,20 @@ void GCS_Plane::update_vehicle_sensor_status_flags(void)
     }
 
 #if OPTFLOW == ENABLED
+    const OpticalFlow *optflow = AP::opticalflow();
+    if (optflow && optflow->enabled()) {
+        control_sensors_present |= MAV_SYS_STATUS_SENSOR_OPTICAL_FLOW;
+        control_sensors_enabled |= MAV_SYS_STATUS_SENSOR_OPTICAL_FLOW;
+    }
     if (optflow && optflow->healthy()) {
         control_sensors_health |= MAV_SYS_STATUS_SENSOR_OPTICAL_FLOW;
-    }
-#endif
-    if (airspeed && airspeed->all_healthy()) {
-        control_sensors_health |= MAV_SYS_STATUS_SENSOR_DIFFERENTIAL_PRESSURE;
-    }
-#if GEOFENCE_ENABLED
-    if (!plane.geofence_breached()) {
-        control_sensors_health |= MAV_SYS_STATUS_GEOFENCE;
     }
 #endif
 
     control_sensors_present |= MAV_SYS_STATUS_SENSOR_RC_RECEIVER;
     control_sensors_enabled |= MAV_SYS_STATUS_SENSOR_RC_RECEIVER;
-    if (millis() - plane.failsafe.last_valid_rc_ms < 200) {
+    uint32_t last_valid = plane.failsafe.last_valid_rc_ms;
+    if (millis() - last_valid < 200) {
         control_sensors_health |= MAV_SYS_STATUS_SENSOR_RC_RECEIVER;
     }
 
@@ -151,10 +144,5 @@ void GCS_Plane::update_vehicle_sensor_status_flags(void)
         if (rangefinder->has_data_orient(ROTATION_PITCH_270)) {
             control_sensors_health |= MAV_SYS_STATUS_SENSOR_LASER_POSITION;            
         }
-    }
-
-    if (plane.have_reverse_thrust() && SRV_Channels::get_output_scaled(SRV_Channel::k_throttle) < 0) {
-        control_sensors_enabled |= MAV_SYS_STATUS_REVERSE_MOTOR;
-        control_sensors_health |= MAV_SYS_STATUS_REVERSE_MOTOR;
     }
 }

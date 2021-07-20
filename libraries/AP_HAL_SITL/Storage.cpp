@@ -1,3 +1,6 @@
+#include "Storage.h"
+
+#include <AP_Vehicle/AP_Vehicle_Type.h>
 #include <AP_HAL/AP_HAL.h>
 
 #include <assert.h>
@@ -5,9 +8,17 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include "Storage.h"
-
 #include <stdio.h>
+
+#ifndef HAL_STORAGE_FILE
+#if APM_BUILD_TYPE(APM_BUILD_Replay)
+#define HAL_STORAGE_FILE "eeprom-replay.bin"
+#elif APM_BUILD_TYPE(APM_BUILD_AP_Periph)
+#define HAL_STORAGE_FILE "eeprom-periph.bin"
+#else
+#define HAL_STORAGE_FILE "eeprom.bin"
+#endif
+#endif
 
 using namespace HALSITL;
 
@@ -221,7 +232,9 @@ static void sitl_flash_open(void)
             }
             uint8_t fill[HAL_FLASH_SECTOR_SIZE*2];
             memset(fill, 0xff, sizeof(fill));
-            pwrite(flash_fd, fill, sizeof(fill), 0);
+            if (pwrite(flash_fd, fill, sizeof(fill), 0) != (ssize_t)sizeof(fill)) {
+                AP_HAL::panic("Failed to fill flash.dat");
+            }
         }
     }
 }
@@ -230,7 +243,7 @@ static bool sitl_flash_write(uint32_t addr, const uint8_t *data, uint32_t length
 {
     sitl_flash_open();
     uint8_t old[length];
-    if (pread(flash_fd, old, length, addr) != length) {
+    if (pread(flash_fd, old, length, addr) != (ssize_t)length) {
         AP_HAL::panic("Failed to read flash.dat at %u len=%u", unsigned(addr), unsigned(length));
     }
 #if defined(HAL_FLASH_MIN_WRITE_SIZE) && HAL_FLASH_MIN_WRITE_SIZE == 32
@@ -264,13 +277,13 @@ static bool sitl_flash_write(uint32_t addr, const uint8_t *data, uint32_t length
         }
 #endif
     }
-    return pwrite(flash_fd, data, length, addr) == length;
+    return pwrite(flash_fd, data, length, addr) == (ssize_t)length;
 }
 
 static bool sitl_flash_read(uint32_t addr, uint8_t *data, uint32_t length)
 {
     sitl_flash_open();
-    return pread(flash_fd, data, length, addr) == length;
+    return pread(flash_fd, data, length, addr) == (ssize_t)length;
 }
 
 static bool sitl_flash_erasepage(uint32_t page)

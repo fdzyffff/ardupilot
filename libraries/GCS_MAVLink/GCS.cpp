@@ -12,6 +12,12 @@
 
 extern const AP_HAL::HAL& hal;
 
+// if this assert fails then fix it and the comment in GCS.h where
+// _statustext_queue is declared
+#if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
+assert_storage_size<GCS::statustext_t, 58> _assert_statustext_t_size;
+#endif
+
 void GCS::get_sensor_status_flags(uint32_t &present,
                                   uint32_t &enabled,
                                   uint32_t &health)
@@ -39,11 +45,23 @@ void GCS::init()
 }
 
 /*
+ * returns a mask of channels that statustexts should be sent to
+ */
+uint8_t GCS::statustext_send_channel_mask() const
+{
+    uint8_t ret = 0;
+    ret |= GCS_MAVLINK::active_channel_mask();
+    ret |= GCS_MAVLINK::streaming_channel_mask();
+    ret &= ~GCS_MAVLINK::private_channel_mask();
+    return ret;
+}
+
+/*
   send a text message to all GCS
  */
 void GCS::send_textv(MAV_SEVERITY severity, const char *fmt, va_list arg_list)
 {
-    uint8_t mask = GCS_MAVLINK::active_channel_mask() | GCS_MAVLINK::streaming_channel_mask();
+    uint8_t mask = statustext_send_channel_mask();
     if (!update_send_has_been_called) {
         // we have not yet initialised the streaming-channel-mask,
         // which is done as part of the update() call.  So just send
@@ -69,6 +87,9 @@ void GCS::send_to_active_channels(uint32_t msgid, const char *pkt)
     }
     for (uint8_t i=0; i<num_gcs(); i++) {
         GCS_MAVLINK &c = *chan(i);
+        if (c.is_private()) {
+            continue;
+        }
         if (!c.is_active()) {
             continue;
         }
@@ -95,7 +116,7 @@ void GCS::send_named_float(const char *name, float value) const
 /*
   install an alternative protocol handler. This allows another
   protocol to take over the link if MAVLink goes idle. It is used to
-  allow for the AP_BLHeli pass-thru protocols to run on hal.uartA
+  allow for the AP_BLHeli pass-thru protocols to run on hal.serial(0)
  */
 bool GCS::install_alternative_protocol(mavlink_channel_t c, GCS_MAVLINK::protocol_handler_fn_t handler)
 {
@@ -121,10 +142,12 @@ void GCS::update_sensor_status_flags()
     const AP_InertialSensor &ins = AP::ins();
 
     control_sensors_present |= MAV_SYS_STATUS_AHRS;
-    control_sensors_enabled |= MAV_SYS_STATUS_AHRS;
-    if (!ahrs.initialised() || ahrs.healthy()) {
-        if (!ahrs.have_inertial_nav() || ins.accel_calibrated_ok_all()) {
-            control_sensors_health |= MAV_SYS_STATUS_AHRS;
+    if (ahrs.initialised()) {
+        control_sensors_enabled |= MAV_SYS_STATUS_AHRS;
+        if (ahrs.healthy()) {
+            if (!ahrs.have_inertial_nav() || ins.accel_calibrated_ok_all()) {
+                control_sensors_health |= MAV_SYS_STATUS_AHRS;
+            }
         }
     }
 
@@ -133,7 +156,7 @@ void GCS::update_sensor_status_flags()
         control_sensors_present |= MAV_SYS_STATUS_SENSOR_3D_MAG;
         control_sensors_enabled |= MAV_SYS_STATUS_SENSOR_3D_MAG;
     }
-    if (compass.enabled() && compass.healthy() && ahrs.use_compass()) {
+    if (compass.enabled() && compass.healthy()) {
         control_sensors_health |= MAV_SYS_STATUS_SENSOR_3D_MAG;
     }
 

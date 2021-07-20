@@ -18,12 +18,22 @@ void ModeManual::update()
         rover.balancebot_pitch_control(desired_throttle);
     }
 
+    // walking robots support roll, pitch and walking_height
+    float desired_roll, desired_pitch, desired_walking_height;
+    get_pilot_desired_roll_and_pitch(desired_roll, desired_pitch);
+    get_pilot_desired_walking_height(desired_walking_height);
+    g2.motors.set_roll(desired_roll);
+    g2.motors.set_pitch(desired_pitch);
+    g2.motors.set_walking_height(desired_walking_height);
+
     // set sailboat sails
     float desired_mainsail;
     float desired_wingsail;
-    g2.sailboat.get_pilot_desired_mainsail(desired_mainsail, desired_wingsail);
+    float desired_mast_rotation;
+    g2.sailboat.get_pilot_desired_mainsail(desired_mainsail, desired_wingsail, desired_mast_rotation);
     g2.motors.set_mainsail(desired_mainsail);
     g2.motors.set_wingsail(desired_wingsail);
+    g2.motors.set_mast_rotation(desired_wingsail);
 
     // copy RC scaled inputs to outputs
     g2.motors.set_throttle(desired_throttle);

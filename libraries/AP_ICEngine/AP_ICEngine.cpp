@@ -23,6 +23,8 @@
 
 extern const AP_HAL::HAL& hal;
 
+#define AP_ICENGINE_START_CHAN_DEBOUNCE_MS          300
+
 const AP_Param::GroupInfo AP_ICEngine::var_info[] = {
 
     // @Param: ENABLE
@@ -34,7 +36,7 @@ const AP_Param::GroupInfo AP_ICEngine::var_info[] = {
 
     // @Param: START_CHAN
     // @DisplayName: Input channel for engine start
-    // @Description: This is an RC input channel for requesting engine start. Engine will try to start when channel is at or above 1700. Engine will stop when channel is at or below 1300. Between 1301 and 1699 the engine will not change state unless a MAVLink command or mission item commands a state change, or the vehicle is disamed.
+    // @Description: This is an RC input channel for requesting engine start. Engine will try to start when channel is at or above 1700. Engine will stop when channel is at or below 1300. Between 1301 and 1699 the engine will not change state unless a MAVLink command or mission item commands a state change, or the vehicle is disamed. See ICE_STARTCHN_MIN parameter to change engine stop PWM value and/or to enable debouncing of the START_CH to avoid accidental engine kills due to noise on channel.
     // @User: Standard
     // @Values: 0:None,1:Chan1,2:Chan2,3:Chan3,4:Chan4,5:Chan5,6:Chan6,7:Chan7,8:Chan8,9:Chan9,10:Chan10,11:Chan11,12:Chan12,13:Chan13,14:Chan14,15:Chan15,16:Chan16
     AP_GROUPINFO("START_CHAN", 1, AP_ICEngine, start_chan, 0),
@@ -132,7 +134,14 @@ const AP_Param::GroupInfo AP_ICEngine::var_info[] = {
     // @Description: Options for ICE control
     // @Bitmask: 0:DisableIgnitionRCFailsafe
     AP_GROUPINFO("OPTIONS", 15, AP_ICEngine, options, 0),
-    
+
+    // @Param: STARTCHN_MIN
+    // @DisplayName: Input channel for engine start minimum PWM
+    // @Description: This is a minimum PWM value for engine start channel for an engine stop to be commanded. Setting this value will avoid RC input glitches with low PWM values from causing an unwanted engine stop. A value of zero means any PWM below 1300 triggers an engine stop.
+    // @User: Standard
+    // @Range: 0 1300
+    AP_GROUPINFO("STARTCHN_MIN", 16, AP_ICEngine, start_chan_min_pwm, 0),
+
     AP_GROUPEND
 };
 
@@ -160,17 +169,43 @@ void AP_ICEngine::update(void)
 
     uint16_t cvalue = 1500;
     RC_Channel *c = rc().channel(start_chan-1);
-    if (c != nullptr) {
+    if (c != nullptr && rc().has_valid_input()) {
         // get starter control channel
         cvalue = c->get_radio_in();
+
+        if (cvalue < start_chan_min_pwm) {
+            cvalue = start_chan_last_value;
+        }
+
+        // snap the input to either 1000, 1500, or 2000
+        // this is useful to compare a debounce changed value
+        // while ignoring tiny noise
+        if (cvalue >= RC_Channel::AUX_PWM_TRIGGER_HIGH) {
+            cvalue = 2000;
+        } else if ((cvalue > 800) && (cvalue <= RC_Channel::AUX_PWM_TRIGGER_LOW)) {
+            cvalue = 1300;
+        } else {
+            cvalue = 1500;
+        }
     }
 
     bool should_run = false;
     uint32_t now = AP_HAL::millis();
 
-    if (state == ICE_OFF && cvalue >= 1700) {
+
+    // debounce timer to protect from spurious changes on start_chan rc input
+    // If the cached value is the same, reset timer
+    if (start_chan_last_value == cvalue) {
+        start_chan_last_ms = now;
+    } else if (now - start_chan_last_ms >= AP_ICENGINE_START_CHAN_DEBOUNCE_MS) {
+        // if it has changed, and stayed changed for the duration, then use that new value
+        start_chan_last_value = cvalue;
+    }
+
+
+    if (state == ICE_OFF && start_chan_last_value >= RC_Channel::AUX_PWM_TRIGGER_HIGH) {
         should_run = true;
-    } else if (cvalue <= 1300) {
+    } else if (start_chan_last_value <= RC_Channel::AUX_PWM_TRIGGER_LOW) {
         should_run = false;
     } else if (state != ICE_OFF) {
         should_run = true;
@@ -322,9 +357,10 @@ bool AP_ICEngine::engine_control(float start_control, float cold_start, float he
         return true;
     }
     RC_Channel *c = rc().channel(start_chan-1);
-    if (c != nullptr) {
+    if (c != nullptr && rc().has_valid_input()) {
         // get starter control channel
-        if (c->get_radio_in() <= 1300) {
+        uint16_t cvalue = c->get_radio_in();
+        if (cvalue >= start_chan_min_pwm && cvalue <= RC_Channel::AUX_PWM_TRIGGER_LOW) {
             gcs().send_text(MAV_SEVERITY_INFO, "Engine: start control disabled");
             return false;
         }
@@ -347,6 +383,9 @@ bool AP_ICEngine::engine_control(float start_control, float cold_start, float he
 */
 void AP_ICEngine::update_idle_governor(int8_t &min_throttle)
 {
+    if (!enable) {
+        return;
+    }
     const int8_t min_throttle_base = min_throttle;
 
     // Initialize idle point to min_throttle on the first run

@@ -180,6 +180,7 @@ void RCInput::_timer_tick(void)
         _num_channels = MIN(_num_channels, RC_INPUT_MAX_CHANNELS);
         rcprot.read(_rc_values, _num_channels);
         _rssi = rcprot.get_RSSI();
+        _rx_link_quality = rcprot.get_rx_link_quality();
 #ifndef HAL_NO_UARTDRIVER
         rc_protocol = rcprot.protocol_name();
 #endif
@@ -216,7 +217,7 @@ void RCInput::_timer_tick(void)
 #ifndef HAL_NO_UARTDRIVER
     if (rc_protocol && rc_protocol != last_protocol) {
         last_protocol = rc_protocol;
-        gcs().send_text(MAV_SEVERITY_DEBUG, "RCInput: decoding %s", last_protocol);
+        GCS_SEND_TEXT(MAV_SEVERITY_DEBUG, "RCInput: decoding %s", last_protocol);
     }
 #endif
 

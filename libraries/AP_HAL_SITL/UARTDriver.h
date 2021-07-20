@@ -48,6 +48,9 @@ public:
     uint32_t available() override;
     uint32_t txspace() override;
     int16_t read() override;
+    ssize_t read(uint8_t *buffer, uint16_t count) override;
+
+    bool discard_input() override;
 
     /* Implementations of Print virtual methods */
     size_t write(uint8_t c) override;
@@ -89,6 +92,7 @@ private:
     bool _connected = false; // true if a client has connected
     bool _use_send_recv = false;
     int _listen_fd;  // socket we are listening on
+    struct sockaddr_in _listen_sockaddr;
     int _serial_port;
     static bool _console;
     bool _nonblocking_writes;
@@ -114,7 +118,7 @@ private:
     void _check_connection(void);
     static bool _select_check(int );
     static void _set_nonblocking(int );
-    bool set_speed(int speed);
+    bool set_speed(int speed) const;
 
     SITL_State *_sitlState;
     uint64_t _receive_timestamp;

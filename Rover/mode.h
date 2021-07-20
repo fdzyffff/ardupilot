@@ -153,11 +153,20 @@ protected:
     // decode pilot's input and return heading_out (in cd) and speed_out (in m/s)
     void get_pilot_desired_heading_and_speed(float &heading_out, float &speed_out);
 
+    // decode pilot roll and pitch inputs and return in roll_out and pitch_out arguments
+    // outputs are in the range -1 to +1
+    void get_pilot_desired_roll_and_pitch(float &roll_out, float &pitch_out);
+
+    // decode pilot height inputs and return in height_out arguments
+    // outputs are in the range -1 to +1
+    void get_pilot_desired_walking_height(float &walking_height_out);
+
     // high level call to navigate to waypoint
     void navigate_to_waypoint();
 
-    // calculate steering output given a turn rate and speed
-    void calc_steering_from_turn_rate(float turn_rate, float speed, bool reversed);
+    // calculate steering output given a turn rate
+    // desired turn rate in radians/sec. Positive to the right.
+    void calc_steering_from_turn_rate(float turn_rate);
 
     // calculate steering angle given a desired lateral acceleration
     void calc_steering_from_lateral_acceleration(float lat_accel, bool reversed = false);
@@ -197,6 +206,9 @@ protected:
     class RC_Channel *&channel_steer;
     class RC_Channel *&channel_throttle;
     class RC_Channel *&channel_lateral;
+    class RC_Channel *&channel_roll;
+    class RC_Channel *&channel_pitch;
+    class RC_Channel *&channel_walking_height;
     class AR_AttitudeControl &attitude_control;
 
     // private members for waypoint navigation
@@ -298,7 +310,7 @@ private:
     void do_nav_delay(const AP_Mission::Mission_Command& cmd);
     bool verify_nav_delay(const AP_Mission::Mission_Command& cmd);
     bool verify_nav_wp(const AP_Mission::Mission_Command& cmd);
-    bool verify_RTL();
+    bool verify_RTL() const;
     bool verify_loiter_unlimited(const AP_Mission::Mission_Command& cmd);
     bool verify_loiter_time(const AP_Mission::Mission_Command& cmd);
     bool verify_nav_guided_enable(const AP_Mission::Mission_Command& cmd);
@@ -315,7 +327,8 @@ private:
     enum Mis_Done_Behave {
         MIS_DONE_BEHAVE_HOLD      = 0,
         MIS_DONE_BEHAVE_LOITER    = 1,
-        MIS_DONE_BEHAVE_ACRO      = 2
+        MIS_DONE_BEHAVE_ACRO      = 2,
+        MIS_DONE_BEHAVE_MANUAL    = 3
     };
 
     bool auto_triggered;        // true when auto has been triggered to start
@@ -387,6 +400,9 @@ public:
     void set_desired_heading_delta_and_speed(float yaw_delta_cd, float target_speed);
     void set_desired_turn_rate_and_speed(float turn_rate_cds, float target_speed);
 
+    // set steering and throttle (-1 to +1).  Only called from scripts
+    void set_steering_and_throttle(float steering, float throttle);
+
     // vehicle start loiter
     bool start_loiter();
 
@@ -402,7 +418,8 @@ protected:
         Guided_WP,
         Guided_HeadingAndSpeed,
         Guided_TurnRateAndSpeed,
-        Guided_Loiter
+        Guided_Loiter,
+        Guided_SteeringAndThrottle
     };
 
     bool _enter() override;
@@ -413,8 +430,14 @@ protected:
     bool have_attitude_target;  // true if we have a valid attitude target
     uint32_t _des_att_time_ms;  // system time last call to set_desired_attitude was made (used for timeout)
     float _desired_yaw_rate_cds;// target turn rate centi-degrees per second
-    bool sent_notification;     // used to send one time notification to ground station
+    bool send_notification;     // used to send one time notification to ground station
     float _desired_speed;       // desired speed used only in HeadingAndSpeed submode
+
+    // direct steering and throttle control
+    bool _have_strthr;          // true if we have a valid direct steering and throttle inputs
+    uint32_t _strthr_time_ms;   // system time last call to set_steering_and_throttle was made (used for timeout)
+    float _strthr_steering;     // direct steering input in the range -1 to +1
+    float _strthr_throttle;     // direct throttle input in the range -1 to +1
 
     // limits
     struct {
@@ -530,7 +553,7 @@ protected:
 
     bool _enter() override;
 
-    bool sent_notification; // used to send one time notification to ground station
+    bool send_notification; // used to send one time notification to ground station
     bool _loitering;        // true if loitering at end of RTL
 
 };
@@ -616,9 +639,14 @@ public:
     // methods that affect movement of the vehicle in this mode
     void update() override { }
 
+    // do not allow arming from this mode
+    bool allows_arming() const override { return false; }
+
     // attributes for mavlink system status reporting
     bool has_manual_input() const override { return true; }
     bool attitude_stabilized() const override { return false; }
+protected:
+    bool _enter() override { return false; };
 };
 
 class ModeFollow : public Mode

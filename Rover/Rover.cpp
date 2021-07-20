@@ -26,7 +26,7 @@
 
    APMrover alpha version tester: Franco Borasio, Daniel Chapelat...
 
-   Please contribute your ideas! See https://dev.ardupilot.org for details
+   Please contribute your ideas! See https://ardupilot.org/dev for details
 */
 
 #include "Rover.h"
@@ -53,10 +53,12 @@ const AP_Scheduler::Task Rover::scheduler_tasks[] = {
     SCHED_TASK(read_rangefinders,      50,    200),
     SCHED_TASK(update_current_mode,   400,    200),
     SCHED_TASK(set_servos,            400,    200),
-    SCHED_TASK(update_GPS,             50,    300),
+    SCHED_TASK_CLASS(AP_GPS,              &rover.gps,              update,         50,  300),
     SCHED_TASK_CLASS(AP_Baro,             &rover.barometer,        update,         10,  200),
     SCHED_TASK_CLASS(AP_Beacon,           &rover.g2.beacon,        update,         50,  200),
+#if HAL_PROXIMITY_ENABLED
     SCHED_TASK_CLASS(AP_Proximity,        &rover.g2.proximity,     update,         50,  200),
+#endif
     SCHED_TASK_CLASS(AP_WindVane,         &rover.g2.windvane,      update,         20,  100),
     SCHED_TASK_CLASS(AC_Fence,            &rover.g2.fence,         update,         10,  100),
     SCHED_TASK(update_wheel_encoder,   50,    200),
@@ -74,11 +76,11 @@ const AP_Scheduler::Task Rover::scheduler_tasks[] = {
     SCHED_TASK_CLASS(AP_Gripper,          &rover.g2.gripper,      update,         10,   75),
 #endif
     SCHED_TASK(rpm_update,             10,    100),
-#if MOUNT == ENABLED
+#if HAL_MOUNT_ENABLED
     SCHED_TASK_CLASS(AP_Mount,            &rover.camera_mount,     update,         50,  200),
 #endif
 #if CAMERA == ENABLED
-    SCHED_TASK_CLASS(AP_Camera,           &rover.camera,           update_trigger, 50,  200),
+    SCHED_TASK_CLASS(AP_Camera,           &rover.camera,           update,         50,  200),
 #endif
     SCHED_TASK(gcs_failsafe_check,     10,    200),
     SCHED_TASK(fence_check,            10,    200),
@@ -107,9 +109,6 @@ const AP_Scheduler::Task Rover::scheduler_tasks[] = {
     SCHED_TASK(afs_fs_check,           10,    200),
 #endif
     SCHED_TASK(read_airspeed,          10,    100),
-#if OSD_ENABLED == ENABLED
-    SCHED_TASK(publish_osd_info,        1,     10),
-#endif
 };
 
 
@@ -167,6 +166,54 @@ bool Rover::set_target_velocity_NED(const Vector3f& vel_ned)
     return true;
 }
 
+// set steering and throttle (-1 to +1) (for use by scripting)
+bool Rover::set_steering_and_throttle(float steering, float throttle)
+{
+    // exit if vehicle is not in Guided mode or Auto-Guided mode
+    if (!control_mode->in_guided_mode()) {
+        return false;
+    }
+
+    // set steering and throttle
+    mode_guided.set_steering_and_throttle(steering, throttle);
+    return true;
+}
+
+// get control output (for use in scripting)
+// returns true on success and control_value is set to a value in the range -1 to +1
+bool Rover::get_control_output(AP_Vehicle::ControlOutput control_output, float &control_value)
+{
+    switch (control_output) {
+    case AP_Vehicle::ControlOutput::Roll:
+        control_value = constrain_float(g2.motors.get_roll(), -1.0f, 1.0f);
+        return true;
+    case AP_Vehicle::ControlOutput::Pitch:
+        control_value = constrain_float(g2.motors.get_pitch(), -1.0f, 1.0f);
+        return true;
+    case AP_Vehicle::ControlOutput::Walking_Height:
+        control_value = constrain_float(g2.motors.get_walking_height(), -1.0f, 1.0f);
+        return true;    
+    case AP_Vehicle::ControlOutput::Throttle:
+        control_value = constrain_float(g2.motors.get_throttle() / 100.0f, -1.0f, 1.0f);
+        return true;
+    case AP_Vehicle::ControlOutput::Yaw:
+        control_value = constrain_float(g2.motors.get_steering() / 4500.0f, -1.0f, 1.0f);
+        return true;
+    case AP_Vehicle::ControlOutput::Lateral:
+        control_value = constrain_float(g2.motors.get_lateral() / 100.0f, -1.0f, 1.0f);
+        return true;
+    case AP_Vehicle::ControlOutput::MainSail:
+        control_value = constrain_float(g2.motors.get_mainsail() / 100.0f, -1.0f, 1.0f);
+        return true;
+    case AP_Vehicle::ControlOutput::WingSail:
+        control_value = constrain_float(g2.motors.get_wingsail() / 100.0f, -1.0f, 1.0f);
+        return true;
+    default:
+        return false;
+    }
+    return false;
+}
+
 #if STATS_ENABLED == ENABLED
 /*
   update AP_Stats
@@ -183,11 +230,6 @@ void Rover::stats_update(void)
 void Rover::ahrs_update()
 {
     arming.update_soft_armed();
-
-#if HIL_MODE != HIL_MODE_DISABLED
-    // update hil before AHRS update
-    gcs().update();
-#endif
 
     // AHRS may use movement to calculate heading
     update_ahrs_flyforward();
@@ -218,7 +260,7 @@ void Rover::ahrs_update()
     }
 
     if (should_log(MASK_LOG_IMU)) {
-        logger.Write_IMU();
+        AP::ins().Write_IMU();
     }
 }
 
@@ -233,7 +275,17 @@ void Rover::gcs_failsafe_check(void)
     }
 
     // check for updates from GCS within 2 seconds
-    failsafe_trigger(FAILSAFE_EVENT_GCS, "GCS", failsafe.last_heartbeat_ms != 0 && (millis() - failsafe.last_heartbeat_ms) > 2000);
+    const uint32_t gcs_last_seen_ms = gcs().sysid_myggcs_last_seen_time_ms();
+    bool do_failsafe = true;
+    if (gcs_last_seen_ms == 0) {
+        // we've never seen the GCS, so we never failsafe for not seeing it
+        do_failsafe = false;
+    } else if (millis() - gcs_last_seen_ms <= 2000) {
+        // we've never seen the GCS in the last couple of seconds, so all good
+        do_failsafe = false;
+    }
+
+    failsafe_trigger(FAILSAFE_EVENT_GCS, "GCS", do_failsafe);
 }
 
 /*
@@ -255,9 +307,11 @@ void Rover::update_logging1(void)
         Log_Write_Nav_Tuning();
     }
 
+#if HAL_PROXIMITY_ENABLED
     if (should_log(MASK_LOG_RANGEFINDER)) {
         logger.Write_Proximity(g2.proximity);
     }
+#endif
 }
 
 /*
@@ -275,7 +329,7 @@ void Rover::update_logging2(void)
     }
 
     if (should_log(MASK_LOG_IMU)) {
-        logger.Write_Vibration();
+        AP::ins().Write_Vibration();
     }
 }
 
@@ -312,19 +366,7 @@ void Rover::one_second_loop(void)
     set_likely_flying(hal.util->get_soft_armed());
 
     // send latest param values to wp_nav
-    g2.wp_nav.set_turn_params(g.turn_max_g, g2.turn_radius, g2.motors.have_skid_steering());
-}
-
-void Rover::update_GPS(void)
-{
-    gps.update();
-    if (gps.last_message_time_ms() != last_gps_msg_ms) {
-        last_gps_msg_ms = gps.last_message_time_ms();
-
-#if CAMERA == ENABLED
-        camera.update();
-#endif
-    }
+    g2.wp_nav.set_turn_params(g2.turn_radius, g2.motors.have_skid_steering());
 }
 
 void Rover::update_current_mode(void)
@@ -348,23 +390,39 @@ void Rover::update_mission(void)
     }
 }
 
-#if OSD_ENABLED == ENABLED
-void Rover::publish_osd_info()
+// vehicle specific waypoint info helpers
+bool Rover::get_wp_distance_m(float &distance) const
 {
-    AP_OSD::NavInfo nav_info {0};
-    if (control_mode == &mode_loiter) {
-        nav_info.wp_xtrack_error = control_mode->get_distance_to_destination();
-    } else {
-        nav_info.wp_xtrack_error = control_mode->crosstrack_error();
+    // see GCS_MAVLINK_Rover::send_nav_controller_output()
+    if (!rover.control_mode->is_autopilot_mode()) {
+        return false;
     }
-    nav_info.wp_distance = control_mode->get_distance_to_destination();
-    nav_info.wp_bearing = control_mode->wp_bearing() * 100.0f;
-    if (control_mode == &mode_auto) {
-         nav_info.wp_number = mode_auto.mission.get_current_nav_index();
-    }
-    osd.set_nav_info(nav_info);
+    distance = control_mode->get_distance_to_destination();
+    return true;
 }
-#endif
+
+// vehicle specific waypoint info helpers
+bool Rover::get_wp_bearing_deg(float &bearing) const
+{
+    // see GCS_MAVLINK_Rover::send_nav_controller_output()
+    if (!rover.control_mode->is_autopilot_mode()) {
+        return false;
+    }
+    bearing = control_mode->wp_bearing();
+    return true;
+}
+
+// vehicle specific waypoint info helpers
+bool Rover::get_wp_crosstrack_error_m(float &xtrack_error) const
+{
+    // see GCS_MAVLINK_Rover::send_nav_controller_output()
+    if (!rover.control_mode->is_autopilot_mode()) {
+        return false;
+    }
+    xtrack_error = control_mode->crosstrack_error();
+    return true;
+}
+
 
 Rover rover;
 AP_Vehicle& vehicle = rover;

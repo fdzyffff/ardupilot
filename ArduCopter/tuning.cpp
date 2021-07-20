@@ -72,7 +72,7 @@ void Copter::tuning()
         break;
 
     case TUNING_THROTTLE_RATE_KP:
-        pos_control->get_vel_z_p().kP(tuning_value);
+        pos_control->get_vel_z_pid().kP(tuning_value);
         break;
 
     case TUNING_ACCEL_Z_KP:
@@ -186,16 +186,6 @@ void Copter::tuning()
      case TUNING_RATE_YAW_FILT:
          attitude_control->get_rate_yaw_pid().filt_E_hz(tuning_value);
          break;
-
-#if WINCH_ENABLED == ENABLED
-     case TUNING_WINCH:
-         // add small deadzone
-         if (fabsf(tuning_value) < 0.05f) {
-             tuning_value = 0;
-         }
-         g2.winch.set_desired_rate(tuning_value);
-         break;
-#endif
 
      case TUNING_SYSTEM_ID_MAGNITUDE:
 #if MODE_SYSTEMID_ENABLED == ENABLED

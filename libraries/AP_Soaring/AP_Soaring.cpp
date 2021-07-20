@@ -4,6 +4,7 @@
 #include <stdint.h>
 extern const AP_HAL::HAL& hal;
 
+#if HAL_SOARING_ENABLED
 
 // ArduSoar parameters
 const AP_Param::GroupInfo SoaringController::var_info[] = {
@@ -25,21 +26,21 @@ const AP_Param::GroupInfo SoaringController::var_info[] = {
     // @Param: Q1
     // @DisplayName: Process noise
     // @Description: Standard deviation of noise in process for strength
-    // @Range: 0 10
+    // @Range: 0.0001 0.01
     // @User: Advanced
     AP_GROUPINFO("Q1", 3, SoaringController, thermal_q1, 0.001f),
 
     // @Param: Q2
     // @DisplayName: Process noise
     // @Description: Standard deviation of noise in process for position and radius
-    // @Range: 0 10
+    // @Range: 0.01 1
     // @User: Advanced
     AP_GROUPINFO("Q2", 4, SoaringController, thermal_q2, 0.03f),
 
     // @Param: R
     // @DisplayName: Measurement noise
     // @Description: Standard deviation of noise in measurement
-    // @Range: 0 10
+    // @Range: 0.01 1
     // @User: Advanced
 
     AP_GROUPINFO("R", 5, SoaringController, thermal_r, 0.45f),
@@ -56,7 +57,7 @@ const AP_Param::GroupInfo SoaringController::var_info[] = {
     // @DisplayName: Minimum thermalling time
     // @Description: Minimum number of seconds to spend thermalling
     // @Units: s
-    // @Range: 0 32768
+    // @Range: 0 600
     // @User: Advanced
     AP_GROUPINFO("MIN_THML_S", 7, SoaringController, min_thermal_s, 20),
 
@@ -64,21 +65,21 @@ const AP_Param::GroupInfo SoaringController::var_info[] = {
     // @DisplayName: Minimum cruising time
     // @Description: Minimum number of seconds to spend cruising
     // @Units: s
-    // @Range: 0 32768
+    // @Range: 0 600
     // @User: Advanced
-    AP_GROUPINFO("MIN_CRSE_S", 8, SoaringController, min_cruise_s, 30),
+    AP_GROUPINFO("MIN_CRSE_S", 8, SoaringController, min_cruise_s, 10),
 
     // @Param: POLAR_CD0
     // @DisplayName: Zero lift drag coef.
     // @Description: Zero lift drag coefficient
-    // @Range: 0 0.5
+    // @Range: 0.005 0.5
     // @User: Advanced
     AP_GROUPINFO("POLAR_CD0", 9, SoaringController, polar_CD0, 0.027),
 
     // @Param: POLAR_B
     // @DisplayName: Induced drag coeffient
     // @Description: Induced drag coeffient
-    // @Range: 0 0.5
+    // @Range: 0.005 0.05
     // @User: Advanced
     AP_GROUPINFO("POLAR_B", 10, SoaringController, polar_B, 0.031),
 
@@ -86,7 +87,7 @@ const AP_Param::GroupInfo SoaringController::var_info[] = {
     // @DisplayName: Cl factor
     // @Description: Cl factor 2*m*g/(rho*S)
     // @Units: m.m/s/s
-    // @Range: 0 0.5
+    // @Range: 20 400
     // @User: Advanced
     AP_GROUPINFO("POLAR_K", 11, SoaringController, polar_K, 25.6),
 
@@ -94,7 +95,7 @@ const AP_Param::GroupInfo SoaringController::var_info[] = {
     // @DisplayName: Maximum soaring altitude, relative to the home location
     // @Description: Don't thermal any higher than this.
     // @Units: m
-    // @Range: 0 1000.0
+    // @Range: 0 5000.0
     // @User: Advanced
     AP_GROUPINFO("ALT_MAX", 12, SoaringController, alt_max, 350.0),
 
@@ -110,20 +111,15 @@ const AP_Param::GroupInfo SoaringController::var_info[] = {
     // @DisplayName: Maximum power altitude, relative to the home location
     // @Description: Cut off throttle at this alt.
     // @Units: m
-    // @Range: 0 1000.0
+    // @Range: 0 5000.0
     // @User: Advanced
     AP_GROUPINFO("ALT_CUTOFF", 14, SoaringController, alt_cutoff, 250.0),
     
-    // @Param: ENABLE_CH
-    // @DisplayName: (Optional) RC channel that toggles the soaring controller on and off
-    // @Description: Toggles the soaring controller on and off. This parameter has any effect only if SOAR_ENABLE is set to 1 and this parameter is set to a valid non-zero channel number. When set, soaring will be activated when RC input to the specified channel is greater than or equal to 1700.
-    // @Range: 0 16
-    // @User: Advanced
-    AP_GROUPINFO("ENABLE_CH", 15, SoaringController, soar_active_ch, 0),
+    // 15 was SOAR_ENABLE_CH, now RCX_OPTION
 
     // @Param: MAX_DRIFT
     // @DisplayName: (Optional) Maximum drift distance to allow when thermalling.
-    // @Description: The previous mode will be restored if the horizontal distance to the thermalling start location exceeds this value. 0 to disable.
+    // @Description: The previous mode will be restored if the horizontal distance to the thermalling start location exceeds this value. -1 to disable.
     // @Range: 0 1000
     // @User: Advanced
     AP_GROUPINFO("MAX_DRIFT", 16, SoaringController, max_drift, -1),
@@ -135,25 +131,29 @@ const AP_Param::GroupInfo SoaringController::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("MAX_RADIUS", 17, SoaringController, max_radius, -1),
 
+    // @Param: THML_BANK
+    // @DisplayName: Thermalling bank angle
+    // @Description: This parameter sets the bank angle to use when thermalling. Typically 30 - 45 degrees works well.
+    // @Range: 20 50
+    // @User: Advanced
+    // @Units: deg
+    AP_GROUPINFO("THML_BANK", 18, SoaringController, thermal_bank, 30.0),
+
     AP_GROUPEND
 };
 
-SoaringController::SoaringController(AP_AHRS &ahrs, AP_SpdHgtControl &spdHgt, const AP_Vehicle::FixedWing &parms) :
-    _ahrs(ahrs),
+SoaringController::SoaringController(AP_SpdHgtControl &spdHgt, const AP_Vehicle::FixedWing &parms) :
     _spdHgt(spdHgt),
-    _vario(ahrs,parms),
+    _vario(parms),
     _aparm(parms),
     _throttle_suppressed(true)
 {
     AP_Param::setup_object_defaults(this, var_info);
-
-    _position_x_filter = LowPassFilter<float>(1.0/60.0);
-    _position_y_filter = LowPassFilter<float>(1.0/60.0);
 }
 
 void SoaringController::get_target(Location &wp)
 {
-    wp = _ahrs.get_home();
+    wp = AP::ahrs().get_home();
     wp.offset(_position_x_filter.get(), _position_y_filter.get());
 }
 
@@ -172,9 +172,10 @@ bool SoaringController::suppress_throttle()
         _spdHgt.reset_pitch_I();
 
         _cruise_start_time_us = AP_HAL::micros64();
+
         // Reset the filtered vario rate - it is currently elevated due to the climb rate and would otherwise take a while to fall again,
         // leading to false positives.
-        _vario.filtered_reading = 0;
+        _vario.reset_trigger_filter(0.0f);
     }
 
     return _throttle_suppressed;
@@ -186,7 +187,7 @@ bool SoaringController::check_thermal_criteria()
 
     return (status == ActiveStatus::AUTO_MODE_CHANGE
             && ((AP_HAL::micros64() - _cruise_start_time_us) > ((unsigned)min_cruise_s * 1e6))
-            && (_vario.filtered_reading - _vario.get_exp_thermalling_sink()) > thermal_vspeed
+            && (_vario.get_trigger_value() - _vario.get_exp_thermalling_sink()) > thermal_vspeed
             && _vario.alt < alt_max
             && _vario.alt > alt_min);
 }
@@ -194,47 +195,36 @@ bool SoaringController::check_thermal_criteria()
 
 SoaringController::LoiterStatus SoaringController::check_cruise_criteria(Vector2f prev_wp, Vector2f next_wp)
 {
+    // Check conditions for re-entering cruise. Note that the aircraft needs to also be aligned with the appropriate
+    // heading before some of these conditions will actually trigger.
+    // The GCS messages are emitted in mode_thermal.cpp. Update these if the logic here is changed.
+
     ActiveStatus status = active_state();
 
-    if (status != ActiveStatus::AUTO_MODE_CHANGE) {
-        _cruise_criteria_msg_last = LoiterStatus::DISABLED;
+    if (status == ActiveStatus::SOARING_DISABLED) {
         return LoiterStatus::DISABLED;
     }
 
     LoiterStatus result = LoiterStatus::GOOD_TO_KEEP_LOITERING;
     const float alt = _vario.alt;
 
-    if (alt > alt_max) {
+    if (_exit_commanded) {
+        result = LoiterStatus::EXIT_COMMANDED;
+    } else if (alt > alt_max) {
         result = LoiterStatus::ALT_TOO_HIGH;
-        if (result != _cruise_criteria_msg_last) {
-            gcs().send_text(MAV_SEVERITY_ALERT, "Reached upper alt = %dm", (int16_t)alt);
-        }
     } else if (alt < alt_min) {
         result = LoiterStatus::ALT_TOO_LOW;
-        if (result != _cruise_criteria_msg_last) {
-            gcs().send_text(MAV_SEVERITY_ALERT, "Reached lower alt = %dm", (int16_t)alt);
-        }
     } else if ((AP_HAL::micros64() - _thermal_start_time_us) > ((unsigned)min_thermal_s * 1e6)) {
         const float mcCreadyAlt = McCready(alt);
         if (_thermalability < mcCreadyAlt) {
             result = LoiterStatus::THERMAL_WEAK;
-            if (result != _cruise_criteria_msg_last) {
-                gcs().send_text(MAV_SEVERITY_INFO, "Thermal weak: th %3.1fm/s alt %3.1fm Mc %3.1fm/s", (double)_thermalability, (double)alt, (double)mcCreadyAlt);
-            }
-        } else if (alt < (-_thermal_start_pos.z) || _vario.smoothed_climb_rate < 0.0) {
+        } else if (alt < (-_thermal_start_pos.z) || _vario.get_filtered_climb() < 0.0) {
             result = LoiterStatus::ALT_LOST;
-            if (result != _cruise_criteria_msg_last) {
-                gcs().send_text(MAV_SEVERITY_INFO, "Not climbing");
-            }
         } else if (check_drift(prev_wp, next_wp)) {
             result = LoiterStatus::DRIFT_EXCEEDED;
-            if (result != _cruise_criteria_msg_last) {
-                gcs().send_text(MAV_SEVERITY_INFO, "Drifted too far");
-            }
         }
     }
 
-    _cruise_criteria_msg_last = result;
     return result;
 }
 
@@ -260,7 +250,8 @@ void SoaringController::init_thermalling()
     const MatrixN<float,4> p{init_p};
 
     Vector3f position;
-    
+
+    const AP_AHRS &_ahrs = AP::ahrs();
     if (!_ahrs.get_relative_position_NED_home(position)) {
         return;
     }
@@ -280,10 +271,12 @@ void SoaringController::init_thermalling()
     _thermal_start_time_us = AP_HAL::micros64();
     _thermal_start_pos = position;
 
-    _vario.reset_filter(0.0);
+    _vario.reset_climb_filter(0.0);
 
     _position_x_filter.reset(_ekf.X[2]);
     _position_y_filter.reset(_ekf.X[3]);
+
+    _exit_commanded = false;
 }
 
 void SoaringController::init_cruising()
@@ -301,17 +294,18 @@ void SoaringController::update_thermalling()
 
     Vector3f current_position;
 
+    const AP_AHRS &_ahrs = AP::ahrs();
     if (!_ahrs.get_relative_position_NED_home(current_position)) {
         return;
     }
 
-    Vector3f wind_drift = _ahrs.wind_estimate()*deltaT*_vario.smoothed_climb_rate/_ekf.X[0];
+    Vector3f wind_drift = _ahrs.wind_estimate()*deltaT*_vario.get_filtered_climb()/_ekf.X[0];
 
     // update the filter
     _ekf.update(_vario.reading, current_position.x, current_position.y, wind_drift.x, wind_drift.y);
 
     
-    _thermalability = (_ekf.X[0]*expf(-powf(_aparm.loiter_radius / _ekf.X[1], 2))) - _vario.get_exp_thermalling_sink();
+    _thermalability = (_ekf.X[0]*expf(-powf(get_thermalling_radius()/_ekf.X[1], 2))) - _vario.get_exp_thermalling_sink();
 
     _prev_update_time = AP_HAL::micros64();
 
@@ -362,7 +356,7 @@ void SoaringController::update_cruising()
 
 void SoaringController::update_vario()
 {
-    _vario.update(polar_K, polar_CD0, polar_B);
+    _vario.update(thermal_bank, polar_K, polar_CD0, polar_B);
 }
 
 
@@ -375,23 +369,10 @@ float SoaringController::McCready(float alt)
 SoaringController::ActiveStatus SoaringController::active_state() const
 {
     if (!soar_active) {
-        return ActiveStatus::DISABLED;
-    }
-    if (soar_active_ch <= 0) {
-        // no activation channel
-        return ActiveStatus::AUTO_MODE_CHANGE;
+        return ActiveStatus::SOARING_DISABLED;
     }
 
-    uint16_t radio_in = RC_Channels::get_radio_in(soar_active_ch-1);
-
-    // active when above 1400, with auto mode changes when above 1700
-    if (radio_in >= 1700) {
-        return ActiveStatus::AUTO_MODE_CHANGE;
-    } else if (radio_in >= 1400) {
-        return ActiveStatus::MANUAL_MODE_CHANGE;
-    }
-
-    return ActiveStatus::DISABLED;
+    return _pilot_desired_state;
 }
 
 void SoaringController::update_active_state()
@@ -401,7 +382,7 @@ void SoaringController::update_active_state()
 
     if (state_changed) {
         switch (status) {
-            case ActiveStatus::DISABLED:
+            case ActiveStatus::SOARING_DISABLED:
                 // It's not enabled, but was enabled on the last loop.
                 gcs().send_text(MAV_SEVERITY_INFO, "Soaring: Disabled.");
                 set_throttle_suppressed(false);
@@ -409,12 +390,19 @@ void SoaringController::update_active_state()
             case ActiveStatus::MANUAL_MODE_CHANGE:
                 // It's enabled, but wasn't on the last loop.
                 gcs().send_text(MAV_SEVERITY_INFO, "Soaring: Enabled, manual mode changes.");
-                set_throttle_suppressed(true);
                 break;
             case ActiveStatus::AUTO_MODE_CHANGE:
                 gcs().send_text(MAV_SEVERITY_INFO, "Soaring: Enabled, automatic mode changes.");
-                set_throttle_suppressed(true);
                 break;
+        }
+
+        if (_last_update_status == ActiveStatus::SOARING_DISABLED) {
+            // We have switched from disabled into an active mode, start cruising.
+            init_cruising();
+        } else if (status != ActiveStatus::SOARING_DISABLED) {
+            // We switched between active modes. If we're in THERMAL this means we should exit gracefully.
+            // This has no effect if we're cruising as it is reset on thermal entry.
+            _exit_commanded = true;
         }
     }
 
@@ -475,3 +463,14 @@ bool SoaringController::check_drift(Vector2f prev_wp, Vector2f next_wp)
         return (powf(parallel,2)+powf(perpendicular,2)) > powf(max_drift,2);;
     }
 }
+
+float SoaringController::get_thermalling_radius() const
+{
+    // Thermalling radius is controlled by parameter SOAR_THML_BANK and true target airspeed.
+    const float target_aspd = _spdHgt.get_target_airspeed() * AP::ahrs().get_EAS2TAS();
+    const float radius = (target_aspd*target_aspd) / (GRAVITY_MSS * tanf(thermal_bank*DEG_TO_RAD));
+
+    return radius;
+}
+
+#endif // HAL_SOARING_ENABLED

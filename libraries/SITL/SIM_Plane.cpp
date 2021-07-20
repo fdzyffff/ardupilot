@@ -37,7 +37,8 @@ Plane::Plane(const char *frame_str) :
     num_motors = 1;
 
     ground_behavior = GROUND_BEHAVIOR_FWD_ONLY;
-    
+    lock_step_scheduled = true;
+
     if (strstr(frame_str, "-heavy")) {
         mass = 8;
     }
@@ -71,8 +72,8 @@ Plane::Plane(const char *frame_str) :
     }
     if (strstr(frame_str, "-throw")) {
         have_launcher = true;
-        launch_accel = 10;
-        launch_time = 1;
+        launch_accel = 25;
+        launch_time = 0.4;
     }
     if (strstr(frame_str, "-tailsitter")) {
         tailsitter = true;
@@ -258,7 +259,7 @@ Vector3f Plane::getForce(float inputAileron, float inputElevator, float inputRud
     return Vector3f(ax, ay, az);
 }
 
-void Plane::calculate_forces(const struct sitl_input &input, Vector3f &rot_accel, Vector3f &body_accel)
+void Plane::calculate_forces(const struct sitl_input &input, Vector3f &rot_accel)
 {
     float aileron  = filtered_servo_angle(input, 0);
     float elevator = filtered_servo_angle(input, 1);
@@ -308,6 +309,9 @@ void Plane::calculate_forces(const struct sitl_input &input, Vector3f &rot_accel
     
     float thrust     = throttle;
 
+    battery_voltage = sitl->batt_voltage - 0.7*throttle;
+    battery_current = 50.0f*throttle;
+
     if (ice_engine) {
         thrust = icengine.update(input);
     }
@@ -338,8 +342,8 @@ void Plane::calculate_forces(const struct sitl_input &input, Vector3f &rot_accel
                 launch_start_ms = now;
             }
             if (now - launch_start_ms < launch_time*1000) {
-                force.x += launch_accel;
-                force.z += launch_accel/3;
+                force.x += mass * launch_accel;
+                force.z += mass * launch_accel/3;
             }
         } else {
             // allow reset of catapult
@@ -377,7 +381,7 @@ void Plane::update(const struct sitl_input &input)
 
     update_wind(input);
     
-    calculate_forces(input, rot_accel, accel_body);
+    calculate_forces(input, rot_accel);
     
     update_dynamics(rot_accel);
     update_external_payload(input);

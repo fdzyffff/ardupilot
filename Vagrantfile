@@ -2,9 +2,11 @@
 # vi: set ft=ruby :
 
 # Testing an ArduPilot VM:
+# rm -rf /vagrant/build
+# dpkg -l | grep modemmanager
 # sim_vehicle.py --map --console # in the starting directory should start a Copter simulation
 # sim_vehicle.py --debug --gdb
-# sim_vehicle.py --valgrind
+# sim_vehicle.py --debug --valgrind
 # time (cd /vagrant && ./waf configure --board=fmuv2 && ./waf build --target=bin/ardusub) # ~9 minutes
 # time (cd /vagrant && ./waf configure --board=fmuv3 && ./waf build --target=bin/ardusub) # ~ minutes (after building fmuv2)
 # time (cd /vagrant && ./waf configure --board=navio2 && ./waf build --target=bin/arduplane)
@@ -100,7 +102,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
   end
 
-  # 18.04 LTS
+  # 18.04 LTS EOL April 2023
   # Only kept around for those few dev's who have already got this image and continue to use it; not available for download
   config.vm.define "bionic32", autostart: false do |bionic32|
     bionic32.vm.box = "ubuntu/bionic32"
@@ -110,12 +112,22 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
   end
 
-  # 18.04 LTS
+  # 18.04 LTS EOL April 2023
   config.vm.define "bionic64", primary: true do |bionic64|
     bionic64.vm.box = "ubuntu/bionic64"
     bionic64.vm.provision :shell, path: "Tools/vagrant/initvagrant.sh"
     bionic64.vm.provider "virtualbox" do |vb|
       vb.name = "ArduPilot (bionic64)"
+    end
+  end
+
+  # 18.04 LTS EOL April 2023
+  config.vm.define "bionic64-desktop", primary: true do |bionic64|
+    bionic64.vm.box = "ubuntu/bionic64"
+    bionic64.vm.provision :shell, path: "Tools/vagrant/initvagrant-desktop.sh"
+    bionic64.vm.provider "virtualbox" do |vb|
+      vb.name = "ArduPilot (bionic64-desktop)"
+      vb.gui = true
     end
   end
 
@@ -137,14 +149,71 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
   end
 
-  # 19.04 bleeding edge
+  # 19.04
   config.vm.define "disco64", autostart: false do |disco64|
     disco64.vm.box = "ubuntu/disco64"
     disco64.vm.provision :shell, path: "Tools/vagrant/initvagrant.sh"
     disco64.vm.provider "virtualbox" do |vb|
       vb.name = "ArduPilot (disco64)"
+    end
+  end
+
+  # 19.10 - broken; fails to use NamedTemporaryFile to create file for gdb
+#  config.vm.define "eoan", autostart: false do |eoan|
+#    eoan.vm.box = "ubuntu/eoan64"
+#    eoan.vm.provision :shell, path: "Tools/vagrant/initvagrant.sh"
+#    eoan.vm.provider "virtualbox" do |vb|
+#      vb.name = "ArduPilot (eoan)"
+#    end
+#    eoan.vm.boot_timeout = 1200
+#  end
+
+  # 20.04 LTS  EOL April 2025
+  config.vm.define "focal", autostart: false do |focal|
+    focal.vm.box = "ubuntu/focal64"
+    focal.vm.provision :shell, path: "Tools/vagrant/initvagrant.sh"
+    focal.vm.provider "virtualbox" do |vb|
+      vb.name = "ArduPilot (focal)"
+    end
+    focal.vm.boot_timeout = 1200
+  end
+  config.vm.define "focal-desktop", autostart: false do |focal|
+    focal.vm.box = "ubuntu/focal64"
+    focal.vm.provision :shell, path: "Tools/vagrant/initvagrant-desktop.sh"
+    focal.vm.provider "virtualbox" do |vb|
+      vb.name = "ArduPilot (focal-desktop)"
       vb.gui = true
     end
+    focal.vm.boot_timeout = 1500
+  end
+
+  # 20.10
+  config.vm.define "groovy", autostart: false do |groovy|
+    groovy.vm.box = "ubuntu/groovy64"
+    groovy.vm.provision :shell, path: "Tools/vagrant/initvagrant.sh"
+    groovy.vm.provider "virtualbox" do |vb|
+      vb.name = "ArduPilot (groovy)"
+    end
+    groovy.vm.boot_timeout = 1200
+  end
+
+  # 21.04
+  config.vm.define "hirsute", autostart: false do |hirsute|
+    hirsute.vm.box = "ubuntu/hirsute64"
+    hirsute.vm.provision :shell, path: "Tools/vagrant/initvagrant.sh"
+    hirsute.vm.provider "virtualbox" do |vb|
+      vb.name = "ArduPilot (hirsute)"
+    end
+    hirsute.vm.boot_timeout = 1200
+  end
+  config.vm.define "hirsute-desktop", autostart: false do |hirsute|
+    hirsute.vm.box = "ubuntu/hirsute64"
+    hirsute.vm.provision :shell, path: "Tools/vagrant/initvagrant-desktop.sh"
+    hirsute.vm.provider "virtualbox" do |vb|
+      vb.name = "ArduPilot (hirsute-desktop)"
+      vb.gui = true
+    end
+    hirsute.vm.boot_timeout = 1200
   end
 
 end

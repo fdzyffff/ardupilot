@@ -13,10 +13,6 @@
 
 #define SERVO_MAX 4500  // This value represents 45 degrees and is just an arbitrary representation of servo max travel.
 
-// HIL enumerations
-#define HIL_MODE_DISABLED 0
-#define HIL_MODE_SENSORS  1
-
 // types of failsafe events
 #define FAILSAFE_EVENT_THROTTLE (1<<0)
 #define FAILSAFE_EVENT_GCS      (1<<1)
@@ -85,7 +81,8 @@ enum fs_crash_action {
 
 enum fs_ekf_action {
     FS_EKF_DISABLE = 0,
-    FS_EFK_HOLD = 1
+    FS_EKF_HOLD = 1,
+    FS_EKF_REPORT_ONLY = 2,
 };
 
 #define DISTANCE_HOME_MINCHANGE 0.5f  // minimum distance to adjust home location
@@ -104,6 +101,3 @@ enum frame_class {
     FRAME_BOAT = 2,
     FRAME_BALANCEBOT = 3,
 };
-
-#define AUX_SWITCH_PWM_TRIGGER_HIGH 1800   // pwm value above which the ch7 or ch8 option will be invoked
-#define AUX_SWITCH_PWM_TRIGGER_LOW  1200   // pwm value below which the ch7 or ch8 option will be disabled

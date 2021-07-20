@@ -4,7 +4,7 @@
 
 
 #include "lua_scripts.h"
-#include "lua_generated_bindings.h"
+#include <AP_Scripting/lua_generated_bindings.h>
 
 #include "lua/src/lua.h"
 #include "lua/src/lauxlib.h"
@@ -44,7 +44,7 @@ static int msghandler(lua_State *L) {
 ** Interface to 'lua_pcall', which sets appropriate message function
 ** and C-signal handler. Used to run all chunks.
 */
-int lua_scripts::docall(lua_State *L, int narg, int nres) {
+int lua_scripts::docall(lua_State *L, int narg, int nres) const {
     int status;
     int base = lua_gettop(L) - narg;  /* function index */
     lua_rawgeti(L, LUA_REGISTRYINDEX, sandbox_ref);

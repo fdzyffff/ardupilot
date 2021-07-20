@@ -20,8 +20,8 @@ void Rover::init_ardupilot()
 #endif
 
     BoardConfig.init();
-#if HAL_WITH_UAVCAN
-    BoardConfig_CAN.init();
+#if HAL_MAX_CAN_PROTOCOL_DRIVERS
+    can_mgr.init();
 #endif
 
     // init gripper
@@ -65,10 +65,13 @@ void Rover::init_ardupilot()
     AP::compass().init();
 
     // initialise rangefinder
+    rangefinder.set_log_rfnd_bit(MASK_LOG_RANGEFINDER);
     rangefinder.init(ROTATION_NONE);
 
+#if HAL_PROXIMITY_ENABLED
     // init proximity sensor
     g2.proximity.init();
+#endif
 
     // init beacons used for non-gps position estimation
     g2.beacon.init();
@@ -84,15 +87,20 @@ void Rover::init_ardupilot()
     ins.set_log_raw_bit(MASK_LOG_IMU_RAW);
 
     init_rc_in();            // sets up rc channels deadzone
-    g2.motors.init();        // init motors including setting servo out channels ranges
+    g2.motors.init(get_frame_type());        // init motors including setting servo out channels ranges
     SRV_Channels::enable_aux_servos();
 
     // init wheel encoders
     g2.wheel_encoder.init();
 
+#if HAL_TORQEEDO_ENABLED
+    // init torqeedo motor driver
+    g2.torqeedo.init();
+#endif
+
     relay.init();
 
-#if MOUNT == ENABLED
+#if HAL_MOUNT_ENABLED
     // initialise camera mount
     camera_mount.init();
 #endif
@@ -122,9 +130,6 @@ void Rover::init_ardupilot()
 
     rover.g2.sailboat.init();
 
-    // disable safety if requested
-    BoardConfig.init_safety();
-
     // flag that initialisation has completed
     initialised = true;
 }
@@ -140,7 +145,7 @@ void Rover::startup_ground(void)
 
     #if(GROUND_START_DELAY > 0)
         gcs().send_text(MAV_SEVERITY_NOTICE, "<startup_ground> With delay");
-        delay(GROUND_START_DELAY * 1000);
+        hal.scheduler->delay(GROUND_START_DELAY * 1000);
     #endif
 
     // IMU ground start
@@ -166,8 +171,6 @@ void Rover::startup_ground(void)
     // we don't want writes to the serial port to cause us to pause
     // so set serial ports non-blocking once we are ready to drive
     serial_manager.set_blocking_writes_all(false);
-
-    gcs().send_text(MAV_SEVERITY_INFO, "Ready to drive");
 }
 
 // update the ahrs flyforward setting which can allow
@@ -299,6 +302,7 @@ bool Rover::is_boat() const
 
 #include <AP_Avoidance/AP_Avoidance.h>
 #include <AP_ADSB/AP_ADSB.h>
-
+#if HAL_ADSB_ENABLED
 // dummy method to avoid linking AP_Avoidance
 AP_Avoidance *AP::ap_avoidance() { return nullptr; }
+#endif

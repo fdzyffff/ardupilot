@@ -10,8 +10,8 @@ bool AP_Arming_Rover::rc_calibration_checks(const bool display_failure)
     }
 
     const RC_Channel *channels[] = {
-            rover.channel_steer,
-            rover.channel_throttle,
+        rover.channel_steer,
+        rover.channel_throttle
     };
     const char *channel_names[] = {"Steer", "Throttle"};
 
@@ -19,11 +19,11 @@ bool AP_Arming_Rover::rc_calibration_checks(const bool display_failure)
         const RC_Channel *channel = channels[i];
         const char *channel_name = channel_names[i];
         // check if radio has been calibrated
-        if (channel->get_radio_min() > 1300) {
+        if (channel->get_radio_min() > RC_Channel::RC_CALIB_MIN_LIMIT_PWM) {
             check_failed(ARMING_CHECK_RC, display_failure, "%s radio min too high", channel_name);
             return false;
         }
-        if (channel->get_radio_max() < 1700) {
+        if (channel->get_radio_max() < RC_Channel::RC_CALIB_MAX_LIMIT_PWM) {
             check_failed(ARMING_CHECK_RC, display_failure, "%s radio max too low", channel_name);
             return false;
         }
@@ -39,15 +39,17 @@ bool AP_Arming_Rover::gps_checks(bool display_failure)
         return true;
     }
 
+    // call parent gps checks
+    if (!AP_Arming::gps_checks(display_failure)) {
+        return false;
+    }
+
     const AP_AHRS &ahrs = AP::ahrs();
 
     // always check if inertial nav has started and is ready
-    if (!ahrs.prearm_healthy()) {
-        const char *reason = ahrs.prearm_failure_reason();
-        if (reason == nullptr) {
-            reason = "AHRS not healthy";
-        }
-        check_failed(display_failure, "%s", reason);
+    char failure_msg[50] = {};
+    if (!ahrs.pre_arm_check(true, failure_msg, sizeof(failure_msg))) {
+        check_failed(display_failure, "AHRS: %s", failure_msg);
         return false;
     }
 
@@ -59,16 +61,12 @@ bool AP_Arming_Rover::gps_checks(bool display_failure)
 
     // ensure position esetimate is ok
     if (!rover.ekf_position_ok()) {
-        const char *reason = ahrs.prearm_failure_reason();
-        if (reason == nullptr) {
-            reason = "Need Position Estimate";
-        }
-        check_failed(display_failure, "%s", reason);
+        // vehicle level position estimate checks
+        check_failed(display_failure, "Need Position Estimate");
         return false;
     }
 
-    // call parent gps checks
-    return AP_Arming::gps_checks(display_failure);
+    return true;
 }
 
 bool AP_Arming_Rover::pre_arm_checks(bool report)
@@ -82,9 +80,13 @@ bool AP_Arming_Rover::pre_arm_checks(bool report)
         return false;
     }
 
+    if (rover.g2.sailboat.sail_enabled() && !rover.g2.windvane.enabled()) {
+        check_failed(report, "Sailing enabled with no WindVane");
+        return false;
+    }
+
     return (AP_Arming::pre_arm_checks(report)
             & rover.g2.motors.pre_arm_check(report)
-            & fence_checks(report)
             & oa_check(report)
             & parameter_checks(report)
             & mode_checks(report));
@@ -135,9 +137,9 @@ bool AP_Arming_Rover::arm(AP_Arming::Method method, const bool do_arming_checks)
 /*
   disarm motors
  */
-bool AP_Arming_Rover::disarm(const AP_Arming::Method method)
+bool AP_Arming_Rover::disarm(const AP_Arming::Method method, bool do_disarm_checks)
 {
-    if (!AP_Arming::disarm(method)) {
+    if (!AP_Arming::disarm(method, do_disarm_checks)) {
         return false;
     }
     if (rover.control_mode != &rover.mode_auto) {
@@ -188,7 +190,7 @@ bool AP_Arming_Rover::parameter_checks(bool report)
 
 // check if arming allowed from this mode
 bool AP_Arming_Rover::mode_checks(bool report)
-{   
+{
     //display failure if arming in this mode is not allowed
     if (!rover.control_mode->allows_arming()) {
         check_failed(report, "Mode not armable");

@@ -14,17 +14,22 @@ namespace ChibiOS {
     class RCOutput;
     class Scheduler;
     class Semaphore;
+    class EventSource;
     class SPIBus;
     class SPIDesc;
     class SPIDevice;
     class SPIDeviceDriver;
     class SPIDeviceManager;
+    class QSPIBus;
+    class QSPIDesc;
+    class QSPIDevice;
+    class QSPIDeviceManager;
     class Storage;
     class UARTDriver;
     class Util;
     class Shared_DMA;
     class SoftSigReader;
     class SoftSigReaderInt;
-    class CANManager;
+    class CANIface;
     class Flash;
 }

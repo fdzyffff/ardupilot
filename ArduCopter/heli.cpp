@@ -73,8 +73,20 @@ void Copter::check_dynamic_flight(void)
 // should be run between the rate controller and the servo updates.
 void Copter::update_heli_control_dynamics(void)
 {
-    // Use Leaky_I if we are not moving fast
-    attitude_control->use_leaky_i(!heli_flags.dynamic_flight);
+
+    if (!motors->using_leaky_integrator()) {
+        //turn off leaky_I
+        attitude_control->use_leaky_i(false);
+        if (ap.land_complete || ap.land_complete_maybe) {
+            motors->set_land_complete(true);
+        } else {
+            motors->set_land_complete(false);
+        }
+    } else {
+        // Use Leaky_I if we are not moving fast
+        attitude_control->use_leaky_i(!heli_flags.dynamic_flight);
+        motors->set_land_complete(false);
+    }
 
     if (ap.land_complete || (is_zero(motors->get_desired_rotor_speed()))){
         // if we are landed or there is no rotor power demanded, decrement slew scalar
@@ -92,7 +104,7 @@ void Copter::update_heli_control_dynamics(void)
 bool Copter::should_use_landing_swash() const
 {
     if (flightmode->has_manual_throttle() ||
-        control_mode == Mode::Number::DRIFT) {
+        flightmode->mode_number() == Mode::Number::DRIFT) {
         // manual modes always uses full swash range
         return false;
     }
@@ -193,17 +205,21 @@ void Copter::heli_update_rotor_speed_targets()
 void Copter::heli_update_autorotation()
 {
 #if MODE_AUTOROTATE_ENABLED == ENABLED
-    //set autonomous autorotation flight mode
-    if (!ap.land_complete && !motors->get_interlock() && !flightmode->has_manual_throttle() && g2.arot.is_enable()) {
+    // check if flying and interlock disengaged
+    if (!ap.land_complete && !motors->get_interlock()) {
+        if (!flightmode->has_manual_throttle() && g2.arot.is_enable()) {
+            // set autonomous autorotation flight mode
+            set_mode(Mode::Number::AUTOROTATE, ModeReason::AUTOROTATION_START);
+        }
+        // set flag to facilitate both auto and manual autorotations
         heli_flags.in_autorotation = true;
-        set_mode(Mode::Number::AUTOROTATE, ModeReason::AUTOROTATION_START);
     } else {
         heli_flags.in_autorotation = false;
     }
 
     // sets autorotation flags through out libraries
     heli_set_autorotation(heli_flags.in_autorotation);
-    if (!ap.land_complete && g2.arot.is_enable()) {
+    if (!ap.land_complete) {
         motors->set_enable_bailout(true);
     } else {
         motors->set_enable_bailout(false);
@@ -215,7 +231,7 @@ void Copter::heli_update_autorotation()
 }
 
 #if MODE_AUTOROTATE_ENABLED == ENABLED
-// heli_set_autorotation - set the autorotation f`lag throughout libraries
+// heli_set_autorotation - set the autorotation flag throughout libraries
 void Copter::heli_set_autorotation(bool autorotation)
 {
     motors->set_in_autorotation(autorotation);

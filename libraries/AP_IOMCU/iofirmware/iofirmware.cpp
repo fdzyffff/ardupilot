@@ -64,14 +64,14 @@ static void dma_rx_end_cb(UARTDriver *uart)
 
     dmaStreamSetMemory0(uart->dmarx, &iomcu.rx_io_packet);
     dmaStreamSetTransactionSize(uart->dmarx, sizeof(iomcu.rx_io_packet));
-    dmaStreamSetMode(uart->dmarx, uart->dmamode    | STM32_DMA_CR_DIR_P2M |
+    dmaStreamSetMode(uart->dmarx, uart->dmarxmode    | STM32_DMA_CR_DIR_P2M |
                      STM32_DMA_CR_MINC | STM32_DMA_CR_TCIE);
     dmaStreamEnable(uart->dmarx);
     uart->usart->CR3 |= USART_CR3_DMAR;
 
     dmaStreamSetMemory0(uart->dmatx, &iomcu.tx_io_packet);
     dmaStreamSetTransactionSize(uart->dmatx, iomcu.tx_io_packet.get_size());
-    dmaStreamSetMode(uart->dmatx, uart->dmamode    | STM32_DMA_CR_DIR_M2P |
+    dmaStreamSetMode(uart->dmatx, uart->dmatxmode    | STM32_DMA_CR_DIR_M2P |
                      STM32_DMA_CR_MINC | STM32_DMA_CR_TCIE);
     dmaStreamEnable(uart->dmatx);
     uart->usart->CR3 |= USART_CR3_DMAT;
@@ -101,7 +101,7 @@ static void idle_rx_handler(UARTDriver *uart)
 
         dmaStreamSetMemory0(uart->dmarx, &iomcu.rx_io_packet);
         dmaStreamSetTransactionSize(uart->dmarx, sizeof(iomcu.rx_io_packet));
-        dmaStreamSetMode(uart->dmarx, uart->dmamode    | STM32_DMA_CR_DIR_P2M |
+        dmaStreamSetMode(uart->dmarx, uart->dmarxmode    | STM32_DMA_CR_DIR_P2M |
                          STM32_DMA_CR_MINC | STM32_DMA_CR_TCIE);
         dmaStreamEnable(uart->dmarx);
         uart->usart->CR3 |= USART_CR3_DMAR;
@@ -124,6 +124,7 @@ static UARTConfig uart_cfg = {
     nullptr,
     nullptr,
     idle_rx_handler,
+    nullptr,
     1500000,      //1.5MBit
     USART_CR1_IDLEIE,
     0,
@@ -557,6 +558,15 @@ bool AP_IOMCU_FW::handle_code_write()
                 dsm_bind_state = 1;
             }
             break;
+
+        case PAGE_REG_SETUP_RC_PROTOCOLS: {
+            if (rx_io_packet.count == 2) {
+                uint32_t v;
+                memcpy(&v, &rx_io_packet.regs[0], 4);
+                AP::RC().set_rc_protocols(v);
+            }
+            break;
+        }
 
         default:
             break;

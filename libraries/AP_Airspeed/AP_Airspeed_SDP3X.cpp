@@ -115,6 +115,7 @@ bool AP_Airspeed_SDP3X::init()
 
         found = true;
 
+#ifndef HAL_NO_GCS
         char c = 'X';
         switch (_scale) {
         case SDP3X_SCALE_PRESSURE_SDP31:
@@ -127,8 +128,10 @@ bool AP_Airspeed_SDP3X::init()
             c = '3';
             break;
         }
-        hal.console->printf("SDP3%c: Found on bus %u address 0x%02x scale=%u\n",
-                            c, get_bus(), addresses[i], _scale);
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "SDP3%c[%u]: Found bus %u addr 0x%02x scale=%u",
+                      get_instance(),
+                      c, get_bus(), addresses[i], _scale);
+#endif
     }
 
     if (!found) {
@@ -142,6 +145,9 @@ bool AP_Airspeed_SDP3X::init()
     set_skip_cal();
     set_offset(0);
     
+    _dev->set_device_type(uint8_t(DevType::SDP3X));
+    set_bus_id(_dev->get_bus_id());
+
     // drop to 2 retries for runtime
     _dev->set_retries(2);
 
@@ -259,6 +265,10 @@ float AP_Airspeed_SDP3X::_correct_pressure(float press)
 
     // airspeed ratio
     float ratio = get_airspeed_ratio();
+    if (!is_positive(ratio)) {
+        // cope with AP_Periph where ratio is 0
+        ratio = 2.0;
+    }
 
     // calculate equivalent pressure correction. This formula comes
     // from turning the dv correction above into an equivalent
@@ -310,7 +320,7 @@ bool AP_Airspeed_SDP3X::get_temperature(float &temperature)
 /*
   check CRC for a set of bytes
  */
-bool AP_Airspeed_SDP3X::_crc(const uint8_t data[], unsigned size, uint8_t checksum)
+bool AP_Airspeed_SDP3X::_crc(const uint8_t data[], uint8_t size, uint8_t checksum)
 {
     uint8_t crc_value = 0xff;
 

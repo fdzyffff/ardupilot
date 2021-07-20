@@ -39,7 +39,7 @@ bool HWESC_Telem::update()
     }
 
     // we expect at least 50ms idle between frames
-    uint32_t now = AP_HAL::millis();
+    uint32_t now = AP_HAL::native_millis();
     bool frame_gap = (now - last_read_ms) > 10;
 
     last_read_ms = now;
@@ -49,10 +49,7 @@ bool HWESC_Telem::update()
         n = 500;
     }
     if (len == 0 && !frame_gap) {
-        // discard
-        while (n--) {
-            uart->read();
-        }
+        uart->discard_input();
         return false;
     }
 

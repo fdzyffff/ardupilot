@@ -12,16 +12,15 @@ build = {
 
 # MCU parameters
 mcu = {
-    # location of MCU serial number
-    'UDID_START' : 0x1FFFF7AC,
-
     # ram map, as list of (address, size-kb, flags)
     # flags of 1 means DMA-capable
     # flags of 2 means faster memory for CPU intensive work
     'RAM_MAP' : [
         (0x20000000,  40, 1), # main memory, DMA safe
         (0x10000000,   8, 2), # CCM memory, faster, but not DMA safe
-    ]
+    ],
+
+    'EXPECTED_CLOCK' : 72000000
 }
 
 AltFunction_map = {
@@ -123,14 +122,14 @@ AltFunction_map = {
 	"PA12:USB_DP"       	:	14,
 	"PA13:EVENTOUT"     	:	15,
 	"PA13:IR_OUT"       	:	5,
-	"PA13:SWDIO-JTMS"   	:	0,
+	"PA13:JTMS-SWDIO"   	:	0,
 	"PA13:TIM16_CH1N"   	:	1,
 	"PA13:TIM4_CH3"     	:	10,
 	"PA13:TSC_G4_IO3"   	:	3,
 	"PA13:USART3_CTS"   	:	7,
 	"PA14:EVENTOUT"     	:	15,
 	"PA14:I2C1_SDA"     	:	4,
-	"PA14:SWCLK-JTCK"   	:	0,
+	"PA14:JTCK-SWCLK"   	:	0,
 	"PA14:TIM1_BKIN"    	:	6,
 	"PA14:TIM8_CH2"     	:	5,
 	"PA14:TSC_G4_IO4"   	:	3,
@@ -408,7 +407,7 @@ AltFunction_map = {
     
 ADC1_map = {
 	# format is PIN : ADC1_CHAN
-	# extracted from tabula-addfunc-F405.csv
+	# extracted from tabula-addfunc-F303.csv
     "PA0"	:	1,
     "PA1"	:	2,
     "PA2"	:	3,

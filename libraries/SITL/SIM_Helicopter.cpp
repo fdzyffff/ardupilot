@@ -52,6 +52,7 @@ Helicopter::Helicopter(const char *frame_str) :
     gas_heli = (strstr(frame_str, "-gas") != nullptr);
 
     ground_behavior = GROUND_BEHAVIOR_NO_MOVEMENT;
+    lock_step_scheduled = true;
 }
 
 /*
@@ -64,11 +65,7 @@ void Helicopter::update(const struct sitl_input &input)
     // get wind vector setup
     update_wind(input);
 
-    if (input.servos[7] > 1400) {
-        motor_interlock = true;
-    } else {
-        motor_interlock = false;
-    }
+    motor_interlock = input.servos[7] > 1400;
     
     float rsc = constrain_float((input.servos[7]-1000) / 1000.0f, 0, 1);
     float rsc_scale = rsc/rsc_setpoint;
@@ -326,7 +323,10 @@ void Helicopter::push_to_buffer(const uint16_t servos_input[16])
 void Helicopter::pull_from_buffer(uint16_t servos_delayed[6])
 {
     servos_stored sample;
-    servos_stored_buffer->pop(sample);
+    if (!servos_stored_buffer->pop(sample)) {
+        // no sample
+        return;
+    }
     servos_delayed[0] = sample.servo1;
     servos_delayed[1] = sample.servo2; 
     servos_delayed[2] = sample.servo3;

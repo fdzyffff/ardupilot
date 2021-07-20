@@ -19,7 +19,6 @@ const AP_Param::Info Rover::var_info[] = {
     // @Param: LOG_BITMASK
     // @DisplayName: Log bitmask
     // @Description: Bitmap of what log types to enable in on-board logger. This value is made up of the sum of each of the log types you want to be saved. On boards supporting microSD cards or other large block-storage devices it is usually best just to enable all log types by setting this to 65535. The individual bits are ATTITUDE_FAST=1, ATTITUDE_MEDIUM=2, GPS=4, PerformanceMonitoring=8, ControlTuning=16, NavigationTuning=32, Mode=64, IMU=128, Commands=256, Battery=512, Compass=1024, TECS=2048, Camera=4096, RCandServo=8192, Rangefinder=16384, Arming=32768, FullLogs=65535
-    // @Values: 0:Disabled,65535:Default
     // @Bitmask: 0:ATTITUDE_FAST,1:ATTITUDE_MED,2:GPS,3:PM,4:THR,5:NTUN,7:IMU,8:CMD,9:CURRENT,10:RANGEFINDER,11:COMPASS,12:CAMERA,13:STEERING,14:RC,15:ARM/DISARM,19:IMU_RAW
     // @User: Advanced
     GSCALAR(log_bitmask,            "LOG_BITMASK",      DEFAULT_LOG_BITMASK),
@@ -158,9 +157,9 @@ const AP_Param::Info Rover::var_info[] = {
     // @Param: FS_EKF_ACTION
     // @DisplayName: EKF Failsafe Action
     // @Description: Controls the action that will be taken when an EKF failsafe is invoked
-    // @Values: 0:Disabled,1:Hold
+    // @Values: 0:Disabled,1:Hold,2:ReportOnly
     // @User: Advanced
-    GSCALAR(fs_ekf_action, "FS_EKF_ACTION", 1),
+    GSCALAR(fs_ekf_action, "FS_EKF_ACTION", FS_EKF_HOLD),
 
     // @Param: FS_EKF_THRESH
     // @DisplayName: EKF failsafe variance threshold
@@ -217,15 +216,6 @@ const AP_Param::Info Rover::var_info[] = {
     // @User: Standard
     GSCALAR(mode6,           "MODE6",         Mode::Number::MANUAL),
 
-    // @Param: TURN_MAX_G
-    // @DisplayName: Turning maximum G force
-    // @Description: The maximum turning acceleration (in units of gravities) that the rover can handle while remaining stable. The navigation code will keep the lateral acceleration below this level to avoid rolling over or slipping the wheels in turns
-    // @Units: gravities
-    // @Range: 0.1 10
-    // @Increment: 0.01
-    // @User: Standard
-    GSCALAR(turn_max_g,             "TURN_MAX_G",      0.6f),
-
     // variables not in the g class which contain EEPROM saved variables
 
     // @Group: COMPASS_
@@ -236,11 +226,9 @@ const AP_Param::Info Rover::var_info[] = {
     // @Path: ../libraries/AP_Scheduler/AP_Scheduler.cpp
     GOBJECT(scheduler, "SCHED_", AP_Scheduler),
 
-    // barometer ground calibration. The GND_ prefix is chosen for
-    // compatibility with previous releases of ArduPlane
-    // @Group: GND_
+    // @Group: BARO
     // @Path: ../libraries/AP_Baro/AP_Baro.cpp
-    GOBJECT(barometer, "GND_", AP_Baro),
+    GOBJECT(barometer, "BARO", AP_Baro),
 
     // @Group: RELAY_
     // @Path: ../libraries/AP_Relay/AP_Relay.cpp
@@ -254,17 +242,41 @@ const AP_Param::Info Rover::var_info[] = {
     // @Path: GCS_Mavlink.cpp
     GOBJECTN(_gcs.chan_parameters[0], gcs0,        "SR0_",     GCS_MAVLINK_Parameters),
 
+#if MAVLINK_COMM_NUM_BUFFERS >= 2
     // @Group: SR1_
     // @Path: GCS_Mavlink.cpp
     GOBJECTN(_gcs.chan_parameters[1],  gcs1,       "SR1_",     GCS_MAVLINK_Parameters),
+#endif
 
+#if MAVLINK_COMM_NUM_BUFFERS >= 3
     // @Group: SR2_
     // @Path: GCS_Mavlink.cpp
     GOBJECTN(_gcs.chan_parameters[2],  gcs2,       "SR2_",     GCS_MAVLINK_Parameters),
+#endif
 
+#if MAVLINK_COMM_NUM_BUFFERS >= 4
     // @Group: SR3_
     // @Path: GCS_Mavlink.cpp
     GOBJECTN(_gcs.chan_parameters[3],  gcs3,       "SR3_",     GCS_MAVLINK_Parameters),
+#endif
+
+#if MAVLINK_COMM_NUM_BUFFERS >= 5
+    // @Group: SR4_
+    // @Path: GCS_Mavlink.cpp
+    GOBJECTN(_gcs.chan_parameters[4],  gcs4,       "SR4_",     GCS_MAVLINK_Parameters),
+#endif
+
+#if MAVLINK_COMM_NUM_BUFFERS >= 6
+    // @Group: SR5_
+    // @Path: GCS_Mavlink.cpp
+    GOBJECTN(_gcs.chan_parameters[5],  gcs5,       "SR5_",     GCS_MAVLINK_Parameters),
+#endif
+
+#if MAVLINK_COMM_NUM_BUFFERS >= 7
+    // @Group: SR6_
+    // @Path: GCS_Mavlink.cpp
+    GOBJECTN(_gcs.chan_parameters[6],  gcs6,       "SR6_",     GCS_MAVLINK_Parameters),
+#endif
 
     // @Group: SERIAL
     // @Path: ../libraries/AP_SerialManager/AP_SerialManager.cpp
@@ -298,7 +310,7 @@ const AP_Param::Info Rover::var_info[] = {
     GOBJECT(camera,                  "CAM_", AP_Camera),
 #endif
 
-#if MOUNT == ENABLED
+#if HAL_MOUNT_ENABLED
     // @Group: MNT
     // @Path: ../libraries/AP_Mount/AP_Mount.cpp
     GOBJECT(camera_mount,           "MNT",  AP_Mount),
@@ -320,16 +332,16 @@ const AP_Param::Info Rover::var_info[] = {
     // @Path: ../libraries/AP_BoardConfig/AP_BoardConfig.cpp
     GOBJECT(BoardConfig,            "BRD_",       AP_BoardConfig),
 
-#if HAL_WITH_UAVCAN
+#if HAL_MAX_CAN_PROTOCOL_DRIVERS
     // @Group: CAN_
-    // @Path: ../libraries/AP_BoardConfig/AP_BoardConfig_CAN.cpp
-    GOBJECT(BoardConfig_CAN,        "CAN_",       AP_BoardConfig_CAN),
+    // @Path: ../libraries/AP_CANManager/AP_CANManager.cpp
+    GOBJECT(can_mgr,        "CAN_",       AP_CANManager),
 #endif
 
     // GPS driver
-    // @Group: GPS_
+    // @Group: GPS
     // @Path: ../libraries/AP_GPS/AP_GPS.cpp
-    GOBJECT(gps, "GPS_", AP_GPS),
+    GOBJECT(gps, "GPS", AP_GPS),
 
 #if AP_AHRS_NAVEKF_AVAILABLE
 #if HAL_NAVEKF2_AVAILABLE
@@ -369,7 +381,7 @@ const AP_Param::Info Rover::var_info[] = {
     // @Path: Parameters.cpp
     GOBJECT(g2, "",  ParametersG2),
 
-#if OSD_ENABLED == ENABLED
+#if OSD_ENABLED || OSD_PARAM_ENABLED
     // @Group: OSD
     // @Path: ../libraries/AP_OSD/AP_OSD.cpp
     GOBJECT(osd, "OSD", AP_OSD),
@@ -419,7 +431,7 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // 7 was used by AP_VisualOdometry
 
     // @Group: MOT_
-    // @Path: AP_MotorsUGV.cpp
+    // @Path: ../libraries/AR_Motors/AP_MotorsUGV.cpp
     AP_SUBGROUPINFO(motors, "MOT_", 8, ParametersG2, AP_MotorsUGV),
 
     // @Group: WENC
@@ -474,9 +486,11 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @Path: ../libraries/AC_Fence/AC_Fence.cpp
     AP_SUBGROUPINFO(fence, "FENCE_", 17, ParametersG2, AC_Fence),
 
+#if HAL_PROXIMITY_ENABLED
     // @Group: PRX
     // @Path: ../libraries/AP_Proximity/AP_Proximity.cpp
     AP_SUBGROUPINFO(proximity, "PRX", 18, ParametersG2, AP_Proximity),
+#endif
 
     // @Group: AVOID_
     // @Path: ../libraries/AC_Avoidance/AC_Avoid.cpp
@@ -567,7 +581,7 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @Param: MIS_DONE_BEHAVE
     // @DisplayName: Mission done behave
     // @Description: Behaviour after mission completes
-    // @Values: 0:Hold,1:Loiter,2:Acro
+    // @Values: 0:Hold,1:Loiter,2:Acro,3:Manual
     // @User: Standard
     AP_GROUPINFO("MIS_DONE_BEHAVE", 38, ParametersG2, mis_done_behave, 0),
 
@@ -636,6 +650,12 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("FS_OPTIONS", 48, ParametersG2, fs_options, 0),
 
+#if HAL_TORQEEDO_ENABLED
+    // @Group: TRQD_
+    // @Path: ../libraries/AP_Torqeedo/AP_Torqeedo.cpp
+    AP_SUBGROUPINFO(torqeedo, "TRQD_", 49, ParametersG2, AP_Torqeedo),
+#endif
+
     AP_GROUPEND
 };
 
@@ -675,11 +695,13 @@ ParametersG2::ParametersG2(void)
     afs(rover.mode_auto.mission),
 #endif
     beacon(rover.serial_manager),
-    motors(rover.ServoRelayEvents),
+    motors(rover.ServoRelayEvents, wheel_rate_control),
     wheel_rate_control(wheel_encoder),
     attitude_control(rover.ahrs),
     smart_rtl(),
+#if HAL_PROXIMITY_ENABLED
     proximity(),
+#endif
     avoid(),
     follow(),
     windvane(),
@@ -728,6 +750,7 @@ const AP_Param::ConversionInfo conversion_table[] = {
     { Parameters::k_param_g2,                35,      AP_PARAM_FLOAT,  "SAIL_HEEL_MAX" },
     { Parameters::k_param_g2,                36,      AP_PARAM_FLOAT,  "SAIL_NO_GO_ANGLE" },
     { Parameters::k_param_arming,             2,     AP_PARAM_INT16,  "ARMING_CHECK" },
+    { Parameters::k_param_turn_max_g_old,     0,     AP_PARAM_FLOAT,  "ATC_TURN_MAX_G" },
 };
 
 void Rover::load_parameters(void)

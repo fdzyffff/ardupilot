@@ -2,6 +2,7 @@
 
 #include <AP_Common/AP_Common.h>
 #include "RC_Channel.h"
+#include <AP_Proximity/AP_Proximity.h>
 
 #if GRIPPER_ENABLED == ENABLED
  # include <AP_Gripper/AP_Gripper.h>
@@ -54,7 +55,7 @@ public:
         k_param_NavEKF2,
         k_param_g2, // 2nd block of parameters
         k_param_NavEKF3,
-        k_param_BoardConfig_CAN,
+        k_param_can_mgr,
         k_param_osd,
 
         // simulation
@@ -218,6 +219,9 @@ public:
         k_param_takeoff_trigger_dz_old,
         k_param_gcs3,
         k_param_gcs_pid_mask,    // 126
+        k_param_gcs4,
+        k_param_gcs5,
+        k_param_gcs6,
 
         //
         // 135 : reserved for Solo until features merged with master
@@ -315,6 +319,7 @@ public:
         k_param_flight_mode6,
         k_param_simple_modes,
         k_param_flight_mode_chan,
+        k_param_initial_mode,
 
         //
         // 210: Waypoint data
@@ -388,9 +393,16 @@ public:
     AP_Int16        throttle_behavior;
     AP_Float        pilot_takeoff_alt;
 
+#if MODE_RTL_ENABLED == ENABLED
     AP_Int16        rtl_altitude;
     AP_Int16        rtl_speed_cms;
     AP_Float        rtl_cone_slope;
+    AP_Int16        rtl_alt_final;
+    AP_Int16        rtl_climb_min;              // rtl minimum climb in cm
+    AP_Int32        rtl_loiter_time;
+    AP_Int8         rtl_alt_type;
+#endif
+
 #if RANGEFINDER_ENABLED == ENABLED
     AP_Float        rangefinder_gain;
 #endif
@@ -399,17 +411,16 @@ public:
     AP_Int16        gps_hdop_good;              // GPS Hdop value at or below this value represent a good position
 
     AP_Int8         super_simple;
-    AP_Int16        rtl_alt_final;
-    AP_Int16        rtl_climb_min;              // rtl minimum climb in cm
 
     AP_Int8         wp_yaw_behavior;            // controls how the autopilot controls yaw during missions
 
+#if MODE_POSHOLD_ENABLED == ENABLED
     AP_Int16        poshold_brake_rate;         // PosHold flight mode's rotation rate during braking in deg/sec
     AP_Int16        poshold_brake_angle_max;    // PosHold flight mode's max lean angle during braking in centi-degrees
-    
+#endif
+
     // Waypoints
     //
-    AP_Int32        rtl_loiter_time;
     AP_Int16        land_speed;
     AP_Int16        land_speed_high;
     AP_Int16        pilot_speed_up;    // maximum vertical ascending velocity the pilot may request
@@ -431,6 +442,7 @@ public:
     AP_Int8         flight_mode6;
     AP_Int8         simple_modes;
     AP_Int8         flight_mode_chan;
+    AP_Int8         initial_mode;
 
     // Misc
     //
@@ -447,10 +459,8 @@ public:
     AP_Int16        gcs_pid_mask;
 
 #if MODE_THROW_ENABLED == ENABLED
-    AP_Int8         throw_motor_start;
+    AP_Enum<ModeThrow::PreThrowMotorState>         throw_motor_start;
 #endif
-
-    AP_Int8         rtl_alt_type;
 
     AP_Int16                rc_speed; // speed of fast RC Channels in Hz
 
@@ -497,7 +507,7 @@ public:
 #if MODE_THROW_ENABLED == ENABLED
     // Throw mode parameters
     AP_Int8 throw_nextmode;
-    AP_Int8 throw_type;
+    AP_Enum<ModeThrow::ThrowType> throw_type;
 #endif
 
     // ground effect compensation enable/disable
@@ -511,7 +521,7 @@ public:
     AP_Beacon beacon;
 #endif
 
-#if PROXIMITY_ENABLED == ENABLED
+#if HAL_PROXIMITY_ENABLED
     // proximity (aka object avoidance) library
     AP_Proximity proximity;
 #endif
@@ -549,7 +559,6 @@ public:
 
     // wheel encoder and winch
 #if WINCH_ENABLED == ENABLED
-    AP_WheelEncoder wheel_encoder;
     AP_Winch winch;
 #endif
 
@@ -611,11 +620,42 @@ public:
     AC_Autorotation arot;
 #endif
 
-#if MODE_ZIGZAG_ENABLED == ENABLED && SPRAYER_ENABLED == ENABLED
-    // auto pump enable/disable
-    AP_Int8 zigzag_auto_pump_enabled;
+#if MODE_ZIGZAG_ENABLED == ENABLED
+    // we need a pointer to the mode for the G2 table
+    void *mode_zigzag_ptr;
 #endif
 
+#if MODE_ACRO_ENABLED == ENABLED
+    AP_Int8 acro_options;
+#endif
+
+#if MODE_AUTO_ENABLED == ENABLED
+    AP_Int32 auto_options;
+#endif
+
+#if MODE_GUIDED_ENABLED == ENABLED
+    AP_Int32 guided_options;
+#endif
+
+    AP_Float fs_gcs_timeout;
+
+#if MODE_RTL_ENABLED == ENABLED
+    AP_Int32 rtl_options;
+#endif
+
+    AP_Int32 flight_options;
+
+#if RANGEFINDER_ENABLED == ENABLED
+    AP_Float rangefinder_filt;
+#endif
+
+#if MODE_GUIDED_ENABLED == ENABLED
+    AP_Float guided_timeout;
+#endif
+
+#if AP_TERRAIN_AVAILABLE
+    AP_Float terrain_margin;
+#endif
 };
 
 extern const AP_Param::Info        var_info[];

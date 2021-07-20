@@ -2,7 +2,7 @@
 
 #include "AP_RangeFinder_Backend.h"
 
-#if HAL_WITH_UAVCAN
+#if HAL_CANMANAGER_ENABLED
 #include <AP_UAVCAN/AP_UAVCAN.h>
 
 class MeasurementCb;
@@ -33,4 +33,4 @@ private:
     bool new_data;
     MAV_DISTANCE_SENSOR _sensor_type;
 };
-#endif //HAL_WITH_UAVCAN
+#endif //HAL_CANMANAGER_ENABLED

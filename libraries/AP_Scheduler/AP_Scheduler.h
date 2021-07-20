@@ -20,12 +20,21 @@
  */
 #pragma once
 
+#ifndef HAL_SCHEDULER_ENABLED
+#define HAL_SCHEDULER_ENABLED 1
+#endif
+
 #include <AP_Param/AP_Param.h>
 #include <AP_HAL/Util.h>
+#include <AP_HAL/AP_HAL.h>
 #include <AP_Math/AP_Math.h>
 #include "PerfInfo.h"       // loop perf monitoring
 
-#define AP_SCHEDULER_NAME_INITIALIZER(_name) .name = #_name,
+#if HAL_MINIMIZE_FEATURES
+#define AP_SCHEDULER_NAME_INITIALIZER(_clazz,_name) .name = #_name,
+#else
+#define AP_SCHEDULER_NAME_INITIALIZER(_clazz,_name) .name = #_clazz "::" #_name,
+#endif
 #define LOOP_RATE 0
 
 /*
@@ -33,7 +42,7 @@
  */
 #define SCHED_TASK_CLASS(classname, classptr, func, _rate_hz, _max_time_micros) { \
     .function = FUNCTOR_BIND(classptr, &classname::func, void),\
-    AP_SCHEDULER_NAME_INITIALIZER(func)\
+    AP_SCHEDULER_NAME_INITIALIZER(classname, func)\
     .rate_hz = _rate_hz,\
     .max_time_micros = _max_time_micros\
 }
@@ -74,6 +83,10 @@ public:
         uint16_t max_time_micros;
     };
 
+    enum class Options : uint8_t {
+        RECORD_TASK_INFO = 1 << 0
+    };
+
     // initialise scheduler
     void init(const Task *tasks, uint8_t num_tasks, uint32_t log_performance_bit);
 
@@ -99,7 +112,7 @@ public:
     void run(uint32_t time_available);
 
     // return the number of microseconds available for the current task
-    uint16_t time_available_usec(void);
+    uint16_t time_available_usec(void) const;
 
     // return debug parameter
     uint8_t debug_flags(void) { return _debug; }
@@ -147,6 +160,8 @@ public:
 
     HAL_Semaphore &get_semaphore(void) { return _rsem; }
 
+    void task_info(ExpandingString &str);
+
     static const struct AP_Param::GroupInfo var_info[];
 
     // loop performance monitoring:
@@ -164,6 +179,9 @@ private:
 
     // loop rate in Hz as set at startup
     AP_Int16 _active_loop_rate_hz;
+
+    // scheduler options
+    AP_Int8 _options;
     
     // calculated loop period in usec
     uint16_t _loop_period_us;
@@ -208,9 +226,6 @@ private:
     // time of last loop in seconds
     float _last_loop_time_s;
     
-    // performance counters
-    AP_HAL::Util::perf_counter_t *_perf_counters;
-
     // bitmask bit which indicates if we should log PERF message
     uint32_t _log_performance_bit;
 

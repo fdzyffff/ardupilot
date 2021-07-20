@@ -56,7 +56,11 @@ class upload_fw(Task.Task):
         upload_tools = self.env.get_flat('UPLOAD_TOOLS')
         upload_port = self.generator.bld.options.upload_port
         src = self.inputs[0]
-        cmd = "{} '{}/uploader.py' '{}'".format(self.env.get_flat('PYTHON'), upload_tools, src)
+        # Refer Tools/scripts/macos_remote_upload.sh for details
+        if 'AP_OVERRIDE_UPLOAD_CMD' in os.environ:
+            cmd = "{} '{}'".format(os.environ['AP_OVERRIDE_UPLOAD_CMD'], src.abspath())
+        else:
+            cmd = "{} '{}/uploader.py' '{}'".format(self.env.get_flat('PYTHON'), upload_tools, src)
         if upload_port is not None:
             cmd += " '--port' '%s'" % upload_port
         return self.exec_command(cmd)
@@ -154,6 +158,8 @@ class generate_apj(Task.Task):
             "summary": self.env.BOARD,
             "version": "0.1",
             "image_size": len(img),
+            "flash_total": int(self.env.FLASH_TOTAL),
+            "flash_free": int(self.env.FLASH_TOTAL) - len(img),
             "git_identity": self.generator.bld.git_head_hash(short=True),
             "board_revision": 0,
             "USBID": self.env.USBID
@@ -235,23 +241,16 @@ def chibios_firmware(self):
         _upload_task = self.create_task('upload_fw', src=apj_target)
         _upload_task.set_run_after(generate_apj_task)
 
-def setup_can_build(cfg):
-    '''enable CAN build. By doing this here we can auto-enable CAN in
-    the build based on the presence of CAN pins in hwdef.dat'''
+def setup_canmgr_build(cfg):
+    '''enable CANManager build. By doing this here we can auto-enable CAN in
+    the build based on the presence of CAN pins in hwdef.dat except for AP_Periph builds'''
     env = cfg.env
     env.AP_LIBRARIES += [
         'AP_UAVCAN',
         'modules/uavcan/libuavcan/src/**/*.cpp',
         ]
 
-    env.CFLAGS += ['-DUAVCAN_STM32_CHIBIOS=1',
-                   '-DUAVCAN_STM32_NUM_IFACES=2']
-
-    env.CXXFLAGS += [
-        '-Wno-error=cast-align',
-        '-DUAVCAN_STM32_CHIBIOS=1',
-        '-DUAVCAN_STM32_NUM_IFACES=2'
-        ]
+    env.CFLAGS += ['-DHAL_CAN_IFACES=2']
 
     env.DEFINES += [
         'UAVCAN_CPP_VERSION=UAVCAN_CPP03',
@@ -262,7 +261,7 @@ def setup_can_build(cfg):
     env.INCLUDES += [
         cfg.srcnode.find_dir('modules/uavcan/libuavcan/include').abspath(),
         ]
-    cfg.get_board().with_uavcan = True
+    cfg.get_board().with_can = True
 
 def load_env_vars(env):
     '''optionally load extra environment variables from env.py in the build directory'''
@@ -293,6 +292,11 @@ def load_env_vars(env):
             print("env set %s=%s" % (k, v))
     if env.ENABLE_ASSERTS:
         env.CHIBIOS_BUILD_FLAGS += ' ENABLE_ASSERTS=yes'
+    if env.ENABLE_MALLOC_GUARD:
+        env.CHIBIOS_BUILD_FLAGS += ' ENABLE_MALLOC_GUARD=yes'
+    if env.ENABLE_STATS:
+        env.CHIBIOS_BUILD_FLAGS += ' ENABLE_STATS=yes'
+
 
 def setup_optimization(env):
     '''setup optimization flags for build'''
@@ -359,8 +363,8 @@ def configure(cfg):
     if ret != 0:
         cfg.fatal("Failed to process hwdef.dat ret=%d" % ret)
     load_env_vars(cfg.env)
-    if env.HAL_WITH_UAVCAN:
-        setup_can_build(cfg)
+    if env.HAL_NUM_CAN_IFACES and not env.AP_PERIPH:
+        setup_canmgr_build(cfg)
     setup_optimization(cfg.env)
 
 def generate_hwdef_h(env):
@@ -378,14 +382,18 @@ def generate_hwdef_h(env):
     if not os.path.exists(hwdef_out):
         os.mkdir(hwdef_out)
     python = sys.executable
-    cmd = "{0} '{1}' -D '{2}' '{3}' {4} --params '{5}'".format(python, hwdef_script, hwdef_out, env.HWDEF, env.BOOTLOADER_OPTION, env.DEFAULT_PARAMETERS)
+    cmd = "{0} '{1}' -D '{2}' --params '{3}' '{4}'".format(python, hwdef_script, hwdef_out, env.DEFAULT_PARAMETERS, env.HWDEF)
+    if env.HWDEF_EXTRA:
+        cmd += " '{0}'".format(env.HWDEF_EXTRA)
+    if env.BOOTLOADER_OPTION:
+        cmd += " " + env.BOOTLOADER_OPTION
     return subprocess.call(cmd, shell=True)
 
 def pre_build(bld):
     '''pre-build hook to change dynamic sources'''
     load_env_vars(bld.env)
-    if bld.env.HAL_WITH_UAVCAN:
-        bld.get_board().with_uavcan = True
+    if bld.env.HAL_NUM_CAN_IFACES:
+        bld.get_board().with_can = True
     hwdef_h = os.path.join(bld.env.BUILDROOT, 'hwdef.h')
     if not os.path.exists(hwdef_h):
         print("Generating hwdef.h")
@@ -399,11 +407,21 @@ def pre_build(bld):
 
 def build(bld):
 
+
+    hwdef_rule="%s '%s/hwdef/scripts/chibios_hwdef.py' -D '%s' --params '%s' '%s'" % (
+            bld.env.get_flat('PYTHON'),
+            bld.env.AP_HAL_ROOT,
+            bld.env.BUILDROOT,
+            bld.env.default_parameters,
+            bld.env.HWDEF)
+    if bld.env.HWDEF_EXTRA:
+        hwdef_rule += " " + bld.env.HWDEF_EXTRA
+    if bld.env.BOOTLOADER_OPTION:
+        hwdef_rule += " " + bld.env.BOOTLOADER_OPTION
     bld(
         # build hwdef.h from hwdef.dat. This is needed after a waf clean
         source=bld.path.ant_glob(bld.env.HWDEF),
-        rule="%s '${AP_HAL_ROOT}/hwdef/scripts/chibios_hwdef.py' -D '${BUILDROOT}' '%s' %s --params '%s'" % (
-            bld.env.get_flat('PYTHON'), bld.env.HWDEF, bld.env.BOOTLOADER_OPTION, bld.env.default_parameters),
+        rule=hwdef_rule,
         group='dynamic_sources',
         target=[bld.bldnode.find_or_declare('hwdef.h'),
                 bld.bldnode.find_or_declare('ldscript.ld'),

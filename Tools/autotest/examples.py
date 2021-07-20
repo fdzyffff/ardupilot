@@ -1,11 +1,22 @@
+#!/usr/bin/env python
+
+"""
+Contains functions used to test the ArduPilot examples
+
+AP_FLAKE8_CLEAN
+"""
+
 from __future__ import print_function
 
+
 import os
+import pexpect
 import signal
 import subprocess
 import time
 
 from pysim import util
+
 
 def run_example(filepath, valgrind=False, gdb=False):
     cmd = []
@@ -40,12 +51,31 @@ def run_example(filepath, valgrind=False, gdb=False):
 
     print("Ran: (%s)" % str(cmd))
 
+
 def run_examples(debug=False, valgrind=False, gdb=False):
     dirpath = util.reltopdir(os.path.join('build', 'linux', 'examples'))
+
+    print("Running Hello")
+    # explicitly run helloworld and check for output
+    hello_path = os.path.join(dirpath, "Hello")
+    p = pexpect.spawn(hello_path, ["Hello"])
+    ex = None
+    try:
+        p.expect("hello world", timeout=5)
+    except pexpect.TIMEOUT as e:
+        ex = e
+    print("ran Hello")
+
+    p.close()
+
+    if ex is not None:
+        raise ex
 
     skip = {
         "BARO_generic": "Most linux computers don't have baros...",
         "RCProtocolDecoder": "This assumes specific hardware is connected",
+        "FlashTest": "https://github.com/ArduPilot/ardupilot/issues/14168",
+        "UART_chargen": "This nuke the term",
     }
     for afile in os.listdir(dirpath):
         if afile in skip:

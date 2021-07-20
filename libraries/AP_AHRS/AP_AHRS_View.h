@@ -21,6 +21,11 @@
  */
 
 #include "AP_AHRS.h"
+#include <AP_Motors/AP_Motors.h>
+
+// fwd declarations to avoid include errors
+class AC_AttitudeControl;
+class AC_PosControl;
 
 class AP_AHRS_View
 {
@@ -154,11 +159,11 @@ public:
 
     // rotate a 2D vector from earth frame to body frame
     // in result, x is forward, y is right
-    Vector2f rotate_earth_to_body2D(const Vector2f &ef_vector) const;
+    Vector2f earth_to_body2D(const Vector2f &ef_vector) const;
 
     // rotate a 2D vector from earth frame to body frame
     // in input, x is forward, y is right
-    Vector2f rotate_body_to_earth2D(const Vector2f &bf) const;
+    Vector2f body_to_earth2D(const Vector2f &bf) const;
 
     // return the average size of the roll/pitch error estimate
     // since last call
@@ -171,6 +176,11 @@ public:
     float get_error_yaw(void) const {
         return ahrs.get_error_yaw();
     }
+
+    // Logging Functions
+    void Write_AttitudeView(const Vector3f &targets) const;    
+    void Write_Rate( const AP_Motors &motors, const AC_AttitudeControl &attitude_control,
+                        const AC_PosControl &pos_control) const;
 
     float roll;
     float pitch;

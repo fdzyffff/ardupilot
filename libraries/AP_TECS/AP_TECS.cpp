@@ -43,7 +43,7 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
 
     // @Param: THR_DAMP
     // @DisplayName: Controller throttle damping
-    // @Description: Damping gain for throttle demand loop. Slows the throttle response to correct for speed and height oscillations.
+    // @Description: Damping gain for throttle demand loop. Increase to add throttle activity to dampen oscillations in speed and height.
     // @Range: 0.1 1.0
     // @Increment: 0.1
     // @User: Advanced
@@ -83,7 +83,7 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
 
     // @Param: RLL2THR
     // @DisplayName: Bank angle compensation gain
-    // @Description: Gain from bank angle to throttle to compensate for loss of airspeed from drag in turns. Set to approximately 10x the sink rate in m/s caused by a 45-degree turn. High efficiency models may need less while less efficient aircraft may need more. Should be tuned in an automatic mission with waypoints and turns greater than 90 degrees. Tune with PTCH2SV_RLL and KFF_RDDRMIX to achieve constant airspeed, constant altitude turns.
+    // @Description: Gain from bank angle to throttle to compensate for loss of airspeed from drag in turns. Set to approximately 10x the sink rate in m/s caused by a 45-degree turn. High efficiency models may need less while less efficient aircraft may need more. Should be tuned in an automatic mission with waypoints and turns greater than 90 degrees. Tune with PTCH2SRV_RLL and KFF_RDDRMIX to achieve constant airspeed, constant altitude turns.
     // @Range: 5.0 30.0
     // @Increment: 1.0
     // @User: Advanced
@@ -110,7 +110,7 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
     // @Description: Maximum demanded descent rate. Do not set higher than the vertical speed the aircraft can maintain at THR_MIN, TECS_PITCH_MIN, and ARSPD_FBW_MAX.
     // @Increment: 0.1
     // @Range: 0.0 20.0
-    // @User: User
+    // @User: Standard
     AP_GROUPINFO("SINK_MAX",  11, AP_TECS, _maxSinkRate, 5.0f),
 
     // @Param: LAND_ARSPD
@@ -118,7 +118,7 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
     // @Description: When performing an autonomus landing, this value is used as the goal airspeed during approach.  Note that this parameter is not useful if your platform does not have an airspeed sensor (use TECS_LAND_THR instead).  If negative then this value is not used during landing.
     // @Range: -1 127
     // @Increment: 1
-    // @User: User
+    // @User: Standard
     AP_GROUPINFO("LAND_ARSPD", 12, AP_TECS, _landAirspeed, -1),
 
     // @Param: LAND_THR
@@ -126,7 +126,7 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
     // @Description: Use this parameter instead of LAND_ARSPD if your platform does not have an airspeed sensor.  It is the cruise throttle during landing approach.  If this value is negative then it is disabled and TECS_LAND_ARSPD is used instead.
     // @Range: -1 100
     // @Increment: 0.1
-    // @User: User
+    // @User: Standard
     AP_GROUPINFO("LAND_THR", 13, AP_TECS, _landThrottle, -1),
 
     // @Param: LAND_SPDWGT
@@ -205,7 +205,7 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
 
     // @Param: LAND_TDAMP
     // @DisplayName: Controller throttle damping when landing
-    // @Description: This is the damping gain for the throttle demand loop during and auto-landing. Same as TECS_THR_DAMP but only in effect during an auto-land. Increase to add damping to correct for oscillations in speed and height. When set to 0 landing throttle damp is controlled by TECS_THR_DAMP.
+    // @Description: Damping gain for the throttle demand loop during an auto-landing. Same as TECS_THR_DAMP but only in effect during an auto-land. Increase to add throttle activity to dampen oscillations in speed and height. When set to 0 landing throttle damping is controlled by TECS_THR_DAMP.
     // @Range: 0.1 1.0
     // @Increment: 0.1
     // @User: Advanced
@@ -674,17 +674,6 @@ void AP_TECS::_update_throttle_with_airspeed(void)
 
         float THRminf_clipped_to_zero = constrain_float(_THRminf, 0, _THRmaxf);
 
-        // Rate limit PD + FF throttle
-        // Calculate the throttle increment from the specified slew time
-        if (aparm.throttle_slewrate != 0) {
-            float thrRateIncr = _DT * (_THRmaxf - THRminf_clipped_to_zero) * aparm.throttle_slewrate * 0.01f;
-
-            _throttle_dem = constrain_float(_throttle_dem,
-                                            _last_throttle_dem - thrRateIncr,
-                                            _last_throttle_dem + thrRateIncr);
-            _last_throttle_dem = _throttle_dem;
-        }
-
         // Calculate integrator state upper and lower limits
         // Set to a value that will allow 0.1 (10%) throttle saturation to allow for noise on the demand
         // Additionally constrain the integrator state amplitude so that the integrator comes off limits faster.
@@ -706,6 +695,25 @@ void AP_TECS::_update_throttle_with_airspeed(void)
         else
         {
             _integTHR_state = constrain_float(_integTHR_state, integ_min, integ_max);
+        }
+
+        // Rate limit PD + FF throttle
+        // Calculate the throttle increment from the specified slew time
+        int8_t throttle_slewrate = aparm.throttle_slewrate;
+        if (_landing.is_on_approach()) {
+            const int8_t land_slewrate = _landing.get_throttle_slewrate();
+            if (land_slewrate > 0) {
+                throttle_slewrate = land_slewrate;
+            }
+        }
+
+        if (throttle_slewrate != 0) {
+            float thrRateIncr = _DT * (_THRmaxf - THRminf_clipped_to_zero) * throttle_slewrate * 0.01f;
+
+            _throttle_dem = constrain_float(_throttle_dem,
+                                            _last_throttle_dem - thrRateIncr,
+                                            _last_throttle_dem + thrRateIncr);
+            _last_throttle_dem = _throttle_dem;
         }
 
         // Sum the components.
@@ -762,6 +770,7 @@ void AP_TECS::_update_throttle_without_airspeed(int16_t throttle_nudge)
     if (_flags.is_gliding)
     {
         _throttle_dem = 0.0f;
+        return;
     }
 
     // Calculate additional throttle for turn drag compensation including throttle nudging

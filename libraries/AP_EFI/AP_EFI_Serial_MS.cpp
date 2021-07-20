@@ -16,7 +16,7 @@
 #include <AP_HAL/AP_HAL.h>
 #include "AP_EFI_Serial_MS.h"
 
-#if EFI_ENABLED
+#if HAL_EFI_ENABLED
 #include <AP_SerialManager/AP_SerialManager.h>
 
 extern const AP_HAL::HAL &hal;
@@ -44,11 +44,7 @@ void AP_EFI_Serial_MS::update()
     }
 
     if (port->available() == 0 || now - last_response_ms > 200) {
-        // clear the input buffer
-        uint32_t buffered_data_size = port->available();
-        for (uint32_t i = 0; i < buffered_data_size; i++) {
-            port->read();
-        }
+        port->discard_input();
         // Request an update from the realtime table (7).
         // The data we need start at offset 6 and ends at 129
         send_request(7, RT_FIRST_OFFSET, RT_LAST_OFFSET);
@@ -233,4 +229,4 @@ uint32_t AP_EFI_Serial_MS::CRC32_compute_byte(uint32_t crc, uint8_t data)
     return crc;
 }
 
-#endif // EFI_ENABLED
+#endif // HAL_EFI_ENABLED

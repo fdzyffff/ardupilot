@@ -66,7 +66,7 @@ public:
         k_param_serial_manager, // Serial ports, AP_SerialManager
         k_param_notify, // Notify Library, AP_Notify
         k_param_arming = 26, // Arming checks
-        k_param_BoardConfig_CAN,
+        k_param_can_mgr,
 
         // Sensor objects
         k_param_ins = 30, // AP_InertialSensor
@@ -206,6 +206,10 @@ public:
         // RC_Mapper Library
         k_param_rcmap, // Disabled
 
+        k_param_gcs4,
+        k_param_gcs5,
+        k_param_gcs6,
+
         k_param_cam_slew_limit = 237, // deprecated
         k_param_lights_steps,
         k_param_pilot_speed_dn,
@@ -320,7 +324,7 @@ public:
     AP_Gripper gripper;
 #endif
 
-#if PROXIMITY_ENABLED == ENABLED
+#if HAL_PROXIMITY_ENABLED
     // proximity (aka object avoidance) library
     AP_Proximity proximity;
 #endif
@@ -334,6 +338,9 @@ public:
 #ifdef ENABLE_SCRIPTING
     AP_Scripting scripting;
 #endif // ENABLE_SCRIPTING
+
+    // Airspeed
+    AP_Airspeed airspeed;
 
 };
 

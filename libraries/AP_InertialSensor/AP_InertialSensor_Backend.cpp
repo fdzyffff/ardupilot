@@ -94,15 +94,34 @@ void AP_InertialSensor_Backend::_rotate_and_correct_accel(uint8_t instance, Vect
 
     // rotate for sensor orientation
     accel.rotate(_imu._accel_orientation[instance]);
-    
-    // apply offsets
-    accel -= _imu._accel_offset[instance];
 
-    // apply scaling
-    const Vector3f &accel_scale = _imu._accel_scale[instance].get();
-    accel.x *= accel_scale.x;
-    accel.y *= accel_scale.y;
-    accel.z *= accel_scale.z;
+#if HAL_INS_TEMPERATURE_CAL_ENABLE
+    if (_imu.tcal_learning) {
+        _imu.tcal[instance].update_accel_learning(accel, _imu.get_temperature(instance));
+    }
+#endif
+
+    if (!_imu._calibrating_accel && (_imu._acal == nullptr
+#if HAL_INS_ACCELCAL_ENABLED
+        || !_imu._acal->running()
+#endif
+    )) {
+
+#if HAL_INS_TEMPERATURE_CAL_ENABLE
+        // apply temperature corrections
+        _imu.tcal[instance].correct_accel(_imu.get_temperature(instance), _imu.caltemp_accel[instance], accel);
+#endif
+
+        // apply offsets
+        accel -= _imu._accel_offset[instance];
+
+
+        // apply scaling
+        const Vector3f &accel_scale = _imu._accel_scale[instance].get();
+        accel.x *= accel_scale.x;
+        accel.y *= accel_scale.y;
+        accel.z *= accel_scale.z;
+    }
 
     // rotate to body frame
     if (_imu._board_orientation == ROTATION_CUSTOM && _imu._custom_rotation) {
@@ -116,9 +135,23 @@ void AP_InertialSensor_Backend::_rotate_and_correct_gyro(uint8_t instance, Vecto
 {
     // rotate for sensor orientation
     gyro.rotate(_imu._gyro_orientation[instance]);
+
+#if HAL_INS_TEMPERATURE_CAL_ENABLE
+    if (_imu.tcal_learning) {
+        _imu.tcal[instance].update_gyro_learning(gyro, _imu.get_temperature(instance));
+    }
+#endif
     
-    // gyro calibration is always assumed to have been done in sensor frame
-    gyro -= _imu._gyro_offset[instance];
+    if (!_imu._calibrating_gyro) {
+
+#if HAL_INS_TEMPERATURE_CAL_ENABLE
+        // apply temperature corrections
+        _imu.tcal[instance].correct_gyro(_imu.get_temperature(instance), _imu.caltemp_gyro[instance], gyro);
+#endif
+
+        // gyro calibration is always assumed to have been done in sensor frame
+        gyro -= _imu._gyro_offset[instance];
+    }
 
     if (_imu._board_orientation == ROTATION_CUSTOM && _imu._custom_rotation) {
         gyro = *_imu._custom_rotation * gyro;
@@ -170,8 +203,8 @@ void AP_InertialSensor_Backend::_notify_new_gyro_raw_sample(uint8_t instance,
         dt = (sample_us - _imu._gyro_last_sample_us[instance]) * 1.0e-6f;
         _imu._gyro_last_sample_us[instance] = sample_us;
     } else {
-        // don't accept below 100Hz
-        if (_imu._gyro_raw_sample_rates[instance] < 100) {
+        // don't accept below 40Hz
+        if (_imu._gyro_raw_sample_rates[instance] < 40) {
             return;
         }
 
@@ -227,11 +260,14 @@ void AP_InertialSensor_Backend::_notify_new_gyro_raw_sample(uint8_t instance,
         _imu._last_raw_gyro[instance] = gyro;
 #if HAL_WITH_DSP
         // capture gyro window for FFT analysis
-        _last_gyro_window[_num_gyro_samples++] = gyro * _imu._gyro_raw_sampling_multiplier[instance];
-        _num_gyro_samples = _num_gyro_samples % INS_MAX_GYRO_WINDOW_SAMPLES; // protect against overrun
+        if (_imu._gyro_window_size > 0) {
+            const Vector3f& scaled_gyro = gyro * _imu._gyro_raw_sampling_multiplier[instance];
+            _imu._gyro_window[instance][0].push(scaled_gyro.x);
+            _imu._gyro_window[instance][1].push(scaled_gyro.y);
+            _imu._gyro_window[instance][2].push(scaled_gyro.z);
+        }
 #endif
-        // apply the low pass filter
-        Vector3f gyro_filtered = _imu._gyro_filter[instance].apply(gyro);
+        Vector3f gyro_filtered = gyro;
 
         // apply the notch filter
         if (_gyro_notch_enabled()) {
@@ -242,6 +278,9 @@ void AP_InertialSensor_Backend::_notify_new_gyro_raw_sample(uint8_t instance,
         if (gyro_harmonic_notch_enabled()) {
             gyro_filtered = _imu._gyro_harmonic_notch_filter[instance].apply(gyro_filtered);
         }
+
+        // apply the low pass filter last to attentuate any notch induced noise
+        gyro_filtered = _imu._gyro_filter[instance].apply(gyro_filtered);
 
         // if the filtering failed in any way then reset the filters and keep the old value
         if (gyro_filtered.is_nan() || gyro_filtered.is_inf()) {
@@ -271,16 +310,7 @@ void AP_InertialSensor_Backend::log_gyro_raw(uint8_t instance, const uint64_t sa
         return;
     }
     if (should_log_imu_raw()) {
-        uint64_t now = AP_HAL::micros64();
-        struct log_GYRO pkt = {
-            LOG_PACKET_HEADER_INIT((uint8_t)(LOG_GYR1_MSG+instance)),
-            time_us   : now,
-            sample_us : sample_us?sample_us:now,
-            GyrX      : gyro.x,
-            GyrY      : gyro.y,
-            GyrZ      : gyro.z
-        };
-        logger->WriteBlock(&pkt, sizeof(pkt));
+        Write_GYR(instance, sample_us, gyro);
     } else {
         if (!_imu.batchsampler.doing_sensor_rate_logging()) {
             _imu.batchsampler.sample(instance, AP_InertialSensor::IMU_SENSOR_TYPE_GYRO, sample_us, gyro);
@@ -308,17 +338,9 @@ void AP_InertialSensor_Backend::_publish_accel(uint8_t instance, const Vector3f 
     if (_imu._accel_calibrator != nullptr && _imu._accel_calibrator[instance].get_status() == ACCEL_CAL_COLLECTING_SAMPLE) {
         Vector3f cal_sample = _imu._delta_velocity[instance];
 
-        //remove rotation
+        // remove rotation. Note that we don't need to remove offsets or scale factor as those
+        // are not applied when calibrating
         cal_sample.rotate_inverse(_imu._board_orientation);
-
-        // remove scale factors
-        const Vector3f &accel_scale = _imu._accel_scale[instance].get();
-        cal_sample.x /= accel_scale.x;
-        cal_sample.y /= accel_scale.y;
-        cal_sample.z /= accel_scale.z;
-        
-        //remove offsets
-        cal_sample += _imu._accel_offset[instance].get() * _imu._delta_velocity_dt[instance] ;
 
         _imu._accel_calibrator[instance].new_sample(cal_sample, _imu._delta_velocity_dt[instance]);
     }
@@ -351,8 +373,8 @@ void AP_InertialSensor_Backend::_notify_new_accel_raw_sample(uint8_t instance,
         dt = (sample_us - _imu._accel_last_sample_us[instance]) * 1.0e-6f;
         _imu._accel_last_sample_us[instance] = sample_us;
     } else {
-        // don't accept below 100Hz
-        if (_imu._accel_raw_sample_rates[instance] < 100) {
+        // don't accept below 40Hz
+        if (_imu._accel_raw_sample_rates[instance] < 40) {
             return;
         }
 
@@ -426,16 +448,7 @@ void AP_InertialSensor_Backend::log_accel_raw(uint8_t instance, const uint64_t s
         return;
     }
     if (should_log_imu_raw()) {
-        uint64_t now = AP_HAL::micros64();
-        struct log_ACCEL pkt = {
-            LOG_PACKET_HEADER_INIT((uint8_t)(LOG_ACC1_MSG+instance)),
-            time_us   : now,
-            sample_us : sample_us?sample_us:now,
-            AccX      : accel.x,
-            AccY      : accel.y,
-            AccZ      : accel.z
-        };
-        logger->WriteBlock(&pkt, sizeof(pkt));
+        Write_ACC(instance, sample_us, accel);
     } else {
         if (!_imu.batchsampler.doing_sensor_rate_logging()) {
             _imu.batchsampler.sample(instance, AP_InertialSensor::IMU_SENSOR_TYPE_ACCEL, sample_us, accel);
@@ -473,11 +486,11 @@ void AP_InertialSensor_Backend::_inc_gyro_error_count(uint8_t instance)
     _imu._gyro_error_count[instance]++;
 }
 
-// return the requested sample rate in Hz
-uint16_t AP_InertialSensor_Backend::get_sample_rate_hz(void) const
+// return the requested loop rate at which samples will be made available in Hz
+uint16_t AP_InertialSensor_Backend::get_loop_rate_hz(void) const
 {
     // enum can be directly cast to Hz
-    return (uint16_t)_imu._sample_rate;
+    return (uint16_t)_imu._loop_rate;
 }
 
 /*
@@ -515,17 +528,6 @@ void AP_InertialSensor_Backend::update_gyro(uint8_t instance)
         _publish_gyro(instance, _imu._gyro_filtered[instance]);
         // copy the gyro samples from the backend to the frontend window
 #if HAL_WITH_DSP
-        if (_imu._gyro_window_size > 0) {
-            uint8_t idx = _imu._circular_buffer_idx[instance];
-            for (uint8_t i = 0; i < _num_gyro_samples; i++) {
-                _imu._gyro_window[instance][0][idx] = _last_gyro_window[i].x;
-                _imu._gyro_window[instance][1][idx] = _last_gyro_window[i].y;
-                _imu._gyro_window[instance][2][idx] = _last_gyro_window[i].z;
-                idx = (idx + 1) % _imu._gyro_window_size;
-            }
-            _num_gyro_samples = 0;
-            _imu._circular_buffer_idx[instance] = idx;
-        }
         _imu._gyro_raw[instance] = _imu._last_raw_gyro[instance] * _imu._gyro_raw_sampling_multiplier[instance];
 #endif
         _imu._new_gyro_data[instance] = false;
@@ -546,7 +548,11 @@ void AP_InertialSensor_Backend::update_gyro(uint8_t instance)
         _last_harmonic_notch_bandwidth_hz = gyro_harmonic_notch_bandwidth_hz();
         _last_harmonic_notch_attenuation_dB = gyro_harmonic_notch_attenuation_dB();
     } else if (!is_equal(_last_harmonic_notch_center_freq_hz, gyro_harmonic_notch_center_freq_hz())) {
-        _imu._gyro_harmonic_notch_filter[instance].update(gyro_harmonic_notch_center_freq_hz());
+        if (num_gyro_harmonic_notch_center_frequencies() > 1) {
+            _imu._gyro_harmonic_notch_filter[instance].update(num_gyro_harmonic_notch_center_frequencies(), gyro_harmonic_notch_center_frequencies_hz());
+        } else {
+            _imu._gyro_harmonic_notch_filter[instance].update(gyro_harmonic_notch_center_freq_hz());
+        }
         _last_harmonic_notch_center_freq_hz = gyro_harmonic_notch_center_freq_hz();
     }
     // possily update the notch filter parameters
@@ -599,3 +605,13 @@ bool AP_InertialSensor_Backend::should_log_imu_raw() const
     return true;
 }
 
+// log an unexpected change in a register for an IMU
+void AP_InertialSensor_Backend::log_register_change(uint32_t bus_id, const AP_HAL::Device::checkreg &reg)
+{
+    AP::logger().Write("IREG", "TimeUS,DevID,Bank,Reg,Val", "QUBBB",
+                       AP_HAL::micros64(),
+                       bus_id,
+                       reg.bank,
+                       reg.regnum,
+                       reg.value);
+}
