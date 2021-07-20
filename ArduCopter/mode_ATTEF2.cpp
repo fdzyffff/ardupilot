@@ -6,7 +6,7 @@
  */
 
 // althold_init - initialise althold controller
-bool ModeEF3::init(bool ignore_checks)
+bool ModeATTEF2::init(bool ignore_checks)
 {
     // initialise position and desired velocity
     if (!pos_control->is_active_z()) {
@@ -19,7 +19,7 @@ bool ModeEF3::init(bool ignore_checks)
 
 // althold_run - runs the althold controller
 // should be called at 100hz or more
-void ModeEF3::run()
+void ModeATTEF2::run()
 {
     float takeoff_climb_rate = 0.0f;
 
@@ -35,11 +35,7 @@ void ModeEF3::run()
     get_pilot_desired_lean_angles(target_roll, target_pitch, copter.aparm.angle_max, attitude_control->get_althold_lean_angle_max());
 
     // get pilot's desired yaw rate
-    
     float target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
-    if (target_pitch < -1500.f) {
-        target_yaw_rate += User_get_pilot_desired_yaw_rate(target_roll);
-    } 
 
     // get pilot desired climb rate
     float target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
@@ -91,18 +87,15 @@ void ModeEF3::run()
         // apply avoidance
         copter.avoid.adjust_fence_roll_pitch(target_roll, target_pitch, copter.aparm.angle_max);
 #endif
-        float ef3_target_alt = constrain_float(copter.g2.user_parameters.EF3_target_alt, 30.0f, 600.0f);
-
-        // if (!User_rangefinder_check()) {
-        //     target_climb_rate -= g.pilot_speed_up*0.75f;
-        // }
-        if (target_climb_rate > g.pilot_speed_up * 0.9f ) {
-            copter.surface_tracking.set_target_alt_cm(ef3_target_alt);
-        } else if (target_climb_rate > -get_pilot_speed_dn()*0.9f) {
-            target_climb_rate = 0.0f;
-            copter.surface_tracking.set_target_alt_cm(ef3_target_alt);
+        if (!User_rangefinder_check()) {
+            target_climb_rate -= g.pilot_speed_up*0.5f;
         } else {
-            target_climb_rate = MAX(target_climb_rate, -50.f);
+            if (target_climb_rate > -get_pilot_speed_dn()*0.9f) {
+                User_alt_limit(target_climb_rate);
+            } else {
+                // User_alt_limit(target_climb_rate);  
+                target_climb_rate = MAX(target_climb_rate, -50.f);
+            }
         }
         // adjust climb rate using rangefinder
         target_climb_rate = copter.surface_tracking.adjust_climb_rate(target_climb_rate);
@@ -122,10 +115,28 @@ void ModeEF3::run()
 
 }
 
-float ModeEF3::User_get_pilot_desired_yaw_rate(float target_roll) {
-    return copter.g2.user_parameters.EF3_yaw_factor * target_roll;
+void ModeATTEF2::User_alt_limit(float&  target_rate) {
+    if (!copter.rangefinder_alt_ok()) {return;}
+    float current_rng_alt = 0.0f;
+    if (!copter.surface_tracking.get_target_alt_cm(current_rng_alt)) {return;}
+
+    float kP = pos_control->get_pos_z_p().kP();
+    float accel_cmss = pos_control->get_max_accel_z();
+    float rate_max = g.pilot_speed_up;
+    float rate_min = -get_pilot_speed_dn();
+    float alt_max = constrain_float(copter.g2.user_parameters.EF2_alt_max, 300.f, 600.f);
+    float alt_min = constrain_float(copter.g2.user_parameters.EF2_alt_min, 60.f, 250.f);
+    if (is_zero(kP)) {
+        rate_max = MIN(rate_max, safe_sqrt(2.0f * (alt_max - current_rng_alt) * accel_cmss));
+        rate_min = MAX(rate_min, safe_sqrt(2.0f * (alt_min - current_rng_alt) * accel_cmss));
+    } else {
+        rate_max = MIN(rate_max, AC_AttitudeControl::sqrt_controller((alt_max - current_rng_alt), kP, accel_cmss, G_Dt));
+        rate_min = MAX(rate_min, AC_AttitudeControl::sqrt_controller((alt_min - current_rng_alt), kP, accel_cmss, G_Dt));
+    }
+    rate_max = MAX(rate_min, rate_max);
+    target_rate = constrain_float(target_rate, rate_min, rate_max);
 }
 
-bool ModeEF3::User_rangefinder_check() {
+bool ModeATTEF2::User_rangefinder_check() {
     return (copter.inertial_nav.get_altitude() < 50.f || copter.rangefinder_alt_ok());
 }

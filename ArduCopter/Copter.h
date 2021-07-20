@@ -189,6 +189,8 @@
 #include <SITL/SITL.h>
 #endif
 
+#include <EF_Counter/EF_Counter.h>
+
 #include "mode.h"
 
 class Copter : public AP_Vehicle {
@@ -236,8 +238,10 @@ public:
     friend class ModeThrow;
     friend class ModeZigZag;
     friend class ModeAutorotate;
-    friend class ModeEF3;
-    friend class ModeEF2;
+    friend class ModeATTEF3;
+    friend class ModeATTEF2;
+    friend class ModePOSEF3;
+    friend class ModePOSEF2;
 
     Copter(void);
 
@@ -565,6 +569,7 @@ private:
     AP_Avoidance_Copter avoidance_adsb{adsb};
 #endif
 
+    EF_Counter efcounter;
     // last valid RC input time
     uint32_t last_radio_update_ms;
 
@@ -995,8 +1000,10 @@ private:
 #if MODE_AUTOROTATE_ENABLED == ENABLED
     ModeAutorotate mode_autorotate;
 #endif
-    ModeEF3 mode_ef3;
-    ModeEF2 mode_ef2;
+    ModeATTEF3 mode_attef3;
+    ModeATTEF2 mode_attef2;
+    ModePOSEF3 mode_posef3;
+    ModePOSEF2 mode_posef2;
 
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);

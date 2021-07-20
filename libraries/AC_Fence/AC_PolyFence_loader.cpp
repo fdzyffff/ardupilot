@@ -213,6 +213,7 @@ bool AC_PolyFence_loader::breached(const Vector2f& pos_cm) const
     // check we are inside each inclusion zone:
     for (uint8_t i=0; i<_num_loaded_inclusion_boundaries; i++) {
         const InclusionBoundary &boundary = _loaded_inclusion_boundary[i];
+        if (boundary.count < 3) {continue;}
         if (Polygon_outside(pos_cm, boundary.points, boundary.count)) {
             return true;
         }
@@ -718,7 +719,7 @@ bool AC_PolyFence_loader::load_from_eeprom()
             InclusionBoundary &boundary = _loaded_inclusion_boundary[_num_loaded_inclusion_boundaries];
             boundary.points = next_storage_point;
             boundary.count = index.count;
-            if (index.count < 3) {
+            if (index.count < 2) {
                 gcs().send_text(MAV_SEVERITY_WARNING, "AC_Fence: invalid polygon vertex count");
                 storage_valid = false;
                 break;
@@ -885,7 +886,7 @@ bool AC_PolyFence_loader::validate_fence(const AC_PolyFenceItem *new_items, uint
 
         case AC_PolyFenceType::POLYGON_INCLUSION:
         case AC_PolyFenceType::POLYGON_EXCLUSION:
-            if (new_items[i].vertex_count < 3) {
+            if (new_items[i].vertex_count < 2) {
                 gcs().send_text(MAV_SEVERITY_WARNING, "Invalid vertex count (%u)", new_items[i].vertex_count);
                 return false;
             }

@@ -171,14 +171,21 @@ Mode *Copter::mode_from_mode_num(const Mode::Number mode)
             break;
 #endif
 
-        case Mode::Number::EF3:
-            ret = &mode_ef3;
+        case Mode::Number::ATTEF3:
+            ret = &mode_attef3;
             break;
 
-        case Mode::Number::EF2:
-            ret = &mode_ef2;
+        case Mode::Number::ATTEF2:
+            ret = &mode_attef2;
             break;
 
+        case Mode::Number::POSEF3:
+            ret = &mode_posef3;
+            break;
+
+        case Mode::Number::POSEF2:
+            ret = &mode_posef2;
+            break;
         default:
             break;
     }

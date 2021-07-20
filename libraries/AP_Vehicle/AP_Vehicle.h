@@ -124,7 +124,6 @@ protected:
     AP_InertialSensor ins;
     AP_Button button;
     RangeFinder rangefinder;
-
     AP_RSSI rssi;
 
     AP_SerialManager serial_manager;

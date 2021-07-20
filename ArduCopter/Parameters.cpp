@@ -713,6 +713,7 @@ const AP_Param::Info Copter::var_info[] = {
     GOBJECT(osd, "OSD", AP_OSD),
 #endif
 
+    GOBJECT(efcounter,      "EFCOUNTER_",   EF_Counter),
     // @Group:
     // @Path: Parameters.cpp
     GOBJECT(g2, "",  ParametersG2),

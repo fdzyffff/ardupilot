@@ -36,8 +36,10 @@ public:
         ZIGZAG    =    24,  // ZIGZAG mode is able to fly in a zigzag manner with predefined point A and point B
         SYSTEMID  =    25,  // System ID mode produces automated system identification signals in the controllers
         AUTOROTATE =   26,  // Autonomous autorotation
-        EF3 =   27,  // 
-        EF2 =   28,  // 
+        ATTEF3 =   27,  // 
+        ATTEF2 =   28,  // 
+        POSEF3 =   30,  // 
+        POSEF2 =   31,  // 
     };
 
     // constructor
@@ -1473,7 +1475,7 @@ private:
 #endif
 
 
-class ModeEF3 : public Mode {
+class ModeATTEF3 : public Mode {
 
 public:
     // inherit constructor
@@ -1492,8 +1494,8 @@ public:
 
 protected:
 
-    const char *name() const override { return "ALT_HOLD"; }
-    const char *name4() const override { return "ALTH"; }
+    const char *name() const override { return "ATTEF3"; }
+    const char *name4() const override { return "AEF3"; }
 
 private:
 
@@ -1502,7 +1504,7 @@ private:
 };
 
 
-class ModeEF2 : public Mode {
+class ModeATTEF2 : public Mode {
 
 public:
     // inherit constructor
@@ -1521,11 +1523,98 @@ public:
 
 protected:
 
-    const char *name() const override { return "ALT_HOLD"; }
-    const char *name4() const override { return "ALTH"; }
+    const char *name() const override { return "ATTEF2"; }
+    const char *name4() const override { return "AEF2"; }
 
 private:
 
     void User_alt_limit(float&  target_rate);
     bool User_rangefinder_check();
+};
+
+
+
+class ModePOSEF3 : public Mode {
+
+public:
+    // inherit constructor
+    using Mode::Mode;
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    bool requires_GPS() const override { return true; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(bool from_gcs) const override { return true; };
+    bool is_autopilot() const override { return false; }
+    bool has_user_takeoff(bool must_navigate) const override { return true; }
+
+#if PRECISION_LANDING == ENABLED
+    void set_precision_loiter_enabled(bool value) { _precision_loiter_enabled = value; }
+#endif
+
+protected:
+
+    const char *name() const override { return "POSEF3"; }
+    const char *name4() const override { return "PEF3"; }
+
+    uint32_t wp_distance() const override;
+    int32_t wp_bearing() const override;
+
+#if PRECISION_LANDING == ENABLED
+    bool do_precision_loiter();
+    void precision_loiter_xy();
+#endif
+
+private:
+
+    float User_get_pilot_desired_yaw_rate(float target_roll);
+    bool User_rangefinder_check();
+
+#if PRECISION_LANDING == ENABLED
+    bool _precision_loiter_enabled;
+#endif
+};
+
+
+class ModePOSEF2 : public Mode {
+
+public:
+    // inherit constructor
+    using Mode::Mode;
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    bool requires_GPS() const override { return true; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(bool from_gcs) const override { return true; };
+    bool is_autopilot() const override { return false; }
+    bool has_user_takeoff(bool must_navigate) const override { return true; }
+
+#if PRECISION_LANDING == ENABLED
+    void set_precision_loiter_enabled(bool value) { _precision_loiter_enabled = value; }
+#endif
+
+protected:
+
+    const char *name() const override { return "POSEF2"; }
+    const char *name4() const override { return "PEF2"; }
+
+    uint32_t wp_distance() const override;
+    int32_t wp_bearing() const override;
+
+#if PRECISION_LANDING == ENABLED
+    bool do_precision_loiter();
+    void precision_loiter_xy();
+#endif
+
+private:
+
+    void User_alt_limit(float&  target_rate);
+    bool User_rangefinder_check();
+
+#if PRECISION_LANDING == ENABLED
+    bool _precision_loiter_enabled;
+#endif
 };

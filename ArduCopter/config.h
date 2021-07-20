@@ -579,7 +579,7 @@
 
 // Super Simple mode
 #ifndef SUPER_SIMPLE_RADIUS
- # define SUPER_SIMPLE_RADIUS       1000
+ # define SUPER_SIMPLE_RADIUS       150
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
