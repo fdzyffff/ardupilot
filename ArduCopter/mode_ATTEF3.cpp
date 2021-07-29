@@ -13,6 +13,7 @@ bool ModeATTEF3::init(bool ignore_checks)
         pos_control->set_alt_target_to_current_alt();
         pos_control->set_desired_velocity_z(inertial_nav.get_velocity_z());
     }
+    gcs().send_text(MAV_SEVERITY_WARNING, "ATTEF3");
 
     return true;
 }
@@ -96,9 +97,7 @@ void ModeATTEF3::run()
         if (!User_rangefinder_check()) {
             target_climb_rate -= g.pilot_speed_up*0.5f;
         } else {
-            if (target_climb_rate > g.pilot_speed_up * 0.9f ) {
-                copter.surface_tracking.set_target_alt_cm(ef3_target_alt);
-            } else if (target_climb_rate > -get_pilot_speed_dn()*0.9f) {
+            if (target_climb_rate > -get_pilot_speed_dn()*0.9f) {
                 target_climb_rate = 0.0f;
                 copter.surface_tracking.set_target_alt_cm(ef3_target_alt);
             } else {
@@ -129,5 +128,5 @@ float ModeATTEF3::User_get_pilot_desired_yaw_rate(float target_roll) {
 }
 
 bool ModeATTEF3::User_rangefinder_check() {
-    return (copter.inertial_nav.get_altitude() < 50.f || copter.rangefinder_alt_ok());
+    return (copter.rangefinder_alt_ok());
 }
