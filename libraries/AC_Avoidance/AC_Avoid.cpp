@@ -730,9 +730,7 @@ void AC_Avoid::adjust_velocity_polygon(float kP, float accel_cmss, Vector2f &des
 
     // return if we have already breached polygon
     const bool inside_polygon = !Polygon_outside(position_xy, boundary, num_points);
-    if (inside_polygon != stay_inside) {
-        return;
-    }
+
 
     // Safe_vel will be adjusted to remain within fence.
     // We need a separate vector in case adjustment fails,
@@ -752,49 +750,80 @@ void AC_Avoid::adjust_velocity_polygon(float kP, float accel_cmss, Vector2f &des
     const float speed = safe_vel.length();
     const Vector2f stopping_point_plus_margin = position_xy + safe_vel*((2.0f + margin_cm + get_stopping_distance(kP, accel_cmss, speed))/speed);
 
-    for (uint16_t i=0; i<num_points; i++) {
-        uint16_t j = i+1;
-        if (j >= num_points) {
-            j = 0;
-        }
-        // end points of current edge
-        Vector2f start = boundary[j];
-        Vector2f end = boundary[i];
-        if ((AC_Avoid::BehaviourType)_behavior.get() == BEHAVIOR_SLIDE) {
+    if (inside_polygon != stay_inside) {
+        // if vehicle is out of fence but not far away, try go back to fence
+        float cloest_dist = -1.0f;
+        Vector2f cloest_direction;
+        for (uint16_t i=0; i<num_points; i++) {
+            uint16_t j = i+1;
+            if (j >= num_points) {
+                j = 0;
+            }
+            // end points of current edge
+            Vector2f start = boundary[j];
+            Vector2f end = boundary[i];
             // vector from current position to closest point on current edge
             Vector2f limit_direction = Vector2f::closest_point(position_xy, start, end) - position_xy;
             // distance to closest point
             const float limit_distance_cm = limit_direction.length();
-            if (!is_zero(limit_distance_cm)) {
+            if (limit_distance_cm < cloest_dist || cloest_dist < 0.0f) {
                 // We are strictly inside the given edge.
                 // Adjust velocity to not violate this edge.
                 limit_direction /= limit_distance_cm;
-                limit_velocity(kP, accel_cmss, safe_vel, limit_direction, MAX(limit_distance_cm - margin_cm, 0.0f), dt);
-            } else {
-                // We are exactly on the edge - treat this as a fence breach.
-                // i.e. do not adjust velocity.
-                return;
+                cloest_dist = limit_distance_cm;
+                cloest_direction = limit_direction;
             }
-        } else {
-            // find intersection with line segment
-            Vector2f intersection;
-            if (Vector2f::segment_intersection(position_xy, stopping_point_plus_margin, start, end, intersection)) {
-                // vector from current position to point on current edge
-                Vector2f limit_direction = intersection - position_xy;
+        }
+        if (cloest_dist >= 0.0f && cloest_dist < (200.f + margin_cm * 5.0f)) {
+            const float max_speed = get_max_speed(kP, accel_cmss, cloest_dist + margin_cm, dt);
+            safe_vel = cloest_direction*max_speed;
+        }
+    }
+    else {
+        for (uint16_t i=0; i<num_points; i++) {
+            uint16_t j = i+1;
+            if (j >= num_points) {
+                j = 0;
+            }
+            // end points of current edge
+            Vector2f start = boundary[j];
+            Vector2f end = boundary[i];
+            if ((AC_Avoid::BehaviourType)_behavior.get() == BEHAVIOR_SLIDE) {
+                // vector from current position to closest point on current edge
+                Vector2f limit_direction = Vector2f::closest_point(position_xy, start, end) - position_xy;
+                // distance to closest point
                 const float limit_distance_cm = limit_direction.length();
                 if (!is_zero(limit_distance_cm)) {
-                    if (limit_distance_cm <= margin_cm) {
-                        // we are within the margin so stop vehicle
-                        safe_vel.zero();
-                    } else {
-                        // vehicle inside the given edge, adjust velocity to not violate this edge
-                        limit_direction /= limit_distance_cm;
-                        limit_velocity(kP, accel_cmss, safe_vel, limit_direction, MAX(limit_distance_cm - margin_cm, 0.0f), dt);
-                    }
+                    // We are strictly inside the given edge.
+                    // Adjust velocity to not violate this edge.
+                    limit_direction /= limit_distance_cm;
+                    limit_velocity(kP, accel_cmss, safe_vel, limit_direction, MAX(limit_distance_cm - margin_cm, 0.0f), dt);
                 } else {
                     // We are exactly on the edge - treat this as a fence breach.
                     // i.e. do not adjust velocity.
                     return;
+                }
+            } else {
+                // find intersection with line segment
+                Vector2f intersection;
+                if (Vector2f::segment_intersection(position_xy, stopping_point_plus_margin, start, end, intersection)) {
+                    // vector from current position to point on current edge
+                    Vector2f limit_direction = intersection - position_xy;
+                    const float limit_distance_cm = limit_direction.length();
+                    if (!is_zero(limit_distance_cm)) {
+                        if (limit_distance_cm <= margin_cm) {
+                            // we are within the margin so stop vehicle
+                            safe_vel.zero();
+                        } else {
+                            // vehicle inside the given edge, adjust velocity to not violate this edge
+                            limit_direction /= limit_distance_cm;
+                            limit_velocity(kP, accel_cmss, safe_vel, limit_direction, MAX(limit_distance_cm - margin_cm, 0.0f), dt);
+                        }
+                    } else {
+                        // We are exactly on the edge - treat this as a fence breach.
+                        // i.e. do not adjust velocity.
+                        return;
+                    }
                 }
             }
         }

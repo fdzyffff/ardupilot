@@ -28,6 +28,7 @@ bool ModePOSEF2::init(bool ignore_checks)
         pos_control->set_alt_target_to_current_alt();
         pos_control->set_desired_velocity_z(inertial_nav.get_velocity_z());
     }
+    _tookoff = false;
     gcs().send_text(MAV_SEVERITY_WARNING, "POSEF2");
 
     return true;
@@ -176,15 +177,15 @@ void ModePOSEF2::run()
         // call attitude controller
         attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(loiter_nav->get_roll(), loiter_nav->get_pitch(), target_yaw_rate);
 
-        if (!User_rangefinder_check()) {
-            target_climb_rate -= g.pilot_speed_up*0.5f;
-        } else {
-            if (target_climb_rate > -get_pilot_speed_dn()*0.9f) {
-                User_alt_limit(target_climb_rate);
-            } else {
-                // User_alt_limit(target_climb_rate);  
-                target_climb_rate = MAX(target_climb_rate, -50.f);
+        if (!copter.rangefinder_alt_ok()) {
+            if (_tookoff) {
+                target_climb_rate = MAX(-get_pilot_speed_dn(), -50.f);
+            } else if (copter.inertial_nav.get_altitude() > 300.f ) {
+                _tookoff = true;
             }
+        } else {
+            User_alt_limit(target_climb_rate);
+            _tookoff = true;
         }
 
         // adjust climb rate using rangefinder
@@ -218,7 +219,7 @@ void ModePOSEF2::User_alt_limit(float&  target_rate) {
     float accel_cmss = pos_control->get_max_accel_z();
     float rate_max = g.pilot_speed_up;
     float rate_min = -get_pilot_speed_dn();
-    float alt_max = constrain_float(copter.g2.user_parameters.EF2_alt_max, 300.f, 600.f);
+    float alt_max = constrain_float(copter.g2.user_parameters.EF2_alt_max, 100.f, 600.f);
     float alt_min = constrain_float(copter.g2.user_parameters.EF2_alt_min, 60.f, 250.f);
     if (is_zero(kP)) {
         rate_max = MIN(rate_max, safe_sqrt(2.0f * (alt_max - current_rng_alt) * accel_cmss));
@@ -229,8 +230,4 @@ void ModePOSEF2::User_alt_limit(float&  target_rate) {
     }
     rate_max = MAX(rate_min, rate_max);
     target_rate = constrain_float(target_rate, rate_min, rate_max);
-}
-
-bool ModePOSEF2::User_rangefinder_check() {
-    return (copter.inertial_nav.get_altitude() < 50.f || copter.rangefinder_alt_ok());
 }

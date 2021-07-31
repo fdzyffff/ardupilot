@@ -307,7 +307,12 @@ void AC_Loiter::calc_desired_velocity(float nav_dt)
     // TODO: We need to also limit the _desired_accel
     AC_Avoid *_avoid = AP::ac_avoid();
     if (_avoid != nullptr) {
+        Vector2f pre_desired_vel(desired_vel.x, desired_vel.y);
         _avoid->adjust_velocity(_pos_control.get_pos_xy_p().kP(), _accel_cmss, desired_vel, nav_dt);
+        if (!is_zero(pre_desired_vel.length() - desired_vel.length())) {
+            _desired_accel = desired_vel/gnd_speed_limit_cms*pilot_acceleration_max;
+            //gcs().send_text(MAV_SEVERITY_INFO, "%f, %f, %f", pre_desired_vel.x, desired_vel.x, _desired_accel.x);
+        }
     }
 
     // send adjusted feed forward acceleration and velocity back to the Position Controller

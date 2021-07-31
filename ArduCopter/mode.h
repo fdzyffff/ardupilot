@@ -1499,8 +1499,8 @@ protected:
 
 private:
 
+    bool _tookoff;
     float User_get_pilot_desired_yaw_rate(float target_roll);
-    bool User_rangefinder_check();
 };
 
 
@@ -1527,9 +1527,8 @@ protected:
     const char *name4() const override { return "AEF2"; }
 
 private:
-
+    bool _tookoff;
     void User_alt_limit(float&  target_rate);
-    bool User_rangefinder_check();
 };
 
 
@@ -1568,8 +1567,8 @@ protected:
 
 private:
 
+    bool _tookoff;
     float User_get_pilot_desired_yaw_rate(float target_roll);
-    bool User_rangefinder_check();
 
 #if PRECISION_LANDING == ENABLED
     bool _precision_loiter_enabled;
@@ -1611,8 +1610,8 @@ protected:
 
 private:
 
+    bool _tookoff;
     void User_alt_limit(float&  target_rate);
-    bool User_rangefinder_check();
 
 #if PRECISION_LANDING == ENABLED
     bool _precision_loiter_enabled;
