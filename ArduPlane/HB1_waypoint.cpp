@@ -158,9 +158,9 @@ void Plane::HB1_msg_mission2apm_preattack_handle(int32_t time_s) {
     g2.hb1_follow_hover_attack_time.set_and_save(time_s*1000);
     HB1_status_set_HB_Mission_Action(HB1_Mission_PreAttack);
     if (g2.hb1_num_interim > 0) {
-        gcs().send_text(MAV_SEVERITY_INFO, "PreAttack received (#%d) [%d ms]", g2.hb1_num_wp+g2.hb1_num_interim, g2.hb1_follow_hover_attack_time.get());
+        gcs().send_text(MAV_SEVERITY_INFO, "PreAttack received (#%d) [%d ms]", g2.hb1_num_wp.get()+g2.hb1_num_interim.get(), g2.hb1_follow_hover_attack_time.get());
     } else {
-        gcs().send_text(MAV_SEVERITY_INFO, "no interim WP! (#%d)", g2.hb1_num_wp+g2.hb1_num_interim);
+        gcs().send_text(MAV_SEVERITY_INFO, "no interim WP! (#%d)", g2.hb1_num_wp.get()+g2.hb1_num_interim.get());
     }
 }
 
@@ -177,12 +177,23 @@ void Plane::HB1_msg_mission2apm_attack_handle() {
     }
 }
 
+void Plane::HB1_msg_mission2apm_RocketON_handle() {
+    if (!arming.is_armed()) {
+        plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_GROUND_RocketON);
+        gcs().send_text(MAV_SEVERITY_INFO, "Rocket ground ON");
+    } else {
+        gcs().send_text(MAV_SEVERITY_INFO, "Disarm first! for Rocket ground ON");
+    }
+}
+
 void Plane::HB1_msg_mission2apm_EngineSTART_handle() {
     if (!arming.is_armed()) {
         // check if need to re send start cmd
         if ((fabsf(plane.HB1_Power.HB1_engine_rpm.get()) < 50.f) || (g2.hb1_rpm_used == 0)) {
             gcs().send_text(MAV_SEVERITY_INFO, "Engine ground start");
             HB1_status_set_HB_Power_Action(HB1_PowerAction_GROUND_EngineSTART, true);
+        } else {
+            gcs().send_text(MAV_SEVERITY_INFO, "Engine is running");
         }
     } else {
         gcs().send_text(MAV_SEVERITY_INFO, "Disarm first! for Engine ground start");

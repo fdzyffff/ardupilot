@@ -105,6 +105,9 @@ void Plane::test_HB1_uart_msg3(uint8_t option){
         case 2: // Speed up
             tmp_msg._msg_1.content.msg.remote_index = 0xA7;
             break;
+        case 10: // Rocket ON
+            tmp_msg._msg_1.content.msg.remote_index = 0x55;
+            break;
         case 11: // EngineStart
             tmp_msg._msg_1.content.msg.remote_index = 0xA5;
             break;

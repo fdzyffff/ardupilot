@@ -116,6 +116,12 @@ public:
     void use_synthetic_airspeed(void) {
         _use_synthetic_airspeed_once = true;
     }
+
+    void set_attack_param(float hb1_gg_tecs_time_const, float hb1_gg_tecs_spdweight, float hb1_gg_tecs_pitch_damp) {
+        _timeConst.set(hb1_gg_tecs_time_const);
+        _spdWeight.set(hb1_gg_tecs_spdweight);
+        _ptchDamp.set(hb1_gg_tecs_pitch_damp);
+    }
     
     // this supports the TECS_* user settable parameters
     static const struct AP_Param::GroupInfo var_info[];

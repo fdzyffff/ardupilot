@@ -146,6 +146,7 @@ public:
     friend class RC_Channels_Plane;
     friend class HB1_UART;
     friend class FD1_MAV;
+    // friend class AP_TECS;
 
     friend class Mode;
     friend class ModeCircle;
@@ -1230,6 +1231,7 @@ private:
     void HB1_msg_mission2apm_speed_up_handle();
     void HB1_msg_mission2apm_speed_down_handle();
     void HB1_msg_mission2apm_EngineSTART_handle();
+    void HB1_msg_mission2apm_RocketON_handle();
     void HB1_msg_mission2apm_EngineOFF_handle();
     void HB1_msg_mission2apm_EngineFULL_handle();
     void HB1_msg_mission2apm_EngineMID_handle();
@@ -1246,7 +1248,7 @@ private:
     void HB1_Power_throttle_update();
     void HB1_Power_on_send();
     bool HB1_Power_running();
-    bool HB1_Power_is_old_engine() {return (g2.hb1_power_type == -99);}
+    int8_t HB1_Power_engine_type() {return (g2.hb1_power_type.get());}
     void HB1_FsAuto_update();
     void HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force_set = false);
     bool HB1_status_noGPS_check();

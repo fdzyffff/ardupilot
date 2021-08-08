@@ -47,6 +47,10 @@ void Plane::HB1_Mission_update() {
             }
             if (HB1_status_noGPS_check()) {
                 HB1_status_set_HB_Mission_Action(HB1_Mission_FsNoGPS);
+                AP_Mission::Mission_Command temp_cmd;
+                if (mission.get_next_nav_cmd(0, temp_cmd)) {
+                    set_target_altitude_location(temp_cmd.content.location);
+                }
             }
             break;
         case HB1_Mission_PreAttack :

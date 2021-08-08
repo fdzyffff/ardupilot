@@ -121,7 +121,7 @@ void RC_Channel_Plane::do_aux_function(const aux_func_t ch_option, const aux_swi
     case AUX_FUNC::RELAY:
         RC_Channel::do_aux_function_relay(0, ch_flag == HIGH);
         if (ch_flag == HIGH) {
-            plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_GROUND_RocketON);
+            plane.HB1_msg_mission2apm_RocketON_handle();
         }
         else {plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_None);}
         break;
@@ -135,26 +135,16 @@ void RC_Channel_Plane::do_aux_function(const aux_func_t ch_option, const aux_swi
     case AUX_FUNC::RELAY3:
         RC_Channel::do_aux_function_relay(2, ch_flag == HIGH);
         if (ch_flag == HIGH) {
-            plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_GROUND_EngineOFF);
+            plane.HB1_msg_mission2apm_EngineOFF_handle();
         }
         else {plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_None);}
         break;
     case AUX_FUNC::RELAY4:
         RC_Channel::do_aux_function_relay(3, ch_flag == HIGH);
         if (ch_flag == HIGH) {
-            if (plane.arming.is_armed() && plane.is_flying()) {
-                plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_EngineSTART, true);
-            } else {
-                plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_GROUND_EngineSTART);
-            }
-        } else {
-            if (plane.arming.is_armed()) {
-                ;
-            } else {
-                //plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_None);
-                ;
-            }
+            plane.HB1_msg_mission2apm_EngineSTART_handle();
         }
+        else {plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_None);}
         break;
 
     default:

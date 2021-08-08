@@ -577,9 +577,13 @@ public:
     AP_Int32 hb1_follow_hover_wp_time;
     AP_Int32 hb1_follow_hover_attack_time;
     AP_Int16 hb1_acc_radius;
+    AP_Int16 hb1_acc_radius_preattack;
     AP_Int32 hb1_fsauto_time;
     AP_Int16 hb1_power_type;
     AP_Float hb1_gg_sec;
+    AP_Float hb1_gg_tecs_time_const;
+    AP_Float hb1_gg_tecs_spdweight;
+    AP_Float hb1_gg_tecs_pitch_damp;
 
     AP_Int8 hb1_test_mode;
     AP_Int8 hb1_rpm_used;

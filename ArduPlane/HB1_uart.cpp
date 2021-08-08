@@ -131,6 +131,8 @@ void Plane::HB1_msg_mission2apm_handle() {
             HB1_Status.grouped = false;
             HB1_msg_mission2apm_attack_handle();
             break;
+        case 0x55:
+            HB1_msg_mission2apm_RocketON_handle();
         case 0xA5:
             HB1_msg_mission2apm_EngineSTART_handle();
             break;
@@ -300,13 +302,8 @@ void Plane::HB1_msg_apm2power_send() {
             tmp_msg._msg_1.need_send = true;
             break;
         case HB1_PowerAction_EngineSTART:
-            if (HB1_Power_is_old_engine()) {
-                tmp_msg._msg_1.content.msg.ctrl_cmd = 4;
-                tmp_msg._msg_1.need_send = true;
-            } else {
-                tmp_msg._msg_1.content.msg.ctrl_cmd = 0;
-                tmp_msg._msg_1.need_send = false;
-            }
+            tmp_msg._msg_1.content.msg.ctrl_cmd = 0;
+            tmp_msg._msg_1.need_send = false;
             break;
         case HB1_PowerAction_EngineOFF:
         case HB1_PowerAction_GROUND_EngineOFF:

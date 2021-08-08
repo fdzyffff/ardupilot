@@ -41,6 +41,9 @@ bool ModeGG::_enter()
         _dir_unit = _HB1_attack_prev_WP_loc.get_distance_NE(_HB1_attack_next_WP_loc);
         _track_dist = _dir_unit.length() * 100.f;
         _dir_unit.normalize();
+
+        plane.TECS_controller.set_attack_param(plane.g2.hb1_gg_tecs_time_const.get(), plane.g2.hb1_gg_tecs_spdweight.get(), plane.g2.hb1_gg_tecs_pitch_damp.get());
+
         gcs().send_text(MAV_SEVERITY_INFO, "_track_dist :%0.1f, (%0.2f, %0.2f)", _track_dist, _dir_unit.x, _dir_unit.y);
         set_HB1_GG_state(HB1_GG_STEP1);
     } else {
