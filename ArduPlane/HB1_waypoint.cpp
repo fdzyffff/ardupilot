@@ -1,22 +1,22 @@
 #include "Plane.h"
 
 void Plane::HB1_wp_init() {
-    HB1_Status.wp_to_renew = true;
+    HB1_Status.wp_to_renew = false;
     bool read_wp = (g2.hb1_num_wp != 0);
-    bool read_interim = true;
-    bool read_attack = true;
+    bool read_interim = false;
+    bool read_attack = false;
     if (g2.hb1_num_interim != 0) {
-        read_interim = plane.mission.read_cmd_from_storage(g2.hb1_num_interim,HB1_interim_cmd);     
+        read_interim = plane.mission.read_cmd_from_storage(g2.hb1_num_wp+g2.hb1_num_interim,HB1_interim_cmd);     
     }
     if (g2.hb1_num_attack != 0) {
-        read_attack = plane.mission.read_cmd_from_storage(g2.hb1_num_attack,HB1_attack_cmd);     
+        read_attack = plane.mission.read_cmd_from_storage(g2.hb1_num_wp+g2.hb1_num_interim+g2.hb1_num_attack,HB1_attack_cmd);     
     }
     if (!read_wp || !read_interim || !read_attack) {
-        gcs().send_text(MAV_SEVERITY_INFO, "clean mis %d(%d):%d(%d):%d(%d)",read_wp,g2.hb1_num_wp,read_interim,g2.hb1_num_interim,read_attack,g2.hb1_num_attack);
         g2.hb1_num_wp.set_and_save(0);
         g2.hb1_num_interim.set_and_save(0);
         g2.hb1_num_attack.set_and_save(0);
         plane.mission.clear();
+        gcs().send_text(MAV_SEVERITY_INFO, "clean mis %d(%d):%d(%d):%d(%d)",read_wp,g2.hb1_num_wp,read_interim,g2.hb1_num_interim,read_attack,g2.hb1_num_attack);
     } else {
         gcs().send_text(MAV_SEVERITY_INFO, "recover mis %d(%d):%d(%d):%d(%d)",read_wp,g2.hb1_num_wp,read_interim,g2.hb1_num_interim,read_attack,g2.hb1_num_attack);
     }

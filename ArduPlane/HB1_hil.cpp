@@ -10,7 +10,7 @@ void Plane::FD1_mav_init()
 
 void Plane::FD1_mav_read()
 {
-    static uint32_t last_update_ms = millis();
+    // static uint32_t last_update_ms = millis();
     if (!FD1_mav.initialized()) {return;}
     mavlink_status_t *chan0_status = mavlink_get_channel_status(MAVLINK_COMM_0);
     uint8_t saved_seq = chan0_status->current_tx_seq;
@@ -96,14 +96,14 @@ void Plane::FD1_mav_read()
                         plane.ahrs.reset_attitude(packet.roll, packet.pitch, packet.yaw);
                     }
                     // plane.ahrs.reset_attitude(packet.roll, packet.pitch, packet.yaw);
-                    if (tnow - last_update_ms > 2000) {
-                        gcs().send_text(MAV_SEVERITY_INFO, "att: %0.2f, %0.2f %0.2f", packet.roll, packet.pitch, packet.yaw);
-                        gcs().send_text(MAV_SEVERITY_INFO, "gyro: %0.2f, %0.2f %0.2f", gyros.x, gyros.y, gyros.z);
-                        gcs().send_text(MAV_SEVERITY_INFO, "acc: %0.2f, %0.2f %0.2f", accels.x, accels.y, accels.z);
-                        gcs().send_text(MAV_SEVERITY_INFO, "pos: %d, %d, %d", packet.lat, packet.lon, packet.alt/10);
-                        gcs().send_text(MAV_SEVERITY_INFO, "vel: %0.2f, %0.2f %0.2f", vel.x, vel.y, vel.z);
-                        last_update_ms = tnow;
-                    }
+                    // if (tnow - last_update_ms > 2000) {
+                    //     gcs().send_text(MAV_SEVERITY_INFO, "att: %0.2f, %0.2f %0.2f", packet.roll, packet.pitch, packet.yaw);
+                    //     gcs().send_text(MAV_SEVERITY_INFO, "gyro: %0.2f, %0.2f %0.2f", gyros.x, gyros.y, gyros.z);
+                    //     gcs().send_text(MAV_SEVERITY_INFO, "acc: %0.2f, %0.2f %0.2f", accels.x, accels.y, accels.z);
+                    //     gcs().send_text(MAV_SEVERITY_INFO, "pos: %d, %d, %d", packet.lat, packet.lon, packet.alt/10);
+                    //     gcs().send_text(MAV_SEVERITY_INFO, "vel: %0.2f, %0.2f %0.2f", vel.x, vel.y, vel.z);
+                    //     last_update_ms = tnow;
+                    // }
 
                     break;
                 }

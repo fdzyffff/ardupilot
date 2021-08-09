@@ -43,6 +43,7 @@ bool ModeGG::_enter()
         _dir_unit.normalize();
 
         plane.TECS_controller.set_attack_param(plane.g2.hb1_gg_tecs_time_const.get(), plane.g2.hb1_gg_tecs_spdweight.get(), plane.g2.hb1_gg_tecs_pitch_damp.get());
+        plane.aparm.airspeed_cruise_cm.set(plane.g2.hb1_gg_spd.get()*100.f);
 
         gcs().send_text(MAV_SEVERITY_INFO, "_track_dist :%0.1f, (%0.2f, %0.2f)", _track_dist, _dir_unit.x, _dir_unit.y);
         set_HB1_GG_state(HB1_GG_STEP1);
@@ -117,7 +118,9 @@ void ModeGG::update()
             // if (delta_z_cm < 1000.f) {
             //     plane.nav_pitch_cd = constrain_int16((int16_t)target_pitch, -8500, -6500);
             // } else {
-            plane.nav_pitch_cd = MIN(plane.nav_pitch_cd, constrain_int16((int16_t)target_pitch, -8500, 500));
+            float tmp_pitch = MIN(plane.nav_pitch_cd, constrain_int16((int16_t)target_pitch, -8500, 500));
+            tmp_pitch += 1;
+            //plane.nav_pitch_cd = MIN(plane.nav_pitch_cd, constrain_int16((int16_t)target_pitch, -8500, 500));
             // }
             //plane.aparm.airspeed_cruise_cm.set(final_speed_cm);
 

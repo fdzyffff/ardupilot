@@ -584,6 +584,7 @@ public:
     AP_Float hb1_gg_tecs_time_const;
     AP_Float hb1_gg_tecs_spdweight;
     AP_Float hb1_gg_tecs_pitch_damp;
+    AP_Float hb1_gg_spd;
 
     AP_Int8 hb1_test_mode;
     AP_Int8 hb1_rpm_used;
