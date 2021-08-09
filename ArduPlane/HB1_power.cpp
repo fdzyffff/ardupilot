@@ -320,5 +320,5 @@ bool Plane::HB1_Power_running() {
     if (g2.hb1_rpm_used == 1 && plane.HB1_Power.HB1_engine_rpm.get() > 1000.f) {
         return true;
     }
-    return true;
+    return false;
 }

@@ -31,6 +31,21 @@ void Plane::adjust_altitude_target()
         control_mode == &mode_cruise) {
         return;
     }
+    if (control_mode == &mode_gg) {
+        if (target_altitude.offset_cm != 0 && 
+            !current_loc.past_interval_finish_line(prev_WP_loc, next_WP_loc)) {
+            // control climb/descent rate
+            set_target_altitude_location(next_WP_loc);
+            float tmp_wp_proportion = 1.0f - current_loc.line_path_proportion(prev_WP_loc, next_WP_loc); 
+            tmp_wp_proportion = constrain_float(tmp_wp_proportion, 0.0f, 1.0f);
+            change_target_altitude(-target_altitude.offset_cm*tmp_wp_proportion);
+        } else {
+            set_target_altitude_location(next_WP_loc);
+        }
+        altitude_error_cm = calc_altitude_error_cm();
+        return;
+    }
+
     if (landing.is_flaring()) {
         // during a landing flare, use TECS_LAND_SINK as a target sink
         // rate, and ignores the target altitude

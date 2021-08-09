@@ -402,7 +402,7 @@ void Plane::test_HB1_mission_send_msg() {
 
 Location Plane::test_HB1_generate_wp() {
     static int16_t index_loc = 0;
-    float alt = 17000.0f;
+    float alt = 27000.0f;
     Vector3f tmp_xyz = Vector3f(0.0f, 0.0f, alt);
     switch (index_loc) {
         case 0 :
@@ -422,7 +422,7 @@ Location Plane::test_HB1_generate_wp() {
 
 Location Plane::test_HB1_generate_interim_attack(bool is_attack) {
     static int16_t index_loc = 0;
-    float alt = 35000.0f;
+    float alt = 45000.0f;
     Vector3f tmp_xyz = Vector3f(0.0f, 0.0f, alt);
     switch (index_loc) {
         case 0 :
@@ -435,7 +435,7 @@ Location Plane::test_HB1_generate_interim_attack(bool is_attack) {
             tmp_xyz = Vector3f(-200000.0f * (float)index_loc, -200000.0f * (float)index_loc, alt);
             break;
     }
-    if (is_attack) {tmp_xyz.z = 0.0f;}
+    if (is_attack) {tmp_xyz.z = 10000.0f;}
     index_loc++;
     Location tmp_loc(tmp_xyz);
     return tmp_loc;

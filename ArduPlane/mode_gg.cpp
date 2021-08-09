@@ -44,6 +44,7 @@ bool ModeGG::_enter()
 
         plane.TECS_controller.set_attack_param(plane.g2.hb1_gg_tecs_time_const.get(), plane.g2.hb1_gg_tecs_spdweight.get(), plane.g2.hb1_gg_tecs_pitch_damp.get());
         plane.aparm.airspeed_cruise_cm.set(plane.g2.hb1_gg_spd.get()*100.f);
+        plane.aparm.airspeed_max.set(plane.g2.hb1_gg_spd.get());
 
         gcs().send_text(MAV_SEVERITY_INFO, "_track_dist :%0.1f, (%0.2f, %0.2f)", _track_dist, _dir_unit.x, _dir_unit.y);
         set_HB1_GG_state(HB1_GG_STEP1);
@@ -70,6 +71,7 @@ void ModeGG::update()
             if (plane.HB1_status_noGPS_check()) {
                 set_HB1_GG_state(HB1_GG_STEP2);
             }
+            plane.aparm.airspeed_cruise_cm.set(plane.g2.hb1_gg_spd.get()*100.f);
             // use to update wp_distance in navigation.
             plane.prev_WP_loc = _HB1_attack_prev_WP_loc;
             plane.next_WP_loc = _HB1_attack_next_WP_loc;

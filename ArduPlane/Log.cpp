@@ -132,6 +132,10 @@ struct PACKED log_Nav_Tuning {
 // Write a navigation tuning packet
 void Plane::Log_Write_Nav_Tuning()
 {
+    float _tmp_target_alt = target_altitude.amsl_cm;
+    float _tmp_target_alt_wp = next_WP_loc.alt;
+    _tmp_target_alt -= home.alt;
+    _tmp_target_alt_wp -= home.alt;
     struct log_Nav_Tuning pkt = {
         LOG_PACKET_HEADER_INIT(LOG_NTUN_MSG),
         time_us             : AP_HAL::micros64(),
@@ -144,7 +148,7 @@ void Plane::Log_Write_Nav_Tuning()
         airspeed_error      : airspeed_error,
         target_lat          : next_WP_loc.lat,
         target_lng          : next_WP_loc.lng,
-        target_alt          : next_WP_loc.alt,
+        target_alt          : (int32_t)_tmp_target_alt,
         target_airspeed     : target_airspeed_cm,
     };
     logger.WriteBlock(&pkt, sizeof(pkt));
@@ -220,6 +224,7 @@ struct PACKED log_AETR {
     int16_t flap;
     int16_t temp;
     int16_t rpm;
+    int16_t state;
     int16_t fuel;
 };
 
@@ -235,6 +240,7 @@ void Plane::Log_Write_AETR()
         ,flap     : SRV_Channels::get_output_scaled(SRV_Channel::k_flap_auto)
         ,temp     : (int16_t)(HB1_Power.HB1_engine_temp)
         ,rpm      : (int16_t)HB1_Power.HB1_engine_rpm.get()
+        ,state    : (int16_t)HB1_status_get_HB_Mission_Action()
         ,fuel     : (int16_t)HB1_Power.HB1_engine_fuel
         };
 
@@ -281,7 +287,7 @@ const struct LogStructure Plane::log_structure[] = {
     { LOG_PIQA_MSG, sizeof(log_PID), \
       "PIQA", PID_FMT,  PID_LABELS, PID_UNITS, PID_MULTS }, \
     { LOG_AETR_MSG, sizeof(log_AETR), \
-      "AETR", "Qhhhhhhhh",  "TimeUS,Ail,Elev,Thr,Rudd,Flap,Temp,Rpm,Fuel", "s--------", "F--------" },  \
+      "AETR", "Qhhhhhhhhh",  "TimeUS,Ail,Elev,Thr,Rudd,Flap,Temp,Rpm,STAT,Fuel", "s---------", "F---------" },  \
 };
 
 void Plane::Log_Write_Vehicle_Startup_Messages()

@@ -62,12 +62,18 @@ void Plane::HB1_uart_update_50Hz()
 
     // for test
     if (HB1_test.status != 0) {
-        test_HB1_mission_send_msg();
+        // test_HB1_mission_send_msg();
         //gcs().send_text(MAV_SEVERITY_INFO, "SIM out running");
     }
 
     HB1_uart_mission.write();
-    HB1_uart_cam.write();
+    int16_t _cam_count_trig = 50/constrain_int16(g2.hb1_cam_rate.get(), 1, 50);
+    static int16_t _cam_count = 0;
+    if (_cam_count >= _cam_count_trig) {
+        HB1_uart_cam.write();
+        _cam_count = 0;
+    }
+    _cam_count += 1;
 
     //FD1_mav_read();
     FD1_mav_send();

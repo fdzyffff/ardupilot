@@ -1288,6 +1288,7 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("HB1_GG_SP", 44, ParametersG2, hb1_gg_tecs_spdweight, 0.2f),
     AP_GROUPINFO("HB1_GG_PD", 45, ParametersG2, hb1_gg_tecs_pitch_damp, 0.2f),
     AP_GROUPINFO("HB1_GG_SPD", 46, ParametersG2, hb1_gg_spd, 50.f),
+    AP_GROUPINFO("HB1_CAM_RATE", 47, ParametersG2, hb1_cam_rate, 20),
 
     AP_GROUPEND
 };
