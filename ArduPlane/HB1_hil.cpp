@@ -10,7 +10,7 @@ void Plane::FD1_mav_init()
 
 void Plane::FD1_mav_read()
 {
-    // static uint32_t last_update_ms = millis();
+    static uint32_t last_update_ms = millis();
     if (!FD1_mav.initialized()) {return;}
     mavlink_status_t *chan0_status = mavlink_get_channel_status(MAVLINK_COMM_0);
     uint8_t saved_seq = chan0_status->current_tx_seq;
@@ -47,7 +47,7 @@ void Plane::FD1_mav_read()
                     // sanity check location
                     if (!check_latlng(packet.lat, packet.lon) || (packet.lat==0&&packet.lon==0)) {
                         // setup airspeed pressure based on 3D speed, no wind
-                        plane.airspeed.setHIL(sq(vel.length()) / 2.0f + 2013);
+                        // plane.airspeed.setHIL(sq(vel.length()) / 2.0f + 2013);
             
                         plane.gps.setHIL(0, AP_GPS::NO_FIX,
                                         tnow,
@@ -55,7 +55,7 @@ void Plane::FD1_mav_read()
 
                     } else {
                         // setup airspeed pressure based on 3D speed, no wind
-                        plane.airspeed.setHIL(sq(vel.length()) / 2.0f + 2013);
+                        // plane.airspeed.setHIL(sq(vel.length()) / 2.0f + 2013);
             
                         plane.gps.setHIL(0, AP_GPS::GPS_OK_FIX_3D,
                                         tnow,
@@ -104,6 +104,24 @@ void Plane::FD1_mav_read()
                     //     gcs().send_text(MAV_SEVERITY_INFO, "vel: %0.2f, %0.2f %0.2f", vel.x, vel.y, vel.z);
                     //     last_update_ms = tnow;
                     // }
+
+                    break;
+                }
+                case MAVLINK_MSG_ID_COMMAND_LONG: {
+                    uint32_t tnow = millis();
+                    mavlink_command_long_t packet;
+                    mavlink_msg_command_long_decode(&msg, &packet); 
+                    switch(packet.command) {
+                        case MAV_CMD_USER_1:
+                            plane.airspeed.setHIL(sq(packet.param1) / 2.0f + 2013);
+                            if (tnow - last_update_ms > 2000) {
+                                //gcs().send_text(MAV_SEVERITY_INFO, "arspd: %0.2f, %0.2f", packet.param1, plane.airspeed.get_airspeed());
+                                last_update_ms = tnow;
+                            }
+                            break;
+                        default:
+                            break;
+                    }
 
                     break;
                 }

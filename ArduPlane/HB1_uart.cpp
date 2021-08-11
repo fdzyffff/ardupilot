@@ -139,6 +139,7 @@ void Plane::HB1_msg_mission2apm_handle() {
             break;
         case 0x55:
             HB1_msg_mission2apm_RocketON_handle();
+            break;
         case 0xA5:
             HB1_msg_mission2apm_EngineSTART_handle();
             break;

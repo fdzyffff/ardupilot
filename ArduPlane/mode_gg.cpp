@@ -43,8 +43,8 @@ bool ModeGG::_enter()
         _dir_unit.normalize();
 
         plane.TECS_controller.set_attack_param(plane.g2.hb1_gg_tecs_time_const.get(), plane.g2.hb1_gg_tecs_spdweight.get(), plane.g2.hb1_gg_tecs_pitch_damp.get());
-        plane.aparm.airspeed_cruise_cm.set(plane.g2.hb1_gg_spd.get()*100.f);
-        plane.aparm.airspeed_max.set(plane.g2.hb1_gg_spd.get());
+        plane.aparm.airspeed_cruise_cm.set_and_notify(plane.g2.hb1_gg_spd.get()*100.f);
+        plane.aparm.airspeed_max.set_and_notify(plane.g2.hb1_gg_spd.get());
 
         gcs().send_text(MAV_SEVERITY_INFO, "_track_dist :%0.1f, (%0.2f, %0.2f)", _track_dist, _dir_unit.x, _dir_unit.y);
         set_HB1_GG_state(HB1_GG_STEP1);
@@ -64,7 +64,7 @@ void ModeGG::update()
 
     float final_gg_sec = constrain_float(plane.g2.hb1_gg_sec, 0.5f, 10.f);
     // set nav_roll and nav_pitch using sticks
-    float final_speed_cm = 100.f* (plane.g2.hb1_follow_speed + plane.g2.hb1_follow_speed_range);
+    float final_speed_cm = plane.g2.hb1_gg_spd.get()*100.f;
     switch(HB1_GG_state) {
         case HB1_GG_STEP1:
         {
@@ -141,8 +141,8 @@ void ModeGG::update()
 
 
 
-
-
+            float airspeed_measured = 0;
+            if (plane.ahrs.airspeed_estimate(&airspeed_measured)) {final_speed_cm = airspeed_measured*100.f;}
             // once track covered, go final stage
             if ((_track_dist - _track_covered) < -(MAX(0.1f,final_gg_sec) * final_speed_cm)) {
                 set_HB1_GG_state(HB1_GG_STEP2);

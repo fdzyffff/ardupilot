@@ -118,9 +118,11 @@ public:
     }
 
     void set_attack_param(float hb1_gg_tecs_time_const, float hb1_gg_tecs_spdweight, float hb1_gg_tecs_pitch_damp) {
-        _timeConst.set(hb1_gg_tecs_time_const);
-        _spdWeight.set(hb1_gg_tecs_spdweight);
-        _ptchDamp.set(hb1_gg_tecs_pitch_damp);
+        _maxClimbRate.set_and_notify(60.f);
+        _maxSinkRate.set_and_notify(60.f);
+        _timeConst.set_and_notify(hb1_gg_tecs_time_const);
+        _spdWeight.set_and_notify(hb1_gg_tecs_spdweight);
+        _ptchDamp.set_and_notify(hb1_gg_tecs_pitch_damp);
     }
     
     // this supports the TECS_* user settable parameters
