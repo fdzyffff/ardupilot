@@ -93,6 +93,7 @@ public:
     // used by HIL to set the airspeed
     void set_HIL(float airspeed) {
         state[primary].airspeed = airspeed;
+        state[primary].raw_airspeed = airspeed;
     }
 
     // return the differential pressure in Pascal for the last airspeed reading

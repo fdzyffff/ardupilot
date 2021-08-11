@@ -19,6 +19,7 @@ void Plane::HB1_wp_init() {
         gcs().send_text(MAV_SEVERITY_INFO, "clean mis %d(%d):%d(%d):%d(%d)",read_wp,g2.hb1_num_wp,read_interim,g2.hb1_num_interim,read_attack,g2.hb1_num_attack);
     } else {
         gcs().send_text(MAV_SEVERITY_INFO, "recover mis %d(%d):%d(%d):%d(%d)",read_wp,g2.hb1_num_wp,read_interim,g2.hb1_num_interim,read_attack,g2.hb1_num_attack);
+        HB1_Status.wp_to_renew = true;
     }
 }
 

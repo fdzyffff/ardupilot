@@ -114,8 +114,9 @@ void Plane::FD1_mav_read()
                     switch(packet.command) {
                         case MAV_CMD_USER_1:
                             plane.airspeed.setHIL(sq(packet.param1) / 2.0f + 2013);
+                            plane.airspeed.set_HIL(packet.param1);
                             if (tnow - last_update_ms > 2000) {
-                                //gcs().send_text(MAV_SEVERITY_INFO, "arspd: %0.2f, %0.2f", packet.param1, plane.airspeed.get_airspeed());
+                                // gcs().send_text(MAV_SEVERITY_INFO, "arspd: %0.2f, %0.2f", packet.param1, plane.airspeed.get_airspeed());
                                 last_update_ms = tnow;
                             }
                             break;

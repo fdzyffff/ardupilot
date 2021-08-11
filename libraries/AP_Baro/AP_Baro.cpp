@@ -322,6 +322,7 @@ float AP_Baro::get_altitude_difference(float base_pressure, float pressure) cons
 // assumes standard atmosphere lapse rate
 float AP_Baro::get_EAS2TAS(void)
 {
+
     float altitude = get_altitude();
     if ((fabsf(altitude - _last_altitude_EAS2TAS) < 25.0f) && !is_zero(_EAS2TAS)) {
         // not enough change to require re-calculating

@@ -406,6 +406,11 @@ void AP_Airspeed::read(uint8_t i)
         state[i].filtered_pressure = 0.7f * state[i].filtered_pressure + 0.3f * airspeed_pressure;
     }
 
+    if (state[i].hil_set) {
+        state[i].last_pressure  = airspeed_pressure;
+        state[i].last_update_ms = AP_HAL::millis();
+        return;
+    }
     /*
       we support different pitot tube setups so user can choose if
       they want to be able to detect pressure on the static port
