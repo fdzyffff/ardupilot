@@ -11,13 +11,18 @@ void Plane::FD1_mav_init()
 void Plane::FD1_mav_read()
 {
     static uint32_t last_update_ms = millis();
+    uint32_t tnow = millis();
+    static uint32_t pk0_count = 0;
+    static uint32_t pk1_count = 0;
+    static uint32_t pk2_count = 0;
     if (!FD1_mav.initialized()) {return;}
     mavlink_status_t *chan0_status = mavlink_get_channel_status(MAVLINK_COMM_0);
     uint8_t saved_seq = chan0_status->current_tx_seq;
     uint8_t saved_flags = chan0_status->flags;
     //chan0_status->flags |= MAVLINK_STATUS_FLAG_OUT_MAVLINK1;
     while (FD1_mav.get_port()->available()>0) {
-        int8_t temp = FD1_mav.get_port()->read();
+        uint8_t temp = FD1_mav.get_port()->read();
+        if (temp == 0xFE) pk0_count++;
         mavlink_message_t msg;
         mavlink_status_t status;
         uint8_t ret = mavlink_frame_char_buffer(&FD1_mav.mavlink.rxmsg, &FD1_mav.mavlink.status, temp, &msg, &status);
@@ -34,8 +39,8 @@ void Plane::FD1_mav_read()
                     if (plane.g.hil_mode != 1) {
                         break;
                     }
+                    pk1_count++;
 
-                    uint32_t tnow = millis();
                     mavlink_hil_state_t packet;
                     mavlink_msg_hil_state_decode(&msg, &packet);
             
@@ -108,17 +113,21 @@ void Plane::FD1_mav_read()
                     break;
                 }
                 case MAVLINK_MSG_ID_COMMAND_LONG: {
-                    uint32_t tnow = millis();
+                    if (plane.g.hil_mode != 1) {
+                        break;
+                    }
+                    pk2_count++;
                     mavlink_command_long_t packet;
                     mavlink_msg_command_long_decode(&msg, &packet); 
                     switch(packet.command) {
                         case MAV_CMD_USER_1:
                             plane.airspeed.setHIL(sq(packet.param1) / 2.0f + 2013);
                             plane.airspeed.set_HIL(packet.param1);
-                            if (tnow - last_update_ms > 2000) {
-                                // gcs().send_text(MAV_SEVERITY_INFO, "arspd: %0.2f, %0.2f", packet.param1, plane.airspeed.get_airspeed());
-                                last_update_ms = tnow;
-                            }
+                            plane.barometer.setHIL_EAS2TAS(packet.param2);
+                            // if (tnow - last_update_ms > 2000) {
+                            //     gcs().send_text(MAV_SEVERITY_INFO, "arspd: %0.2f, %0.2f", packet.param1, plane.airspeed.get_airspeed());
+                            //     last_update_ms = tnow;
+                            // }
                             break;
                         default:
                             break;
@@ -133,6 +142,13 @@ void Plane::FD1_mav_read()
     }
     chan0_status->current_tx_seq = saved_seq;
     chan0_status->flags = saved_flags;
+    if (tnow - last_update_ms > 1000) {
+        //gcs().send_text(MAV_SEVERITY_INFO, "raw: %d, att: %d, arspd: %d", pk0_count, pk1_count, pk2_count);
+        last_update_ms = tnow;
+        pk0_count = 0;
+        pk1_count = 0;
+        pk2_count = 0;
+    }
 }
 
 

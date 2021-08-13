@@ -124,6 +124,7 @@ public:
 
     // HIL (and SITL) interface, setting altitude
     void setHIL(float altitude_msl);
+    void setHIL_EAS2TAS(float EAS2TAS);
 
     // HIL (and SITL) interface, setting pressure, temperature, altitude and climb_rate
     // used by Replay
@@ -140,6 +141,7 @@ public:
 
     // HIL variables
     struct {
+        float EAS2TAS;
         float pressure;
         float temperature;
         float altitude;
@@ -158,7 +160,7 @@ public:
     uint8_t num_instances(void) const { return _num_sensors; }
 
     // enable HIL mode
-    void set_hil_mode(void) { _hil_mode = true; }
+    void set_hil_mode(void) { _hil_mode = true; _hil.EAS2TAS = -1.f;}
 
     // set baro drift amount
     void set_baro_drift_altitude(float alt) { _alt_offset = alt; }

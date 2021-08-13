@@ -93,6 +93,10 @@ void AP_Baro::setHIL(float altitude_msl)
     _hil.updated = true;
 }
 
+void AP_Baro::setHIL_EAS2TAS(float EAS2TAS)
+{
+    _hil.EAS2TAS = EAS2TAS;
+}
 /*
   set HIL pressure and temperature for an instance
  */

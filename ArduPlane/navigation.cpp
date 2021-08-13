@@ -223,10 +223,11 @@ void Plane::update_loiter(uint16_t radius)
             quadplane.guided_start();
         }
     } else if ((loiter.start_time_ms == 0 &&
-                (control_mode == &mode_auto || control_mode == &mode_guided) &&
+                (control_mode == &mode_auto) &&
                 auto_state.crosstrack &&
                 current_loc.get_distance(next_WP_loc) > radius*3) ||
-               (control_mode == &mode_rtl && quadplane.available() && quadplane.rtl_mode == 1)) {
+               (control_mode == &mode_rtl && quadplane.available() && quadplane.rtl_mode == 1) || 
+               (control_mode == &mode_guided)) {
         /*
           if never reached loiter point and using crosstrack and somewhat far away from loiter point
           navigate to it like in auto-mode for normal crosstrack behavior
