@@ -174,7 +174,7 @@ void Plane::HB1_Power_status_update() {
             }
             break;
         case HB1_PowerAction_GROUND_RocketON: // triggered by RC
-            if (timer > 2000) {
+            if (timer > 10000) {
                 HB1_status_set_HB_Power_Action(HB1_PowerAction_None);
             }
         case HB1_PowerAction_GROUND_EngineOFF: // triggered by RC OR cmd
