@@ -249,6 +249,15 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("OPTIONS", 28, AP_TECS, _options, 0),
 
+    AP_GROUPINFO("GCLMB_MAX",   29, AP_TECS, _hb1_maxClimbRate, 5.0f),
+    AP_GROUPINFO("GPTCH_DAMP",  30, AP_TECS, _hb1_ptchDamp, 0.0f),
+    AP_GROUPINFO("GSINK_MAX",   31, AP_TECS, _hb1_maxSinkRate, 5.0f),
+    AP_GROUPINFO("GINTEG_GAIN", 32, AP_TECS, _hb1_integGain, 0.1f),
+    AP_GROUPINFO("GVERT_ACC",   33, AP_TECS, _hb1_vertAccLim, 7.0f),
+    AP_GROUPINFO("GTIME_CONST", 34, AP_TECS, _hb1_timeConst, 5.0f),
+    AP_GROUPINFO("GTHR_DAMP",   35, AP_TECS, _hb1_thrDamp, 0.5f),
+    AP_GROUPINFO("GSPDWEIGHT",  36, AP_TECS, _hb1_spdWeight, 1.0f),
+
     AP_GROUPEND
 };
 

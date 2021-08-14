@@ -42,7 +42,7 @@ bool ModeGG::_enter()
         _track_dist = _dir_unit.length() * 100.f;
         _dir_unit.normalize();
 
-        plane.TECS_controller.set_attack_param(plane.g2.hb1_gg_tecs_time_const.get(), plane.g2.hb1_gg_tecs_spdweight.get(), plane.g2.hb1_gg_tecs_pitch_damp.get());
+        plane.TECS_controller.set_attack_param();
         plane.aparm.airspeed_cruise_cm.set_and_notify(plane.g2.hb1_gg_spd.get()*100.f);
         plane.aparm.airspeed_max.set_and_notify(plane.g2.hb1_gg_spd.get());
 

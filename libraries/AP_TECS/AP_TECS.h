@@ -117,12 +117,15 @@ public:
         _use_synthetic_airspeed_once = true;
     }
 
-    void set_attack_param(float hb1_gg_tecs_time_const, float hb1_gg_tecs_spdweight, float hb1_gg_tecs_pitch_damp) {
-        _maxClimbRate.set_and_notify(100.f);
-        _maxSinkRate.set_and_notify(100.f);
-        _timeConst.set_and_notify(hb1_gg_tecs_time_const);
-        _spdWeight.set_and_notify(hb1_gg_tecs_spdweight);
-        _ptchDamp.set_and_notify(hb1_gg_tecs_pitch_damp);
+    void set_attack_param() {
+        _maxClimbRate.set_and_notify(_hb1_maxClimbRate.get());
+        _ptchDamp.set_and_notify(_hb1_ptchDamp.get());
+        _maxSinkRate.set_and_notify(_hb1_maxSinkRate.get());
+        _integGain.set_and_notify(_hb1_integGain.get());
+        _vertAccLim.set_and_notify(_hb1_vertAccLim.get());
+        _timeConst.set_and_notify(_hb1_timeConst.get());
+        _thrDamp.set_and_notify(_hb1_thrDamp.get());
+        _spdWeight.set_and_notify(_hb1_spdWeight.get());
     }
     
     // this supports the TECS_* user settable parameters
@@ -175,6 +178,15 @@ private:
     AP_Int8  _land_pitch_max;
     AP_Float _maxSinkRate_approach;
     AP_Int32 _options;
+
+    AP_Float _hb1_maxClimbRate;
+    AP_Float _hb1_ptchDamp;
+    AP_Float _hb1_maxSinkRate;
+    AP_Float _hb1_integGain;
+    AP_Float _hb1_vertAccLim;
+    AP_Float _hb1_timeConst;
+    AP_Float _hb1_thrDamp;
+    AP_Float _hb1_spdWeight;
 
     enum {
         OPTION_GLIDER_ONLY=(1<<0),

@@ -1284,9 +1284,6 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("MIS_N_INTERIM", 40, ParametersG2, hb1_num_interim, 0),
     AP_GROUPINFO("MIS_N_ATTACK", 41, ParametersG2, hb1_num_attack, 0),
     AP_GROUPINFO("HIL_TEST", 42, ParametersG2, hil_test, 0),
-    AP_GROUPINFO("HB1_GG_TM", 43, ParametersG2, hb1_gg_tecs_time_const, 6.0f),
-    AP_GROUPINFO("HB1_GG_SP", 44, ParametersG2, hb1_gg_tecs_spdweight, 0.2f),
-    AP_GROUPINFO("HB1_GG_PD", 45, ParametersG2, hb1_gg_tecs_pitch_damp, 0.2f),
     AP_GROUPINFO("HB1_GG_SPD", 46, ParametersG2, hb1_gg_spd, 50.f),
     AP_GROUPINFO("HB1_CAM_RATE", 47, ParametersG2, hb1_cam_rate, 20),
 
