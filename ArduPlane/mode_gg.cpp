@@ -144,7 +144,7 @@ void ModeGG::update()
             float airspeed_measured = 0;
             if (plane.ahrs.airspeed_estimate(&airspeed_measured)) {final_speed_cm = airspeed_measured*100.f;}
             // once track covered, go final stage
-            if ((_track_dist - _track_covered) < -(MAX(0.1f,final_gg_sec) * final_speed_cm)) {
+            if ((_track_dist - _track_covered) < (MAX(0.1f,final_gg_sec) * final_speed_cm)) {
                 set_HB1_GG_state(HB1_GG_STEP2);
                 gcs().send_text(MAV_SEVERITY_INFO, "Force Final");
             }

@@ -23,12 +23,12 @@ void Plane::HB1_Power_pwm_update() {
                 HB1_throttle = 0.0f;
                 break;
             case HB1_PowerAction_GROUND_EngineSTART:
-                if (HB1_Power_engine_type() == 10 || HB1_Power_engine_type() == 11) {
+                if (HB1_Power_engine_type() == 0) {
                     HB1_throttle = constrain_float(12.f, thr_min, thr_max);
                 }
                 break;
             case HB1_PowerAction_GROUND_EngineON:
-                if (HB1_Power_engine_type() == 10 || HB1_Power_engine_type() == 11) {
+                if (HB1_Power_engine_type() == 0) {
                     HB1_throttle = constrain_float(12.f, thr_min, thr_max);
                 }
                 break;
@@ -53,7 +53,7 @@ void Plane::HB1_Power_pwm_update() {
     } else {
         HB1_throttle = throttle;
 
-        if (HB1_Power_engine_type() == 10 || HB1_Power_engine_type() == 11) {
+        if (HB1_Power_engine_type() == 0) {
             thr_min = 12.f;
         }
 
@@ -131,9 +131,7 @@ void Plane::HB1_Power_status_update() {
             }
             break;
         case HB1_PowerAction_EngineSTART:
-            if (HB1_Power_engine_type()==1 && timer > 2000) {
-                HB1_status_set_HB_Power_Action(HB1_PowerAction_EngineON);
-            } else if (timer > 5000) {
+            if (timer > 2000) {
                 HB1_status_set_HB_Power_Action(HB1_PowerAction_EngineON);
             }
             break;
@@ -223,19 +221,11 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force
             relay.off(3);
             break;
         case HB1_PowerAction_EngineSTART:
-            if (HB1_Power_engine_type()==1) {
-                gcs().send_text(MAV_SEVERITY_INFO, "Engine Starting(old)");
-                relay.off(0);
-                relay.off(1);
-                relay.off(2);
-                relay.on(3);
-            } else {
-                gcs().send_text(MAV_SEVERITY_INFO, "Engine Starting");
-                relay.off(0);
-                relay.off(1);
-                relay.off(2);
-                relay.off(3);
-            }
+            gcs().send_text(MAV_SEVERITY_INFO, "Engine Starting");
+            relay.off(0);
+            relay.off(1);
+            relay.off(2);
+            relay.off(3);
             break;
         case HB1_PowerAction_GROUND_EngineSTART:
             gcs().send_text(MAV_SEVERITY_INFO, "G Engine Starting");

@@ -190,11 +190,11 @@ void Plane::HB1_msg_mission2apm_RocketON_handle() {
 void Plane::HB1_msg_mission2apm_EngineSTART_handle() {
     if (!arming.is_armed()) {
         // check if need to re send start cmd
-        if ((fabsf(plane.HB1_Power.HB1_engine_rpm.get()) < 50.f) || (g2.hb1_rpm_used == 0)) {
+        if (HB1_Power_running()) {
+            gcs().send_text(MAV_SEVERITY_INFO, "Engine is running");
+        } else {
             gcs().send_text(MAV_SEVERITY_INFO, "Engine ground start");
             HB1_status_set_HB_Power_Action(HB1_PowerAction_GROUND_EngineSTART, true);
-        } else {
-            gcs().send_text(MAV_SEVERITY_INFO, "Engine is running");
         }
     } else {
         gcs().send_text(MAV_SEVERITY_INFO, "Disarm first! for Engine ground start");
