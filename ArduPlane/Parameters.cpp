@@ -1286,6 +1286,7 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("HIL_TEST", 42, ParametersG2, hil_test, 0),
     AP_GROUPINFO("HB1_GG_SPD", 46, ParametersG2, hb1_gg_spd, 50.f),
     AP_GROUPINFO("HB1_CAM_RATE", 47, ParametersG2, hb1_cam_rate, 20),
+    AP_GROUPINFO("HB1_60_MIN", 48, ParametersG2, hb1_engine60_min, 12.f),
 
     AP_GROUPEND
 };

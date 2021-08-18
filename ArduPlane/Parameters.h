@@ -592,6 +592,7 @@ public:
     AP_Int16 hb1_num_interim;
     AP_Int16 hb1_num_attack;
     AP_Int16 hb1_cam_rate;
+    AP_Float hb1_engine60_min;
 
     AP_Int8 hil_test;
 };

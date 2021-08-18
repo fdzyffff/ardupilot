@@ -92,12 +92,17 @@ void ModeGG::update()
 
 
 
-            float delta_xy_cm = 100.f * plane.current_loc.get_distance(plane.HB1_attack_cmd.content.location);
+            // float delta_xy_cm = 100.f * plane.current_loc.get_distance(plane.HB1_attack_cmd.content.location);
             static float delta_z_cm = 0.0f;
+            int32_t tmp_pre_alt = 0;
             int32_t tmp_curr_alt = 0;
             int32_t tmp_attack_alt = 0;
             if (plane.current_loc.get_alt_cm(Location::AltFrame::ABOVE_HOME, tmp_curr_alt) && plane.HB1_attack_cmd.content.location.get_alt_cm(Location::AltFrame::ABOVE_HOME, tmp_attack_alt)) {
                 delta_z_cm = (float)tmp_curr_alt -(float)tmp_attack_alt;
+            }
+            float _wp_atk = 25.f;
+            if (plane.prev_WP_loc.get_alt_cm(Location::AltFrame::ABOVE_HOME, tmp_pre_alt) && plane.HB1_attack_cmd.content.location.get_alt_cm(Location::AltFrame::ABOVE_HOME, tmp_attack_alt)) {
+                _wp_atk = ToDeg(atan2f((float)tmp_pre_alt -(float)tmp_attack_alt, 100.f * plane.prev_WP_loc.get_distance(plane.HB1_attack_cmd.content.location)));
             }
             delta_z_cm = MAX(delta_z_cm, 10.0f);
             int16_t current_cd = plane.ahrs.yaw_sensor;//plane.gps.ground_course_cd();
@@ -116,43 +121,34 @@ void ModeGG::update()
             //plane.nav_roll_cd = 0;
 
 
-            float target_pitch = -100.0f * ToDeg(atan2f(delta_z_cm, delta_xy_cm));
-            // if (delta_z_cm < 1000.f) {
-            //     plane.nav_pitch_cd = constrain_int16((int16_t)target_pitch, -8500, -6500);
-            // } else {
-            float tmp_pitch = MIN(plane.nav_pitch_cd, constrain_int16((int16_t)target_pitch, -8500, 500));
-            tmp_pitch += 1;
-            //plane.nav_pitch_cd = MIN(plane.nav_pitch_cd, constrain_int16((int16_t)target_pitch, -8500, 500));
-            // }
-            //plane.aparm.airspeed_cruise_cm.set(final_speed_cm);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+            bool go_step2 = false;
             float airspeed_measured = 0;
             if (plane.ahrs.airspeed_estimate(&airspeed_measured)) {final_speed_cm = airspeed_measured*100.f;}
             // once track covered, go final stage
-            if ((_track_dist - _track_covered) < (MAX(0.1f,final_gg_sec) * final_speed_cm)) {
+            float _wp_delta_z_cm = MAX(delta_z_cm - (final_gg_sec* final_speed_cm *sinf(radians(_wp_atk))), 10.0f);
+            float _wp_delta_xy_cm = _track_dist - _track_covered - (final_gg_sec* final_speed_cm *cosf(radians(_wp_atk)));
+            float _atk_angle = ToDeg(atan2f(_wp_delta_z_cm, _wp_delta_xy_cm));
+            if ((_track_dist - _track_covered) < 10000.f) {
+                if (_wp_delta_xy_cm > 0.0f) {
+                    if (_atk_angle> 80.f) {
+                        go_step2 = true;
+                    }
+                } else {
+                    go_step2 = true;
+                }
+            }
+            if (go_step2) {
                 set_HB1_GG_state(HB1_GG_STEP2);
                 gcs().send_text(MAV_SEVERITY_INFO, "Force Final");
             }
+
             if (print_counter%133 == 0) {                
-                gcs().send_text(MAV_SEVERITY_INFO, "_track_dist ; _track_rest : %0.2f, %0.2f", _track_dist, _track_dist - _track_covered);
-                gcs().send_text(MAV_SEVERITY_INFO, "target_roll : %0.2f", target_roll);
-                gcs().send_text(MAV_SEVERITY_INFO, "c_cd %d, t_cd: %d, d_cd: %d", current_cd, target_cd, plane.nav_roll_cd);
-                gcs().send_text(MAV_SEVERITY_INFO, "P_cd : %d", plane.nav_pitch_cd);
+                gcs().send_text(MAV_SEVERITY_INFO, "_track_dist ; _track_rest : %0.2f, %0.2f", _track_dist*0.01f, (_track_dist - _track_covered)*0.01f);
+                gcs().send_text(MAV_SEVERITY_INFO, "_wp_z ; _wp_xy: %0.2f (%0.2f), %0.2f", _wp_delta_z_cm*0.01f, delta_z_cm*0.01f, _wp_delta_xy_cm*0.01f);
+                gcs().send_text(MAV_SEVERITY_INFO, "_wp_atk; _atk: %0.2f, %0.2f", _wp_atk, _atk_angle);
+                // gcs().send_text(MAV_SEVERITY_INFO, "target_roll : %0.2f", target_roll);
+                // gcs().send_text(MAV_SEVERITY_INFO, "c_cd %d, t_cd: %d, d_cd: %d", current_cd, target_cd, plane.nav_roll_cd);
+                // gcs().send_text(MAV_SEVERITY_INFO, "P_cd : %d", plane.nav_pitch_cd);
             }
             break;
         }

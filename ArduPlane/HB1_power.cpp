@@ -24,12 +24,12 @@ void Plane::HB1_Power_pwm_update() {
                 break;
             case HB1_PowerAction_GROUND_EngineSTART:
                 if (HB1_Power_engine_type() == 0) {
-                    HB1_throttle = constrain_float(12.f, thr_min, thr_max);
+                    HB1_throttle = constrain_float(g2.hb1_engine60_min.get(), thr_min, thr_max);
                 }
                 break;
             case HB1_PowerAction_GROUND_EngineON:
                 if (HB1_Power_engine_type() == 0) {
-                    HB1_throttle = constrain_float(12.f, thr_min, thr_max);
+                    HB1_throttle = constrain_float(g2.hb1_engine60_min.get(), thr_min, thr_max);
                 }
                 break;
             case HB1_PowerAction_GROUND_EngineOFF:
@@ -54,7 +54,7 @@ void Plane::HB1_Power_pwm_update() {
         HB1_throttle = throttle;
 
         if (HB1_Power_engine_type() == 0) {
-            thr_min = 12.f;
+            thr_min = g2.hb1_engine60_min.get();
         }
 
         if (plane.throttle_suppressed) {
