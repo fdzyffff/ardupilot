@@ -128,7 +128,7 @@ void ModeGG::update()
             float _wp_delta_z_cm = MAX(delta_z_cm - (final_gg_sec* final_speed_cm *sinf(radians(_wp_atk))), 10.0f);
             float _wp_delta_xy_cm = _track_dist - _track_covered - (final_gg_sec* final_speed_cm *cosf(radians(_wp_atk)));
             float _atk_angle = ToDeg(atan2f(_wp_delta_z_cm, _wp_delta_xy_cm));
-            if ((_track_dist - _track_covered) < 10000.f) {
+            if ((_track_dist - _track_covered) < 20000.f) {
                 if (_wp_delta_xy_cm > 0.0f) {
                     if (_atk_angle> 80.f) {
                         go_step2 = true;

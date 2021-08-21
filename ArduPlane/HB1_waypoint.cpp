@@ -194,7 +194,7 @@ void Plane::HB1_msg_mission2apm_EngineSTART_handle() {
             gcs().send_text(MAV_SEVERITY_INFO, "Engine is running");
         } else {
             gcs().send_text(MAV_SEVERITY_INFO, "Engine ground start");
-            HB1_status_set_HB_Power_Action(HB1_PowerAction_GROUND_EngineSTART, true);
+            HB1_status_set_HB_Power_Action(HB1_PowerAction_GROUND_EngineSTART_PRE, true);
         }
     } else {
         gcs().send_text(MAV_SEVERITY_INFO, "Disarm first! for Engine ground start");
@@ -216,7 +216,7 @@ void Plane::HB1_msg_mission2apm_EngineFULL_handle() {
         return;
     }
     if (HB1_Power.state == HB1_PowerAction_GROUND_EngineSTART) {
-        gcs().send_text(MAV_SEVERITY_INFO, "Engine is booting");
+        gcs().send_text(MAV_SEVERITY_INFO, "Engine is pulling up");
         return;
     }
 
