@@ -78,12 +78,19 @@ void Plane::HB1_Mission_update() {
             }
             break;
         case HB1_Mission_Hover :
-            if ( timer > HB1_Status.time_out ) {
-                if (g2.hb1_num_attack > 0) {
-                    HB1_Status.mission_complete = false;
-                    HB1_status_set_HB_Mission_Action(HB1_Mission_PreAttack);
-                } else {
-                    HB1_status_set_HB_Mission_Action(HB1_Mission_Attack);
+            if ( timer > HB1_Status.time_out ){
+                if (g2.hb1_pilot_type == 0) {
+                    if (g2.hb1_num_attack > 0) {
+                        HB1_Status.mission_complete = false;
+                        HB1_status_set_HB_Mission_Action(HB1_Mission_PreAttack);
+                    } else {
+                        HB1_status_set_HB_Mission_Action(HB1_Mission_Attack);
+                    }
+                }
+                if (g2.hb1_pilot_type == 1) {
+                    set_mode(plane.mode_fbwa, MODE_REASON_UNAVAILABLE);
+                    HB1_status_set_HB_Mission_Action(HB1_Mission_None);
+                    HB1_status_set_HB_Power_Action(HB1_PowerAction_EngineOFF);
                 }
             }
             if (HB1_status_noGPS_check()) {

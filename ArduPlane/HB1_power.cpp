@@ -187,10 +187,7 @@ void Plane::HB1_Power_status_update() {
         default:
             break;
     }
-        
-    if ( plane.parachute.released() && HB1_Power.state != HB1_PowerAction_ParachuteON) {
-        HB1_status_set_HB_Power_Action(HB1_PowerAction_EngineOFF);
-    }
+
 }
 
 void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force_set) {

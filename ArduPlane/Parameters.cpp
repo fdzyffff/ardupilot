@@ -1243,7 +1243,7 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
 
     // @Param: HB1_TYPE
     // @DisplayName: 飞控类型
-    // @Description:  光电型:0 基础型：1
+    // @Description:  攻击型:0 开伞型：1
     // @Range: 0 1
     // @Units: int
     // @Increment: 1

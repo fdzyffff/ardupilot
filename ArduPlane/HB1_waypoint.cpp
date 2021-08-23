@@ -156,6 +156,10 @@ void Plane::HB1_msg_mission2apm_speed_down_handle() {
 }
 
 void Plane::HB1_msg_mission2apm_preattack_handle(int32_t time_s) {
+    if (g2.hb1_pilot_type == 1) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Not attack type (%d)", g2.hb1_pilot_type.get());
+        return;
+    }
     g2.hb1_follow_hover_attack_time.set_and_save(time_s*1000);
     HB1_status_set_HB_Mission_Action(HB1_Mission_PreAttack);
     if (g2.hb1_num_interim > 0) {
