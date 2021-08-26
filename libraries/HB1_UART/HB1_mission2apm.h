@@ -19,7 +19,7 @@ public:
         uint8_t point_index;
         int32_t longitude;
         int32_t latitude;
-        uint16_t alt;
+        int16_t alt;
     };
 
     //0x66
@@ -28,7 +28,7 @@ public:
         uint8_t interim_point_index;
         int32_t longitude;
         int32_t latitude;
-        uint16_t alt;
+        int16_t alt;
     };
 
     //0x33
@@ -37,7 +37,7 @@ public:
         uint8_t attack_point_index;
         int32_t longitude;
         int32_t latitude;
-        uint16_t alt;
+        int16_t alt;
     };
 
     //0x33
