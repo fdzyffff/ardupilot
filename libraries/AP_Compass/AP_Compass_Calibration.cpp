@@ -436,13 +436,19 @@ MAV_RESULT Compass::mag_cal_fixed_yaw(float yaw_deg, uint8_t compass_mask,
         // get AHRS position. If unavailable then try GPS location
         if (!AP::ahrs().get_position(loc)) {
             if (AP::gps().status() < AP_GPS::GPS_OK_FIX_3D) {
-                gcs().send_text(MAV_SEVERITY_ERROR, "Mag: no position available");
-                return MAV_RESULT_FAILED;
+                gcs().send_text(MAV_SEVERITY_ERROR, "Mag: no position available, use default");
+                // return MAV_RESULT_FAILED;
+                lat_deg = 31.3557901;
+                lon_deg = 121.5924679;
+            } else {
+                loc = AP::gps().location();
+                lat_deg = loc.lat * 1.0e-7;
+                lon_deg = loc.lng * 1.0e-7;
             }
-            loc = AP::gps().location();
+        } else {
+            lat_deg = loc.lat * 1.0e-7;
+            lon_deg = loc.lng * 1.0e-7;
         }
-        lat_deg = loc.lat * 1.0e-7;
-        lon_deg = loc.lng * 1.0e-7;
     }
 
     // get the magnetic field intensity and orientation

@@ -199,7 +199,8 @@ IMU Invensense SPI:mpu6000 ROTATION_ROLL_180_YAW_270
 define HAL_DEFAULT_INS_FAST_SAMPLE 1
 
 # MS5611 integrated on I2C2 bus, multiple possible choices for external barometer
-BARO MS56XX I2C:0:0x77
+# 56XX official is 77
+BARO MS56XX I2C:0:0x76
 BARO DPS280 I2C:0:0x76
 BARO BMP280 I2C:0:0x76
 
