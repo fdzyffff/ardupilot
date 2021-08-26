@@ -20,7 +20,20 @@ void Copter::userhook_FastLoop()
             set_mode(Mode::Number::LAND, ModeReason::UNAVAILABLE);
         }
     }
+
+    if (flightmode == &mode_land && copter.arming.is_armed()) {
+        if (copter.rangefinder_alt_ok()) {
+            if (copter.rangefinder_state.alt_cm < 20.f) {
+                copter.arming.disarm();
+                gcs().send_text(MAV_SEVERITY_WARNING, "DISARM 1");
+            }
+        } else {
+            copter.arming.disarm();
+            gcs().send_text(MAV_SEVERITY_WARNING, "DISARM 2");
+        }
+    }
 }
+
 #endif
 
 #ifdef USERHOOK_50HZLOOP
@@ -78,5 +91,22 @@ void Copter::userhook_auxSwitch2(uint8_t ch_flag)
 void Copter::userhook_auxSwitch3(uint8_t ch_flag)
 {
     // put your aux switch #3 handler here (CHx_OPT = 49)
+    switch (ch_flag) {
+    case 2:
+        copter.arming.arm(AP_Arming::Method::AUXSWITCH);
+        // remember that we are using an arming switch, for use by set_throttle_zero_flag
+        copter.ap.armed_with_switch = true;
+        break;
+    case 1:
+        // nothing
+        break;
+    case 0:
+        if (copter.rangefinder_alt_ok()) {
+            set_mode(Mode::Number::LAND, ModeReason::UNAVAILABLE);
+        } else {
+            copter.arming.disarm();
+        }
+        break;
+    }
 }
 #endif

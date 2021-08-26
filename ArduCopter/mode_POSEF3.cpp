@@ -96,7 +96,7 @@ void ModePOSEF3::run()
 
         // get pilot's desired yaw rate
         target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
-        if (target_pitch < -1500.f) {
+        if (target_pitch < -500.f) {
             target_yaw_rate += User_get_pilot_desired_yaw_rate(target_roll);
         }
         // get pilot desired climb rate

@@ -309,8 +309,16 @@ void AC_Loiter::calc_desired_velocity(float nav_dt)
     if (_avoid != nullptr) {
         Vector2f pre_desired_vel(desired_vel.x, desired_vel.y);
         _avoid->adjust_velocity(_pos_control.get_pos_xy_p().kP(), _accel_cmss, desired_vel, nav_dt);
-        if (!is_zero(pre_desired_vel.length() - desired_vel.length())) {
-            _desired_accel = desired_vel/gnd_speed_limit_cms*pilot_acceleration_max;
+        if (!is_zero(pre_desired_vel.x - desired_vel.x)) {
+                float brake_gain = _pos_control.get_vel_xy_pid().kP() * 0.5f;
+                //loiter_brake_accel = constrain_float(AC_AttitudeControl::sqrt_controller(desired_speed, brake_gain, _brake_jerk_max_cmsss, nav_dt), 0.0f, _brake_accel_cmss);
+                _desired_accel.x = constrain_float(AC_AttitudeControl::sqrt_controller(pre_desired_vel.x - desired_vel.x, brake_gain, _brake_jerk_max_cmsss, nav_dt), 0.0f, _brake_accel_cmss);
+        }
+        if (!is_zero(pre_desired_vel.y - desired_vel.y)) {
+                float brake_gain = _pos_control.get_vel_xy_pid().kP() * 0.5f;
+                //loiter_brake_accel = constrain_float(AC_AttitudeControl::sqrt_controller(desired_speed, brake_gain, _brake_jerk_max_cmsss, nav_dt), 0.0f, _brake_accel_cmss);
+                _desired_accel.y = constrain_float(AC_AttitudeControl::sqrt_controller(pre_desired_vel.y - desired_vel.y, brake_gain, _brake_jerk_max_cmsss, nav_dt), 0.0f, _brake_accel_cmss);
+            //_desired_accel = desired_vel/gnd_speed_limit_cms*pilot_acceleration_max;
             //gcs().send_text(MAV_SEVERITY_INFO, "%f, %f, %f", pre_desired_vel.x, desired_vel.x, _desired_accel.x);
         }
     }
