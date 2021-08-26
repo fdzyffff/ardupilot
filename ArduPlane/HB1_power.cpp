@@ -12,6 +12,9 @@ void Plane::HB1_Power_pwm_update() {
     float thr_max = 100.0f;
     float timer = (millis() - HB1_Power.timer);
     if (!arming.is_armed()) {
+        if (HB1_Power_engine_type() == 0) {
+            thr_min = g2.hb1_engine60_min.get();
+        }
         switch (HB1_Power.state) {
             case HB1_PowerAction_None:
             case HB1_PowerAction_RocketON:
@@ -24,17 +27,13 @@ void Plane::HB1_Power_pwm_update() {
                 break;
             case HB1_PowerAction_GROUND_EngineSTART:
             case HB1_PowerAction_GROUND_EngineSTART_PRE:
-                if (HB1_Power_engine_type() == 0) {
-                    HB1_throttle = constrain_float(g2.hb1_engine60_min.get(), thr_min, thr_max);
-                }
+                HB1_throttle = thr_min;
                 break;
             case HB1_PowerAction_GROUND_EngineON:
-                if (HB1_Power_engine_type() == 0) {
-                    HB1_throttle = constrain_float(g2.hb1_engine60_min.get(), thr_min, thr_max);
-                }
+                HB1_throttle = thr_min;
                 break;
             case HB1_PowerAction_GROUND_EngineOFF:
-                HB1_throttle = thr_min;
+                HB1_throttle = 0.0f;
                 break;
             case HB1_PowerAction_GROUND_EngineFULL:
                 if (timer < 2000.f) {
