@@ -1117,16 +1117,17 @@ private:
     enum HB1_Power_Action_t {
         HB1_PowerAction_None            = 0,
         HB1_PowerAction_RocketON        = 1,
-        HB1_PowerAction_EngineSTART     = 2,
+        HB1_PowerAction_EnginePullUP    = 2,
         HB1_PowerAction_EngineON        = 3,
         HB1_PowerAction_EngineOFF       = 4,
         HB1_PowerAction_ParachuteON     = 5,
-        HB1_PowerAction_GROUND_RocketON    = 6,
-        HB1_PowerAction_GROUND_EngineSTART = 7,
-        HB1_PowerAction_GROUND_EngineON    = 8,
-        HB1_PowerAction_GROUND_EngineOFF   = 9,
-        HB1_PowerAction_GROUND_EngineFULL  = 10,
-        HB1_PowerAction_GROUND_EngineMID   = 11,
+        HB1_PowerAction_GROUND_RocketON        = 6,
+        HB1_PowerAction_GROUND_EngineSTART_PRE = 7,
+        HB1_PowerAction_GROUND_EngineSTART     = 8,
+        HB1_PowerAction_GROUND_EngineON        = 9,
+        HB1_PowerAction_GROUND_EngineOFF       = 10,
+        HB1_PowerAction_GROUND_EngineFULL      = 11,
+        HB1_PowerAction_GROUND_EngineMID       = 12,
     };
 
     enum HB1_Mission_t {

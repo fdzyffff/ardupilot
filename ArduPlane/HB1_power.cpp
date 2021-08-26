@@ -15,7 +15,7 @@ void Plane::HB1_Power_pwm_update() {
         switch (HB1_Power.state) {
             case HB1_PowerAction_None:
             case HB1_PowerAction_RocketON:
-            case HB1_PowerAction_EngineSTART:
+            case HB1_PowerAction_EnginePullUP:
             case HB1_PowerAction_EngineON:
             case HB1_PowerAction_EngineOFF:
             case HB1_PowerAction_ParachuteON:
@@ -23,13 +23,14 @@ void Plane::HB1_Power_pwm_update() {
                 HB1_throttle = 0.0f;
                 break;
             case HB1_PowerAction_GROUND_EngineSTART:
+            case HB1_PowerAction_GROUND_EngineSTART_PRE:
                 if (HB1_Power_engine_type() == 0) {
-                    HB1_throttle = constrain_float(12.f, thr_min, thr_max);
+                    HB1_throttle = constrain_float(g2.hb1_engine60_min.get(), thr_min, thr_max);
                 }
                 break;
             case HB1_PowerAction_GROUND_EngineON:
                 if (HB1_Power_engine_type() == 0) {
-                    HB1_throttle = constrain_float(12.f, thr_min, thr_max);
+                    HB1_throttle = constrain_float(g2.hb1_engine60_min.get(), thr_min, thr_max);
                 }
                 break;
             case HB1_PowerAction_GROUND_EngineOFF:
@@ -54,7 +55,7 @@ void Plane::HB1_Power_pwm_update() {
         HB1_throttle = throttle;
 
         if (HB1_Power_engine_type() == 0) {
-            thr_min = 12.f;
+            thr_min = g2.hb1_engine60_min.get();
         }
 
         if (plane.throttle_suppressed) {
@@ -72,7 +73,7 @@ void Plane::HB1_Power_pwm_update() {
             case HB1_PowerAction_RocketON:
                 HB1_throttle = thr_min;
                 break;
-            case HB1_PowerAction_EngineSTART:
+            case HB1_PowerAction_EnginePullUP:
                 {   
                     float timer_delay = MAX(timer - 0.0f, 0.0f);
                     if (timer_delay < 800.f) {
@@ -92,6 +93,7 @@ void Plane::HB1_Power_pwm_update() {
                 break;
             case HB1_PowerAction_GROUND_RocketON:
             case HB1_PowerAction_GROUND_EngineSTART:
+            case HB1_PowerAction_GROUND_EngineSTART_PRE:
             case HB1_PowerAction_GROUND_EngineON:
             case HB1_PowerAction_GROUND_EngineFULL:
             case HB1_PowerAction_GROUND_EngineMID:
@@ -121,7 +123,7 @@ void Plane::HB1_Power_status_update() {
                 if (speed_reached) {
 //                    if (timer > 4000 || (ins.get_accel().x < 10.0f)) {
                         gcs().send_text(MAV_SEVERITY_INFO, "timer: %d ax %0.2f", (int32_t)timer, ins.get_accel().x);
-                        HB1_status_set_HB_Power_Action(HB1_PowerAction_EngineSTART);
+                        HB1_status_set_HB_Power_Action(HB1_PowerAction_EnginePullUP);
 //                    }
                 } else {
                     set_mode(plane.mode_fbwa, MODE_REASON_UNAVAILABLE);
@@ -130,7 +132,7 @@ void Plane::HB1_Power_status_update() {
                 }
             }
             break;
-        case HB1_PowerAction_EngineSTART:
+        case HB1_PowerAction_EnginePullUP:
             if (timer > 2000) {
                 HB1_status_set_HB_Power_Action(HB1_PowerAction_EngineON);
             }
@@ -166,6 +168,11 @@ void Plane::HB1_Power_status_update() {
             break;
         case HB1_PowerAction_ParachuteON:
             break;
+        case HB1_PowerAction_GROUND_EngineSTART_PRE:
+            if (timer > 1000) {
+                HB1_status_set_HB_Power_Action(HB1_PowerAction_GROUND_EngineSTART);
+            }
+            break;
         case HB1_PowerAction_GROUND_EngineSTART: // triggered by RC OR cmd
             if (timer > 6000) {
                 HB1_status_set_HB_Power_Action(HB1_PowerAction_GROUND_EngineON);
@@ -180,10 +187,7 @@ void Plane::HB1_Power_status_update() {
         default:
             break;
     }
-        
-    if ( plane.parachute.released() && HB1_Power.state != HB1_PowerAction_ParachuteON) {
-        HB1_status_set_HB_Power_Action(HB1_PowerAction_EngineOFF);
-    }
+
 }
 
 void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force_set) {
@@ -220,8 +224,15 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force
             relay.off(2);
             relay.off(3);
             break;
-        case HB1_PowerAction_EngineSTART:
-            gcs().send_text(MAV_SEVERITY_INFO, "Engine Starting");
+        case HB1_PowerAction_EnginePullUP:
+            gcs().send_text(MAV_SEVERITY_INFO, "Engine Pull up");
+            relay.off(0);
+            relay.off(1);
+            relay.off(2);
+            relay.off(3);
+            break;
+        case HB1_PowerAction_GROUND_EngineSTART_PRE:
+            gcs().send_text(MAV_SEVERITY_INFO, "Engine Prepare");
             relay.off(0);
             relay.off(1);
             relay.off(2);

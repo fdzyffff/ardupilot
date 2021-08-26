@@ -156,6 +156,10 @@ void Plane::HB1_msg_mission2apm_speed_down_handle() {
 }
 
 void Plane::HB1_msg_mission2apm_preattack_handle(int32_t time_s) {
+    if (g2.hb1_pilot_type == 1) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Not attack type (%d)", g2.hb1_pilot_type.get());
+        return;
+    }
     g2.hb1_follow_hover_attack_time.set_and_save(time_s*1000);
     HB1_status_set_HB_Mission_Action(HB1_Mission_PreAttack);
     if (g2.hb1_num_interim > 0) {
@@ -194,7 +198,7 @@ void Plane::HB1_msg_mission2apm_EngineSTART_handle() {
             gcs().send_text(MAV_SEVERITY_INFO, "Engine is running");
         } else {
             gcs().send_text(MAV_SEVERITY_INFO, "Engine ground start");
-            HB1_status_set_HB_Power_Action(HB1_PowerAction_GROUND_EngineSTART, true);
+            HB1_status_set_HB_Power_Action(HB1_PowerAction_GROUND_EngineSTART_PRE, true);
         }
     } else {
         gcs().send_text(MAV_SEVERITY_INFO, "Disarm first! for Engine ground start");
@@ -216,7 +220,7 @@ void Plane::HB1_msg_mission2apm_EngineFULL_handle() {
         return;
     }
     if (HB1_Power.state == HB1_PowerAction_GROUND_EngineSTART) {
-        gcs().send_text(MAV_SEVERITY_INFO, "Engine is booting");
+        gcs().send_text(MAV_SEVERITY_INFO, "Engine is pulling up");
         return;
     }
 

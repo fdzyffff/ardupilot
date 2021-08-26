@@ -1243,7 +1243,7 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
 
     // @Param: HB1_TYPE
     // @DisplayName: 飞控类型
-    // @Description:  光电型:0 基础型：1
+    // @Description:  攻击型:0 开伞型：1
     // @Range: 0 1
     // @Units: int
     // @Increment: 1
@@ -1286,6 +1286,7 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("HIL_TEST", 42, ParametersG2, hil_test, 0),
     AP_GROUPINFO("HB1_GG_SPD", 46, ParametersG2, hb1_gg_spd, 50.f),
     AP_GROUPINFO("HB1_CAM_RATE", 47, ParametersG2, hb1_cam_rate, 20),
+    AP_GROUPINFO("HB1_60_MIN", 48, ParametersG2, hb1_engine60_min, 12.f),
 
     AP_GROUPEND
 };
