@@ -1234,6 +1234,7 @@ private:
     void HB1_msg_mission2apm_EngineSTART_handle();
     void HB1_msg_mission2apm_RocketON_handle();
     void HB1_msg_mission2apm_EngineOFF_handle();
+    void HB1_msg_mission2apm_ParachuteON_handle();
     void HB1_msg_mission2apm_EngineFULL_handle();
     void HB1_msg_mission2apm_EngineMID_handle();
     void HB1_msg_mission2apm_Disarm_handle();

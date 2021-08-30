@@ -2,9 +2,12 @@
 
 void Plane::HB1_wp_init() {
     HB1_Status.wp_to_renew = false;
-    bool read_wp = (g2.hb1_num_wp != 0);
+    bool read_wp = false;
     bool read_interim = false;
     bool read_attack = false;
+    if (g2.hb1_num_wp != 0) {
+        read_wp = plane.mission.read_cmd_from_storage(g2.hb1_num_wp,HB1_lastWP_cmd); 
+    }
     if (g2.hb1_num_interim != 0) {
         read_interim = plane.mission.read_cmd_from_storage(g2.hb1_num_wp+g2.hb1_num_interim,HB1_interim_cmd);     
     }
@@ -197,7 +200,6 @@ void Plane::HB1_msg_mission2apm_EngineSTART_handle() {
         if (HB1_Power_running()) {
             gcs().send_text(MAV_SEVERITY_INFO, "Engine is running");
         } else {
-            gcs().send_text(MAV_SEVERITY_INFO, "Engine ground start");
             HB1_status_set_HB_Power_Action(HB1_PowerAction_GROUND_EngineSTART_PRE, true);
         }
     } else {
@@ -206,8 +208,11 @@ void Plane::HB1_msg_mission2apm_EngineSTART_handle() {
 }
 
 void Plane::HB1_msg_mission2apm_EngineOFF_handle() {
-    gcs().send_text(MAV_SEVERITY_INFO, "Engine ground stop");
     HB1_status_set_HB_Power_Action(HB1_PowerAction_GROUND_EngineOFF, true);
+}
+
+void Plane::HB1_msg_mission2apm_ParachuteON_handle() {
+    plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_ParachuteON);
 }
 
 void Plane::HB1_msg_mission2apm_EngineFULL_handle() {
@@ -224,7 +229,6 @@ void Plane::HB1_msg_mission2apm_EngineFULL_handle() {
         return;
     }
 
-    gcs().send_text(MAV_SEVERITY_INFO, "Engine ground full");
     HB1_status_set_HB_Power_Action(HB1_PowerAction_GROUND_EngineFULL, true);
 }
 

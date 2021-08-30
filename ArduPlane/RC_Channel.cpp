@@ -128,8 +128,8 @@ void RC_Channel_Plane::do_aux_function(const aux_func_t ch_option, const aux_swi
     case AUX_FUNC::RELAY2:
         RC_Channel::do_aux_function_relay(1, ch_flag == HIGH);
         if (ch_flag == HIGH) {
-            plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_ParachuteON);
-            }
+            plane.HB1_msg_mission2apm_ParachuteON_handle();
+        }
         // else {plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_None);}
         break;
     case AUX_FUNC::RELAY3:

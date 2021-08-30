@@ -3,6 +3,8 @@
 void Plane::HB1_status_init() {
     HB1_status_set_HB_Power_Action(HB1_PowerAction_None);
     HB1_status_set_HB_Mission_Action(HB1_Mission_None);
+    SRV_Channels::set_output_pwm(SRV_Channel::k_launcher_HB1, 1100);
+    SRV_Channels::set_output_pwm(SRV_Channel::k_parachute_HB1, 1100);
     HB1_follow_dir = 0.0f;
     HB1_Status.last_update_ms = 0;
     HB1_Status.mission_complete = false;

@@ -166,6 +166,11 @@ void Plane::HB1_Power_status_update() {
             }
             break;
         case HB1_PowerAction_ParachuteON:
+            if (timer > 10000) {
+                if (!arming.is_armed()) {
+                    HB1_status_set_HB_Power_Action(HB1_PowerAction_None);
+                }
+            }
             break;
         case HB1_PowerAction_GROUND_EngineSTART_PRE:
             if (timer > 1000) {
@@ -197,6 +202,8 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force
     }
     uint32_t tnow = millis();
     HB1_Power.timer = tnow;
+    SRV_Channels::set_output_pwm(SRV_Channel::k_launcher_HB1, 1100);
+    SRV_Channels::set_output_pwm(SRV_Channel::k_parachute_HB1, 1100);
     switch (HB1_Power.state) {
         case HB1_PowerAction_None:
             plane.HB1_Power.HB1_engine_startcount = 0;
@@ -205,7 +212,6 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force
             relay.off(1);
             relay.off(2);
             relay.off(3);
-            SRV_Channels::set_output_pwm(SRV_Channel::k_launcher_HB1, 1100);
             break;
         case HB1_PowerAction_RocketON:
             gcs().send_text(MAV_SEVERITY_INFO, "Rocket ON");
@@ -231,6 +237,7 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force
             relay.off(3);
             break;
         case HB1_PowerAction_GROUND_EngineSTART_PRE:
+            plane.HB1_Power.HB1_engine_startcount = 0;
             gcs().send_text(MAV_SEVERITY_INFO, "Engine Prepare");
             relay.off(0);
             relay.off(1);
@@ -278,6 +285,7 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force
             relay.on(1);
             relay.off(2);
             relay.off(3);
+            SRV_Channels::set_output_pwm(SRV_Channel::k_parachute_HB1, 1900);
             break;
         default:
             break;

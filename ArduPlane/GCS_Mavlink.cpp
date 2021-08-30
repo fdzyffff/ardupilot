@@ -966,35 +966,39 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_long_packet(const mavlink_command_l
         plane.autotune_enable(!is_zero(packet.param1));
         return MAV_RESULT_ACCEPTED;
 
-#if PARACHUTE == ENABLED
     case MAV_CMD_DO_PARACHUTE:
-        // configure or release parachute
-        switch ((uint16_t)packet.param1) {
-        case PARACHUTE_DISABLE:
-            plane.parachute.enabled(false);
-            return MAV_RESULT_ACCEPTED;
-        case PARACHUTE_ENABLE:
-            plane.parachute.enabled(true);
-            return MAV_RESULT_ACCEPTED;
-        case PARACHUTE_RELEASE:
-            // treat as a manual release which performs some additional check of altitude
-            if (plane.parachute.released()) {
-                gcs().send_text(MAV_SEVERITY_NOTICE, "Parachute already released");
-                return MAV_RESULT_FAILED;
-            }
-            if (!plane.parachute.enabled()) {
-                gcs().send_text(MAV_SEVERITY_NOTICE, "Parachute not enabled");
-                return MAV_RESULT_FAILED;
-            }
-            if (!plane.parachute_manual_release()) {
-                return MAV_RESULT_FAILED;
-            }
-            return MAV_RESULT_ACCEPTED;
-        default:
-            break;
-        }
-        return MAV_RESULT_FAILED;
-#endif
+        plane.HB1_msg_mission2apm_ParachuteON_handle();
+        return MAV_RESULT_ACCEPTED;
+
+// #if PARACHUTE == ENABLED
+//     case MAV_CMD_DO_PARACHUTE:
+//         // configure or release parachute
+//         switch ((uint16_t)packet.param1) {
+//         case PARACHUTE_DISABLE:
+//             plane.parachute.enabled(false);
+//             return MAV_RESULT_ACCEPTED;
+//         case PARACHUTE_ENABLE:
+//             plane.parachute.enabled(true);
+//             return MAV_RESULT_ACCEPTED;
+//         case PARACHUTE_RELEASE:
+//             // treat as a manual release which performs some additional check of altitude
+//             if (plane.parachute.released()) {
+//                 gcs().send_text(MAV_SEVERITY_NOTICE, "Parachute already released");
+//                 return MAV_RESULT_FAILED;
+//             }
+//             if (!plane.parachute.enabled()) {
+//                 gcs().send_text(MAV_SEVERITY_NOTICE, "Parachute not enabled");
+//                 return MAV_RESULT_FAILED;
+//             }
+//             if (!plane.parachute_manual_release()) {
+//                 return MAV_RESULT_FAILED;
+//             }
+//             return MAV_RESULT_ACCEPTED;
+//         default:
+//             break;
+//         }
+//         return MAV_RESULT_FAILED;
+// #endif
 
     case MAV_CMD_DO_MOTOR_TEST:
         // param1 : motor sequence number (a number from 1 to max number of motors on the vehicle)
