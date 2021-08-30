@@ -131,6 +131,36 @@ bool EF_Counter::EFGate_check(Vector3f &pos_start, Vector3f &pos_end, const Vect
     return false;
 }
 
+void EF_Counter::uart_send(AP_HAL::UARTDriver *_port, int16_t id) {
+
+    _msg_uwb_out._msg_1.need_send = true;
+    _msg_uwb_out._msg_1.content.msg.sum_check = 0;
+    _msg_uwb_out._msg_1.content.msg.header.head_1 = FD1_msg_uwb_out::PREAMBLE1;
+    _msg_uwb_out._msg_1.content.msg.header.head_2 = FD1_msg_uwb_out::PREAMBLE2;
+    _msg_uwb_out._msg_1.content.msg.sys_id = id;
+    _msg_uwb_out._msg_1.content.msg.t1 = _EFGate_last_pass_time_ms[1].get();
+    _msg_uwb_out._msg_1.content.msg.t2 = _EFGate_last_pass_time_ms[2].get();
+    _msg_uwb_out._msg_1.content.msg.t3 = _EFGate_last_pass_time_ms[3].get();
+    _msg_uwb_out._msg_1.content.msg.t4 = _EFGate_last_pass_time_ms[4].get();
+    _msg_uwb_out._msg_1.content.msg.t5 = _EFGate_last_pass_time_ms[5].get();
+    _msg_uwb_out._msg_1.content.msg.t6 = _EFGate_last_pass_time_ms[6].get();
+    _msg_uwb_out._msg_1.content.msg.t7 = _EFGate_last_pass_time_ms[7].get();
+    _msg_uwb_out._msg_1.content.msg.t8 = _EFGate_last_pass_time_ms[8].get();
+    _msg_uwb_out._msg_1.content.msg.t9 = _EFGate_last_pass_time_ms[9].get();
+    _msg_uwb_out._msg_1.content.msg.t10 = _EFGate_last_pass_time_ms[10].get();
+
+    _msg_uwb_out._msg_1.content.msg.sum_check = 0;
+    for (int8_t i = 0; i < _msg_uwb_out._msg_1.length - 1; i++) {
+        _msg_uwb_out._msg_1.content.msg.sum_check += _msg_uwb_out._msg_1.content.data[i];
+    }
+    _msg_uwb_out.swap_message();
+    for (int8_t i = 0; i < _msg_uwb_out._msg_1.length; i ++) {
+        _port->write(_msg_uwb_out._msg_1.content.data[i]);
+    }
+    _msg_uwb_out._msg_1.updated = false;
+    _msg_uwb_out._msg_1.need_send = false;
+}
+
 
 // singleton instance
 EF_Counter *EF_Counter::_singleton;

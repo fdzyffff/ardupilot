@@ -14,6 +14,7 @@ public:
     AP_Float EF3_yaw_factor;
     AP_Float EF2_alt_max;
     AP_Float EF2_alt_min;
+    AP_Int8  EF_use_uwb_port;
     
 private:
     // Put your parameter variable definitions here

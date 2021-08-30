@@ -60,7 +60,14 @@ void Copter::userhook_SlowLoop()
 #ifdef USERHOOK_SUPERSLOWLOOP
 void Copter::userhook_SuperSlowLoop()
 {
+    if (g2.user_parameters.EF_use_uwb_port.get() <= 0) {return;}
     // put your 1Hz code here
+    AP_HAL::UARTDriver *_port;
+    if (!(_port = serial_manager.find_serial(AP_SerialManager::SerialProtocol_GPS, g2.user_parameters.EF_use_uwb_port.get()-1))) {
+        gcs().send_text(MAV_SEVERITY_WARNING, "No UWB port");
+        return;
+    }
+    AP::ef_counter().uart_send(_port, g.sysid_this_mav.get());
 }
 #endif
 

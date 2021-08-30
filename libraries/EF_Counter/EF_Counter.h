@@ -4,6 +4,9 @@
 #include <AP_Param/AP_Param.h>
 #include <AP_Math/AP_Math.h>
 #include <AC_AttitudeControl/AC_AttitudeControl.h> // Attitude controller library for sqrt controller
+#include <AP_HAL/AP_HAL.h>
+
+#include "FD1_msg_uwb_out.h"
 /*
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -46,6 +49,9 @@ public:
     void update();
     void EFGate_reset();
 
+    FD1_msg_uwb_out& get_msg_uwb_out() {return _msg_uwb_out;}
+    void uart_send(AP_HAL::UARTDriver *_port, int16_t id);
+
     // for holding parameters
     static const struct AP_Param::GroupInfo var_info[];
 
@@ -56,6 +62,8 @@ private:
     bool EFGate_check(Vector3f &pos_start, Vector3f &pos_end, const Vector2f* lines, uint16_t num_points, uint32_t &extra_time);
 
     Vector3f _last_pos;
+
+    FD1_msg_uwb_out _msg_uwb_out;
 
     // parameters
     AP_Float   _update_dist;

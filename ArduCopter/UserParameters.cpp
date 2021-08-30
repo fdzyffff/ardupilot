@@ -10,6 +10,7 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     AP_GROUPINFO("_EF3_R2Y_F", 1, UserParameters, EF3_yaw_factor, 0.5f),
     AP_GROUPINFO("_EF2_ALT_MAX", 2, UserParameters, EF2_alt_max, 300.0f),
     AP_GROUPINFO("_EF2_ALT_MIN", 3, UserParameters, EF2_alt_min, 100.0f),
+    AP_GROUPINFO("_UWB_PORT_USE", 4, UserParameters, EF_use_uwb_port, 0),
 
     
     AP_GROUPEND
