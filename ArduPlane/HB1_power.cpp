@@ -202,7 +202,6 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force
     }
     uint32_t tnow = millis();
     HB1_Power.timer = tnow;
-    SRV_Channels::set_output_pwm(SRV_Channel::k_launcher_HB1, 1100);
     SRV_Channels::set_output_pwm(SRV_Channel::k_parachute_HB1, 1100);
     switch (HB1_Power.state) {
         case HB1_PowerAction_None:

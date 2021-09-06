@@ -243,6 +243,7 @@ bool AP_Arming_Plane::disarm(void)
     plane.HB1_Status.time_out = plane.g2.hb1_follow_hover_wp_time;
     plane.HB1_Status.already_takeoff = false;
     plane.HB1_Status.grouped = false;
+    SRV_Channels::set_output_pwm(SRV_Channel::k_launcher_HB1, 1100);
     
     if (plane.control_mode != &plane.mode_manual) {
         plane.set_mode(plane.mode_fbwa, MODE_REASON_UNAVAILABLE);
