@@ -202,7 +202,7 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force
     }
     uint32_t tnow = millis();
     HB1_Power.timer = tnow;
-    SRV_Channels::set_output_pwm(SRV_Channel::k_parachute_HB1, 1100);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_parachute_HB1, 0);
     switch (HB1_Power.state) {
         case HB1_PowerAction_None:
             plane.HB1_Power.HB1_engine_startcount = 0;
@@ -219,7 +219,7 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force
             relay.off(2);
             relay.off(3);
             HB1_Status.already_takeoff = true;
-            SRV_Channels::set_output_pwm(SRV_Channel::k_launcher_HB1, 1900);
+            SRV_Channels::set_output_scaled(SRV_Channel::k_launcher_HB1, 100);
             break;
         case HB1_PowerAction_GROUND_RocketON:
             gcs().send_text(MAV_SEVERITY_INFO, "G Rocket ON");
@@ -284,7 +284,7 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force
             relay.on(1);
             relay.off(2);
             relay.off(3);
-            SRV_Channels::set_output_pwm(SRV_Channel::k_parachute_HB1, 1900);
+            SRV_Channels::set_output_scaled(SRV_Channel::k_parachute_HB1, 100);
             break;
         default:
             break;
