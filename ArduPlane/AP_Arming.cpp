@@ -116,6 +116,20 @@ bool AP_Arming_Plane::pre_arm_checks(bool display_failure)
         ret = false;
     }
 
+    if (plane.quadplane.enabled() && ((plane.quadplane.options & QuadPlane::OPTION_ONLY_ARM_IN_QMODE_OR_AUTO) != 0) &&
+            !plane.control_mode->is_vtol_mode() && (plane.control_mode != &plane.mode_auto)) {
+        check_failed(display_failure,"not in Q mode");
+        ret = false;
+    }
+
+    if (plane.g2.flight_options & FlightOptions::CENTER_THROTTLE_TRIM){
+       int16_t trim = plane.channel_throttle->get_radio_trim();
+       if (trim < 1250 || trim > 1750) {
+           check_failed(display_failure, "Throttle trim not near center stick(%u)",trim );
+           ret = false;
+       }
+    }
+
     return ret;
 }
 
@@ -246,7 +260,7 @@ bool AP_Arming_Plane::disarm(const AP_Arming::Method method, bool do_disarm_chec
     plane.throttle_suppressed = plane.control_mode->does_auto_throttle();
 
     // if no airmode switch assigned, ensure airmode is off:
-    if (rc().find_channel_for_option(RC_Channel::AUX_FUNC::AIRMODE) == nullptr) {
+    if ((plane.quadplane.air_mode == AirMode::ON) && (rc().find_channel_for_option(RC_Channel::AUX_FUNC::AIRMODE) == nullptr)) {
         plane.quadplane.air_mode = AirMode::OFF;
     }
 

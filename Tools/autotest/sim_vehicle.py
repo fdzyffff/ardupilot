@@ -28,7 +28,6 @@ import shlex
 import binascii
 import math
 
-from pymavlink import mavextra
 from pysim import vehicleinfo
 
 
@@ -37,6 +36,12 @@ windowID = []
 
 autotest_dir = os.path.dirname(os.path.realpath(__file__))
 root_dir = os.path.realpath(os.path.join(autotest_dir, '../..'))
+
+try:
+    from pymavlink import mavextra
+except ImportError:
+    sys.path.append(os.path.join(root_dir, "modules/mavlink"))
+    from pymavlink import mavextra
 
 os.environ["SIM_VEHICLE_SESSION"] = binascii.hexlify(os.urandom(8)).decode()
 
@@ -644,6 +649,8 @@ def start_vehicle(binary, opts, stuff, spawns=None):
     cmd.extend(["--speedup", str(opts.speedup)])
     if opts.sysid is not None:
         cmd.extend(["--sysid", str(opts.sysid)])
+    if opts.slave is not None:
+        cmd.extend(["--slave", str(opts.slave)])
     if opts.sitl_instance_args:
         # this could be a lot better:
         cmd.extend(opts.sitl_instance_args.split(" "))
@@ -1114,6 +1121,10 @@ group_sim.add_option("--ekf-double",
 group_sim.add_option("--ekf-single",
                      action='store_true',
                      help="use single precision in EKF")
+group_sim.add_option("", "--slave",
+                     type='int',
+                     default=0,
+                     help="Set the number of JSON slave")
 parser.add_option_group(group_sim)
 
 

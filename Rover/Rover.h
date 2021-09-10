@@ -70,6 +70,7 @@
 #include <AP_WindVane/AP_WindVane.h>
 #include <AR_Motors/AP_MotorsUGV.h>
 #include <AP_Torqeedo/AP_Torqeedo.h>
+#include <AP_AIS/AP_AIS.h>
 
 #ifdef ENABLE_SCRIPTING
 #include <AP_Scripting/AP_Scripting.h>
@@ -162,16 +163,14 @@ private:
 
     AP_L1_Control L1_controller{ahrs, nullptr};
 
-#if AP_AHRS_NAVEKF_AVAILABLE
     OpticalFlow optflow;
-#endif
 
 #if OSD_ENABLED || OSD_PARAM_ENABLED
     AP_OSD osd;
 #endif
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-    SITL::SITL sitl;
+    SITL::SIM sitl;
 #endif
 
     // GCS handling
@@ -275,10 +274,12 @@ private:
 private:
 
     // Rover.cpp
+#ifdef ENABLE_SCRIPTING
     bool set_target_location(const Location& target_loc) override;
     bool set_target_velocity_NED(const Vector3f& vel_ned) override;
     bool set_steering_and_throttle(float steering, float throttle) override;
     bool get_control_output(AP_Vehicle::ControlOutput control_output, float &control_value) override;
+#endif // ENABLE_SCRIPTING
     void stats_update();
     void ahrs_update();
     void gcs_failsafe_check(void);
@@ -324,7 +325,6 @@ private:
     void fence_check();
 
     // GCS_Mavlink.cpp
-    void send_servo_out(mavlink_channel_t chan);
     void send_wheel_encoder_distance(mavlink_channel_t chan);
 
     // Log.cpp
@@ -379,7 +379,6 @@ private:
     bool set_mode(Mode &new_mode, ModeReason reason);
     bool set_mode(const uint8_t new_mode, ModeReason reason) override;
     uint8_t get_mode() const override { return (uint8_t)control_mode->mode_number(); }
-    bool mavlink_set_mode(uint8_t mode);
     void startup_INS_ground(void);
     void notify_mode(const Mode *new_mode);
     uint8_t check_digital_pin(uint8_t pin);

@@ -21,6 +21,7 @@
 #include <AP_RobotisServo/AP_RobotisServo.h>
 #include <AP_SBusOut/AP_SBusOut.h>
 #include <AP_BLHeli/AP_BLHeli.h>
+#include <AP_FETtecOneWire/AP_FETtecOneWire.h>
 
 #ifndef NUM_SERVO_CHANNELS
 #if defined(HAL_BUILD_AP_PERIPH) && defined(HAL_PWM_COUNT)
@@ -50,6 +51,7 @@ public:
 
     typedef enum
     {
+        k_GPIO                  = -1,           ///< used as GPIO pin (input or output)
         k_none                  = 0,            ///< disabled
         k_manual                = 1,            ///< manual, just pass-thru the RC in signal
         k_flap                  = 2,            ///< flap
@@ -531,6 +533,11 @@ public:
     // initialize before any call to push
     static void init();
 
+    // return true if a channel is set to type GPIO
+    static bool is_GPIO(uint8_t channel) {
+        return channel_function(channel) == SRV_Channel::k_GPIO;
+    }
+
 private:
 
     static bool disabled_passthrough;
@@ -562,6 +569,11 @@ private:
     AP_BLHeli blheli;
     static AP_BLHeli *blheli_ptr;
 #endif
+
+#if HAL_AP_FETTEC_ONEWIRE_ENABLED
+    AP_FETtecOneWire fetteconwire;
+    static AP_FETtecOneWire *fetteconwire_ptr;
+#endif  // HAL_AP_FETTEC_ONEWIRE_ENABLED
 #endif // HAL_BUILD_AP_PERIPH
 
     static uint16_t disabled_mask;

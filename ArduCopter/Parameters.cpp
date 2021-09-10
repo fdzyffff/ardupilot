@@ -167,20 +167,10 @@ const AP_Param::Info Copter::var_info[] = {
     GSCALAR(rtl_alt_type, "RTL_ALT_TYPE", 0),
 #endif
 
-#if RANGEFINDER_ENABLED == ENABLED
-    // @Param: RNGFND_GAIN
-    // @DisplayName: Rangefinder gain
-    // @Description: Used to adjust the speed with which the target altitude is changed when objects are sensed below the copter
-    // @Range: 0.01 2.0
-    // @Increment: 0.01
-    // @User: Standard
-    GSCALAR(rangefinder_gain, "RNGFND_GAIN", RANGEFINDER_GAIN_DEFAULT),
-#endif
-
     // @Param: FS_GCS_ENABLE
     // @DisplayName: Ground Station Failsafe Enable
     // @Description: Controls whether failsafe will be invoked (and what action to take) when connection with Ground station is lost for at least 5 seconds. See FS_OPTIONS param for additional actions, or for cases allowing Mission continuation, when GCS failsafe is enabled.
-    // @Values: 0:Disabled/NoAction,1:RTL,2:RTL or Continue with Mission in Auto Mode (Removed in 4.0+-see FS_OPTIONS),3:SmartRTL or RTL,4:SmartRTL or Land,5:Land (4.0+ Only)
+    // @Values: 0:Disabled/NoAction,1:RTL,2:RTL or Continue with Mission in Auto Mode (Removed in 4.0+-see FS_OPTIONS),3:SmartRTL or RTL,4:SmartRTL or Land,5:Land,6:Auto DO_LAND_START or RTL
     // @User: Standard
     GSCALAR(failsafe_gcs, "FS_GCS_ENABLE", FS_GCS_DISABLED),
 
@@ -244,7 +234,7 @@ const AP_Param::Info Copter::var_info[] = {
     // @Param: FS_THR_ENABLE
     // @DisplayName: Throttle Failsafe Enable
     // @Description: The throttle failsafe allows you to configure a software failsafe activated by a setting on the throttle input channel
-    // @Values:  0:Disabled,1:Enabled always RTL,2:Enabled Continue with Mission in Auto Mode (Removed in 4.0+),3:Enabled always Land,4:Enabled always SmartRTL or RTL,5:Enabled always SmartRTL or Land
+    // @Values:  0:Disabled,1:Enabled always RTL,2:Enabled Continue with Mission in Auto Mode (Removed in 4.0+),3:Enabled always Land,4:Enabled always SmartRTL or RTL,5:Enabled always SmartRTL or Land,6:Enabled Auto DO_LAND_START or RTL
     // @User: Standard
     GSCALAR(failsafe_throttle,  "FS_THR_ENABLE",   FS_THR_ENABLED_ALWAYS_RTL),
 
@@ -269,42 +259,42 @@ const AP_Param::Info Copter::var_info[] = {
     // @Param: FLTMODE1
     // @DisplayName: Flight Mode 1
     // @Description: Flight mode when Channel 5 pwm is <= 1230
-    // @Values: 0:Stabilize,1:Acro,2:AltHold,3:Auto,4:Guided,5:Loiter,6:RTL,7:Circle,9:Land,11:Drift,13:Sport,14:Flip,15:AutoTune,16:PosHold,17:Brake,18:Throw,19:Avoid_ADSB,20:Guided_NoGPS,21:Smart_RTL,22:FlowHold,23:Follow,24:ZigZag,25:SystemID,26:Heli_Autorotate
+    // @Values: 0:Stabilize,1:Acro,2:AltHold,3:Auto,4:Guided,5:Loiter,6:RTL,7:Circle,9:Land,11:Drift,13:Sport,14:Flip,15:AutoTune,16:PosHold,17:Brake,18:Throw,19:Avoid_ADSB,20:Guided_NoGPS,21:Smart_RTL,22:FlowHold,23:Follow,24:ZigZag,25:SystemID,26:Heli_Autorotate,27:Auto RTL
     // @User: Standard
     GSCALAR(flight_mode1, "FLTMODE1",               (uint8_t)FLIGHT_MODE_1),
 
     // @Param: FLTMODE2
     // @DisplayName: Flight Mode 2
     // @Description: Flight mode when Channel 5 pwm is >1230, <= 1360
-    // @Values: 0:Stabilize,1:Acro,2:AltHold,3:Auto,4:Guided,5:Loiter,6:RTL,7:Circle,9:Land,11:Drift,13:Sport,14:Flip,15:AutoTune,16:PosHold,17:Brake,18:Throw,19:Avoid_ADSB,20:Guided_NoGPS,21:Smart_RTL,22:FlowHold,23:Follow,24:ZigZag,25:SystemID,26:Heli_Autorotate
+    // @Values: 0:Stabilize,1:Acro,2:AltHold,3:Auto,4:Guided,5:Loiter,6:RTL,7:Circle,9:Land,11:Drift,13:Sport,14:Flip,15:AutoTune,16:PosHold,17:Brake,18:Throw,19:Avoid_ADSB,20:Guided_NoGPS,21:Smart_RTL,22:FlowHold,23:Follow,24:ZigZag,25:SystemID,26:Heli_Autorotate,27:Auto RTL
     // @User: Standard
     GSCALAR(flight_mode2, "FLTMODE2",               (uint8_t)FLIGHT_MODE_2),
 
     // @Param: FLTMODE3
     // @DisplayName: Flight Mode 3
     // @Description: Flight mode when Channel 5 pwm is >1360, <= 1490
-    // @Values: 0:Stabilize,1:Acro,2:AltHold,3:Auto,4:Guided,5:Loiter,6:RTL,7:Circle,9:Land,11:Drift,13:Sport,14:Flip,15:AutoTune,16:PosHold,17:Brake,18:Throw,19:Avoid_ADSB,20:Guided_NoGPS,21:Smart_RTL,22:FlowHold,23:Follow,24:ZigZag,25:SystemID,26:Heli_Autorotate
+    // @Values: 0:Stabilize,1:Acro,2:AltHold,3:Auto,4:Guided,5:Loiter,6:RTL,7:Circle,9:Land,11:Drift,13:Sport,14:Flip,15:AutoTune,16:PosHold,17:Brake,18:Throw,19:Avoid_ADSB,20:Guided_NoGPS,21:Smart_RTL,22:FlowHold,23:Follow,24:ZigZag,25:SystemID,26:Heli_Autorotate,27:Auto RTL
     // @User: Standard
     GSCALAR(flight_mode3, "FLTMODE3",               (uint8_t)FLIGHT_MODE_3),
 
     // @Param: FLTMODE4
     // @DisplayName: Flight Mode 4
     // @Description: Flight mode when Channel 5 pwm is >1490, <= 1620
-    // @Values: 0:Stabilize,1:Acro,2:AltHold,3:Auto,4:Guided,5:Loiter,6:RTL,7:Circle,9:Land,11:Drift,13:Sport,14:Flip,15:AutoTune,16:PosHold,17:Brake,18:Throw,19:Avoid_ADSB,20:Guided_NoGPS,21:Smart_RTL,22:FlowHold,23:Follow,24:ZigZag,25:SystemID,26:Heli_Autorotate
+    // @Values: 0:Stabilize,1:Acro,2:AltHold,3:Auto,4:Guided,5:Loiter,6:RTL,7:Circle,9:Land,11:Drift,13:Sport,14:Flip,15:AutoTune,16:PosHold,17:Brake,18:Throw,19:Avoid_ADSB,20:Guided_NoGPS,21:Smart_RTL,22:FlowHold,23:Follow,24:ZigZag,25:SystemID,26:Heli_Autorotate,27:Auto RTL
     // @User: Standard
     GSCALAR(flight_mode4, "FLTMODE4",               (uint8_t)FLIGHT_MODE_4),
 
     // @Param: FLTMODE5
     // @DisplayName: Flight Mode 5
     // @Description: Flight mode when Channel 5 pwm is >1620, <= 1749
-    // @Values: 0:Stabilize,1:Acro,2:AltHold,3:Auto,4:Guided,5:Loiter,6:RTL,7:Circle,9:Land,11:Drift,13:Sport,14:Flip,15:AutoTune,16:PosHold,17:Brake,18:Throw,19:Avoid_ADSB,20:Guided_NoGPS,21:Smart_RTL,22:FlowHold,23:Follow,24:ZigZag,25:SystemID,26:Heli_Autorotate
+    // @Values: 0:Stabilize,1:Acro,2:AltHold,3:Auto,4:Guided,5:Loiter,6:RTL,7:Circle,9:Land,11:Drift,13:Sport,14:Flip,15:AutoTune,16:PosHold,17:Brake,18:Throw,19:Avoid_ADSB,20:Guided_NoGPS,21:Smart_RTL,22:FlowHold,23:Follow,24:ZigZag,25:SystemID,26:Heli_Autorotate,27:Auto RTL
     // @User: Standard
     GSCALAR(flight_mode5, "FLTMODE5",               (uint8_t)FLIGHT_MODE_5),
 
     // @Param: FLTMODE6
     // @DisplayName: Flight Mode 6
     // @Description: Flight mode when Channel 5 pwm is >=1750
-    // @Values: 0:Stabilize,1:Acro,2:AltHold,3:Auto,4:Guided,5:Loiter,6:RTL,7:Circle,9:Land,11:Drift,13:Sport,14:Flip,15:AutoTune,16:PosHold,17:Brake,18:Throw,19:Avoid_ADSB,20:Guided_NoGPS,21:Smart_RTL,22:FlowHold,23:Follow,24:ZigZag,25:SystemID,26:Heli_Autorotate
+    // @Values: 0:Stabilize,1:Acro,2:AltHold,3:Auto,4:Guided,5:Loiter,6:RTL,7:Circle,9:Land,11:Drift,13:Sport,14:Flip,15:AutoTune,16:PosHold,17:Brake,18:Throw,19:Avoid_ADSB,20:Guided_NoGPS,21:Smart_RTL,22:FlowHold,23:Follow,24:ZigZag,25:SystemID,26:Heli_Autorotate,27:Auto RTL
     // @User: Standard
     GSCALAR(flight_mode6, "FLTMODE6",               (uint8_t)FLIGHT_MODE_6),
 
@@ -346,7 +336,7 @@ const AP_Param::Info Copter::var_info[] = {
     // @DisplayName: Channel 6 Tuning
     // @Description: Controls which parameters (normally PID gains) are being tuned with transmitter's channel 6 knob
     // @User: Standard
-    // @Values: 0:None,1:Stab Roll/Pitch kP,4:Rate Roll/Pitch kP,5:Rate Roll/Pitch kI,21:Rate Roll/Pitch kD,3:Stab Yaw kP,6:Rate Yaw kP,26:Rate Yaw kD,56:Rate Yaw Filter,55:Motor Yaw Headroom,14:AltHold kP,7:Throttle Rate kP,34:Throttle Accel kP,35:Throttle Accel kI,36:Throttle Accel kD,12:Loiter Pos kP,22:Velocity XY kP,28:Velocity XY kI,10:WP Speed,25:Acro RollPitch kP,40:Acro Yaw kP,45:RC Feel,13:Heli Ext Gyro,38:Declination,39:Circle Rate,41:RangeFinder Gain,46:Rate Pitch kP,47:Rate Pitch kI,48:Rate Pitch kD,49:Rate Roll kP,50:Rate Roll kI,51:Rate Roll kD,52:Rate Pitch FF,53:Rate Roll FF,54:Rate Yaw FF,58:SysID Magnitude
+    // @Values: 0:None,1:Stab Roll/Pitch kP,4:Rate Roll/Pitch kP,5:Rate Roll/Pitch kI,21:Rate Roll/Pitch kD,3:Stab Yaw kP,6:Rate Yaw kP,26:Rate Yaw kD,56:Rate Yaw Filter,55:Motor Yaw Headroom,14:AltHold kP,7:Throttle Rate kP,34:Throttle Accel kP,35:Throttle Accel kI,36:Throttle Accel kD,12:Loiter Pos kP,22:Velocity XY kP,28:Velocity XY kI,10:WP Speed,25:Acro RollPitch kP,40:Acro Yaw kP,45:RC Feel,13:Heli Ext Gyro,38:Declination,39:Circle Rate,46:Rate Pitch kP,47:Rate Pitch kI,48:Rate Pitch kD,49:Rate Roll kP,50:Rate Roll kI,51:Rate Roll kD,52:Rate Pitch FF,53:Rate Roll FF,54:Rate Yaw FF,58:SysID Magnitude
     GSCALAR(radio_tuning, "TUNE",                   0),
 
     // @Param: FRAME_TYPE
@@ -624,7 +614,7 @@ const AP_Param::Info Copter::var_info[] = {
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
     // @Group: SIM_
     // @Path: ../libraries/SITL/SITL.cpp
-    GOBJECT(sitl, "SIM_", SITL::SITL),
+    GOBJECT(sitl, "SIM_", SITL::SIM),
 #endif
 
     // @Group: BARO
@@ -776,7 +766,7 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("WP_NAVALT_MIN", 1, ParametersG2, wp_navalt_min, 0),
 
-#if BUTTON_ENABLED == ENABLED
+#if HAL_BUTTON_ENABLED
     // @Group: BTN_
     // @Path: ../libraries/AP_Button/AP_Button.cpp
     AP_SUBGROUPPTR(button_ptr, "BTN_", 2, ParametersG2, AP_Button),
@@ -1079,16 +1069,6 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("GUID_TIMEOUT", 46, ParametersG2, guided_timeout, 3.0),
 #endif
 
-#if AP_TERRAIN_AVAILABLE
-    // @Param: TERRAIN_MARGIN
-    // @DisplayName: Terrain following altitude margin
-    // @Description: Terrain following altitude margin.  Vehicle will stop if distance from target altitude is larger than this margin (in meters)
-    // @Units: m
-    // @Range: 0.1 100
-    // @User: Advanced
-    AP_GROUPINFO("TERRAIN_MARGIN", 47, ParametersG2, terrain_margin, 10.0),
-#endif
-
     AP_GROUPEND
 };
 
@@ -1104,7 +1084,7 @@ ParametersG2::ParametersG2(void)
     , proximity()
 #endif
 #if ADVANCED_FAILSAFE == ENABLED
-    ,afs(copter.mode_auto.mission)
+    ,afs()
 #endif
 #if MODE_SMARTRTL_ENABLED == ENABLED
     ,smart_rtl()
@@ -1127,7 +1107,9 @@ ParametersG2::ParametersG2(void)
 #if MODE_AUTOROTATE_ENABLED == ENABLED
     ,arot()
 #endif
+#if HAL_BUTTON_ENABLED
     ,button_ptr(&copter.button)
+#endif
 #if MODE_ZIGZAG_ENABLED == ENABLED
     ,mode_zigzag_ptr(&copter.mode_zigzag)
 #endif
@@ -1176,8 +1158,6 @@ void Copter::load_parameters(void)
         AP_HAL::panic("Bad var table");
     }
 
-    // disable centrifugal force correction, it will be enabled as part of the arming process
-    ahrs.set_correct_centrifugal(false);
     hal.util->set_soft_armed(false);
 
     if (!g.format_version.load() ||
@@ -1254,7 +1234,7 @@ void Copter::convert_pid_parameters(void)
         { Parameters::k_param_pi_vel_xy, 0, AP_PARAM_FLOAT, "PSC_VELXY_P" },
         { Parameters::k_param_pi_vel_xy, 1, AP_PARAM_FLOAT, "PSC_VELXY_I" },
         { Parameters::k_param_pi_vel_xy, 2, AP_PARAM_FLOAT, "PSC_VELXY_IMAX" },
-        { Parameters::k_param_pi_vel_xy, 3, AP_PARAM_FLOAT, "PSC_VELXY_FILT" },
+        { Parameters::k_param_pi_vel_xy, 3, AP_PARAM_FLOAT, "PSC_VELXY_FLTE" },
         { Parameters::k_param_p_vel_z, 0, AP_PARAM_FLOAT, "PSC_VELZ_P" },
         { Parameters::k_param_pid_accel_z, 0, AP_PARAM_FLOAT, "PSC_ACCZ_P" },
         { Parameters::k_param_pid_accel_z, 1, AP_PARAM_FLOAT, "PSC_ACCZ_I" },

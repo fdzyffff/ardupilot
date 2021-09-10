@@ -940,7 +940,8 @@ AP_InertialSensor::detect_backends(void)
 
 #if HAL_EXTERNAL_AHRS_ENABLED
     // if enabled, make the first IMU the external AHRS
-    if (int8_t serial_port = AP::externalAHRS().get_port() >= 0) {
+    const int8_t serial_port = AP::externalAHRS().get_port();
+    if (serial_port >= 0) {
         ADD_BACKEND(new AP_InertialSensor_ExternalAHRS(*this, serial_port));
     }
 #endif
@@ -1492,14 +1493,6 @@ void AP_InertialSensor::update(void)
         }
         for (uint8_t i=0; i<_backend_count; i++) {
             _backends[i]->update();
-        }
-
-        // clear accumulators
-        for (uint8_t i = 0; i < INS_MAX_INSTANCES; i++) {
-            _delta_velocity_acc[i].zero();
-            _delta_velocity_acc_dt[i] = 0;
-            _delta_angle_acc[i].zero();
-            _delta_angle_acc_dt[i] = 0;
         }
 
         if (!_startup_error_counts_set) {

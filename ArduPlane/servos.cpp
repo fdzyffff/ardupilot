@@ -362,9 +362,9 @@ void Plane::set_servos_idle(void)
  */
 void Plane::set_servos_manual_passthrough(void)
 {
-    SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, channel_roll->get_control_in_zero_dz());
-    SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, channel_pitch->get_control_in_zero_dz());
-    SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, channel_rudder->get_control_in_zero_dz());
+    SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, roll_in_expo(false));
+    SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, pitch_in_expo(false));
+    SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, rudder_in_expo(false));
     int8_t throttle = get_throttle_input(true);
     SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, throttle);
 
@@ -541,8 +541,9 @@ void Plane::set_servos_controlled(void)
             // STABILIZE mode with THR_PASS_STAB set
             SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, get_throttle_input(true));
         } else {
+            // get throttle, but adjust center to output TRIM_THROTTLE if flight option set
             SRV_Channels::set_output_scaled(SRV_Channel::k_throttle,
-                                            constrain_int16(get_throttle_input(true), min_throttle, max_throttle));
+                                            constrain_int16(get_adjusted_throttle_input(true), min_throttle, max_throttle));
         }
     } else if (control_mode->is_guided_mode() &&
                guided_throttle_passthru) {
@@ -741,7 +742,7 @@ void Plane::force_flare(void)
         if (quadplane.tilt.tilt_type == QuadPlane::TILT_TYPE_BICOPTER) {
             tilt = 0; // this is tilts up for a Bicopter
         }
-        if (quadplane.is_tailsitter()) {
+        if (quadplane.tailsitter.enabled()) {
             tilt = SERVO_MAX; //this is tilts up for a tailsitter
         }
         SRV_Channels::set_output_scaled(SRV_Channel::k_motor_tilt, tilt);
@@ -818,7 +819,7 @@ void Plane::set_servos(void)
     steering_control.ground_steering = false;
 
     if (control_mode == &mode_training) {
-        steering_control.rudder = channel_rudder->get_control_in();
+        steering_control.rudder = rudder_in_expo(false);
     }
     
     SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, steering_control.rudder);
@@ -910,7 +911,7 @@ void Plane::servos_output(void)
     servos_twin_engine_mix();
 
     // cope with tailsitters and bicopters
-    quadplane.tailsitter_output();
+    quadplane.tailsitter.output();
     quadplane.tiltrotor_bicopter();
 
     // support forced flare option

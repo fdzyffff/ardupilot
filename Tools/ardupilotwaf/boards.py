@@ -2,6 +2,7 @@
 # encoding: utf-8
 
 from collections import OrderedDict
+import re
 import sys, os
 import fnmatch
 
@@ -42,6 +43,9 @@ class Board:
         cfg.load('cxx_checks')
 
         env = waflib.ConfigSet.ConfigSet()
+        def srcpath(path):
+            return cfg.srcnode.make_node(path).abspath()
+        env.SRCROOT = srcpath('')
         self.configure_env(cfg, env)
 
         # Setup scripting, had to defer this to allow checking board size
@@ -156,6 +160,13 @@ class Board:
 
         cfg.msg("CXX Compiler", "%s %s"  % (cfg.env.COMPILER_CXX, ".".join(cfg.env.CC_VERSION)))
 
+        if cfg.options.assert_cc_version:
+            cfg.msg("Checking compiler", "%s %s"  % (cfg.options.assert_cc_version, ".".join(cfg.env.CC_VERSION)))
+            have_version = cfg.env.COMPILER_CXX+"-"+'.'.join(list(cfg.env.CC_VERSION))
+            want_version = cfg.options.assert_cc_version
+            if have_version != want_version:
+                cfg.fatal("cc version mismatch: %s should be %s" % (have_version, want_version))
+        
         if 'clang' in cfg.env.COMPILER_CC:
             env.CFLAGS += [
                 '-fcolor-diagnostics',
@@ -314,6 +325,7 @@ class Board:
             ]
         else:
             env.LINKFLAGS += [
+                '-fno-exceptions',
                 '-Wl,--gc-sections',
             ]
 
@@ -361,6 +373,17 @@ class Board:
 
         if cfg.options.ekf_single:
             env.CXXFLAGS += ['-DHAL_WITH_EKF_DOUBLE=0']
+
+        # add files from ROMFS_custom
+        custom_dir = 'ROMFS_custom'
+        if os.path.exists(custom_dir):
+            for root, subdirs, files in os.walk(custom_dir):
+                for f in files:
+                    if fnmatch.fnmatch(f,"*~"):
+                        # exclude emacs tmp files
+                        continue
+                    fname = root[len(custom_dir)+1:]+"/"+f
+                    env.ROMFS_FILES += [(fname,root+"/"+f)]
 
     def pre_build(self, bld):
         '''pre-build hook that gets called before dynamic sources'''
@@ -410,10 +433,21 @@ def get_ap_periph_boards():
         hwdef = os.path.join(dirname, d, 'hwdef.dat')
         if os.path.exists(hwdef):
             with open(hwdef, "r") as f:
-                if '-periph' in f.readline():  # try to get -periph include
+                content = f.read()
+                if 'AP_PERIPH' in content:
                     list_ap.append(d)
-                if 'AP_PERIPH' in f.read():
-                    list_ap.append(d)
+                    continue
+                # process any include lines:
+                m = re.match(r"include\s+([^\s]*)", content)
+                if m is None:
+                    continue
+                include_path = os.path.join(os.path.dirname(hwdef), m.group(1))
+                with open(include_path, "r") as g:
+                    content = g.read()
+                    if 'AP_PERIPH' in content:
+                        list_ap.append(d)
+                        continue
+
     list_ap = list(set(list_ap))
     return list_ap
 
@@ -561,10 +595,6 @@ class sitl(Board):
             env.CXXFLAGS += [
                 '-fno-slp-vectorize' # compiler bug when trying to use SLP
             ]
-        
-        def srcpath(path):
-            return cfg.srcnode.make_node(path).abspath()
-        env.SRCROOT = srcpath('')
 
 class sitl_periph_gps(sitl):
     def configure_env(self, cfg, env):
@@ -762,6 +792,7 @@ class chibios(Board):
             ('6','3','1'),
             ('9','2','1'),
             ('9','3','1'),
+            ('10','2','1'),
         ]
 
         if cfg.options.Werror or cfg.env.CC_VERSION in gcc_whitelist:
@@ -1045,6 +1076,16 @@ class rst_zynq(linux):
 
         env.DEFINES.update(
             CONFIG_HAL_BOARD_SUBTYPE = 'HAL_BOARD_SUBTYPE_LINUX_RST_ZYNQ',
+        )
+
+class obal(linux):
+    toolchain = 'arm-linux-gnueabihf'
+
+    def configure_env(self, cfg, env):
+        super(obal, self).configure_env(cfg, env)
+
+        env.DEFINES.update(
+            CONFIG_HAL_BOARD_SUBTYPE = 'HAL_BOARD_SUBTYPE_LINUX_OBAL_V1',
         )
 
 class SITL_static(sitl):

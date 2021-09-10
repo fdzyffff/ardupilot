@@ -89,22 +89,19 @@ void ModeCircle::run()
 
     // get pilot desired climb rate (or zero if in radio failsafe)
     float target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
-    // adjust climb rate using rangefinder
-    if (copter.rangefinder_alt_ok()) {
-        // if rangefinder is ok, use surface tracking
-        target_climb_rate = copter.surface_tracking.adjust_climb_rate(target_climb_rate);
-    }
 
     // if not armed set throttle to zero and exit immediately
     if (is_disarmed_or_landed()) {
-        make_safe_spool_down();
+        make_safe_ground_handling();
         return;
     }
 
     // set motors to full range
     motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
 
-    // run circle controller
+    // update the vertical offset based on the surface measurement
+    copter.surface_tracking.update_surface_offset();
+
     copter.failsafe_terrain_set_status(copter.circle_nav->update(target_climb_rate));
 
     // call attitude controller

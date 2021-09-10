@@ -119,6 +119,8 @@ public:
         GPS_TYPE_MSP = 19,
         GPS_TYPE_ALLYSTAR = 20, // AllyStar NMEA
         GPS_TYPE_EXTERNAL_AHRS = 21,
+        GPS_TYPE_UAVCAN_RTK_BASE = 22,
+        GPS_TYPE_UAVCAN_RTK_ROVER = 23,
     };
 
     /// GPS status codes
@@ -168,6 +170,7 @@ public:
         float ground_speed;                 ///< ground speed in m/sec
         float ground_course;                ///< ground course in degrees
         float gps_yaw;                      ///< GPS derived yaw information, if available (degrees)
+        uint32_t gps_yaw_time_ms;           ///< timestamp of last GPS yaw reading
         bool  gps_yaw_configured;           ///< GPS is configured to provide yaw
         uint16_t hdop;                      ///< horizontal dilution of precision in cm
         uint16_t vdop;                      ///< vertical dilution of precision in cm
@@ -198,6 +201,13 @@ public:
         int32_t  rtk_baseline_z_mm;        ///< Current baseline in ECEF z or NED down component in mm
         uint32_t rtk_accuracy;             ///< Current estimate of 3D baseline accuracy (receiver dependent, typical 0 to 9999)
         int32_t  rtk_iar_num_hypotheses;   ///< Current number of integer ambiguity hypotheses
+        
+        // UBX Relative Position and Heading message information
+        float relPosHeading;               ///< Reported Heading in degrees
+        float relPosLength;                ///< Reported Position horizontal distance in meters
+        float relPosD;                     ///< Reported Vertical distance in meters
+        float accHeading;                  ///< Reported Heading Accuracy in degrees
+        uint32_t relposheading_ts;        ///< True if new data has been received since last time it was false
     };
 
     /// Startup initialisation.
@@ -328,21 +338,9 @@ public:
     }
 
     // yaw in degrees if available
-    bool gps_yaw_deg(uint8_t instance, float &yaw_deg, float &accuracy_deg) const {
-        if (!have_gps_yaw(instance)) {
-            return false;
-        }
-        yaw_deg = state[instance].gps_yaw;
-        if (state[instance].have_gps_yaw_accuracy) {
-            accuracy_deg = state[instance].gps_yaw_accuracy;
-        } else {
-            // fall back to 10 degrees as a generic default
-            accuracy_deg = 10;
-        }
-        return true;
-    }
-    bool gps_yaw_deg(float &yaw_deg, float &accuracy_deg) const {
-        return gps_yaw_deg(primary_instance, yaw_deg, accuracy_deg);
+    bool gps_yaw_deg(uint8_t instance, float &yaw_deg, float &accuracy_deg, uint32_t &time_ms) const;
+    bool gps_yaw_deg(float &yaw_deg, float &accuracy_deg, uint32_t &time_ms) const {
+        return gps_yaw_deg(primary_instance, yaw_deg, accuracy_deg, time_ms);
     }
 
     // number of locked satellites
@@ -531,6 +529,14 @@ public:
         DoNotChange = 2,
     };
 
+#if GPS_MOVING_BASELINE
+    // methods used by UAVCAN GPS driver and AP_Periph for moving baseline
+    void inject_MBL_data(uint8_t* data, uint16_t length);
+    void get_RelPosHeading(uint32_t &timestamp, float &relPosHeading, float &relPosLength, float &relPosD, float &accHeading);
+    bool get_RTCMV3(const uint8_t *&bytes, uint16_t &len);
+    void clear_RTCMV3();
+#endif // GPS_MOVING_BASELINE
+
 protected:
 
     // configuration parameters
@@ -688,7 +694,8 @@ private:
     // Auto configure types
     enum GPS_AUTO_CONFIG {
         GPS_AUTO_CONFIG_DISABLE = 0,
-        GPS_AUTO_CONFIG_ENABLE  = 1
+        GPS_AUTO_CONFIG_ENABLE_SERIAL_ONLY  = 1,
+        GPS_AUTO_CONFIG_ENABLE_ALL = 2,
     };
 
     enum class GPSAutoSwitch {

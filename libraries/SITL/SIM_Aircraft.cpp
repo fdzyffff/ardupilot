@@ -34,6 +34,7 @@
 #include <AP_Param/AP_Param.h>
 #include <AP_Declination/AP_Declination.h>
 #include <AP_Terrain/AP_Terrain.h>
+#include <AP_Scheduler/AP_Scheduler.h>
 
 using namespace SITL;
 
@@ -164,7 +165,7 @@ void Aircraft::update_position(void)
 // @Field: PN: Position - North component
 // @Field: PE: Position - East component
 // @Field: PD: Position - Down component
-    AP::logger().Write("SITL", "TimeUS,VN,VE,VD,AN,AE,AD,PN,PE,PD", "Qfffffffff",
+    AP::logger().WriteStreaming("SITL", "TimeUS,VN,VE,VD,AN,AE,AD,PN,PE,PD", "Qfffffffff",
                                            AP_HAL::micros64(),
                                            velocity_ef.x, velocity_ef.y, velocity_ef.z,
                                            accel_ef.x, accel_ef.y, accel_ef.z,
@@ -458,6 +459,29 @@ void Aircraft::fill_fdm(struct sitl_fdm &fdm)
         set_speedup(sitl->speedup);
         last_speedup = sitl->speedup;
     }
+
+    // for EKF comparison log relhome pos and velocity at loop rate
+    static uint16_t last_ticks;
+    uint16_t ticks = AP::scheduler().ticks();
+    if (last_ticks != ticks) {
+        last_ticks = ticks;
+// @LoggerMessage: SIM2
+// @Description: Additional simulator state
+// @Field: TimeUS: Time since system startup
+// @Field: PN: North position from home
+// @Field: PE: East position from home
+// @Field: PD: Down position from home
+// @Field: VN: Velocity north
+// @Field: VE: Velocity east
+// @Field: VD: Velocity down
+        Vector3d pos = get_position_relhome();
+        Vector3f vel = get_velocity_ef();
+        AP::logger().WriteStreaming("SIM2", "TimeUS,PN,PE,PD,VN,VE,VD",
+                                    "Qdddfff",
+                                    AP_HAL::micros64(),
+                                    pos.x, pos.y, pos.z,
+                                    vel.x, vel.y, vel.z);
+    }
 }
 
 float Aircraft::rangefinder_range() const
@@ -671,15 +695,10 @@ void Aircraft::update_dynamics(const Vector3f &rot_accel)
             dcm.to_euler(&r, &p, &y);
             y = y + yaw_rate * delta_time;
             dcm.from_euler(0.0f, radians(90), y);
-            // no movement
-            if (accel_earth.z > -1.1*GRAVITY_MSS) {
-                velocity_ef.zero();
-            }
             // X, Y movement tracks ground movement
             velocity_ef.x = gnd_movement.x;
             velocity_ef.y = gnd_movement.y;
             gyro.zero();
-            use_smoothing = true;
             break;
         }
         }
@@ -787,7 +806,7 @@ void Aircraft::smooth_sensors(void)
 // @Field: R2: DCM Roll
 // @Field: P2: DCM Pitch
 // @Field: Y2: DCM Yaw
-    AP::logger().Write("SMOO", "TimeUS,AEx,AEy,AEz,DPx,DPy,DPz,R,P,Y,R2,P2,Y2",
+    AP::logger().WriteStreaming("SMOO", "TimeUS,AEx,AEy,AEz,DPx,DPy,DPz,R,P,Y,R2,P2,Y2",
                                            "Qffffffffffff",
                                            AP_HAL::micros64(),
                                            degrees(angle_differential.x),
@@ -921,6 +940,10 @@ void Aircraft::update_external_payload(const struct sitl_input &input)
     // update RichenPower generator
     if (richenpower) {
         richenpower->update(input);
+    }
+
+    if (fetteconewireesc) {
+        fetteconewireesc->update(*this);
     }
 
     sitl->shipsim.update();

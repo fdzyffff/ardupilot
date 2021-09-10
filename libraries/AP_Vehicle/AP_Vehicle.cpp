@@ -139,7 +139,6 @@ void AP_Vehicle::setup()
 
     // init_ardupilot is where the vehicle does most of its initialisation.
     init_ardupilot();
-    gcs().send_text(MAV_SEVERITY_INFO, "ArduPilot Ready");
 
 #if !APM_BUILD_TYPE(APM_BUILD_Replay)
     SRV_Channels::init();
@@ -175,7 +174,7 @@ void AP_Vehicle::setup()
 #if GENERATOR_ENABLED
     generator.init();
 #endif
-
+    gcs().send_text(MAV_SEVERITY_INFO, "ArduPilot Ready");
 }
 
 void AP_Vehicle::loop()
@@ -193,6 +192,18 @@ void AP_Vehicle::loop()
         */
         done_safety_init = true;
         BoardConfig.init_safety();
+
+        // send RC output mode info if available
+        char banner_msg[50];
+        if (hal.rcout->get_output_mode_banner(banner_msg, sizeof(banner_msg))) {
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "%s", banner_msg);
+        }
+    }
+    const uint32_t new_internal_errors = AP::internalerror().errors();
+    if(_last_internal_errors != new_internal_errors) {
+        AP::logger().Write_Error(LogErrorSubsystem::INTERNAL_ERROR, LogErrorCode::INTERNAL_ERRORS_DETECTED);
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "Internal Errors %x", (unsigned)new_internal_errors);
+        _last_internal_errors = new_internal_errors;
     }
 }
 
@@ -344,6 +355,12 @@ void AP_Vehicle::update_dynamic_notch_at_specified_rate()
     }
 }
 
+void AP_Vehicle::notify_no_such_mode(uint8_t mode_number)
+{
+    GCS_SEND_TEXT(MAV_SEVERITY_WARNING,"No such mode %u", mode_number);
+    AP::logger().Write_Error(LogErrorSubsystem::FLIGHT_MODE, LogErrorCode(mode_number));
+}
+
 // reboot the vehicle in an orderly manner, doing various cleanups and
 // flashing LEDs as appropriate
 void AP_Vehicle::reboot(bool hold_in_bootloader)
@@ -403,6 +420,13 @@ void AP_Vehicle::publish_osd_info()
     nav_info.wp_number = mission->get_current_nav_index();
     osd->set_nav_info(nav_info);
 }
+
+void AP_Vehicle::get_osd_roll_pitch_rad(float &roll, float &pitch) const
+{
+    roll = ahrs.roll;
+    pitch = ahrs.pitch;
+}
+
 #endif
 
 AP_Vehicle *AP_Vehicle::_singleton = nullptr;

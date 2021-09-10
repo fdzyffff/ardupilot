@@ -36,6 +36,8 @@ public:
         ZIGZAG    =    24,  // ZIGZAG mode is able to fly in a zigzag manner with predefined point A and point B
         SYSTEMID  =    25,  // System ID mode produces automated system identification signals in the controllers
         AUTOROTATE =   26,  // Autonomous autorotation
+        AUTO_RTL =     27,  // Auto RTL, this is not a true mode, AUTO will report as this mode if entered to perform a DO_LAND_START Landing sequence
+        TURTLE =       28,  // Flip over after crash
     };
 
     // constructor
@@ -101,18 +103,41 @@ public:
         return pos_control->get_vel_desired_cms();
     }
 
+    // send output to the motors, can be overridden by subclasses
+    virtual void output_to_motors();
+
+    // returns true if pilot's yaw input should be used to adjust vehicle's heading
+    virtual bool use_pilot_yaw() const {return true; }
+
 protected:
 
     // helper functions
     bool is_disarmed_or_landed() const;
     void zero_throttle_and_relax_ac(bool spool_up = false);
     void zero_throttle_and_hold_attitude();
-    void make_safe_spool_down();
+    void make_safe_ground_handling(bool force_throttle_unlimited = false);
 
-    // functions to control landing
-    // in modes that support landing
+    // functions to control normal landing.  pause_descent is true if vehicle should not descend
     void land_run_horizontal_control();
     void land_run_vertical_control(bool pause_descent = false);
+    void land_run_horiz_and_vert_control(bool pause_descent = false) {
+        land_run_horizontal_control();
+        land_run_vertical_control(pause_descent);
+    }
+
+    // run normal or precision landing (if enabled)
+    // pause_descent is true if vehicle should not descend
+    void land_run_normal_or_precland(bool pause_descent = false);
+
+#if PRECISION_LANDING == ENABLED
+    // Go towards a position commanded by prec land state machine in order to retry landing
+    // The passed in location is expected to be NED and in meters
+    void precland_retry_position(const Vector3f &retry_pos);
+
+    // Run precland statemachine. This function should be called from any mode that wants to do precision landing.
+    // This handles everything from prec landing, to prec landing failures, to retries and failsafe measures
+    void precland_run();
+#endif
 
     // return expected input throttle setting to hover:
     virtual float throttle_hover() const;
@@ -249,7 +274,6 @@ public:
     GCS_Copter &gcs();
     void set_throttle_takeoff(void);
     uint16_t get_pilot_speed_dn(void);
-
     // end pass-through functions
 };
 
@@ -352,7 +376,7 @@ class ModeAuto : public Mode {
 public:
     // inherit constructor
     using Mode::Mode;
-    Number mode_number() const override { return Number::AUTO; }
+    Number mode_number() const override { return auto_RTL? Number::AUTO_RTL : Number::AUTO; }
 
     bool init(bool ignore_checks) override;
     void exit() override;
@@ -394,6 +418,7 @@ public:
     bool is_landing() const override;
 
     bool is_taking_off() const override;
+    bool use_pilot_yaw() const override;
 
     bool requires_terrain_failsafe() const override { return true; }
 
@@ -406,6 +431,9 @@ public:
     // for GCS_MAVLink to call:
     bool do_guided(const AP_Mission::Mission_Command& cmd);
 
+    // Go straight to landing sequence via DO_LAND_START, if succeeds pretend to be Auto RTL mode
+    bool jump_to_landing_sequence_auto_RTL(ModeReason reason);
+
     AP_Mission mission{
         FUNCTOR_BIND_MEMBER(&ModeAuto::start_command, bool, const AP_Mission::Mission_Command &),
         FUNCTOR_BIND_MEMBER(&ModeAuto::verify_command, bool, const AP_Mission::Mission_Command &),
@@ -413,8 +441,8 @@ public:
 
 protected:
 
-    const char *name() const override { return "AUTO"; }
-    const char *name4() const override { return "AUTO"; }
+    const char *name() const override { return auto_RTL? "AUTO RTL" : "AUTO"; }
+    const char *name4() const override { return auto_RTL? "ARTL" : "AUTO"; }
 
     uint32_t wp_distance() const override;
     int32_t wp_bearing() const override;
@@ -428,8 +456,6 @@ private:
         AllowTakeOffWithoutRaisingThrottle = (1 << 1U),
         IgnorePilotYaw                     = (1 << 2U),
     };
-
-    bool use_pilot_yaw(void) const;
 
     bool start_command(const AP_Mission::Mission_Command& cmd);
     bool verify_command(const AP_Mission::Mission_Command& cmd);
@@ -555,6 +581,9 @@ private:
         uint8_t cmd_count;                  // number of commands in the cmd array
         AP_Mission::Mission_Command cmd[mis_change_detect_cmd_max]; // local copy of the next few mission commands
     } mis_change_detect = {};
+
+    // True if we have entered AUTO to perform a DO_LAND_START landing sequence and we should report as AUTO RTL mode
+    bool auto_RTL;
 };
 
 #if AUTOTUNE_ENABLED == ENABLED
@@ -893,6 +922,8 @@ public:
     // return guided mode timeout in milliseconds.  Only used for velocity, acceleration and angle control
     uint32_t get_timeout_ms() const;
 
+    bool use_pilot_yaw() const override;
+
 protected:
 
     const char *name() const override { return "GUIDED"; }
@@ -926,7 +957,6 @@ private:
     void posvelaccel_control_run();
     void set_desired_velocity_with_accel_and_fence_limits(const Vector3f& vel_des);
     void set_yaw_state(bool use_yaw, float yaw_cd, bool use_yaw_rate, float yaw_rate_cds, bool relative_angle);
-    bool use_pilot_yaw(void) const;
 
     // controls which controller is run (pos or vel):
     SubMode guided_mode = SubMode::TakeOff;
@@ -1028,6 +1058,7 @@ protected:
 
     uint32_t wp_distance() const override;
     int32_t wp_bearing() const override;
+    float crosstrack_error() const override { return pos_control->crosstrack_error();}
 
 #if PRECISION_LANDING == ENABLED
     bool do_precision_loiter();
@@ -1150,6 +1181,8 @@ public:
     // for reporting to GCS
     bool get_wp(Location &loc) const override;
 
+    bool use_pilot_yaw() const override;
+
     // RTL states
     enum class SubMode : uint8_t {
         STARTING,
@@ -1232,8 +1265,6 @@ private:
         IgnorePilotYaw    = (1U << 2),
     };
 
-    bool use_pilot_yaw(void) const;
-
 };
 
 
@@ -1256,6 +1287,7 @@ public:
     void exit() override;
 
     bool is_landing() const override;
+    bool use_pilot_yaw() const override;
 
     // Safe RTL states
     enum class SubMode : uint8_t {
@@ -1486,6 +1518,35 @@ private:
     uint32_t free_fall_start_ms;    // system time free fall was detected
     float free_fall_start_velz;     // vertical velocity when free fall was detected
 };
+
+#if MODE_TURTLE_ENABLED == ENABLED
+class ModeTurtle : public Mode {
+
+public:
+    // inherit constructors
+    using Mode::Mode;
+    Number mode_number() const override { return Number::TURTLE; }
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+    void exit() override;
+
+    bool requires_GPS() const override { return false; }
+    bool has_manual_throttle() const override { return true; }
+    bool allows_arming(AP_Arming::Method method) const override;
+    bool is_autopilot() const override { return false; }
+    void change_motor_direction(bool reverse);
+    void output_to_motors() override;
+
+protected:
+    const char *name() const override { return "TURTLE"; }
+    const char *name4() const override { return "TRTL"; }
+
+private:
+    float motors_output;
+    Vector2f motors_input;
+};
+#endif
 
 // modes below rely on Guided mode so must be declared at the end (instead of in alphabetical order)
 

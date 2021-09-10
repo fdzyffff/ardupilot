@@ -217,6 +217,8 @@ void AP_Logger::Write_RSSI()
 }
 
 void AP_Logger::Write_Command(const mavlink_command_int_t &packet,
+                              uint8_t source_system,
+                              uint8_t source_component,
                               const MAV_RESULT result,
                               bool was_command_long)
 {
@@ -225,10 +227,10 @@ void AP_Logger::Write_Command(const mavlink_command_int_t &packet,
         time_us         : AP_HAL::micros64(),
         target_system   : packet.target_system,
         target_component: packet.target_component,
+        source_system   : source_system,
+        source_component: source_component,
         frame           : packet.frame,
         command         : packet.command,
-        current         : packet.current,
-        autocontinue    : packet.autocontinue,
         param1          : packet.param1,
         param2          : packet.param2,
         param3          : packet.param3,
@@ -293,6 +295,16 @@ void AP_Logger::Write_Power(void)
         // encode armed state in bit 3
         safety_and_armed |= 1U<<2;
     }
+    float MCU_temp = 0;
+    float MCU_voltage = 0;
+    float MCU_vmin = 0;
+    float MCU_vmax = 0;
+#if HAL_WITH_MCU_MONITORING
+    MCU_temp = hal.analogin->mcu_temperature();
+    MCU_voltage = hal.analogin->mcu_voltage();
+    MCU_vmin = hal.analogin->mcu_voltage_min();
+    MCU_vmax = hal.analogin->mcu_voltage_max();
+#endif
     const struct log_POWR pkt{
         LOG_PACKET_HEADER_INIT(LOG_POWR_MSG),
         time_us : AP_HAL::micros64(),
@@ -300,7 +312,11 @@ void AP_Logger::Write_Power(void)
         Vservo  : hal.analogin->servorail_voltage(),
         flags   : hal.analogin->power_status_flags(),
         accumulated_flags   : hal.analogin->accumulated_power_status_flags(),
-        safety_and_arm : safety_and_armed
+        safety_and_arm : safety_and_armed,
+        MCU_temp : MCU_temp,
+        MCU_voltage : MCU_voltage,
+        MCU_voltage_min : MCU_vmin,
+        MCU_voltage_max : MCU_vmax,
     };
     WriteBlock(&pkt, sizeof(pkt));
 #endif
