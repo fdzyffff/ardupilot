@@ -138,6 +138,9 @@ public:
     // Command an euler roll, pitch and yaw angle with angular velocity feedforward and smoothing
     virtual void input_euler_angle_roll_pitch_yaw(float euler_roll_angle_cd, float euler_pitch_angle_cd, float euler_yaw_angle_cd, bool slew_yaw);
 
+    // Command an euler roll angle and an euler pitch and yaw rate with angular velocity feedforward and smoothing
+    virtual void input_euler_angle_roll_euler_rate_pitch_yaw(float euler_roll_angle_cd, float euler_pitch_rate_cds, float euler_yaw_rate_cds);
+
     // Command euler yaw rate and pitch angle with roll angle specified in body frame with multicopter style controls
     // (used only by tailsitter quadplanes)
     virtual void input_euler_rate_yaw_euler_angle_pitch_bf_roll_m(float euler_roll_angle_cd, float euler_pitch_angle_cd, float euler_yaw_rate_cds);

@@ -19,6 +19,7 @@ void Copter::userhook_FastLoop()
 void Copter::userhook_50Hz()
 {
     // put your 50Hz code here
+    Ucam.update();
 }
 #endif
 
@@ -26,13 +27,27 @@ void Copter::userhook_50Hz()
 void Copter::userhook_MediumLoop()
 {
     // put your 10Hz code here
+    Ucam_Log_Write_UCamTarget();
 }
 #endif
 
 #ifdef USERHOOK_SLOWLOOP
 void Copter::userhook_SlowLoop()
 {
-    // put your 3.3Hz code here
+    // put your 1Hz code here
+    if ((g2.user_parameters.cam_print.get() & (1<<0)) && Ucam.display_info_new) { // 1
+        gcs().send_text(MAV_SEVERITY_WARNING, "Raw (%0.0f,%0.0f) on:%0.0f", Ucam.display_info_p1, Ucam.display_info_p2, Ucam.display_info_p3);
+        Ucam.display_info_new = false;
+    }
+    if (g2.user_parameters.cam_print.get() & (1<<1)) { // 2
+        gcs().send_text(MAV_SEVERITY_WARNING, "Corr (%0.0f,%0.0f) on:%d", Ucam.get_correct_info().x,Ucam.get_correct_info().y, Ucam.is_active());
+    }
+    if (g2.user_parameters.cam_print.get() & (1<<2)) { // 4
+        gcs().send_text(MAV_SEVERITY_WARNING, "rpy (%0.1f,%0.1f,%0.1f)", Ucam.get_target_roll_angle()*0.01f, Ucam.get_target_pitch_rate()*0.01f, Ucam.get_target_yaw_rate()*0.01f);
+    }
+    if (g2.user_parameters.cam_print.get() & (1<<3)) { // 8
+        gcs().send_text(MAV_SEVERITY_WARNING, "Track Angle (%0.1f)", Ucam.get_current_angle_deg());
+    }
 }
 #endif
 

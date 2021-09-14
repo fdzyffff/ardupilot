@@ -454,6 +454,40 @@ void Copter::Log_Write_GuidedTarget(uint8_t target_type, const Vector3f& pos_tar
     logger.WriteBlock(&pkt, sizeof(pkt));
 }
 
+// Cam target logging
+struct PACKED log_UCamTarget {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    uint8_t target_valid;
+    float target_raw_x;
+    float target_raw_y;
+    float target_corr_x;
+    float target_corr_y;
+    float target_roll_angle;
+    float target_pitch_rate;
+    float target_yaw_rate;
+    float target_track_angle;
+};
+
+// Write a Cam target
+void Copter::Ucam_Log_Write_UCamTarget()
+{
+    struct log_UCamTarget pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_UCAMTARGET_MSG),
+        time_us            : AP_HAL::micros64(),
+        target_valid       : (uint8_t)Ucam.is_active(),
+        target_raw_x       : Ucam.get_raw_info().x,
+        target_raw_y       : Ucam.get_raw_info().y,
+        target_corr_x      : Ucam.get_correct_info().x,
+        target_corr_y      : Ucam.get_correct_info().y,
+        target_roll_angle  : Ucam.get_target_roll_angle()*0.01f,
+        target_pitch_rate  : Ucam.get_target_pitch_rate()*0.01f,
+        target_yaw_rate    : Ucam.get_target_yaw_rate()*0.01f,
+        target_track_angle : Ucam.get_current_angle_deg()
+    };
+    logger.WriteBlock(&pkt, sizeof(pkt));
+}
+
 // type and unit information can be found in
 // libraries/AP_Logger/Logstructure.h; search for "log_Units" for
 // units and "Format characters" for field type information
@@ -489,6 +523,8 @@ const struct LogStructure Copter::log_structure[] = {
       "SIDS", "QBfffffff",  "TimeUS,Ax,Mag,FSt,FSp,TFin,TC,TR,TFout", "s--ssssss", "F--------" },
     { LOG_GUIDEDTARGET_MSG, sizeof(log_GuidedTarget),
       "GUID",  "QBffffff",    "TimeUS,Type,pX,pY,pZ,vX,vY,vZ", "s-mmmnnn", "F-000000" },
+    { LOG_UCAMTARGET_MSG, sizeof(log_UCamTarget),
+      "UCAM",  "QBffffffff", "TimeUS,AON,FrawX,FrawY,FcorrX,FcorrY,Rangle,Prate,Yrate,Track", "s---------", "F---------" },
 };
 
 void Copter::Log_Write_Vehicle_Startup_Messages()

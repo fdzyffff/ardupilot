@@ -190,6 +190,7 @@
 #endif
 
 #include "mode.h"
+#include "UCam.h"
 
 class Copter : public AP_Vehicle {
 public:
@@ -236,6 +237,11 @@ public:
     friend class ModeThrow;
     friend class ModeZigZag;
     friend class ModeAutorotate;
+    friend class ModeLockon;
+    friend class ModeAttack_att;
+    friend class ModeAttack_angle;
+
+    friend class UCam;
 
     Copter(void);
 
@@ -912,6 +918,10 @@ private:
     void userhook_auxSwitch1(uint8_t ch_flag);
     void userhook_auxSwitch2(uint8_t ch_flag);
     void userhook_auxSwitch3(uint8_t ch_flag);
+
+    UCam Ucam;
+    void Ucam_Log_Write_UCamTarget();
+
 
 #if OSD_ENABLED == ENABLED
     void publish_osd_info();
