@@ -108,7 +108,9 @@ void Copter::userhook_auxSwitch3(uint8_t ch_flag)
         // nothing
         break;
     case 0:
-        if (copter.rangefinder_alt_ok()) {
+        if (!copter.arming.is_armed()) {
+            return;
+        } else if (copter.rangefinder_alt_ok()) {
             set_mode(Mode::Number::LAND, ModeReason::UNAVAILABLE);
         } else {
             copter.arming.disarm();

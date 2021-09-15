@@ -184,12 +184,13 @@ void ModePOSEF3::run()
         if (!copter.rangefinder_alt_ok()) {
             if (_tookoff) {
                 target_climb_rate = MAX(-get_pilot_speed_dn(), -50.f);
-            } else if (copter.inertial_nav.get_altitude() > 300.f ) {
+            } else if (copter.inertial_nav.get_altitude() > 400.f ) {
                 _tookoff = true;
             }
         } else {
             target_climb_rate = 0.0f;
             copter.surface_tracking.set_target_alt_cm(ef3_target_alt);
+            _tookoff = true;
         }
 
         // adjust climb rate using rangefinder
