@@ -1004,6 +1004,9 @@ private:
     ModeAutorotate mode_autorotate;
 #endif
 
+    ModeLockon mode_lockon;
+    ModeAttack_att mode_attack_att;
+    ModeAttack_angle mode_attack_angle;
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);

@@ -53,6 +53,6 @@ float ModeAttack_att::my_get_throttle_boosted(float throttle_in)
 
     float norm_input = constrain_float((target_angle_deg - current_angle_deg)/target_angle_deg, -1.0f, 1.0f);
 
-    float throttle_out = throttle_in + copter.g2.user_parameters.Thr_pid.update_all(0.0f, norm_input, false);
+    float throttle_out = throttle_in + copter.g2.user_parameters.Thr_pid.update_all(0.0f, -norm_input, false);
     return throttle_out;
 }
