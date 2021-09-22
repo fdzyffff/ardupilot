@@ -86,7 +86,7 @@ void EF_Counter::EFGate_update(Vector3f &pos_start, Vector3f &pos_end)
             if (i_gate == 0 && _EFGate_last_pass_time_ms[i_gate] == 0) {
                 _EFGate_last_pass_time_ms[i_gate].set_and_save(AP_HAL::millis()-extra_time);
                 gcs().send_text(MAV_SEVERITY_WARNING, "Timer start");
-            } else if (_EFGate_last_pass_time_ms[0] != 0 && _EFGate_last_pass_time_ms[i_gate] == 0) {
+            } else if (_EFGate_last_pass_time_ms[0] != 0 && i_gate != 0) {
                 _EFGate_last_pass_time_ms[i_gate].set_and_save(AP_HAL::millis()-extra_time - _EFGate_last_pass_time_ms[0].get());
                 gcs().send_text(MAV_SEVERITY_WARNING, "T%d :%0.3f", i_gate, (float)_EFGate_last_pass_time_ms[i_gate].get()*0.001f);
             }
