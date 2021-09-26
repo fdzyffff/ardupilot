@@ -5,6 +5,10 @@ void Copter::userhook_init()
 {
     // put your initialisation code here
     // this will be called once at start-up
+
+    if (g2.user_parameters.EF_use_uwb_port.get() <= 0) {return;}
+    AP::ef_counter().EFGate_reset();
+    gcs().send_text(MAV_SEVERITY_INFO, "Timer reset");
 }
 #endif
 

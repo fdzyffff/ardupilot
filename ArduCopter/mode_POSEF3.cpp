@@ -89,16 +89,14 @@ void ModePOSEF3::run()
         update_simple_mode();
 
         // convert pilot input to lean angles
-        get_pilot_desired_lean_angles(target_roll, target_pitch, loiter_nav->get_angle_max_cd(), attitude_control->get_althold_lean_angle_max());
+        get_pilot_desired_lean_angles_EF3(target_roll, target_pitch, loiter_nav->get_angle_max_cd(), attitude_control->get_althold_lean_angle_max());
 
         // process pilot's roll and pitch input
         loiter_nav->set_pilot_desired_acceleration(target_roll, target_pitch, G_Dt);
 
         // get pilot's desired yaw rate
-        target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
-        if (target_pitch < -500.f) {
-            target_yaw_rate += User_get_pilot_desired_yaw_rate(target_roll);
-        }
+        target_yaw_rate = copter.g2.user_parameters.EF3_yaw_factor * get_pilot_desired_yaw_rate(channel_roll->get_control_in());
+
         // get pilot desired climb rate
         target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
         target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
@@ -213,8 +211,4 @@ uint32_t ModePOSEF3::wp_distance() const
 int32_t ModePOSEF3::wp_bearing() const
 {
     return loiter_nav->get_bearing_to_target();
-}
-
-float ModePOSEF3::User_get_pilot_desired_yaw_rate(float target_roll) {
-    return copter.g2.user_parameters.EF3_yaw_factor * target_roll;
 }

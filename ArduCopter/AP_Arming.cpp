@@ -795,6 +795,7 @@ bool AP_Arming_Copter::arm(const AP_Arming::Method method, const bool do_arming_
 
     // assumed armed without a arming, switch. Overridden in switches.cpp
     copter.ap.armed_with_switch = false;
+    gcs().send_text(MAV_SEVERITY_INFO, "Go Go Go!");
 
     // return success
     return true;

@@ -446,6 +446,46 @@ void Mode::get_pilot_desired_lean_angles(float &roll_out, float &pitch_out, floa
     // roll_out and pitch_out are returned
 }
 
+// get_pilot_desired_angle - transform pilot's roll or pitch input into a desired lean angle
+// returns desired angle in centi-degrees
+void Mode::get_pilot_desired_lean_angles_EF3(float &roll_out, float &pitch_out, float angle_max, float angle_limit) const
+{
+    // throttle failsafe check
+    if (copter.failsafe.radio || !copter.ap.rc_receiver_present) {
+        roll_out = 0;
+        pitch_out = 0;
+        return;
+    }
+    // fetch roll and pitch inputs
+    pitch_out = channel_pitch->get_control_in();
+    if (pitch_out > -500.0f) {
+        roll_out = 0.0f;
+    } else {
+        roll_out = channel_roll->get_control_in();
+    }
+
+    // limit max lean angle
+    angle_limit = constrain_float(angle_limit, 1000.0f, angle_max);
+
+    // scale roll and pitch inputs to ANGLE_MAX parameter range
+    float scaler = angle_max/(float)ROLL_PITCH_YAW_INPUT_MAX;
+    roll_out *= scaler;
+    pitch_out *= scaler;
+
+    // do circular limit
+    float total_in = norm(pitch_out, roll_out);
+    if (total_in > angle_limit) {
+        float ratio = angle_limit / total_in;
+        roll_out *= ratio;
+        pitch_out *= ratio;
+    }
+
+    // do lateral tilt to euler roll conversion
+    roll_out = (18000/M_PI) * atanf(cosf(pitch_out*(M_PI/18000))*tanf(roll_out*(M_PI/18000)));
+
+    // roll_out and pitch_out are returned
+}
+
 bool Mode::_TakeOff::triggered(const float target_climb_rate) const
 {
     if (!copter.ap.land_complete) {

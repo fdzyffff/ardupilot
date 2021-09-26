@@ -84,6 +84,7 @@ public:
 
     // pilot input processing
     void get_pilot_desired_lean_angles(float &roll_out, float &pitch_out, float angle_max, float angle_limit) const;
+    void get_pilot_desired_lean_angles_EF3(float &roll_out, float &pitch_out, float angle_max, float angle_limit) const;
     float get_pilot_desired_yaw_rate(int16_t stick_angle);
     float get_pilot_desired_throttle() const;
 
@@ -1500,7 +1501,6 @@ protected:
 private:
 
     bool _tookoff;
-    float User_get_pilot_desired_yaw_rate(float target_roll);
 };
 
 
@@ -1568,7 +1568,6 @@ protected:
 private:
 
     bool _tookoff;
-    float User_get_pilot_desired_yaw_rate(float target_roll);
 
 #if PRECISION_LANDING == ENABLED
     bool _precision_loiter_enabled;

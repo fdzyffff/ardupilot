@@ -34,14 +34,11 @@ void ModeATTEF3::run()
 
     // get pilot desired lean angles
     float target_roll, target_pitch;
-    get_pilot_desired_lean_angles(target_roll, target_pitch, copter.aparm.angle_max, attitude_control->get_althold_lean_angle_max());
+    get_pilot_desired_lean_angles_EF3(target_roll, target_pitch, copter.aparm.angle_max, attitude_control->get_althold_lean_angle_max());
 
     // get pilot's desired yaw rate
     
-    float target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
-    if (target_pitch < -500.f) {
-        target_yaw_rate += User_get_pilot_desired_yaw_rate(target_roll);
-    } 
+    float target_yaw_rate = copter.g2.user_parameters.EF3_yaw_factor * get_pilot_desired_yaw_rate(channel_roll->get_control_in());
 
     // get pilot desired climb rate
     float target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
@@ -122,9 +119,4 @@ void ModeATTEF3::run()
 
     // call z-axis position controller
     pos_control->update_z_controller();
-
-}
-
-float ModeATTEF3::User_get_pilot_desired_yaw_rate(float target_roll) {
-    return copter.g2.user_parameters.EF3_yaw_factor * target_roll;
 }

@@ -438,6 +438,7 @@ bool NavEKF3_core::readyToUseBodyOdm(void) const
 // return true if the filter to be ready to use gps
 bool NavEKF3_core::readyToUseGPS(void) const
 {
+    // gcs().send_text(MAV_SEVERITY_INFO, "%d,%d,%d,%d,%d,%d,%d,%d",validOrigin , tiltAlignComplete , yawAlignComplete , delAngBiasLearned , gpsGoodToAlign , (frontend->_fusionModeGPS != 3) , gpsDataToFuse , !gpsInhibit);
     return validOrigin && tiltAlignComplete && yawAlignComplete && delAngBiasLearned && gpsGoodToAlign && (frontend->_fusionModeGPS != 3) && gpsDataToFuse && !gpsInhibit;
 }
 
