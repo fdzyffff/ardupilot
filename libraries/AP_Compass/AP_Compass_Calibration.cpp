@@ -437,9 +437,12 @@ MAV_RESULT Compass::mag_cal_fixed_yaw(float yaw_deg, uint8_t compass_mask,
         if (!AP::ahrs().get_position(loc)) {
             if (AP::gps().status() < AP_GPS::GPS_OK_FIX_3D) {
                 gcs().send_text(MAV_SEVERITY_ERROR, "Mag: no position available");
-                return MAV_RESULT_FAILED;
+                loc.lat = 315524988;
+                loc.lng = 1218396452;
+                loc.alt = 100;
+            } else {
+                loc = AP::gps().location();
             }
-            loc = AP::gps().location();
         }
         lat_deg = loc.lat * 1.0e-7;
         lon_deg = loc.lng * 1.0e-7;
