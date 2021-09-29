@@ -18,7 +18,7 @@ void Copter::userhook_FastLoop()
     // put your 100Hz code here
     AP::ef_counter().update();
 
-    if (flightmode == &mode_attef2 || flightmode == &mode_attef3 || flightmode == &mode_posef2 || flightmode == &mode_posef3) {
+    if (copter.arming.is_armed() && (flightmode == &mode_attef2 || flightmode == &mode_attef3 || flightmode == &mode_posef2 || flightmode == &mode_posef3)) {
         if (inertial_nav.get_altitude() > 600.f && !rangefinder_alt_ok()) {
             gcs().send_text(MAV_SEVERITY_WARNING, "RNGFND Warning! LAND");
             set_mode(Mode::Number::LAND, ModeReason::UNAVAILABLE);
