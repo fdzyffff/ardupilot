@@ -37,6 +37,7 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     AP_GROUPINFO("_H_CFACTOR"       , 24, UserParameters, fly_climb_factor, 1.0f),
     AP_GROUPINFO("_H_COFFSET"       , 25, UserParameters, fly_climb_rate_offset, 0.0f),
 
+    AP_GROUPINFO("_TELE_POWER"      , 26, UserParameters, tele_power, 10),
 
     AP_GROUPEND
 };

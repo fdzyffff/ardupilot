@@ -57,6 +57,34 @@ void Copter::userhook_SuperSlowLoop()
     if (g2.user_parameters.cam_print.get() & (1<<3)) { // 8
         gcs().send_text(MAV_SEVERITY_WARNING, "Track Angle (%0.1f)", Ucam.get_current_angle_deg());
     }
+
+    static uint32_t last_update = millis();
+    static bool tele_set = false;
+    if (!tele_set && (millis() - last_update > 1000)) {
+
+        for (uint8_t i=0; i<MAVLINK_COMM_NUM_BUFFERS; i++) {
+            AP_HAL::UARTDriver *_port;
+            if ((_port = serial_manager.find_serial(AP_SerialManager::SerialProtocol_MAVLink, i))) {
+                //gcs().send_text(MAV_SEVERITY_WARNING, "port : %d", i);
+                _port->write(0x41);
+                _port->write(0x54);
+                _port->write(0x2B);
+                _port->write(0x54);
+                _port->write(0x58);
+                _port->write(0x50);
+                _port->write(0x57);
+                _port->write(0x52);
+                _port->write(0x3D);
+                _port->write(0x31);
+                _port->write(0x30);
+                _port->write(g2.user_parameters.tele_power.get());
+            }
+        }
+
+        if (millis() - last_update > 10000) {
+            tele_set = true;
+        }
+    }
 }
 #endif
 
@@ -88,3 +116,37 @@ void Copter::userhook_auxSwitch3(uint8_t ch_flag)
     // put your aux switch #3 handler here (CHx_OPT = 49)
 }
 #endif
+
+void Copter::send_my_micro_image(mavlink_channel_t chan, mavlink_my_micro_image_t* my_micro_image) {
+        // mavlink_channel_t new_chan = MAVLINK_COMM_0;
+        // if (chan == MAVLINK_COMM_0) {new_chan = MAVLINK_COMM_1;}
+        // if (chan == MAVLINK_COMM_1) {new_chan = MAVLINK_COMM_2;}
+        // if (chan == MAVLINK_COMM_2) {new_chan = MAVLINK_COMM_3;}
+        // mavlink_msg_my_micro_image_send(new_chan,
+        //     my_micro_image->st_row_idx,
+        //     my_micro_image->st_packed_col_idx,
+        //     my_micro_image->info,
+        //     my_micro_image->data); 
+
+    uint16_t mask = GCS_MAVLINK::active_channel_mask() | GCS_MAVLINK::streaming_channel_mask();
+    //gcs().send_text(MAV_SEVERITY_WARNING, "Mask %d", mask);
+    // don't send on the incoming channel. This should only matter if
+    // the routing table is full
+    mask &= ~(1U<<(chan-MAVLINK_COMM_0));
+    //gcs().send_text(MAV_SEVERITY_WARNING, "Mask %d", mask);
+    // send on the remaining channels
+    for (uint8_t i=0; i<MAVLINK_COMM_NUM_BUFFERS; i++) {
+        if (mask & (1U<<i)) {
+            mavlink_channel_t channel = (mavlink_channel_t)(MAVLINK_COMM_0 + i);
+            if (comm_get_txspace(channel) >= 128 +
+               GCS_MAVLINK::packet_overhead_chan(channel)) {
+            // gcs().send_text(MAV_SEVERITY_WARNING, "channel %d", i);
+            mavlink_msg_my_micro_image_send(channel,
+                my_micro_image->st_row_idx,
+                my_micro_image->st_packed_col_idx,
+                my_micro_image->info,
+                my_micro_image->data); 
+            }
+        }
+    }
+}

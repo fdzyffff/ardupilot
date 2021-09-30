@@ -41,4 +41,5 @@ public:
 	AP_Float fly_climb_factor;
     AP_Float fly_climb_rate_offset;
 
+    AP_Int16 tele_power;
 };

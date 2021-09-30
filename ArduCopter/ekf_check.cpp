@@ -98,38 +98,39 @@ bool Copter::ekf_over_threshold()
     if (g.fs_ekf_thresh <= 0.0f) {
         return false;
     }
+    return false;
 
-    // use EKF to get variance
-    float position_variance, vel_variance, height_variance, tas_variance;
-    Vector3f mag_variance;
-    Vector2f offset;
-    ahrs.get_variances(vel_variance, position_variance, height_variance, mag_variance, tas_variance, offset);
+    // // use EKF to get variance
+    // float position_variance, vel_variance, height_variance, tas_variance;
+    // Vector3f mag_variance;
+    // Vector2f offset;
+    // ahrs.get_variances(vel_variance, position_variance, height_variance, mag_variance, tas_variance, offset);
 
-    const float mag_max = fmaxf(fmaxf(mag_variance.x,mag_variance.y),mag_variance.z);
+    // const float mag_max = fmaxf(fmaxf(mag_variance.x,mag_variance.y),mag_variance.z);
 
-    // return true if two of compass, velocity and position variances are over the threshold OR velocity variance is twice the threshold
-    uint8_t over_thresh_count = 0;
-    if (mag_max >= g.fs_ekf_thresh) {
-        over_thresh_count++;
-    }
-    if (!optflow.healthy() && (vel_variance >= (2.0f * g.fs_ekf_thresh))) {
-        over_thresh_count += 2;
-    } else if (vel_variance >= g.fs_ekf_thresh) {
-        over_thresh_count++;
-    }
-    if (position_variance >= g.fs_ekf_thresh) {
-        over_thresh_count++;
-    }
+    // // return true if two of compass, velocity and position variances are over the threshold OR velocity variance is twice the threshold
+    // uint8_t over_thresh_count = 0;
+    // if (mag_max >= g.fs_ekf_thresh) {
+    //     over_thresh_count++;
+    // }
+    // if (!optflow.healthy() && (vel_variance >= (2.0f * g.fs_ekf_thresh))) {
+    //     over_thresh_count += 2;
+    // } else if (vel_variance >= g.fs_ekf_thresh) {
+    //     over_thresh_count++;
+    // }
+    // if (position_variance >= g.fs_ekf_thresh) {
+    //     over_thresh_count++;
+    // }
 
-    if (over_thresh_count >= 2) {
-        return true;
-    }
+    // if (over_thresh_count >= 2) {
+    //     return true;
+    // }
 
-    // either optflow relative or absolute position estimate OK
-    if (optflow_position_ok() || ekf_position_ok()) {
-        return false;
-    }
-    return true;
+    // // either optflow relative or absolute position estimate OK
+    // if (optflow_position_ok() || ekf_position_ok()) {
+    //     return false;
+    // }
+    // return true;
 }
 
 

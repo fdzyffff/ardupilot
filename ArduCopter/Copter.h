@@ -956,6 +956,7 @@ private:
     int32_t Ugcs_get_relative_alt();
     Vector3f Ugcs_get_velocity_NED();
 
+    void send_my_micro_image(mavlink_channel_t chan, mavlink_my_micro_image_t* my_micro_image) ;
 #if OSD_ENABLED == ENABLED
     void publish_osd_info();
 #endif
