@@ -87,7 +87,7 @@ void ModeATTEF2::run()
 
 #if AC_AVOID_ENABLED == ENABLED
         // apply avoidance
-        copter.avoid.adjust_fence_roll_pitch(target_roll, target_pitch, copter.aparm.angle_max);
+        // copter.avoid.adjust_fence_roll_pitch(target_roll, target_pitch, copter.aparm.angle_max);
 #endif
         if (!copter.rangefinder_alt_ok()) {
             if (_tookoff) {

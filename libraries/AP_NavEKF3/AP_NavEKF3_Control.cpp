@@ -347,7 +347,7 @@ void NavEKF3_core::setAidingMode()
                 // We are commencing aiding using GPS - this is the preferred method
                 posResetSource = GPS;
                 velResetSource = GPS;
-                gcs().send_text(MAV_SEVERITY_INFO, "EKF3 IMU%u is using GPS",(unsigned)imu_index);
+                gcs().send_text(MAV_SEVERITY_INFO, "GO! (EKF3 IMU%u is using GPS)",(unsigned)imu_index);
             } else if (readyToUseRangeBeacon()) {
                 // We are commencing aiding using range beacons
                 posResetSource = RNGBCN;
@@ -438,8 +438,13 @@ bool NavEKF3_core::readyToUseBodyOdm(void) const
 // return true if the filter to be ready to use gps
 bool NavEKF3_core::readyToUseGPS(void) const
 {
-    // gcs().send_text(MAV_SEVERITY_INFO, "%d,%d,%d,%d,%d,%d,%d,%d",validOrigin , tiltAlignComplete , yawAlignComplete , delAngBiasLearned , gpsGoodToAlign , (frontend->_fusionModeGPS != 3) , gpsDataToFuse , !gpsInhibit);
-    return validOrigin && tiltAlignComplete && yawAlignComplete && delAngBiasLearned && gpsGoodToAlign && (frontend->_fusionModeGPS != 3) && gpsDataToFuse && !gpsInhibit;
+    // static uint32_t last_time_ms = AP_HAL::millis();
+    // if (AP_HAL::millis() - last_time_ms > 2000) {
+    //     gcs().send_text(MAV_SEVERITY_INFO, "%d,%d,%d,%d,%d,%d,%d,%d",validOrigin , tiltAlignComplete , yawAlignComplete , delAngBiasLearned , gpsGoodToAlign , (frontend->_fusionModeGPS != 3) , gpsDataToFuse , !gpsInhibit);
+    //     last_time_ms = AP_HAL::millis();
+    // }
+    //return validOrigin && tiltAlignComplete && yawAlignComplete && delAngBiasLearned && gpsGoodToAlign && (frontend->_fusionModeGPS != 3) && gpsDataToFuse && !gpsInhibit;
+    return validOrigin && tiltAlignComplete && yawAlignComplete && gpsGoodToAlign && (frontend->_fusionModeGPS != 3) && gpsDataToFuse && !gpsInhibit;
 }
 
 // return true if the filter to be ready to use the beacon range measurements

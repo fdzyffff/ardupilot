@@ -627,6 +627,7 @@ void NavEKF3_core::readGpsData()
             }
 
             // convert GPS measurements to local NED and save to buffer to be fused later if we have a valid origin
+            // gcs().send_text(MAV_SEVERITY_INFO, "validOrigin %d",validOrigin);
             if (validOrigin) {
                 gpsDataNew.pos = EKF_origin.get_distance_NE(gpsloc);
                 if ((frontend->_originHgtMode & (1<<2)) == 0) {

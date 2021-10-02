@@ -88,7 +88,7 @@ void ModeATTEF3::run()
 
 #if AC_AVOID_ENABLED == ENABLED
         // apply avoidance
-        copter.avoid.adjust_fence_roll_pitch(target_roll, target_pitch, copter.aparm.angle_max);
+        // copter.avoid.adjust_fence_roll_pitch(target_roll, target_pitch, copter.aparm.angle_max);
 #endif
         float ef3_target_alt = constrain_float(copter.g2.user_parameters.EF3_target_alt, 30.0f, 600.0f);
 
