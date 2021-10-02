@@ -39,7 +39,7 @@ void EF_Counter::update() {
     const AP_AHRS &_ahrs = AP::ahrs();
 
     Vector3f new_pos;
-    if (!_ahrs.get_relative_position_NED_home(new_pos)) {
+    if (!_ahrs.get_relative_position_NED_origin(new_pos)) {
         return;
     }
     new_pos *= 100.0f; // m to cm
@@ -61,16 +61,21 @@ void EF_Counter::EFGate_update(Vector3f &pos_start, Vector3f &pos_end)
 {
     const AC_Fence *fence = AP::fence();
     if (fence == nullptr) {
+        gcs().send_text(MAV_SEVERITY_WARNING, "fence == nullptr");
         return;
     }
 
     // exit if polygon fences are not enabled
     if ((fence->get_enabled_fences() & AC_FENCE_TYPE_POLYGON) == 0) {
+        gcs().send_text(MAV_SEVERITY_WARNING, "fence_not_enable");
         return;
     }
 
     // iterate through inclusion polygons
     const uint8_t num_inclusion_polygons = fence->polyfence().get_inclusion_polygon_count();
+    // if (num_inclusion_polygons < 2) {
+    //     gcs().send_text(MAV_SEVERITY_WARNING, "fence udpate %d", num_inclusion_polygons);
+    // }
     //gcs().send_text(MAV_SEVERITY_WARNING, "fence udpate %d", num_inclusion_polygons);
     uint8_t i_gate = 0; // 0 is for start line
     for (uint8_t i = 0; i < num_inclusion_polygons; i++) {
@@ -90,6 +95,7 @@ void EF_Counter::EFGate_update(Vector3f &pos_start, Vector3f &pos_end)
                 _EFGate_last_pass_time_ms[i_gate].set_and_save(AP_HAL::millis()-extra_time - _EFGate_last_pass_time_ms[0].get());
                 gcs().send_text(MAV_SEVERITY_WARNING, "T%d :%0.3f", i_gate, (float)_EFGate_last_pass_time_ms[i_gate].get()*0.001f);
             }
+            // gcs().send_text(MAV_SEVERITY_WARNING, "fence udpate %d", num_points);
         }
         i_gate += 1;
     }
@@ -111,6 +117,7 @@ bool EF_Counter::EFGate_check(Vector3f &pos_start, Vector3f &pos_end, const Vect
     if (lines == nullptr || num_points == 0 || num_points != 2) {
         return false;
     }
+    // gcs().send_text(MAV_SEVERITY_WARNING, " ef check");
 
     // end points of current edge
     Vector2f gate_start = lines[0];
@@ -118,7 +125,9 @@ bool EF_Counter::EFGate_check(Vector3f &pos_start, Vector3f &pos_end, const Vect
 
     // find intersection with line segment
     Vector2f intersection;
+    // gcs().send_text(MAV_SEVERITY_WARNING, " ef check %0.2f (%0.2f)", (lines[1]-lines[0]).length(), (pos_start_xy-pos_end_xy).length() );
     if (Vector2f::segment_intersection(pos_start_xy, pos_end_xy, gate_start, gate_end, intersection)) {
+        // gcs().send_text(MAV_SEVERITY_WARNING, " ef check 2");
         float l1 = (pos_end_xy - intersection).length();
         float l2 = (pos_end_xy - pos_start_xy).length();
         if (is_zero(l2)) {
