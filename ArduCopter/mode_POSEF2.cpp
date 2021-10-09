@@ -229,5 +229,9 @@ void ModePOSEF2::User_alt_limit(float&  target_rate) {
         rate_min = MAX(rate_min, AC_AttitudeControl::sqrt_controller((alt_min - current_rng_alt), kP, accel_cmss, G_Dt));
     }
     rate_max = MAX(rate_min, rate_max);
+    if (current_rng_alt < 60.f) {
+        target_rate = constrain_float(target_rate, 0.0f, rate_max);
+        return;
+    }
     target_rate = constrain_float(target_rate, rate_min, rate_max);
 }
