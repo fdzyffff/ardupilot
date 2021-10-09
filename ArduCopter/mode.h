@@ -1572,6 +1572,7 @@ private:
 #if PRECISION_LANDING == ENABLED
     bool _precision_loiter_enabled;
 #endif
+    void User_alt_limit(float&  target_rate);
 };
 
 
