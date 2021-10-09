@@ -900,11 +900,17 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_
 
     case MAV_CMD_USER_1: {
         copter.Ucam.handle_info(packet.param1, packet.param2, ((int16_t)packet.param3!=0));
+
         return MAV_RESULT_ACCEPTED;
     }
 
     case MAV_CMD_USER_2: {
         copter.Ugcs.handle_info((int16_t)packet.param1, (int16_t)packet.param2, (int16_t)packet.param3, (int16_t)packet.param4);
+        return MAV_RESULT_ACCEPTED;
+    }
+
+    case MAV_CMD_USER_5: {
+        copter.Upayload.cmd_handle((int16_t)packet.param1);
         return MAV_RESULT_ACCEPTED;
     }
 

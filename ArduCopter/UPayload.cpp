@@ -45,41 +45,41 @@ void UPayload::msg_payload2apm_handle()
         case payload_parse:
             if (_cmd == 0x01) {
                 copter.gcs().send_text(MAV_SEVERITY_WARNING, "step[%d]:%d",_cmd,_ret);
-                if (_ret == 0xF0) {
-                    set_state(payload_selfcheck);
-                }
+                // if (_ret == 0xF0) {
+                //     set_state(payload_selfcheck);
+                // }
             }
             break;
         case payload_selfcheck:
             if (_cmd == 0x02) {
                 copter.gcs().send_text(MAV_SEVERITY_WARNING, "step[%d]:%d",_cmd,_ret);
-                if (_ret == 0xF0) {
-                    set_state(payload_voltup);
-                }
+                // if (_ret == 0xF0) {
+                //     set_state(payload_voltup);
+                // }
             }
             break;
         case payload_voltup:
             if (_cmd == 0x03) {
                 copter.gcs().send_text(MAV_SEVERITY_WARNING, "step[%d]:%d",_cmd,_ret);
-                if (_ret == 0xF0) {
-                    set_state(payload_arm);
-                }
+                // if (_ret == 0xF0) {
+                //     set_state(payload_arm);
+                // }
             }
             break;
         case payload_arm:
             if (_cmd == 0x04) {
                 copter.gcs().send_text(MAV_SEVERITY_WARNING, "step[%d]:%d",_cmd,_ret);
-                if (_ret == 0xF0) {
-                    set_state(payload_fire);
-                }
+                // if (_ret == 0xF0) {
+                //     set_state(payload_fire);
+                // }
             }
             break;
         case payload_fire:
             if (_cmd == 0x05) {
                 copter.gcs().send_text(MAV_SEVERITY_WARNING, "step[%d]:%d",_cmd,_ret);
-                if (_ret == 0xF0) {
-                    set_state(payload_none);
-                }
+                // if (_ret == 0xF0) {
+                //     set_state(payload_none);
+                // }
             }
             break;
         case payload_none:
@@ -96,21 +96,27 @@ void UPayload::set_state(state_t state) {
     uint8_t _cmd = 0x00;
     switch (_state) {
         case payload_parse:
+            gcs().send_text(MAV_SEVERITY_WARNING, "Payload Parse");
             _cmd = 0x01;
             break;
         case payload_selfcheck:
+            gcs().send_text(MAV_SEVERITY_WARNING, "Payload Selfcheck");
             _cmd = 0x02;
             break;
         case payload_voltup:
+            gcs().send_text(MAV_SEVERITY_WARNING, "Payload VoltUP");
             _cmd = 0x03;
             break;
         case payload_arm:
+            gcs().send_text(MAV_SEVERITY_WARNING, "Payload Arm");
             _cmd = 0x04;
             break;
         case payload_fire:
+            gcs().send_text(MAV_SEVERITY_WARNING, "Payload Fire");
             _cmd = 0x05;
             break;
         case payload_none:
+            gcs().send_text(MAV_SEVERITY_WARNING, "Payload None");
         default:
             break;
     }
@@ -132,11 +138,39 @@ void UPayload::update()
         msg_payload2apm_handle();
     }
 
-    if (AP_HAL::millis() - _last_state_ms > 5000) {
+    if (AP_HAL::millis() - _last_state_ms > 15000) {
         set_state(payload_none);
     }
 
     if (_uart.initialized()) {
         _uart.write();
+    }
+}
+
+void UPayload::cmd_handle(int16_t cmd_in)
+{
+    if (cmd_in != 0) {
+        switch (_state) {
+            case payload_none:
+                set_state(payload_parse);
+                break;
+            case payload_parse:
+                set_state(payload_selfcheck);
+                break;
+            case payload_selfcheck:
+                set_state(payload_voltup);
+                break;
+            case payload_voltup:
+                set_state(payload_arm);
+                break;
+            case payload_arm:
+                set_state(payload_fire);
+                break;
+            case payload_fire:
+                set_state(payload_none);
+                break;
+            default:
+                break;
+        }
     }
 }

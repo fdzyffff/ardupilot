@@ -22,6 +22,7 @@ public:
     void update();
     void msg_payload2apm_handle();
     void set_state(state_t state);
+    void cmd_handle(int16_t cmd_in);
 
 private:
 
