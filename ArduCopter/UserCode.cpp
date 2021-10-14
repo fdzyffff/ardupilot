@@ -19,7 +19,8 @@ void Copter::userhook_FastLoop()
     AP::ef_counter().update();
 
     if (copter.arming.is_armed() && (flightmode == &mode_attef2 || flightmode == &mode_attef3 || flightmode == &mode_posef2 || flightmode == &mode_posef3)) {
-        if (inertial_nav.get_altitude() > 600.f && !rangefinder_alt_ok()) {
+        float height = copter.inertial_nav.get_altitude() * 0.01 - copter.arming_altitude_m;
+        if (height > 600.f && !rangefinder_alt_ok()) {
             gcs().send_text(MAV_SEVERITY_WARNING, "RNGFND Warning! LAND");
             set_mode(Mode::Number::LAND, ModeReason::UNAVAILABLE);
         }
