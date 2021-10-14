@@ -61,13 +61,13 @@ void EF_Counter::EFGate_update(Vector3f &pos_start, Vector3f &pos_end)
 {
     const AC_Fence *fence = AP::fence();
     if (fence == nullptr) {
-        gcs().send_text(MAV_SEVERITY_WARNING, "fence == nullptr");
+        //gcs().send_text(MAV_SEVERITY_WARNING, "fence == nullptr");
         return;
     }
 
     // exit if polygon fences are not enabled
     if ((fence->get_enabled_fences() & AC_FENCE_TYPE_POLYGON) == 0) {
-        gcs().send_text(MAV_SEVERITY_WARNING, "fence_not_enable");
+        //gcs().send_text(MAV_SEVERITY_WARNING, "fence_not_enable");
         return;
     }
 
