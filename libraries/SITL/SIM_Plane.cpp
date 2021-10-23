@@ -65,7 +65,7 @@ Plane::Plane(const char *frame_str) :
     }
     if (strstr(frame_str, "-bungee")) {
         have_launcher = true;
-        launch_accel = 20;
+        launch_accel = 120;
         launch_time = 2;
     }
     if (strstr(frame_str, "-throw")) {

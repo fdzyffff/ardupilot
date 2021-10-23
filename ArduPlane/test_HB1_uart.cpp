@@ -126,6 +126,18 @@ void Plane::test_HB1_uart_msg3(uint8_t option){
         case 16: // ServoTest
             tmp_msg._msg_1.content.msg.remote_index = 0x99;
             break;
+        case 21:
+            SRV_Channels::set_output_scaled(SRV_Channel::k_launcher_HB1, 100);
+            tmp_msg._msg_1.updated = false;
+            tmp_msg._msg_1.need_send = false;
+            tmp_msg._msg_1.print = false;
+            break;
+        case 22:
+            SRV_Channels::set_output_scaled(SRV_Channel::k_launcher_HB1, 0);
+            tmp_msg._msg_1.updated = false;
+            tmp_msg._msg_1.need_send = false;
+            tmp_msg._msg_1.print = false;
+            break;
         default:
             break;
     }
