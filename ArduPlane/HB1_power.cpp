@@ -114,7 +114,7 @@ void Plane::HB1_Power_status_update() {
             }
             break;
         case HB1_PowerAction_RocketON:
-            if (timer > 2000) {
+            if (timer > (uint32_t)g2.hb1_rocket_timer_ms.get()) {
                 float airspeed_measured = 0;
                 if (!ahrs.airspeed_estimate(&airspeed_measured)) {airspeed_measured = 0.0f;}
                 float gspd = ahrs.groundspeed_vector().length();

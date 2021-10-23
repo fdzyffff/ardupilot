@@ -38,24 +38,23 @@ bool Plane::auto_takeoff_check(void)
     if (!takeoff_state.launchTimerStarted && !is_zero(g.takeoff_throttle_min_accel)) {
         // we are requiring an X acceleration event to launch
         float xaccel = SpdHgt_Controller->get_VXdot();
-        if (g2.takeoff_throttle_accel_count <= 1) {
-            if (xaccel < g.takeoff_throttle_min_accel) {
-                goto no_launch;
-            }
-        } else {
-            // we need multiple accel events
-            if (now - takeoff_state.accel_event_ms > 500) {
-                takeoff_state.accel_event_counter = 0;
-            }
-            bool odd_event = ((takeoff_state.accel_event_counter & 1) != 0);
-            bool got_event = (odd_event?xaccel < -g.takeoff_throttle_min_accel : xaccel > g.takeoff_throttle_min_accel);
-            if (got_event) {
-                takeoff_state.accel_event_counter++;
+        bool got_event = xaccel > g.takeoff_throttle_min_accel;
+
+        if (got_event) {
+            if (takeoff_state.accel_event_counter == 0 ) {
+                takeoff_state.accel_event_counter = 1;
                 takeoff_state.accel_event_ms = now;
             }
-            if (takeoff_state.accel_event_counter < g2.takeoff_throttle_accel_count) {
-                goto no_launch;
-            }
+        } else {
+            takeoff_state.accel_event_counter = 0;
+            // takeoff_state.accel_event_ms = now;
+        }
+
+        // we need multiple accel events
+        if (takeoff_state.accel_event_counter == 0) {
+            goto no_launch;
+        } else if (now - takeoff_state.accel_event_ms < (uint32_t)g2.takeoff_throttle_accel_ms.get()) {
+            goto no_launch;
         }
     }
 
@@ -65,7 +64,7 @@ bool Plane::auto_takeoff_check(void)
         takeoff_state.last_tkoff_arm_time = now;
         if (now - takeoff_state.last_report_ms > 2000) {
             gcs().send_text(MAV_SEVERITY_INFO, "Armed AUTO, xaccel = %.1f m/s/s, waiting %.1f sec",
-                              (double)SpdHgt_Controller->get_VXdot(), (double)(wait_time_ms*0.001f));
+                              (double)SpdHgt_Controller->get_VXdot(), (double)(now - takeoff_state.accel_event_ms)*0.001f);
             takeoff_state.last_report_ms = now;
         }
     }

@@ -1182,12 +1182,12 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_SUBGROUPINFO(scripting, "SCR_", 14, ParametersG2, AP_Scripting),
 #endif
 
-    // @Param: TKOFF_ACCEL_CNT
+    // @Param: TKOFF_ACCEL_MS
     // @DisplayName: Takeoff throttle acceleration count
-    // @Description: This is the number of acceleration events to require for arming with TKOFF_THR_MINACC. The default is 1, which means a single forward acceleration above TKOFF_THR_MINACC will arm. By setting this higher than 1 you can require more forward/backward movements to arm.
-    // @Range: 1 10
+    // @Description: This is the duration time of acceleration to require for arming with TKOFF_THR_MINACC.
+    // @Range: 0 10000
     // @User: User
-    AP_GROUPINFO("TKOFF_ACCEL_CNT", 15, ParametersG2, takeoff_throttle_accel_count, 1),
+    AP_GROUPINFO("TKOFF_ACCEL_MS", 15, ParametersG2, takeoff_throttle_accel_ms, 0),
 
 #if LANDING_GEAR_ENABLED == ENABLED
     // @Group: LGR_
@@ -1287,6 +1287,7 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("HB1_GG_SPD", 46, ParametersG2, hb1_gg_spd, 50.f),
     AP_GROUPINFO("HB1_CAM_RATE", 47, ParametersG2, hb1_cam_rate, 20),
     AP_GROUPINFO("HB1_60_MIN", 48, ParametersG2, hb1_engine60_min, 12.f),
+    AP_GROUPINFO("HB1_RKT_MS", 49, ParametersG2, hb1_rocket_timer_ms, 2000),
 
     AP_GROUPEND
 };

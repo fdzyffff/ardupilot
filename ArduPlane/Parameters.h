@@ -552,7 +552,7 @@ public:
     AP_Scripting scripting;
 #endif // ENABLE_SCRIPTING
 
-    AP_Int8 takeoff_throttle_accel_count;
+    AP_Int32 takeoff_throttle_accel_ms;
     AP_Int8 takeoff_timeout;
 
 #if LANDING_GEAR_ENABLED == ENABLED
@@ -593,6 +593,7 @@ public:
     AP_Int16 hb1_num_attack;
     AP_Int16 hb1_cam_rate;
     AP_Float hb1_engine60_min;
+    AP_Int32 hb1_rocket_timer_ms;
 
     AP_Int8 hil_test;
 };
