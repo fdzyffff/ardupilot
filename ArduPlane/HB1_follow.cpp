@@ -30,7 +30,7 @@ void Plane::HB1_msg_mission2apm_follow_handle() {
 void Plane::HB1_update_follow()
 {
     float target_dist = HB1_follow_loc.get_distance(current_loc);
-    float length_cut = 400.0f; //meter
+    float length_cut = 3000.0f; //meter
     float vel_length = 0.f;
     if (target_dist > length_cut) {
     	prev_WP_loc = current_loc;
@@ -42,10 +42,10 @@ void Plane::HB1_update_follow()
     	prev_WP_loc = HB1_follow_loc;
     	//prev_WP_loc.offset_bearing(HB1_follow_dir, -100);
     	guided_WP_loc = HB1_follow_loc;
-    	guided_WP_loc.offset_bearing(HB1_follow_dir, 400);
+    	guided_WP_loc.offset_bearing(HB1_follow_dir, 3000);
     	next_WP_loc = guided_WP_loc;
     	auto_state.crosstrack = true;
-    	vel_length = 390.f;
+    	vel_length = 2990.f;
     }
     // float delta_dist = (guided_WP_loc.get_distance(current_loc) - vel_length);
     // float accel_mss = g2.hb1_follow_speed_ratio.get();
