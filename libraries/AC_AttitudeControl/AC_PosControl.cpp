@@ -892,7 +892,7 @@ void AC_PosControl::write_log()
     AP::logger().Write("PSC",
                        "TimeUS,TPX,TPY,PX,PY,TVX,TVY,VX,VY,TAX,TAY,AX,AY",
                        "smmmmnnnnoooo",
-                       "F000000000000",
+                       "F------------",
                        "Qffffffffffff",
                        AP_HAL::micros64(),
                        double(pos_target.x * 0.01f),

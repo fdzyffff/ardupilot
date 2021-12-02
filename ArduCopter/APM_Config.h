@@ -10,9 +10,9 @@
 //#define AC_FENCE              DISABLED            // disable fence to save 2k of flash
 #define CAMERA                DISABLED            // disable camera trigger to save 1k of flash
 //#define RANGEFINDER_ENABLED   DISABLED            // disable rangefinder to save 1k of flash
-#define PROXIMITY_ENABLED     DISABLED            // disable proximity sensors
+// #define PROXIMITY_ENABLED     DISABLED            // disable proximity sensors
 //#define AC_RALLY              DISABLED            // disable rally points library (must also disable terrain which relies on rally)
-#define AC_AVOID_ENABLED      DISABLED            // disable stop-at-fence library
+// #define AC_AVOID_ENABLED      DISABLED            // disable stop-at-fence library
 #define AC_OAPATHPLANNER_ENABLED DISABLED         // disable path planning around obstacles
 //#define AC_TERRAIN            DISABLED            // disable terrain library
 #define PARACHUTE             DISABLED            // disable parachute release to save 1k of flash
@@ -35,7 +35,7 @@
 //#define MODE_CIRCLE_ENABLED   DISABLED            // disable circle mode support
 #define MODE_DRIFT_ENABLED    DISABLED            // disable drift mode support
 #define MODE_FLIP_ENABLED     DISABLED            // disable flip mode support
-#define MODE_FOLLOW_ENABLED   DISABLED            // disable follow mode support
+// #define MODE_FOLLOW_ENABLED   DISABLED            // disable follow mode support
 //#define MODE_GUIDED_ENABLED   DISABLED            // disable guided mode support
 //#define MODE_GUIDED_NOGPS_ENABLED   DISABLED      // disable guided/nogps mode support
 //#define MODE_LOITER_ENABLED   DISABLED            // disable loiter mode support
@@ -64,7 +64,7 @@
 // Put your variable definitions into the UserVariables.h file (or another file name and then change the #define below).
 //#define USERHOOK_VARIABLES "UserVariables.h"
 // Put your custom code into the UserCode.cpp with function names matching those listed below and ensure the appropriate #define below is uncommented below
-//#define USERHOOK_INIT userhook_init();                      // for code to be run once at startup
+#define USERHOOK_INIT userhook_init();                      // for code to be run once at startup
 //#define USERHOOK_FASTLOOP userhook_FastLoop();            // for code to be run at 100hz
 #define USERHOOK_50HZLOOP userhook_50Hz();                  // for code to be run at 50hz
 #define USERHOOK_MEDIUMLOOP userhook_MediumLoop();        // for code to be run at 10hz

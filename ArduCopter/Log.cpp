@@ -488,6 +488,28 @@ void Copter::Ugcs_Log_Write_UCamTarget()
     logger.WriteBlock(&pkt, sizeof(pkt));
 }
 
+// genren target logging
+struct PACKED log_Mocap {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    float raw_x;
+    float raw_y;
+    float raw_z;
+};
+
+// Write a Guided mode target
+void Copter::Ugcs_Log_Write_Mocap()
+{
+    struct log_Mocap pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_MOCAP_MSG),
+        time_us     : AP_HAL::micros64(),
+        raw_x       : mocap_stat.x,
+        raw_y       : mocap_stat.y,
+        raw_z       : mocap_stat.z
+    };
+    logger.WriteBlock(&pkt, sizeof(pkt));
+}
+
 // type and unit information can be found in
 // libraries/AP_Logger/Logstructure.h; search for "log_Units" for
 // units and "Format characters" for field type information
@@ -525,6 +547,8 @@ const struct LogStructure Copter::log_structure[] = {
       "GUID",  "QBffffff",    "TimeUS,Type,pX,pY,pZ,vX,vY,vZ", "s-mmmnnn", "F-000000" },
     { LOG_UCAMTARGET_MSG, sizeof(log_UCamTarget),
       "UCAM",  "QBffffffff", "TimeUS,AON,FrawX,FrawY,FcorrX,FcorrY,Rangle,Prate,Yrate,Track", "s---------", "F---------" },
+    { LOG_MOCAP_MSG, sizeof(log_Mocap),
+      "MOCP",  "Qfff", "TimeUS,x,y,z", "s---", "F---" },
 };
 
 void Copter::Log_Write_Vehicle_Startup_Messages()

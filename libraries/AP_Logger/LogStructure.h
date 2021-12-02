@@ -481,6 +481,7 @@ struct PACKED log_NKF2 {
     int16_t magY;
     int16_t magZ;
     uint8_t index;
+    uint8_t altsource;
 };
 
 struct PACKED log_NKF2a {
@@ -1436,7 +1437,7 @@ struct PACKED log_Arm_Disarm {
     { LOG_NKF1_MSG, sizeof(log_EKF1), \
       "NKF1","QccCfffffffccce","TimeUS,Roll,Pitch,Yaw,VN,VE,VD,dPD,PN,PE,PD,GX,GY,GZ,OH", "sddhnnnnmmmkkkm", "FBBB0000000BBBB" }, \
     { LOG_NKF2_MSG, sizeof(log_NKF2), \
-      "NKF2","QbccccchhhhhhB","TimeUS,AZbias,GSX,GSY,GSZ,VWN,VWE,MN,ME,MD,MX,MY,MZ,MI", "s----nnGGGGGG-", "F----BBCCCCCC-" }, \
+      "NKF2","QbccccchhhhhhBb","TimeUS,AZbias,GSX,GSY,GSZ,VWN,VWE,MN,ME,MD,MX,MY,MZ,MI,aSRC", "s----nnGGGGGG--", "F----BBCCCCCC--" }, \
     { LOG_NKF3_MSG, sizeof(log_NKF3), \
       "NKF3","Qcccccchhhcc","TimeUS,IVN,IVE,IVD,IPN,IPE,IPD,IMX,IMY,IMZ,IYAW,IVT", "snnnmmmGGG??", "FBBBBBBCCCBB" }, \
     { LOG_NKF4_MSG, sizeof(log_NKF4), \
@@ -1446,7 +1447,7 @@ struct PACKED log_Arm_Disarm {
     { LOG_NKF6_MSG, sizeof(log_EKF1), \
       "NKF6","QccCfffffffccce","TimeUS,Roll,Pitch,Yaw,VN,VE,VD,dPD,PN,PE,PD,GX,GY,GZ,OH", "sddhnnn-mmmkkkm", "FBBB000-000BBBB" }, \
     { LOG_NKF7_MSG, sizeof(log_NKF2), \
-      "NKF7","QbccccchhhhhhB","TimeUS,AZbias,GSX,GSY,GSZ,VWN,VWE,MN,ME,MD,MX,MY,MZ,MI", "s----nnGGGGGG-", "F----BBCCCCCC-" }, \
+      "NKF7","QbccccchhhhhhBb","TimeUS,AZbias,GSX,GSY,GSZ,VWN,VWE,MN,ME,MD,MX,MY,MZ,MI,aSRC", "s----nnGGGGGG--", "F----BBCCCCCC--" }, \
     { LOG_NKF8_MSG, sizeof(log_NKF3), \
       "NKF8","Qcccccchhhcc","TimeUS,IVN,IVE,IVD,IPN,IPE,IPD,IMX,IMY,IMZ,IYAW,IVT", "snnnmmmGGGd?", "FBBBBBBCCCBB" }, \
     { LOG_NKF9_MSG, sizeof(log_NKF4), \
@@ -1456,7 +1457,7 @@ struct PACKED log_Arm_Disarm {
     { LOG_NKF11_MSG, sizeof(log_EKF1), \
       "NK11","QccCfffffffccce","TimeUS,Roll,Pitch,Yaw,VN,VE,VD,dPD,PN,PE,PD,GX,GY,GZ,OH", "sddhnnn-mmmkkkm", "FBBB000-000BBBB" }, \
     { LOG_NKF12_MSG, sizeof(log_NKF2), \
-      "NK12","QbccccchhhhhhB","TimeUS,AZbias,GSX,GSY,GSZ,VWN,VWE,MN,ME,MD,MX,MY,MZ,MI", "s----nnGGGGGG-", "F----BBCCCCCC-" }, \
+      "NK12","QbccccchhhhhhBb","TimeUS,AZbias,GSX,GSY,GSZ,VWN,VWE,MN,ME,MD,MX,MY,MZ,MI,aSRC", "s----nnGGGGGG--", "F----BBCCCCCC--" }, \
     { LOG_NKF13_MSG, sizeof(log_NKF3), \
       "NK13","Qcccccchhhcc","TimeUS,IVN,IVE,IVD,IPN,IPE,IPD,IMX,IMY,IMZ,IYAW,IVT", "snnnmmmGGGd?", "FBBBBBBCCCBB" }, \
     { LOG_NKF14_MSG, sizeof(log_NKF4), \

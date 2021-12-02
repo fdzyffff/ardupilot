@@ -25,19 +25,24 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     AP_GROUPINFO("_GCS_NCRUISE"     , 13, UserParameters, gcs_num_cruise, 2),
     AP_GROUPINFO("_GCS_TCRUISE"     , 14, UserParameters, gcs_time_cruise, 0),
     AP_GROUPINFO("_GCS_GROUP_Y"     , 15, UserParameters, gcs_group_yaw, 90.f),
-    AP_GROUPINFO("_GCS_S_YANGL"     , 16, UserParameters, gcs_search_yangle_left, -45.f),
-    AP_GROUPINFO("_GCS_S_YANGR"     , 17, UserParameters, gcs_search_yangle_right, 45.f),
-    AP_GROUPINFO("_GCS_S_YRATE"     , 18, UserParameters, gcs_search_yrate, 4.5f),
+    AP_GROUPINFO("_GCS_REL_YAW"     , 16, UserParameters, gcs_group_relative_yaw, 0),
+    AP_GROUPINFO("_GCS_S_YANGL"     , 17, UserParameters, gcs_search_yangle_left, -45.f),
+    AP_GROUPINFO("_GCS_S_YANGR"     , 18, UserParameters, gcs_search_yangle_right, 45.f),
+    AP_GROUPINFO("_GCS_S_YRATE"     , 19, UserParameters, gcs_search_yrate, 4.5f),
 
-    AP_GROUPINFO("_YAW_TC"          , 19, UserParameters, fly_yaw_tc, 2.0f),
-    AP_GROUPINFO("_P_LIMIT"         , 20, UserParameters, fly_pitch_limit, 3000.0f),
-    AP_GROUPINFO("_R_LIMIT"         , 21, UserParameters, fly_roll_limit, 1500.0f),
-    AP_GROUPINFO("_R_FACTOR"        , 22, UserParameters, fly_roll_factor, 1.0f),
-    AP_GROUPINFO("_H_PSCALAR"       , 23, UserParameters, fly_pitch_scalar, 1.0f),
-    AP_GROUPINFO("_H_CFACTOR"       , 24, UserParameters, fly_climb_factor, 1.0f),
-    AP_GROUPINFO("_H_COFFSET"       , 25, UserParameters, fly_climb_rate_offset, 0.0f),
+    AP_GROUPINFO("_YAW_TC"          , 20, UserParameters, fly_yaw_tc, 2.0f),
+    AP_GROUPINFO("_P_LIMIT"         , 21, UserParameters, fly_pitch_limit, 3000.0f),
+    AP_GROUPINFO("_R_LIMIT"         , 22, UserParameters, fly_roll_limit, 1500.0f),
+    AP_GROUPINFO("_R_FACTOR"        , 23, UserParameters, fly_roll_factor, 1.0f),
+    AP_GROUPINFO("_H_PSCALAR"       , 24, UserParameters, fly_pitch_scalar, 1.0f),
+    AP_GROUPINFO("_H_CFACTOR"       , 25, UserParameters, fly_climb_factor, 1.0f),
+    AP_GROUPINFO("_H_COFFSET"       , 26, UserParameters, fly_climb_rate_offset, 0.0f),
 
-    AP_GROUPINFO("_TELE_POWER"      , 26, UserParameters, tele_power, 10),
+    AP_GROUPINFO("_TELE_POWER"      , 27, UserParameters, tele_power, 10),
+
+    AP_GROUPINFO("_EKF_LAT"         , 28, UserParameters, ekf_origin_latitude, 0),
+    AP_GROUPINFO("_EKF_LNG"         , 29, UserParameters, ekf_origin_longitude, 0),
+    AP_GROUPINFO("_EKF_ALT"         , 30, UserParameters, ekf_origin_alt, 0),
 
     AP_GROUPEND
 };

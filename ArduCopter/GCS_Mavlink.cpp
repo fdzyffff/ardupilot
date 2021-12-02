@@ -570,6 +570,34 @@ void GCS_MAVLINK_Copter::handle_rc_channels_override(const mavlink_message_t &ms
     GCS_MAVLINK::handle_rc_channels_override(msg);
 }
 
+void GCS_MAVLINK_Copter::handle_att_pos_mocap(const mavlink_message_t &msg, bool fake_value)
+{
+    mavlink_att_pos_mocap_t m;
+    mavlink_msg_att_pos_mocap_decode(&msg, &m);
+    static uint32_t last_update = millis();
+    if (m.target_system == 0 || m.target_system == copter.g.sysid_this_mav) {
+        copter.mocap_stat.x = m.x;
+        copter.mocap_stat.y = m.y;
+        copter.mocap_stat.z = m.z;
+        copter.mocap_stat.n_count++;
+        copter.mocap_stat.last_update_ms = millis();
+    
+        Location ekf_origin;
+        bool have_origin = copter.ahrs.get_origin(ekf_origin);
+        if (!have_origin) {
+            last_update = millis();
+        }
+
+        fake_value = !(have_origin && (millis() - last_update) > 10000);
+
+        if (copter.ahrs.initialised()) {
+            GCS_MAVLINK::handle_att_pos_mocap(msg, fake_value);
+        }
+
+    }
+
+}
+
 void GCS_MAVLINK_Copter::handle_command_ack(const mavlink_message_t &msg)
 {
     copter.command_ack_counter++;

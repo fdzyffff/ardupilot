@@ -171,6 +171,7 @@ enum LoggingParameters {
      LOG_SYSIDD_MSG,
      LOG_SYSIDS_MSG,
      LOG_UCAMTARGET_MSG,
+     LOG_MOCAP_MSG,
 };
 
 // Harmonic notch update mode

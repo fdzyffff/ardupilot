@@ -29,6 +29,7 @@ public:
     AP_Int16 gcs_num_cruise;
     AP_Int32 gcs_time_cruise;
     AP_Float gcs_group_yaw;
+    AP_Int16 gcs_group_relative_yaw;
     AP_Float gcs_search_yangle_left;
     AP_Float gcs_search_yangle_right;
     AP_Float gcs_search_yrate;
@@ -42,4 +43,8 @@ public:
     AP_Float fly_climb_rate_offset;
 
     AP_Int16 tele_power;
+
+    AP_Int32 ekf_origin_latitude;
+    AP_Int32 ekf_origin_longitude;
+    AP_Int32 ekf_origin_alt;
 };

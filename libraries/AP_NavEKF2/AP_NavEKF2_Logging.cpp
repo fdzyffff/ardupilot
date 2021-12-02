@@ -57,6 +57,8 @@ void NavEKF2::Log_Write_NKF2(uint8_t _core, LogMessages msg_id, uint64_t time_us
     getMagNED(_core,magNED);
     getMagXYZ(_core,magXYZ);
     getGyroScaleErrorPercentage(_core,gyroScaleFactor);
+    uint8_t activeHgtSource=0;
+    getactiveHgtSource(-1,activeHgtSource);
     const struct log_NKF2 pkt2{
         LOG_PACKET_HEADER_INIT(msg_id),
         time_us : time_us,
@@ -72,7 +74,8 @@ void NavEKF2::Log_Write_NKF2(uint8_t _core, LogMessages msg_id, uint64_t time_us
         magX    : (int16_t)(magXYZ.x),
         magY    : (int16_t)(magXYZ.y),
         magZ    : (int16_t)(magXYZ.z),
-        index   : (uint8_t)(magIndex)
+        index   : (uint8_t)(magIndex),
+        altsource : (uint8_t)activeHgtSource
     };
     AP::logger().WriteBlock(&pkt2, sizeof(pkt2));
 }
@@ -157,9 +160,11 @@ void NavEKF2::Log_Write_NKF5(uint64_t time_us) const
     float rngInnov=0; // range finder innovations
     float range=0; // measured range
     float gndOffsetErr=0; // filter ground offset state error
+
     Vector3f predictorErrors; // output predictor angle, velocity and position tracking error
     getFlowDebug(-1,normInnov, gndOffset, flowInnovX, flowInnovY, auxFlowInnov, HAGL, rngInnov, range, gndOffsetErr);
     getOutputTrackingError(-1,predictorErrors);
+    
     const struct log_NKF5 pkt5{
         LOG_PACKET_HEADER_INIT(LOG_NKF5_MSG),
         time_us : time_us,

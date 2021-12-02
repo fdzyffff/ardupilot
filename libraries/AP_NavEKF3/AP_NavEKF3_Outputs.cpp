@@ -630,3 +630,7 @@ void NavEKF3_core::getOutputTrackingError(Vector3f &error) const
     error = outputTrackError;
 }
 
+void NavEKF3_core::getactiveHgtSource(uint8_t &HgtSource) const
+{
+    HgtSource = activeHgtSource;
+}

@@ -293,6 +293,14 @@ private:
         uint32_t glitch_cleared_ms; // system time glitch cleared
     } rangefinder_state, rangefinder_up_state;
 
+    struct Mocap_stat {
+        uint16_t n_count;
+        uint32_t last_update_ms;
+        float x;
+        float y;
+        float z;
+    } mocap_stat;
+
     class SurfaceTracking {
     public:
         // get desired climb rate (in cm/s) to achieve surface tracking
@@ -924,6 +932,11 @@ private:
     void userhook_auxSwitch2(uint8_t ch_flag);
     void userhook_auxSwitch3(uint8_t ch_flag);
 
+    void userhook_SuperSlowLoop_print();
+    void userhook_SuperSlowLoop_telemsetup();
+    void userhook_SuperSlowLoop_setgpsorigin();
+    void userhook_SuperSlowLoop_gcsfeedback();
+    void userhook_SuperSlowLoop_mocap_update();
 
     // User_cam
     enum My_state_t {
@@ -950,6 +963,7 @@ private:
     bool Ugcs_do_attack();
     bool Ugcs_do_fs1();     // failsafe type1
     void Ugcs_Log_Write_UCamTarget();
+    void Ugcs_Log_Write_Mocap();
     void Ugcs_handle_msg(const mavlink_message_t &msg);
 
     int32_t Ugcs_get_terrain_alt();

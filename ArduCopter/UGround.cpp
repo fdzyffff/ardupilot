@@ -98,7 +98,13 @@ void UGround::set_up_offset(int8_t sender_id, Vector3f target_postion, Vector3f 
     }
 
     Matrix3f tmp_m;
-    tmp_m.from_euler(0.0f, 0.0f, radians(copter.g2.user_parameters.gcs_group_yaw));
+    float tmp_yaw = 0.0f;
+    if (copter.g2.user_parameters.gcs_group_relative_yaw.get() == 0) {
+        tmp_yaw = radians(copter.g2.user_parameters.gcs_group_yaw);
+    } else {
+        tmp_yaw = radians(wrap_360(copter.g2.user_parameters.gcs_group_yaw + target_heading));
+    }
+    tmp_m.from_euler(0.0f, 0.0f, tmp_yaw);
     _offset_position = tmp_m*_offset_position;
 
     _dest_loc_vec = target_postion + _offset_position;

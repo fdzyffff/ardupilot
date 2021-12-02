@@ -2922,7 +2922,7 @@ void GCS_MAVLINK::log_vision_position_estimate_data(const uint64_t usec,
                                                     const float yaw)
 {
     AP::logger().Write("VISP", "TimeUS,RemTimeUS,CTimeMS,PX,PY,PZ,Roll,Pitch,Yaw",
-                       "sssmmmddh", "FFC000000", "QQIffffff",
+                       "sssmmmddh", "FFC------", "QQIffffff",
                        (uint64_t)AP_HAL::micros64(),
                        (uint64_t)usec,
                        corrected_msec,
@@ -2934,18 +2934,23 @@ void GCS_MAVLINK::log_vision_position_estimate_data(const uint64_t usec,
                        (double)(yaw * RAD_TO_DEG));
 }
 
-void GCS_MAVLINK::handle_att_pos_mocap(const mavlink_message_t &msg)
+void GCS_MAVLINK::handle_att_pos_mocap(const mavlink_message_t &msg, bool fake_value)
 {
     mavlink_att_pos_mocap_t m;
     mavlink_msg_att_pos_mocap_decode(&msg, &m);
 
     // sensor assumed to be at 0,0,0 body-frame; need parameters for this?
     const Vector3f sensor_offset = {};
-    const Vector3f pos = {
+    Vector3f pos = {
         m.x,
         m.y,
         m.z
     };
+    if (fake_value) {
+        pos.x = 0.0f;
+        pos.y = 0.0f;
+        pos.z = 0.0f;
+    }
     Quaternion attitude = Quaternion(m.q);
     const float posErr = 0; // parameter required?
     const float angErr = 0; // parameter required?
