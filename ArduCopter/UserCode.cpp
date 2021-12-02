@@ -5,6 +5,7 @@ void Copter::userhook_init()
 {
     // put your initialisation code here
     // this will be called once at start-up
+    userhook_init_cam();
 }
 #endif
 
@@ -19,7 +20,8 @@ void Copter::userhook_FastLoop()
 void Copter::userhook_50Hz()
 {
     // put your 50Hz code here
-    Ucam.update();
+    userhook_50Hz_update_uart();
+    userhook_50Hz_update_cam();
 }
 #endif
 
@@ -74,3 +76,45 @@ void Copter::userhook_auxSwitch3(uint8_t ch_flag)
     // put your aux switch #3 handler here (CHx_OPT = 49)
 }
 #endif
+
+void Copter::userhook_init_cam() {
+    FD1_uart_msg_cam.init();
+    FD1_uart_msg_cam.get_msg_cam_in().set_enable();
+}
+
+void Copter::userhook_50Hz_update_uart() {
+    if (FD1_uart_msg_cam.initialized()) {
+        FD1_uart_msg_cam.read();
+    }
+    // test mode
+    if (g2.user_parameters.uart_cam_test != 0) {
+        FD1_uart_cam_test_send();
+    } else {
+        FD1_uart_cam_handle();
+    }
+    FD1_uart_msg_cam.write();
+
+}
+
+void Copter::userhook_50Hz_update_cam() {
+    Ucam.update();
+}
+
+void Copter::FD1_uart_cam_handle() {
+    FD1_msg_cam_in &tmp_msg = FD1_uart_msg_cam.get_msg_cam_in();
+    if (tmp_msg._msg_1.updated) {
+        Ucam.handle_info((float)tmp_msg._msg_1.content.msg.cam_x_in, (float)tmp_msg._msg_1.content.msg.cam_y_in, (tmp_msg._msg_1.content.msg.cam_id==0x10));
+    }
+}
+
+void Copter::FD1_uart_cam_test_send() {
+    FD1_msg_cam_in &tmp_msg = FD1_uart_msg_cam.get_msg_cam_in();
+    tmp_msg._msg_1.need_send = true;
+    tmp_msg._msg_1.content.msg.cam_id = 0x10;
+    tmp_msg._msg_1.content.msg.cam_x_in = 10;
+    tmp_msg._msg_1.content.msg.cam_y_in = 15;
+    tmp_msg._msg_1.content.msg.sum_check = 0;
+    for (int8_t i = 0; i < tmp_msg._msg_1.length - 1; i++) {
+        tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
+    }
+}

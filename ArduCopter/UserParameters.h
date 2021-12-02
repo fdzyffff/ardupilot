@@ -32,4 +32,6 @@ public:
     AP_Float fly_roll_factor;
     AP_Float fly_pitch_scalar;
     AP_Float fly_climb_factor;
+
+    AP_Int8  uart_cam_test;
 };

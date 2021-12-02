@@ -26,6 +26,8 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     AP_GROUPINFO("_R_FACTOR"        , 15, UserParameters, fly_roll_factor, 1.0f),
     AP_GROUPINFO("_H_PSCALAR"       , 16, UserParameters, fly_pitch_scalar, 1.0f),
     AP_GROUPINFO("_H_CFACTOR"       , 17, UserParameters, fly_climb_factor, 1.0f),
+
+    AP_GROUPINFO("_CAM_TEST"        , 18, UserParameters, uart_cam_test, 0),
     
     AP_GROUPEND
 };

@@ -191,6 +191,7 @@
 
 #include "mode.h"
 #include "UCam.h"
+#include <FD1_UART/FD1_UART.h>
 
 class Copter : public AP_Vehicle {
 public:
@@ -920,8 +921,13 @@ private:
     void userhook_auxSwitch3(uint8_t ch_flag);
 
     UCam Ucam;
+    FD1_UART FD1_uart_msg_cam{AP_SerialManager::SerialProtocol_CAM};
+    void userhook_init_cam();
+    void userhook_50Hz_update_uart();
+    void userhook_50Hz_update_cam();
     void Ucam_Log_Write_UCamTarget();
-
+    void FD1_uart_cam_test_send();
+    void FD1_uart_cam_handle();
 
 #if OSD_ENABLED == ENABLED
     void publish_osd_info();
