@@ -494,9 +494,14 @@ void Copter::update_GPS(void)
 
 void Copter::init_simple_bearing()
 {
-    // capture current cos_yaw and sin_yaw values
-    simple_cos_yaw = ahrs.cos_yaw();
-    simple_sin_yaw = ahrs.sin_yaw();
+    if (g2.user_parameters.EF_football_dir.get() < 0.0f) {
+        // capture current cos_yaw and sin_yaw values
+        simple_cos_yaw = ahrs.cos_yaw();
+        simple_sin_yaw = ahrs.sin_yaw();
+    } else {
+        simple_cos_yaw = cosf(radians(g2.user_parameters.EF_football_dir.get()));
+        simple_sin_yaw = sinf(radians(g2.user_parameters.EF_football_dir.get()));
+    }
 
     // initialise super simple heading (i.e. heading towards home) to be 180 deg from simple mode heading
     super_simple_last_bearing = wrap_360_cd(ahrs.yaw_sensor+18000);

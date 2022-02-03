@@ -1501,6 +1501,7 @@ protected:
 private:
 
     bool _tookoff;
+    void User_alt_limit(float&  target_rate);
 };
 
 

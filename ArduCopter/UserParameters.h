@@ -15,6 +15,7 @@ public:
     AP_Float EF2_alt_max;
     AP_Float EF2_alt_min;
     AP_Int8  EF_use_uwb_port;
+    AP_Float EF_football_dir;
     
 private:
     // Put your parameter variable definitions here
