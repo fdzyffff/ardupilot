@@ -102,6 +102,8 @@
 #include <AC_Fence/AC_Fence.h>
 #endif
 
+#include <FD1_UART/FD1_UART.h>
+
 // Local modules
 #include "defines.h"
 #include "mode.h"
@@ -1147,6 +1149,8 @@ private:
     float roll_in_expo(bool use_dz) const;
     float pitch_in_expo(bool use_dz) const;
     float rudder_in_expo(bool use_dz) const;
+
+    FD1_UART FD1_uart_msg_ep4{AP_SerialManager::SerialProtocol_EP4};
 
 public:
     void failsafe_check(void);

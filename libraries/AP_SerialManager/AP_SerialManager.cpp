@@ -533,6 +533,11 @@ void AP_SerialManager::init()
                     // Note init is handled by AP_MSP
                     break;
 #endif
+                case SerialProtocol_EP4:
+                    uart->begin(map_baudrate(state[i].baud), 
+                                         128,
+                                         256);
+                    break;
                 default:
                     uart->begin(map_baudrate(state[i].baud));
             }
