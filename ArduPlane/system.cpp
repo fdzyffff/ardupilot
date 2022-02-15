@@ -155,6 +155,7 @@ void Plane::init_ardupilot()
     Location::set_terrain(&terrain);
 #endif
 
+    FD1_uart_init();
 }
 
 //********************************************************************************

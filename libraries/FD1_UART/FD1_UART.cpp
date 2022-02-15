@@ -1,5 +1,3 @@
-#include <AP_HAL/AP_HAL.h>
-#include <AP_Math/AP_Math.h>
 #include "FD1_UART.h"
 
 extern const AP_HAL::HAL& hal;
@@ -41,7 +39,16 @@ void FD1_UART::write(void)
         for(i = 0;i < _msg_ep4_in._msg_1.length ; i ++) {
             _port->write(_msg_ep4_in._msg_1.content.data[i]);
         }
-        _msg_ep4_in._msg_1.updated = false;
+        //_msg_ep4_in._msg_1.updated = false;
         _msg_ep4_in._msg_1.need_send = false;
+    }
+    if (_msg_ep4_out._msg_1.need_send)
+    {
+        _msg_ep4_out.swap_message();
+        for(i = 0;i < _msg_ep4_out._msg_1.length ; i ++) {
+            _port->write(_msg_ep4_out._msg_1.content.data[i]);
+        }
+        //_msg_ep4_out._msg_1.updated = false;
+        _msg_ep4_out._msg_1.need_send = false;
     }
 }

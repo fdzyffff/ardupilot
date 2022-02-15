@@ -2,6 +2,7 @@
 #include <AP_SerialManager/AP_SerialManager.h>
 
 #include "FD1_msg_ep4_in.h"
+#include "FD1_msg_ep4_out.h"
 
 class FD1_UART {
 public:
@@ -24,6 +25,7 @@ public:
     void write();
 
     FD1_msg_ep4_in& get_msg_ep4_in() { return _msg_ep4_in; }
+    FD1_msg_ep4_out& get_msg_ep4_out() { return _msg_ep4_out; }
 
 private:
 
@@ -32,4 +34,5 @@ private:
     bool _initialized;
 
     FD1_msg_ep4_in _msg_ep4_in;
+    FD1_msg_ep4_out _msg_ep4_out;
 };

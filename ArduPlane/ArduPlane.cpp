@@ -115,6 +115,7 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
 #if HAL_EFI_ENABLED
     SCHED_TASK(efi_update,             10,    200),
 #endif
+    SCHED_TASK(FD1_uart_update,        20,    400),
 };
 
 void Plane::get_scheduler_tasks(const AP_Scheduler::Task *&tasks,
