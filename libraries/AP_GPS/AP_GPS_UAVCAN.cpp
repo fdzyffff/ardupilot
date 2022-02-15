@@ -37,6 +37,10 @@
 #include <ardupilot/gnss/RelPosHeading.hpp>
 #endif
 
+#include <AP_BoardConfig/AP_BoardConfig.h>
+
+#define GPS_PPS_EMULATION 0
+
 extern const AP_HAL::HAL& hal;
 
 #define GPS_UAVCAN_DEBUGGING 0
@@ -66,6 +70,11 @@ UC_REGISTRY_BINDER(MovingBaselineDataCb, ardupilot::gnss::MovingBaselineData);
 UC_REGISTRY_BINDER(RelPosHeadingCb, ardupilot::gnss::RelPosHeading);
 #endif
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+#define NATIVE_TIME_OFFSET (AP_HAL::micros64() - AP_HAL::native_micros64())
+#else
+#define NATIVE_TIME_OFFSET 0
+#endif
 AP_GPS_UAVCAN::DetectedModules AP_GPS_UAVCAN::_detected_modules[] = {0};
 HAL_Semaphore AP_GPS_UAVCAN::_sem_registry;
 
@@ -103,59 +112,73 @@ void AP_GPS_UAVCAN::subscribe_msgs(AP_UAVCAN* ap_uavcan)
 
     uavcan::Subscriber<uavcan::equipment::gnss::Fix, FixCb> *gnss_fix;
     gnss_fix = new uavcan::Subscriber<uavcan::equipment::gnss::Fix, FixCb>(*node);
+    if (gnss_fix == nullptr) {
+        AP_BoardConfig::allocation_error("gnss_fix");
+    }
     const int gnss_fix_start_res = gnss_fix->start(FixCb(ap_uavcan, &handle_fix_msg_trampoline));
     if (gnss_fix_start_res < 0) {
         AP_HAL::panic("UAVCAN GNSS subscriber start problem\n\r");
-        return;
     }
 
     uavcan::Subscriber<uavcan::equipment::gnss::Fix2, Fix2Cb> *gnss_fix2;
     gnss_fix2 = new uavcan::Subscriber<uavcan::equipment::gnss::Fix2, Fix2Cb>(*node);
+    if (gnss_fix2 == nullptr) {
+        AP_BoardConfig::allocation_error("gnss_fix2");
+    }
     const int gnss_fix2_start_res = gnss_fix2->start(Fix2Cb(ap_uavcan, &handle_fix2_msg_trampoline));
     if (gnss_fix2_start_res < 0) {
         AP_HAL::panic("UAVCAN GNSS subscriber start problem\n\r");
-        return;
     }
     
     uavcan::Subscriber<uavcan::equipment::gnss::Auxiliary, AuxCb> *gnss_aux;
     gnss_aux = new uavcan::Subscriber<uavcan::equipment::gnss::Auxiliary, AuxCb>(*node);
+    if (gnss_aux == nullptr) {
+        AP_BoardConfig::allocation_error("gnss_aux");
+    }
     const int gnss_aux_start_res = gnss_aux->start(AuxCb(ap_uavcan, &handle_aux_msg_trampoline));
     if (gnss_aux_start_res < 0) {
         AP_HAL::panic("UAVCAN GNSS subscriber start problem\n\r");
-        return;
     }
 
     uavcan::Subscriber<ardupilot::gnss::Heading, HeadingCb> *gnss_heading;
     gnss_heading = new uavcan::Subscriber<ardupilot::gnss::Heading, HeadingCb>(*node);
+    if (gnss_heading == nullptr) {
+        AP_BoardConfig::allocation_error("gnss_heading");
+    }
     const int gnss_heading_start_res = gnss_heading->start(HeadingCb(ap_uavcan, &handle_heading_msg_trampoline));
     if (gnss_heading_start_res < 0) {
         AP_HAL::panic("UAVCAN GNSS subscriber start problem\n\r");
-        return;
     }
 
     uavcan::Subscriber<ardupilot::gnss::Status, StatusCb> *gnss_status;
     gnss_status = new uavcan::Subscriber<ardupilot::gnss::Status, StatusCb>(*node);
+    if (gnss_status == nullptr) {
+        AP_BoardConfig::allocation_error("gnss_status");
+    }
     const int gnss_status_start_res = gnss_status->start(StatusCb(ap_uavcan, &handle_status_msg_trampoline));
     if (gnss_status_start_res < 0) {
         AP_HAL::panic("UAVCAN GNSS subscriber start problem\n\r");
-        return;
     }
 
 #if GPS_MOVING_BASELINE
     uavcan::Subscriber<ardupilot::gnss::MovingBaselineData, MovingBaselineDataCb> *gnss_moving_baseline;
     gnss_moving_baseline = new uavcan::Subscriber<ardupilot::gnss::MovingBaselineData, MovingBaselineDataCb>(*node);
+    if (gnss_moving_baseline == nullptr) {
+        AP_BoardConfig::allocation_error("gnss_moving_baseline");
+    }
     const int gnss_moving_baseline_start_res = gnss_moving_baseline->start(MovingBaselineDataCb(ap_uavcan, &handle_moving_baseline_msg_trampoline));
     if (gnss_moving_baseline_start_res < 0) {
         AP_HAL::panic("UAVCAN GNSS subscriber start problem\n\r");
-        return;
     }
 
     uavcan::Subscriber<ardupilot::gnss::RelPosHeading, RelPosHeadingCb> *gnss_relposheading;
     gnss_relposheading = new uavcan::Subscriber<ardupilot::gnss::RelPosHeading, RelPosHeadingCb>(*node);
+    if (gnss_relposheading == nullptr) {
+        AP_BoardConfig::allocation_error("gnss_relposheading");
+    }
     const int gnss_relposheading_start_res = gnss_relposheading->start(RelPosHeadingCb(ap_uavcan, &handle_relposheading_msg_trampoline));
     if (gnss_relposheading_start_res < 0) {
         AP_HAL::panic("UAVCAN GNSS subscriber start problem\n\r");
-        return;
     }
 #endif
 }
@@ -394,7 +417,7 @@ void AP_GPS_UAVCAN::handle_fix_msg(const FixCb &cb)
         if (!uavcan::isNaN(cb.msg->ned_velocity[0])) {
             Vector3f vel(cb.msg->ned_velocity[0], cb.msg->ned_velocity[1], cb.msg->ned_velocity[2]);
             interim_state.velocity = vel;
-            interim_state.ground_speed = norm(vel.x, vel.y);
+            interim_state.ground_speed = vel.xy().length();
             interim_state.ground_course = wrap_360(degrees(atan2f(vel.y, vel.x)));
             interim_state.have_vertical_velocity = true;
         } else {
@@ -518,7 +541,7 @@ void AP_GPS_UAVCAN::handle_fix2_msg(const Fix2Cb &cb)
         if (!uavcan::isNaN(cb.msg->ned_velocity[0])) {
             Vector3f vel(cb.msg->ned_velocity[0], cb.msg->ned_velocity[1], cb.msg->ned_velocity[2]);
             interim_state.velocity = vel;
-            interim_state.ground_speed = norm(vel.x, vel.y);
+            interim_state.ground_speed = vel.xy().length();
             interim_state.ground_course = wrap_360(degrees(atan2f(vel.y, vel.x)));
             interim_state.have_vertical_velocity = true;
         } else {
@@ -562,8 +585,41 @@ void AP_GPS_UAVCAN::handle_fix2_msg(const Fix2Cb &cb)
         // hdop from pdop. Some GPS modules don't provide the Aux message
         interim_state.hdop = interim_state.vdop = cb.msg->pdop * 100.0;
     }
+
+    if ((cb.msg->timestamp.usec > cb.msg->gnss_timestamp.usec) && (cb.msg->gnss_timestamp.usec > 0)) {
+        // we have a valid timestamp based on gnss_timestamp timescale, we can use that to correct our gps message time
+        interim_state.last_corrected_gps_time_us = jitter_correction.correct_offboard_timestamp_usec(cb.msg->timestamp.usec, (cb.msg->getUtcTimestamp().toUSec() + NATIVE_TIME_OFFSET));
+        interim_state.last_gps_time_ms = interim_state.last_corrected_gps_time_us/1000U;
+        interim_state.last_corrected_gps_time_us -= cb.msg->timestamp.usec - cb.msg->gnss_timestamp.usec;
+        // this is also the time the message was received on the UART on other end.
+        interim_state.corrected_timestamp_updated = true;
+    } else {
+        interim_state.last_gps_time_ms = jitter_correction.correct_offboard_timestamp_usec(cb.msg->timestamp.usec, cb.msg->getUtcTimestamp().toUSec() + NATIVE_TIME_OFFSET)/1000U;
+    }
+
+#if GPS_PPS_EMULATION
+    // Emulates a PPS signal, can be used to check how close are we to real GPS time
+    static virtual_timer_t timeout_vt;
+    hal.gpio->pinMode(51, 1);
+    auto handle_timeout = [](void *arg)
+    {
+        (void)arg;
+        //we are called from ISR context
+        chSysLockFromISR();
+        hal.gpio->toggle(51);
+        chSysUnlockFromISR();
+    };
+
+    static uint64_t next_toggle, last_toggle;
     
-    interim_state.last_gps_time_ms = AP_HAL::millis();
+    next_toggle = (cb.msg->timestamp.usec) + (1000000ULL - ((cb.msg->timestamp.usec) % 1000000ULL));
+
+    next_toggle += jitter_correction.get_link_offset_usec();
+    if (next_toggle != last_toggle) {
+        chVTSet(&timeout_vt, chTimeUS2I(next_toggle - AP_HAL::micros64()), handle_timeout, nullptr);
+        last_toggle = next_toggle;
+    }
+#endif
 
     _new_data = true;
     if (!seen_message) {
@@ -820,7 +876,12 @@ bool AP_GPS_UAVCAN::read(void)
         interim_state.speed_accuracy = MIN(interim_state.speed_accuracy, 1000.0);
 
         state = interim_state;
-
+        if (interim_state.last_corrected_gps_time_us) {
+            // If we were able to get a valid last_corrected_gps_time_us
+            // we have had a valid GPS message time, from which we calculate
+            // the time of week.
+            _last_itow_ms = interim_state.time_week_ms;
+        }
         return true;
     }
     if (!seen_message) {

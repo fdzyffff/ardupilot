@@ -206,7 +206,7 @@ void GCS_MAVLINK_Rover::send_pid_tuning()
 
     // speed to throttle PID
     if (g.gcs_pid_mask & 2) {
-        pid_info = &g2.attitude_control.get_throttle_speed_pid().get_pid_info();
+        pid_info = &g2.attitude_control.get_throttle_speed_pid_info();
         mavlink_msg_pid_tuning_send(chan, PID_TUNING_ACCZ,
                                     pid_info->target,
                                     pid_info->actual,
@@ -565,20 +565,9 @@ bool GCS_MAVLINK_Rover::handle_guided_request(AP_Mission::Mission_Command &cmd)
     return rover.mode_guided.set_desired_location(cmd.content.location);
 }
 
-void GCS_MAVLINK_Rover::handle_change_alt_request(AP_Mission::Mission_Command &cmd)
-{
-    // nothing to do
-}
-
 MAV_RESULT GCS_MAVLINK_Rover::_handle_command_preflight_calibration(const mavlink_command_long_t &packet)
 {
-    if (is_equal(packet.param4, 1.0f)) {
-        if (rover.trim_radio()) {
-            return MAV_RESULT_ACCEPTED;
-        } else {
-            return MAV_RESULT_FAILED;
-        }
-    } else if (is_equal(packet.param6, 1.0f)) {
+    if (is_equal(packet.param6, 1.0f)) {
         if (rover.g2.windvane.start_direction_calibration()) {
             return MAV_RESULT_ACCEPTED;
         } else {
@@ -710,19 +699,10 @@ MAV_RESULT GCS_MAVLINK_Rover::handle_command_int_do_reposition(const mavlink_com
         return MAV_RESULT_DENIED;
     }
 
-    Location request_location {};
-    request_location.lat = packet.x;
-    request_location.lng = packet.y;
-
-    if (fabsf(packet.z) > LOCATION_ALT_MAX_M) {
+    Location requested_location {};
+    if (!location_from_command_t(packet, requested_location)) {
         return MAV_RESULT_DENIED;
     }
-
-    Location::AltFrame frame;
-    if (!mavlink_coordinate_frame_to_location_alt_frame((MAV_FRAME)packet.frame, frame)) {
-        return MAV_RESULT_DENIED; // failed as the location is not valid
-    }
-    request_location.set_alt_cm((int32_t)(packet.z * 100.0f), frame);
 
     if (!rover.control_mode->in_guided_mode()) {
         if (!rover.set_mode(Mode::Number::GUIDED, ModeReason::GCS_COMMAND)) {
@@ -737,7 +717,7 @@ MAV_RESULT GCS_MAVLINK_Rover::handle_command_int_do_reposition(const mavlink_com
     }
 
     // set the destination
-    if (!rover.mode_guided.set_desired_location(request_location)) {
+    if (!rover.mode_guided.set_desired_location(requested_location)) {
         return MAV_RESULT_FAILED;
     }
 
@@ -1001,21 +981,13 @@ void GCS_MAVLINK_Rover::handle_set_position_target_global_int(const mavlink_mess
         target_speed = constrain_float(safe_sqrt(sq(packet.vx) + sq(packet.vy)), -speed_max, speed_max);
         // convert vector direction to target yaw
         target_yaw_cd = degrees(atan2f(packet.vy, packet.vx)) * 100.0f;
-
-        // rotate target yaw if provided in body-frame
-        if (packet.coordinate_frame == MAV_FRAME_BODY_NED || packet.coordinate_frame == MAV_FRAME_BODY_OFFSET_NED) {
-            target_yaw_cd = wrap_180_cd(target_yaw_cd + rover.ahrs.yaw_sensor);
-        }
     }
 
     // consume yaw heading
     if (!yaw_ignore) {
         target_yaw_cd = ToDeg(packet.yaw) * 100.0f;
-        // rotate target yaw if provided in body-frame
-        if (packet.coordinate_frame == MAV_FRAME_BODY_NED || packet.coordinate_frame == MAV_FRAME_BODY_OFFSET_NED) {
-            target_yaw_cd = wrap_180_cd(target_yaw_cd + rover.ahrs.yaw_sensor);
-        }
     }
+
     // consume yaw rate
     float target_turn_rate_cds = 0.0f;
     if (!yaw_rate_ignore) {
@@ -1083,7 +1055,7 @@ uint8_t GCS_MAVLINK_Rover::high_latency_tgt_heading() const
         // need to convert -180->180 to 0->360/2
         return wrap_360(control_mode->wp_bearing()) / 2;
     }
-    return 0;      
+    return 0;
 }
     
 uint16_t GCS_MAVLINK_Rover::high_latency_tgt_dist() const
@@ -1093,7 +1065,7 @@ uint16_t GCS_MAVLINK_Rover::high_latency_tgt_dist() const
         // return units are dm
         return MIN((control_mode->get_distance_to_destination()) / 10, UINT16_MAX);
     }
-    return 0;  
+    return 0;
 }
 
 uint8_t GCS_MAVLINK_Rover::high_latency_tgt_airspeed() const
@@ -1112,7 +1084,7 @@ uint8_t GCS_MAVLINK_Rover::high_latency_wind_speed() const
         // return units are m/s*5
         return MIN(rover.g2.windvane.get_true_wind_speed() * 5, UINT8_MAX);
     }
-    return 0; 
+    return 0;
 }
 
 uint8_t GCS_MAVLINK_Rover::high_latency_wind_direction() const
@@ -1121,6 +1093,6 @@ uint8_t GCS_MAVLINK_Rover::high_latency_wind_direction() const
         // return units are deg/2
         return wrap_360(degrees(rover.g2.windvane.get_true_wind_direction_rad())) / 2;
     }
-    return 0; 
+    return 0;
 }
 #endif // HAL_HIGH_LATENCY2_ENABLED

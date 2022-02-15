@@ -145,21 +145,10 @@ void AP_MotorsUGV::setup_safety_output()
 {
     if (_pwm_type == PWM_TYPE_BRUSHED_WITH_RELAY) {
         // set trim to min to set duty cycle range (0 - 100%) to servo range
-        SRV_Channels::set_trim_to_min_for(SRV_Channel::k_throttle);
-        SRV_Channels::set_trim_to_min_for(SRV_Channel::k_throttleLeft);
-        SRV_Channels::set_trim_to_min_for(SRV_Channel::k_throttleRight);
-    }
-
-    if (_disarm_disable_pwm) {
-        // throttle channels output zero pwm (i.e. no signal)
-        SRV_Channels::set_safety_limit(SRV_Channel::k_throttle, SRV_Channel::Limit::ZERO_PWM);
-        SRV_Channels::set_safety_limit(SRV_Channel::k_throttleLeft, SRV_Channel::Limit::ZERO_PWM);
-        SRV_Channels::set_safety_limit(SRV_Channel::k_throttleRight, SRV_Channel::Limit::ZERO_PWM);
-    } else {
-        // throttle channels output trim values (because rovers will go backwards if set to MIN)
-        SRV_Channels::set_safety_limit(SRV_Channel::k_throttle, SRV_Channel::Limit::TRIM);
-        SRV_Channels::set_safety_limit(SRV_Channel::k_throttleLeft, SRV_Channel::Limit::TRIM);
-        SRV_Channels::set_safety_limit(SRV_Channel::k_throttleRight, SRV_Channel::Limit::TRIM);
+        // ignore servo revese flag, it is used by the relay
+        SRV_Channels::set_trim_to_min_for(SRV_Channel::k_throttle, true);
+        SRV_Channels::set_trim_to_min_for(SRV_Channel::k_throttleLeft, true);
+        SRV_Channels::set_trim_to_min_for(SRV_Channel::k_throttleRight, true);
     }
 
     // stop sending pwm if main CPU fails
@@ -297,6 +286,10 @@ void AP_MotorsUGV::output(bool armed, float ground_speed, float dt)
         armed = false;
         _throttle = 0.0f;
     }
+
+    // clear limit flags
+    // output_ methods are responsible for setting them to true if required on each iteration
+    limit.steer_left = limit.steer_right = limit.throttle_lower = limit.throttle_upper = false;
 
     // sanity check parameters
     sanity_check_parameters();
@@ -674,12 +667,6 @@ void AP_MotorsUGV::output_regular(bool armed, float ground_speed, float steering
                     const float throttle_scaler_inv = cosf(steering_angle_rad);
                     if (!is_zero(throttle_scaler_inv)) {
                         throttle /= throttle_scaler_inv;
-                        if (throttle >= 100.0f) {
-                            limit.throttle_upper = true;
-                        }
-                        if (throttle <= -100.0f) {
-                            limit.throttle_lower = true;
-                        }
                     }
                 }
             } else {
@@ -761,6 +748,10 @@ void AP_MotorsUGV::output_skid_steering(bool armed, float steering, float thrott
     // check for saturation and scale back throttle and steering proportionally
     const float saturation_value = fabsf(steering_scaled) + fabsf(throttle_scaled);
     if (saturation_value > 1.0f) {
+        // store pre-scaled values so we can set limit flags afterwards
+        const float steering_scaled_orig = steering_scaled;
+        const float throttle_scaled_orig = throttle_scaled;
+
         const float str_thr_mix = constrain_float(_steering_throttle_mix, 0.0f, 1.0f);
         const float fair_scaler = 1.0f / saturation_value;
         if (str_thr_mix >= 0.5f) {
@@ -771,6 +762,16 @@ void AP_MotorsUGV::output_skid_steering(bool armed, float steering, float thrott
             // prioritise throttle over steering
             throttle_scaled *= linear_interpolate(fair_scaler, 1.0f, 0.5f - str_thr_mix, 0.0f, 0.5f);
             steering_scaled = (1.0f - fabsf(throttle_scaled)) * (is_negative(steering_scaled) ? -1.0f : 1.0f);
+        }
+
+        // update limits if either steering or throttle has been reduced
+        if (fabsf(steering_scaled) < fabsf(steering_scaled_orig)) {
+            limit.steer_left |= is_negative(steering_scaled_orig);
+            limit.steer_right |= is_positive(steering_scaled_orig);
+        }
+        if (fabsf(throttle_scaled) < fabsf(throttle_scaled_orig)) {
+            limit.throttle_lower |= is_negative(throttle_scaled_orig);
+            limit.throttle_upper |= is_positive(throttle_scaled_orig);
         }
     }
 
@@ -803,20 +804,30 @@ void AP_MotorsUGV::output_omni(bool armed, float steering, float throttle, float
         const float scaled_steering = steering / 4500.0f;
         const float scaled_lateral = lateral / 100.0f;
 
-        float thr_str_ltr_out;
+        float thr_str_ltr_out[AP_MOTORS_NUM_MOTORS_MAX];
         float thr_str_ltr_max = 1;
-        for (uint8_t i=0; i<AP_MOTORS_NUM_MOTORS_MAX; i++) {
-            thr_str_ltr_out = (scaled_throttle * _throttle_factor[i]) +
+        for (uint8_t i=0; i<_motors_num; i++) {
+            // Each motor outputs throttle + steering + lateral
+            thr_str_ltr_out[i] = (scaled_throttle * _throttle_factor[i]) +
                               (scaled_steering * _steering_factor[i]) +
                               (scaled_lateral * _lateral_factor[i]);
-            if (fabsf(thr_str_ltr_out) > thr_str_ltr_max) {
-                thr_str_ltr_max = fabsf(thr_str_ltr_out);
+            // record the largest output above 1
+            if (fabsf(thr_str_ltr_out[i]) > thr_str_ltr_max) {
+                thr_str_ltr_max = fabsf(thr_str_ltr_out[i]);
             }
-
-            float output_vectored = (thr_str_ltr_out / thr_str_ltr_max);
-
+        }
+        // Scale all outputs back evenly such that the lagest fits
+        const float output_scale = 1 / thr_str_ltr_max;
+        for (uint8_t i=0; i<_motors_num; i++) {
             // send output for each motor
-            output_throttle(SRV_Channels::get_motor_function(i), 100.0f * output_vectored);
+            output_throttle(SRV_Channels::get_motor_function(i), thr_str_ltr_out[i] * 100.0f * output_scale);
+        }
+        if (output_scale < 1.0) {
+            // cant tell which command resulted in the scale back, so limit all
+            limit.steer_left = true;
+            limit.steer_right = true;
+            limit.throttle_lower = true;
+            limit.throttle_upper = true;
         }
     } else {
         // handle disarmed case
@@ -928,10 +939,10 @@ void AP_MotorsUGV::slew_limit_throttle(float dt)
 void AP_MotorsUGV::set_limits_from_input(bool armed, float steering, float throttle)
 {
     // set limits based on inputs
-    limit.steer_left = !armed || (steering <= -4500.0f);
-    limit.steer_right = !armed || (steering >= 4500.0f);
-    limit.throttle_lower = !armed || (throttle <= -_throttle_max);
-    limit.throttle_upper = !armed || (throttle >= _throttle_max);
+    limit.steer_left |= !armed || (steering <= -4500.0f);
+    limit.steer_right |= !armed || (steering >= 4500.0f);
+    limit.throttle_lower |= !armed || (throttle <= -_throttle_max);
+    limit.throttle_upper |= !armed || (throttle >= _throttle_max);
 }
 
 // scale a throttle using the _throttle_min and _thrust_curve_expo parameters.  throttle should be in the range -100 to +100
@@ -1005,6 +1016,24 @@ bool AP_MotorsUGV::active() const
     return false;
 }
 
+// returns true if the configured PWM type is digital and should have fixed endpoints
+bool AP_MotorsUGV::is_digital_pwm_type() const
+{
+    switch (_pwm_type) {
+        case PWM_TYPE_DSHOT150:
+        case PWM_TYPE_DSHOT300:
+        case PWM_TYPE_DSHOT600:
+        case PWM_TYPE_DSHOT1200:
+            return true;
+        case PWM_TYPE_NORMAL:
+        case PWM_TYPE_ONESHOT:
+        case PWM_TYPE_ONESHOT125:
+        case PWM_TYPE_BRUSHED_WITH_RELAY:
+        case PWM_TYPE_BRUSHED_BIPOLAR:
+            break;
+    }
+    return false;
+}
 
 namespace AP {
     AP_MotorsUGV *motors_ugv()

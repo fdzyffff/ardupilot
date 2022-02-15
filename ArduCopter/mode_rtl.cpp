@@ -25,6 +25,9 @@ bool ModeRTL::init(bool ignore_checks)
     // reset flag indicating if pilot has applied roll or pitch inputs during landing
     copter.ap.land_repo_active = false;
 
+    // this will be set true if prec land is later active
+    copter.ap.prec_land_active = false;
+
 #if PRECISION_LANDING == ENABLED
     // initialise precland state machine
     copter.precland_statemachine.init();
@@ -167,7 +170,7 @@ void ModeRTL::climb_return_run()
     float target_yaw_rate = 0;
     if (!copter.failsafe.radio && use_pilot_yaw()) {
         // get pilot's desired yaw rate
-        target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
+        target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->norm_input_dz());
         if (!is_zero(target_yaw_rate)) {
             auto_yaw.set_mode(AUTO_YAW_HOLD);
         }
@@ -225,7 +228,7 @@ void ModeRTL::loiterathome_run()
     float target_yaw_rate = 0;
     if (!copter.failsafe.radio && use_pilot_yaw()) {
         // get pilot's desired yaw rate
-        target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
+        target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->norm_input_dz());
         if (!is_zero(target_yaw_rate)) {
             auto_yaw.set_mode(AUTO_YAW_HOLD);
         }
@@ -332,7 +335,7 @@ void ModeRTL::descent_run()
 
         if (g.land_repositioning || use_pilot_yaw()) {
             // get pilot's desired yaw rate
-            target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
+            target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->norm_input_dz());
         }
     }
 

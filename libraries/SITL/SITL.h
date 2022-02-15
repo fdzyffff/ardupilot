@@ -1,6 +1,6 @@
 #pragma once
 
-#include <AP_HAL/AP_HAL.h>
+#include <AP_HAL/AP_HAL_Boards.h>
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
 
@@ -14,6 +14,7 @@
 #include "SIM_Gripper_EPM.h"
 #include "SIM_Gripper_Servo.h"
 #include "SIM_I2C.h"
+#include "SIM_SPI.h"
 #include "SIM_Parachute.h"
 #include "SIM_Precland.h"
 #include "SIM_Sprayer.h"
@@ -23,6 +24,7 @@
 #include "SIM_FETtecOneWireESC.h"
 #include "SIM_IntelligentEnergy24.h"
 #include "SIM_Ship.h"
+#include "SIM_GPS.h"
 #include <AP_RangeFinder/AP_RangeFinder.h>
 
 namespace SITL {
@@ -100,7 +102,9 @@ public:
         AP_Param::setup_object_defaults(this, var_info);
         AP_Param::setup_object_defaults(this, var_info2);
         AP_Param::setup_object_defaults(this, var_info3);
+#if HAL_SIM_GPS_ENABLED
         AP_Param::setup_object_defaults(this, var_gps);
+#endif
         AP_Param::setup_object_defaults(this, var_mag);
         AP_Param::setup_object_defaults(this, var_ins);
 #ifdef SFML_JOYSTICK
@@ -128,29 +132,14 @@ public:
         SITL_RCFail_Throttle950 = 2,
     };
 
-    enum GPSType {
-        GPS_TYPE_NONE  = 0,
-        GPS_TYPE_UBLOX = 1,
-        GPS_TYPE_MTK   = 2,
-        GPS_TYPE_MTK16 = 3,
-        GPS_TYPE_MTK19 = 4,
-        GPS_TYPE_NMEA  = 5,
-        GPS_TYPE_SBP   = 6,
-        GPS_TYPE_FILE  = 7,
-        GPS_TYPE_NOVA  = 8,
-        GPS_TYPE_SBP2   = 9,
-    };
-
     enum GPSHeading {
         GPS_HEADING_NONE = 0,
         GPS_HEADING_HDT  = 1,
         GPS_HEADING_THS  = 2,
+        GPS_HEADING_KSXT = 3,
     };
 
     struct sitl_fdm state;
-
-    // loop update rate in Hz
-    uint16_t update_rate_hz;
 
     // throttle when motors are active
     float throttle;
@@ -161,7 +150,9 @@ public:
     static const struct AP_Param::GroupInfo var_info[];
     static const struct AP_Param::GroupInfo var_info2[];
     static const struct AP_Param::GroupInfo var_info3[];
+#if HAL_SIM_GPS_ENABLED
     static const struct AP_Param::GroupInfo var_gps[];
+#endif
     static const struct AP_Param::GroupInfo var_mag[];
     static const struct AP_Param::GroupInfo var_ins[];
 #ifdef SFML_JOYSTICK
@@ -187,7 +178,7 @@ public:
     AP_Int8 mag_fail[HAL_COMPASS_MAX_SENSORS];   // fail magnetometer, 1 for no data, 2 for freeze
     AP_Float servo_speed; // servo speed in seconds
 
-    AP_Float sonar_glitch;// probablility between 0-1 that any given sonar sample will read as max distance
+    AP_Float sonar_glitch;// probability between 0-1 that any given sonar sample will read as max distance
     AP_Float sonar_noise; // in metres
     AP_Float sonar_scale; // meters per volt
 
@@ -200,8 +191,8 @@ public:
     AP_Int16 gps_lock_time[2]; // delay in seconds before GPS gets lock
     AP_Int16 gps_alt_offset[2]; // gps alt error
     AP_Int8  gps_disable[2]; // disable simulated GPS
-    AP_Int8  gps_delay[2];   // delay in samples
-    AP_Int8  gps_type[2]; // see enum GPSType
+    AP_Int16 gps_delay_ms[2];   // delay in milliseconds
+    AP_Int8  gps_type[2]; // see enum SITL::GPS::Type
     AP_Float gps_byteloss[2];// byte loss as a percent
     AP_Int8  gps_numsats[2]; // number of visible satellites
     AP_Vector3f gps_glitch[2];  // glitch offsets in lat, lon and altitude
@@ -228,7 +219,7 @@ public:
     AP_Int8  terrain_enable; // enable using terrain for height
     AP_Int16 pin_mask; // for GPIO emulation
     AP_Float speedup; // simulation speedup
-    AP_Int8  odom_enable; // enable visual odomotry data
+    AP_Int8  odom_enable; // enable visual odometry data
     AP_Int8  telem_baudlimit_enable; // enable baudrate limiting on links
     AP_Float flow_noise; // optical flow measurement noise (rad/sec)
     AP_Int8  baro_count; // number of simulated baros to create
@@ -407,10 +398,16 @@ public:
         return i2c_sim.ioctl(i2c_operation, data);
     }
 
+    int spi_ioctl(uint8_t bus, uint8_t cs_pin, uint8_t spi_operation, void *data) {
+        return spi_sim.ioctl(bus, cs_pin, spi_operation, data);
+    }
+
     Sprayer sprayer_sim;
 
     // simulated ship takeoffs
+#if AP_SIM_SHIP_ENABLED
     ShipSim shipsim;
+#endif
 
     Gripper_Servo gripper_sim;
     Gripper_EPM gripper_epm_sim;
@@ -418,6 +415,7 @@ public:
     Parachute parachute_sim;
     Buzzer buzzer_sim;
     I2C i2c_sim;
+    SPI spi_sim;
     ToneAlarm tonealarm_sim;
     SIM_Precland precland_sim;
     RichenPower richenpower_sim;
@@ -436,8 +434,6 @@ public:
         uint32_t send_counter;
     } led;
 
-    EFI_MegaSquirt efi_ms;
-
     AP_Int8 led_layout;
 
     // vicon parameters
@@ -455,12 +451,14 @@ public:
     float get_apparent_wind_dir() const{return state.wind_vane_apparent.direction;}
     float get_apparent_wind_spd() const{return state.wind_vane_apparent.speed;}
 
+#if HAL_INS_TEMPERATURE_CAL_ENABLE
     // IMU temperature calibration params
     AP_Float imu_temp_start;
     AP_Float imu_temp_end;
     AP_Float imu_temp_tconst;
     AP_Float imu_temp_fixed;
     AP_InertialSensor::TCal imu_tcal[INS_MAX_INSTANCES];
+#endif
 
     // IMU control parameters
     AP_Float gyro_noise[INS_MAX_INSTANCES];  // in degrees/second
@@ -479,7 +477,6 @@ public:
 
     // Master instance to use servos from with slave instances
     AP_Int8 ride_along_master;
-
 };
 
 } // namespace SITL

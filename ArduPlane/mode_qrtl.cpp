@@ -1,6 +1,8 @@
 #include "mode.h"
 #include "Plane.h"
 
+#if HAL_QUADPLANE_ENABLED
+
 bool ModeQRTL::_enter()
 {
     // use do_RTL() to setup next_WP_loc
@@ -39,10 +41,19 @@ void ModeQRTL::update()
 void ModeQRTL::run()
 {
     quadplane.vtol_position_controller();
-    if (poscontrol.get_state() >= QuadPlane::QPOS_POSITION2) {
+    if (poscontrol.get_state() > QuadPlane::QPOS_POSITION2) {
         // change target altitude to home alt
         plane.next_WP_loc.alt = plane.home.alt;
+    }
+    if (poscontrol.get_state() >= QuadPlane::QPOS_POSITION2) {
+        // start landing logic
         quadplane.verify_vtol_land();
+    }
+
+    // when in approach allow stick mixing
+    if (quadplane.poscontrol.get_state() == QuadPlane::QPOS_AIRBRAKE ||
+        quadplane.poscontrol.get_state() == QuadPlane::QPOS_APPROACH) {
+        plane.stabilize_stick_mixing_fbw();
     }
 }
 
@@ -64,7 +75,7 @@ bool ModeQRTL::update_target_altitude()
      */
     const float radius = MAX(fabsf(plane.aparm.loiter_radius), fabsf(plane.g.rtl_radius));
     const float rtl_alt_delta = MAX(0, plane.g.RTL_altitude_cm*0.01 - plane.quadplane.qrtl_alt);
-    const float sink_time = rtl_alt_delta / MAX(0.6*plane.SpdHgt_Controller->get_max_sinkrate(), 1);
+    const float sink_time = rtl_alt_delta / MAX(0.6*plane.TECS_controller.get_max_sinkrate(), 1);
     const float sink_dist = plane.aparm.airspeed_cruise_cm * 0.01 * sink_time;
     const float dist = plane.auto_state.wp_distance;
     const float rad_min = 2*radius;
@@ -78,3 +89,10 @@ bool ModeQRTL::update_target_altitude()
     return true;
 }
 
+// only nudge during approach
+bool ModeQRTL::allows_throttle_nudging() const
+{
+    return plane.quadplane.poscontrol.get_state() == QuadPlane::QPOS_APPROACH;
+}
+
+#endif

@@ -128,9 +128,11 @@ void AP_Hott_Telem::send_EAM(void)
 
     const AP_Baro &baro = AP::baro();
     msg.temp1 = uint8_t(baro.get_temperature(0) + 20.5);
+#if BARO_MAX_INSTANCES > 1
     if (baro.healthy(1)) {
         msg.temp2 = uint8_t(baro.get_temperature(1) + 20.5);
     }
+#endif
 
     AP_AHRS &ahrs = AP::ahrs();
     float alt = 0;
@@ -159,6 +161,7 @@ void AP_Hott_Telem::send_EAM(void)
         msg.electric_sec = t % 60U;
     }
 
+#if AP_AIRSPEED_ENABLED
     AP_Airspeed *airspeed = AP_Airspeed::get_singleton();
     if (airspeed && airspeed->healthy()) {
         msg.speed = uint16_t(airspeed->get_airspeed() * 3.6 + 0.5);
@@ -166,6 +169,10 @@ void AP_Hott_Telem::send_EAM(void)
         WITH_SEMAPHORE(ahrs.get_semaphore());
         msg.speed = uint16_t(ahrs.groundspeed() * 3.6 + 0.5);
     }
+#else
+    WITH_SEMAPHORE(ahrs.get_semaphore());
+    msg.speed = uint16_t(ahrs.groundspeed() * 3.6 + 0.5);
+#endif
 
     send_packet((const uint8_t *)&msg, sizeof(msg));
 }

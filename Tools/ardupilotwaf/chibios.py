@@ -205,7 +205,7 @@ class set_app_descriptor(Task.Task):
         desc_len = 16
         crc1 = to_unsigned(crc32(bytearray(img[:offset])))
         crc2 = to_unsigned(crc32(bytearray(img[offset+desc_len:])))
-        githash = to_unsigned(int('0x' + self.generator.bld.git_head_hash(short=True),16))
+        githash = to_unsigned(int('0x' + os.environ.get('GIT_VERSION', self.generator.bld.git_head_hash(short=True)),16))
         desc = struct.pack('<IIII', crc1, crc2, len(img), githash)
         img = img[:offset] + desc + img[offset+desc_len:]
         Logs.info("Applying %s APP_DESCRIPTOR %08x%08x" % (self.env.APP_DESCRIPTOR, crc1, crc2))
@@ -235,13 +235,18 @@ class generate_apj(Task.Task):
             "image_size": len(intf_img),
             "extf_image_size": len(extf_img),
             "flash_total": int(self.env.FLASH_TOTAL),
+            "image_maxsize": int(self.env.FLASH_TOTAL),
             "flash_free": int(self.env.FLASH_TOTAL) - len(intf_img),
-            "extflash_total": int(self.env.EXTERNAL_PROG_FLASH_MB * 1024 * 1024),
-            "extflash_free": int(self.env.EXTERNAL_PROG_FLASH_MB * 1024 * 1024) - len(extf_img),
+            "extflash_total": int(self.env.EXT_FLASH_SIZE_MB * 1024 * 1024),
+            "extflash_free": int(self.env.EXT_FLASH_SIZE_MB * 1024 * 1024) - len(extf_img),
             "git_identity": self.generator.bld.git_head_hash(short=True),
             "board_revision": 0,
             "USBID": self.env.USBID
         }
+        if self.env.MANUFACTURER:
+            d["manufacturer"] = self.env.MANUFACTURER
+        if self.env.BRAND_NAME:
+            d["brand_name"] = self.env.BRAND_NAME
         if self.env.build_dates:
             # we omit build_time when we don't have build_dates so that apj
             # file is idential for same git hash and compiler
@@ -409,6 +414,7 @@ def configure(cfg):
     kw['features'] = Utils.to_list(kw.get('features', [])) + ['ch_ap_library']
 
     env.CH_ROOT = srcpath('modules/ChibiOS')
+    env.CC_ROOT = srcpath('modules/CrashDebug/CrashCatcher')
     env.AP_HAL_ROOT = srcpath('libraries/AP_HAL_ChibiOS')
     env.BUILDDIR = bldpath('modules/ChibiOS')
     env.BUILDROOT = bldpath('')
@@ -423,6 +429,7 @@ def configure(cfg):
 
     # relative paths to pass to make, relative to directory that make is run from
     env.CH_ROOT_REL = os.path.relpath(env.CH_ROOT, env.BUILDROOT)
+    env.CC_ROOT_REL = os.path.relpath(env.CC_ROOT, env.BUILDROOT)
     env.AP_HAL_REL = os.path.relpath(env.AP_HAL_ROOT, env.BUILDROOT)
     env.BUILDDIR_REL = os.path.relpath(env.BUILDDIR, env.BUILDROOT)
 
@@ -452,13 +459,18 @@ def configure(cfg):
 def generate_hwdef_h(env):
     '''run chibios_hwdef.py'''
     import subprocess
-
     if env.BOOTLOADER:
-        env.HWDEF = os.path.join(env.SRCROOT, 'libraries/AP_HAL_ChibiOS/hwdef/%s/hwdef-bl.dat' % env.BOARD)
+        if len(env.HWDEF) == 0:
+            env.HWDEF = os.path.join(env.SRCROOT, 'libraries/AP_HAL_ChibiOS/hwdef/%s/hwdef-bl.dat' % env.BOARD)
+        else:
+            # update to using hwdef-bl.dat
+            env.HWDEF = env.HWDEF.replace('hwdef.dat', 'hwdef-bl.dat')
         env.BOOTLOADER_OPTION="--bootloader"
     else:
-        env.HWDEF = os.path.join(env.SRCROOT, 'libraries/AP_HAL_ChibiOS/hwdef/%s/hwdef.dat' % env.BOARD)
+        if len(env.HWDEF) == 0:
+            env.HWDEF = os.path.join(env.SRCROOT, 'libraries/AP_HAL_ChibiOS/hwdef/%s/hwdef.dat' % env.BOARD)
         env.BOOTLOADER_OPTION=""
+
     hwdef_script = os.path.join(env.SRCROOT, 'libraries/AP_HAL_ChibiOS/hwdef/scripts/chibios_hwdef.py')
     hwdef_out = env.BUILDROOT
     if not os.path.exists(hwdef_out):
@@ -512,7 +524,7 @@ def build(bld):
     
     bld(
         # create the file modules/ChibiOS/include_dirs
-        rule="touch Makefile && BUILDDIR=${BUILDDIR_REL} CHIBIOS=${CH_ROOT_REL} AP_HAL=${AP_HAL_REL} ${CHIBIOS_BUILD_FLAGS} ${CHIBIOS_BOARD_NAME} ${MAKE} pass -f '${BOARD_MK}'",
+        rule="touch Makefile && BUILDDIR=${BUILDDIR_REL} CRASHCATCHER=${CC_ROOT_REL} CHIBIOS=${CH_ROOT_REL} AP_HAL=${AP_HAL_REL} ${CHIBIOS_BUILD_FLAGS} ${CHIBIOS_BOARD_NAME} ${MAKE} pass -f '${BOARD_MK}'",
         group='dynamic_sources',
         target=bld.bldnode.find_or_declare('modules/ChibiOS/include_dirs')
     )
@@ -526,13 +538,23 @@ def build(bld):
     common_src += bld.path.ant_glob('modules/ChibiOS/os/hal/**/*.mk')
     if bld.env.ROMFS_FILES:
         common_src += [bld.bldnode.find_or_declare('ap_romfs_embedded.h')]
-    ch_task = bld(
-        # build libch.a from ChibiOS sources and hwdef.h
-        rule="BUILDDIR='${BUILDDIR_REL}' CHIBIOS='${CH_ROOT_REL}' AP_HAL=${AP_HAL_REL} ${CHIBIOS_BUILD_FLAGS} ${CHIBIOS_BOARD_NAME} '${MAKE}' -j%u lib -f '${BOARD_MK}'" % bld.options.jobs,
-        group='dynamic_sources',
-        source=common_src,
-        target=bld.bldnode.find_or_declare('modules/ChibiOS/libch.a')
-    )
+
+    if bld.env.ENABLE_CRASHDUMP:
+        ch_task = bld(
+            # build libch.a from ChibiOS sources and hwdef.h
+            rule="BUILDDIR='${BUILDDIR_REL}' CRASHCATCHER='${CC_ROOT_REL}' CHIBIOS='${CH_ROOT_REL}' AP_HAL=${AP_HAL_REL} ${CHIBIOS_BUILD_FLAGS} ${CHIBIOS_BOARD_NAME} ${HAL_MAX_STACK_FRAME_SIZE} '${MAKE}' -j%u lib -f '${BOARD_MK}'" % bld.options.jobs,
+            group='dynamic_sources',
+            source=common_src,
+            target=[bld.bldnode.find_or_declare('modules/ChibiOS/libch.a'), bld.bldnode.find_or_declare('modules/ChibiOS/libcc.a')]
+        )
+    else:
+        ch_task = bld(
+            # build libch.a from ChibiOS sources and hwdef.h
+            rule="BUILDDIR='${BUILDDIR_REL}' CHIBIOS='${CH_ROOT_REL}' AP_HAL=${AP_HAL_REL} ${CHIBIOS_BUILD_FLAGS} ${CHIBIOS_BOARD_NAME} ${HAL_MAX_STACK_FRAME_SIZE} '${MAKE}' -j%u lib -f '${BOARD_MK}'" % bld.options.jobs,
+            group='dynamic_sources',
+            source=common_src,
+            target=bld.bldnode.find_or_declare('modules/ChibiOS/libch.a')
+        )
     ch_task.name = "ChibiOS_lib"
     DSP_LIBS = {
         'cortex-m4' : 'libarm_cortexM4lf_math.a',
@@ -546,6 +568,8 @@ def build(bld):
         bld.env.LIB += ['DSP']
     bld.env.LIB += ['ch']
     bld.env.LIBPATH += ['modules/ChibiOS/']
+    if bld.env.ENABLE_CRASHDUMP:
+        bld.env.LINKFLAGS += ['-Wl,-whole-archive', 'modules/ChibiOS/libcc.a', '-Wl,-no-whole-archive']
     # list of functions that will be wrapped to move them out of libc into our
     # own code note that we also include functions that we deliberately don't
     # implement anywhere (the FILE* functions). This allows us to get link

@@ -1,12 +1,5 @@
 #include "AC_PosControl_Sub.h"
 
-AC_PosControl_Sub::AC_PosControl_Sub(AP_AHRS_View& ahrs, const AP_InertialNav& inav,
-                                     const AP_Motors& motors, AC_AttitudeControl& attitude_control, float dt) :
-    AC_PosControl(ahrs, inav, motors, attitude_control, dt),
-    _alt_max(0.0f),
-    _alt_min(0.0f)
-{}
-
 /// input_accel_z - calculate a jerk limited path from the current position, velocity and acceleration to an input acceleration.
 ///     The function takes the current position, velocity, and acceleration and calculates the required jerk limited adjustment to the acceleration for the next time dt.
 ///     The kinematic path is constrained by the maximum acceleration and jerk set using the function set_max_speed_accel_z.
@@ -23,17 +16,12 @@ void AC_PosControl_Sub::input_vel_accel_z(float &vel, const float accel, bool fo
             sqrt_controller(_alt_max-_pos_target.z, 0.0f, _accel_max_z_cmss, 0.0f));
     }
 
-    // calculated increased maximum acceleration if over speed
-    float accel_z_cms = _accel_max_z_cmss;
-    if (_vel_desired.z < _vel_max_down_cms && !is_zero(_vel_max_down_cms)) {
-        accel_z_cms *= POSCONTROL_OVERSPEED_GAIN_Z * _vel_desired.z / _vel_max_down_cms;
-    }
-    if (_vel_desired.z > _vel_max_up_cms && !is_zero(_vel_max_up_cms)) {
-        accel_z_cms *= POSCONTROL_OVERSPEED_GAIN_Z * _vel_desired.z / _vel_max_up_cms;
-    }
+    // calculated increased maximum acceleration and jerk if over speed
+    float accel_max_z_cmss = _accel_max_z_cmss * calculate_overspeed_gain();
+    float jerk_max_xy_cmsss = _jerk_max_xy_cmsss * calculate_overspeed_gain();
 
     // adjust desired alt if motors have not hit their limits
-    update_pos_vel_accel(_pos_target.z, _vel_desired.z, _accel_desired.z, _dt, _limit_vector.z);
+    update_pos_vel_accel(_pos_target.z, _vel_desired.z, _accel_desired.z, _dt, _limit_vector.z, _p_pos_z.get_error(), _pid_vel_z.get_error());
 
     // prevent altitude target from breeching altitude limits
     if (is_negative(_alt_min) && _alt_min < _alt_max && _alt_max < 100 && _pos_target.z < _alt_min) {
@@ -42,8 +30,8 @@ void AC_PosControl_Sub::input_vel_accel_z(float &vel, const float accel, bool fo
 
     shape_vel_accel(vel, accel,
         _vel_desired.z, _accel_desired.z,
-        -accel_z_cms, accel_z_cms,
-        _jerk_xy_max, _dt, limit_output);
+        -accel_max_z_cmss, accel_max_z_cmss,
+        jerk_max_xy_cmsss, _dt, limit_output);
 
-    update_vel_accel(vel, accel, _dt, _limit_vector.z);
+    update_vel_accel(vel, accel, _dt, 0.0, 0.0);
 }

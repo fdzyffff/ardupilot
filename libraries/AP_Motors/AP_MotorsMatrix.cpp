@@ -38,7 +38,7 @@ void AP_MotorsMatrix::init(motor_frame_class frame_class, motor_frame_type frame
     set_update_rate(_speed_hz);
 }
 
-#ifdef ENABLE_SCRIPTING
+#if AP_SCRIPTING_ENABLED
 // dedicated init for lua scripting
 bool AP_MotorsMatrix::init(uint8_t expected_num_motors)
 {
@@ -109,7 +109,7 @@ bool AP_MotorsMatrix::set_throttle_factor(int8_t motor_num, float throttle_facto
     return true;
 }
 
-#endif // ENABLE_SCRIPTING
+#endif // AP_SCRIPTING_ENABLED
 
 // set update rate to motors - a value in hertz
 void AP_MotorsMatrix::set_update_rate(uint16_t speed_hz)
@@ -460,13 +460,8 @@ void AP_MotorsMatrix::check_for_failed_motor(float throttle_thrust_best_plus_adj
 // output_test_seq - spin a motor at the pwm value specified
 //  motor_seq is the motor's sequence number from 1 to the number of motors on the frame
 //  pwm value is an actual pwm value that will be output, normally in the range of 1000 ~ 2000
-void AP_MotorsMatrix::output_test_seq(uint8_t motor_seq, int16_t pwm)
+void AP_MotorsMatrix::_output_test_seq(uint8_t motor_seq, int16_t pwm)
 {
-    // exit immediately if not armed
-    if (!armed()) {
-        return;
-    }
-
     // loop through all the possible orders spinning any motors that match that description
     for (uint8_t i = 0; i < AP_MOTORS_MAX_NUM_MOTORS; i++) {
         if (motor_enabled[i] && _test_order[i] == motor_seq) {
@@ -585,7 +580,7 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
     bool success = true;
 
     switch (frame_class) {
-
+#if AP_MOTORS_FRAME_QUAD_ENABLED
         case MOTOR_FRAME_QUAD:
             _frame_class_string = "QUAD";
             _mav_type = MAV_TYPE_QUADROTOR;
@@ -635,7 +630,7 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     add_motors(motors, ARRAY_SIZE(motors));
                     break;
                 }
-#endif
+#endif //APM_BUILD_TYPE(APM_BUILD_ArduPlane)
                 case MOTOR_FRAME_TYPE_BF_X: {
                     // betaflight quad X order
                     // see: https://fpvfrenzy.com/betaflight-motor-order/
@@ -765,6 +760,17 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     add_motors(motors, ARRAY_SIZE(motors));
                     break;
                 }
+                case MOTOR_FRAME_TYPE_Y4:
+                    _frame_type_string = "Y4";
+                    // Y4 motor definition with right front CCW, left front CW
+                    static const AP_MotorsMatrix::MotorDefRaw motors[] {
+                        { -1.0f,  1.000f, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 1 },
+                        {  0.0f, -1.000f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  2 },
+                        {  0.0f, -1.000f, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 3 },
+                        {  1.0f,  1.000f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  4 },
+                    };
+                    add_motors_raw(motors, ARRAY_SIZE(motors));
+                    break;
                 default:
                     // quad frame class does not support this frame type
                     _frame_type_string = "UNSUPPORTED";
@@ -772,7 +778,8 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     break;
             }
             break;  // quad
-
+#endif //AP_MOTORS_FRAME_QUAD_ENABLED
+#if AP_MOTORS_FRAME_HEXA_ENABLED
         case MOTOR_FRAME_HEXA:
             _frame_class_string = "HEXA";
             _mav_type = MAV_TYPE_HEXAROTOR;
@@ -850,7 +857,8 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     break;
             }
             break;
-
+#endif //AP_MOTORS_FRAME_HEXA_ENABLED
+#if AP_MOTORS_FRAME_OCTA_ENABLED
         case MOTOR_FRAME_OCTA:
             _frame_class_string = "OCTA";
             _mav_type = MAV_TYPE_OCTOROTOR;
@@ -919,14 +927,14 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                 case MOTOR_FRAME_TYPE_I: {
                     _frame_type_string = "I";
                     static const AP_MotorsMatrix::MotorDefRaw motors[] {
-                        { 0.333f, -1.0f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  1 },
-                        { -0.333f,  1.0f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  5 },
-                        {    1.0f, -1.0f, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 2 },
-                        {  0.333f,  1.0f, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 4 },
-                        { -0.333f, -1.0f, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 8 },
-                        {   -1.0f,  1.0f, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 6 },
-                        {   -1.0f, -1.0f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  7 },
-                        {    1.0f,  1.0f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  3 },
+                        { 0.333f, -1.0f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,   5 },
+                        { -0.333f,  1.0f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  1 },
+                        {    1.0f, -1.0f, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 6 },
+                        {  0.333f,  1.0f, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 8 },
+                        { -0.333f, -1.0f, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 4 },
+                        {   -1.0f,  1.0f, AP_MOTORS_MATRIX_YAW_FACTOR_CCW, 2 },
+                        {   -1.0f, -1.0f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  3 },
+                        {    1.0f,  1.0f, AP_MOTORS_MATRIX_YAW_FACTOR_CW,  7 },
                     };
                     add_motors_raw(motors, ARRAY_SIZE(motors));
                     break;
@@ -968,7 +976,8 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     break;
             } // octa frame type
             break;
-
+#endif //AP_MOTORS_FRAME_OCTA_ENABLED
+#if AP_MOTORS_FRAME_OCTAQUAD_ENABLED
         case MOTOR_FRAME_OCTAQUAD:
             _mav_type = MAV_TYPE_OCTOROTOR;
             _frame_class_string = "OCTAQUAD";
@@ -1055,7 +1064,8 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     break;
             }
             break;
-
+#endif //AP_MOTORS_FRAME_OCTAQUAD_ENABLED
+#if AP_MOTORS_FRAME_DODECAHEXA_ENABLED
         case MOTOR_FRAME_DODECAHEXA: {
             _mav_type = MAV_TYPE_DODECAROTOR;
             _frame_class_string = "DODECAHEXA";
@@ -1105,7 +1115,8 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     break;
             }}
             break;
-
+#endif //AP_MOTORS_FRAME_DODECAHEXA_ENABLED
+#if AP_MOTORS_FRAME_Y6_ENABLED
         case MOTOR_FRAME_Y6:
             _mav_type = MAV_TYPE_HEXAROTOR;
             _frame_class_string = "Y6";
@@ -1153,7 +1164,8 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                 }
             }
             break;
-
+#endif //AP_MOTORS_FRAME_Y6_ENABLED
+#if AP_MOTORS_FRAME_DECA_ENABLED
         case MOTOR_FRAME_DECA:
             _mav_type = MAV_TYPE_DECAROTOR;
             _frame_class_string = "DECA";
@@ -1175,8 +1187,9 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     add_motors(motors, ARRAY_SIZE(motors));
                     break;
                 }
-                case MOTOR_FRAME_TYPE_X: {
-                    _frame_type_string = "X";
+                case MOTOR_FRAME_TYPE_X:
+                case MOTOR_FRAME_TYPE_CW_X: {
+                    _frame_type_string = "X/CW_X";
                     static const AP_MotorsMatrix::MotorDef motors[] {
                         {   18, AP_MOTORS_MATRIX_YAW_FACTOR_CCW,   1 },
                         {   54, AP_MOTORS_MATRIX_YAW_FACTOR_CW,    2 },
@@ -1198,13 +1211,15 @@ void AP_MotorsMatrix::setup_motors(motor_frame_class frame_class, motor_frame_ty
                     break;
             }
             break;
-
+#endif //AP_MOTORS_FRAME_DECA_ENABLED
         default:
             // matrix doesn't support the configured class
             _frame_class_string = "UNSUPPORTED";
             success = false;
             _mav_type = MAV_TYPE_GENERIC;
             break;
+
+
     } // switch frame_class
 
     // normalise factors to magnitude 0.5

@@ -7,6 +7,11 @@
 #include <AP_Math/AP_Math.h>
 #include <AP_MSP/msp.h>
 
+#ifndef AP_AIRSPEED_ENABLED
+#define AP_AIRSPEED_ENABLED 1
+#endif
+
+
 class AP_Airspeed_Backend;
 
 #ifndef AIRSPEED_MAX_SENSORS
@@ -52,13 +57,16 @@ public:
 
     void init(void);
 
+    // indicate which bit in LOG_BITMASK indicates we should log airspeed readings
+    void set_log_bit(uint32_t log_bit) { _log_bit = log_bit; }
+
 #if AP_AIRSPEED_AUTOCAL_ENABLE
     // inflight ratio calibration
     void set_calibration_enabled(bool enable) {calibration_enabled = enable;}
 #endif //AP_AIRSPEED_AUTOCAL_ENABLE
 
     // read the analog source and update airspeed
-    void update(bool log);
+    void update(void);
 
     // calibrate the airspeed. This must be called on startup if the
     // altitude/climb_rate/acceleration interfaces are ever used
@@ -123,7 +131,8 @@ public:
     bool healthy(uint8_t i) const {
         bool ok = state[i].healthy && enabled(i);
 #ifndef HAL_BUILD_AP_PERIPH
-        ok &= (fabsf(param[i].offset) > 0 || state[i].use_zero_offset);
+        // sanity check the offset parameter.  Zero is permitted if we are skipping calibration.
+        ok &= (fabsf(param[i].offset) > 0 || state[i].use_zero_offset || param[i].skip_cal);
 #endif
         return ok;
     }
@@ -250,6 +259,8 @@ private:
     uint8_t primary;
     uint8_t num_sensors;
 
+    uint32_t _log_bit = -1;     // stores which bit in LOG_BITMASK is used to indicate we should log airspeed readings
+
     void read(uint8_t i);
     // return the differential pressure in Pascal for the last airspeed reading for the requested instance
     // returns 0 if the sensor is not enabled
@@ -278,6 +289,8 @@ private:
     AP_Airspeed_Backend *sensor[AIRSPEED_MAX_SENSORS];
 
     void Log_Airspeed();
+
+    bool add_backend(AP_Airspeed_Backend *backend);
 };
 
 namespace AP {

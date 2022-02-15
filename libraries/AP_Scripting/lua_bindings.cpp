@@ -9,6 +9,7 @@
 #include <AP_Scripting/lua_generated_bindings.h>
 
 #include <AP_Scripting/AP_Scripting.h>
+#include <string.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -261,10 +262,16 @@ static int AP_Logger_Write(lua_State *L) {
         }
         if (charlen != 0) {
             const char *tmp = luaL_checkstring(L, i);
-            if (strlen(tmp) > charlen) {
+            const size_t slen = strlen(tmp);
+            if (slen > charlen) {
                 return luaL_error(L, "arg %i too long for %c format",i,fmt_cat[i-3]);
             }
-            luaL_addlstring(&buffer, (char *)&tmp, charlen);
+            char tstr[charlen];
+            memcpy(tstr, tmp, slen);
+            if (slen < charlen) {
+                memset(&tstr[slen], 0, charlen-slen);
+            }
+            luaL_addlstring(&buffer, tstr, charlen);
         }
     }
 
@@ -313,7 +320,7 @@ static int lua_get_i2c_device(lua_State *L) {
 
     static_assert(SCRIPTING_MAX_NUM_I2C_DEVICE >= 0, "There cannot be a negative number of I2C devices");
     if (AP::scripting()->num_i2c_devices >= SCRIPTING_MAX_NUM_I2C_DEVICE) {
-        return luaL_argerror(L, 1, "no i2c devices available");;
+        return luaL_argerror(L, 1, "no i2c devices available");
     }
 
     AP::scripting()->_i2c_dev[AP::scripting()->num_i2c_devices] = new AP_HAL::OwnPtr<AP_HAL::I2CDevice>;

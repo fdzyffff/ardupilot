@@ -28,6 +28,9 @@ bool ModeLand::init(bool ignore_checks)
     // reset flag indicating if pilot has applied roll or pitch inputs during landing
     copter.ap.land_repo_active = false;
 
+    // this will be set true if prec land is later active
+    copter.ap.prec_land_active = false;
+
     // initialise yaw
     auto_yaw.set_mode(AUTO_YAW_HOLD);
 
@@ -114,7 +117,7 @@ void ModeLand::nogps_run()
         }
 
         // get pilot's desired yaw rate
-        target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
+        target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->norm_input_dz());
         if (!is_zero(target_yaw_rate)) {
             auto_yaw.set_mode(AUTO_YAW_HOLD);
         }

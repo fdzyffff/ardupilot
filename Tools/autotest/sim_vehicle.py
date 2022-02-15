@@ -28,6 +28,7 @@ import shlex
 import binascii
 import math
 
+from pysim import util
 from pysim import vehicleinfo
 
 
@@ -236,6 +237,25 @@ class BobException(Exception):
 def kill_tasks():
     """Clean up stray processes by name.  This is a shotgun approach"""
     progress("Killing tasks")
+
+    if cmd_opts.coverage:
+        import psutil
+        for proc in psutil.process_iter(['pid', 'name', 'environ']):
+            if proc.name() not in ["arducopter", "ardurover", "arduplane", "ardusub", "antennatracker"]:
+                # only kill vehicle that way
+                continue
+            if os.environ['SIM_VEHICLE_SESSION'] not in proc.environ().get('SIM_VEHICLE_SESSION'):
+                # only kill vehicle launched with sim_vehicle.py that way
+                continue
+            proc.terminate()
+            progress("Waiting SITL to exit cleanly and write coverage .gcda")
+            try:
+                proc.wait(timeout=30)
+                progress("Done")
+            except psutil.TimeoutExpired:
+                progress("SITL doesn't want to exit cleaning, killing ...")
+                proc.kill()
+
     try:
         victim_names = {
             'JSBSim',
@@ -249,7 +269,7 @@ def kill_tasks():
             'MAVProxy.exe',
             'runsim.py',
             'AntennaTracker.elf',
-            'scrimmage'
+            'scrimmage',
             'ardurover',
             'arduplane',
             'arducopter'
@@ -303,6 +323,9 @@ def do_build(opts, frame_options):
     if opts.debug:
         cmd_configure.append("--debug")
 
+    if opts.coverage:
+        cmd_configure.append("--coverage")
+
     if opts.enable_onvif and 'antennatracker' in frame_options["waf_target"]:
         cmd_configure.append("--enable-onvif")
 
@@ -319,9 +342,6 @@ def do_build(opts, frame_options):
 
     if opts.tonealarm:
         cmd_configure.append("--enable-sfml-audio")
-
-    if opts.flash_storage:
-        cmd_configure.append("--sitl-flash-storage")
 
     if opts.math_check_indexes:
         cmd_configure.append("--enable-math-check-indexes")
@@ -340,6 +360,9 @@ def do_build(opts, frame_options):
 
     if opts.ekf_single:
         cmd_configure.append("--ekf-single")
+
+    if opts.sitl_32bit:
+        cmd_configure.append("--sitl-32bit")
 
     pieces = [shlex.split(x) for x in opts.waf_configure_args]
     for piece in pieces:
@@ -393,7 +416,7 @@ def get_user_locations_path():
     '''The user locations.txt file is located by default in
     $XDG_CONFIG_DIR/ardupilot/locations.txt. If $XDG_CONFIG_DIR is
     not defined, we look in $HOME/.config/ardupilot/locations.txt.  If
-    $HOME is not defined, we look in ./.config/ardpupilot/locations.txt.'''
+    $HOME is not defined, we look in ./.config/ardupilot/locations.txt.'''
 
     config_dir = os.environ.get(
         'XDG_CONFIG_DIR',
@@ -661,13 +684,19 @@ def start_vehicle(binary, opts, stuff, spawns=None):
         paths = stuff["default_params_filename"]
         if not isinstance(paths, list):
             paths = [paths]
-        paths = [os.path.join(autotest_dir, x) for x in paths]
+        paths = [util.relcurdir(os.path.join(autotest_dir, x)) for x in paths]
         for x in paths:
             if not os.path.isfile(x):
                 print("The parameter file (%s) does not exist" % (x,))
                 sys.exit(1)
         path = ",".join(paths)
         progress("Using defaults from (%s)" % (path,))
+    if opts.flash_storage:
+        cmd.append("--set-storage-flash-enabled 1")
+        cmd.append("--set-storage-posix-enabled 0")
+    elif opts.fram_storage:
+        cmd.append("--set-storage-fram-enabled 1")
+        cmd.append("--set-storage-posix-enabled 0")
     if opts.add_param_file:
         for file in opts.add_param_file:
             if not os.path.isfile(file):
@@ -688,10 +717,6 @@ def start_vehicle(binary, opts, stuff, spawns=None):
 
     if path is not None:
         cmd.extend(["--defaults", path])
-    if opts.mcast:
-        cmd.extend(["--uartA mcast:"])
-    elif opts.udp:
-        cmd.extend(["--uartA udpclient:127.0.0.1:" + str(5760+cmd_opts.instance*10)])
 
     if cmd_opts.start_time is not None:
         # Parse start_time into a double precision number specifying seconds since 1900.
@@ -708,6 +733,19 @@ def start_vehicle(binary, opts, stuff, spawns=None):
         c = ["-I" + str(i)]
         if spawns is not None:
             c.extend(["--home", spawns[i]])
+        if opts.mcast:
+            c.extend(["--uartA", "mcast:"])
+        elif opts.udp:
+            c.extend(["--uartA", "udpclient:127.0.0.1:" + str(5760+i*10)])
+        if opts.auto_sysid:
+            if opts.sysid is not None:
+                raise ValueError("Can't use auto-sysid and sysid together")
+            sysid = i + 1
+            # Take 0-based logging into account
+            if sysid < 1 or sysid > 255:
+                raise ValueError("Invalid system id %d" % sysid)
+            c.extend(["--sysid", str(sysid)])
+
         os.chdir(i_dir)
         run_in_terminal_window(cmd_name, cmd + c)
     os.chdir(old_dir)
@@ -726,6 +764,28 @@ def start_mavproxy(opts, stuff):
         cmd.append("mavproxy.exe")
     else:
         cmd.append("mavproxy.py")
+
+    if opts.mcast:
+        cmd.extend(["--master", "mcast:"])
+
+    for i in instances:
+        if not opts.no_extra_ports:
+            ports = [p + 10 * i for p in [14550, 14551]]
+            for port in ports:
+                if os.path.isfile("/ardupilot.vagrant"):
+                    # We're running inside of a vagrant guest; forward our
+                    # mavlink out to the containing host OS
+                    cmd.extend(["--out", "10.0.2.2:" + str(port)])
+                else:
+                    cmd.extend(["--out", "127.0.0.1:" + str(port)])
+
+        if not opts.mcast:
+            if opts.udp:
+                cmd.extend(["--master", ":" + str(5760 + 10 * i)])
+            else:
+                cmd.extend(["--master", "tcp:127.0.0.1:" + str(5760 + 10 * i)])
+        if stuff["sitl-port"] and not opts.no_rcin:
+            cmd.extend(["--sitl", "127.0.0.1:" + str(5501 + 10 * i)])
 
     if opts.tracker:
         cmd.extend(["--load-module", "tracker"])
@@ -807,36 +867,8 @@ def start_mavproxy(opts, stuff):
     if old is not None:
         env['PYTHONPATH'] += os.path.pathsep + old
 
-    old_dir = os.getcwd()
-    for i, i_dir in zip(instances, instance_dir):
-        c = []
-
-        if not opts.no_extra_ports:
-            ports = [p + 10 * i for p in [14550, 14551]]
-            for port in ports:
-                if os.path.isfile("/ardupilot.vagrant"):
-                    # We're running inside of a vagrant guest; forward our
-                    # mavlink out to the containing host OS
-                    c.extend(["--out", "10.0.2.2:" + str(port)])
-                else:
-                    c.extend(["--out", "127.0.0.1:" + str(port)])
-
-        if True:
-            if opts.mcast:
-                c.extend(["--master", "mcast:"])
-            elif opts.udp:
-                c.extend(["--master", ":" + str(5760 + 10 * i)])
-            else:
-                c.extend(["--master", "tcp:127.0.0.1:" + str(5760 + 10 * i)])
-            if stuff["sitl-port"] and not opts.no_rcin:
-                c.extend(["--sitl", "127.0.0.1:" + str(5501 + 10 * i)])
-
-        os.chdir(i_dir)
-        if i == instances[-1]:
-            run_cmd_blocking("Run MavProxy", cmd + c, env=env)
-        else:
-            run_in_terminal_window("Run MavProxy", cmd + c, env=env)
-    os.chdir(old_dir)
+    run_cmd_blocking("Run MavProxy", cmd, env=env)
+    progress("MAVProxy exited")
 
 
 vehicle_options_string = '|'.join(vinfo.options.keys())
@@ -867,6 +899,9 @@ vehicle_choices.append("APMrover2")
 vehicle_choices.append("Copter")  # should change to ArduCopter at some stage
 vehicle_choices.append("Plane")  # should change to ArduPlane at some stage
 vehicle_choices.append("Sub")  # should change to Sub at some stage
+vehicle_choices.append("copter")  # should change to ArduCopter at some stage
+vehicle_choices.append("plane")  # should change to ArduPlane at some stage
+vehicle_choices.append("sub")  # should change to Sub at some stage
 
 parser.add_option("-v", "--vehicle",
                   type='choice',
@@ -919,6 +954,11 @@ group_build.add_option("--enable-math-check-indexes",
                        action="store_true",
                        dest="math_check_indexes",
                        help="enable checking of math indexes")
+group_build.add_option("", "--sitl-32bit",
+                       default=False,
+                       action='store_true',
+                       dest="sitl_32bit",
+                       help="compile sitl using 32-bit")
 group_build.add_option("", "--rebuild-on-failure",
                        dest="rebuild_on_failure",
                        action='store_true',
@@ -936,6 +976,10 @@ group_build.add_option("", "--waf-build-arg",
                        type="string",
                        default=[],
                        help="extra arguments to pass to waf in its build step")
+group_build.add_option("", "--coverage",
+                       action='store_true',
+                       default=False,
+                       help="use coverage build")
 parser.add_option_group(group_build)
 
 group_sim = optparse.OptionGroup(parser, "Simulation options")
@@ -1095,9 +1139,17 @@ group_sim.add_option("-Z", "--swarm",
                      type='string',
                      default=None,
                      help="Specify path of swarminit.txt for shifting spawn location")
+group_sim.add_option("", "--auto-offset-line",
+                     type="string",
+                     default=None,
+                     help="Argument of form  BEARING,DISTANCE.  When running multiple instances, form a line along bearing with an interval of DISTANCE",  # NOQA
+                     )
 group_sim.add_option("--flash-storage",
                      action='store_true',
-                     help="enable use of flash storage emulation")
+                     help="use flash storage emulation")
+group_sim.add_option("--fram-storage",
+                     action='store_true',
+                     help="use fram storage emulation")
 group_sim.add_option("--disable-ekf2",
                      action='store_true',
                      help="disable EKF2 in build")
@@ -1125,6 +1177,10 @@ group_sim.add_option("", "--slave",
                      type='int',
                      default=0,
                      help="Set the number of JSON slave")
+group_sim.add_option("", "--auto-sysid",
+                     default=False,
+                     action='store_true',
+                     help="Set SYSID_THISMAV based upon instance number")
 parser.add_option_group(group_sim)
 
 
@@ -1218,6 +1274,10 @@ if cmd_opts.strace and cmd_opts.valgrind:
 if cmd_opts.strace and cmd_opts.callgrind:
     print("callgrind and strace almost certainly not a good idea")
 
+if cmd_opts.sysid and cmd_opts.auto_sysid:
+    print("Cannot use auto-sysid together with sysid")
+    sys.exit(1)
+
 # magically determine vehicle type (if required):
 if cmd_opts.vehicle is None:
     cwd = os.getcwd()
@@ -1242,6 +1302,9 @@ vehicle_map = {
     "Copter": "ArduCopter",  # will switch eventually
     "Plane": "ArduPlane",  # will switch eventually
     "Sub": "ArduSub",  # will switch eventually
+    "copter": "ArduCopter",  # will switch eventually
+    "plane": "ArduPlane",  # will switch eventually
+    "sub": "ArduSub",  # will switch eventually
 }
 if cmd_opts.vehicle in vehicle_map:
     progress("%s is now known as %s" %
@@ -1299,6 +1362,17 @@ else:
     location = None
 if cmd_opts.swarm is not None:
     offsets = find_offsets(instances, cmd_opts.swarm)
+elif cmd_opts.auto_offset_line is not None:
+    if location is None:
+        raise ValueError("location needed for auto-offset-line")
+    (bearing, metres) = cmd_opts.auto_offset_line.split(",")
+    bearing = float(bearing)
+    metres = float(metres)
+    dist = 0
+    offsets = {}
+    for x in instances:
+        offsets[x] = [dist*math.sin(math.radians(bearing)), dist*math.cos(math.radians(bearing)), 0, 0]
+        dist += metres
 else:
     offsets = {x: [0.0, 0.0, 0.0, None] for x in instances}
 if location is not None:

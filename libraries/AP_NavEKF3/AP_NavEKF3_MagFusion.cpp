@@ -1427,7 +1427,7 @@ void NavEKF3_core::alignMagStateDeclination()
 
     // rotate the NE values so that the declination matches the published value
     Vector3F initMagNED = stateStruct.earth_magfield;
-    ftype magLengthNE = norm(initMagNED.x,initMagNED.y);
+    ftype magLengthNE = initMagNED.xy().length();
     stateStruct.earth_magfield.x = magLengthNE * cosF(magDecAng);
     stateStruct.earth_magfield.y = magLengthNE * sinF(magDecAng);
 
@@ -1534,7 +1534,7 @@ bool NavEKF3_core::learnMagBiasFromGPS(void)
 // Reset states using yaw from EKF-GSF and velocity and position from GPS
 bool NavEKF3_core::EKFGSF_resetMainFilterYaw(bool emergency_reset)
 {
-    // Don't do a reset unless permitted by the EK3_GSF_USE and EK3_GSF_RUN parameter masks
+    // Don't do a reset unless permitted by the EK3_GSF_USE_MASK and EK3_GSF_RUN_MASK parameter masks
     if ((yawEstimator == nullptr)
         || !(frontend->_gsfUseMask & (1U<<core_index))) {
         return false;

@@ -442,6 +442,12 @@ bool Storage::_flash_erase_ok(void)
  */
 bool Storage::healthy(void)
 {
+#ifdef USE_POSIX
+    // SD card storage is really slow
+    if (_initialisedType == StorageBackend::SDCard) {
+        return log_fd != -1 || AP_HAL::millis() - _last_empty_ms < 30000U;
+    }
+#endif
     return ((_initialisedType != StorageBackend::None) &&
             (AP_HAL::millis() - _last_empty_ms < 2000u));
 }
@@ -467,5 +473,19 @@ bool Storage::erase(void)
     return false;
 #endif
 }
+
+/*
+  get storage size and ptr
+ */
+bool Storage::get_storage_ptr(void *&ptr, size_t &size)
+{
+    if (_initialisedType==StorageBackend::None) {
+        return false;
+    }
+    ptr = _buffer;
+    size = sizeof(_buffer);
+    return true;
+}
+
 
 #endif // HAL_USE_EMPTY_STORAGE

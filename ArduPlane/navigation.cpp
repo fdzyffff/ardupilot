@@ -99,7 +99,7 @@ void Plane::navigate()
     // ----------------------------
     auto_state.wp_distance = current_loc.get_distance(next_WP_loc);
     auto_state.wp_proportion = current_loc.line_path_proportion(prev_WP_loc, next_WP_loc);
-    SpdHgt_Controller->set_path_proportion(auto_state.wp_proportion);
+    TECS_controller.set_path_proportion(auto_state.wp_proportion);
 
     // update total loiter angle
     loiter_angle_update();
@@ -109,13 +109,51 @@ void Plane::navigate()
     control_mode->navigate();
 }
 
+// method intended for use in calc_airspeed_errors only
+float Plane::mode_auto_target_airspeed_cm()
+{
+#if HAL_QUADPLANE_ENABLED
+    if ((quadplane.options & QuadPlane::OPTION_MISSION_LAND_FW_APPROACH) &&
+        ((vtol_approach_s.approach_stage == Landing_ApproachStage::APPROACH_LINE) ||
+         (vtol_approach_s.approach_stage == Landing_ApproachStage::VTOL_LANDING))) {
+        const float land_airspeed = TECS_controller.get_land_airspeed();
+        if (is_positive(land_airspeed)) {
+            return land_airspeed * 100;
+        }
+        // fallover to normal airspeed
+        return aparm.airspeed_cruise_cm;
+    }
+    if (quadplane.in_vtol_land_approach()) {
+        return quadplane.get_land_airspeed() * 100;
+    }
+#endif
+
+    // normal AUTO mode and new_airspeed variable was set by
+    // DO_CHANGE_SPEED command while in AUTO mode
+    if (new_airspeed_cm > 0) {
+        return new_airspeed_cm;
+    }
+
+    // fallover to normal airspeed
+    return aparm.airspeed_cruise_cm;
+}
+
 void Plane::calc_airspeed_errors()
 {
+    // Get the airspeed_estimate, update smoothed airspeed estimate
+    // NOTE:  we use the airspeed estimate function not direct sensor
+    //        as TECS may be using synthetic airspeed
     float airspeed_measured = 0;
+    if (ahrs.airspeed_estimate(airspeed_measured)) {
+        smoothed_airspeed = smoothed_airspeed * 0.8f + airspeed_measured * 0.2f;
+    }
 
-    // we use the airspeed estimate function not direct sensor as TECS
-    // may be using synthetic airspeed
-    ahrs.airspeed_estimate(airspeed_measured);
+    // low pass filter speed scaler, with 1Hz cutoff, at 10Hz
+    const float speed_scaler = calc_speed_scaler();
+    const float cutoff_Hz = 2.0;
+    const float dt = 0.1;
+    surface_speed_scaler += calc_lowpass_alpha_dt(dt, cutoff_Hz) * (speed_scaler - surface_speed_scaler);
+
 
     // FBW_B/cruise airspeed target
     if (!failsafe.rc_failsafe && (control_mode == &mode_fbwb || control_mode == &mode_cruise)) {
@@ -165,35 +203,38 @@ void Plane::calc_airspeed_errors()
 
 #endif // OFFBOARD_GUIDED == ENABLED
 
+#if HAL_SOARING_ENABLED
+    } else if (g2.soaring_controller.is_active() && g2.soaring_controller.get_throttle_suppressed()) {
+        if (control_mode == &mode_thermal) {
+            float arspd = g2.soaring_controller.get_thermalling_target_airspeed();
+
+            if (arspd > 0) {
+                target_airspeed_cm = arspd * 100;
+            } else {
+                target_airspeed_cm = aparm.airspeed_cruise_cm;
+            }
+        } else if (control_mode == &mode_auto) {
+            float arspd = g2.soaring_controller.get_cruising_target_airspeed();
+
+            if (arspd > 0) {
+                target_airspeed_cm = arspd * 100;
+            } else {
+                target_airspeed_cm = aparm.airspeed_cruise_cm;
+            }
+        }
+#endif
+
     } else if (flight_stage == AP_Vehicle::FixedWing::FLIGHT_LAND) {
         // Landing airspeed target
         target_airspeed_cm = landing.get_target_airspeed_cm();
     } else if (control_mode == &mode_guided && new_airspeed_cm > 0) { //DO_CHANGE_SPEED overrides onboard guided speed commands, user would have re-enter guided mode to revert
                        target_airspeed_cm = new_airspeed_cm;
     } else if (control_mode == &mode_auto) {
-        if ((quadplane.options & QuadPlane::OPTION_MISSION_LAND_FW_APPROACH) &&
-			   ((vtol_approach_s.approach_stage == Landing_ApproachStage::APPROACH_LINE) ||
-			     (vtol_approach_s.approach_stage == Landing_ApproachStage::VTOL_LANDING))) {
-                     const float land_airspeed = SpdHgt_Controller->get_land_airspeed();
-                     if (is_positive(land_airspeed)) {
-                         target_airspeed_cm = land_airspeed * 100;
-                     } else {
-                         // fallover to normal airspeed
-                         target_airspeed_cm = aparm.airspeed_cruise_cm;
-                     }
-        } else if (quadplane.in_vtol_land_approach()) {
-            target_airspeed_cm = quadplane.get_land_airspeed() * 100;
-        } else {
-            // normal AUTO mode and new_airspeed variable was set by DO_CHANGE_SPEED command while in AUTO mode
-            if (new_airspeed_cm > 0) {
-                target_airspeed_cm = new_airspeed_cm;
-            } else {
-                // fallover to normal airspeed
-                target_airspeed_cm = aparm.airspeed_cruise_cm;
-            }
-        }
+        target_airspeed_cm = mode_auto_target_airspeed_cm();
+#if HAL_QUADPLANE_ENABLED
     } else if (control_mode == &mode_qrtl && quadplane.in_vtol_land_approach()) {
         target_airspeed_cm = quadplane.get_land_airspeed() * 100;
+#endif
     } else {
         // Normal airspeed target for all other cases
         target_airspeed_cm = aparm.airspeed_cruise_cm;
@@ -228,7 +269,7 @@ void Plane::calc_airspeed_errors()
 
     // use the TECS view of the target airspeed for reporting, to take
     // account of the landing speed
-    airspeed_error = SpdHgt_Controller->get_target_airspeed() - airspeed_measured;
+    airspeed_error = TECS_controller.get_target_airspeed() - airspeed_measured;
 }
 
 void Plane::calc_gndspeed_undershoot()
@@ -249,6 +290,48 @@ void Plane::calc_gndspeed_undershoot()
     }
 }
 
+// method intended to be used by update_loiter
+void Plane::update_loiter_update_nav(uint16_t radius)
+{
+#if HAL_QUADPLANE_ENABLED
+    if (loiter.start_time_ms != 0 &&
+        quadplane.guided_mode_enabled()) {
+        if (!auto_state.vtol_loiter) {
+            auto_state.vtol_loiter = true;
+            // reset loiter start time, so we don't consider the point
+            // reached till we get much closer
+            loiter.start_time_ms = 0;
+            quadplane.guided_start();
+        }
+        return;
+    }
+#endif
+
+#if HAL_QUADPLANE_ENABLED
+    const bool quadplane_qrtl_switch = (control_mode == &mode_rtl && quadplane.available() && quadplane.rtl_mode == QuadPlane::RTL_MODE::SWITCH_QRTL);
+#else
+    const bool quadplane_qrtl_switch = false;
+#endif
+
+    if ((loiter.start_time_ms == 0 &&
+         (control_mode == &mode_auto || control_mode == &mode_guided) &&
+         auto_state.crosstrack &&
+         current_loc.get_distance(next_WP_loc) > radius*3) ||
+        quadplane_qrtl_switch) {
+        /*
+          if never reached loiter point and using crosstrack and somewhat far away from loiter point
+          navigate to it like in auto-mode for normal crosstrack behavior
+
+          we also use direct waypoint navigation if we are a quadplane
+          that is going to be switching to QRTL when it gets within
+          RTL_RADIUS
+        */
+        nav_controller->update_waypoint(prev_WP_loc, next_WP_loc);
+        return;
+    }
+    nav_controller->update_loiter(next_WP_loc, radius, loiter.direction);
+}
+
 void Plane::update_loiter(uint16_t radius)
 {
     if (radius <= 1) {
@@ -261,32 +344,7 @@ void Plane::update_loiter(uint16_t radius)
         }
     }
 
-    if (loiter.start_time_ms != 0 &&
-        quadplane.guided_mode_enabled()) {
-        if (!auto_state.vtol_loiter) {
-            auto_state.vtol_loiter = true;
-            // reset loiter start time, so we don't consider the point
-            // reached till we get much closer
-            loiter.start_time_ms = 0;
-            quadplane.guided_start();
-        }
-    } else if ((loiter.start_time_ms == 0 &&
-                (control_mode == &mode_auto || control_mode == &mode_guided) &&
-                auto_state.crosstrack &&
-                current_loc.get_distance(next_WP_loc) > radius*3) ||
-               (control_mode == &mode_rtl && quadplane.available() && quadplane.rtl_mode == QuadPlane::RTL_MODE::SWITCH_QRTL)) {
-        /*
-          if never reached loiter point and using crosstrack and somewhat far away from loiter point
-          navigate to it like in auto-mode for normal crosstrack behavior
-
-          we also use direct waypoint navigation if we are a quadplane
-          that is going to be switching to QRTL when it gets within
-          RTL_RADIUS
-        */
-        nav_controller->update_waypoint(prev_WP_loc, next_WP_loc);
-    } else {
-        nav_controller->update_loiter(next_WP_loc, radius, loiter.direction);
-    }
+    update_loiter_update_nav(radius);
 
     if (loiter.start_time_ms == 0) {
         if (reached_loiter_target() ||
@@ -297,9 +355,11 @@ void Plane::update_loiter(uint16_t radius)
                 // starting a loiter in GUIDED means we just reached the target point
                 gcs().send_mission_item_reached_message(0);
             }
+#if HAL_QUADPLANE_ENABLED
             if (quadplane.guided_mode_enabled()) {
                 quadplane.guided_start();
             }
+#endif
         }
     }
 }
@@ -382,8 +442,10 @@ void Plane::setup_turn_angle(void)
  */
 bool Plane::reached_loiter_target(void)
 {
+#if HAL_QUADPLANE_ENABLED
     if (quadplane.in_vtol_auto()) {
         return auto_state.wp_distance < 3;
     }
+#endif
     return nav_controller->reached_loiter_target();
 }

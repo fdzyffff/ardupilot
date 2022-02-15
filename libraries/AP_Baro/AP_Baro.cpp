@@ -66,6 +66,10 @@
  #define HAL_BARO_PROBE_EXT_DEFAULT 0
 #endif
 
+#ifndef HAL_BARO_EXTERNAL_BUS_DEFAULT
+ #define HAL_BARO_EXTERNAL_BUS_DEFAULT -1
+#endif
+
 #ifdef HAL_BUILD_AP_PERIPH
 #define HAL_BARO_ALLOW_INIT_NO_BARO
 #endif
@@ -121,7 +125,7 @@ const AP_Param::GroupInfo AP_Baro::var_info[] = {
     // @Description: This selects the bus number for looking for an I2C barometer. When set to -1 it will probe all external i2c buses based on the GND_PROBE_EXT parameter.
     // @Values: -1:Disabled,0:Bus0,1:Bus1
     // @User: Advanced
-    AP_GROUPINFO("_EXT_BUS", 7, AP_Baro, _ext_bus, -1),
+    AP_GROUPINFO("_EXT_BUS", 7, AP_Baro, _ext_bus, HAL_BARO_EXTERNAL_BUS_DEFAULT),
 
     // @Param: _SPEC_GRAV
     // @DisplayName: Specific Gravity (For water depth measurement)
@@ -223,10 +227,10 @@ const AP_Param::GroupInfo AP_Baro::var_info[] = {
 // singleton instance
 AP_Baro *AP_Baro::_singleton;
 
-#ifdef HAL_NO_GCS
-#define BARO_SEND_TEXT(severity, format, args...)
-#else
+#if HAL_GCS_ENABLED
 #define BARO_SEND_TEXT(severity, format, args...) gcs().send_text(severity, format, ##args)
+#else
+#define BARO_SEND_TEXT(severity, format, args...)
 #endif
 
 /*
@@ -253,8 +257,8 @@ void AP_Baro::calibrate(bool save)
         BARO_SEND_TEXT(MAV_SEVERITY_INFO, "Baro: skipping calibration after WDG reset");
         return;
     }
-    
-#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+
+#if AP_SIM_BARO_ENABLED
     if (AP::sitl()->baro_count == 0) {
         return;
     }
@@ -371,7 +375,7 @@ void AP_Baro::update_calibration()
 float AP_Baro::get_altitude_difference(float base_pressure, float pressure) const
 {
     float ret;
-    float temp    = get_ground_temperature() + C_TO_KELVIN;
+    float temp    = C_TO_KELVIN(get_ground_temperature());
     float scaling = pressure / base_pressure;
 
     // This is an exact calculation that is within +-2.5m of the standard
@@ -401,7 +405,7 @@ float AP_Baro::get_EAS2TAS(void)
     // only estimate lapse rate for the difference from the ground location
     // provides a more consistent reading then trying to estimate a complete
     // ISA model atmosphere
-    float tempK = get_ground_temperature() + C_TO_KELVIN - ISA_LAPSE_RATE * altitude;
+    float tempK = C_TO_KELVIN(get_ground_temperature()) - ISA_LAPSE_RATE * altitude;
     const float eas2tas_squared = SSL_AIR_DENSITY / (pressure / (ISA_GAS_CONSTANT * tempK));
     if (!is_positive(eas2tas_squared)) {
         return 1.0f;
@@ -464,6 +468,7 @@ float AP_Baro::get_external_temperature(const uint8_t instance) const
     }
     
 #ifndef HAL_BUILD_AP_PERIPH
+#if AP_AIRSPEED_ENABLED
     // if we don't have an external temperature then try to use temperature
     // from the airspeed sensor
     AP_Airspeed *airspeed = AP_Airspeed::get_singleton();
@@ -473,6 +478,7 @@ float AP_Baro::get_external_temperature(const uint8_t instance) const
             return temperature;
         }
     }
+#endif
 #endif
     
     // if we don't have an external temperature and airspeed temperature
@@ -624,7 +630,7 @@ void AP_Baro::init(void)
     default:
         break;
     }
-#elif CONFIG_HAL_BOARD == HAL_BOARD_SITL
+#elif AP_SIM_BARO_ENABLED
     SITL::SIM *sitl = AP::sitl();
     if (sitl == nullptr) {
         AP_HAL::panic("No SITL pointer");
@@ -677,7 +683,7 @@ void AP_Baro::init(void)
 #endif
 
 #if !defined(HAL_BARO_ALLOW_INIT_NO_BARO) // most boards requires external baro
-#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+#if AP_SIM_BARO_ENABLED
     if (sitl->baro_count == 0) {
         return;
     }
@@ -789,7 +795,7 @@ void AP_Baro::_probe_i2c_barometers(void)
         }
     }
 #if APM_BUILD_TYPE(APM_BUILD_ArduSub)
-    if (probe & PROBE_LPS25H) {
+    if (probe & PROBE_KELLER) {
         FOREACH_I2C_MASK(i,mask) {
             ADD_BACKEND(AP_Baro_KellerLD::probe(*this,
                                                 std::move(GET_I2C_DEVICE(i, HAL_BARO_KELLERLD_I2C_ADDR))));

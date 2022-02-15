@@ -18,6 +18,7 @@ SOURCE_EXTS = [
 ]
 
 COMMON_VEHICLE_DEPENDENT_LIBRARIES = [
+    'AP_Airspeed',
     'AP_AccelCal',
     'AP_ADC',
     'AP_AHRS',
@@ -107,9 +108,19 @@ COMMON_VEHICLE_DEPENDENT_LIBRARIES = [
     'AP_ExternalAHRS',
     'AP_VideoTX',
     'AP_FETtecOneWire',
+    'AP_Torqeedo',
 ]
 
-def get_legacy_defines(sketch_name):
+def get_legacy_defines(sketch_name, bld):
+    # If we are building heli, we adjust the build directory define so that 
+    # we do not need to actually split heli and copter directories
+    if bld.cmd == 'heli' or 'heli' in bld.targets:
+        return [
+        'APM_BUILD_DIRECTORY=APM_BUILD_Heli',
+        'SKETCH="' + sketch_name + '"',
+        'SKETCHNAME="' + sketch_name + '"',
+        ]
+
     return [
         'APM_BUILD_DIRECTORY=APM_BUILD_' + sketch_name,
         'SKETCH="' + sketch_name + '"',
@@ -253,7 +264,7 @@ def ap_program(bld,
         program_name = bld.path.name
 
     if use_legacy_defines:
-        kw['defines'].extend(get_legacy_defines(bld.path.name))
+        kw['defines'].extend(get_legacy_defines(bld.path.name, bld))
 
     kw['features'] = kw.get('features', []) + bld.env.AP_PROGRAM_FEATURES
 
@@ -284,7 +295,8 @@ def ap_program(bld,
         tg.env.STLIB += [kw['use']]
 
     for group in program_groups:
-        _grouped_programs.setdefault(group, []).append(tg)
+        _grouped_programs.setdefault(group, {}).update({tg.name : tg})
+
 
 @conf
 def ap_example(bld, **kw):
@@ -496,20 +508,20 @@ def _select_programs_from_group(bld):
             groups = ['bin']
 
     if 'all' in groups:
-        groups = _grouped_programs.keys()
+        groups = list(_grouped_programs.keys())
+        groups.remove('bin')       # Remove `bin` so as not to duplicate all items in bin
 
     for group in groups:
         if group not in _grouped_programs:
             bld.fatal('Group %s not found' % group)
 
-        tg = _grouped_programs[group][0]
-        if bld.targets:
-            bld.targets += ',' + tg.name
-        else:
-            bld.targets = tg.name
+        target_names = _grouped_programs[group].keys()
 
-        for tg in _grouped_programs[group][1:]:
-            bld.targets += ',' + tg.name
+        for name in target_names:
+            if bld.targets:
+                bld.targets += ',' + name
+            else:
+                bld.targets = name
 
 def options(opt):
     opt.ap_groups = {

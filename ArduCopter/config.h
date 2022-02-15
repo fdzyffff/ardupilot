@@ -55,7 +55,6 @@
 #if FRAME_CONFIG == HELI_FRAME
   # define RC_FAST_SPEED                        125
   # define WP_YAW_BEHAVIOR_DEFAULT              WP_YAW_BEHAVIOR_LOOK_AHEAD
-  # define AUTOTUNE_ENABLED                     DISABLED
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
@@ -166,12 +165,6 @@
 
 #ifndef EKF_ORIGIN_MAX_ALT_KM
  # define EKF_ORIGIN_MAX_ALT_KM         50   // EKF origin and home must be within 50km vertically
-#endif
-
-//////////////////////////////////////////////////////////////////////////////
-//  OPTICAL_FLOW
-#ifndef OPTFLOW
- # define OPTFLOW       ENABLED
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
@@ -303,7 +296,7 @@
 //////////////////////////////////////////////////////////////////////////////
 // Sport - fly vehicle in rate-controlled (earth-frame) mode
 #ifndef MODE_SPORT_ENABLED
-# define MODE_SPORT_ENABLED !HAL_MINIMIZE_FEATURES
+# define MODE_SPORT_ENABLED DISABLED
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
@@ -450,16 +443,12 @@
 //
 
 // Acro Mode
-#ifndef ACRO_RP_P
- # define ACRO_RP_P                 4.5f
-#endif
-
-#ifndef ACRO_YAW_P
- # define ACRO_YAW_P                4.5f
-#endif
-
 #ifndef ACRO_LEVEL_MAX_ANGLE
- # define ACRO_LEVEL_MAX_ANGLE      3000
+ # define ACRO_LEVEL_MAX_ANGLE      3000 // maximum lean angle in trainer mode measured in centidegrees
+#endif
+
+#ifndef ACRO_LEVEL_MAX_OVERSHOOT
+ # define ACRO_LEVEL_MAX_OVERSHOOT  1000 // maximum overshoot angle in trainer mode when full roll or pitch stick is held in centidegrees
 #endif
 
 #ifndef ACRO_BALANCE_ROLL
@@ -471,20 +460,28 @@
 #endif
 
 #ifndef ACRO_RP_EXPO_DEFAULT
- #define ACRO_RP_EXPO_DEFAULT       0.3f
+ #define ACRO_RP_EXPO_DEFAULT       0.3f    // ACRO roll and pitch expo parameter default
 #endif
 
 #ifndef ACRO_Y_EXPO_DEFAULT
- #define ACRO_Y_EXPO_DEFAULT        0.0f
+ #define ACRO_Y_EXPO_DEFAULT        0.0f    // ACRO yaw expo parameter default
 #endif
 
 #ifndef ACRO_THR_MID_DEFAULT
  #define ACRO_THR_MID_DEFAULT       0.0f
 #endif
 
+#ifndef ACRO_RP_RATE_DEFAULT
+ #define ACRO_RP_RATE_DEFAULT      360      // ACRO roll and pitch rotation rate parameter default in deg/s
+#endif
+
+#ifndef ACRO_Y_RATE_DEFAULT
+ #define ACRO_Y_RATE_DEFAULT       202.5    // ACRO yaw rotation rate parameter default in deg/s
+#endif
+
 // RTL Mode
 #ifndef RTL_ALT_FINAL
- # define RTL_ALT_FINAL             0       // the altitude the vehicle will move to as the final stage of Returning to Launch.  Set to zero to land.
+ # define RTL_ALT_FINAL             0       // the altitude, in cm, the vehicle will move to as the final stage of Returning to Launch.  Set to zero to land.
 #endif
 
 #ifndef RTL_ALT
@@ -560,7 +557,7 @@
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
-// Throttle control defaults
+// Pilot control defaults
 //
 
 #ifndef THR_DZ_DEFAULT
@@ -573,6 +570,13 @@
 #endif
 #ifndef PILOT_ACCEL_Z_DEFAULT
  # define PILOT_ACCEL_Z_DEFAULT 250 // vertical acceleration in cm/s/s while altitude is under pilot control
+#endif
+
+#ifndef PILOT_Y_RATE_DEFAULT
+ # define PILOT_Y_RATE_DEFAULT  202.5   // yaw rotation rate parameter default in deg/s for all mode except ACRO
+#endif
+#ifndef PILOT_Y_EXPO_DEFAULT
+ # define PILOT_Y_EXPO_DEFAULT  0.0     // yaw expo parameter default for all mode except ACRO
 #endif
 
 #ifndef AUTO_DISARMING_DELAY
@@ -658,10 +662,6 @@
 
 #if MODE_AUTO_ENABLED && !MODE_RTL_ENABLED
   #error ModeAuto requires ModeRTL which is disabled
-#endif
-
-#if AP_TERRAIN_AVAILABLE && !MODE_AUTO_ENABLED
-  #error Terrain requires ModeAuto which is disabled
 #endif
 
 #if FRAME_CONFIG == HELI_FRAME && !MODE_ACRO_ENABLED

@@ -53,7 +53,7 @@ template <typename T>
 inline bool is_zero(const T fVal1) {
     static_assert(std::is_floating_point<T>::value || std::is_base_of<T,AP_Float>::value,
                   "Template parameter not of type float");
-    return (fabsf(static_cast<float>(fVal1)) < FLT_EPSILON);
+    return is_zero(static_cast<float>(fVal1));
 }
 
 /* 
@@ -77,6 +77,19 @@ inline bool is_negative(const T fVal1) {
     return (static_cast<float>(fVal1) <= (-1.0 * FLT_EPSILON));
 }
 
+/*
+ * @brief: Check whether a double is greater than zero
+ */
+inline bool is_positive(const double fVal1) {
+    return (fVal1 >= static_cast<double>(FLT_EPSILON));
+}
+
+/*
+ * @brief: Check whether a double is less than zero
+ */
+inline bool is_negative(const double fVal1) {
+    return (fVal1 <= static_cast<double>((-1.0 * FLT_EPSILON)));
+}
 
 /*
  * A variant of asin() that checks the input ranges and ensures a valid angle
@@ -215,12 +228,14 @@ ftype norm(const T first, const U second, const Params... parameters)
     return sqrtF(sq(first, second, parameters...));
 }
 
+#undef MIN
 template<typename A, typename B>
 static inline auto MIN(const A &one, const B &two) -> decltype(one < two ? one : two)
 {
     return one < two ? one : two;
 }
 
+#undef MAX
 template<typename A, typename B>
 static inline auto MAX(const A &one, const B &two) -> decltype(one > two ? one : two)
 {
@@ -322,3 +337,7 @@ uint16_t float2fixed(const float input, const uint8_t fractional_bits = 8);
   fixed wing aircraft
  */
 float fixedwing_turn_rate(float bank_angle_deg, float airspeed);
+
+// convert degrees farenheight to Kelvin
+float degF_to_Kelvin(float temp_f);
+

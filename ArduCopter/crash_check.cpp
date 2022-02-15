@@ -35,6 +35,12 @@ void Copter::crash_check()
         return;
     }
 
+    // exit immediately if in force flying
+    if (force_flying && !flightmode->is_landing()) {
+        crash_counter = 0;
+        return;
+    }
+
     // return immediately if we are not in an angle stabilize flight mode or we are flipping
     if (flightmode->mode_number() == Mode::Number::ACRO || flightmode->mode_number() == Mode::Number::FLIP) {
         crash_counter = 0;
@@ -137,7 +143,7 @@ void Copter::thrust_loss_check()
     }
 
     // check for descent
-    if (!is_negative(inertial_nav.get_velocity_z())) {
+    if (!is_negative(inertial_nav.get_velocity_z_up_cms())) {
         thrust_loss_counter = 0;
         return;
     }
@@ -163,6 +169,12 @@ void Copter::thrust_loss_check()
         // enable thrust loss handling
         motors->set_thrust_boost(true);
         // the motors library disables this when it is no longer needed to achieve the commanded output
+
+#if GRIPPER_ENABLED == ENABLED
+        if ((copter.g2.flight_options & uint32_t(FlightOptions::RELEASE_GRIPPER_ON_THRUST_LOSS)) != 0) {
+            copter.g2.gripper.release();
+        }
+#endif
     }
 }
 
@@ -221,7 +233,7 @@ void Copter::yaw_imbalance_check()
 
 // Code to detect a crash main ArduCopter code
 #define PARACHUTE_CHECK_TRIGGER_SEC         1       // 1 second of loss of control triggers the parachute
-#define PARACHUTE_CHECK_ANGLE_DEVIATION_CD  3000    // 30 degrees off from target indicates a loss of control
+#define PARACHUTE_CHECK_ANGLE_DEVIATION_DEG 30.0f   // 30 degrees off from target indicates a loss of control
 
 // parachute_check - disarms motors and triggers the parachute if serious loss of control has been detected
 // vehicle is considered to have a "serious loss of control" by the vehicle being more than 30 degrees off from the target roll and pitch angles continuously for 1 second
@@ -240,7 +252,7 @@ void Copter::parachute_check()
     parachute.set_is_flying(!ap.land_complete);
 
     // pass sink rate to parachute library
-    parachute.set_sink_rate(-inertial_nav.get_velocity_z() * 0.01f);
+    parachute.set_sink_rate(-inertial_nav.get_velocity_z_up_cms() * 0.01f);
 
     // exit immediately if in standby
     if (standby_active) {
@@ -283,7 +295,7 @@ void Copter::parachute_check()
 
     // check for angle error over 30 degrees
     const float angle_error = attitude_control->get_att_error_angle_deg();
-    if (angle_error <= CRASH_CHECK_ANGLE_DEVIATION_DEG) {
+    if (angle_error <= PARACHUTE_CHECK_ANGLE_DEVIATION_DEG) {
         if (control_loss_count > 0) {
             control_loss_count--;
         }

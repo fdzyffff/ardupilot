@@ -22,7 +22,6 @@
 #include <AP_CANManager/AP_CANManager.h>
 #include <AP_Common/AP_Common.h>
 #include <AP_Scheduler/AP_Scheduler.h>
-#include <AP_HAL/utility/sparse-endian.h>
 #include <SRV_Channel/SRV_Channel.h>
 #include <GCS_MAVLink/GCS.h>
 #include "AP_ToshibaCAN.h"
@@ -318,7 +317,7 @@ void AP_ToshibaCAN::loop()
                         t.voltage = float(be16toh(reply_data.voltage_mv)) * 0.001f;  // millivolts to volts
                         t.current = MAX((int16_t)be16toh(reply_data.current_ma), 0) * (4.0f * 0.001f); // milli-amps to amps
                         if (diff_ms <= 1000) {
-                            // convert centi-amps miliseconds to mAh
+                            // convert centi-amps milliseconds to mAh
                             _telemetry[esc_id].current_tot_mah += t.current * diff_ms * amp_ms_to_mah;
                         }
                         t.consumption_mah = _telemetry[esc_id].current_tot_mah;

@@ -362,7 +362,8 @@ int16_t CANIface::send(const AP_HAL::CANFrame& frame, uint64_t tx_deadline,
     txi.abort_on_error = (flags & AbortOnError) != 0;
     // setup frame initial state
     txi.pushed         = false;
-    return 1;
+
+    return AP_HAL::CANIface::send(frame, tx_deadline, flags);
 }
 
 int16_t CANIface::receive(AP_HAL::CANFrame& out_frame, uint64_t& out_timestamp_us, CanIOFlags& out_flags)
@@ -375,13 +376,19 @@ int16_t CANIface::receive(AP_HAL::CANFrame& out_frame, uint64_t& out_timestamp_u
     out_frame    = rx_item.frame;
     out_timestamp_us = rx_item.timestamp_us;
     out_flags    = rx_item.flags;
-    return 1;
+
+    return AP_HAL::CANIface::receive(out_frame, out_timestamp_us, out_flags);
 }
 
 #if !defined(HAL_BOOTLOADER_BUILD)
 bool CANIface::configureFilters(const CanFilterConfig* filter_configs,
                                 uint16_t num_configs)
 {
+#if !defined(HAL_BUILD_AP_PERIPH)
+    // only do filtering for AP_Periph
+    can_->FMR &= ~bxcan::FMR_FINIT;
+    return true;
+#else
     if (mode_ != FilteredMode) {
         return false;
     }
@@ -449,6 +456,7 @@ bool CANIface::configureFilters(const CanFilterConfig* filter_configs,
     }
 
     return false;
+#endif // AP_Periph
 }
 #endif
 
@@ -481,7 +489,7 @@ void CANIface::handleTxMailboxInterrupt(uint8_t mailbox_index, bool txok, const 
         rx_item.timestamp_us = timestamp_us;
         rx_item.flags = AP_HAL::CANIface::Loopback;
         PERF_STATS(stats.tx_loopback);
-        rx_queue_.push(rx_item);
+        add_to_rx_queue(rx_item);
     }
 
     if (txok && !txi.pushed) {
@@ -569,7 +577,7 @@ void CANIface::handleRxInterrupt(uint8_t fifo_index, uint64_t timestamp_us)
     rx_item.frame = frame;
     rx_item.timestamp_us = timestamp_us;
     rx_item.flags = 0;
-    if (rx_queue_.push(rx_item)) {
+    if (add_to_rx_queue(rx_item)) {
         PERF_STATS(stats.rx_received);
     } else {
         PERF_STATS(stats.rx_overflow);
@@ -758,9 +766,15 @@ void CANIface::initOnce(bool enable_irq)
         CriticalSectionLocker lock;
         switch (can_interfaces[self_index_]) {
         case 0:
+#if defined(RCC_APB1ENR1_CAN1EN)
+            RCC->APB1ENR1 |=  RCC_APB1ENR1_CAN1EN;
+            RCC->APB1RSTR1 |=  RCC_APB1RSTR1_CAN1RST;
+            RCC->APB1RSTR1 &= ~RCC_APB1RSTR1_CAN1RST;
+#else
             RCC->APB1ENR  |=  RCC_APB1ENR_CAN1EN;
             RCC->APB1RSTR |=  RCC_APB1RSTR_CAN1RST;
             RCC->APB1RSTR &= ~RCC_APB1RSTR_CAN1RST;
+#endif
             break;
 #ifdef RCC_APB1ENR_CAN2EN
         case 1:
@@ -842,7 +856,7 @@ bool CANIface::init(const uint32_t bitrate, const CANIface::OperatingMode mode)
         Debug("Initing iface 0...");
         if (!can_ifaces[0]->init(bitrate, mode)) {
             Debug("Iface 0 init failed");
-            return false;;
+            return false;
         }
 
         Debug("Enabling CAN iface");

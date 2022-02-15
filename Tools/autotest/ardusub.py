@@ -245,9 +245,7 @@ class AutoTestSub(AutoTest):
         self.disarm_vehicle()
         self.progress("Manual dive OK")
 
-        m = self.mav.recv_match(type='SCALED_PRESSURE3', blocking=True)
-        if m is None:
-            raise NotAchievedException("Did not get SCALED_PRESSURE3")
+        m = self.assert_receive_message('SCALED_PRESSURE3')
         if m.temperature != 2650:
             raise NotAchievedException("Did not get correct TSYS01 temperature")
 
@@ -367,6 +365,14 @@ class AutoTestSub(AutoTest):
                 break
         self.initialise_after_reboot_sitl()
 
+    def DoubleCircle(self):
+        self.change_mode('CIRCLE')
+        self.wait_ready_to_arm()
+        self.arm_vehicle()
+        self.change_mode('STABILIZE')
+        self.change_mode('CIRCLE')
+        self.disarm_vehicle()
+
     def default_parameter_list(self):
         ret = super(AutoTestSub, self).default_parameter_list()
         ret["FS_GCS_ENABLE"] = 0  # FIXME
@@ -396,6 +402,10 @@ class AutoTestSub(AutoTest):
             ("GripperMission",
              "Test gripper mission items",
              self.test_gripper_mission),
+
+            ("DoubleCircle",
+             "Test entering circle twice",
+             self.DoubleCircle),
 
             ("MotorThrustHoverParameterIgnore", "Test if we are ignoring MOT_THST_HOVER", self.test_mot_thst_hover_ignore),
 

@@ -231,6 +231,7 @@ bool AP_ESC_Telem::get_usage_seconds(uint8_t esc_index, uint32_t& usage_s) const
 // send ESC telemetry messages over MAVLink
 void AP_ESC_Telem::send_esc_telemetry_mavlink(uint8_t mav_chan)
 {
+#if HAL_GCS_ENABLED
     static_assert(ESC_TELEM_MAX_ESCS <= 12, "AP_ESC_Telem::send_esc_telemetry_mavlink() only supports up-to 12 motors");
 
     if (!_have_data) {
@@ -295,6 +296,7 @@ void AP_ESC_Telem::send_esc_telemetry_mavlink(uint8_t mav_chan)
                 break;
         }
     }
+#endif // HAL_GCS_ENABLED
 }
 
 // record an update to the telemetry data together with timestamp
@@ -368,7 +370,7 @@ void AP_ESC_Telem::update()
 {
     AP_Logger *logger = AP_Logger::get_singleton();
 
-    // Push received telemtry data into the logging system
+    // Push received telemetry data into the logging system
     if (logger && logger->logging_enabled()) {
 
         for (uint8_t i = 0; i < ESC_TELEM_MAX_ESCS; i++) {
@@ -386,7 +388,7 @@ void AP_ESC_Telem::update()
                 //   voltage is in Volt
                 //   current is in Ampere
                 //   esc_temp is in centi-degrees Celsius
-                //   current_tot is in mili-Ampere hours
+                //   current_tot is in milli-Ampere hours
                 //   motor_temp is in centi-degrees Celsius
                 //   error_rate is in percentage
                 const struct log_Esc pkt{

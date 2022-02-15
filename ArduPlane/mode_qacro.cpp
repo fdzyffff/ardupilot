@@ -1,10 +1,12 @@
 #include "mode.h"
 #include "Plane.h"
 
+#if HAL_QUADPLANE_ENABLED
+
 bool ModeQAcro::_enter()
 {
     quadplane.throttle_wait = false;
-    quadplane.transition_state = QuadPlane::TRANSITION_DONE;
+    quadplane.transition->force_transistion_complete();
     attitude_control->relax_attitude_controllers();
     return true;
 }
@@ -29,8 +31,6 @@ void ModeQAcro::run()
         attitude_control->set_throttle_out(0, true, 0);
         quadplane.relax_attitude_control();
     } else {
-        quadplane.check_attitude_relax();
-
         quadplane.set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
 
         // convert the input to the desired body frame rate
@@ -59,3 +59,5 @@ void ModeQAcro::run()
         attitude_control->set_throttle_out(throttle_out, false, 10.0f);
     }
 }
+
+#endif

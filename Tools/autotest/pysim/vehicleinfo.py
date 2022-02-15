@@ -105,7 +105,11 @@ class VehicleInfo(object):
             },
             "deca-cwx": {
                 "waf_target": "bin/arducopter",
-                "default_params_filename": "default_params/copter.parm",
+                "default_params_filename": [
+                    "default_params/copter.parm",
+                    "default_params/copter-deca.parm",
+                    "default_params/copter-deca-cwx.parm"
+                 ],
             },
             "tri": {
                 "waf_target": "bin/arducopter",
@@ -206,11 +210,9 @@ class VehicleInfo(object):
         },
     },
     "Blimp": {
-        "default_frame": "quad",
+        "default_frame": "Blimp",
         "frames": {
-            # BLIMP
-            "quad": {
-                "model": "+",
+            "Blimp": {
                 "waf_target": "bin/blimp",
                 "default_params_filename": "default_params/blimp.parm",
             },
@@ -263,6 +265,10 @@ class VehicleInfo(object):
             "plane-jet": {
                 "waf_target": "bin/arduplane",
                 "default_params_filename": ["default_params/plane.parm", "default_params/plane-jet.parm"],
+            },
+            "quadplane-copter_tailsitter": {
+                "waf_target": "bin/arduplane",
+                "default_params_filename": ["default_params/quadplane.parm","default_params/quadplane-copter_tailsitter.parm"],
             },
             "plane": {
                 "waf_target": "bin/arduplane",
@@ -330,6 +336,11 @@ class VehicleInfo(object):
                 "default_params_filename": ["default_params/rover.parm",
                                             "default_params/rover-skid.parm",
                                             "default_params/balancebot.parm"],
+            },
+            "motorboat": {
+                "waf_target": "bin/ardurover",
+                "default_params_filename": ["default_params/rover.parm",
+                                            "default_params/motorboat.parm"],
             },
             "sailboat": {
                 "waf_target": "bin/ardurover",

@@ -88,11 +88,9 @@ void NavEKF3_core::setWindMagStateLearningMode()
             }
 
             // set the wind state variances to the measurement uncertainty
-            for (uint8_t index=22; index<=23; index++) {
-                zeroCols(P, 22, 23);
-                zeroRows(P, 22, 23);
-                P[index][index] = trueAirspeedVariance;
-            }
+            zeroCols(P, 22, 23);
+            zeroRows(P, 22, 23);
+            P[22][22] = P[23][23] = trueAirspeedVariance;
 
             windStatesAligned = true;
 
@@ -346,12 +344,12 @@ void NavEKF3_core::setAidingMode()
                 posTimeout = true;
                 velTimeout = true;
                 tasTimeout = true;
-                gpsNotAvailable = true;
+                gpsIsInUse = false;
              } else if (posAidLossCritical) {
                 // if the loss of position is critical, declare all sources of position aiding as being timed out
                 posTimeout = true;
                 velTimeout = !optFlowUsed && !gpsVelUsed && !bodyOdmUsed;
-                gpsNotAvailable = true;
+                gpsIsInUse = false;
 
             }
             break;
@@ -711,6 +709,10 @@ void  NavEKF3_core::updateFilterStatus(void)
     filterStatus.flags.using_gps = ((imuSampleTime_ms - lastPosPassTime_ms) < 4000) && (PV_AidingMode == AID_ABSOLUTE);
     filterStatus.flags.gps_glitching = !gpsAccuracyGood && (PV_AidingMode == AID_ABSOLUTE) && (frontend->sources.getPosXYSource() == AP_NavEKF_Source::SourceXY::GPS); // GPS glitching is affecting navigation accuracy
     filterStatus.flags.gps_quality_good = gpsGoodToAlign;
+    // for reporting purposes we report rejecting airspeed after 3s of not fusing when we want to fuse the data
+    filterStatus.flags.rejecting_airspeed = lastTasFailTime_ms != 0 &&
+                                            (imuSampleTime_ms - lastTasFailTime_ms) < 1000 &&
+                                            (imuSampleTime_ms - lastTasPassTime_ms) > 3000;
     filterStatus.flags.initalized = filterStatus.flags.initalized || healthy();
 }
 
