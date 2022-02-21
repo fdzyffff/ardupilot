@@ -53,7 +53,7 @@ void Plane::FD1_uart_ep4_send() {
     FD1_msg_ep4_out &tmp_msg = FD1_uart_msg_ep4.get_msg_ep4_out();
 
     tmp_msg._msg_1.content.msg.sum_check = 0;
-    tmp_msg._msg_1.content.msg.damper = (uint16_t)constrain_float(ep4_throttle*10.0f, 0.0f, 100.0f);
+    tmp_msg._msg_1.content.msg.damper = (uint16_t)constrain_float(ep4_throttle*10.0f, 0.0f, 1000.0f);
     tmp_msg._msg_1.content.msg.empty1 = 0;
     tmp_msg._msg_1.content.msg.count = n_count;
     tmp_msg._msg_1.content.msg.header.head_1 = FD1_msg_ep4_out::PREAMBLE1;
@@ -88,6 +88,7 @@ void Plane::send_esc_telemetry_mavlink_fake(mavlink_channel_t chan) {
         uint16_t count[4] {};
 
         rpm[0] = tmp_msg._msg_1.content.msg.rpm;
+        rpm[1] = MAX(tmp_msg._msg_1.content.msg.fuel_pressure, 0);
         voltage[0] = (uint16_t)(MAX(tmp_msg._msg_1.content.msg.cylinder_temp1, 0));
         voltage[1] = (uint16_t)(MAX(tmp_msg._msg_1.content.msg.cylinder_temp2, 0));
         current[0] = (uint16_t)(MAX(tmp_msg._msg_1.content.msg.venting_temp1, 0));
