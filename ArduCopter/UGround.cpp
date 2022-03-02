@@ -71,6 +71,14 @@ void UGround::do_cmd(int16_t cmd, bool force_set) {
         case 7:
             set_state(UGCS_FS1);
             break;
+        case 10:
+            copter.Ucam.do_cmd(1.0f);
+            copter.gcs().send_text(MAV_SEVERITY_WARNING, "CAM ON");
+            break;
+        case 11:
+            copter.Ucam.do_cmd(0.0f);
+            copter.gcs().send_text(MAV_SEVERITY_WARNING, "CAM OFF");
+            break;
         case 255:
             copter.arming.disarm();
             break;

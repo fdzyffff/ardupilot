@@ -10,6 +10,9 @@ void Copter::userhook_init()
     mocap_stat.x = 0.0f;
     mocap_stat.y = 0.0f;
     mocap_stat.z = 0.0f;
+
+    Ucam.init();
+    Upayload.init();
 }
 #endif
 
@@ -90,7 +93,7 @@ void Copter::userhook_auxSwitch3(uint8_t ch_flag)
 
 void Copter::userhook_SuperSlowLoop_print() {
     if ((g2.user_parameters.cam_print.get() & (1<<0)) && Ucam.display_info_new) { // 1
-        gcs().send_text(MAV_SEVERITY_WARNING, "Raw (%0.0f,%0.0f) on:%0.0f", Ucam.display_info_p1, Ucam.display_info_p2, Ucam.display_info_p3);
+        gcs().send_text(MAV_SEVERITY_WARNING, "[%d] %0.0f,%0.0f,%0.0f,%0.0f", Ucam.display_info_count, Ucam.display_info_p1, Ucam.display_info_p2, Ucam.display_info_p3, Ucam.display_info_p4);
         Ucam.display_info_new = false;
     }
     if (g2.user_parameters.cam_print.get() & (1<<1)) { // 2
@@ -105,6 +108,9 @@ void Copter::userhook_SuperSlowLoop_print() {
     if (g2.user_parameters.cam_print.get() & (1<<4)) { // 16
         gcs().send_text(MAV_SEVERITY_WARNING, "Mocap [%d] [%0.1f, %0.1f, %0.1f]", mocap_stat.n_count, mocap_stat.x, mocap_stat.y, mocap_stat.z);
     }
+
+
+    Ucam.display_info_count = 0;
 }
 
 void Copter::userhook_SuperSlowLoop_telemsetup() {

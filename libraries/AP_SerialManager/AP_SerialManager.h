@@ -125,6 +125,7 @@ public:
         SerialProtocol_RCIN = 23,
         SerialProtocol_Hott = 27,
         SerialProtocol_Payload = 28,
+        SerialProtocol_Cam = 29,
     };
 
     // get singleton instance

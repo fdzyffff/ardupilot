@@ -304,9 +304,9 @@ bool GCS_MAVLINK_Copter::try_send_message(enum ap_message id)
             0,
             MAV_CMD_USER_3,
             0,
-            copter.Ucam.is_active()?(copter.Ugcs.is_lockon()?2.0f:1.0f):0.0f,
-            copter.Ucam.is_active()?copter.Ucam.get_raw_info().x:0.0f, 
-            copter.Ucam.is_active()?copter.Ucam.get_raw_info().y:0.0f, 
+            (float)copter.Ucam.cam_state(),
+            copter.Ucam.get_raw_info().x, 
+            copter.Ucam.get_raw_info().y, 
             (float)copter.Ugcs.get_state_num(),
             (float)copter.Ugcs.get_distance(), 
             0, 0);
@@ -923,12 +923,6 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_
                 }
             }
         }
-        return MAV_RESULT_ACCEPTED;
-    }
-
-    case MAV_CMD_USER_1: {
-        copter.Ucam.handle_info(packet.param1, packet.param2, ((int16_t)packet.param3!=0));
-
         return MAV_RESULT_ACCEPTED;
     }
 
