@@ -9,6 +9,7 @@
 bool ModeAttack_att::init(bool ignore_checks)
 {
     if (copter.Ucam.is_active()) {
+        copter.Upayload.set_state(UPayload::payload_arm);
         return true;
     }
     copter.g2.user_parameters.Ucam_pid.reset_I();
@@ -44,6 +45,11 @@ void ModeAttack_att::run()
     attitude_control->set_throttle_out(my_get_throttle_boosted(motors->get_throttle_hover()*1.1f),
                                        false,
                                        g.throttle_filt);
+    
+    if (copter.ins.get_accel_peak_hold_neg_x() < -(20.0f)) {
+        copter.Upayload.set_state(UPayload::payload_fire);
+    }
+
 }
 
 float ModeAttack_att::my_get_throttle_boosted(float throttle_in)

@@ -973,17 +973,6 @@ void GCS_MAVLINK_Copter::handleMessage(const mavlink_message_t &msg)
         break;
     }
 
-
-    case MAVLINK_MSG_ID_MY_MICRO_IMAGE:      // MAV ID: 3
-    {
-        // We keep track of the last time we received a heartbeat from our GCS for failsafe purposes
-
-        mavlink_my_micro_image_t packet;
-        mavlink_msg_my_micro_image_decode(&msg, &packet);
-        copter.send_my_micro_image(chan, &packet);
-        break;
-    }
-
     case MAVLINK_MSG_ID_MANUAL_CONTROL:
     {
         if (msg.sysid != copter.g.sysid_my_gcs) {

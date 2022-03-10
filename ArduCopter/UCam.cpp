@@ -169,6 +169,16 @@ void UCam::mav_read()
 
                     break;
                 }
+
+                case MAVLINK_MSG_ID_MY_MICRO_IMAGE:      // MAV ID: 3
+                {
+                    // We keep track of the last time we received a heartbeat from our GCS for failsafe purposes
+
+                    mavlink_my_micro_image_t packet;
+                    mavlink_msg_my_micro_image_decode(&msg, &packet);
+                    copter.send_my_micro_image((mavlink_channel_t)0, &packet);
+                    break;
+                }
                 default:
                     break;
             }

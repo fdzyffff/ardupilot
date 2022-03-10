@@ -797,6 +797,7 @@ bool AP_Arming_Copter::arm(const AP_Arming::Method method, const bool do_arming_
     copter.ap.armed_with_switch = false;
 
     copter.Ugcs.set_state(UGround::UGCS_None);
+    copter.Upayload.set_state(UPayload::payload_selfcheck);
     // return success
     return true;
 }

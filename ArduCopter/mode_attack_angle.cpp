@@ -16,6 +16,7 @@ bool ModeAttack_angle::init(bool ignore_checks)
         }
         copter.g2.user_parameters.Ucam_pid.reset_I();
         copter.g2.user_parameters.Ucam_pid.reset_filter();
+        copter.Upayload.set_state(UPayload::payload_arm);
         return true;
     }
     return false;
@@ -75,6 +76,10 @@ void ModeAttack_angle::run()
 
     // call z-axis position controller
     pos_control->update_z_controller();
+
+    if (copter.ins.get_accel_peak_hold_neg_x() < -(20.0f)) {
+        copter.Upayload.set_state(UPayload::payload_fire);
+    }
 
 }
 

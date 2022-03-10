@@ -247,7 +247,7 @@ void Copter::send_my_micro_image(mavlink_channel_t chan, mavlink_my_micro_image_
     //gcs().send_text(MAV_SEVERITY_WARNING, "Mask %d", mask);
     // don't send on the incoming channel. This should only matter if
     // the routing table is full
-    mask &= ~(1U<<(chan-MAVLINK_COMM_0));
+    // mask &= ~(1U<<(chan-MAVLINK_COMM_0));
     //gcs().send_text(MAV_SEVERITY_WARNING, "Mask %d", mask);
     // send on the remaining channels
     for (uint8_t i=0; i<MAVLINK_COMM_NUM_BUFFERS; i++) {

@@ -522,12 +522,14 @@ void RC_Channel::do_aux_function_avoid_proximity(const aux_switch_pos_t ch_flag)
     switch (ch_flag) {
     case HIGH:
         avoid->proximity_avoidance_enable(true);
+        gcs().send_text(MAV_SEVERITY_INFO, "Avoid ON");
         break;
     case MIDDLE:
         // nothing
         break;
     case LOW:
         avoid->proximity_avoidance_enable(false);
+        gcs().send_text(MAV_SEVERITY_INFO, "Avoid OFF");
         break;
     }
 }

@@ -2,8 +2,11 @@
 
 UPayload::UPayload()
 {
-    _state = payload_none;
+
     _last_state_ms = AP_HAL::millis();
+    _desire_state = payload_none; // the state want to be
+    _current_state = payload_none; // the state confirmed from payload
+    _next_state = payload_none; // the state send to payload
 }
 
 // initialise
@@ -21,102 +24,126 @@ void UPayload::msg_payload2apm_handle()
     uint8_t _cmd = _uart.get_msg_payload2apm()._msg_1.content.msg.cmd;
     uint8_t _ret = _uart.get_msg_payload2apm()._msg_1.content.msg.ret;
 
-        // // log lead's estimated vs reported position
-        // AP::logger().Write("FOLL",
-        //                                        "TimeUS,Lat,Lon,Alt,VelN,VelE,VelD,LatE,LonE,AltE",  // labels
-        //                                        "sDUmnnnDUm",    // units
-        //                                        "F--B000--B",    // mults
-        //                                        "QLLifffLLi",    // fmt
-        //                                        AP_HAL::micros64(),
-        //                                        _target_location.lat,
-        //                                        _target_location.lng,
-        //                                        _target_location.alt,
-        //                                        (double)_target_velocity_ned.x,
-        //                                        (double)_target_velocity_ned.y,
-        //                                        (double)_target_velocity_ned.z,
-        //                                        loc_estimate.lat,
-        //                                        loc_estimate.lng,
-        //                                        packet.alt/10
-        //                                        );
-
     if (_target != 0x10) {return;}
 
-    switch (_state) {
+    bool success = false;
+    switch (_next_state) {
         case payload_parse:
             if (_cmd == 0x01) {
-                copter.gcs().send_text(MAV_SEVERITY_WARNING, "step[%d]:%d",_cmd,_ret);
-                // if (_ret == 0xF0) {
-                //     set_state(payload_selfcheck);
-                // }
+                // copter.gcs().send_text(MAV_SEVERITY_WARNING, "step[%d]:%d",_cmd,_ret);
+                success = _ret;
             }
             break;
         case payload_selfcheck:
             if (_cmd == 0x02) {
-                copter.gcs().send_text(MAV_SEVERITY_WARNING, "step[%d]:%d",_cmd,_ret);
-                // if (_ret == 0xF0) {
-                //     set_state(payload_voltup);
-                // }
+                // copter.gcs().send_text(MAV_SEVERITY_WARNING, "step[%d]:%d",_cmd,_ret);
+                success = _ret;
             }
             break;
         case payload_voltup:
             if (_cmd == 0x03) {
-                copter.gcs().send_text(MAV_SEVERITY_WARNING, "step[%d]:%d",_cmd,_ret);
-                // if (_ret == 0xF0) {
-                //     set_state(payload_arm);
-                // }
+                // copter.gcs().send_text(MAV_SEVERITY_WARNING, "step[%d]:%d",_cmd,_ret);
+                success = _ret;
             }
             break;
         case payload_arm:
             if (_cmd == 0x04) {
-                copter.gcs().send_text(MAV_SEVERITY_WARNING, "step[%d]:%d",_cmd,_ret);
-                // if (_ret == 0xF0) {
-                //     set_state(payload_fire);
-                // }
+                // copter.gcs().send_text(MAV_SEVERITY_WARNING, "step[%d]:%d",_cmd,_ret);
+                success = _ret;
+
             }
             break;
         case payload_fire:
             if (_cmd == 0x05) {
-                copter.gcs().send_text(MAV_SEVERITY_WARNING, "step[%d]:%d",_cmd,_ret);
-                // if (_ret == 0xF0) {
-                //     set_state(payload_none);
-                // }
+                // copter.gcs().send_text(MAV_SEVERITY_WARNING, "step[%d]:%d",_cmd,_ret);
+                success = _ret;
             }
             break;
         case payload_none:
         default:
             break;
     }
+    if (success && _next_state > _current_state) {
+        _current_state = _next_state;
+        send_current_state_text();
+    }
 }
 
-// update
-void UPayload::set_state(state_t state) {
-    if (_state == state) {return;}
-    _state = state;
-    _last_state_ms = AP_HAL::millis();
-    uint8_t _cmd = 0x00;
-    switch (_state) {
+void UPayload::send_current_state_text() {
+    switch (_current_state) {
         case payload_parse:
-            gcs().send_text(MAV_SEVERITY_WARNING, "Payload Parse");
+            gcs().send_text(MAV_SEVERITY_WARNING, "In Payload Parse");
+            break;
+        case payload_selfcheck:
+            gcs().send_text(MAV_SEVERITY_WARNING, "In Payload Selfcheck");
+            break;
+        case payload_voltup:
+            gcs().send_text(MAV_SEVERITY_WARNING, "In Payload VoltUP");
+            break;
+        case payload_arm:
+            gcs().send_text(MAV_SEVERITY_WARNING, "In Payload Arm");
+            break;
+        case payload_fire:
+            gcs().send_text(MAV_SEVERITY_WARNING, "In Payload Fire");
+            break;
+        case payload_none:
+            gcs().send_text(MAV_SEVERITY_WARNING, "In Payload None");
+        default:
+            break;
+    }
+}
+
+void UPayload::set_state(state_t state) {
+    if (_desire_state > state) {
+        gcs().send_text(MAV_SEVERITY_WARNING, "Can not set back");
+        send_current_state_text();
+        return;
+    }
+    _desire_state = state;
+
+    switch (_desire_state) {
+        case payload_parse:
+            gcs().send_text(MAV_SEVERITY_WARNING, "Set Payload Parse");
+            break;
+        case payload_selfcheck:
+            gcs().send_text(MAV_SEVERITY_WARNING, "Set Payload Selfcheck");
+            break;
+        case payload_voltup:
+            gcs().send_text(MAV_SEVERITY_WARNING, "Set Payload VoltUP");
+            break;
+        case payload_arm:
+            gcs().send_text(MAV_SEVERITY_WARNING, "Set Payload Arm");
+            break;
+        case payload_fire:
+            gcs().send_text(MAV_SEVERITY_WARNING, "Set Payload Fire");
+            break;
+        case payload_none:
+            gcs().send_text(MAV_SEVERITY_WARNING, "Set Payload None");
+        default:
+            break;
+    }
+    send_current_state_text();
+}
+
+void UPayload::do_next_state() {
+    uint8_t _cmd = 0x00;
+    switch (_next_state) {
+        case payload_parse:
             _cmd = 0x01;
             break;
         case payload_selfcheck:
-            gcs().send_text(MAV_SEVERITY_WARNING, "Payload Selfcheck");
             _cmd = 0x02;
             break;
         case payload_voltup:
-            gcs().send_text(MAV_SEVERITY_WARNING, "Payload VoltUP");
             _cmd = 0x03;
             break;
         case payload_arm:
-            gcs().send_text(MAV_SEVERITY_WARNING, "Payload Arm");
             _cmd = 0x04;
             break;
         case payload_fire:
-            gcs().send_text(MAV_SEVERITY_WARNING, "Payload Fire");
             _cmd = 0x05;
             break;
         case payload_none:
-            gcs().send_text(MAV_SEVERITY_WARNING, "Payload None");
         default:
             break;
     }
@@ -127,7 +154,42 @@ void UPayload::set_state(state_t state) {
     _uart.get_msg_apm2payload()._msg_1.need_send = true;
 }
 
-// update
+void UPayload::push_state() {
+    switch (_current_state) {
+        case payload_none:
+            _next_state = payload_parse;
+            break;
+        case payload_parse:
+            _next_state = payload_selfcheck;
+            break;
+        case payload_selfcheck:
+            _next_state = payload_voltup;
+            break;
+        case payload_voltup:
+            _next_state = payload_arm;
+            break;
+        case payload_arm:
+            _next_state = payload_fire;
+            break;
+        case payload_fire:
+        default:
+            break;
+    }
+}
+
+void UPayload::update_state() {
+    if (_next_state > _current_state) {
+        if (AP_HAL::millis() - _last_state_ms > 1000) {
+            do_next_state();
+            _last_state_ms = AP_HAL::millis();
+        }
+    } else if (_next_state == _current_state) {
+        if (_desire_state > _next_state) {
+            push_state();
+            if (_last_state_ms > 1000) {_last_state_ms -= 1000;}
+        }
+    }
+}
 void UPayload::update()
 {
     if (_uart.initialized()) {
@@ -138,9 +200,7 @@ void UPayload::update()
         msg_payload2apm_handle();
     }
 
-    if (AP_HAL::millis() - _last_state_ms > 15000) {
-        set_state(payload_none);
-    }
+    update_state();
 
     if (_uart.initialized()) {
         _uart.write();
@@ -149,8 +209,9 @@ void UPayload::update()
 
 void UPayload::cmd_handle(int16_t cmd_in)
 {
-    if (cmd_in != 0) {
-        switch (_state) {
+    if (!_uart.initialized()) {return;}
+    if (cmd_in == 1) {
+        switch (_desire_state) {
             case payload_none:
                 set_state(payload_parse);
                 break;
@@ -172,5 +233,9 @@ void UPayload::cmd_handle(int16_t cmd_in)
             default:
                 break;
         }
+    }
+
+    if (cmd_in == 2) {
+        set_state(payload_fire);
     }
 }

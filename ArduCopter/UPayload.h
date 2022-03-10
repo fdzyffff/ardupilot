@@ -20,13 +20,20 @@ public:
     // initialise
     void init();
     void update();
-    void msg_payload2apm_handle();
     void set_state(state_t state);
     void cmd_handle(int16_t cmd_in);
 
 private:
 
     HB1_UART _uart{AP_SerialManager::SerialProtocol_Payload};
-    state_t _state;
+    state_t _desire_state;
+    state_t _current_state;
+    state_t _next_state;
     uint32_t _last_state_ms;
+
+    void msg_payload2apm_handle();
+    void send_current_state_text();
+    void do_next_state();
+    void push_state();
+    void update_state();
 };
