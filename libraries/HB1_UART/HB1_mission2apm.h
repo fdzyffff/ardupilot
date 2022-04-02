@@ -40,7 +40,7 @@ public:
         int16_t alt;
     };
 
-    //0x33
+    //0x69
     struct PACKED Remote_CMD_PREATTACK {
         uint8_t time_s;
         uint8_t temp_data[11];
@@ -51,6 +51,12 @@ public:
         uint8_t temp_data[12];
     };
 
+    //0x7E
+    struct PACKED Remote_CMD_SEARCHWP {
+        uint8_t line_index;
+        uint8_t temp_data[11];
+    };
+
     union PACKED Remote_CMD {
         Remote_CMD_TAKEOFF   cmd_takeoff;
         Remote_CMD_WP        cmd_wp;
@@ -58,6 +64,7 @@ public:
         Remote_CMD_ATTACK    cmd_attack;
         Remote_CMD_AWAY      cmd_away;
         Remote_CMD_PREATTACK cmd_preattack;
+        Remote_CMD_SEARCHWP  cmd_searchwp;
         uint8_t cmd_data[12];
     };
 
@@ -81,13 +88,15 @@ public:
         int16_t leader_dir;
         uint8_t leader_target_id;
         bool net_timeout;
-        uint8_t unused[5];
+        int16_t target_vx;
+        int16_t target_vy;
+        int16_t target_vz;
         uint8_t sum_check;
     };
 
     union PACKED Content_1 {
         MSG_Command_1 msg;
-        uint8_t data[51];
+        uint8_t data[52];
     };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -96,7 +105,7 @@ public:
         bool print;
         bool updated;
         bool need_send;
-        const uint16_t length = 51;
+        const uint16_t length = 52;
         Content_1 content;
     };
 
@@ -116,7 +125,7 @@ public:
         uint16_t read;
         uint8_t sum_check;
         HB1_mission2apm_header header;
-        uint8_t data[60];;
+        uint8_t data[52];;
     } _msg;
 
     HB1_mission2apm();

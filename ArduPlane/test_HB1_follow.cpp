@@ -195,11 +195,9 @@ void Plane::test_HB1_mission_update_msg() {
     tmp_msg._msg_1.content.msg.leader_dir = (int16_t)(wrap_180(HB1_test.follow_dir)*tmp_msg.SF_ANG);
     tmp_msg._msg_1.content.msg.leader_target_id = 0;
     tmp_msg._msg_1.content.msg.net_timeout = false;
-    tmp_msg._msg_1.content.msg.unused[0] = 0;
-    tmp_msg._msg_1.content.msg.unused[1] = 0;
-    tmp_msg._msg_1.content.msg.unused[2] = 0;
-    tmp_msg._msg_1.content.msg.unused[3] = 0;
-    tmp_msg._msg_1.content.msg.unused[4] = 0;
+    tmp_msg._msg_1.content.msg.target_vx = 0;
+    tmp_msg._msg_1.content.msg.target_vy = 0;
+    tmp_msg._msg_1.content.msg.target_vz = 0;
     
     switch (HB1_test.cmd_type) {
         case 1: // cmd takeoff
@@ -230,7 +228,7 @@ void Plane::test_HB1_mission_update_msg() {
             break;
         case 11: // insert wp
             tmp_msg._msg_1.content.msg.remote_index = 0x9C;
-            tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.line_index = 0;
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.line_index = 1;
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.point_index = 0;
             tmp_loc = test_HB1_generate_wp();
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.longitude = (int32_t)((double)tmp_loc.lng*tmp_msg.SF_LL);
@@ -257,12 +255,59 @@ void Plane::test_HB1_mission_update_msg() {
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.latitude = (int32_t)((double)tmp_loc.lat*tmp_msg.SF_LL);
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.alt = (int16_t)((float)tmp_loc.alt*0.01f*tmp_msg.SF_ALT);
             gcs().send_text(MAV_SEVERITY_INFO, "SIM set attack");
-            break;
-        case 21: 
+        case 14: 
             apm_deltaX = 1500.0f;
             apm_deltaY = 1500.0f;
             apm_deltaZ = 1500.0f;
             gcs().send_text(MAV_SEVERITY_INFO, "SIM Offset");
+            break;
+
+        case 21: // Speed up
+            tmp_msg._msg_1.content.msg.remote_index = 0x3A;
+            break;
+        case 22: // Speed up
+            tmp_msg._msg_1.content.msg.remote_index = 0xA7;
+            break;
+        case 23: // Rocket ON
+            tmp_msg._msg_1.content.msg.remote_index = 0x55;
+            break;
+        case 24: // EngineStart
+            tmp_msg._msg_1.content.msg.remote_index = 0xA5;
+            break;
+        case 25: // EngineOFF
+            tmp_msg._msg_1.content.msg.remote_index = 0xC6;
+            break;
+        case 26: // EngineFULL
+            tmp_msg._msg_1.content.msg.remote_index = 0xE7;
+            break;
+        case 27: // EngineMID
+            tmp_msg._msg_1.content.msg.remote_index = 0xB4;
+            break;
+        case 28: // Disarm
+            tmp_msg._msg_1.content.msg.remote_index = 0xCC;
+            break;
+        case 29: // ServoTest
+            tmp_msg._msg_1.content.msg.remote_index = 0x99;
+            break;
+        case 30: // Search wp
+            tmp_msg._msg_1.content.msg.remote_index = 0x7E;
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_searchwp.line_index = 1;
+            break;
+        case 31: // min throttle
+            SRV_Channels::set_output_scaled(SRV_Channel::k_launcher_HB1, 100);
+            tmp_msg._msg_1.updated = false;
+            tmp_msg._msg_1.need_send = false;
+            tmp_msg._msg_1.print = false;
+            break;
+        case 32: // full throttle
+            SRV_Channels::set_output_scaled(SRV_Channel::k_launcher_HB1, 0);
+            tmp_msg._msg_1.updated = false;
+            tmp_msg._msg_1.need_send = false;
+            tmp_msg._msg_1.print = false;
+            break;
+        default:
+            break;
+
         default:
             break;
     }
@@ -316,11 +361,9 @@ void Plane::test_HB1_mission_send_msg() {
     tmp_msg._msg_1.content.msg.leader_dir = (int16_t)(gps.ground_course_cd()*0.01f * tmp_msg.SF_ANG);
     tmp_msg._msg_1.content.msg.leader_target_id = mission.get_current_nav_index();
     tmp_msg._msg_1.content.msg.net_timeout = false;
-    tmp_msg._msg_1.content.msg.unused[0] = 0;
-    tmp_msg._msg_1.content.msg.unused[1] = 0;
-    tmp_msg._msg_1.content.msg.unused[2] = 0;
-    tmp_msg._msg_1.content.msg.unused[3] = 0;
-    tmp_msg._msg_1.content.msg.unused[4] = 0;
+    tmp_msg._msg_1.content.msg.target_vx = 0;
+    tmp_msg._msg_1.content.msg.target_vy = 0;
+    tmp_msg._msg_1.content.msg.target_vz = 0;
     
     switch (HB1_test.cmd_type2) {
         case 1: // cmd takeoff

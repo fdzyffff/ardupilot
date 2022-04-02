@@ -52,7 +52,13 @@ void Plane::HB1_msg_mission2apm_set_wp_handle() {
     tmp_cmd.content.location.lng = (int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.longitude/tmp_msg.SF_LL);
     tmp_cmd.content.location.set_alt_cm((int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.alt*100.f/tmp_msg.SF_ALT), Location::AltFrame::ABOVE_HOME);
 
-    tmp_cmd.p1 = 0;
+    uint16_t line_index = tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.line_index;
+    uint16_t point_index = tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.point_index;  
+
+    line_index = MIN(0xFF,line_index);
+    point_index = MIN(0xFF,point_index);
+    tmp_cmd.p1 = (line_index << 8) | (point_index & 0x00FF);
+
     if (HB1_Status.wp_to_renew || g2.hb1_num_wp == 0 || g2.hb1_num_interim != 0|| g2.hb1_num_attack != 0) {
         plane.mission.clear();
         plane.mission.add_cmd(tmp_cmd);
@@ -73,28 +79,75 @@ void Plane::HB1_msg_mission2apm_set_interim_handle() {
     if (HB1_Status.state == HB1_Mission_Hover2 || HB1_Status.state == HB1_Mission_Attack) {return;}
     HB1_mission2apm &tmp_msg = HB1_uart_mission.get_msg_mission2apm();
 
-    HB1_interim_cmd.id = MAV_CMD_NAV_WAYPOINT;
-    HB1_interim_cmd.content.location.lat = (int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.latitude/tmp_msg.SF_LL);
-    HB1_interim_cmd.content.location.lng = (int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.longitude/tmp_msg.SF_LL);
-    HB1_interim_cmd.content.location.set_alt_cm((int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.alt*100.f/tmp_msg.SF_ALT), Location::AltFrame::ABOVE_HOME);
+    uint16_t line_index = tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.line_index;
+    uint16_t point_index = tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.point_index;  
 
-    HB1_interim_cmd.p1 = 0;
-    if (g2.hb1_num_attack == 0) {
-        if (g2.hb1_num_interim == 0) {
-            plane.mission.add_cmd(HB1_interim_cmd);
-            g2.hb1_num_interim.set_and_save(1);
+    line_index = MIN(0xFF,line_index);
+    point_index = MIN(0xFF,point_index);
+
+    if (point_index < 1) { return; }
+    if (point_index > (g2.hb1_num_interim.get() + 1) ) { return; }
+
+    tmp_interim_cmd.id = MAV_CMD_NAV_WAYPOINT;
+    tmp_interim_cmd.content.location.lat = (int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.latitude/tmp_msg.SF_LL);
+    tmp_interim_cmd.content.location.lng = (int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.longitude/tmp_msg.SF_LL);
+    tmp_interim_cmd.content.location.set_alt_cm((int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.alt*100.f/tmp_msg.SF_ALT), Location::AltFrame::ABOVE_HOME);
+    tmp_interim_cmd.p1 = (line_index << 8) | (point_index & 0x00FF);
+
+    if (point_index == 1) {
+        if (g2.hb1_num_attack == 0) {
+            if (g2.hb1_num_interim == 0) {
+                plane.mission.add_cmd(tmp_interim_cmd);
+                g2.hb1_num_interim.set_and_save(1);
+            } else if (g2.hb1_num_interim == 1) {
+                plane.mission.replace_cmd(plane.mission.num_commands()-1, tmp_interim_cmd);
+            } else if (g2.hb1_num_interim == 2) {
+                plane.mission.replace_cmd(plane.mission.num_commands()-1, tmp_interim_cmd);
+            }
         } else {
-            plane.mission.replace_cmd(plane.mission.num_commands()-1, HB1_interim_cmd);
+            if (g2.hb1_num_interim == 0) {
+                plane.mission.replace_cmd(plane.mission.num_commands()-1, tmp_interim_cmd);
+                plane.mission.add_cmd(HB1_attack_cmd);
+                g2.hb1_num_interim.set_and_save(1);
+            } else if (g2.hb1_num_interim == 1) {
+                plane.mission.replace_cmd(plane.mission.num_commands()-2, tmp_interim_cmd);
+            } else if (g2.hb1_num_interim == 2) {
+                plane.mission.replace_cmd(plane.mission.num_commands()-2, tmp_interim_cmd);
+            }
         }
-    } else {
-        if (g2.hb1_num_interim == 0) {
-            plane.mission.replace_cmd(plane.mission.num_commands()-1, HB1_interim_cmd);
-            plane.mission.add_cmd(HB1_attack_cmd);
-            g2.hb1_num_interim.set_and_save(1);
+        // udpate HB1_interim_cmd
+        HB1_interim_cmd = tmp_interim_cmd;
+    } else if (point_index == 2) {
+        if (g2.hb1_num_attack == 0) {
+            if (g2.hb1_num_interim == 0) {
+                plane.mission.add_cmd(tmp_interim_cmd);
+                g2.hb1_num_interim.set_and_save(1);
+                // udpate HB1_interim_cmd
+                HB1_interim_cmd = tmp_interim_cmd;
+            } else if (g2.hb1_num_interim == 1) {
+                plane.mission.replace_cmd(plane.mission.num_commands()-1, tmp_interim_cmd);
+                plane.mission.add_cmd(HB1_interim_cmd);
+                g2.hb1_num_interim.set_and_save(2);
+            } else if (g2.hb1_num_interim == 2) {
+                plane.mission.replace_cmd(plane.mission.num_commands()-2, tmp_interim_cmd);
+            }
         } else {
-            plane.mission.replace_cmd(plane.mission.num_commands()-2, HB1_interim_cmd);
+            if (g2.hb1_num_interim == 0) {
+                plane.mission.replace_cmd(plane.mission.num_commands()-1, tmp_interim_cmd);
+                plane.mission.add_cmd(HB1_attack_cmd);
+                g2.hb1_num_interim.set_and_save(1);
+                HB1_interim_cmd = tmp_interim_cmd;
+            } else if (g2.hb1_num_interim == 1) {
+                plane.mission.replace_cmd(plane.mission.num_commands()-2, tmp_interim_cmd);
+                plane.mission.replace_cmd(plane.mission.num_commands()-1, HB1_interim_cmd);
+                plane.mission.add_cmd(HB1_attack_cmd);
+                g2.hb1_num_interim.set_and_save(2);
+            } else if (g2.hb1_num_interim == 2) {
+                plane.mission.replace_cmd(plane.mission.num_commands()-3, tmp_interim_cmd);
+            }
         }
     }
+
     if ((HB1_Status.state == HB1_Mission_PreAttack) && (control_mode == &mode_auto) ) {
         HB1_status_set_HB_Mission_Action(HB1_Mission_PreAttack,true);
         gcs().send_text(MAV_SEVERITY_INFO, "Interim (%d / %d) reset and saved", g2.hb1_num_interim.get(), plane.mission.num_commands());
@@ -112,7 +165,13 @@ void Plane::HB1_msg_mission2apm_set_attack_handle() {
     HB1_attack_cmd.content.location.lng = (int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.longitude/tmp_msg.SF_LL);
     HB1_attack_cmd.content.location.set_alt_cm((int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.alt*100.f/tmp_msg.SF_ALT), Location::AltFrame::ABOVE_HOME);
 
-    HB1_attack_cmd.p1 = 0;
+    uint16_t line_index = tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.line_index;
+    uint16_t point_index = tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.point_index;  
+
+    line_index = MIN(0xFF,line_index);
+    point_index = MIN(0xFF,point_index);
+    HB1_attack_cmd.p1 = (line_index << 8) | (point_index & 0x00FF);
+
     if (g2.hb1_num_attack == 0) {
         plane.mission.add_cmd(HB1_attack_cmd);
         g2.hb1_num_attack.set_and_save(1);
@@ -122,6 +181,52 @@ void Plane::HB1_msg_mission2apm_set_attack_handle() {
     }
     gcs().send_text(MAV_SEVERITY_INFO, "Attack (%d / %d) saved", g2.hb1_num_attack.get(), plane.mission.num_commands());
 }
+
+void Plane::HB1_msg_mission2apm_Search_wp_handle() {
+    HB1_mission2apm &tmp_msg = HB1_uart_mission.get_msg_mission2apm();
+    HB1_Status.search_wp = true;
+    HB1_Status.search_line_index = tmp_msg._msg_1.content.msg.remote_cmd.cmd_searchwp.line_index;
+    HB1_Status.search_id = 1;
+    HB1_Status.search_ms = millis();
+}
+
+void Plane::HB1_msg_mission2apm_Search_wp_pack() {
+    if (!HB1_Status.search_wp) {return;}
+    uint32_t tnow = millis();
+    if (tnow - HB1_Status.search_ms > 200) {
+        goto go_next;
+    }
+    Mission_Command tmp_cmd;
+    if (!mission.read_cmd_from_storage(HB1_Status.search_id , tmp_cmd)) {
+        goto go_next;
+    }
+    if (HIGHBYTE(tmp_cmd.p1) == HB1_Status.search_line_index) {
+        HB1_apm2mission &new_msg = HB1_uart_mission.get_msg_apm2mission();
+        new_msg._msg_1.content.msg.remote_index = tmp_msg._msg_1.content.msg.remote_index;
+        new_msg._msg_1.content.msg.line_index = HIGHBYTE(tmp_cmd.p1);
+        new_msg._msg_1.content.msg.point_index = LOWBYTE(tmp_cmd.p1);
+        new_msg._msg_1.content.msg.longitude = (int32_t)((double)tmp_cmd.content.location.lng * new_msg.SF_LL);
+        new_msg._msg_1.content.msg.latitude = (int32_t)((double)tmp_cmd.content.location.lat * new_msg.SF_LL);
+        int32_t alt_target = 0;
+        if (!tmp_cmd.content.location.get_alt_cm(Location::AltFrame::ABOVE_HOME, alt_target)) {
+            gcs().send_text(MAV_SEVERITY_INFO, "get waypoint %d alt failed, set to 0", new_msg._msg_1.content.msg.point_index);
+        }
+        new_msg._msg_1.content.msg.alt = (int16_t)((float)alt_target * new_msg.SF_ALT);
+        new_msg._msg_1.content.msg.control_id = HIGHBYTE(tmp_cmd.p1);
+        return;
+    }
+    goto go_next;
+
+go_next:
+    HB1_Status.search_ms = tnow;
+    HB1_Status.search_id++;
+    gcs().send_text(MAV_SEVERITY_INFO, "try send waypoint %d ", HB1_Status.search_id);
+    if (HB1_Status.search_id > g2.hb1_num_wp.get()) {
+        HB1_Status.search_wp = false;
+    }
+    // gcs().send_text(MAV_SEVERITY_INFO, "can not find waypoint %d ", target_wp_id);
+}
+
 
 void Plane::HB1_msg_mission2apm_away_handle(HB1_mission2apm &tmp_msg) {
     HB1_Status.grouped = false;

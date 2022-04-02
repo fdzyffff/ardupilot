@@ -50,7 +50,7 @@ public:
         uint16_t read;
         uint8_t sum_check;
         HB1_mission2cam_header header;
-        uint8_t data[60];;
+        uint8_t data[12];;
     } _msg;
 
     HB1_mission2cam();

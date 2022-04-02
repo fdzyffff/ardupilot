@@ -46,7 +46,7 @@ public:
         uint16_t read;
         uint8_t sum_check;
         HB1_mission2apm_header header;
-        uint8_t data[10];;
+        uint8_t data[6];;
     } _msg;*/
 
     HB1_apm2power();

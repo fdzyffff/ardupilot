@@ -85,15 +85,14 @@ void Plane::HB1_uart_update_10Hz()
     HB1_msg_apm2cam_send();
 
     if (HB1_uart_power.get_msg_apm2power()._msg_1.need_send && HB1_Power.send_counter > 0) {
-        HB1_uart_power.write();
         if (HB1_Power.send_counter > 1) {
             HB1_Power.send_counter--;
             HB1_uart_power.get_msg_apm2power()._msg_1.need_send = true;
         }
     } else {
         HB1_Power_throttle_update();
-        HB1_uart_power.write();
     }
+    HB1_uart_power.write();
     HB1_uart_print();
 }
 
@@ -113,12 +112,6 @@ void Plane::HB1_msg_mission2apm_handle() {
         case 0x66:
             HB1_msg_mission2apm_set_interim_handle();
             break;
-        case 0x3A:
-            HB1_msg_mission2apm_speed_up_handle();
-            break;
-        case 0xA7:
-            HB1_msg_mission2apm_speed_down_handle();
-            break;
         case 0x33:
             if (!HB1_status_noGPS_check()) {
                 HB1_msg_mission2apm_set_attack_handle();
@@ -129,22 +122,34 @@ void Plane::HB1_msg_mission2apm_handle() {
         //         HB1_msg_mission2apm_away_handle();
         //     }
         //     break;
-        case 0x69:
-            HB1_Status.grouped = false;
-            HB1_msg_mission2apm_preattack_handle(tmp_msg._msg_1.content.msg.remote_cmd.cmd_preattack.time_s);
-            break;
         case 0xE5:
             HB1_Status.grouped = false;
             HB1_msg_mission2apm_attack_handle();
             break;
-        case 0x55:
-            HB1_msg_mission2apm_RocketON_handle();
+        case 0x69:
+            HB1_Status.grouped = false;
+            HB1_msg_mission2apm_preattack_handle(tmp_msg._msg_1.content.msg.remote_cmd.cmd_preattack.time_s);
             break;
+        case 0x3A:
+            HB1_msg_mission2apm_speed_up_handle();
+            break;
+        case 0xA7:
+            HB1_msg_mission2apm_speed_down_handle();
+            break;
+        // case 0x35:
+        //     to do delete line_index
+        //     break;
         case 0xA5:
             HB1_msg_mission2apm_EngineSTART_handle();
             break;
         case 0xC6:
             HB1_msg_mission2apm_EngineOFF_handle();
+            break;
+        case 0x99:
+            HB1_msg_mission2apm_ServoTest_handle();
+            break;
+        case 0xCC:
+            HB1_msg_mission2apm_Disarm_handle();
             break;
         case 0xE7:
             HB1_msg_mission2apm_EngineFULL_handle();
@@ -152,11 +157,11 @@ void Plane::HB1_msg_mission2apm_handle() {
         case 0xB4:
             HB1_msg_mission2apm_EngineMID_handle();
             break;
-        case 0xCC:
-            HB1_msg_mission2apm_Disarm_handle();
+        case 0x55:
+            HB1_msg_mission2apm_RocketON_handle();
             break;
-        case 0x99:
-            HB1_msg_mission2apm_ServoTest_handle();
+        case 0x7E:
+            HB1_msg_mission2apm_Search_wp_handle();
             break;
         default:
             break;
@@ -221,9 +226,19 @@ void Plane::HB1_msg_apm2mission_send() {
     tmp_msg._msg_1.content.msg.header.index = HB1_apm2mission::INDEX1;
     tmp_msg._msg_1.content.msg.length = tmp_msg._msg_1.length-4;
 
-    tmp_msg._msg_1.content.msg.longitude = (int32_t)((double)current_loc.lng * tmp_msg.SF_LL);
-    tmp_msg._msg_1.content.msg.latitude = (int32_t)((double)current_loc.lat * tmp_msg.SF_LL);
-    tmp_msg._msg_1.content.msg.alt = (int16_t)(relative_ground_altitude(false) * tmp_msg.SF_ALT);
+
+    if (HB1_Status.search_wp) {
+        HB1_msg_mission2apm_Search_wp_pack();
+    } else {
+        tmp_msg._msg_1.content.msg.remote_index = 0xFF;
+        tmp_msg._msg_1.content.msg.line_index = 0;
+        tmp_msg._msg_1.content.msg.point_index = 0;
+        tmp_msg._msg_1.content.msg.longitude = (int32_t)((double)current_loc.lng * tmp_msg.SF_LL);
+        tmp_msg._msg_1.content.msg.latitude = (int32_t)((double)current_loc.lat * tmp_msg.SF_LL);
+        tmp_msg._msg_1.content.msg.alt = (int16_t)(relative_ground_altitude(false) * tmp_msg.SF_ALT);
+        tmp_msg._msg_1.content.msg.control_id = 0;
+    }
+
     tmp_msg._msg_1.content.msg.ptich = (int16_t)((float)(ahrs.pitch_sensor/100) * tmp_msg.SF_ANG);
     tmp_msg._msg_1.content.msg.roll = (int16_t)((float)(ahrs.roll_sensor/100) * tmp_msg.SF_ANG);
     tmp_msg._msg_1.content.msg.yaw = (int16_t)((float)wrap_180_cd(ahrs.yaw_sensor/100) * tmp_msg.SF_ANG);
@@ -237,10 +252,10 @@ void Plane::HB1_msg_apm2mission_send() {
     tmp_msg._msg_1.content.msg.in_group = (HB1_Status.state == HB1_Mission_Follow);
     tmp_msg._msg_1.content.msg.gspd = (int16_t)(ahrs.groundspeed_vector().length() * 0.01f * tmp_msg.SF_VEL);
     tmp_msg._msg_1.content.msg.gspd_dir = (int16_t)(gps.ground_course_cd()*0.01f * tmp_msg.SF_ANG);
-    tmp_msg._msg_1.content.msg.unused[0] = HB1_status_get_HB_Mission_Action();
-    tmp_msg._msg_1.content.msg.unused[1] = 0;
-    tmp_msg._msg_1.content.msg.unused[2] = 0;
-    tmp_msg._msg_1.content.msg.unused[3] = 0;
+    tmp_msg._msg_1.content.msg.mission_state = HB1_status_get_HB_Mission_Action();
+    tmp_msg._msg_1.content.msg.control_type = 0;
+    tmp_msg._msg_1.content.msg.target_dist = 0;
+    tmp_msg._msg_1.content.msg.target_control_id = 0;
     tmp_msg._msg_1.content.msg.sum_check = 0;
     
     for (int8_t i = 2; i < tmp_msg._msg_1.length - 1; i++) {

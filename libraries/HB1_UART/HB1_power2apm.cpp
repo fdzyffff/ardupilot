@@ -15,9 +15,11 @@ void HB1_power2apm::parse(uint8_t temp)
         case HB1UART_msg_parser::HB1UART_PREAMBLE1:
             _msg.read = 0;
             _msg.sum_check = 0;
-            _msg.sum_check += temp;
             if (temp == PREAMBLE1) {
+                _msg.sum_check += temp;
                 _msg.msg_state = HB1UART_msg_parser::HB1UART_PREAMBLE2;
+                _msg.data[_msg.read] = temp;
+                _msg.read++;
             }
             break;
         case HB1UART_msg_parser::HB1UART_PREAMBLE2:
@@ -26,7 +28,8 @@ void HB1_power2apm::parse(uint8_t temp)
                 _msg.header.head_1 = PREAMBLE1;
                 _msg.header.head_2 = PREAMBLE2;
                 _msg.length = _msg_1.length;
-                _msg.read = 2;
+                _msg.data[_msg.read] = temp;
+                _msg.read++;
                 _msg.sum_check += temp;
                 _msg.msg_state = HB1UART_msg_parser::HB1UART_DATA;
             }
@@ -40,7 +43,7 @@ void HB1_power2apm::parse(uint8_t temp)
                 _msg.msg_state = HB1UART_msg_parser::HB1UART_PREAMBLE1;
                 break;
             }
-            _msg.data[_msg.read-2] = temp;
+            _msg.data[_msg.read] = temp;
 
             _msg.sum_check += temp;
 
@@ -51,7 +54,7 @@ void HB1_power2apm::parse(uint8_t temp)
             }
             break;
         case HB1UART_msg_parser::HB1UART_SUM:
-            _msg.data[_msg.read-2] = temp;
+            _msg.data[_msg.read] = temp;
             _msg.msg_state = HB1UART_msg_parser::HB1UART_PREAMBLE1;
 
             if (_msg.sum_check == temp)
@@ -66,10 +69,8 @@ void HB1_power2apm::process_message(void)
 {
     int16_t i = 0;
 
-    _msg_1.content.data[0] = _msg.header.head_1;
-    _msg_1.content.data[1] = _msg.header.head_2;
-    for (i = 0; i < _msg_1.length - 2; i ++) {
-        _msg_1.content.data[i+2] = _msg.data[i];
+    for (i = 0; i < _msg_1.length; i ++) {
+        _msg_1.content.data[i] = _msg.data[i];
     }
     swap_message();
     _msg_1.updated = true;

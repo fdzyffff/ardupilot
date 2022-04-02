@@ -1165,6 +1165,10 @@ private:
         bool already_takeoff;
         bool grouped;
         bool wp_to_renew;
+        bool search_wp;
+        uint8_t search_line_index;
+        uint16_t search_id;
+        uint32_t search_ms;
     } HB1_Status;
 
     struct {
@@ -1218,7 +1222,7 @@ private:
     void test_HB1_follow_target_reset();
     void test_HB1_mission_update_msg();
     void test_HB1_mission_send_msg();
-    Location test_HB1_generate_wp();
+    Location test_HB1_generate_wp(uint8_t &line_index);
     Location test_HB1_generate_interim_attack(bool is_attack=false);
 
     void HB1_msg_mission2apm_takeoff_handle();
@@ -1239,6 +1243,8 @@ private:
     void HB1_msg_mission2apm_EngineMID_handle();
     void HB1_msg_mission2apm_Disarm_handle();
     void HB1_msg_mission2apm_ServoTest_handle();
+    void HB1_msg_mission2apm_Search_wp_handle();
+    void HB1_msg_mission2apm_Search_wp_pack();
 
     void HB1_status_set_HB_Mission_Action(HB1_Mission_t action, bool Force_set=false);
     uint8_t HB1_status_get_HB_Mission_Action();

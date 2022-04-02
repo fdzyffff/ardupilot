@@ -17,12 +17,16 @@ void HB1_mission2apm_v1::parse(uint8_t temp)
             _msg.sum_check = 0;
             if (temp == PREAMBLE1) {
                 _msg.msg_state = HB1UART_msg_parser::HB1UART_PREAMBLE2;
+                _msg.data[_msg.read] = temp;
+                _msg.read++;
             }
             break;
         case HB1UART_msg_parser::HB1UART_PREAMBLE2:
             if (temp == PREAMBLE2)
             {
                 _msg.msg_state = HB1UART_msg_parser::HB1UART_INDEX;
+                _msg.data[_msg.read] = temp;
+                _msg.read++;
             }
             else
             {
@@ -32,12 +36,14 @@ void HB1_mission2apm_v1::parse(uint8_t temp)
         case HB1UART_msg_parser::HB1UART_INDEX:
             _msg.header.head_1 = PREAMBLE1;
             _msg.header.head_2 = PREAMBLE2;
+            _msg.sum_check = 0;
             _msg.sum_check += temp;
             _msg.header.index = temp;
             switch (_msg.header.index) {
                 case INDEX1:
                     _msg.length = _msg_1.length;
-                    _msg.read = 3;
+                    _msg.data[_msg.read] = temp;
+                    _msg.read++;
                     _msg.msg_state = HB1UART_msg_parser::HB1UART_DATA;
                     break;
                 default:
@@ -51,7 +57,7 @@ void HB1_mission2apm_v1::parse(uint8_t temp)
                 _msg.msg_state = HB1UART_msg_parser::HB1UART_PREAMBLE1;
                 break;
             }
-            _msg.data[_msg.read-3] = temp;
+            _msg.data[_msg.read] = temp;
 
             _msg.sum_check += temp;
 
@@ -62,7 +68,7 @@ void HB1_mission2apm_v1::parse(uint8_t temp)
             }
             break;
         case HB1UART_msg_parser::HB1UART_SUM:
-            _msg.data[_msg.read-3] = temp;
+            _msg.data[_msg.read] = temp;
             _msg.msg_state = HB1UART_msg_parser::HB1UART_PREAMBLE1;
 
             if (_msg.sum_check == temp)
@@ -78,11 +84,8 @@ void HB1_mission2apm_v1::process_message(void)
     int16_t i = 0;
     switch (_msg.header.index) {
         case INDEX1:
-            _msg_1.content.data[0] = _msg.header.head_1;
-            _msg_1.content.data[1] = _msg.header.head_2;
-            _msg_1.content.data[2] = _msg.header.index;
-            for (i = 0; i < _msg_1.length - 3; i ++) {
-                _msg_1.content.data[i+3] = _msg.data[i];
+            for (i = 0; i < _msg_1.length ; i ++) {
+                _msg_1.content.data[i] = _msg.data[i];
             }
             swap_message();
             _msg_1.print = true;

@@ -597,7 +597,7 @@ bool Plane::verify_nav_wp(const AP_Mission::Mission_Command& cmd)
     // fly past it for set distance along the line of waypoints
     Location flex_next_WP_loc = next_WP_loc;
 
-    uint8_t cmd_passby = HIGHBYTE(cmd.p1); // distance in meters to pass beyond the wp
+    uint8_t cmd_passby = 0;//HIGHBYTE(cmd.p1); // distance in meters to pass beyond the wp
     uint16_t cmd_acceptance_distance = 0;//LOWBYTE(cmd.p1); // radius in meters to accept reaching the wp
     if (HB1_Status.state == HB1_Mission_PreAttack) {
         cmd_acceptance_distance += g2.hb1_acc_radius_preattack.get();

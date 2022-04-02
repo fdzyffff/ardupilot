@@ -11,6 +11,10 @@ void Plane::HB1_status_init() {
     HB1_Status.time_out = g2.hb1_follow_hover_wp_time;
     HB1_Status.already_takeoff = false;
     HB1_Status.grouped = false;
+    HB1_Status.search_wp = false;
+    HB1_Status.search_line_index = 0;
+    HB1_Status.search_id = 1;
+    HB1_Status.search_ms = millis();
 
     HB1_Power.HB1_engine_rpm.reset(0.0f);
     HB1_Power.HB1_engine_rpm.set_cutoff_frequency(50.f, 5.f);

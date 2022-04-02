@@ -722,14 +722,14 @@ MAV_MISSION_RESULT AP_Mission::mavlink_int_to_mission_cmd(const mavlink_mission_
          */
 #if APM_BUILD_TYPE(APM_BUILD_ArduPlane)
         // acceptance radius in meters and pass by distance in meters
-        uint16_t acp = packet.param2;           // param 2 is acceptance radius in meters is held in low p1
-        uint16_t passby = packet.param3;        // param 3 is pass by distance in meters is held in high p1
+        uint16_t line_index = packet.param2;           // param 2 is acceptance radius in meters is held in low p1
+        uint16_t point_index = packet.param3;        // param 3 is pass by distance in meters is held in high p1
 
         // limit to 255 so it does not wrap during the shift or mask operation
-        passby = MIN(0xFF,passby);
-        acp = MIN(0xFF,acp);
+        line_index = MIN(0xFF,line_index);
+        point_index = MIN(0xFF,point_index);
 
-        cmd.p1 = (passby << 8) | (acp & 0x00FF);
+        cmd.p1 = (line_index << 8) | (point_index & 0x00FF);
 #else
         // delay at waypoint in seconds (this is for copters???)
         cmd.p1 = packet.param1;
@@ -1154,8 +1154,8 @@ bool AP_Mission::mission_cmd_to_mavlink_int(const AP_Mission::Mission_Command& c
 #if APM_BUILD_TYPE(APM_BUILD_ArduPlane)
         // acceptance radius in meters
 
-        packet.param2 = LOWBYTE(cmd.p1);        // param 2 is acceptance radius in meters is held in low p1
-        packet.param3 = HIGHBYTE(cmd.p1);       // param 3 is pass by distance in meters is held in high p1
+        packet.param2 = HIGHBYTE(cmd.p1);               // line index
+        packet.param3 = LOWBYTE(cmd.p1);                // point index
 #else
         // delay at waypoint in seconds
         packet.param1 = cmd.p1;
