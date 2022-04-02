@@ -15,6 +15,7 @@ void Plane::HB1_status_init() {
     HB1_Status.search_line_index = 0;
     HB1_Status.search_id = 1;
     HB1_Status.search_ms = millis();
+    HB1_Status.remote_index = 0xFF;
 
     HB1_Power.HB1_engine_rpm.reset(0.0f);
     HB1_Power.HB1_engine_rpm.set_cutoff_frequency(50.f, 5.f);
@@ -162,7 +163,7 @@ void Plane::HB1_status_set_HB_Mission_Action(HB1_Mission_t action, bool Force_se
         case HB1_Mission_PreAttack :
             set_mode(mode_auto, MODE_REASON_UNAVAILABLE);
             auto_state.next_wp_crosstrack = false;
-            mission.set_current_cmd(g2.hb1_num_wp+g2.hb1_num_interim);
+            mission.set_current_cmd(g2.hb1_num_wp+MIN(g2.hb1_num_interim,1));
             HB1_Status.state = action;
             break;
         case HB1_Mission_FsGPS :

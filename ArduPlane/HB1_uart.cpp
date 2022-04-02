@@ -256,6 +256,10 @@ void Plane::HB1_msg_apm2mission_send() {
     tmp_msg._msg_1.content.msg.control_type = 0;
     tmp_msg._msg_1.content.msg.target_dist = 0;
     tmp_msg._msg_1.content.msg.target_control_id = 0;
+    if (plane.control_mode == &plane.mode_auto && arming.is_armed()) {
+        tmp_msg._msg_1.content.msg.target_dist = (int16_t)current_loc.get_distance(next_WP_loc);
+        tmp_msg._msg_1.content.msg.target_control_id = HIGHBYTE(mission.get_current_nav_cmd().p1);
+    }
     tmp_msg._msg_1.content.msg.sum_check = 0;
     
     for (int8_t i = 2; i < tmp_msg._msg_1.length - 1; i++) {

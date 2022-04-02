@@ -239,7 +239,7 @@ void Plane::test_HB1_mission_update_msg() {
         case 12: // insert interim
             tmp_msg._msg_1.content.msg.remote_index = 0x66;
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.p1 = 0;
-            tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.interim_point_index = 0;
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.interim_point_index = 2;
             tmp_loc = test_HB1_generate_interim_attack();
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.longitude = (int32_t)((double)tmp_loc.lng*tmp_msg.SF_LL);
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.latitude = (int32_t)((double)tmp_loc.lat*tmp_msg.SF_LL);
@@ -255,6 +255,7 @@ void Plane::test_HB1_mission_update_msg() {
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.latitude = (int32_t)((double)tmp_loc.lat*tmp_msg.SF_LL);
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.alt = (int16_t)((float)tmp_loc.alt*0.01f*tmp_msg.SF_ALT);
             gcs().send_text(MAV_SEVERITY_INFO, "SIM set attack");
+            break;
         case 14: 
             apm_deltaX = 1500.0f;
             apm_deltaY = 1500.0f;
@@ -305,9 +306,6 @@ void Plane::test_HB1_mission_update_msg() {
             tmp_msg._msg_1.need_send = false;
             tmp_msg._msg_1.print = false;
             break;
-        default:
-            break;
-
         default:
             break;
     }
@@ -404,7 +402,7 @@ void Plane::test_HB1_mission_send_msg() {
         case 12: // insert interim
             tmp_msg._msg_1.content.msg.remote_index = 0x66;
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.p1 = 0;
-            tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.interim_point_index = 0;
+            tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.interim_point_index = 2;
             tmp_loc = test_HB1_generate_interim_attack();
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.longitude = (int32_t)((double)tmp_loc.lng*tmp_msg.SF_LL);
             tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.latitude = (int32_t)((double)tmp_loc.lat*tmp_msg.SF_LL);

@@ -36,7 +36,7 @@ void HB1_mission2apm::parse(uint8_t temp)
         case HB1UART_msg_parser::HB1UART_INDEX:
             _msg.header.head_1 = PREAMBLE1;
             _msg.header.head_2 = PREAMBLE2;
-            _msg.sum_ = 0;
+            _msg.sum_check = 0;
             _msg.sum_check += temp;
             _msg.header.index = temp;
             switch (_msg.header.index) {

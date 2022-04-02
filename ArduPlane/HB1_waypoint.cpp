@@ -86,8 +86,9 @@ void Plane::HB1_msg_mission2apm_set_interim_handle() {
     point_index = MIN(0xFF,point_index);
 
     if (point_index < 1) { return; }
-    if (point_index > (g2.hb1_num_interim.get() + 1) ) { return; }
+    if (point_index > 2) { return; }
 
+    AP_Mission::Mission_Command tmp_interim_cmd;
     tmp_interim_cmd.id = MAV_CMD_NAV_WAYPOINT;
     tmp_interim_cmd.content.location.lat = (int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.latitude/tmp_msg.SF_LL);
     tmp_interim_cmd.content.location.lng = (int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_interim.longitude/tmp_msg.SF_LL);
@@ -188,21 +189,24 @@ void Plane::HB1_msg_mission2apm_Search_wp_handle() {
     HB1_Status.search_line_index = tmp_msg._msg_1.content.msg.remote_cmd.cmd_searchwp.line_index;
     HB1_Status.search_id = 1;
     HB1_Status.search_ms = millis();
+    HB1_Status.remote_index = tmp_msg._msg_1.content.msg.remote_index;
 }
 
 void Plane::HB1_msg_mission2apm_Search_wp_pack() {
     if (!HB1_Status.search_wp) {return;}
     uint32_t tnow = millis();
     if (tnow - HB1_Status.search_ms > 200) {
-        goto go_next;
+        HB1_msg_mission2apm_Search_wp_pack_next();
+        return;
     }
-    Mission_Command tmp_cmd;
+    AP_Mission::Mission_Command tmp_cmd;
     if (!mission.read_cmd_from_storage(HB1_Status.search_id , tmp_cmd)) {
-        goto go_next;
+        HB1_msg_mission2apm_Search_wp_pack_next();
+        return;
     }
     if (HIGHBYTE(tmp_cmd.p1) == HB1_Status.search_line_index) {
         HB1_apm2mission &new_msg = HB1_uart_mission.get_msg_apm2mission();
-        new_msg._msg_1.content.msg.remote_index = tmp_msg._msg_1.content.msg.remote_index;
+        new_msg._msg_1.content.msg.remote_index = HB1_Status.remote_index;
         new_msg._msg_1.content.msg.line_index = HIGHBYTE(tmp_cmd.p1);
         new_msg._msg_1.content.msg.point_index = LOWBYTE(tmp_cmd.p1);
         new_msg._msg_1.content.msg.longitude = (int32_t)((double)tmp_cmd.content.location.lng * new_msg.SF_LL);
@@ -213,14 +217,15 @@ void Plane::HB1_msg_mission2apm_Search_wp_pack() {
         }
         new_msg._msg_1.content.msg.alt = (int16_t)((float)alt_target * new_msg.SF_ALT);
         new_msg._msg_1.content.msg.control_id = HIGHBYTE(tmp_cmd.p1);
-        return;
     }
-    goto go_next;
+    return;
+}
 
-go_next:
+void Plane::HB1_msg_mission2apm_Search_wp_pack_next() {
+    uint32_t tnow = millis();
     HB1_Status.search_ms = tnow;
+    gcs().send_text(MAV_SEVERITY_INFO, "sent waypoint %d ", HB1_Status.search_id);
     HB1_Status.search_id++;
-    gcs().send_text(MAV_SEVERITY_INFO, "try send waypoint %d ", HB1_Status.search_id);
     if (HB1_Status.search_id > g2.hb1_num_wp.get()) {
         HB1_Status.search_wp = false;
     }
@@ -271,7 +276,7 @@ void Plane::HB1_msg_mission2apm_preattack_handle(int32_t time_s) {
     g2.hb1_follow_hover_attack_time.set_and_save(time_s*1000);
     HB1_status_set_HB_Mission_Action(HB1_Mission_PreAttack);
     if (g2.hb1_num_interim > 0) {
-        gcs().send_text(MAV_SEVERITY_INFO, "PreAttack received (#%d) [%d ms]", g2.hb1_num_wp.get()+g2.hb1_num_interim.get(), g2.hb1_follow_hover_attack_time.get());
+        gcs().send_text(MAV_SEVERITY_INFO, "PreAttack received (#%d) [%d ms]", g2.hb1_num_wp.get()+1, g2.hb1_follow_hover_attack_time.get());
     } else {
         gcs().send_text(MAV_SEVERITY_INFO, "no interim WP! (#%d)", g2.hb1_num_wp.get()+g2.hb1_num_interim.get());
     }
