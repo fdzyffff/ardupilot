@@ -6,19 +6,6 @@ class UGround {
 
 public:
 
-    enum UGCS_state_t {
-        UGCS_None            = 0,
-        UGCS_Takeoff         = 1,
-        UGCS_Standby1        = 2,
-        UGCS_Fly             = 3,
-        UGCS_Standby2        = 4,
-        UGCS_Curise          = 5,
-        UGCS_Assemble        = 6,
-        UGCS_Lockon          = 7,
-        UGCS_Attack          = 8,
-        UGCS_FS1             = 10,
-    };
-
     // constructor, destructor
     UGround();
 
@@ -28,34 +15,52 @@ public:
     // return true if smart_rtl is usable (it may become unusable if the user took off without GPS lock or the path became too long)
     bool is_active() const { return _active; }
 
-    void handle_info(int16_t cmd, int16_t position_id, int16_t group_id, int16_t free=0);
+    void handle_info(int16_t p1, float p2, float p3, float p4);
 
-    void do_cmd(int16_t cmd, bool force_set = false);
-    void set_state(UGCS_state_t new_state, bool force_set = false);
+    void do_cmd(int16_t cmd);
     void refresh_cmd();
 
-    UGCS_state_t get_state() {return _state;}
     void update();
     void state_update();
 
     bool is_leader() {return _is_leader;}
     void is_leader(bool b) {_is_leader = b;}
-    bool is_lockon() {return (_state == UGCS_Lockon);}
 
-    float get_distance() {return _distance;}
+    float get_group_distance() {return _group_distance;}
     int16_t get_group_id() {return _group_id;}
-    Vector3f get_offset_position() {return _offset_position;}
-    Vector3f get_dest_loc_vec() {return _dest_loc_vec;}
-    void set_cruise_yaw_middle_cd(float yaw_middle_cd) {_yaw_middle_cd = yaw_middle_cd;}
+    Vector3f get_offset(int8_t id_A, int8_t id_B, float distance);
+    void set_up_group( int16_t group_id, float distance, float direction);
 
-    void set_up_offset(int8_t sender_id, Vector3f target_postion, Vector3f target_velocity, float target_heading);
+
+    void set_cruise_yaw_middle_cd(float yaw_middle_cd) {_yaw_middle_cd = yaw_middle_cd;}
+    void update_group_yaw(float dt);
+    void set_up_follow(int8_t sender_id, Vector3f target_postion, Vector3f target_velocity, float target_heading);
+    void set_up_dest(float lat_in, float lng_in);
+    void refresh_dest();
+    void set_up_alt(float target_alt);
+    void clean_follow();
 
     int16_t get_state_num();
-    float get_dest_yaw_cd() {return _dest_yaw_cd;}
-    float get_dist_to_target() {return _dist_to_target;}
-    float get_bearing_to_target() {return _bearing_to_target;}
-    float get_cruise_yaw_rate();
-    float get_cruise_yaw_rate(float yaw_middle_cd);
+    Vector3f get_dest_loc_vec() {return _dest_loc_vec;}
+    Vector3f get_follow_vel_vec() {return _follow_vel_vec;}
+    Vector3f get_follow_loc_vec() {return _follow_loc_vec;}
+    Vector3f get_search_dest();
+    Vector3f get_assemble_dest();
+    bool dest_pos_update() {return _new_dist;}
+    void dest_pos_update(bool b) {_new_dist = b;}
+    float get_follow_yaw_cd() {return _follow_yaw_cd;}
+    float get_lockon_yaw_rate();
+    float get_lockon_yaw_rate(float yaw_middle_cd);
+    float get_lockon_yaw() { return _yaw_middle_cd;}
+
+    bool do_takeoff(); // takeoff
+    bool do_fly();     // fly
+    bool do_search();  // search
+    bool do_assemble();// assemble
+    bool do_lockon();  // lock on target
+    bool do_attack();  // attack
+    bool do_fs1();     // failsafe type1
+
 
     int16_t _group_id;
     int16_t _position_id;
@@ -64,23 +69,29 @@ public:
 
 private:
 
-    UGCS_state_t _state;
     Vector2f raw_info;
     Vector2f correct_info;
+    Vector3f _follow_loc_vec;
+    Vector3f _follow_vel_vec;
     Vector3f _dest_loc_vec;
-    Vector3f _dest_vel_vec;
-    Vector3f _offset_position;
-    float _dest_yaw_cd;
-    float _distance;
+    Vector3f _raw_dest_loc_vec;
+    Vector3f _leader_loc_vec;
+    float _follow_yaw_cd;
+    float _group_target_yaw;
+    float _group_current_yaw;
+    float _group_distance;
     bool _active;
     bool _is_leader;
+    bool _new_dist;
     int16_t _cmd;
     uint32_t _state_timer_ms;
     uint32_t _last_state_update_ms;
+    int16_t _leader_id;
     float _dist_to_target;
     float _bearing_to_target;
 
     my_group_1_t my_group1;
     my_group_2_t my_group2;
+    my_group_1_assemble_t my_group1_assemble;
 };
 

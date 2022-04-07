@@ -308,7 +308,7 @@ bool GCS_MAVLINK_Copter::try_send_message(enum ap_message id)
             copter.Ucam.get_raw_info().x, 
             copter.Ucam.get_raw_info().y, 
             (float)copter.Ugcs.get_state_num(),
-            (float)copter.Ugcs.get_distance(), 
+            (float)copter.Ugcs.get_group_distance(), 
             0, 0);
         CHECK_PAYLOAD_SIZE(GLOBAL_POSITION_INT);
         mavlink_msg_global_position_int_send(
@@ -316,12 +316,13 @@ bool GCS_MAVLINK_Copter::try_send_message(enum ap_message id)
             AP_HAL::millis(),
             copter.current_loc.lat,                 // in 1E7 degrees
             copter.current_loc.lng,                 // in 1E7 degrees
-            copter.Ugcs_get_terrain_alt(),          // millimeters above ground/sea level
+            copter.Ugcs_get_terrain_target_alt(),   // millimeters above ground/sea level
             copter.Ugcs_get_relative_alt(),         // millimeters above home
             copter.Ugcs_get_velocity_NED().x*100.f, // X speed cm/s (+ve North)
             copter.Ugcs_get_velocity_NED().y*100.f, // Y speed cm/s (+ve East)
             copter.Ugcs_get_velocity_NED().z*100.f, // Z speed cm/s (+ve Down)
             copter.ahrs.yaw_sensor);                // compass heading in 1/100 degree
+            // copter.Ugcs_get_target_yaw_cd());       // target heading in 1/100 degree
     break;
 
     case MSG_HEARTBEAT:
@@ -926,8 +927,14 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_
         return MAV_RESULT_ACCEPTED;
     }
 
+    case MAV_CMD_USER_1: {
+        // copter.gcs().send_text(MAV_SEVERITY_WARNING, "USER1");
+        copter.Ugcs.handle_info((int16_t)packet.param1, packet.param2, packet.param3, packet.param4);
+        return MAV_RESULT_ACCEPTED;
+    }
+
     case MAV_CMD_USER_2: {
-        copter.Ugcs.handle_info((int16_t)packet.param1, (int16_t)packet.param2, (int16_t)packet.param3, (int16_t)packet.param4);
+        copter.gcs().send_text(MAV_SEVERITY_WARNING, "USER2");
         return MAV_RESULT_ACCEPTED;
     }
 

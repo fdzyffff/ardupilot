@@ -33,6 +33,8 @@ public:
     AP_Float gcs_search_yangle_left;
     AP_Float gcs_search_yangle_right;
     AP_Float gcs_search_yrate;
+    AP_Int16 gcs_target_alt;
+    AP_Float gcs_group_delay;
 
 	AP_Float fly_yaw_tc;
     AP_Float fly_pitch_limit;

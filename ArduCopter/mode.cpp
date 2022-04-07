@@ -180,6 +180,20 @@ Mode *Copter::mode_from_mode_num(const Mode::Number mode)
             ret = &mode_attack_angle;
             break;
 
+#if MODE_GUIDED_NOGPS_ENABLED == ENABLED
+        case Mode::Number::TAKEOFF:
+            ret = &mode_takeoff;
+            break;
+        case Mode::Number::FLY:
+            ret = &mode_fly;
+            break;
+        case Mode::Number::SEARCH:
+            ret = &mode_search;
+            break;
+        case Mode::Number::ASSEMBLE:
+            ret = &mode_assemble;
+            break;
+#endif
         default:
             break;
     }

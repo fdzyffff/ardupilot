@@ -243,6 +243,10 @@ public:
     friend class ModeLockon;
     friend class ModeAttack_att;
     friend class ModeAttack_angle;
+    friend class ModeTakeoff;
+    friend class ModeFly;
+    friend class ModeSearch;
+    friend class ModeAssemble;
 
     friend class UCam;
     friend class UGround;
@@ -953,22 +957,14 @@ private:
     UPayload Upayload;
     LowPassFilterFloat Ugcs_last_valid_alt_cm;
     void Ugcs_handel_msg();
-    bool Ugcs_reached_position();
-    bool Ugcs_do_takeoff(); // takeoff
-    bool Ugcs_do_fly();     // fly
-    bool Ugcs_do_standby(); // standby
-    bool Ugcs_do_cruise();  // fly and search
-    bool Ugcs_do_assemble();  // assemble
-    bool Ugcs_do_lockon();  // lock on target
-    bool Ugcs_do_attack();
-    bool Ugcs_do_fs1();     // failsafe type1
     void Ugcs_Log_Write_UCamTarget();
     void Ugcs_Log_Write_Mocap();
     void Ugcs_handle_msg(const mavlink_message_t &msg);
 
-    int32_t Ugcs_get_terrain_alt();
+    int32_t Ugcs_get_terrain_target_alt();
     int32_t Ugcs_get_relative_alt();
     Vector3f Ugcs_get_velocity_NED();
+    float Ugcs_get_target_yaw_cd();
 
     void send_my_micro_image(mavlink_channel_t chan, mavlink_my_micro_image_t* my_micro_image) ;
 #if OSD_ENABLED == ENABLED
@@ -1054,6 +1050,10 @@ private:
     ModeLockon mode_lockon;
     ModeAttack_att mode_attack_att;
     ModeAttack_angle mode_attack_angle;
+    ModeTakeoff mode_takeoff;
+    ModeFly mode_fly;
+    ModeSearch mode_search;
+    ModeAssemble mode_assemble;
 
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);

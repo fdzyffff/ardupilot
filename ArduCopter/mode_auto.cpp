@@ -742,7 +742,7 @@ void ModeAuto::takeoff_run()
 void ModeAuto::wp_run()
 {
     // process pilot's yaw input
-    float target_yaw_rate = copter.Ugcs.get_cruise_yaw_rate();
+    float target_yaw_rate = copter.Ugcs.get_lockon_yaw_rate();
     if (!is_zero(target_yaw_rate)) {
         auto_yaw.set_mode(AUTO_YAW_HOLD);
     } else {
@@ -884,7 +884,7 @@ void ModeAuto::loiter_run()
     }
 
     // accept pilot input of yaw
-    float target_yaw_rate = copter.Ugcs.get_cruise_yaw_rate();
+    float target_yaw_rate = copter.Ugcs.get_lockon_yaw_rate();
 
     // set motors to full range
     motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);

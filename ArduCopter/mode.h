@@ -39,6 +39,10 @@ public:
         LOCKON     =   27,  // Lock on
         ATTACK_ATT =   28,  // Attack
         ATTACK_ANGLE = 29,  // Attack
+        TAKEOFF =      30,
+        FLY =          31,
+        SEARCH =       32,
+        ASSEMBLE =     33,
         //AUTOROTATE =   28,  // Attack
     };
 
@@ -1470,7 +1474,7 @@ private:
 };
 #endif
 
-
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 class ModeLockon : public Mode {
 
 public:
@@ -1499,8 +1503,6 @@ private:
 
 };
 
-
-
 class ModeAttack_att : public Mode {
 
 public:
@@ -1527,7 +1529,6 @@ protected:
 private:
 
 };
-
 
 class ModeAttack_angle : public Mode {
 
@@ -1556,3 +1557,113 @@ private:
 
 };
 
+class ModeTakeoff : public Mode {
+
+public:
+    // inherit constructor
+    using Mode::Mode;
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    bool requires_GPS() const override { return true; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(bool from_gcs) const override { return from_gcs; }
+    bool is_autopilot() const override { return true; }
+    bool has_user_takeoff(bool must_navigate) const override { return true; }
+
+
+protected:
+
+    const char *name() const override { return "TAKEOFF"; }
+    const char *name4() const override { return "TKOF"; }
+
+    uint32_t wp_distance() const override;
+    int32_t wp_bearing() const override;
+
+private:
+    int16_t _stage = 1;
+    uint32_t _takeoff_time = 0;
+};
+
+class ModeFly: public Mode {
+
+public:
+    // inherit constructor
+    using Mode::Mode;
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    bool requires_GPS() const override { return true; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(bool from_gcs) const override { return from_gcs; }
+    bool is_autopilot() const override { return true; }
+    bool has_user_takeoff(bool must_navigate) const override { return true; }
+
+
+protected:
+
+    const char *name() const override { return "FLY###"; }
+    const char *name4() const override { return "FLY#"; }
+
+    uint32_t wp_distance() const override;
+    int32_t wp_bearing() const override;
+
+private:
+};
+
+class ModeSearch: public Mode {
+
+public:
+    // inherit constructor
+    using Mode::Mode;
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    bool requires_GPS() const override { return true; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(bool from_gcs) const override { return from_gcs; }
+    bool is_autopilot() const override { return true; }
+    bool has_user_takeoff(bool must_navigate) const override { return true; }
+
+
+protected:
+
+    const char *name() const override { return "Search"; }
+    const char *name4() const override { return "SERH"; }
+
+    uint32_t wp_distance() const override;
+    int32_t wp_bearing() const override;
+
+private:
+};
+
+class ModeAssemble: public Mode {
+
+public:
+    // inherit constructor
+    using Mode::Mode;
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    bool requires_GPS() const override { return true; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(bool from_gcs) const override { return from_gcs; }
+    bool is_autopilot() const override { return true; }
+    bool has_user_takeoff(bool must_navigate) const override { return true; }
+
+
+protected:
+
+    const char *name() const override { return "Assemble"; }
+    const char *name4() const override { return "ASMB"; }
+
+    uint32_t wp_distance() const override;
+    int32_t wp_bearing() const override;
+
+private:
+    bool reached_position();
+};

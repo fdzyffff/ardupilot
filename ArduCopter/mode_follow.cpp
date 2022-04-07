@@ -165,14 +165,14 @@ void ModeFollow::run()
 
 uint32_t ModeFollow::wp_distance() const
 {
-    return copter.Ugcs.get_dist_to_target();
-    //return g2.follow.get_distance_to_target() * 100;
+    // return copter.Ugcs.get_dist_to_target();
+    return g2.follow.get_distance_to_target() * 100;
 }
 
 int32_t ModeFollow::wp_bearing() const
 {
-    return copter.Ugcs.get_bearing_to_target();
-    //return g2.follow.get_bearing_to_target() * 100;
+    // return copter.Ugcs.get_bearing_to_target();
+    return g2.follow.get_bearing_to_target() * 100;
 }
 
 /*

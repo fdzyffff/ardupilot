@@ -796,7 +796,6 @@ bool AP_Arming_Copter::arm(const AP_Arming::Method method, const bool do_arming_
     // assumed armed without a arming, switch. Overridden in switches.cpp
     copter.ap.armed_with_switch = false;
 
-    copter.Ugcs.set_state(UGround::UGCS_None);
     copter.Upayload.set_state(UPayload::payload_selfcheck);
     // return success
     return true;
@@ -861,8 +860,6 @@ bool AP_Arming_Copter::disarm()
     hal.util->set_soft_armed(false);
 
     copter.ap.in_arming_delay = false;
-
-    copter.Ugcs.set_state(UGround::UGCS_None);
 
     return true;
 }

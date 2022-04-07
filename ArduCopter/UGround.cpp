@@ -28,48 +28,77 @@ void UGround::init()
     _position_id = 0;
     _group_id = 1;
     _is_leader = true;
-    _distance = 200.f;
+    _group_distance = 200.f;
     _cmd = 0;
-    set_state(UGCS_None);
+    _follow_loc_vec.zero();
+    _follow_vel_vec.zero();
+    _follow_yaw_cd = 0.0f;
     _dest_loc_vec.zero();
-    _dest_vel_vec.zero();
-    _dest_yaw_cd = 0.0f;
-    _offset_position.zero();
+    _raw_dest_loc_vec.zero();
     _dist_to_target = 0.0f;
     _bearing_to_target = 0.0f;
     _yaw_middle_cd = 0.0f;
+    _group_target_yaw = (float)(copter.ahrs.yaw_sensor/100);
+    _group_current_yaw = (float)(copter.ahrs.yaw_sensor/100);
+    _new_dist = false;
+    _leader_id = copter.g.sysid_this_mav;
+    _leader_loc_vec.zero();
 }
 
-void UGround::handle_info(int16_t cmd, int16_t group_id, int16_t distance, int16_t free)
+void UGround::handle_info(int16_t p1, float p2, float p3, float p4)
 {
-    group_id = 1;
-    _group_id = group_id;
-    _distance = distance;
-    _cmd = cmd;
-    do_cmd(_cmd, false);
-    my_group1.set_distance(_distance);
-    my_group2.set_distance(_distance);
-}
-
-void UGround::do_cmd(int16_t cmd, bool force_set) {
-    switch (cmd) {
+    switch (p1) {
+        case 1:
+            do_cmd((int16_t)p2);
+            break;
         case 2:
-            set_state(UGCS_Takeoff);
+            copter.gcs().send_text(MAV_SEVERITY_WARNING, "Set up group");
+            set_up_group( (int16_t)p2, p3, p4);
             break;
         case 3:
-            set_state(UGCS_Fly, force_set);
+            copter.gcs().send_text(MAV_SEVERITY_WARNING, "Set up alt");
+            set_up_alt(p2);
+            break;
+        case 10:
+            copter.gcs().send_text(MAV_SEVERITY_WARNING, "Set up dest :%f, %f",p2, p3);
+            set_up_dest(p2, p3);
+            break;
+        default:
+            break;
+    }
+}
+
+void UGround::do_cmd(int16_t cmd) {
+    switch (cmd) {
+        case 1:
+            do_takeoff();
+            copter.gcs().send_text(MAV_SEVERITY_WARNING, "Do takeoff");
+            _cmd = cmd;
+            break;
+        case 2:
+            do_fly();
+            _cmd = cmd;
+            copter.gcs().send_text(MAV_SEVERITY_WARNING, "Do fly");
+            break;
+        case 3:
+            do_search();
+            copter.gcs().send_text(MAV_SEVERITY_WARNING, "Do search");
+            _cmd = cmd;
             break;
         case 4:
-            set_state(UGCS_Curise, force_set);
+            do_assemble();
+            copter.gcs().send_text(MAV_SEVERITY_WARNING, "Do assemble [%d]", is_active());
+            _cmd = cmd;
             break;
         case 5:
-            set_state(UGCS_Assemble, force_set);
+            do_attack();
+            copter.gcs().send_text(MAV_SEVERITY_WARNING, "Do attack");
+            _cmd = cmd;
             break;
         case 6:
-            set_state(UGCS_Attack);
-            break;
-        case 7:
-            set_state(UGCS_FS1);
+            do_fs1();
+            copter.gcs().send_text(MAV_SEVERITY_WARNING, "Do fs1");
+            _cmd = cmd;
             break;
         case 10:
             copter.Ucam.do_cmd(1.0f);
@@ -87,309 +116,208 @@ void UGround::do_cmd(int16_t cmd, bool force_set) {
     }
 }
 
-void UGround::refresh_cmd() {
-    copter.gcs().send_text(MAV_SEVERITY_WARNING, "(%d)cmd:%d",_is_leader,_cmd);
-    do_cmd(_cmd, true);
+void UGround::set_up_group( int16_t group_id, float distance, float direction) {
+    _group_id = group_id;
+    _group_target_yaw = direction;
+    if (distance > 10.f) {
+        _group_distance = distance;
+    }
+    refresh_dest();
 }
 
-void UGround::set_up_offset(int8_t sender_id, Vector3f target_postion, Vector3f target_velocity, float target_heading) {
-    _offset_position.zero();
+void UGround::set_up_alt(float target_alt) {
+    copter.g2.user_parameters.gcs_target_alt.set(target_alt);
+    refresh_dest();
+}
+
+void UGround::refresh_dest() {
+    // offset from virtual center point to this vehicle
+    Vector3f offset_position = get_offset(copter.g.sysid_this_mav, 0, _group_distance);
+    Matrix3f tmp_m;
+    tmp_m.from_euler(0.0f, 0.0f, radians(_group_target_yaw));
+    offset_position = tmp_m*offset_position;
+    _dest_loc_vec = _raw_dest_loc_vec+offset_position;
+    _dest_loc_vec.z = (float)copter.g2.user_parameters.gcs_target_alt.get();
+
+    dest_pos_update(true);
+}
+
+void UGround::set_up_dest(float lat_in, float lng_in) {
+    Location tmp_location;
+    tmp_location.lat = (int32_t)(lat_in*1.0e7f);
+    tmp_location.lng = (int32_t)(lng_in*1.0e7f);
+    tmp_location.alt = (int16_t)copter.g2.user_parameters.gcs_target_alt.get();
+    tmp_location.relative_alt = 1; 
+    Vector2f res_vec;
+    if (!tmp_location.get_vector_xy_from_origin_NE(res_vec)) {return;}
+    Vector3f target_postion = Vector3f(res_vec.x, res_vec.y, copter.g2.user_parameters.gcs_target_alt.get());
+    Vector3f new_raw_dest_loc_vec = target_postion;
+    if (norm(new_raw_dest_loc_vec.x - _raw_dest_loc_vec.x, new_raw_dest_loc_vec.y - _raw_dest_loc_vec.y) > 200.f) {
+        _raw_dest_loc_vec = new_raw_dest_loc_vec;
+        refresh_dest();
+    }
+    // _raw_dest_loc_vec = target_postion;
+}
+
+void UGround::refresh_cmd() {
+    copter.gcs().send_text(MAV_SEVERITY_WARNING, "(%d)cmd:%d",_is_leader,_cmd);
+    do_cmd(_cmd);
+}
+
+void UGround::set_up_follow(int8_t sender_id, Vector3f target_postion, Vector3f target_velocity, float target_heading) {
+    Vector3f offset_position = get_offset(copter.g.sysid_this_mav, sender_id, _group_distance);
+    Matrix3f tmp_m;
+    tmp_m.from_euler(0.0f, 0.0f, radians(_group_current_yaw));
+    offset_position = tmp_m*offset_position;
+
+    Vector3f vel_comp = Vector3f(target_velocity.x*copter.g2.user_parameters.gcs_group_delay.get()*0.001f, target_velocity.y*copter.g2.user_parameters.gcs_group_delay.get()*0.001f, 0.0f);
+    // Vector3f vel_comp = Vector3f(target_velocity.x*1.0f, target_velocity.y*1.0f, 0.0f);
+
+    if (norm(target_velocity.x, target_velocity.y) < 200.f) {
+        vel_comp.zero();
+    }
+
+    _follow_loc_vec = target_postion + offset_position + vel_comp;
+    _follow_vel_vec = target_velocity;
+    _follow_yaw_cd = target_heading*100.f;
+    _leader_id = sender_id;
+    _leader_loc_vec = target_postion + vel_comp;
+}
+
+void UGround::clean_follow() {
+    _follow_vel_vec.zero();
+}
+
+void UGround::update_group_yaw(float dt) {
+    float yaw_rate_limit = 500.f/MAX(500.f, _group_distance*4.0f)*57.f;
+    float _delta_yaw = constrain_float(wrap_180(_group_target_yaw - _group_current_yaw), -yaw_rate_limit*dt, yaw_rate_limit*dt);
+    _group_current_yaw = wrap_360(_group_current_yaw + _delta_yaw);
+}
+
+Vector3f UGround::get_search_dest() {
+    Vector3f search_offset_position;
+    switch (_group_id) {
+    case 1:
+        search_offset_position = my_group1.get_search_dest(copter.g.sysid_this_mav, _group_distance, 20.f*_group_distance);
+        break;
+    case 2:
+        search_offset_position = my_group2.get_search_dest(copter.g.sysid_this_mav, _group_distance, 500.f);
+        break;
+    default:
+        break;
+    }
+
+    Matrix3f tmp_m;
+    tmp_m.from_euler(0.0f, 0.0f, radians(_group_current_yaw));
+    search_offset_position = tmp_m*search_offset_position;
+
+    return (get_dest_loc_vec()+search_offset_position);
+}
+
+Vector3f UGround::get_assemble_dest() {
+    Vector3f assemble_offset_position = my_group1_assemble.get_offset(copter.g.sysid_this_mav, _leader_id, 1000.f);
+
+    float group_dir = wrap_360(_follow_yaw_cd*0.01f - my_group1_assemble.get_dir(_leader_id)); // in degree
+    Matrix3f tmp_m;
+    tmp_m.from_euler(0.0f, 0.0f, radians(group_dir));
+    assemble_offset_position = tmp_m*assemble_offset_position;
+    _leader_loc_vec.z = (float)(copter.g2.user_parameters.gcs_target_alt.get());
+    // update _yaw_middle_cd to possible target dir
+    _yaw_middle_cd = wrap_360(_follow_yaw_cd*0.01f + my_group1_assemble.get_dir(copter.g.sysid_this_mav) - my_group1_assemble.get_dir(_leader_id))*100.0f;
+    copter.gcs().send_text(MAV_SEVERITY_WARNING, "dir: %f",_yaw_middle_cd);
+    return (_leader_loc_vec+assemble_offset_position);
+}
+
+Vector3f UGround::get_offset(int8_t id_A, int8_t id_B, float distance) {
+    Vector3f offset_position;
+    offset_position.zero();
     switch (_group_id) {
         case 1:
-            _offset_position = my_group1.get_offset(copter.g.sysid_this_mav, sender_id);
+            offset_position = my_group1.get_offset(id_A, id_B, distance);
             break;
         case 2:
-            _offset_position = my_group2.get_offset(copter.g.sysid_this_mav, sender_id);
+            offset_position = my_group2.get_offset(id_A, id_B, distance);
             break;
         default:
             break;
     }
-
-    Matrix3f tmp_m;
-    float tmp_yaw = 0.0f;
-    if (copter.g2.user_parameters.gcs_group_relative_yaw.get() == 0) {
-        tmp_yaw = radians(copter.g2.user_parameters.gcs_group_yaw);
-    } else {
-        tmp_yaw = radians(wrap_360(copter.g2.user_parameters.gcs_group_yaw + target_heading));
-    }
-    tmp_m.from_euler(0.0f, 0.0f, tmp_yaw);
-    _offset_position = tmp_m*_offset_position;
-
-    _dest_loc_vec = target_postion + _offset_position;
-    _dest_vel_vec = target_velocity;
-    _dest_yaw_cd = target_heading*100.f;
-
-
-    Vector2f res_vec;
-    if (!copter.ahrs.get_relative_position_NE_origin(res_vec)) {return;}
-    _dist_to_target = norm(_dest_loc_vec.x - res_vec.x*100.f, _dest_loc_vec.y - res_vec.y*100.f);
-    _bearing_to_target = degrees(atan2f(_dest_loc_vec.y - res_vec.y*100.f, _dest_loc_vec.x - res_vec.x*100.f))*100.f;
+    return offset_position;
 }
 
 // update
 void UGround::update()
 {
+    update_group_yaw(0.02f);
     const uint32_t now = millis();
     uint32_t _time_out = (uint32_t)copter.g2.user_parameters.gcs_time_out.get();
     if ( _time_out!=0 && ((now - _last_update_ms) > _time_out) ) {
         _active = false;
+        clean_follow();
     } else {
         _active = true;
-    }
-    state_update();
-}
-
-void UGround::state_update() 
-{
-    uint32_t timer = millis() - _last_state_update_ms;
-    if (copter.control_mode == Mode::Number::STABILIZE) {
-        set_state(UGCS_None);
-    }
-    if (copter.control_mode == Mode::Number::ALT_HOLD) {
-        set_state(UGCS_None);
-    }
-
-    float sonar_height = -10.0f;
-    if (copter.rangefinder_alt_ok()) {sonar_height = copter.rangefinder_state.alt_cm;}
-    bool _reached_position = copter.Ugcs_reached_position();
-    switch (get_state()) {
-        case UGCS_Takeoff:
-        {
-            if ( timer>_state_timer_ms) {
-                set_state(UGCS_Standby1);
-                _state_timer_ms = 3000000;
-            }
-            break;
-        }
-        case UGCS_Standby1:
-        {
-            if (timer>_state_timer_ms) {
-                set_state(UGCS_FS1);
-            }
-            break;
-        }
-        case UGCS_Fly:
-        {
-            if (is_leader()){
-                if ((copter.mode_auto.mission.get_current_nav_index() > copter.g2.user_parameters.gcs_num_cruise) ) {
-                    set_state(UGCS_Standby2);
-                    _state_timer_ms = copter.g2.user_parameters.gcs_time_cruise<=0?3600000:copter.g2.user_parameters.gcs_time_cruise;
-                }
-            } else {
-                copter.mode_guided.set_destination_posvel(_dest_loc_vec, _dest_vel_vec, true, _dest_yaw_cd, false, 0.0f, false);
-            }
-            break;
-        }
-        case UGCS_Standby2:
-        {
-            if (timer>_state_timer_ms) {
-                set_state(UGCS_Curise);
-            }
-            if (timer>3600000) {
-                set_state(UGCS_FS1);
-            }
-            break;
-        }
-        case UGCS_Curise:
-        {
-            if (copter.Ucam.is_active()) {
-                set_state(UGCS_Lockon);
-                _state_timer_ms = 300000;
-            }
-            if (!is_leader()) {
-                copter.mode_guided.set_destination_posvel(_dest_loc_vec, _dest_vel_vec, true, _dest_yaw_cd, false, 0.0f, false);
-            }
-            break;
-        }
-        case UGCS_Assemble:
-        {
-            if (!is_leader()) {
-                if (_reached_position) {
-                    set_state(UGCS_Lockon);
-                    _state_timer_ms = 300000;
-                }
-                copter.mode_guided.set_destination_posvel(_dest_loc_vec, _dest_vel_vec, true, _dest_yaw_cd, false, 0.0f, false);
-            } else {
-                set_state(UGCS_Lockon);
-                _state_timer_ms = 300000;
-            }
-            break;
-        }
-        case UGCS_Lockon:
-        {
-            if (timer>_state_timer_ms) {
-                set_state(UGCS_FS1);
-            }
-            break;
-        }
-        case UGCS_Attack:
-        {
-            if (sonar_height > 0 && sonar_height < 100 && !copter.Ucam.is_active()) {
-                set_state(UGCS_Lockon);
-            }
-            break;
-        }
-        case UGCS_FS1:
-        {
-            break;
-        }
-        default:
-            break;
-    }
-}
-
-void UGround::set_state(UGCS_state_t new_state, bool force_set)
-{
-    if ( (get_state() == new_state) && !force_set ) {
-        return;
-    }
-    bool ret = false;
-    switch (new_state) {
-        case UGCS_None:
-            ret = true;
-            break;
-        case UGCS_Takeoff:
-            ret = copter.Ugcs_do_takeoff();
-            _state_timer_ms = 10000;
-            break;
-        case UGCS_Fly:
-            ret = copter.Ugcs_do_fly();
-            break;
-        case UGCS_Standby2:
-            ret = copter.Ugcs_do_standby();
-            break;
-        case UGCS_Curise:
-            ret = copter.Ugcs_do_cruise();
-            break;
-        case UGCS_Assemble:
-            ret = copter.Ugcs_do_assemble();
-            break;
-        case UGCS_Lockon:
-            ret = copter.Ugcs_do_lockon();
-            break;
-        case UGCS_Attack:
-            ret = copter.Ugcs_do_attack();
-            break;
-        case UGCS_FS1:
-            ret = copter.Ugcs_do_fs1();
-            break;
-        case UGCS_Standby1:
-            ret = (copter.control_mode == Mode::Number::GUIDED);
-        default:
-            break;
-    }
-    if (!ret) {
-        if (new_state != UGCS_Attack) {
-            set_state(UGCS_FS1);  
-        }
-        return;
-    }
-    _state = new_state;
-    _last_state_update_ms = millis();
-    switch (_state) {
-        case UGCS_None:
-            copter.gcs().send_text(MAV_SEVERITY_WARNING, "UGCS_None");
-            break;
-        case UGCS_Takeoff:
-            copter.gcs().send_text(MAV_SEVERITY_WARNING, "UGCS_Takeoff");
-            break;
-        case UGCS_Fly:
-            copter.gcs().send_text(MAV_SEVERITY_WARNING, "UGCS_Fly");
-            break;
-        case UGCS_Standby1:
-            copter.gcs().send_text(MAV_SEVERITY_WARNING, "UGCS_Standby1");
-            break;
-        case UGCS_Standby2:
-            copter.gcs().send_text(MAV_SEVERITY_WARNING, "UGCS_Standby2");
-            break;
-        case UGCS_Curise:
-            copter.gcs().send_text(MAV_SEVERITY_WARNING, "UGCS_Curise");
-            break;
-        case UGCS_Assemble:
-            copter.gcs().send_text(MAV_SEVERITY_WARNING, "UGCS_Assemble");
-            break;
-        case UGCS_Lockon:
-            copter.gcs().send_text(MAV_SEVERITY_WARNING, "UGCS_Lockon");
-            break;
-        case UGCS_Attack:
-            copter.gcs().send_text(MAV_SEVERITY_WARNING, "UGCS_Attack");
-            break;
-        case UGCS_FS1:
-            copter.gcs().send_text(MAV_SEVERITY_WARNING, "UGCS_FS1");
-            break;
-        default:
-            break;
     }
 }
 
 int16_t UGround::get_state_num() {
     int16_t ret = -1;
     if (is_leader()) {
-        switch (_state) {
-            case UGCS_None:
-                ret = 0;
-                break;
-            case UGCS_Takeoff:
-            case UGCS_Standby1:
+        switch (copter.control_mode) {
+            case Mode::Number::TAKEOFF:
                 ret = 1;
                 break;
-            case UGCS_Fly:
+            case Mode::Number::FLY:
                 ret = 2;
                 break;
-            case UGCS_Standby2:
-            case UGCS_Curise:
+            case Mode::Number::SEARCH:
                 ret = 4;
                 break;
-            case UGCS_Lockon:
-            case UGCS_Assemble:
+            case Mode::Number::LOCKON:
+            case Mode::Number::ASSEMBLE:
                 ret = 5;
                 break;
-            case UGCS_Attack:
+            case Mode::Number::ATTACK_ANGLE:
                 ret = 6;
                 break;
-            case UGCS_FS1:
+            case Mode::Number::LAND:
                 ret = 7;
                 break;
             default:
+                ret = 0;
                 break;
         }
     } else {
-        switch (_state) {
-            case UGCS_None:
-                ret = 0;
-                break;
-            case UGCS_Takeoff:
-            case UGCS_Standby1:
+        switch (copter.control_mode) {
+            case Mode::Number::TAKEOFF:
                 ret = 1;
                 break;
-            case UGCS_Fly:
-            case UGCS_Standby2:
-            case UGCS_Curise:
+            case Mode::Number::FLY:
                 ret = 3;
                 break;
-            case UGCS_Assemble:
-            case UGCS_Lockon:
+            case Mode::Number::ASSEMBLE:
+            case Mode::Number::LOCKON:
                 ret = 5;
                 break;
-            case UGCS_Attack:
+            case Mode::Number::ATTACK_ANGLE:
                 ret = 6;
                 break;
-            case UGCS_FS1:
+            case Mode::Number::LAND:
                 ret = 7;
                 break;
             default:
+                ret = 0;
                 break;
         }
     }
     return ret;
 }
 
-float UGround::get_cruise_yaw_rate() {
-    return get_cruise_yaw_rate(_yaw_middle_cd);
+
+float UGround::get_lockon_yaw_rate() {
+    return get_lockon_yaw_rate(_yaw_middle_cd);
 }
 
-float UGround::get_cruise_yaw_rate(float yaw_middle_cd) {
-    if ((get_state() != UGCS_Curise && get_state() != UGCS_Lockon)|| !is_leader()) {return 0.0f;}
+float UGround::get_lockon_yaw_rate(float yaw_middle_cd) {
+    if (copter.control_mode != Mode::Number::LOCKON) {return 0.0f;}
     float para_angle_right = constrain_float(copter.g2.user_parameters.gcs_search_yangle_right * 100.f, 0.0f, 18000.f);
     float para_angle_left = constrain_float(copter.g2.user_parameters.gcs_search_yangle_left * 100.f, -18000.f, para_angle_right);
     float para_angle_rate = fabsf(copter.g2.user_parameters.gcs_search_yrate) * 100.f;
@@ -410,92 +338,57 @@ float UGround::get_cruise_yaw_rate(float yaw_middle_cd) {
     return angle_rate;
 }
 
-//~~~~~~~~~~~~~~~~~~~~~~~ Copter ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-bool Copter::Ugcs_reached_position() {
-    static uint32_t _last_ms = millis();
-    if (flightmode->wp_distance() > 100.f) {
-        _last_ms = millis();
-    } else {
-        if (millis() - _last_ms > 1000) {
-            return true;
-        }
-    }
+bool UGround::do_takeoff() // takeoff
+{
+    copter.set_mode(Mode::Number::GUIDED, ModeReason::GCS_COMMAND);
+    if (copter.arming.arm(AP_Arming::Method::MAVLINK)) {
+        return copter.set_mode(Mode::Number::TAKEOFF, ModeReason::GCS_COMMAND);
+    } 
     return false;
 }
 
-bool Copter::Ugcs_do_takeoff() // takeoff
+bool UGround::do_fly()     // fly
 {
-    return (set_mode(Mode::Number::GUIDED, ModeReason::TOY_MODE) 
-            && copter.arming.arm(AP_Arming::Method::MAVLINK)
-            && set_mode(Mode::Number::GUIDED, ModeReason::TOY_MODE)
-            && mode_guided.do_user_takeoff(constrain_float(g.pilot_takeoff_alt,0.0f,1000.0f),true)) ;
+    refresh_dest();
+    return copter.set_mode(Mode::Number::FLY, ModeReason::GCS_COMMAND);
 }
 
-bool Copter::Ugcs_do_fly()     // fly
+bool UGround::do_search()  // search
 {
-    if (Ugcs.is_leader()) {
-        if (set_mode(Mode::Number::AUTO, ModeReason::TOY_MODE)) {
-            mode_auto.mission.set_current_cmd(1);
-            Ugcs.set_cruise_yaw_middle_cd(attitude_control->get_att_target_euler_cd().z);
-            return true;
-        }
+    return copter.set_mode(Mode::Number::SEARCH, ModeReason::GCS_COMMAND);
+}
+
+bool UGround::do_assemble()  // assemble
+{
+    if(is_leader() || !is_active()) {
+        _yaw_middle_cd = copter.ahrs.yaw_sensor;
+        return copter.set_mode(Mode::Number::LOCKON, ModeReason::TOY_MODE);
     } else {
-        return set_mode(Mode::Number::GUIDED, ModeReason::TOY_MODE);
-    }
-    return false;
-}
-
-bool Copter::Ugcs_do_standby() // loiter
-{
-    bool ret = set_mode(Mode::Number::BRAKE, ModeReason::TOY_MODE);
-    return ret;
-}
-
-bool Copter::Ugcs_do_cruise()  // fly and search
-{
-    if (Ugcs.is_leader()) {
-        if (set_mode(Mode::Number::AUTO, ModeReason::TOY_MODE)) {
-            mode_auto.mission.set_current_cmd(g2.user_parameters.gcs_num_cruise);
-            return true;
-        }
-    } else {
-        return set_mode(Mode::Number::GUIDED, ModeReason::TOY_MODE);
-    }
-    return false;
-}
-
-bool Copter::Ugcs_do_assemble()  // assemble
-{
-    if(Ugcs.is_leader()) {
-        return set_mode(Mode::Number::LOCKON, ModeReason::TOY_MODE);
-    } else {
-        return set_mode(Mode::Number::GUIDED, ModeReason::TOY_MODE);
+        _yaw_middle_cd = _follow_yaw_cd;
+        return copter.set_mode(Mode::Number::ASSEMBLE, ModeReason::GCS_COMMAND);
     }
 }
 
-bool Copter::Ugcs_do_lockon()  // lock on target
+bool UGround::do_lockon()  // lock on target
 {
-    if (set_mode(Mode::Number::LOCKON, ModeReason::TOY_MODE)) {
-        return true;
-    }
-    return false;
+    return copter.set_mode(Mode::Number::LOCKON, ModeReason::TOY_MODE);
 }
 
-bool Copter::Ugcs_do_attack()
+bool UGround::do_attack()
 {
-    bool ret = set_mode(Mode::Number::ATTACK_ANGLE, ModeReason::TOY_MODE);
-    return ret;
+    return copter.set_mode(Mode::Number::ATTACK_ANGLE, ModeReason::TOY_MODE);
 }
 
-bool Copter::Ugcs_do_fs1()     // failsafe type1
+bool UGround::do_fs1()     // failsafe type1
 {
-    bool ret = set_mode(Mode::Number::LAND, ModeReason::TOY_MODE);
+    bool ret = copter.set_mode(Mode::Number::LAND, ModeReason::TOY_MODE);
     if (!ret) {
-        set_mode(Mode::Number::LAND, ModeReason::TOY_MODE);
+        copter.set_mode(Mode::Number::LAND, ModeReason::TOY_MODE);
     }
     return true;
 }
 
+//~~~~~~~~~~~~~~~~~~~~~~~ Copter ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 void Copter::Ugcs_handle_msg(const mavlink_message_t &msg) {
     if (msg.sysid == 233) { return; }
 
@@ -522,11 +415,11 @@ void Copter::Ugcs_handle_msg(const mavlink_message_t &msg) {
 
         _target_location.lat = packet.lat;
         _target_location.lng = packet.lon;
-        _target_location.alt = packet.relative_alt / 10;        // convert millimeters to cm
+        _target_location.alt = packet.relative_alt / 10;  // convert millimeters to cm
         _target_location.relative_alt = 1;                // set relative_alt flag
 
-        _target_velocity_neu.x = packet.vx * 0.01f; // velocity north
-        _target_velocity_neu.y = packet.vy * 0.01f; // velocity east
+        _target_velocity_neu.x = packet.vx; // velocity north
+        _target_velocity_neu.y = packet.vy; // velocity east
         _target_velocity_neu.z = 0.0f;//packet.vz * 0.01f; // velocity down
 
         if (packet.hdg <= 36000) {                  // heading (UINT16_MAX if unknown)
@@ -540,27 +433,19 @@ void Copter::Ugcs_handle_msg(const mavlink_message_t &msg) {
         if (!_target_location.get_vector_xy_from_origin_NE(res_vec)) {return;}
         _target_postion_neu.x = res_vec.x;
         _target_postion_neu.y = res_vec.y;
-        if (packet.alt > 0) { Ugcs_last_valid_alt_cm.apply(0.1f*(float)packet.alt, 0.1f); }
-        if (packet.alt > 0 && rangefinder_alt_ok() ) {
-            float rng_offset = Ugcs_get_relative_alt()*0.1f - rangefinder_state.alt_cm;
-            _target_postion_neu.z = rng_offset + Ugcs_last_valid_alt_cm.get();
-
-            //copter.gcs().send_text(MAV_SEVERITY_WARNING, "Z: %0.2f",_target_postion_neu.z);
-        } else {
-            _target_postion_neu.z = (float)(packet.relative_alt / 10);
+        
+        float rng_offset = 0.0f;
+        if (rangefinder_alt_ok() ) {
+            rng_offset = Ugcs_get_relative_alt()*0.1f - rangefinder_state.alt_cm;
         }
-        Ugcs.set_up_offset(msg.sysid, _target_postion_neu, _target_velocity_neu, _target_heading);
-        //g2.follow.set_offset(Ugcs.get_offset_position()*0.01f);
-        //g2.follow.handle_msg(msg, (int32_t)Ugcs_last_valid_alt_cm.get());
+        _target_postion_neu.z = rng_offset + (float)(copter.g2.user_parameters.gcs_target_alt.get());
+
+        Ugcs.set_up_follow(msg.sysid, _target_postion_neu, _target_velocity_neu, _target_heading);
     }
 }
 
-int32_t Copter::Ugcs_get_terrain_alt() {
-    int32_t ret = -999;
-    if (rangefinder_alt_ok()) {
-        ret = rangefinder_state.alt_cm * 10UL;
-    }
-    return ret;
+int32_t Copter::Ugcs_get_terrain_target_alt() {
+    return copter.g2.user_parameters.gcs_target_alt.get();
 }
 
 int32_t Copter::Ugcs_get_relative_alt() {
@@ -577,4 +462,8 @@ Vector3f Copter::Ugcs_get_velocity_NED() {
         vel.zero();
     }
     return vel;
+}
+
+float Copter::Ugcs_get_target_yaw_cd() {
+    return attitude_control->get_att_target_euler_cd().z;
 }

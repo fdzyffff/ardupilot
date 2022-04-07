@@ -29,20 +29,22 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     AP_GROUPINFO("_GCS_S_YANGL"     , 17, UserParameters, gcs_search_yangle_left, -45.f),
     AP_GROUPINFO("_GCS_S_YANGR"     , 18, UserParameters, gcs_search_yangle_right, 45.f),
     AP_GROUPINFO("_GCS_S_YRATE"     , 19, UserParameters, gcs_search_yrate, 4.5f),
+    AP_GROUPINFO("_GCS_ALT"         , 20, UserParameters, gcs_target_alt, 250),
+    AP_GROUPINFO("_GCS_DELAY"       , 21, UserParameters, gcs_group_delay, 1000.f),
 
-    AP_GROUPINFO("_YAW_TC"          , 20, UserParameters, fly_yaw_tc, 2.0f),
-    AP_GROUPINFO("_P_LIMIT"         , 21, UserParameters, fly_pitch_limit, 3000.0f),
-    AP_GROUPINFO("_R_LIMIT"         , 22, UserParameters, fly_roll_limit, 1500.0f),
-    AP_GROUPINFO("_R_FACTOR"        , 23, UserParameters, fly_roll_factor, 1.0f),
-    AP_GROUPINFO("_H_PSCALAR"       , 24, UserParameters, fly_pitch_scalar, 1.0f),
-    AP_GROUPINFO("_H_CFACTOR"       , 25, UserParameters, fly_climb_factor, 1.0f),
-    AP_GROUPINFO("_H_COFFSET"       , 26, UserParameters, fly_climb_rate_offset, 0.0f),
+    AP_GROUPINFO("_YAW_TC"          , 22, UserParameters, fly_yaw_tc, 2.0f),
+    AP_GROUPINFO("_P_LIMIT"         , 23, UserParameters, fly_pitch_limit, 3000.0f),
+    AP_GROUPINFO("_R_LIMIT"         , 24, UserParameters, fly_roll_limit, 1500.0f),
+    AP_GROUPINFO("_R_FACTOR"        , 25, UserParameters, fly_roll_factor, 1.0f),
+    AP_GROUPINFO("_H_PSCALAR"       , 26, UserParameters, fly_pitch_scalar, 1.0f),
+    AP_GROUPINFO("_H_CFACTOR"       , 27, UserParameters, fly_climb_factor, 1.0f),
+    AP_GROUPINFO("_H_COFFSET"       , 28, UserParameters, fly_climb_rate_offset, 0.0f),
 
-    AP_GROUPINFO("_TELE_POWER"      , 27, UserParameters, tele_power, 10),
+    AP_GROUPINFO("_TELE_POWER"      , 29, UserParameters, tele_power, 10),
 
-    AP_GROUPINFO("_EKF_LAT"         , 28, UserParameters, ekf_origin_latitude, 0),
-    AP_GROUPINFO("_EKF_LNG"         , 29, UserParameters, ekf_origin_longitude, 0),
-    AP_GROUPINFO("_EKF_ALT"         , 30, UserParameters, ekf_origin_alt, 0),
+    AP_GROUPINFO("_EKF_LAT"         , 30, UserParameters, ekf_origin_latitude, 0),
+    AP_GROUPINFO("_EKF_LNG"         , 31, UserParameters, ekf_origin_longitude, 0),
+    AP_GROUPINFO("_EKF_ALT"         , 32, UserParameters, ekf_origin_alt, 0),
 
     AP_GROUPEND
 };

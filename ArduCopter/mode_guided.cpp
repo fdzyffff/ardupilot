@@ -121,7 +121,7 @@ void ModeGuided::posvel_control_start()
     pos_control->init_xy_controller();
 
     // set speed and acceleration from wpnav's speed and acceleration
-    pos_control->set_max_speed_xy(wp_nav->get_default_speed_xy());
+    pos_control->set_max_speed_xy(wp_nav->get_default_speed_xy()*1.5f);
     pos_control->set_max_accel_xy(wp_nav->get_wp_acceleration());
 
     const Vector3f& curr_pos = inertial_nav.get_position();

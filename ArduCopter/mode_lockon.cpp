@@ -17,7 +17,7 @@ bool ModeLockon::init(bool ignore_checks)
         pos_control->set_alt_target_to_current_alt();
         pos_control->set_desired_velocity_z(inertial_nav.get_velocity_z());
     }
-
+    copter.gcs().send_text(MAV_SEVERITY_WARNING, "mode Lock ON");
     return true;
 }
 
@@ -39,7 +39,7 @@ void ModeLockon::run()
     if (copter.Ucam.is_active()) {
         target_yaw_rate = copter.Ucam.get_target_yaw_rate();
     } else {
-        target_yaw_rate = copter.Ugcs.get_cruise_yaw_rate();
+        target_yaw_rate = copter.Ugcs.get_lockon_yaw_rate();
     }
 
     // if (copter.rangefinder_alt_ok() && (float)copter.rangefinder_state.alt_cm < 100.f) {
@@ -74,10 +74,9 @@ void ModeLockon::run()
 
     case AltHold_Flying:
     default:
-        if (!copter.Ugcs.is_leader()) {
-            pos_control->set_xy_target(copter.Ugcs.get_dest_loc_vec().x, copter.Ugcs.get_dest_loc_vec().y);
-
-        }
+        // if (!copter.Ugcs.is_leader()) {
+        //     pos_control->set_xy_target(copter.Ugcs.get_dest_loc_vec().x, copter.Ugcs.get_dest_loc_vec().y);
+        // }
         // set motors to full range
         motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
 
