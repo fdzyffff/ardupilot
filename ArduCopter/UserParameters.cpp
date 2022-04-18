@@ -46,5 +46,7 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     AP_GROUPINFO("_EKF_LNG"         , 31, UserParameters, ekf_origin_longitude, 0),
     AP_GROUPINFO("_EKF_ALT"         , 32, UserParameters, ekf_origin_alt, 0),
 
+    AP_GROUPINFO("_SEARCH_DIST"     , 33, UserParameters, group_search_dist, 1000.f),
+
     AP_GROUPEND
 };

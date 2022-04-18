@@ -59,6 +59,10 @@ void UGround::handle_info(int16_t p1, float p2, float p3, float p4)
             copter.gcs().send_text(MAV_SEVERITY_WARNING, "Set up alt");
             set_up_alt(p2);
             break;
+        case 4:
+            copter.gcs().send_text(MAV_SEVERITY_WARNING, "Set up search dist: %f",p2);
+            set_up_search_dist(p2);
+            break;
         case 10:
             copter.gcs().send_text(MAV_SEVERITY_WARNING, "Set up dest :%f, %f",p2, p3);
             set_up_dest(p2, p3);
@@ -100,6 +104,10 @@ void UGround::do_cmd(int16_t cmd) {
             copter.gcs().send_text(MAV_SEVERITY_WARNING, "Do fs1");
             _cmd = cmd;
             break;
+        case 7:
+            do_pause();
+            copter.gcs().send_text(MAV_SEVERITY_WARNING, "Do pause");
+            break;
         case 10:
             copter.Ucam.do_cmd(1.0f);
             copter.gcs().send_text(MAV_SEVERITY_WARNING, "CAM ON");
@@ -128,6 +136,10 @@ void UGround::set_up_group( int16_t group_id, float distance, float direction) {
 void UGround::set_up_alt(float target_alt) {
     copter.g2.user_parameters.gcs_target_alt.set(target_alt);
     refresh_dest();
+}
+
+void UGround::set_up_search_dist(float search_dist) {
+    copter.g2.user_parameters.group_search_dist.set(search_dist);
 }
 
 void UGround::refresh_dest() {
@@ -198,7 +210,7 @@ Vector3f UGround::get_search_dest() {
     Vector3f search_offset_position;
     switch (_group_id) {
     case 1:
-        search_offset_position = my_group1.get_search_dest(copter.g.sysid_this_mav, _group_distance, 20.f*_group_distance);
+        search_offset_position = my_group1.get_search_dest(copter.g.sysid_this_mav, _group_distance, copter.g2.user_parameters.group_search_dist.get());
         break;
     case 2:
         search_offset_position = my_group2.get_search_dest(copter.g.sysid_this_mav, _group_distance, 500.f);
@@ -340,10 +352,10 @@ float UGround::get_lockon_yaw_rate(float yaw_middle_cd) {
 
 bool UGround::do_takeoff() // takeoff
 {
-    copter.set_mode(Mode::Number::GUIDED, ModeReason::GCS_COMMAND);
+    copter.set_mode(Mode::Number::TAKEOFF, ModeReason::GCS_COMMAND);
     if (copter.arming.arm(AP_Arming::Method::MAVLINK)) {
-        return copter.set_mode(Mode::Number::TAKEOFF, ModeReason::GCS_COMMAND);
-    } 
+        return copter.mode_guided.do_user_takeoff(constrain_float(copter.g.pilot_takeoff_alt,100.0f,500.0f),true);
+    }
     return false;
 }
 
@@ -386,6 +398,11 @@ bool UGround::do_fs1()     // failsafe type1
         copter.set_mode(Mode::Number::LAND, ModeReason::TOY_MODE);
     }
     return true;
+}
+
+bool UGround::do_pause()
+{
+    return copter.set_mode(Mode::Number::BRAKE, ModeReason::TOY_MODE);
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~ Copter ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

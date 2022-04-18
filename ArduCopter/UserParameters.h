@@ -49,4 +49,6 @@ public:
     AP_Int32 ekf_origin_latitude;
     AP_Int32 ekf_origin_longitude;
     AP_Int32 ekf_origin_alt;
+
+    AP_Float group_search_dist;
 };

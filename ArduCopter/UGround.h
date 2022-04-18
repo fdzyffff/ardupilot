@@ -38,6 +38,7 @@ public:
     void set_up_dest(float lat_in, float lng_in);
     void refresh_dest();
     void set_up_alt(float target_alt);
+    void set_up_search_dist(float search_dist);
     void clean_follow();
 
     int16_t get_state_num();
@@ -60,6 +61,7 @@ public:
     bool do_lockon();  // lock on target
     bool do_attack();  // attack
     bool do_fs1();     // failsafe type1
+    bool do_pause();   // brake
 
 
     int16_t _group_id;
