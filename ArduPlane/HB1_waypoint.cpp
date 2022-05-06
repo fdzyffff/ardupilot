@@ -55,7 +55,7 @@ void Plane::HB1_msg_mission2apm_set_wp_handle() {
     uint16_t line_index = tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.line_index;
     uint16_t point_index = tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.point_index;  
 
-    line_index = MIN(0xFF,line_index);
+    line_index = MIN(0xFF,line_index);// now for control_id
     point_index = MIN(0xFF,point_index);
     tmp_cmd.p1 = (line_index << 8) | (point_index & 0x00FF);
 
@@ -70,7 +70,7 @@ void Plane::HB1_msg_mission2apm_set_wp_handle() {
     }
     if (plane.mission.add_cmd(tmp_cmd)) {
         g2.hb1_num_wp.set_and_save(g2.hb1_num_wp.get()+1);
-        gcs().send_text(MAV_SEVERITY_INFO, "WP (%d / %d) saved", g2.hb1_num_wp.get(), plane.mission.num_commands());
+        gcs().send_text(MAV_SEVERITY_INFO, "[%d] WP (%d / %d) saved", line_index, g2.hb1_num_wp.get(), plane.mission.num_commands());
         HB1_lastWP_cmd = tmp_cmd;
     }
 }
@@ -82,7 +82,7 @@ void Plane::HB1_msg_mission2apm_set_interim_handle() {
     uint16_t line_index = tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.line_index;
     uint16_t point_index = tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.point_index;  
 
-    line_index = MIN(0xFF,line_index);
+    line_index = MIN(0xFF,line_index);// now for control_id
     point_index = MIN(0xFF,point_index);
 
     if (point_index < 1) { return; }
@@ -169,7 +169,7 @@ void Plane::HB1_msg_mission2apm_set_attack_handle() {
     uint16_t line_index = tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.line_index;
     uint16_t point_index = tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.point_index;  
 
-    line_index = MIN(0xFF,line_index);
+    line_index = MIN(0xFF,line_index);// empty
     point_index = MIN(0xFF,point_index);
     HB1_attack_cmd.p1 = (line_index << 8) | (point_index & 0x00FF);
 
@@ -204,10 +204,11 @@ void Plane::HB1_msg_mission2apm_Search_wp_pack() {
         HB1_msg_mission2apm_Search_wp_pack_next();
         return;
     }
-    if (HIGHBYTE(tmp_cmd.p1) == HB1_Status.search_line_index) {
+    // if (HIGHBYTE(tmp_cmd.p1) == HB1_Status.search_line_index) {
+    if (HB1_Status.search_line_index == 1) {
         HB1_apm2mission &new_msg = HB1_uart_mission.get_msg_apm2mission();
         new_msg._msg_1.content.msg.remote_index = HB1_Status.remote_index;
-        new_msg._msg_1.content.msg.line_index = HIGHBYTE(tmp_cmd.p1);
+        new_msg._msg_1.content.msg.line_index = 1;// HIGHBYTE(tmp_cmd.p1);
         new_msg._msg_1.content.msg.point_index = LOWBYTE(tmp_cmd.p1);
         new_msg._msg_1.content.msg.longitude = (int32_t)((double)tmp_cmd.content.location.lng * new_msg.SF_LL);
         new_msg._msg_1.content.msg.latitude = (int32_t)((double)tmp_cmd.content.location.lat * new_msg.SF_LL);
