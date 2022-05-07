@@ -195,7 +195,7 @@ void Plane::HB1_msg_mission2apm_Search_wp_handle() {
 void Plane::HB1_msg_mission2apm_Search_wp_pack() {
     if (!HB1_Status.search_wp) {return;}
     uint32_t tnow = millis();
-    if (tnow - HB1_Status.search_ms > 200) {
+    if (tnow - HB1_Status.search_ms >= 500) {
         HB1_msg_mission2apm_Search_wp_pack_next();
         return;
     }
