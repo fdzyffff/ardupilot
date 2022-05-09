@@ -227,7 +227,7 @@ void Plane::HB1_msg_mission2apm_Search_wp_pack_next() {
     HB1_Status.search_ms = tnow;
     gcs().send_text(MAV_SEVERITY_INFO, "sent waypoint %d ", HB1_Status.search_id);
     HB1_Status.search_id++;
-    if (HB1_Status.search_id > g2.hb1_num_wp.get()) {
+    if (HB1_Status.search_id > g2.hb1_num_wp.get() + g2.hb1_num_interim.get() + g2.hb1_num_attack.get()) {
         HB1_Status.search_wp = false;
     }
     // gcs().send_text(MAV_SEVERITY_INFO, "can not find waypoint %d ", target_wp_id);
