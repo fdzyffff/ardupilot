@@ -209,7 +209,7 @@ void Plane::HB1_msg_mission2apm_Search_wp_pack() {
         HB1_apm2mission &new_msg = HB1_uart_mission.get_msg_apm2mission();
         new_msg._msg_1.content.msg.remote_index = HB1_Status.remote_index;
         new_msg._msg_1.content.msg.line_index = 1;// HIGHBYTE(tmp_cmd.p1);
-        new_msg._msg_1.content.msg.point_index = LOWBYTE(tmp_cmd.p1);
+        new_msg._msg_1.content.msg.point_index = HB1_Status.search_id;//LOWBYTE(tmp_cmd.p1);
         new_msg._msg_1.content.msg.longitude = (int32_t)((double)tmp_cmd.content.location.lng * new_msg.SF_LL);
         new_msg._msg_1.content.msg.latitude = (int32_t)((double)tmp_cmd.content.location.lat * new_msg.SF_LL);
         int32_t alt_target = 0;
