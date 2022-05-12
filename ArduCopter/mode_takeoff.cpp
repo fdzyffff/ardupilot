@@ -24,17 +24,17 @@ bool ModeTakeoff::init(bool ignore_checks)
 // should be called at 100hz or more
 void ModeTakeoff::run()
 {
-    if (_stage == 1 ) {
-        if ( (copter.rangefinder_alt_ok() && copter.rangefinder_state.alt_cm > 50.0f)
-           ||(!copter.rangefinder_alt_ok() && copter.inertial_nav.get_altitude() > MAX(100.f, copter.g2.user_parameters.gcs_target_alt.get())) ) {
-            const Vector3f& tmp_target = wp_nav->get_wp_destination();
-            Vector3f target = Vector3f(tmp_target.x, tmp_target.y, copter.g2.user_parameters.gcs_target_alt.get());
-            if (copter.mode_guided.set_destination(target)) {
-                _stage = 2;
-                copter.gcs().send_text(MAV_SEVERITY_WARNING, "takeoff stage 2");
-            }
-        }
-    }
+    // if (_stage == 1 ) {
+    //     if ( (copter.rangefinder_alt_ok() && copter.rangefinder_state.alt_cm > 50.0f)
+    //        ||(!copter.rangefinder_alt_ok() && copter.inertial_nav.get_altitude() > MAX(100.f, copter.g2.user_parameters.gcs_target_alt.get())) ) {
+    //         const Vector3f& tmp_target = wp_nav->get_wp_destination();
+    //         Vector3f target = Vector3f(tmp_target.x, tmp_target.y, copter.g2.user_parameters.gcs_target_alt.get());
+    //         if (copter.mode_guided.set_destination(target)) {
+    //             _stage = 2;
+    //             copter.gcs().send_text(MAV_SEVERITY_WARNING, "takeoff stage 2");
+    //         }
+    //     }
+    // }
     copter.mode_guided.run();
 }
 

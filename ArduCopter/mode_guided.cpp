@@ -198,6 +198,7 @@ bool ModeGuided::set_destination(const Vector3f& destination, bool use_yaw, floa
 
     // no need to check return status because terrain data is not used
     if (!wp_nav->set_wp_destination(destination, true)) {
+        copter.gcs().send_text(MAV_SEVERITY_WARNING, "Dest : %f", destination.z);
         wp_nav->set_wp_destination(destination, false);
     }
 

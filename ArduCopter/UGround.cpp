@@ -161,7 +161,10 @@ void UGround::set_up_dest(float lat_in, float lng_in) {
     tmp_location.alt = (int16_t)copter.g2.user_parameters.gcs_target_alt.get();
     tmp_location.relative_alt = 1; 
     Vector2f res_vec;
-    if (!tmp_location.get_vector_xy_from_origin_NE(res_vec)) {return;}
+    if (!tmp_location.get_vector_xy_from_origin_NE(res_vec)) {
+        copter.gcs().send_text(MAV_SEVERITY_WARNING, "Failed setup dest");
+        return;
+    }
     Vector3f target_postion = Vector3f(res_vec.x, res_vec.y, copter.g2.user_parameters.gcs_target_alt.get());
     Vector3f new_raw_dest_loc_vec = target_postion;
     if (norm(new_raw_dest_loc_vec.x - _raw_dest_loc_vec.x, new_raw_dest_loc_vec.y - _raw_dest_loc_vec.y) > 200.f) {
