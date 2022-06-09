@@ -448,6 +448,7 @@ void Mode::auto_takeoff_run()
     //     wp_nav->set_wp_destination(target, false);
     // }
     // call z-axis position controller (wpnav should have already updated it's alt target)
+    copter.attitude_control->set_thr_slew(true, 400);
     copter.pos_control->update_z_controller();
 
     // call attitude controller

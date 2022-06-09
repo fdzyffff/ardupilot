@@ -38,7 +38,6 @@
  # define AC_ATC_MULTI_RATE_YAW_FILT_HZ     2.5f
 #endif
 
-
 class AC_AttitudeControl_Multi : public AC_AttitudeControl {
 public:
 	AC_AttitudeControl_Multi(AP_AHRS_View &ahrs, const AP_Vehicle::MultiCopter &aparm, AP_MotorsMulticopter& motors, float dt);
@@ -81,6 +80,10 @@ public:
     // user settable parameters
     static const struct AP_Param::GroupInfo var_info[];
 
+    // add at 2020-06-03
+    void set_thr_slew(bool b, uint16_t loop_rate = 400) {_thr_slew = b; _loop_rate = loop_rate;}
+
+
 protected:
 
     // update_throttle_rpy_mix - updates thr_low_comp value towards the target
@@ -97,4 +100,10 @@ protected:
     AP_Float              _thr_mix_man;     // throttle vs attitude control prioritisation used when using manual throttle (higher values mean we prioritise attitude control over throttle)
     AP_Float              _thr_mix_min;     // throttle vs attitude control prioritisation used when landing (higher values mean we prioritise attitude control over throttle)
     AP_Float              _thr_mix_max;     // throttle vs attitude control prioritisation used during active flight (higher values mean we prioritise attitude control over throttle)
+
+    // add at 2020-06-03
+    AP_Float             _slew_up_time;     // throttle increase slew limitting
+    AP_Float             _slew_dn_time;     // throttle decrease slew limitting
+    bool                 _thr_slew;
+    uint16_t             _loop_rate;        // rate in Hz at which output() function is called (normally 400hz)
 };

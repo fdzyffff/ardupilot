@@ -62,6 +62,7 @@ public:
     bool do_attack();  // attack
     bool do_fs1();     // failsafe type1
     bool do_pause();   // brake
+    bool do_arm();     // arm
 
 
     int16_t _group_id;

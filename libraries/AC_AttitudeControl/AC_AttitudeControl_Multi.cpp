@@ -211,6 +211,24 @@ const AP_Param::GroupInfo AC_AttitudeControl_Multi::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("THR_MIX_MAN", 6, AC_AttitudeControl_Multi, _thr_mix_man, AC_ATTITUDE_CONTROL_MAN_DEFAULT),
 
+    // @Param: SLEW_UP_TIME
+    // @DisplayName: Output slew time for increasing throttle
+    // @Description: Time in seconds to slew output from zero to full. This is used to limit the rate at which output can change. Range is constrained between 0 and 0.5.
+    // @Range: 0 .5
+    // @Units: s
+    // @Increment: 0.001
+    // @User: Advanced
+    AP_GROUPINFO("SLEW_UP_TIME", 7, AC_AttitudeControl_Multi, _slew_up_time, 0.0f),
+
+    // @Param: SLEW_DN_TIME
+    // @DisplayName: Output slew time for decreasing throttle
+    // @Description: Time in seconds to slew output from full to zero. This is used to limit the rate at which output can change.  Range is constrained between 0 and 0.5.
+    // @Range: 0 .5
+    // @Units: s
+    // @Increment: 0.001
+    // @User: Advanced
+    AP_GROUPINFO("SLEW_DN_TIME", 8, AC_AttitudeControl_Multi, _slew_dn_time, 0.0f),
+
     // @Param: RAT_RLL_FILT
     // @DisplayName: Roll axis rate controller input frequency in Hz
     // @Description: Roll axis rate controller input frequency in Hz
@@ -235,6 +253,8 @@ const AP_Param::GroupInfo AC_AttitudeControl_Multi::var_info[] = {
     // @Units: Hz
     // @User: Standard
 
+
+
     AP_GROUPEND
 };
 
@@ -246,6 +266,8 @@ AC_AttitudeControl_Multi::AC_AttitudeControl_Multi(AP_AHRS_View &ahrs, const AP_
     _pid_rate_yaw(AC_ATC_MULTI_RATE_YAW_P, AC_ATC_MULTI_RATE_YAW_I, AC_ATC_MULTI_RATE_YAW_D, 0.0f, AC_ATC_MULTI_RATE_YAW_IMAX, AC_ATC_MULTI_RATE_RP_FILT_HZ, AC_ATC_MULTI_RATE_YAW_FILT_HZ, 0.0f, dt)
 {
     AP_Param::setup_object_defaults(this, var_info);
+    _thr_slew = false;
+    _loop_rate = 400;
 }
 
 // Update Alt_Hold angle maximum
@@ -266,6 +288,39 @@ void AC_AttitudeControl_Multi::update_althold_lean_angle_max(float throttle_in)
 
 void AC_AttitudeControl_Multi::set_throttle_out(float throttle_in, bool apply_angle_boost, float filter_cutoff)
 {
+
+    static float last_throttle_in = 0.0f;
+    if (_thr_slew) {
+        /*
+        If MOT_SLEW_UP_TIME is 0 (default), no slew limit is applied to increasing output.
+        If MOT_SLEW_DN_TIME is 0 (default), no slew limit is applied to decreasing output.
+        MOT_SLEW_UP_TIME and MOT_SLEW_DN_TIME are constrained to 0.0~0.5 for sanity.
+        If spool mode is shutdown, no slew limit is applied to allow immediate disarming of motors.
+        */
+
+        // Output limits with no slew time applied
+        float output_slew_limit_up = 1.0f;
+        float output_slew_limit_dn = 0.0f;
+
+        // If MOT_SLEW_UP_TIME is set, calculate the highest allowed new output value, constrained 0.0~1.0
+        if (is_positive(_slew_up_time)) {
+            float output_delta_up_max = 1.0f / (constrain_float(_slew_up_time, 0.0f, 50.0f) * _loop_rate);
+            output_slew_limit_up = constrain_float(last_throttle_in + output_delta_up_max, 0.0f, 1.0f);
+        }
+
+        // If MOT_SLEW_DN_TIME is set, calculate the lowest allowed new output value, constrained 0.0~1.0
+        if (is_positive(_slew_dn_time)) {
+            float output_delta_dn_max = 1.0f / (constrain_float(_slew_dn_time, 0.0f, 50.0f) * _loop_rate);
+            output_slew_limit_dn = constrain_float(last_throttle_in - output_delta_dn_max, 0.0f, 1.0f);
+        }
+
+        // Constrain change in output to within the above limits
+        throttle_in = constrain_float(throttle_in, output_slew_limit_dn, output_slew_limit_up);
+        // reset the _thr_slew flag for safety reason
+        _thr_slew = false;
+    }
+    last_throttle_in = throttle_in;
+
     _throttle_in = throttle_in;
     update_althold_lean_angle_max(throttle_in);
     _motors.set_throttle_filter_cutoff(filter_cutoff);

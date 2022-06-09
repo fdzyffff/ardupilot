@@ -516,14 +516,15 @@ void NavEKF2_core::readGpsData()
                 gpsSpdAccuracy = MAX(gpsSpdAccuracy,frontend->_gpsHorizVelNoise);
             }
             gpsPosAccuracy *= (1.0f - alpha);
-            float gpsPosAccRaw;
-            if (!gps.horizontal_accuracy(gpsPosAccRaw)) {
+    // my modification
+            // float gpsPosAccRaw;
+            // if (!gps.horizontal_accuracy(gpsPosAccRaw)) {
                 gpsPosAccuracy = 0.0f;
-            } else {
-                gpsPosAccuracy = MAX(gpsPosAccuracy,gpsPosAccRaw);
-                gpsPosAccuracy = MIN(gpsPosAccuracy,100.0f);
-                gpsPosAccuracy = MAX(gpsPosAccuracy, frontend->_gpsHorizPosNoise);
-            }
+            // } else {
+            //     gpsPosAccuracy = MAX(gpsPosAccuracy,gpsPosAccRaw);
+            //     gpsPosAccuracy = MIN(gpsPosAccuracy,100.0f);
+            //     gpsPosAccuracy = MAX(gpsPosAccuracy, frontend->_gpsHorizPosNoise);
+            // }
             gpsHgtAccuracy *= (1.0f - alpha);
             float gpsHgtAccRaw;
             if (!gps.vertical_accuracy(gpsHgtAccRaw)) {

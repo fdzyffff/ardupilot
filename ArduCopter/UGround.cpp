@@ -116,6 +116,13 @@ void UGround::do_cmd(int16_t cmd) {
             copter.Ucam.do_cmd(0.0f);
             copter.gcs().send_text(MAV_SEVERITY_WARNING, "CAM OFF");
             break;
+        case 12:
+            copter.Ucam.do_cmd(10.0f);
+            copter.gcs().send_text(MAV_SEVERITY_WARNING, "Plot get");
+            break;
+        case 254:
+            do_arm();
+            break;
         case 255:
             copter.arming.disarm();
             break;
@@ -151,6 +158,8 @@ void UGround::refresh_dest() {
     _dest_loc_vec = _raw_dest_loc_vec+offset_position;
     _dest_loc_vec.z = (float)copter.g2.user_parameters.gcs_target_alt.get();
 
+    gcs().send_text(MAV_SEVERITY_WARNING, "[x,y,z]: [%f,%f,%f]", _dest_loc_vec.x,_dest_loc_vec.y,_dest_loc_vec.z);
+
     dest_pos_update(true);
 }
 
@@ -160,6 +169,11 @@ void UGround::set_up_dest(float lat_in, float lng_in) {
     tmp_location.lng = (int32_t)(lng_in*1.0e7f);
     tmp_location.alt = (int16_t)copter.g2.user_parameters.gcs_target_alt.get();
     tmp_location.relative_alt = 1; 
+
+    gcs().send_text(MAV_SEVERITY_WARNING, "lng: %d", tmp_location.lng);
+    gcs().send_text(MAV_SEVERITY_WARNING, "lat: %d", tmp_location.lat);
+    gcs().send_text(MAV_SEVERITY_WARNING, "alt: %d", tmp_location.alt);
+
     Vector2f res_vec;
     if (!tmp_location.get_vector_xy_from_origin_NE(res_vec)) {
         copter.gcs().send_text(MAV_SEVERITY_WARNING, "Failed setup dest");
@@ -353,11 +367,27 @@ float UGround::get_lockon_yaw_rate(float yaw_middle_cd) {
     return angle_rate;
 }
 
+bool UGround::do_arm()
+{
+    if (copter.motors->armed()) {
+        return true;
+    }
+
+    copter.set_mode(Mode::Number::GUIDED, ModeReason::GCS_COMMAND);
+    if (copter.arming.arm(AP_Arming::Method::MAVLINK)) {
+        return true;
+    }
+    return false;
+}
+
 bool UGround::do_takeoff() // takeoff
 {
-    copter.set_mode(Mode::Number::TAKEOFF, ModeReason::GCS_COMMAND);
-    if (copter.arming.arm(AP_Arming::Method::MAVLINK)) {
-        return copter.mode_guided.do_user_takeoff(constrain_float(copter.g.pilot_takeoff_alt,100.0f,500.0f),true);
+    if (!copter.motors->armed()) {
+        return do_arm();
+    }
+
+    if (copter.set_mode(Mode::Number::TAKEOFF, ModeReason::GCS_COMMAND)) {
+        return copter.mode_guided.do_user_takeoff(constrain_float(copter.g.pilot_takeoff_alt,100.0f,1500.0f),true);
     }
     return false;
 }
@@ -438,8 +468,8 @@ void Copter::Ugcs_handle_msg(const mavlink_message_t &msg) {
         _target_location.alt = packet.relative_alt / 10;  // convert millimeters to cm
         _target_location.relative_alt = 1;                // set relative_alt flag
 
-        _target_velocity_neu.x = packet.vx; // velocity north
-        _target_velocity_neu.y = packet.vy; // velocity east
+        _target_velocity_neu.x = 0.0f;//packet.vx; // velocity north
+        _target_velocity_neu.y = 0.0f;//packet.vy; // velocity east
         _target_velocity_neu.z = 0.0f;//packet.vz * 0.01f; // velocity down
 
         if (packet.hdg <= 36000) {                  // heading (UINT16_MAX if unknown)

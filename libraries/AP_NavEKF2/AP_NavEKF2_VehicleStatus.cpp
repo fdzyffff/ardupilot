@@ -272,6 +272,8 @@ void NavEKF2_core::calcGpsGoodForFlight(void)
     if (!AP::gps().speed_accuracy(gpsSpdAccRaw)) {
         gpsSpdAccRaw = 0.0f;
     }
+    // my modification
+    gpsSpdAccRaw = 0.0f;
 
     // filter the raw speed accuracy using a LPF
     sAccFilterState1 = constrain_float((alpha1 * gpsSpdAccRaw + (1.0f - alpha1) * sAccFilterState1),0.0f,10.0f);

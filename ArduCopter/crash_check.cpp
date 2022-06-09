@@ -76,6 +76,7 @@ void Copter::thrust_loss_check()
 {
     static uint16_t thrust_loss_counter;  // number of iterations vehicle may have been crashed
 
+    return;
     // exit immediately if thrust boost is already engaged
     if (motors->get_thrust_boost()) {
         return;
