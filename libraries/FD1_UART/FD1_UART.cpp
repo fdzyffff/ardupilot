@@ -24,6 +24,7 @@ void FD1_UART::read(void)
     while (_port->available() > 0) {
         uint8_t temp = _port->read();
         if (_msg_ep4_in.enable())   {_msg_ep4_in.parse(temp);}
+        if (_msg_ts_in.enable())    {_msg_ts_in.parse(temp);}
     }
 }
 
@@ -41,6 +42,7 @@ void FD1_UART::write(void)
         }
         //_msg_ep4_in._msg_1.updated = false;
         _msg_ep4_in._msg_1.need_send = false;
+        _msg_ep4_in.swap_message();
     }
     if (_msg_ep4_out._msg_1.need_send)
     {
@@ -50,5 +52,36 @@ void FD1_UART::write(void)
         }
         //_msg_ep4_out._msg_1.updated = false;
         _msg_ep4_out._msg_1.need_send = false;
+        _msg_ep4_out.swap_message();
+    }
+    if (_msg_ts_in._msg_1.need_send)
+    {
+        _msg_ts_in.swap_message();
+        for(i = 0;i <= _msg_ts_in._msg_1.length+2 ; i ++) {
+            _port->write(_msg_ts_in._msg_1.content.data[i]);
+        }
+        //_msg_ts_in._msg_1.updated = false;
+        _msg_ts_in._msg_1.need_send = false;
+        _msg_ts_in.swap_message();
+    }
+    if (_msg_ts_out._msg_1.need_send)
+    {
+        _msg_ts_out.swap_message();
+        for(i = 0;i <= _msg_ts_out._msg_1.length+2 ; i ++) {
+            _port->write(_msg_ts_out._msg_1.content.data[i]);
+        }
+        //_msg_ts_out._msg_1.updated = false;
+        _msg_ts_out._msg_1.need_send = false;
+        _msg_ts_out.swap_message();
+    }
+    if (_msg_ts_route._msg_1.need_send)
+    {
+        _msg_ts_route.swap_message();
+        for(i = 0;i <= _msg_ts_route._msg_1.length+2 ; i ++) {
+            _port->write(_msg_ts_route._msg_1.content.data[i]);
+        }
+        //_msg_ts_route._msg_1.updated = false;
+        _msg_ts_route._msg_1.need_send = false;
+        _msg_ts_route.swap_message();
     }
 }

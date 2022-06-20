@@ -91,5 +91,5 @@ void FD1_msg_ep4_in::swap_message(void)
     swap_message_sub(_msg_1.content.data[29-1], _msg_1.content.data[30-1]);
     swap_message_sub(_msg_1.content.data[31-1], _msg_1.content.data[32-1],_msg_1.content.data[33-1], _msg_1.content.data[34-1]);
     swap_message_sub(_msg_1.content.data[35-1], _msg_1.content.data[36-1],_msg_1.content.data[37-1], _msg_1.content.data[38-1]);
-    swap_message_sub(_msg_1.content.data[39], _msg_1.content.data[40]);
+    swap_message_sub(_msg_1.content.data[39-1], _msg_1.content.data[40-1]);
 }

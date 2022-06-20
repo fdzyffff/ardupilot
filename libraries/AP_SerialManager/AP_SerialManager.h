@@ -153,6 +153,8 @@ public:
         SerialProtocol_SmartAudio = 37,
         SerialProtocol_EP4 = 38,
         SerialProtocol_EP4_OUT = 39,
+        SerialProtocol_TS = 40,
+        SerialProtocol_MISSION = 41,
         SerialProtocol_NumProtocols                    // must be the last value
     };
 

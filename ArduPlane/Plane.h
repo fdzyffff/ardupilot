@@ -1150,23 +1150,37 @@ private:
     float pitch_in_expo(bool use_dz) const;
     float rudder_in_expo(bool use_dz) const;
 
-    // User customization for ep4 and outher functions
+    // User customization for ep4
     FD1_UART FD1_uart_msg_ep4{AP_SerialManager::SerialProtocol_EP4};
     FD1_UART FD1_uart_msg_ep4_route{AP_SerialManager::SerialProtocol_EP4_OUT};
     void FD1_uart_init();
     void FD1_uart_update();
+    void FD1_uart_ep4_init();
+    void FD1_uart_ep4_update();
     void FD1_uart_ep4_handle_and_route();
     void FD1_uart_ep4_send();
     void send_ep4_ecu(mavlink_channel_t chan);
     void send_esc_telemetry_mavlink_fake(mavlink_channel_t chan);
     struct {
-        bool gcs_new;
+        //bool gcs_new;
         uint32_t last_update_ms;
     } ep4_state;
 
     void test_EP4_uart(uint8_t msg_id, uint8_t option);
     void test_EP4_in(uint8_t option);
     void test_EP4_out(uint8_t option);
+
+    // User costomization for TS cam
+    FD1_UART FD1_uart_msg_ts{AP_SerialManager::SerialProtocol_TS};
+    FD1_UART FD1_uart_msg_mission{AP_SerialManager::SerialProtocol_MISSION};
+
+    void FD1_uart_ts_init();
+    void FD1_uart_ts_update();
+    void FD1_uart_ts_send();
+    void FD1_uart_mission_handle_and_route();
+    void FD1_uart_ts_handle_and_route();
+    void get_Time(uint8_t &year_out, uint8_t &month_out, uint8_t &day_out, uint8_t &hour_out, uint8_t &minute_out, uint8_t &second_out);
+    void FD1_uart_ts_AHRS_test();
 
 public:
     void failsafe_check(void);

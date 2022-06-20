@@ -2160,6 +2160,12 @@ void QuadPlane::update(void)
         }
     }
 
+    if(AP::compass().enabled()) {
+        // update compass with throttle value - used for compassmot
+        plane.compass.set_throttle(motors->get_throttle());
+        //compass.set_voltage(battery.voltage());
+    }
+
 }
 
 /*

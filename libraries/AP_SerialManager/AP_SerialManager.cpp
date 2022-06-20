@@ -535,6 +535,8 @@ void AP_SerialManager::init()
 #endif
                 case SerialProtocol_EP4:
                 case SerialProtocol_EP4_OUT:
+                case SerialProtocol_TS:
+                case SerialProtocol_MISSION:
                     uart->begin(map_baudrate(state[i].baud), 
                                          128,
                                          256);
