@@ -172,8 +172,9 @@ void Plane::HB1_status_set_HB_Mission_Action(HB1_Mission_t action, bool Force_se
             break;
         case HB1_Mission_Hover :
             set_mode(mode_loiter, MODE_REASON_UNAVAILABLE);
-            next_WP_loc = HB1_lastWP_cmd.content.location;
-            next_WP_loc.alt = plane.current_loc.alt;
+            next_WP_loc.lat = HB1_lastWP_cmd.content.location.lat;
+            next_WP_loc.lng = HB1_lastWP_cmd.content.location.lng;
+            // next_WP_loc.alt = plane.current_loc.alt;
             HB1_Status.state = action;
             break;
         case HB1_Mission_Hover2 :

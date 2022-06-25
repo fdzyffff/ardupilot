@@ -239,6 +239,7 @@ void Plane::HB1_msg_mission2apm_away_handle(HB1_mission2apm &tmp_msg) {
     uint16_t target_wp_index = tmp_msg._msg_1.content.msg.leader_target_id;
 
     if (target_wp_index < mission.num_commands()) {
+        if (target_wp_index > g2.hb1_num_wp) {target_wp_index = g2.hb1_num_wp;}
         HB1_status_set_HB_Mission_Action(HB1_Mission_WP);
         gcs().send_text(MAV_SEVERITY_INFO, "Away received (#%d)", target_wp_index);
         auto_state.next_wp_crosstrack = false;
