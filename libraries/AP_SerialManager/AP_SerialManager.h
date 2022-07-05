@@ -169,6 +169,8 @@ public:
         SerialProtocol_AIS = 40,
         SerialProtocol_CoDevESC = 41,
         SerialProtocol_MSP_DisplayPort = 42,
+        SerialProtocol_Payload = 43,
+        SerialProtocol_Cam = 44,
         SerialProtocol_NumProtocols                    // must be the last value
     };
 

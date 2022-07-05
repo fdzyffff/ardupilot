@@ -64,6 +64,66 @@ void Copter::Log_Write_Control_Tuning()
     logger.WriteBlock(&pkt, sizeof(pkt));
 }
 
+
+// Mocap
+struct PACKED log_Mocap {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    float raw_x;
+    float raw_y;
+    float raw_z;
+};
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Mocap
+void Copter::Ugcs_Log_Write_Mocap()
+{
+    struct log_Mocap pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_MOCAP_MSG),
+        time_us     : AP_HAL::micros64(),
+        raw_x       : mocap_stat.x,
+        raw_y       : mocap_stat.y,
+        raw_z       : mocap_stat.z
+    };
+    logger.WriteBlock(&pkt, sizeof(pkt));
+}
+
+
+// UCamTarget logging
+struct PACKED log_UCamTarget {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    uint8_t target_valid;
+    float target_raw_x;
+    float target_raw_y;
+    float target_corr_x;
+    float target_corr_y;
+    float target_roll_angle;
+    float target_pitch_rate;
+    float target_yaw_rate;
+    float target_track_angle;
+};
+
+// Write a UCamTarget
+void Copter::Ugcs_Log_Write_UCamTarget()
+{
+    struct log_UCamTarget pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_UCAMTARGET_MSG),
+        time_us            : AP_HAL::micros64(),
+        target_valid       : (uint8_t)Ucam.is_active(),
+        target_raw_x       : Ucam.get_raw_info().x,
+        target_raw_y       : Ucam.get_raw_info().y,
+        target_corr_x      : Ucam.get_correct_info().x,
+        target_corr_y      : Ucam.get_correct_info().y,
+        target_roll_angle  : Ucam.get_target_roll_angle()*0.01f,
+        target_pitch_rate  : Ucam.get_target_pitch_rate()*0.01f,
+        target_yaw_rate    : Ucam.get_target_yaw_rate()*0.01f,
+        target_track_angle : Ucam.get_current_angle_deg()
+    };
+    logger.WriteBlock(&pkt, sizeof(pkt));
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 // Write an attitude packet
 void Copter::Log_Write_Attitude()
 {
@@ -562,6 +622,12 @@ const struct LogStructure Copter::log_structure[] = {
 
     { LOG_GUIDED_ATTITUDE_TARGET_MSG, sizeof(log_Guided_Attitude_Target),
       "GUIA",  "QBffffffff",    "TimeUS,Type,Roll,Pitch,Yaw,RollRt,PitchRt,YawRt,Thrust,ClimbRt", "s-dddkkk-n", "F-000000-0" , true },
+
+
+    { LOG_UCAMTARGET_MSG, sizeof(log_UCamTarget),
+      "UCAM",  "QBffffffff", "TimeUS,AON,FrawX,FrawY,FcorrX,FcorrY,Rangle,Prate,Yrate,Track", "s---------", "F---------" },
+    { LOG_MOCAP_MSG, sizeof(log_Mocap),
+      "MOCP",  "Qfff", "TimeUS,x,y,z", "s---", "F---" },
 };
 
 void Copter::Log_Write_Vehicle_Startup_Messages()
