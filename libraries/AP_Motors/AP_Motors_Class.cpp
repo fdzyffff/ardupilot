@@ -17,6 +17,7 @@
 #include <AP_HAL/AP_HAL.h>
 #include <SRV_Channel/SRV_Channel.h>
 #include <GCS_MAVLink/GCS.h>
+#include <AP_Notify/AP_Notify.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -124,6 +125,7 @@ void AP_Motors::rc_set_freq(uint32_t motor_mask, uint16_t freq_hz)
 
     const uint32_t mask = motor_mask_to_srv_channel_mask(motor_mask);
     hal.rcout->set_freq(mask, freq_hz);
+    hal.rcout->set_dshot_esc_type(SRV_Channels::get_dshot_esc_type());
 
     switch (pwm_type(_pwm_type.get())) {
     case PWM_TYPE_ONESHOT:
@@ -199,7 +201,7 @@ void AP_Motors::add_motor_num(int8_t motor_num)
         SRV_Channel::Aux_servo_function_t function = SRV_Channels::get_motor_function(motor_num);
         SRV_Channels::set_aux_channel_default(function, motor_num);
         if (!SRV_Channels::find_channel(function, chan)) {
-            gcs().send_text(MAV_SEVERITY_ERROR, "Motors: unable to setup motor %u", motor_num);
+            gcs().send_text(MAV_SEVERITY_ERROR, "Motors: no SERVOx_FUNCTION set to Motor%u", motor_num + 1);
         }
     }
 }

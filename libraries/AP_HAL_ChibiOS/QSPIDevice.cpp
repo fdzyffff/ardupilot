@@ -17,6 +17,7 @@
  *         Siddharth Bharat Purohit, Cubepilot Pty. Ltd.
  */
 
+#include <hal.h>
 #include "QSPIDevice.h"
 
 #include <AP_HAL/AP_HAL.h>
@@ -26,7 +27,6 @@
 #include "Util.h"
 #include "Scheduler.h"
 #include <stdio.h>
-#include "hwdef/common/stm32_util.h"
 
 #if HAL_USE_WSPI == TRUE && defined(HAL_QSPI_DEVICE_LIST)
 

@@ -36,7 +36,7 @@ const AP_Param::GroupInfo AP_L1_Control::var_info[] = {
     // @Units: deg
     // @Range: 0 89
     // @User: Advanced
-    AP_GROUPINFO_FRAME("LIM_BANK",   3, AP_L1_Control, _loiter_bank_limit, 0.0f, AP_PARAM_FRAME_PLANE),
+    AP_GROUPINFO("LIM_BANK",   3, AP_L1_Control, _loiter_bank_limit, 0.0f),
 
     AP_GROUPEND
 };
@@ -313,7 +313,7 @@ void AP_L1_Control::update_waypoint(const struct Location &prev_WP, const struct
         Nu1 += _L1_xtrack_i;
 
         Nu = Nu1 + Nu2;
-        _nav_bearing = atan2f(AB.y, AB.x) + Nu1; // bearing (radians) from AC to L1 point
+        _nav_bearing = wrap_PI(atan2f(AB.y, AB.x) + Nu1);   // bearing (radians) from AC to L1 point
     }
 
     _prevent_indecision(Nu);

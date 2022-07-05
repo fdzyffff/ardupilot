@@ -25,7 +25,6 @@
 #include "AP_SLCANIface.h"
 #include "AP_CANDriver.h"
 #include <GCS_MAVLink/GCS.h>
-//#include <GCS_MAVLink/GCS_MAVLink.h>
 
 class AP_CANManager
 {
@@ -56,7 +55,7 @@ public:
         Driver_Type_None = 0,
         Driver_Type_UAVCAN = 1,
         // 2 was KDECAN -- do not re-use
-        Driver_Type_ToshibaCAN = 3,
+        // 3 was ToshibaCAN -- do not re-use
         Driver_Type_PiccoloCAN = 4,
         Driver_Type_CANTester = 5,
         Driver_Type_EFI_NWPMU = 6,
@@ -65,6 +64,7 @@ public:
         // 9 was Driver_Type_MPPT_PacketDigital
         Driver_Type_Scripting = 10,
         Driver_Type_Benewake = 11,
+        Driver_Type_Scripting2 = 12,
     };
 
     void init(void);
@@ -112,6 +112,7 @@ public:
 #if HAL_GCS_ENABLED
     bool handle_can_forward(mavlink_channel_t chan, const mavlink_command_long_t &packet, const mavlink_message_t &msg);
     void handle_can_frame(const mavlink_message_t &msg) const;
+    void handle_can_filter_modify(const mavlink_message_t &msg);
 #endif
 
 private:
@@ -132,6 +133,7 @@ private:
     private:
         AP_Int8 _driver_number;
         AP_Int32 _bitrate;
+        AP_Int32 _fdbitrate;
     };
 
     //Parameter Interface for CANDrivers
@@ -180,6 +182,11 @@ private:
         mavlink_channel_t chan;
         uint8_t system_id;
         uint8_t component_id;
+        uint8_t frame_counter;
+        uint32_t last_callback_enable_ms;
+        HAL_Semaphore sem;
+        uint16_t num_filter_ids;
+        uint16_t *filter_ids;
     } can_forward;
 #endif // HAL_GCS_ENABLED
 };

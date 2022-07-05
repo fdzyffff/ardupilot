@@ -52,7 +52,10 @@ public:
     void init(motor_frame_class frame_class, motor_frame_type frame_type) override;
 
     // set frame class (i.e. quad, hexa, heli) and type (i.e. x, plus)
-    void set_frame_class_and_type(motor_frame_class frame_class, motor_frame_type frame_type) override;
+    void set_frame_class_and_type(motor_frame_class frame_class, motor_frame_type frame_type) override {
+        _frame_class = frame_class;
+        _frame_type = frame_type;
+    }
 
     // set update rate to motors - a value in hertz
     virtual void set_update_rate( uint16_t speed_hz ) override = 0;
@@ -66,6 +69,9 @@ public:
 
     // parameter_check - returns true if helicopter specific parameters are sensible, used for pre-arm check
     virtual bool parameter_check(bool display_msg) const;
+	
+    //set turbine start flag on to initiaize starting sequence
+    void set_turb_start(bool turb_start) { _heliflags.start_engine = turb_start; }
 
     // has_flybar - returns true if we have a mechical flybar
     virtual bool has_flybar() const { return AP_MOTORS_HELI_NOFLYBAR; }
@@ -105,7 +111,7 @@ public:
 
     // get_motor_mask - returns a bitmask of which outputs are being used for motors or servos (1 means being used)
     //  this can be used to ensure other pwm outputs (i.e. for servos) do not conflict
-    virtual uint16_t get_motor_mask() override = 0;
+    virtual uint32_t get_motor_mask() override = 0;
 
     virtual void set_acro_tail(bool set) {}
 
@@ -195,7 +201,8 @@ protected:
     // reset_swash_servo - free up swash servo for maximum movement
     void reset_swash_servo(SRV_Channel::Aux_servo_function_t function);
 
-    // init_outputs - initialise Servo/PWM ranges and endpoints
+    // init_outputs - initialise Servo/PWM ranges and endpoints.  This
+    // method also updates the initialised flag.
     virtual bool init_outputs() = 0;
 
     // calculate_armed_scalars - must be implemented by child classes
@@ -222,6 +229,9 @@ protected:
 
     const char* _get_frame_string() const override { return "HELI"; }
 
+    // update turbine start flag
+    void update_turbine_start();
+
     // enum values for HOVER_LEARN parameter
     enum HoverLearn {
         HOVER_LEARN_DISABLED = 0,
@@ -243,6 +253,7 @@ protected:
         uint8_t takeoff_collective      : 1;    // true if collective is above 30% between H_COL_MID and H_COL_MAX
         uint8_t below_land_min_coll     : 1;    // true if collective is below H_COL_LAND_MIN
         uint8_t rotor_spooldown_complete : 1;    // true if the rotors have spooled down completely
+        uint8_t start_engine            : 1;    // true if turbine start RC option is initiated
     } _heliflags;
 
     // parameters

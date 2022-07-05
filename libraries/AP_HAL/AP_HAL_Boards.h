@@ -228,6 +228,10 @@
 #define HAL_ENABLE_LIBUAVCAN_DRIVERS HAL_CANMANAGER_ENABLED
 #endif
 
+#ifndef AP_AIRSPEED_BACKEND_DEFAULT_ENABLED
+#define AP_AIRSPEED_BACKEND_DEFAULT_ENABLED 1
+#endif
+
 #ifdef HAVE_LIBDL
 #define AP_MODULE_SUPPORTED 1
 #else
@@ -261,8 +265,12 @@
 #define HAL_INS_ENABLED (!defined(HAL_BUILD_AP_PERIPH))
 #endif
 
+#ifndef AP_STATS_ENABLED
+#define AP_STATS_ENABLED (!defined(HAL_BUILD_AP_PERIPH))
+#endif
+
 #ifndef HAL_WITH_MCU_MONITORING
-#define HAL_WITH_MCU_MONITORING defined(STM32H7) && STM32_HAS_ADC3
+#define HAL_WITH_MCU_MONITORING 0
 #endif
 
 #ifndef HAL_HNF_MAX_FILTERS
@@ -282,6 +290,12 @@
 // plus one static notch with one harmonic
 #define HAL_HNF_MAX_FILTERS 18
 #endif
+#endif // HAL_HNF_MAX_FILTERS
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL // allow SITL to have all the CANFD options
+#define HAL_CANFD_SUPPORTED 8
+#elif !defined(HAL_CANFD_SUPPORTED)
+#define HAL_CANFD_SUPPORTED 0
 #endif
 
 #ifndef __RAMFUNC__

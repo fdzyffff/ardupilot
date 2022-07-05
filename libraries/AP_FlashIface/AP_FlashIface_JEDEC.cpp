@@ -39,8 +39,9 @@ struct supported_device {
 };
 
 static const struct supported_device supported_devices[] = {
-    {"mt25q", 0x20, 0xBA}, // https://www.mouser.in/datasheet/2/671/mict_s_a0003959700_1-2290909.pdf
-    {"w25q", 0xEF, 0x40}
+    {"mt25q", 0x20, 0xBA},  // https://www.mouser.in/datasheet/2/671/mict_s_a0003959700_1-2290909.pdf
+    {"w25q", 0xEF, 0x40},
+    {"w25q-dtr", 0xEF, 0x70}
 };
 
 #ifdef HAL_BOOTLOADER_BUILD
@@ -667,7 +668,7 @@ bool AP_FlashIface_JEDEC::start_sector_erase(uint32_t sector, uint32_t &delay_ms
 bool AP_FlashIface_JEDEC::start_erase_offset(uint32_t offset, uint32_t size, uint32_t &erasing,
         uint32_t &delay_ms, uint32_t &timeout_ms)
 {
-    uint8_t ins;
+    uint8_t ins = 0;
     uint32_t erase_size = 0;
     erasing = 0;
     // Find the maximum size we can erase
@@ -920,6 +921,9 @@ bool AP_FlashIface_JEDEC::start_xip_mode(void** addr)
         Debug("XIP mode unsupported on this chip");
         return false;
     }
+
+    bool success = false;
+
     switch(_desc.entry_method) {
         case AP_FlashIface_JEDEC::XIP_ENTRY_METHOD_1:
         {
@@ -936,7 +940,8 @@ bool AP_FlashIface_JEDEC::start_xip_mode(void** addr)
             cmd.addr = 0;
             cmd.dummy = _desc.fast_read_dummy_cycles;
             _dev->set_cmd_header(cmd);
-            return _dev->enter_xip_mode(addr);
+            success = _dev->enter_xip_mode(addr);
+            break;
         }
         case AP_FlashIface_JEDEC::XIP_ENTRY_METHOD_2:
         {
@@ -964,7 +969,8 @@ bool AP_FlashIface_JEDEC::start_xip_mode(void** addr)
             // correct dummy bytes because of addition of alt bytes
             cmd.dummy = _desc.fast_read_dummy_cycles - 1;
             _dev->set_cmd_header(cmd);
-            return _dev->enter_xip_mode(addr);
+            success = _dev->enter_xip_mode(addr);
+            break;
         }
         default:
         {
@@ -972,6 +978,9 @@ bool AP_FlashIface_JEDEC::start_xip_mode(void** addr)
             return false;
         }
     }
+    // make sure that the flash is ready once we enter XIP
+    DELAY_MICROS(100);
+    return success;
 }
 
 bool AP_FlashIface_JEDEC::stop_xip_mode()

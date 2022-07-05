@@ -33,6 +33,7 @@
 #include <StorageManager/StorageManager.h>
 #include <AP_BoardConfig/AP_BoardConfig.h>
 #include <AP_InternalError/AP_InternalError.h>
+#include <AP_Filesystem/AP_Filesystem.h>
 #include <stdio.h>
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
     #include <SITL/SITL.h>
@@ -1207,7 +1208,7 @@ void AP_Param::save_sync(bool force_save, bool send_to_gcs)
 
     if (ofs+type_size((enum ap_var_type)phdr.type)+2*sizeof(phdr) >= _storage.size()) {
         // we are out of room for saving variables
-        hal.console->printf("EEPROM full\n");
+        DEV_PRINTF("EEPROM full\n");
         return;
     }
 
@@ -1583,7 +1584,7 @@ void AP_Param::load_object_from_eeprom(const void *object_pointer, const struct 
     uint16_t key;
 
     if (!find_key_by_pointer(object_pointer, key)) {
-        hal.console->printf("ERROR: Unable to find param pointer\n");
+        DEV_PRINTF("ERROR: Unable to find param pointer\n");
         return;
     }
     
@@ -1868,7 +1869,7 @@ void AP_Param::convert_old_parameter(const struct ConversionInfo *info, float sc
     AP_Param *ap2;
     ap2 = find(&info->new_name[0], &ptype);
     if (ap2 == nullptr) {
-        hal.console->printf("Unknown conversion '%s'\n", info->new_name);
+        DEV_PRINTF("Unknown conversion '%s'\n", info->new_name);
         return;
     }
 
@@ -1902,7 +1903,7 @@ void AP_Param::convert_old_parameter(const struct ConversionInfo *info, float sc
         }
     } else {
         // can't do vector<->scalar conversion, or different vector types
-        hal.console->printf("Bad conversion type '%s'\n", info->new_name);
+        DEV_PRINTF("Bad conversion type '%s'\n", info->new_name);
     }
 }
 #pragma GCC diagnostic pop
@@ -1950,6 +1951,10 @@ void AP_Param::convert_class(uint16_t param_key, void *object_pointer,
         }
 
         AP_Param *ap2 = (AP_Param *)(group_info[i].offset + (uint8_t *)object_pointer);
+        if (ap2->configured_in_storage()) {
+            // user has already set a value, or previous conversion was done
+            continue;
+        }
         memcpy(ap2, ap, sizeof(old_value));
         // and save
         ap2->save();
@@ -2109,8 +2114,9 @@ bool AP_Param::parse_param_line(char *line, char **vname, float &value, bool &re
 // increments num_defaults for each default found in filename
 bool AP_Param::count_defaults_in_file(const char *filename, uint16_t &num_defaults)
 {
-    FILE *f = fopen(filename, "r");
-    if (f == nullptr) {
+    // try opening the file both in the posix filesystem and using AP::FS
+    int file_apfs = AP::FS().open(filename, O_RDONLY, true);
+    if (file_apfs == -1) {
         return false;
     }
     char line[100];
@@ -2118,7 +2124,7 @@ bool AP_Param::count_defaults_in_file(const char *filename, uint16_t &num_defaul
     /*
       work out how many parameter default structures to allocate
      */
-    while (fgets(line, sizeof(line)-1, f)) {
+    while (AP::FS().fgets(line, sizeof(line)-1, file_apfs)) {
         char *pname;
         float value;
         bool read_only;
@@ -2131,23 +2137,23 @@ bool AP_Param::count_defaults_in_file(const char *filename, uint16_t &num_defaul
         }
         num_defaults++;
     }
-
-    fclose(f);
+    AP::FS().close(file_apfs);
 
     return true;
 }
 
 bool AP_Param::read_param_defaults_file(const char *filename, bool last_pass)
 {
-    FILE *f = fopen(filename, "r");
-    if (f == nullptr) {
+    // try opening the file both in the posix filesystem and using AP::FS
+    int file_apfs = AP::FS().open(filename, O_RDONLY, true);
+    if (file_apfs == -1) {
         AP_HAL::panic("AP_Param: Failed to re-open defaults file");
         return false;
     }
 
     uint16_t idx = 0;
     char line[100];
-    while (fgets(line, sizeof(line)-1, f)) {
+    while (AP::FS().fgets(line, sizeof(line)-1, file_apfs)) {
         char *pname;
         float value;
         bool read_only;
@@ -2179,7 +2185,8 @@ bool AP_Param::read_param_defaults_file(const char *filename, bool last_pass)
             vp->set_float(value, var_type);
         }
     }
-    fclose(f);
+    AP::FS().close(file_apfs);
+
     return true;
 }
 

@@ -149,8 +149,8 @@ int16_t GCS_MAVLINK_Rover::vfr_hud_throttle() const
 
 void GCS_MAVLINK_Rover::send_rangefinder() const
 {
-    float distance_cm;
-    float voltage;
+    float distance = 0;
+    float voltage = 0;
     bool got_one = false;
 
     // report smaller distance of all rangefinders
@@ -160,8 +160,8 @@ void GCS_MAVLINK_Rover::send_rangefinder() const
             continue;
         }
         if (!got_one ||
-            s->distance_cm() < distance_cm) {
-            distance_cm = s->distance_cm();
+            s->distance() < distance) {
+            distance = s->distance();
             voltage = s->voltage_mv();
             got_one = true;
         }
@@ -173,7 +173,7 @@ void GCS_MAVLINK_Rover::send_rangefinder() const
 
     mavlink_msg_rangefinder_send(
         chan,
-        distance_cm * 0.01f,
+        distance,
         voltage);
 }
 
@@ -185,7 +185,7 @@ void GCS_MAVLINK_Rover::send_pid_tuning()
     Parameters &g = rover.g;
     ParametersG2 &g2 = rover.g2;
 
-    const AP_Logger::PID_Info *pid_info;
+    const AP_PIDInfo *pid_info;
 
     // steering PID
     if (g.gcs_pid_mask & 1) {
@@ -276,6 +276,40 @@ void GCS_MAVLINK_Rover::send_pid_tuning()
     if (g.gcs_pid_mask & 32) {
         pid_info = &g2.attitude_control.get_sailboat_heel_pid().get_pid_info();
         mavlink_msg_pid_tuning_send(chan, 9,
+                                    pid_info->target,
+                                    pid_info->actual,
+                                    pid_info->FF,
+                                    pid_info->P,
+                                    pid_info->I,
+                                    pid_info->D,
+                                    pid_info->slew_rate,
+                                    pid_info->Dmod);
+        if (!HAVE_PAYLOAD_SPACE(chan, PID_TUNING)) {
+            return;
+        }
+    }
+
+    // Position Controller Velocity North PID
+    if (g.gcs_pid_mask & 64) {
+        pid_info = &g2.pos_control.get_vel_pid().get_pid_info_x();
+        mavlink_msg_pid_tuning_send(chan, 10,
+                                    pid_info->target,
+                                    pid_info->actual,
+                                    pid_info->FF,
+                                    pid_info->P,
+                                    pid_info->I,
+                                    pid_info->D,
+                                    pid_info->slew_rate,
+                                    pid_info->Dmod);
+        if (!HAVE_PAYLOAD_SPACE(chan, PID_TUNING)) {
+            return;
+        }
+    }
+
+    // Position Controller Velocity East PID
+    if (g.gcs_pid_mask & 128) {
+        pid_info = &g2.pos_control.get_vel_pid().get_pid_info_y();
+        mavlink_msg_pid_tuning_send(chan, 11,
                                     pid_info->target,
                                     pid_info->actual,
                                     pid_info->FF,
@@ -384,6 +418,7 @@ const AP_Param::GroupInfo GCS_MAVLINK_Parameters::var_info[] = {
     // @Units: Hz
     // @Range: 0 50
     // @Increment: 1
+    // @RebootRequired: True
     // @User: Advanced
     AP_GROUPINFO("RAW_SENS", 0, GCS_MAVLINK_Parameters, streamRates[0],  1),
 
@@ -393,6 +428,7 @@ const AP_Param::GroupInfo GCS_MAVLINK_Parameters::var_info[] = {
     // @Units: Hz
     // @Range: 0 50
     // @Increment: 1
+    // @RebootRequired: True
     // @User: Advanced
     AP_GROUPINFO("EXT_STAT", 1, GCS_MAVLINK_Parameters, streamRates[1],  1),
 
@@ -402,6 +438,7 @@ const AP_Param::GroupInfo GCS_MAVLINK_Parameters::var_info[] = {
     // @Units: Hz
     // @Range: 0 50
     // @Increment: 1
+    // @RebootRequired: True
     // @User: Advanced
     AP_GROUPINFO("RC_CHAN",  2, GCS_MAVLINK_Parameters, streamRates[2],  1),
 
@@ -411,6 +448,7 @@ const AP_Param::GroupInfo GCS_MAVLINK_Parameters::var_info[] = {
     // @Units: Hz
     // @Range: 0 50
     // @Increment: 1
+    // @RebootRequired: True
     // @User: Advanced
     AP_GROUPINFO("RAW_CTRL", 3, GCS_MAVLINK_Parameters, streamRates[3],  1),
 
@@ -420,6 +458,7 @@ const AP_Param::GroupInfo GCS_MAVLINK_Parameters::var_info[] = {
     // @Units: Hz
     // @Range: 0 50
     // @Increment: 1
+    // @RebootRequired: True
     // @User: Advanced
     AP_GROUPINFO("POSITION", 4, GCS_MAVLINK_Parameters, streamRates[4],  1),
 
@@ -429,6 +468,7 @@ const AP_Param::GroupInfo GCS_MAVLINK_Parameters::var_info[] = {
     // @Units: Hz
     // @Range: 0 50
     // @Increment: 1
+    // @RebootRequired: True
     // @User: Advanced
     AP_GROUPINFO("EXTRA1",   5, GCS_MAVLINK_Parameters, streamRates[5],  1),
 
@@ -438,6 +478,7 @@ const AP_Param::GroupInfo GCS_MAVLINK_Parameters::var_info[] = {
     // @Units: Hz
     // @Range: 0 50
     // @Increment: 1
+    // @RebootRequired: True
     // @User: Advanced
     AP_GROUPINFO("EXTRA2",   6, GCS_MAVLINK_Parameters, streamRates[6],  1),
 
@@ -447,6 +488,7 @@ const AP_Param::GroupInfo GCS_MAVLINK_Parameters::var_info[] = {
     // @Units: Hz
     // @Range: 0 50
     // @Increment: 1
+    // @RebootRequired: True
     // @User: Advanced
     AP_GROUPINFO("EXTRA3",   7, GCS_MAVLINK_Parameters, streamRates[7],  1),
 
@@ -456,6 +498,7 @@ const AP_Param::GroupInfo GCS_MAVLINK_Parameters::var_info[] = {
     // @Units: Hz
     // @Range: 0 50
     // @Increment: 1
+    // @RebootRequired: True
     // @User: Advanced
     AP_GROUPINFO("PARAMS",   8, GCS_MAVLINK_Parameters, streamRates[8],  10),
 
@@ -465,6 +508,7 @@ const AP_Param::GroupInfo GCS_MAVLINK_Parameters::var_info[] = {
     // @Units: Hz
     // @Range: 0 50
     // @Increment: 1
+    // @RebootRequired: True
     // @User: Advanced
     AP_GROUPINFO("ADSB",   9, GCS_MAVLINK_Parameters, streamRates[9],  0),
 

@@ -22,6 +22,7 @@
 #include <AP_BoardConfig/AP_BoardConfig.h>
 #include <AP_RTC/AP_RTC.h>
 #include <climits>
+#include <AP_SerialManager/AP_SerialManager.h>
 
 #include "AP_GPS_NOVA.h"
 #include "AP_GPS_ERB.h"
@@ -36,6 +37,9 @@
 #include "AP_GPS_MSP.h"
 #include "AP_GPS_ExternalAHRS.h"
 #include "GPS_Backend.h"
+#if HAL_SIM_GPS_ENABLED
+#include "AP_GPS_SITL.h"
+#endif
 
 #if HAL_ENABLE_LIBUAVCAN_DRIVERS
 #include <AP_CANManager/AP_CANManager.h>
@@ -305,7 +309,7 @@ const AP_Param::GroupInfo AP_GPS::var_info[] = {
     // @Param: _DRV_OPTIONS
     // @DisplayName: driver options
     // @Description: Additional backend specific options
-    // @Bitmask: 0:Use UART2 for moving baseline on ublox,1:Use base station for GPS yaw on SBF,2:Use baudrate 115200,3:Use dedicated CAN port b/w GPSes for moving baseline
+    // @Bitmask: 0:Use UART2 for moving baseline on ublox,1:Use base station for GPS yaw on SBF,2:Use baudrate 115200,3:Use dedicated CAN port b/w GPSes for moving baseline,4:Use ellipsoid height instead of AMSL for uBlox driver
     // @User: Advanced
     AP_GROUPINFO("_DRV_OPTIONS", 22, AP_GPS, _driver_options, 0),
 #endif
@@ -359,7 +363,7 @@ const AP_Param::GroupInfo AP_GPS::var_info[] = {
 #if HAL_ENABLE_LIBUAVCAN_DRIVERS
     // @Param: _CAN_NODEID1
     // @DisplayName: GPS Node ID 1
-    // @Description: GPS Node id for discovered first.
+    // @Description: GPS Node id for first-discovered GPS.
     // @ReadOnly: True
     // @User: Advanced
     AP_GROUPINFO("_CAN_NODEID1", 28, AP_GPS, _node_id[0], 0),
@@ -367,21 +371,21 @@ const AP_Param::GroupInfo AP_GPS::var_info[] = {
 #if GPS_MAX_RECEIVERS > 1
     // @Param: _CAN_NODEID2
     // @DisplayName: GPS Node ID 2
-    // @Description: GPS Node id for discovered second.
+    // @Description: GPS Node id for second-discovered GPS.
     // @ReadOnly: True
     // @User: Advanced
     AP_GROUPINFO("_CAN_NODEID2", 29, AP_GPS, _node_id[1], 0),
 #endif // GPS_MAX_RECEIVERS > 1
     // @Param: 1_CAN_OVRIDE
     // @DisplayName: First DroneCAN GPS NODE ID
-    // @Description: GPS Node id for first GPS. If 0 the gps will be automatically selected on first come basis.
+    // @Description: GPS Node id for first GPS. If 0 the gps will be automatically selected on a first-come-first-GPS basis.
     // @User: Advanced
     AP_GROUPINFO("1_CAN_OVRIDE", 30, AP_GPS, _override_node_id[0], 0),
 
 #if GPS_MAX_RECEIVERS > 1
     // @Param: 2_CAN_OVRIDE
     // @DisplayName: Second DroneCAN GPS NODE ID
-    // @Description: GPS Node id for second GPS. If 0 the gps will be automatically selected on first come basis.
+    // @Description: GPS Node id for second GPS. If 0 the gps will be automatically selected on a second-come-second-GPS basis.
     // @User: Advanced
     AP_GROUPINFO("2_CAN_OVRIDE", 31, AP_GPS, _override_node_id[1], 0),
 #endif // GPS_MAX_RECEIVERS > 1
@@ -550,6 +554,43 @@ void AP_GPS::send_blob_start(uint8_t instance, const char *_blob, uint16_t size)
 }
 
 /*
+  initialise state for sending binary blob initialisation strings.  We
+  may choose different blobs not just based on type but also based on
+  parameters.
+ */
+void AP_GPS::send_blob_start(uint8_t instance)
+{
+    if (_type[instance] == GPS_TYPE_UBLOX && option_set(DriverOptions::UBX_Use115200)) {
+        static const char blob[] = UBLOX_SET_BINARY_115200;
+        send_blob_start(instance, blob, sizeof(blob));
+        return;
+    }
+
+#if GPS_MOVING_BASELINE
+    if ((_type[instance] == GPS_TYPE_UBLOX_RTK_BASE ||
+         _type[instance] == GPS_TYPE_UBLOX_RTK_ROVER) &&
+        !option_set(DriverOptions::UBX_MBUseUart2)) {
+        // we use 460800 when doing moving baseline as we need
+        // more bandwidth. We don't do this if using UART2, as
+        // in that case the RTCMv3 data doesn't go over the
+        // link to the flight controller
+        static const char blob[] = UBLOX_SET_BINARY_460800;
+        send_blob_start(instance, blob, sizeof(blob));
+        return;
+    }
+#endif
+
+#if AP_GPS_NMEA_ENABLED
+    if (_type[instance] == GPS_TYPE_HEMI) {
+        send_blob_start(instance, AP_GPS_NMEA_HEMISPHERE_INIT_STRING, strlen(AP_GPS_NMEA_HEMISPHERE_INIT_STRING));
+        return;
+    }
+#endif // AP_GPS_NMEA_ENABLED
+
+    send_blob_start(instance, _initialisation_blob, sizeof(_initialisation_blob));
+}
+
+/*
   send some more initialisation string bytes if there is room in the
   UART transmit buffer
  */
@@ -591,13 +632,11 @@ void AP_GPS::detect_instance(uint8_t instance)
     // user has to explicitly set the MAV type, do not use AUTO
     // do not try to detect the MAV type, assume it's there
     case GPS_TYPE_MAV:
-#ifndef HAL_BUILD_AP_PERIPH
 #if AP_GPS_MAV_ENABLED
         dstate->auto_detected_baud = false; // specified, not detected
         new_gps = new AP_GPS_MAV(*this, state[instance], nullptr);
         goto found_gps;
 #endif //AP_GPS_MAV_ENABLED
-#endif
         break;
 
     // user has to explicitly set the UAVCAN type, do not use AUTO
@@ -635,8 +674,6 @@ void AP_GPS::detect_instance(uint8_t instance)
     // the correct baud rate, and should have the selected baud broadcast
     dstate->auto_detected_baud = true;
 
-    // don't build the less common GPS drivers on F1 AP_Periph
-#if !defined(HAL_BUILD_AP_PERIPH) || !defined(STM32F1)
     switch (_type[instance]) {
 #if AP_GPS_SBF_ENABLED
     // by default the sbf/trimble gps outputs no data on its port, until configured.
@@ -654,10 +691,16 @@ void AP_GPS::detect_instance(uint8_t instance)
         new_gps = new AP_GPS_NOVA(*this, state[instance], _port[instance]);
         break;
 #endif //AP_GPS_NOVA_ENABLED
+
+#if HAL_SIM_GPS_ENABLED
+    case GPS_TYPE_SITL:
+        new_gps = new AP_GPS_SITL(*this, state[instance], _port[instance]);
+        break;
+#endif  // HAL_SIM_GPS_ENABLED
+
     default:
         break;
     }
-#endif // HAL_BUILD_AP_PERIPH
 
     if (now - dstate->last_baud_change_ms > GPS_BAUD_TIME_MS) {
         // try the next baud rate
@@ -673,25 +716,7 @@ void AP_GPS::detect_instance(uint8_t instance)
         dstate->last_baud_change_ms = now;
 
         if (_auto_config >= GPS_AUTO_CONFIG_ENABLE_SERIAL_ONLY && new_gps == nullptr) {
-            if (_type[instance] == GPS_TYPE_UBLOX && (_driver_options & AP_GPS_Backend::DriverOptions::UBX_Use115200)) {
-                static const char blob[] = UBLOX_SET_BINARY_115200;
-                send_blob_start(instance, blob, sizeof(blob));
-            } else if ((_type[instance] == GPS_TYPE_UBLOX_RTK_BASE ||
-                        _type[instance] == GPS_TYPE_UBLOX_RTK_ROVER) &&
-                       ((_driver_options.get() & AP_GPS_Backend::DriverOptions::UBX_MBUseUart2) == 0)) {
-                // we use 460800 when doing moving baseline as we need
-                // more bandwidth. We don't do this if using UART2, as
-                // in that case the RTCMv3 data doesn't go over the
-                // link to the flight controller
-                static const char blob[] = UBLOX_SET_BINARY_460800;
-                send_blob_start(instance, blob, sizeof(blob));
-#if AP_GPS_NMEA_ENABLED
-            } else if (_type[instance] == GPS_TYPE_HEMI) {
-                send_blob_start(instance, AP_GPS_NMEA_HEMISPHERE_INIT_STRING, strlen(AP_GPS_NMEA_HEMISPHERE_INIT_STRING));
-#endif // AP_GPS_NMEA_ENABLED        
-            } else {
-                send_blob_start(instance, _initialisation_blob, sizeof(_initialisation_blob));
-            }
+            send_blob_start(instance);
         }
     }
 
@@ -713,13 +738,13 @@ void AP_GPS::detect_instance(uint8_t instance)
         if ((_type[instance] == GPS_TYPE_AUTO ||
              _type[instance] == GPS_TYPE_UBLOX) &&
             ((!_auto_config && _baudrates[dstate->current_baud] >= 38400) ||
-             (_baudrates[dstate->current_baud] >= 115200 && (_driver_options & AP_GPS_Backend::DriverOptions::UBX_Use115200)) ||
+             (_baudrates[dstate->current_baud] >= 115200 && option_set(DriverOptions::UBX_Use115200)) ||
              _baudrates[dstate->current_baud] == 230400) &&
             AP_GPS_UBLOX::_detect(dstate->ublox_detect_state, data)) {
             new_gps = new AP_GPS_UBLOX(*this, state[instance], _port[instance], GPS_ROLE_NORMAL);
         }
 
-        const uint32_t ublox_mb_required_baud = (_driver_options.get() & AP_GPS_Backend::DriverOptions::UBX_MBUseUart2)?230400:460800;
+        const uint32_t ublox_mb_required_baud = option_set(DriverOptions::UBX_MBUseUart2)?230400:460800;
         if ((_type[instance] == GPS_TYPE_UBLOX_RTK_BASE ||
              _type[instance] == GPS_TYPE_UBLOX_RTK_ROVER) &&
             _baudrates[dstate->current_baud] == ublox_mb_required_baud &&
@@ -732,7 +757,6 @@ void AP_GPS::detect_instance(uint8_t instance)
             }
             new_gps = new AP_GPS_UBLOX(*this, state[instance], _port[instance], role);
         }
-#ifndef HAL_BUILD_AP_PERIPH
 #if AP_GPS_SBP2_ENABLED
         else if ((_type[instance] == GPS_TYPE_AUTO || _type[instance] == GPS_TYPE_SBP) &&
                  AP_GPS_SBP2::_detect(dstate->sbp2_detect_state, data)) {
@@ -766,7 +790,6 @@ void AP_GPS::detect_instance(uint8_t instance)
         }
 #endif //AP_GPS_NMEA_ENABLED
 
-#endif // HAL_BUILD_AP_PERIPH
         if (new_gps) {
             goto found_gps;
         }
@@ -1113,13 +1136,34 @@ void AP_GPS::update_primary(void)
     if (primary_instance == GPS_BLENDED_INSTANCE) {
         primary_instance = 0;
         for (uint8_t i=1; i<GPS_MAX_RECEIVERS; i++) {
-            // choose GPS with highest state or higher number of satellites
-            if ((state[i].status > state[primary_instance].status) ||
-                ((state[i].status == state[primary_instance].status) && (state[i].num_sats > state[primary_instance].num_sats))) {
+            // choose GPS with highest state or higher number of
+            // satellites. Reject a GPS with an old update time, as it
+            // may be the old timestamp that triggered the loss of
+            // blending
+            const uint32_t delay_threshold = 400;
+            const bool higher_status = state[i].status > state[primary_instance].status;
+            const bool old_data_primary = (now - state[primary_instance].last_gps_time_ms) > delay_threshold;
+            const bool old_data = (now - state[i].last_gps_time_ms) > delay_threshold;
+            const bool equal_status = state[i].status == state[primary_instance].status;
+            const bool more_sats = state[i].num_sats > state[primary_instance].num_sats;
+            if (old_data && !old_data_primary) {
+                // don't switch to a GPS that has not updated in 400ms
+                continue;
+            }
+            if (state[i].status < GPS_OK_FIX_3D) {
+                // don't use a GPS without 3D fix
+                continue;
+            }
+            // select the new GPS if the primary has old data, or new
+            // GPS either has higher status, or has the same status
+            // and more satellites
+            if ((old_data_primary && !old_data) ||
+                higher_status ||
+                (equal_status && more_sats)) {
                 primary_instance = i;
-                _last_instance_swap_ms = now;
             }
         }
+        _last_instance_swap_ms = now;
         return;
     }
 #endif  // defined(GPS_BLENDED_INSTANCE)
@@ -1630,7 +1674,7 @@ bool AP_GPS::calc_blend_weights(void)
         for (uint8_t i=0; i<GPS_MAX_RECEIVERS; i++) {
             if (state[i].status >= GPS_OK_FIX_3D) {
                 if (state[i].have_speed_accuracy && state[i].speed_accuracy > 0.0f) {
-                    speed_accuracy_sum_sq += state[i].speed_accuracy * state[i].speed_accuracy;
+                    speed_accuracy_sum_sq += sq(state[i].speed_accuracy);
                 } else {
                     // not all receivers support this metric so set it to zero and don't use it
                     speed_accuracy_sum_sq = 0.0f;
@@ -1646,7 +1690,7 @@ bool AP_GPS::calc_blend_weights(void)
         for (uint8_t i=0; i<GPS_MAX_RECEIVERS; i++) {
             if (state[i].status >= GPS_OK_FIX_2D) {
                 if (state[i].have_horizontal_accuracy && state[i].horizontal_accuracy > 0.0f) {
-                    horizontal_accuracy_sum_sq += state[i].horizontal_accuracy * state[i].horizontal_accuracy;
+                    horizontal_accuracy_sum_sq += sq(state[i].horizontal_accuracy);
                 } else {
                     // not all receivers support this metric so set it to zero and don't use it
                     horizontal_accuracy_sum_sq = 0.0f;
@@ -1662,7 +1706,7 @@ bool AP_GPS::calc_blend_weights(void)
         for (uint8_t i=0; i<GPS_MAX_RECEIVERS; i++) {
             if (state[i].status >= GPS_OK_FIX_3D) {
                 if (state[i].have_vertical_accuracy && state[i].vertical_accuracy > 0.0f) {
-                    vertical_accuracy_sum_sq += state[i].vertical_accuracy * state[i].vertical_accuracy;
+                    vertical_accuracy_sum_sq += sq(state[i].vertical_accuracy);
                 } else {
                     // not all receivers support this metric so set it to zero and don't use it
                     vertical_accuracy_sum_sq = 0.0f;
@@ -1683,12 +1727,12 @@ bool AP_GPS::calc_blend_weights(void)
 
     // calculate a weighting using the reported horizontal position
     float hpos_blend_weights[GPS_MAX_RECEIVERS] = {};
-    if (horizontal_accuracy_sum_sq > 0.0f && (_blend_mask & BLEND_MASK_USE_HPOS_ACC)) {
+    if (horizontal_accuracy_sum_sq > 0.0f) {
         // calculate the weights using the inverse of the variances
         float sum_of_hpos_weights = 0.0f;
         for (uint8_t i=0; i<GPS_MAX_RECEIVERS; i++) {
             if (state[i].status >= GPS_OK_FIX_2D && state[i].horizontal_accuracy >= 0.001f) {
-                hpos_blend_weights[i] = horizontal_accuracy_sum_sq / (state[i].horizontal_accuracy * state[i].horizontal_accuracy);
+                hpos_blend_weights[i] = horizontal_accuracy_sum_sq / sq(state[i].horizontal_accuracy);
                 sum_of_hpos_weights += hpos_blend_weights[i];
             }
         }
@@ -1703,12 +1747,12 @@ bool AP_GPS::calc_blend_weights(void)
 
     // calculate a weighting using the reported vertical position accuracy
     float vpos_blend_weights[GPS_MAX_RECEIVERS] = {};
-    if (vertical_accuracy_sum_sq > 0.0f && (_blend_mask & BLEND_MASK_USE_VPOS_ACC)) {
+    if (vertical_accuracy_sum_sq > 0.0f) {
         // calculate the weights using the inverse of the variances
         float sum_of_vpos_weights = 0.0f;
         for (uint8_t i=0; i<GPS_MAX_RECEIVERS; i++) {
             if (state[i].status >= GPS_OK_FIX_3D && state[i].vertical_accuracy >= 0.001f) {
-                vpos_blend_weights[i] = vertical_accuracy_sum_sq / (state[i].vertical_accuracy * state[i].vertical_accuracy);
+                vpos_blend_weights[i] = vertical_accuracy_sum_sq / sq(state[i].vertical_accuracy);
                 sum_of_vpos_weights += vpos_blend_weights[i];
             }
         }
@@ -1723,12 +1767,12 @@ bool AP_GPS::calc_blend_weights(void)
 
     // calculate a weighting using the reported speed accuracy
     float spd_blend_weights[GPS_MAX_RECEIVERS] = {};
-    if (speed_accuracy_sum_sq > 0.0f && (_blend_mask & BLEND_MASK_USE_SPD_ACC)) {
+    if (speed_accuracy_sum_sq > 0.0f) {
         // calculate the weights using the inverse of the variances
         float sum_of_spd_weights = 0.0f;
         for (uint8_t i=0; i<GPS_MAX_RECEIVERS; i++) {
             if (state[i].status >= GPS_OK_FIX_3D && state[i].speed_accuracy >= 0.001f) {
-                spd_blend_weights[i] = speed_accuracy_sum_sq / (state[i].speed_accuracy * state[i].speed_accuracy);
+                spd_blend_weights[i] = speed_accuracy_sum_sq / sq(state[i].speed_accuracy);
                 sum_of_spd_weights += spd_blend_weights[i];
             }
         }

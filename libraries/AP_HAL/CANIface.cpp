@@ -58,8 +58,9 @@ bool AP_HAL::CANFrame::priorityHigherThan(const CANFrame& rhs) const
  */
 int16_t AP_HAL::CANIface::receive(CANFrame& out_frame, uint64_t& out_ts_monotonic, CanIOFlags& out_flags)
 {
-    if (frame_callback && (out_flags & IsMAVCAN)==0) {
-        frame_callback(get_iface_num(), out_frame);
+    auto cb = frame_callback;
+    if (cb && (out_flags & IsMAVCAN)==0) {
+        cb(get_iface_num(), out_frame);
     }
     return 1;
 }
@@ -69,19 +70,10 @@ int16_t AP_HAL::CANIface::receive(CANFrame& out_frame, uint64_t& out_ts_monotoni
  */
 int16_t AP_HAL::CANIface::send(const CANFrame& frame, uint64_t tx_deadline, CanIOFlags flags)
 {
-    if (frame_callback) {
+    auto cb = frame_callback;
+    if (cb) {
         if ((flags & IsMAVCAN) == 0) {
-            if (frame_counter++ == 100) {
-                // check every 100 frames for disabling CAN_FRAME send
-                // we stop sending after 5s if the client stops
-                // sending MAV_CMD_CAN_FORWARD requests
-                if (AP_HAL::millis() - last_callback_enable_ms > 5000) {
-                    frame_callback = nullptr;
-                    return 1;
-                }
-                frame_counter = 0;
-            }
-            frame_callback(get_iface_num(), frame);
+            cb(get_iface_num(), frame);
         } else {
             CanRxItem rx_item;
             rx_item.frame = frame;
@@ -98,7 +90,86 @@ int16_t AP_HAL::CANIface::send(const CANFrame& frame, uint64_t tx_deadline, CanI
  */
 bool AP_HAL::CANIface::register_frame_callback(FrameCb cb)
 {
-    last_callback_enable_ms = AP_HAL::millis();
     frame_callback = cb;
     return true;
+}
+
+AP_HAL::CANFrame::CANFrame(uint32_t can_id, const uint8_t* can_data, uint8_t data_len, bool canfd_frame) :
+        id(can_id),
+        canfd(canfd_frame)
+{
+    if ((can_data == nullptr) || (data_len == 0) || (data_len > MaxDataLen)) {
+        return;
+    }
+    memcpy(this->data, can_data, data_len);
+    if (data_len <= 8) {
+        dlc = data_len;
+    } else if (!canfd) {
+        dlc = 8;
+    } else {
+        /*
+        Data Length Code      9  10  11  12  13  14  15
+        Number of data bytes 12  16  20  24  32  48  64
+        */
+        if (data_len <= 12) {
+            dlc = 9;
+        } else if (data_len <= 16) {
+            dlc = 10;
+        } else if (data_len <= 20) {
+            dlc = 11;
+        } else if  (data_len <= 24) {
+            dlc = 12;
+        } else if (data_len <= 32) {
+            dlc = 13;
+        } else if (data_len <= 48) {
+            dlc = 14;
+        } else if (data_len <= 64) {
+            dlc = 15;
+        }
+    }
+}
+
+uint8_t AP_HAL::CANFrame::dataLengthToDlc(uint8_t data_length)
+{
+    if (data_length <= 8) {
+        return data_length;
+    } else if (data_length <= 12) {
+        return 9;
+    } else if (data_length <= 16) {
+        return 10;
+    } else if (data_length <= 20) {
+        return 11;
+    } else if (data_length <= 24) {
+        return 12;
+    } else if (data_length <= 32) {
+        return 13;
+    } else if (data_length <= 48) {
+        return 14;
+    }
+    return 15;
+}
+
+
+uint8_t AP_HAL::CANFrame::dlcToDataLength(uint8_t dlc)
+{
+    /*
+    Data Length Code      9  10  11  12  13  14  15
+    Number of data bytes 12  16  20  24  32  48  64
+    */
+    if (dlc <= 8) {
+        return dlc;
+    } else if (dlc == 9) {
+        return 12;
+    } else if (dlc == 10) {
+        return 16;
+    } else if (dlc == 11) {
+        return 20;
+    } else if (dlc == 12) {
+        return 24;
+    } else if (dlc == 13) {
+        return 32;
+    } else if (dlc == 14) {
+        return 48;
+    }
+    return 64;
 }

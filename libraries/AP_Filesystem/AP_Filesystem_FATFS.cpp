@@ -9,6 +9,7 @@
 
 #if HAVE_FILESYSTEM_SUPPORT && CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
 
+#include <ff.h>
 #include <AP_HAL_ChibiOS/sdcard.h>
 #include <GCS_MAVLink/GCS.h>
 
@@ -278,7 +279,7 @@ static bool remount_file_system(void)
     return true;
 }
 
-int AP_Filesystem_FATFS::open(const char *pathname, int flags)
+int AP_Filesystem_FATFS::open(const char *pathname, int flags, bool allow_absolute_path)
 {
     int fileno;
     int fatfs_modes;

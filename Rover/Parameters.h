@@ -3,10 +3,18 @@
 #include <AP_Common/AP_Common.h>
 
 #include "RC_Channel.h"
+#include <AC_Avoidance/AC_Avoid.h>
 #include "AC_Sprayer/AC_Sprayer.h"
+#include <AP_AIS/AP_AIS.h>
+#include <AP_Beacon/AP_Beacon.h>
+#include <AP_Follow/AP_Follow.h>
 #include "AP_Gripper/AP_Gripper.h"
+#include <AP_Proximity/AP_Proximity.h>
 #include "AP_Rally.h"
+#include <AP_SmartRTL/AP_SmartRTL.h>
+#include <AP_Stats/AP_Stats.h>
 #include "AP_Torqeedo/AP_Torqeedo.h"
+#include <AP_WindVane/AP_WindVane.h>
 
 // Global parameter class.
 //
@@ -206,7 +214,7 @@ public:
         k_param_ins,
         k_param_compass,
         k_param_rcmap,
-        k_param_L1_controller,
+        k_param_L1_controller,          // unused
         k_param_steerController_old,    // unused
         k_param_barometer,
         k_param_notify,
@@ -385,7 +393,7 @@ public:
 #endif // AP_SCRIPTING_ENABLED
 
     // waypoint navigation
-    AR_WPNav wp_nav;
+    AR_WPNav_OA wp_nav;
 
     // Sailboat functions
     Sailboat sailboat;
@@ -411,6 +419,12 @@ public:
     // Automatic Identification System - for tracking sea-going vehicles
     AP_AIS ais;
 #endif
+
+    // position controller
+    AR_PosControl pos_control;
+
+    // guided options bitmask
+    AP_Int32 guided_options;
 };
 
 extern const AP_Param::Info var_info[];

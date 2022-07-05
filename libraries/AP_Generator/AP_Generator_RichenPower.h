@@ -151,7 +151,7 @@ private:
         uint8_t footermagic1;
         uint8_t footermagic2;
     };
-    assert_storage_size<RichenPacket, 70> _assert_storage_size_RichenPacket;
+    assert_storage_size<RichenPacket, 70> _assert_storage_size_RichenPacket UNUSED_PRIVATE_MEMBER;
 
     union RichenUnion {
         uint8_t parse_buffer[70];
@@ -204,5 +204,11 @@ private:
         }
         return AP_HAL::millis() - idle_state_start_ms;
     }
+
+    // check if the generator requires maintenance and send a message if it does:
+    void check_maintenance_required();
+    // if we are emitting warnings about the generator requiring
+    // maintenamce, this is the last time we sent the warning:
+    uint32_t last_maintenance_warning_ms;
 };
 #endif

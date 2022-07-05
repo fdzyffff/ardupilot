@@ -14,6 +14,15 @@ class Board(object):
     def __init__(self, name):
         self.name = name
         self.is_ap_periph = False
+        self.autobuild_targets = [
+            'Tracker',
+            'Blimp',
+            'Copter',
+            'Heli',
+            'Plane',
+            'Rover',
+            'Sub',
+        ]
 
 
 class BoardList(object):
@@ -77,6 +86,17 @@ class BoardList(object):
                 if re.match(r"^\s*env AP_PERIPH_HEAVY 1", line):
                     board.is_ap_periph = 1
 
+                # a hwdef can specify which vehicles this target is valid for:
+                match = re.match(r"AUTOBUILD_TARGETS\s*(.*)", line)
+                if match is not None:
+                    mname = match.group(1)
+                    if mname.lower() == 'none':
+                        board.autobuild_targets = []
+                    else:
+                        board.autobuild_targets = [
+                            x.rstrip().lstrip().lower() for x in mname.split(",")
+                        ]
+
     def read_hwdef(self, filepath):
         fh = open(filepath)
         ret = []
@@ -89,7 +109,7 @@ class BoardList(object):
                 ret += [line]
         return ret
 
-    def find_autobuild_boards(self):
+    def find_autobuild_boards(self, build_target=None):
         ret = []
         for board in self.boards:
             if board.is_ap_periph:
@@ -101,22 +121,9 @@ class BoardList(object):
         # should probably have a line in the hwdef indicating they
         # shouldn't be auto-built...
         blacklist = [
-            # the following boards are hacked into build_binaries.py
-            # to be built for Copter only:
-            "CubeGreen-solo",
-            "CubeSolo",
-            "skyviper-journey",
-            "skyviper-v2450",
-
             # IOMCU:
             "iomcu",
             'iomcu_f103_8MHz',
-
-            # evaluation boards
-            'H757I_EVAL',
-            'H757I_EVAL_intf',
-            "Nucleo-G491",
-            "NucleoH743",
 
             # bdshot
             "CubeYellow-bdshot",
@@ -136,7 +143,20 @@ class BoardList(object):
 
         ret = filter(lambda x : x not in blacklist, ret)
 
-        return list(ret)
+        # if the caller has supplied a vehicle to limit to then we do that here:
+        if build_target is not None:
+            # Slow down: n^2 algorithm ahead
+            newret = []
+            for x in ret:
+                for b in self.boards:
+                    if b.name.lower() != x.lower():
+                        continue
+                    if build_target.lower() not in [y.lower() for y in b.autobuild_targets]:
+                        continue
+                    newret.append(x)
+            ret = newret
+
+        return sorted(list(ret))
 
     def find_ap_periph_boards(self):
         blacklist = [
@@ -146,11 +166,6 @@ class BoardList(object):
             "G4-ESC",
             "HereID",
             "HerePro",
-
-            # evaluation boards
-            "H757I_EVAL",
-            "Nucleo-L476",
-            "Nucleo-L496",
         ]
         ret = []
         for x in self.boards:
@@ -159,8 +174,28 @@ class BoardList(object):
             if x.name in blacklist:
                 continue
             ret.append(x.name)
-        return list(ret)
+        return sorted(list(ret))
 
 
 AUTOBUILD_BOARDS = BoardList().find_autobuild_boards()
 AP_PERIPH_BOARDS = BoardList().find_ap_periph_boards()
+
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser(description='list boards to build')
+
+    parser.add_argument('target')
+    parser.add_argument('--per-line', action='store_true', default=False, help='list one per line for use with xargs')
+    args = parser.parse_args()
+    board_list = BoardList()
+    target = args.target
+    if target == "AP_Periph":
+        blist = board_list.find_ap_periph_boards()
+    else:
+        blist = board_list.find_autobuild_boards(target)
+    blist = sorted(blist)
+    if args.per_line:
+        for b in blist:
+            print(b)
+    else:
+        print(blist)

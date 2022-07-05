@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # encoding: utf-8
 
 from collections import OrderedDict
@@ -545,12 +544,14 @@ class sitl(Board):
             HAL_PROBE_EXTERNAL_I2C_BAROS = 1,
         )
 
+        cfg.define('AP_SIM_ENABLED', 1)
         cfg.define('HAL_WITH_SPI', 1)
         cfg.define('HAL_WITH_RAMTRON', 1)
 
         if self.with_can:
             cfg.define('HAL_NUM_CAN_IFACES', 2)
             cfg.define('UAVCAN_EXCEPTIONS', 0)
+            cfg.define('UAVCAN_SUPPORT_CANFD', 1)
 
         env.CXXFLAGS += [
             '-Werror=float-equal'
@@ -666,6 +667,7 @@ class sitl_periph_gps(sitl):
             HAL_BUILD_AP_PERIPH = 1,
             PERIPH_FW = 1,
             CAN_APP_NODE_NAME = '"org.ardupilot.ap_periph_gps"',
+            AP_AIRSPEED_ENABLED = 0,
             HAL_PERIPH_ENABLE_GPS = 1,
             HAL_WITH_DSP = 1,
             HAL_CAN_DEFAULT_NODE_ID = 0,
@@ -677,6 +679,7 @@ class sitl_periph_gps(sitl):
             HAL_MISSION_ENABLED = 0,
             HAL_RALLY_ENABLED = 0,
             HAL_SCHEDULER_ENABLED = 0,
+            CANARD_ENABLE_CANFD = 1,
         )
         # libcanard is written for 32bit platforms
         env.CXXFLAGS += [
@@ -706,7 +709,8 @@ class esp32(Board):
         super(esp32, self).configure_env(cfg, env)
         cfg.load('esp32')
         env.DEFINES.update(
-            CONFIG_HAL_BOARD = 'HAL_BOARD_ESP32'
+            CONFIG_HAL_BOARD = 'HAL_BOARD_ESP32',
+            AP_SIM_ENABLED = 0,
         )
 
         tt = self.name[5:] #leave off 'esp32' so we just get 'buzz','diy','icarus, etc
@@ -827,7 +831,6 @@ class chibios(Board):
             '-mthumb',
             '--specs=nano.specs',
             '--specs=nosys.specs',
-            '-DCHIBIOS_BOARD_NAME="%s"' % self.name,
             '-D__USE_CMSIS',
             '-Werror=deprecated-declarations',
             '-DNDEBUG=1'
@@ -895,6 +898,9 @@ class chibios(Board):
             cfg.msg("Enabling ChibiOS asserts", "no")
 
 
+        if cfg.env.SAVE_TEMPS:
+            env.CXXFLAGS += [ '-S', '-save-temps=obj' ]
+
         if cfg.options.disable_watchdog:
             cfg.msg("Disabling Watchdog", "yes")
             env.CFLAGS += [ '-DDISABLE_WATCHDOG' ]
@@ -916,6 +922,18 @@ class chibios(Board):
         else:
             cfg.msg("Enabling ChibiOS thread statistics", "no")
 
+        if cfg.env.SIM_ENABLED:
+            env.DEFINES.update(
+                AP_SIM_ENABLED = 1,
+            )
+            env.AP_LIBRARIES += [
+                'SITL',
+            ]
+        else:
+            env.DEFINES.update(
+                AP_SIM_ENABLED = 0,
+            )
+
         env.LIB += ['gcc', 'm']
 
         env.GIT_SUBMODULES += [
@@ -934,6 +952,12 @@ class chibios(Board):
             ('9','3','1'),
             ('10','2','1'),
         ]
+
+        if cfg.env.AP_PERIPH:
+            if cfg.env.HAL_CANFD_SUPPORTED:
+                env.DEFINES.update(CANARD_ENABLE_CANFD=1)
+            else:
+                env.DEFINES.update(CANARD_ENABLE_TAO_OPTION=1)
 
         if cfg.options.Werror or cfg.env.CC_VERSION in gcc_whitelist:
             cfg.msg("Enabling -Werror", "yes")
@@ -974,6 +998,7 @@ class linux(Board):
         env.DEFINES.update(
             CONFIG_HAL_BOARD = 'HAL_BOARD_LINUX',
             CONFIG_HAL_BOARD_SUBTYPE = 'HAL_BOARD_SUBTYPE_LINUX_NONE',
+            AP_SIM_ENABLED = 0,
         )
 
         if not cfg.env.DEBUG:

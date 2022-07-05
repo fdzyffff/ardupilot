@@ -312,6 +312,11 @@ void Tailsitter::output(void)
 
             // in assisted flight this is done in the normal motor output path
             if (!quadplane.assisted_flight) {
+
+                // keep attitude control throttle level upto date, this value should never be output to motors
+                // it is used to re-set the accel Z integrator term allowing for a smooth transfer of control
+                quadplane.attitude_control->set_throttle_out(throttle, false, 0);
+
                 // convert the hover throttle to the same output that would result if used via AP_Motors
                 // apply expo, battery scaling and SPIN min/max.
                 throttle = motors->thrust_to_actuator(throttle);
@@ -827,7 +832,7 @@ void Tailsitter_Transition::VTOL_update()
     if (transition_state == TRANSITION_ANGLE_WAIT_VTOL) {
         float aspeed;
         bool have_airspeed = quadplane.ahrs.airspeed_estimate(aspeed);
-        // provide assistance in forward flight portion of tailsitter transistion
+        // provide assistance in forward flight portion of tailsitter transition
         quadplane.assisted_flight = quadplane.should_assist(aspeed, have_airspeed);
         if (!quadplane.tailsitter.transition_vtol_complete()) {
             return;
@@ -932,7 +937,7 @@ void Tailsitter_Transition::restart()
 }
 
 // force state to FW and setup for the transition back to VTOL
-void Tailsitter_Transition::force_transistion_complete()
+void Tailsitter_Transition::force_transition_complete()
 {
     transition_state = TRANSITION_DONE;
     vtol_transition_start_ms = AP_HAL::millis();

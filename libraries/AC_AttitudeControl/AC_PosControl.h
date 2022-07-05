@@ -12,8 +12,6 @@
 #include <AC_PID/AC_PID_2D.h>       // PID library (2-axis)
 #include <AP_InertialNav/AP_InertialNav.h>  // Inertial Navigation library
 #include "AC_AttitudeControl.h"     // Attitude control library
-#include <AP_Motors/AP_Motors.h>    // motors library
-#include <AP_Vehicle/AP_Vehicle.h>  // common vehicle parameters
 
 
 // position controller default definitions
@@ -42,7 +40,7 @@ public:
 
     /// Constructor
     AC_PosControl(AP_AHRS_View& ahrs, const AP_InertialNav& inav,
-                  const AP_Motors& motors, AC_AttitudeControl& attitude_control, float dt);
+                  const class AP_Motors& motors, AC_AttitudeControl& attitude_control, float dt);
 
     /// get_dt - gets time delta in seconds for all position controllers
     float get_dt() const { return _dt; }
@@ -95,6 +93,9 @@ public:
     // relax_velocity_controller_xy - initialise the position controller to the current position and velocity with decaying acceleration.
     ///     This function decays the output acceleration by 95% every half second to achieve a smooth transition to zero requested acceleration.
     void relax_velocity_controller_xy();
+
+    /// reduce response for landing
+    void soften_for_landing_xy();
 
     // init_xy_controller - initialise the position controller to the current position, velocity, acceleration and attitude.
     ///     This function is the default initialisation for any position control that provides position, velocity and acceleration.
@@ -340,6 +341,12 @@ public:
     /// get_lean_angle_max_cd - returns the maximum lean angle the autopilot may request
     float get_lean_angle_max_cd() const;
 
+    /*
+      set_lean_angle_max_cd - set the maximum lean angle. A value of zero means to use the ANGLE_MAX parameter.
+      This is reset to zero on init_xy_controller()
+    */
+    void set_lean_angle_max_cd(float angle_max_cd) { _angle_max_override_cd = angle_max_cd; }
+    
 
     /// Other
 
@@ -411,7 +418,7 @@ protected:
     // references to inertial nav and ahrs libraries
     AP_AHRS_View&           _ahrs;
     const AP_InertialNav&   _inav;
-    const AP_Motors&        _motors;
+    const class AP_Motors&        _motors;
     AC_AttitudeControl&     _attitude_control;
 
     // parameters
@@ -462,6 +469,9 @@ protected:
 
     // high vibration handling
     bool        _vibe_comp_enabled;     // true when high vibration compensation is on
+
+    // angle max override, if zero then use ANGLE_MAX parameter
+    float       _angle_max_override_cd;
 
     // return true if on a real vehicle or SITL with lock-step scheduling
     bool has_good_timing(void) const;

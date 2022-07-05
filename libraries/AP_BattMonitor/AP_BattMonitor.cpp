@@ -365,6 +365,7 @@ void AP_BattMonitor::convert_dynamic_param_groups(uint8_t instance)
         ap_var_type type;
         const char* new_name;
     }  conversion_table[] = {
+        // PARAMETER_CONVERSION - Added: Aug-2021
             { 2,  AP_PARAM_INT8,  "VOLT_PIN"  },
             { 3,  AP_PARAM_INT8,  "CURR_PIN"  },
             { 4,  AP_PARAM_FLOAT, "VOLT_MULT" },
@@ -433,6 +434,19 @@ float AP_BattMonitor::voltage_resting_estimate(uint8_t instance) const
 {
     if (instance < _num_instances && drivers[instance] != nullptr) {
         return drivers[instance]->voltage_resting_estimate();
+    } else {
+        return 0.0f;
+    }
+}
+
+/// voltage - returns battery voltage in volts for GCS, may be resting voltage if option enabled
+float AP_BattMonitor::gcs_voltage(uint8_t instance) const
+{
+    if ((_params[instance]._options.get() & uint32_t(AP_BattMonitor_Params::Options::GCS_Resting_Voltage)) != 0) {
+        return voltage_resting_estimate(instance);
+    }
+    if (instance < _num_instances) {
+        return state[instance].voltage;
     } else {
         return 0.0f;
     }
@@ -724,6 +738,19 @@ uint32_t AP_BattMonitor::get_mavlink_fault_bitmask(const uint8_t instance) const
         return 0;
     }
     return drivers[instance]->get_mavlink_fault_bitmask();
+}
+
+/*
+  check that all configured battery monitors are healthy
+ */
+bool AP_BattMonitor::healthy() const
+{
+    for (uint8_t i=0; i< _num_instances; i++) {
+        if (get_type(i) != Type::NONE && !healthy(i)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 namespace AP {

@@ -9,7 +9,7 @@ float Plane::calc_speed_scaler(void)
 {
     float aspeed, speed_scaler;
     if (ahrs.airspeed_estimate(aspeed)) {
-        if (aspeed > auto_state.highest_airspeed) {
+        if (aspeed > auto_state.highest_airspeed && hal.util->get_soft_armed()) {
             auto_state.highest_airspeed = aspeed;
         }
         if (aspeed > 0.0001f) {
@@ -61,6 +61,10 @@ float Plane::calc_speed_scaler(void)
  */
 bool Plane::stick_mixing_enabled(void)
 {
+    if (!rc().has_valid_input()) {
+        // never stick mix without valid RC
+        return false;
+    }
 #if AC_FENCE == ENABLED
     const bool stickmixing = fence_stickmixing();
 #else
@@ -81,10 +85,7 @@ bool Plane::stick_mixing_enabled(void)
         // we're in an auto mode. Check the stick mixing flag
         if (g.stick_mixing != StickMixing::NONE &&
             g.stick_mixing != StickMixing::VTOL_YAW &&
-            stickmixing &&
-            failsafe.state == FAILSAFE_NONE &&
-            !rc_failsafe_active()) {
-            // we're in an auto mode, and haven't triggered failsafe
+            stickmixing) {
             return true;
         } else {
             return false;
@@ -236,6 +237,11 @@ void Plane::stabilize_stick_mixing_direct()
     aileron = channel_roll->stick_mixing(aileron);
     SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, aileron);
 
+    if ((control_mode == &mode_loiter) && (plane.g2.flight_options & FlightOptions::ENABLE_LOITER_ALT_CONTROL)) {
+        // loiter is using altitude control based on the pitch stick, don't use it again here
+        return;
+    }
+
     float elevator = SRV_Channels::get_output_scaled(SRV_Channel::k_elevator);
     elevator = channel_pitch->stick_mixing(elevator);
     SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, elevator);
@@ -280,7 +286,12 @@ void Plane::stabilize_stick_mixing_fbw()
     }
     nav_roll_cd += roll_input * roll_limit_cd;
     nav_roll_cd = constrain_int32(nav_roll_cd, -roll_limit_cd, roll_limit_cd);
-    
+
+    if ((control_mode == &mode_loiter) && (plane.g2.flight_options & FlightOptions::ENABLE_LOITER_ALT_CONTROL)) {
+        // loiter is using altitude control based on the pitch stick, don't use it again here
+        return;
+    }
+
     float pitch_input = channel_pitch->norm_input();
     if (pitch_input > 0.5f) {
         pitch_input = (3*pitch_input - 1);

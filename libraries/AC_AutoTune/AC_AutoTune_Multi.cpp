@@ -1,5 +1,7 @@
 #include "AC_AutoTune_Multi.h"
 
+#include <AP_Logger/AP_Logger.h>
+
 /*
  * autotune support for multicopters
  *
@@ -49,7 +51,7 @@
 #define AUTOTUNE_RLPF_MAX                  5.0f     // maximum Rate Yaw filter value
 #define AUTOTUNE_RP_MIN                   0.01f     // minimum Rate P value
 #define AUTOTUNE_RP_MAX                    2.0f     // maximum Rate P value
-#define AUTOTUNE_SP_MAX                   20.0f     // maximum Stab P value
+#define AUTOTUNE_SP_MAX                   40.0f     // maximum Stab P value
 #define AUTOTUNE_SP_MIN                    0.5f     // maximum Stab P value
 #define AUTOTUNE_RP_ACCEL_MIN            4000.0f     // Minimum acceleration for Roll and Pitch
 #define AUTOTUNE_Y_ACCEL_MIN             1000.0f     // Minimum acceleration for Yaw
@@ -438,6 +440,30 @@ void AC_AutoTune_Multi::save_tuning_gains()
     AP::logger().Write_Event(LogEvent::AUTOTUNE_SAVEDGAINS);
 
     reset();
+}
+
+// report final gains for a given axis to GCS
+void AC_AutoTune_Multi::report_final_gains(AxisType test_axis) const
+{
+    switch (test_axis) {
+        case ROLL:
+            report_axis_gains("Roll", tune_roll_rp, tune_roll_rp*AUTOTUNE_PI_RATIO_FINAL, tune_roll_rd, tune_roll_sp, tune_roll_accel);
+            break;
+        case PITCH:
+            report_axis_gains("Pitch", tune_pitch_rp, tune_pitch_rp*AUTOTUNE_PI_RATIO_FINAL, tune_pitch_rd, tune_pitch_sp, tune_pitch_accel);
+            break;
+        case YAW:
+            report_axis_gains("Yaw", tune_yaw_rp, tune_yaw_rp*AUTOTUNE_YAW_PI_RATIO_FINAL, 0, tune_yaw_sp, tune_yaw_accel);
+            break;
+    }
+}
+
+// report gain formating helper
+void AC_AutoTune_Multi::report_axis_gains(const char* axis_string, float rate_P, float rate_I, float rate_D, float angle_P, float max_accel) const
+{
+    gcs().send_text(MAV_SEVERITY_NOTICE,"AutoTune: %s complete", axis_string);
+    gcs().send_text(MAV_SEVERITY_NOTICE,"AutoTune: %s Rate: P:%0.3f, I:%0.3f, D:%0.4f",axis_string,rate_P,rate_I,rate_D);
+    gcs().send_text(MAV_SEVERITY_NOTICE,"AutoTune: %s Angle P:%0.3f, Max Accel:%0.0f",axis_string,angle_P,max_accel);
 }
 
 // twitching_test_rate - twitching tests

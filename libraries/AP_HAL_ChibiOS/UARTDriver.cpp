@@ -17,6 +17,8 @@
 #include <AP_HAL/AP_HAL.h>
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS && !defined(HAL_NO_UARTDRIVER)
+
+#include <hal.h>
 #include "UARTDriver.h"
 #include "GPIO.h"
 #include <usbcfg.h>
@@ -571,6 +573,7 @@ __RAMFUNC__ void UARTDriver::rxbuff_full_irq(void* self, uint32_t flags)
           we have data to copy out
          */
         uart_drv->_readbuf.write(uart_drv->rx_bounce_buf[bounce_idx], len);
+        uart_drv->_rx_stats_bytes += len;
         uart_drv->receive_timestamp_update();
     }
 
@@ -632,7 +635,7 @@ void UARTDriver::flush()
         sduSOFHookI((SerialUSBDriver*)sdef.serial);
 #endif
     } else {
-        //TODO: Handle this for other serial ports
+        chEvtSignal(uart_thread_ctx, EVT_TRANSMIT_DATA_READY);
     }
 }
 
@@ -1019,7 +1022,7 @@ void UARTDriver::write_pending_bytes_DMA(uint32_t n)
             if (tx_len > 0) {
                 _last_write_completed_us = AP_HAL::micros();
             }
-            chEvtGetAndClearEvents(EVT_TRANSMIT_DMA_COMPLETE);
+            chEvtGetAndClearEventsI(EVT_TRANSMIT_DMA_COMPLETE);
             chSysUnlock();
         }
         // clean up pending locks
@@ -1154,7 +1157,7 @@ void UARTDriver::write_pending_bytes(void)
         }
         if (AP_HAL::micros() - _first_write_started_us > 500*1000UL) {
             // it doesn't look like hw flow control is working
-            hal.console->printf("disabling flow control on serial %u\n", sdef.get_index());
+            DEV_PRINTF("disabling flow control on serial %u\n", sdef.get_index());
             set_flow_control(FLOW_CONTROL_DISABLE);
         }
     }

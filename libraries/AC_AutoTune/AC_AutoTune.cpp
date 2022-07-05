@@ -1,6 +1,8 @@
 #include "AC_AutoTune.h"
-#include <GCS_MAVLink/GCS.h>
+
+#include <AP_Logger/AP_Logger.h>
 #include <AP_Scheduler/AP_Scheduler.h>
+#include <GCS_MAVLink/GCS.h>
 
 #define AUTOTUNE_PILOT_OVERRIDE_TIMEOUT_MS  500     // restart tuning if pilot has left sticks in middle for 2 seconds
 #if APM_BUILD_TYPE(APM_BUILD_ArduPlane)
@@ -453,6 +455,8 @@ void AC_AutoTune::control_attitude()
             if (tune_type == TUNE_COMPLETE) {
                 // we've reached the end of a D-up-down PI-up-down tune type cycle
                 next_tune_type(tune_type, true);
+
+                report_final_gains(axis);
 
                 // advance to the next axis
                 bool complete = false;
