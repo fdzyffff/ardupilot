@@ -101,6 +101,7 @@ void Plane::HB1_msg_mission2apm_handle() {
     //if (HB1_status_noGPS_check()) {return;}
     // pack up msg
     HB1_mission2apm &tmp_msg = HB1_uart_mission.get_msg_mission2apm();
+    // tmp_msg._msg_1.print = false;
 
     switch (tmp_msg._msg_1.content.msg.remote_index) {
         case 0x63:
@@ -108,14 +109,17 @@ void Plane::HB1_msg_mission2apm_handle() {
             break;
         case 0x9C:
             HB1_msg_mission2apm_set_wp_handle();
+            // tmp_msg._msg_1.print = true;
             break;
         case 0x66:
             HB1_msg_mission2apm_set_interim_handle();
+            // tmp_msg._msg_1.print = true;
             break;
         case 0x33:
-            if (!HB1_status_noGPS_check()) {
+            // if (!HB1_status_noGPS_check()) {
                 HB1_msg_mission2apm_set_attack_handle();
-            }
+            // }
+            // tmp_msg._msg_1.print = true;
             break;
         // case 0xA3:
         //     if (!HB1_status_noGPS_check()) {
