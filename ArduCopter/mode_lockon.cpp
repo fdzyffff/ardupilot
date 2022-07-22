@@ -36,8 +36,8 @@ void ModeLockon::run()
     loiter_nav->set_pilot_desired_acceleration(0.0f, 0.0f, G_Dt);
 
     // get pilot's desired yaw rate
-    if (copter.Ucam.is_active()) {
-        target_yaw_rate = copter.Ucam.get_target_yaw_rate();
+    if (copter.Utarget.is_active()) {
+        target_yaw_rate = copter.Utarget.get_target_yaw_rate();
     } else {
         target_yaw_rate = copter.Ugcs.get_lockon_yaw_rate();
     }

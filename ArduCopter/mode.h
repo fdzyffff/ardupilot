@@ -43,6 +43,8 @@ public:
         FLY =          31,
         SEARCH =       32,
         ASSEMBLE =     33,
+        LOITERTKOFF =  34,
+        ATTACK_POS  =  40,
         //AUTOROTATE =   28,  // Attack
     };
 
@@ -1610,6 +1612,8 @@ protected:
     uint32_t wp_distance() const override;
     int32_t wp_bearing() const override;
 
+    uint32_t _last_ms;
+
 private:
 };
 
@@ -1666,4 +1670,69 @@ protected:
 
 private:
     bool reached_position();
+};
+
+
+class ModeLoiterTakeoff : public Mode {
+
+public:
+    // inherit constructor
+    using Mode::Mode;
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    bool requires_GPS() const override { return true; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(bool from_gcs) const override { return true; };
+    bool is_autopilot() const override { return false; }
+    bool has_user_takeoff(bool must_navigate) const override { return true; }
+    void set_climb_rate(float clime_rate_cms_in);
+
+
+protected:
+
+    const char *name() const override { return "LTKOFF"; }
+    const char *name4() const override { return "LTKF"; }
+
+    uint32_t wp_distance() const override;
+    int32_t wp_bearing() const override;
+
+
+private:
+    float _climb_rate;
+
+};
+
+
+
+class ModeAttack_pos : public Mode {
+
+public:
+    friend class UTarget;
+    // friend class UCapture;
+    // inherit constructor
+    using Mode::Mode;
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    bool requires_GPS() const override { return false; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(bool from_gcs) const override { return true; };
+    bool is_autopilot() const override { return false; }
+    bool has_user_takeoff(bool must_navigate) const override {
+        return !must_navigate;
+    }
+
+protected:
+
+    const char *name() const override { return "ATK_POS"; }
+    const char *name4() const override { return "APOS"; }
+
+private:
+    void update_attack_pos_mode(float &roll_out, float &pitch_out);
+    float update_target_climb_rate();
+    float _direction;
+
 };

@@ -12,7 +12,6 @@
 */
 
 #include "Copter.h"
-//#include "UCam.h"
 
 UCam::UCam()
 {
@@ -28,12 +27,6 @@ void UCam::init()
     raw_info.y = 0.0f;
     correct_info.x = 0.0f;
     correct_info.y = 0.0f;
-    display_info_new = false;
-    display_info_p1 = 0.0f;
-    display_info_p2 = 0.0f;
-    display_info_p3 = 0.0f;
-    display_info_p4 = 0.0f;
-    display_info_count = 0;
     _last_update_ms = 0;
     _target_pitch_rate = 0.0f;
     _target_yaw_rate_cds = 0.0f;
@@ -49,12 +42,12 @@ void UCam::init()
 void UCam::handle_info(float p1, float p2, float p3, float p4)
 {
 
-    display_info_p1 = p1;
-    display_info_p2 = p2;
-    display_info_p3 = p3;
-    display_info_p4 = p4;
-    display_info_new = true;
-    display_info_count++;
+    copter.Utarget.display_info_p1 = p1;
+    copter.Utarget.display_info_p2 = p2;
+    copter.Utarget.display_info_p3 = p3;
+    copter.Utarget.display_info_p4 = p4;
+    copter.Utarget.display_info_new = true;
+    copter.Utarget.display_info_count++;
     bool _valid = false;
     if ((int16_t)p1 == 0 && (int16_t)p2 == 0 && (int16_t)p3 == 0 && (int16_t)p4 == 0) {
     // self check fail (2Hz)
@@ -301,13 +294,13 @@ void UCam::update_target_pitch_rate() {
 }
 
 void UCam::update_target_roll_angle() {
-    float info_x = copter.Ucam.get_correct_info().x/(0.5f*copter.g2.user_parameters.cam_pixel_x) - copter.g2.user_parameters.cam_target_x.get();
+    float info_x = get_correct_info().x/(0.5f*copter.g2.user_parameters.cam_pixel_x) - copter.g2.user_parameters.cam_target_x.get();
     info_x = constrain_float(info_x, -1.0f, 1.0f);
     _target_roll_angle = copter.g2.user_parameters.fly_roll_limit*info_x*copter.g2.user_parameters.fly_roll_factor ;
 }
 
 void UCam::update_target_yaw_rate() {
-    float info_x = copter.Ucam.get_correct_info().x/(0.5f*copter.g2.user_parameters.cam_pixel_x) - copter.g2.user_parameters.cam_target_x.get();
+    float info_x = get_correct_info().x/(0.5f*copter.g2.user_parameters.cam_pixel_x) - copter.g2.user_parameters.cam_target_x.get();
     info_x = constrain_float(info_x, -1.0f, 1.0f);
     float x_angle = copter.g2.user_parameters.cam_angle_x;
     float yaw_rate_tc = copter.g2.user_parameters.fly_yaw_tc;
@@ -316,5 +309,5 @@ void UCam::update_target_yaw_rate() {
 }
 
 void UCam::update_target_track_angle() {
-    _current_angle_deg = -degrees(copter.ahrs_view->pitch) - (copter.g2.user_parameters.cam_pitch_offset)*0.01f-degrees(atanf((copter.Ucam.get_correct_info().y)/(0.5f*copter.g2.user_parameters.cam_pixel_y)*tanf(0.5f*radians(copter.g2.user_parameters.cam_angle_y))));
+    _current_angle_deg = -degrees(copter.ahrs_view->pitch) - (copter.g2.user_parameters.cam_pitch_offset)*0.01f-degrees(atanf((get_correct_info().y)/(0.5f*copter.g2.user_parameters.cam_pixel_y)*tanf(0.5f*radians(copter.g2.user_parameters.cam_angle_y))));
 }

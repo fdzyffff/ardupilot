@@ -6,6 +6,7 @@ class GCS_MAVLINK_Copter : public GCS_MAVLINK
 {
 
 public:
+    friend class UTarget;
 
     using GCS_MAVLINK::GCS_MAVLINK;
 

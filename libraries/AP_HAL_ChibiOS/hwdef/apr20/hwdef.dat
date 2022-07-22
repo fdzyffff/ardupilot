@@ -1,0 +1,184 @@
+ # hw definition file for AProtor hardware for AP4
+
+#---------------------------------Drones.Young-------------------------------
+# STATUS:
+# 64pin stm32f405，24MHz；ID：253；
+# BMI088（SPI）,SPL06,BMP388,ICM20649,HMC5883;
+# FLASH M25P16,TF_nand；RGB LED;
+# 6 UARTs(U1.2.3.4.5.6);SPI1,2;I2C1,I2C2;
+# 10PWMs，BiDbshot，1RCin;
+# 4ESC on board 6s10A with RGB；
+# Ublox Q8MAX on board；
+# On board WIFI；
+# Vl531x as RingeFinder；
+# 08xx-14xx brushless motor。
+
+ #-----------------------------------MCU---------------------------------------
+MCU STM32F4xx STM32F405xx
+APJ_BOARD_ID 253
+OSCILLATOR_HZ 24000000
+STM32_VDD 330U
+FLASH_SIZE_KB 1024
+FLASH_RESERVE_START_KB 64
+#define HAL_MINIMIZE_FEATURES 1
+
+# Strict API checking in ChibiOS
+#define CH_DBG_ENABLE_ASSERTS TRUE
+#define CH_DBG_ENABLE_CHECKS TRUE
+#define CH_DBG_SYSTEM_STATE_CHECK TRUE
+#define CH_DBG_ENABLE_STACK_CHECK TRUE
+
+#---------------------------------USB,SWD--------------------------------------
+# USB setup
+USB_VENDOR 0x0483 # ST
+USB_PRODUCT 0x5740
+USB_STRING_MANUFACTURER "DronesYoung"
+USB_STRING_PRODUCT "APZero"
+USB_STRING_SERIAL  "%SERIAL%"
+
+PA11 OTG_FS_DM OTG1
+PA12 OTG_FS_DP OTG1
+PC0 VBUS INPUT OPENDRAIN
+
+PA13 JTMS-SWDIO SWD
+PA14 JTCK-SWCLK SWD
+
+#-----------------------------------USART,I2C------------------------------------
+# output from printf() lines will be thrown away SD6 is for UART6.
+#STDOUT_SERIAL SD6
+#STDOUT_BAUDRATE 57600
+
+SERIAL_ORDER OTG1 USART1 USART2 USART3 UART4 UART5 USART6
+PA10 USART1_RX USART1
+PA9   USART1_TX USART1
+PA2   USART2_TX USART2
+PA3   USART2_RX USART2
+PC11 USART3_RX USART3 NODMA
+PC10 USART3_TX USART3
+PA1   UART4_RX   UART4
+PA0   UART4_TX   UART4
+UART5必须NODMA，否则与I2C1冲突
+PD2   UART5_RX  UART5 NODMA
+PC12 UART5_TX   UART5 NODMA
+PC6   USART6_TX USART6 NODMA
+PC7   USART6_RX USART6 NODMA
+
+I2C_ORDER I2C1 I2C2
+PB8 I2C1_SCL I2C1
+PB9 I2C1_SDA I2C1
+PB10 I2C2_SCL I2C2
+PB11 I2C2_SDA I2C2
+
+#-----------------------------------ADC-----------------------------------------
+PC3 BATT_VOLTAGE_SENS ADC1 SCALE(1)
+PC2 BATT_CURRENT_SENS ADC1 SCALE(1)
+
+define HAL_BATT_VOLT_PIN 12
+define HAL_BATT_CURR_PIN 13
+#pin有没对应关系？？？？
+define HAL_BATT_VOLT_SCALE 11.0
+define HAL_BATT_CURR_SCALE 11.0
+
+#-----------------------------------PWM----------------------------------------
+define STM32_ST_USE_TIMER 5
+
+# M1-T3C4,M2-T3C2,M3-T3C1,M4-T3C3
+
+PB4 TIM3_CH1 TIM3 PWM(3) GPIO(52)
+PB5 TIM3_CH2 TIM3 PWM(2) GPIO(51)
+PB0 TIM3_CH3 TIM3 PWM(4) GPIO(53)
+PB1 TIM3_CH4 TIM3 PWM(1) GPIO(50) 
+
+#PA15 TIM2_CH1 TIM2 PWM(5) GPIO(54)
+#PB3 TIM2_CH2 TIM2 PWM(6) GPIO(55)
+#PB6 TIM4_CH1 TIM4 PWM(7) GPIO(56)
+#PB7 TIM4_CH2 TIM4 PWM(8) GPIO(57)
+#PC8 TIM8_CH3 TIM8 PWM(9) GPIO(58)
+#PC9 TIM8_CH4 TIM8 PWM(10) GPIO(59)
+
+#define STM32_PWM_USE_ADVANCED TRUE
+define BOARD_PWM_COUNT_DEFAULT 4
+define CH_CFG_ST_RESOLUTION 16
+
+PA8 TIM1_CH1 TIM1 RCININT FLOAT LOW
+
+#-----------------------------------SPI,CAN-------------------------------------
+PA5 SPI1_SCK SPI1
+PA6 SPI1_MISO SPI1
+PA7 SPI1_MOSI SPI1
+
+PB13 SPI2_SCK SPI2
+PB14 SPI2_MISO SPI2
+PB15 SPI2_MOSI SPI2
+
+#-----------------------------------GPIO-------------------------------------
+PC5 BMIA_CS CS
+PC4 BMIG_CS CS
+PB12 ICM6_CS CS
+
+PA4 FLASH_CS CS
+PB2 SDCARD_CS CS
+
+#-----------------------------------Devices -------------------------------------
+SPIDEV bmi088_g       SPI2 DEVID1  BMIG_CS  	MODE3 10*MHZ 10*MHZ
+SPIDEV bmi088_a       SPI2 DEVID2  BMIA_CS  	MODE3 10*MHZ 10*MHZ
+SPIDEV icm20649       SPI2 DEVID3  ICM6_CS        MODE3  2*MHZ  8*MHZ
+
+define HAL_DEFAULT_INS_FAST_SAMPLE 1
+IMU BMI088 SPI:bmi088_a SPI:bmi088_g ROTATION_ROLL_180
+IMU Invensensev2 SPI:icm20649 ROTATION_YAW_90
+
+#COMPASS QMC5883L I2C:1:0x2C false ROTATION_NONE
+
+define ALLOW_ARM_NO_COMPASS
+define HAL_COMPASS_DEFAULT HAL_COMPASS_NONE
+define HAL_PROBE_EXTERNAL_I2C_COMPASSES
+define HAL_I2C_INTERNAL_MASK 0
+
+BARO BMP388 I2C:0:0x77
+#BARO SPL06  I2C:0:0x76
+#define HAL_PROBE_EXTERNAL_I2C_BAROS
+#define HAL_BARO_ALLOW_INIT_NO_BARO
+
+#---------------------------------------FASH,RAM,SD-----------------------------
+SPIDEV dataflash SPI1 DEVID1 FLASH_CS   MODE3 1*MHZ 8*MHZ
+SPIDEV sdcard     SPI1 DEVID2 SDCARD_CS MODE0 400*KHZ 25*MHZ
+
+#M25P16 SETUP
+define HAL_STORAGE_SIZE 15360
+define STORAGE_FLASH_PAGE 1
+
+# Enable FAT filesystem support (needs a microSD defined via SDIO).
+define HAL_OS_FATFS_IO 1
+define HAL_BOARD_LOG_DIRECTORY "/APM/LOGS"
+define HAL_BOARD_TERRAIN_DIRECTORY "/APM/TERRAIN"
+
+# enable logging to dataflash
+#define HAL_LOGGING_DATAFLASH
+
+#-----------------------------------------RGB------------------------------------
+PC13 LED_R1 OUTPUT OPENDRAIN HIGH GPIO(0)
+PC14 LED_G1 OUTPUT OPENDRAIN HIGH GPIO(1)
+PC15 LED_B1 OUTPUT OPENDRAIN HIGH GPIO(2)
+define HAL_GPIO_A_LED_PIN 0
+define HAL_GPIO_B_LED_PIN 1
+define HAL_GPIO_C_LED_PIN 2
+define HAL_GPIO_LED_ON  0
+define HAL_GPIO_LED_OFF 1
+define HAL_HAVE_PIXRACER_LED
+
+#-----------------------------------------SAVE-----------------------------------
+DMA_PRIORITY TIM3* SPI2* 
+
+# save some flash
+define HAL_BATTMON_SMBUS_ENABLE 0
+define HAL_BATTMON_FUEL_ENABLE 0
+define HAL_PARACHUTE_ENABLED 0
+define HAL_SPRAYER_ENABLED 0
+define HAL_MOUNT_ENABLED 0
+define GENERATOR_ENABLED 0
+define AC_OAPATHPLANNER_ENABLED 0
+define PRECISION_LANDING 0
+#-----------------------------------Other---------------------------------------
+#空闲
+

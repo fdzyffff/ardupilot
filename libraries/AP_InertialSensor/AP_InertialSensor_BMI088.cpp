@@ -266,6 +266,7 @@ bool AP_InertialSensor_BMI088::init()
 {
     dev_accel->set_read_flag(0x80);
     dev_gyro->set_read_flag(0x80);
+    _clip_limit = 31.5f * GRAVITY_MSS;
 
     return accel_init() && gyro_init();
 }

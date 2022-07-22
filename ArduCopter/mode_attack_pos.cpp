@@ -6,20 +6,22 @@
  */
 
 // althold_init - initialise althold controller
-bool ModeAltHold::init(bool ignore_checks)
+bool ModeAttack_pos::init(bool ignore_checks)
 {
     // initialise position and desired velocity
+    if (!copter.Utarget.Ucapture.is_active()) {return false;}
     if (!pos_control->is_active_z()) {
         pos_control->set_alt_target_to_current_alt();
         pos_control->set_desired_velocity_z(inertial_nav.get_velocity_z());
     }
+    _direction = copter.Utarget.Ucapture._q_angle_cd;
 
     return true;
 }
 
 // althold_run - runs the althold controller
 // should be called at 100hz or more
-void ModeAltHold::run()
+void ModeAttack_pos::run()
 {
     float takeoff_climb_rate = 0.0f;
 
@@ -32,13 +34,13 @@ void ModeAltHold::run()
 
     // get pilot desired lean angles
     float target_roll, target_pitch;
-    get_pilot_desired_lean_angles(target_roll, target_pitch, copter.aparm.angle_max, attitude_control->get_althold_lean_angle_max());
+    update_attack_pos_mode(target_roll, target_pitch);
 
     // get pilot's desired yaw rate
-    float target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
+    float target_yaw_rate = copter.Utarget.get_target_yaw_rate();;
 
     // get pilot desired climb rate
-    float target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
+    float target_climb_rate = update_target_climb_rate();
     target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
 
     // Alt Hold State Machine Determination
@@ -82,10 +84,6 @@ void ModeAltHold::run()
     case AltHold_Flying:
         motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
 
-#if AC_AVOID_ENABLED == ENABLED
-        // apply avoidance
-        copter.avoid.adjust_roll_pitch(target_roll, target_pitch, copter.aparm.angle_max);
-#endif
         // if (is_zero(target_yaw_rate) && copter.Utarget.is_active()) {
         //     target_yaw_rate = copter.Utarget.get_target_yaw_rate();
         // }
@@ -106,4 +104,42 @@ void ModeAltHold::run()
     // call z-axis position controller
     pos_control->update_z_controller();
 
+}
+
+void ModeAttack_pos::update_attack_pos_mode(float &roll_out, float &pitch_out)
+{
+
+    if (!copter.Utarget.is_active()) {copter.Ugcs.do_lockon();}
+
+    _direction += copter.Utarget.Ucapture._q_cds*G_Dt;
+
+    float simple_cos_yaw = ahrs.cos_yaw();
+    float simple_sin_yaw = ahrs.sin_yaw();
+
+    float sin_yaw = sinf(ToRad(_direction*0.01f));
+    float cos_yaw = cosf(ToRad(_direction*0.01f));
+
+    float rollx, pitchx;
+    // turn to north
+    rollx = 0.0f*cos_yaw - copter.g2.user_parameters.attack_pitch_angle.get()*sin_yaw;
+    pitchx = 0.0f*sin_yaw + copter.g2.user_parameters.attack_pitch_angle.get()*cos_yaw;
+
+    // turn to current yaw
+    roll_out = rollx*simple_cos_yaw + pitchx*simple_sin_yaw;
+    pitch_out = -rollx*simple_sin_yaw + pitchx*simple_cos_yaw;
+}
+
+float ModeAttack_pos::update_target_climb_rate() {
+    float target_alt = copter.Utarget.Ucapture.target_pos.z;
+    float kP = pos_control->get_pos_z_p().kP();
+    float accel_cmss = pos_control->get_max_accel_z();
+    float rate_max = g.pilot_speed_up.get();
+    float rate_min = -get_pilot_speed_dn();
+    float target_rate = 0.0f;
+    if (is_zero(kP)) {
+        target_rate = safe_sqrt(2.0f * (target_alt - copter.Utarget.Ucapture.current_pos.z) * accel_cmss);
+    } else {
+        target_rate = AC_AttitudeControl::sqrt_controller((target_alt - copter.Utarget.Ucapture.current_pos.z), kP, accel_cmss, G_Dt);
+    }
+    return constrain_float(target_rate, rate_min, rate_max);
 }

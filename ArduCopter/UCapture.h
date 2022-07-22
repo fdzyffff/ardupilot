@@ -1,11 +1,11 @@
 #pragma once
 
-class UCam {
+class UCapture {
 
 public:
 
     // constructor, destructor
-    UCam();
+    UCapture();
 
     // initialise
     void init();
@@ -24,37 +24,23 @@ public:
 
     void update();
 
-    float get_target_pitch_rate() {return _target_pitch_rate;}
-    float get_target_roll_angle() {return _target_roll_angle;}
     float get_target_yaw_rate() {return _target_yaw_rate_cds;}
-    float get_current_angle_deg() {return _current_angle_deg;}
-
-private:
-    void update_target_pitch_rate();
-    void update_target_roll_angle();
-    void update_target_yaw_rate();
-    void update_target_track_angle();
-
-
-    AP_HAL::UARTDriver* get_port(void) {return _port;}
-
-    struct {
-        // socket to telem2 on aircraft
-        bool connected;
-        mavlink_message_t rxmsg;
-        mavlink_status_t status;
-        uint8_t seq;
-    } mavlink;
+    float get_target_climb_rate() {return _target_climb_rate;}
 
     Vector2f raw_info;
     Vector2f correct_info;
+    Vector3f current_pos;
+    Vector3f target_pos;
     bool _active;
     uint32_t _last_update_ms;
     int16_t _n_count;
     int16_t _cam_state;
-    AP_HAL::UARTDriver* _port;
-    float _target_pitch_rate;
-    float _target_roll_angle;
     float _target_yaw_rate_cds;
-    float _current_angle_deg;
+    float _target_climb_rate;
+    float _q_cds;
+    float _q_angle_cd;
+
+private:
+    void update_target_yaw_rate();
+    void update_target_climb_rate();
 };

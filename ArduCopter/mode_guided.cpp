@@ -372,23 +372,23 @@ void ModeGuided::run()
 void ModeGuided::takeoff_run()
 {
     auto_takeoff_run();
-    if (wp_nav->reached_wp_destination()) {
-        // optionally retract landing gear
-        copter.landinggear.retract_after_takeoff();
+    // if (wp_nav->reached_wp_destination()) {
+    //     // optionally retract landing gear
+    //     copter.landinggear.retract_after_takeoff();
 
-        // switch to position control mode but maintain current target
-        const Vector3f& tmp_target = wp_nav->get_wp_destination();
-        Vector3f target = Vector3f(tmp_target.x, tmp_target.y, copter.g.pilot_takeoff_alt.get());
-        // float posD = 0.0f;
-        // copter.ahrs.get_relative_position_D_origin(posD);
-        // posD *= -100.0f;
-        // float rng_offset = 0.0f;
-        // if ( copter.rangefinder_alt_ok() ) {
-        //     rng_offset = posD - (float)copter.rangefinder_state.alt_cm;
-        // }
-        // target.z = copter.g.pilot_takeoff_alt.get() + rng_offset;
-        set_destination(target);
-    }
+    //     // switch to position control mode but maintain current target
+    //     const Vector3f& tmp_target = wp_nav->get_wp_destination();
+    //     Vector3f target = Vector3f(tmp_target.x, tmp_target.y, copter.g.pilot_takeoff_alt.get());
+    //     // float posD = 0.0f;
+    //     // copter.ahrs.get_relative_position_D_origin(posD);
+    //     // posD *= -100.0f;
+    //     // float rng_offset = 0.0f;
+    //     // if ( copter.rangefinder_alt_ok() ) {
+    //     //     rng_offset = posD - (float)copter.rangefinder_state.alt_cm;
+    //     // }
+    //     // target.z = copter.g.pilot_takeoff_alt.get() + rng_offset;
+    //     set_destination(target);
+    // }
 }
 
 void Mode::auto_takeoff_run()

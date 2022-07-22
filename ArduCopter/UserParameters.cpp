@@ -48,5 +48,9 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
 
     AP_GROUPINFO("_SEARCH_DIST"     , 33, UserParameters, group_search_dist, 1000.f),
 
+    AP_GROUPINFO("_TGT_TYPE"        , 34 , UserParameters, target_type, 0),
+    AP_GROUPINFO("_TGT_P_ANG"       , 35 , UserParameters, attack_pitch_angle, -3000.f),
+    AP_GROUPINFO("_TGT_K_FCT"       , 36 , UserParameters, attack_k_factor, 3.0f),
+    AP_GROUPINFO("_TGT_PTEST"       , 37 , UserParameters, attack_pos_test, 0),
     AP_GROUPEND
 };

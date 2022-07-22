@@ -34,7 +34,9 @@ void UGround::init()
     _follow_vel_vec.zero();
     _follow_yaw_cd = 0.0f;
     _dest_loc_vec.zero();
+    _dest_loc_vec.z = copter.g2.user_parameters.gcs_target_alt.get();
     _raw_dest_loc_vec.zero();
+    _raw_dest_loc_vec.z= copter.g2.user_parameters.gcs_target_alt.get();
     _dist_to_target = 0.0f;
     _bearing_to_target = 0.0f;
     _yaw_middle_cd = 0.0f;
@@ -62,6 +64,9 @@ void UGround::handle_info(int16_t p1, float p2, float p3, float p4)
         case 4:
             copter.gcs().send_text(MAV_SEVERITY_WARNING, "Set up search dist: %f",p2);
             set_up_search_dist(p2);
+            break;
+        case 5:
+            // alt offset
             break;
         case 10:
             copter.gcs().send_text(MAV_SEVERITY_WARNING, "Set up dest :%f, %f",p2, p3);
@@ -109,19 +114,20 @@ void UGround::do_cmd(int16_t cmd) {
             copter.gcs().send_text(MAV_SEVERITY_WARNING, "Do pause");
             break;
         case 10:
-            copter.Ucam.do_cmd(1.0f);
+            copter.Utarget.do_cmd(1.0f);
             copter.gcs().send_text(MAV_SEVERITY_WARNING, "CAM ON");
             break;
         case 11:
-            copter.Ucam.do_cmd(0.0f);
+            copter.Utarget.do_cmd(0.0f);
             copter.gcs().send_text(MAV_SEVERITY_WARNING, "CAM OFF");
             break;
         case 12:
-            copter.Ucam.do_cmd(10.0f);
+            copter.Utarget.do_cmd(10.0f);
             copter.gcs().send_text(MAV_SEVERITY_WARNING, "Plot get");
             break;
         case 254:
             do_arm();
+            copter.gcs().send_text(MAV_SEVERITY_WARNING, "Do arm");
             break;
         case 255:
             copter.arming.disarm();
@@ -206,7 +212,10 @@ void UGround::set_up_follow(int8_t sender_id, Vector3f target_postion, Vector3f 
         vel_comp.zero();
     }
 
-    _follow_loc_vec = target_postion + offset_position + vel_comp;
+    // Vector3f new_vec = target_postion + offset_position + vel_comp;
+    // if (norm(new_vec.x-_follow_loc_vec.x, new_vec.y-_follow_loc_vec.y) > 200.f) {
+        _follow_loc_vec = target_postion + offset_position + vel_comp;
+    // }
     _follow_vel_vec = target_velocity;
     _follow_yaw_cd = target_heading*100.f;
     _leader_id = sender_id;
@@ -389,6 +398,11 @@ bool UGround::do_takeoff() // takeoff
     if (copter.set_mode(Mode::Number::TAKEOFF, ModeReason::GCS_COMMAND)) {
         return copter.mode_guided.do_user_takeoff(constrain_float(copter.g.pilot_takeoff_alt,100.0f,1500.0f),true);
     }
+
+    // if (copter.set_mode(Mode::Number::LOITERTKOFF, ModeReason::GCS_COMMAND)) {
+    //     copter.mode_loitertkoff.set_climb_rate(20.f);
+    //     return true;
+    // }
     return false;
 }
 
@@ -421,7 +435,13 @@ bool UGround::do_lockon()  // lock on target
 
 bool UGround::do_attack()
 {
-    return copter.set_mode(Mode::Number::ATTACK_ANGLE, ModeReason::TOY_MODE);
+    if (copter.Utarget.type() == 0){
+        return copter.set_mode(Mode::Number::ATTACK_ANGLE, ModeReason::TOY_MODE);
+    }
+    if (copter.Utarget.type() == 1){
+        return copter.set_mode(Mode::Number::ATTACK_POS, ModeReason::TOY_MODE);
+    }
+    return false;
 }
 
 bool UGround::do_fs1()     // failsafe type1
@@ -468,9 +488,9 @@ void Copter::Ugcs_handle_msg(const mavlink_message_t &msg) {
         _target_location.alt = packet.relative_alt / 10;  // convert millimeters to cm
         _target_location.relative_alt = 1;                // set relative_alt flag
 
-        _target_velocity_neu.x = 0.0f;//packet.vx; // velocity north
-        _target_velocity_neu.y = 0.0f;//packet.vy; // velocity east
-        _target_velocity_neu.z = 0.0f;//packet.vz * 0.01f; // velocity down
+        _target_velocity_neu.x = 0.0f; //packet.vx*0.1f; // velocity north
+        _target_velocity_neu.y = 0.0f; //packet.vy*0.1f; // velocity east
+        _target_velocity_neu.z = 0.0f; //packet.vz * 0.01f; // velocity down
 
         if (packet.hdg <= 36000) {                  // heading (UINT16_MAX if unknown)
             _target_heading = packet.hdg * 0.01f;   // convert centi-degrees to degrees
@@ -516,4 +536,18 @@ Vector3f Copter::Ugcs_get_velocity_NED() {
 
 float Copter::Ugcs_get_target_yaw_cd() {
     return attitude_control->get_att_target_euler_cd().z;
+}
+
+Location Copter::Ugcs_get_target_pos_location() {
+    Location originLLH;
+    if (!ahrs.get_origin(originLLH) || !ahrs.home_is_set()) {
+        return current_loc;
+    }
+    const Vector3f offset = originLLH.get_distance_NED(ahrs.get_home());
+    Vector3f pos_target = pos_control->get_pos_target(); // to home
+    pos_target.x += offset.x; 
+    pos_target.y += offset.y; // target pos to origin
+
+    Location ret = Location(pos_target);
+    return ret;
 }

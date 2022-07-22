@@ -475,15 +475,15 @@ void Copter::Ugcs_Log_Write_UCamTarget()
     struct log_UCamTarget pkt = {
         LOG_PACKET_HEADER_INIT(LOG_UCAMTARGET_MSG),
         time_us            : AP_HAL::micros64(),
-        target_valid       : (uint8_t)Ucam.is_active(),
-        target_raw_x       : Ucam.get_raw_info().x,
-        target_raw_y       : Ucam.get_raw_info().y,
-        target_corr_x      : Ucam.get_correct_info().x,
-        target_corr_y      : Ucam.get_correct_info().y,
-        target_roll_angle  : Ucam.get_target_roll_angle()*0.01f,
-        target_pitch_rate  : Ucam.get_target_pitch_rate()*0.01f,
-        target_yaw_rate    : Ucam.get_target_yaw_rate()*0.01f,
-        target_track_angle : Ucam.get_current_angle_deg()
+        target_valid       : (uint8_t)Utarget.is_active(),
+        target_raw_x       : Utarget.get_raw_info().x,
+        target_raw_y       : Utarget.get_raw_info().y,
+        target_corr_x      : Utarget.get_correct_info().x,
+        target_corr_y      : Utarget.get_correct_info().y,
+        target_roll_angle  : Utarget.get_target_roll_angle()*0.01f,
+        target_pitch_rate  : Utarget.get_target_pitch_rate()*0.01f,
+        target_yaw_rate    : Utarget.get_target_yaw_rate()*0.01f,
+        target_track_angle : Utarget.get_current_angle_deg()
     };
     logger.WriteBlock(&pkt, sizeof(pkt));
 }

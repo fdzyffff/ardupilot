@@ -8,7 +8,7 @@
 // althold_init - initialise althold controller
 bool ModeAttack_angle::init(bool ignore_checks)
 {
-    if (copter.Ucam.is_active()) {
+    if (copter.Utarget.is_active()) {
         // initialise position and desired velocity
         if (!pos_control->is_active_z()) {
             pos_control->set_alt_target_to_current_alt();
@@ -34,8 +34,8 @@ void ModeAttack_angle::run()
     update_simple_mode();
 
     // get target lean angles
-    float target_roll_ang = copter.Ucam.get_target_roll_angle();
-    float target_pitch_rate = copter.Ucam.get_target_pitch_rate();
+    float target_roll_ang = copter.Utarget.get_target_roll_angle();
+    float target_pitch_rate = copter.Utarget.get_target_pitch_rate();
 
     if ( (degrees(copter.ahrs_view->pitch)*100.f + target_pitch_rate*G_Dt) > copter.g2.user_parameters.fly_pitch_limit.get() ) {
         target_pitch_rate = MIN(0.0f,target_pitch_rate);
@@ -44,7 +44,7 @@ void ModeAttack_angle::run()
     }
 
     // get target yaw rate
-    float target_yaw_rate = copter.Ucam.get_target_yaw_rate();
+    float target_yaw_rate = copter.Utarget.get_target_yaw_rate();
 
     // get target climb rate
     float target_climb_rate = my_get_target_climb_rate();
@@ -84,7 +84,7 @@ void ModeAttack_angle::run()
 }
 
 float ModeAttack_angle::my_get_target_climb_rate() {
-    float current_angle_deg = copter.Ucam.get_current_angle_deg();
+    float current_angle_deg = copter.Utarget.get_current_angle_deg();
     float target_angle_deg = copter.g2.user_parameters.fly_attack_angle*0.01f;
     float climb_rate_factor = copter.g2.user_parameters.fly_climb_factor;
     float pitch_scalar = copter.g2.user_parameters.fly_pitch_scalar*constrain_float(fabsf(degrees(copter.ahrs_view->pitch)*100.f/copter.g2.user_parameters.fly_pitch_limit.get()), 0.3f, 1.0f);

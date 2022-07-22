@@ -7,7 +7,7 @@
  */
 
 // loiter_init - initialise loiter controller
-bool ModeLoiter::init(bool ignore_checks)
+bool ModeLoiterTakeoff::init(bool ignore_checks)
 {
     if (!copter.failsafe.radio) {
         float target_roll, target_pitch;
@@ -30,61 +30,45 @@ bool ModeLoiter::init(bool ignore_checks)
         pos_control->set_alt_target_to_current_alt();
         pos_control->set_desired_velocity_z(inertial_nav.get_velocity_z());
     }
+    _climb_rate = 0.0f;
+    copter.gcs().send_text(MAV_SEVERITY_WARNING, "mode loiter takeoff");
 
     return true;
 }
 
-#if PRECISION_LANDING == ENABLED
-bool ModeLoiter::do_precision_loiter()
-{
-    if (!_precision_loiter_enabled) {
-        return false;
+void ModeLoiterTakeoff::set_climb_rate(float clime_rate_cms_in) {
+    _climb_rate = MAX(clime_rate_cms_in, 0.0f);
+    if (motors->armed() && !copter.ap.auto_armed && (_climb_rate > 0.0f)) {
+        copter.set_auto_armed(true);
     }
-    if (copter.ap.land_complete_maybe) {
-        return false;        // don't move on the ground
-    }
-    // if the pilot *really* wants to move the vehicle, let them....
-    if (loiter_nav->get_pilot_desired_acceleration().length() > 50.0f) {
-        return false;
-    }
-    if (!copter.precland.target_acquired()) {
-        return false; // we don't have a good vector
-    }
-    return true;
 }
-
-void ModeLoiter::precision_loiter_xy()
-{
-    loiter_nav->clear_pilot_desired_acceleration();
-    Vector2f target_pos, target_vel_rel;
-    if (!copter.precland.get_target_position_cm(target_pos)) {
-        target_pos.x = inertial_nav.get_position().x;
-        target_pos.y = inertial_nav.get_position().y;
-    }
-    if (!copter.precland.get_target_velocity_relative_cms(target_vel_rel)) {
-        target_vel_rel.x = -inertial_nav.get_velocity().x;
-        target_vel_rel.y = -inertial_nav.get_velocity().y;
-    }
-    pos_control->set_xy_target(target_pos.x, target_pos.y);
-    pos_control->override_vehicle_velocity_xy(-target_vel_rel);
-}
-#endif
 
 // loiter_run - runs the loiter controller
 // should be called at 100hz or more
-void ModeLoiter::run()
+void ModeLoiterTakeoff::run()
 {
-    float target_roll, target_pitch;
+    float target_roll = 0.0f;
+    float target_pitch = 0.0f;
     float target_yaw_rate = 0.0f;
-    float target_climb_rate = 0.0f;
-    float takeoff_climb_rate = 0.0f;
+    float target_climb_rate = _climb_rate;
+    float takeoff_climb_rate = 0.0f;;
+
+    // float posD = 0.0f;
+    // copter.ahrs.get_relative_position_D_home(posD);
+    // posD *= -100.0f;
+    float current_alt = copter.inertial_nav.get_altitude();// in cm
+    if (current_alt > constrain_float(copter.g.pilot_takeoff_alt,100.0f,1500.0f)) {
+        if (_climb_rate > 0.0f) {
+            copter.gcs().send_text(MAV_SEVERITY_WARNING, "reset _climb_rate");
+            _climb_rate = 0.0f;
+            target_climb_rate = _climb_rate;
+        }
+    }
 
     // initialize vertical speed and acceleration
     pos_control->set_max_speed_z(-get_pilot_speed_dn(), g.pilot_speed_up);
     pos_control->set_max_accel_z(g.pilot_accel_z);
 
-    // process pilot inputs unless we are in radio failsafe
-    if (!copter.failsafe.radio) {
         // apply SIMPLE mode transform to pilot inputs
         update_simple_mode();
 
@@ -95,15 +79,11 @@ void ModeLoiter::run()
         loiter_nav->set_pilot_desired_acceleration(target_roll, target_pitch, G_Dt);
 
         // get pilot's desired yaw rate
-        target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
+        // target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
 
         // get pilot desired climb rate
-        target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
-        target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
-    } else {
-        // clear out pilot desired acceleration in case radio failsafe event occurs and we do not switch to RTL for some reason
-        loiter_nav->clear_pilot_desired_acceleration();
-    }
+        // target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
+        // target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
 
     // relax loiter target if we might be landed
     if (copter.ap.land_complete_maybe) {
@@ -165,18 +145,9 @@ void ModeLoiter::run()
         // set motors to full range
         motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
 
-#if PRECISION_LANDING == ENABLED
-        if (do_precision_loiter()) {
-            precision_loiter_xy();
-        }
-#endif
-
         // run loiter controller
         loiter_nav->update();
 
-        // if (is_zero(target_yaw_rate) && copter.Utarget.is_active()) {
-        //     target_yaw_rate = copter.Utarget.get_target_yaw_rate();
-        // }
         // call attitude controller
         attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(loiter_nav->get_roll(), loiter_nav->get_pitch(), target_yaw_rate);
 
@@ -192,12 +163,12 @@ void ModeLoiter::run()
     }
 }
 
-uint32_t ModeLoiter::wp_distance() const
+uint32_t ModeLoiterTakeoff::wp_distance() const
 {
     return loiter_nav->get_distance_to_target();
 }
 
-int32_t ModeLoiter::wp_bearing() const
+int32_t ModeLoiterTakeoff::wp_bearing() const
 {
     return loiter_nav->get_bearing_to_target();
 }

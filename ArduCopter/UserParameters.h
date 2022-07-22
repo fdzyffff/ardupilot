@@ -51,4 +51,9 @@ public:
     AP_Int32 ekf_origin_alt;
 
     AP_Float group_search_dist;
+
+    AP_Int8 target_type;
+    AP_Float attack_pitch_angle;
+    AP_Float attack_k_factor;
+    AP_Int8 attack_pos_test;
 };

@@ -11,8 +11,9 @@ void Copter::userhook_init()
     mocap_stat.y = 0.0f;
     mocap_stat.z = 0.0f;
 
-    Ucam.init();
+    Utarget.init();
     Upayload.init();
+    Ugcs.init();
 }
 #endif
 
@@ -27,7 +28,7 @@ void Copter::userhook_FastLoop()
 void Copter::userhook_50Hz()
 {
     // put your 50Hz code here
-    Ucam.update();
+    Utarget.update();
     Ugcs.update();
     Upayload.update();
 }
@@ -92,25 +93,25 @@ void Copter::userhook_auxSwitch3(uint8_t ch_flag)
 #endif
 
 void Copter::userhook_SuperSlowLoop_print() {
-    if ((g2.user_parameters.cam_print.get() & (1<<0)) && Ucam.display_info_new) { // 1
-        gcs().send_text(MAV_SEVERITY_WARNING, "[%d] %0.0f,%0.0f,%0.0f,%0.0f", Ucam.display_info_count, Ucam.display_info_p1, Ucam.display_info_p2, Ucam.display_info_p3, Ucam.display_info_p4);
-        Ucam.display_info_new = false;
+    if ((g2.user_parameters.cam_print.get() & (1<<0)) && Utarget.display_info_new) { // 1
+        gcs().send_text(MAV_SEVERITY_WARNING, "[%d] %0.0f,%0.0f,%0.0f,%0.0f", Utarget.display_info_count, Utarget.display_info_p1, Utarget.display_info_p2, Utarget.display_info_p3, Utarget.display_info_p4);
+        Utarget.display_info_new = false;
     }
     if (g2.user_parameters.cam_print.get() & (1<<1)) { // 2
-        gcs().send_text(MAV_SEVERITY_WARNING, "Corr (%0.0f,%0.0f) on:%d", Ucam.get_correct_info().x,Ucam.get_correct_info().y, Ucam.is_active());
+        gcs().send_text(MAV_SEVERITY_WARNING, "r(%0.0f,%0.0f) c(%0.0f,%0.0f) on:%d", Utarget.get_raw_info().x,Utarget.get_raw_info().y,Utarget.get_correct_info().x,Utarget.get_correct_info().y, Utarget.is_active());
     }
     if (g2.user_parameters.cam_print.get() & (1<<2)) { // 4
-        gcs().send_text(MAV_SEVERITY_WARNING, "rpy (%0.1f,%0.1f,%0.1f)", Ucam.get_target_roll_angle()*0.01f, Ucam.get_target_pitch_rate()*0.01f, Ucam.get_target_yaw_rate()*0.01f);
+        gcs().send_text(MAV_SEVERITY_WARNING, "rpy (%0.1f,%0.1f,%0.1f)", Utarget.get_target_roll_angle()*0.01f, Utarget.get_target_pitch_rate()*0.01f, Utarget.get_target_yaw_rate()*0.01f);
     }
     if (g2.user_parameters.cam_print.get() & (1<<3)) { // 8
-        gcs().send_text(MAV_SEVERITY_WARNING, "Track Angle (%0.1f)", Ucam.get_current_angle_deg());
+        gcs().send_text(MAV_SEVERITY_WARNING, "Track Angle (%0.1f)", Utarget.get_current_angle_deg());
     }
     if (g2.user_parameters.cam_print.get() & (1<<4)) { // 16
         gcs().send_text(MAV_SEVERITY_WARNING, "Mocap [%d] [%0.1f, %0.1f, %0.1f]", mocap_stat.n_count, mocap_stat.x, mocap_stat.y, mocap_stat.z);
     }
 
 
-    Ucam.display_info_count = 0;
+    Utarget.display_info_count = 0;
 }
 
 void Copter::userhook_SuperSlowLoop_telemsetup() {

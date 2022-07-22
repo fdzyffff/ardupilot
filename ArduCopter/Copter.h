@@ -72,7 +72,7 @@
 #include "defines.h"
 #include "config.h"
 
-#include "UCam.h"
+#include "UTarget.h"
 #include "UGround.h"
 #include "UPayload.h"
 
@@ -247,8 +247,12 @@ public:
     friend class ModeFly;
     friend class ModeSearch;
     friend class ModeAssemble;
+    friend class ModeLoiterTakeoff;
+    friend class ModeAttack_pos;
 
+    friend class UTarget;
     friend class UCam;
+    friend class UCapture;
     friend class UGround;
     friend class UPayload;
 
@@ -952,7 +956,7 @@ private:
         My_state_Attack          = 5,
     };
 
-    UCam Ucam;
+    UTarget Utarget;
     UGround Ugcs;
     UPayload Upayload;
     LowPassFilterFloat Ugcs_last_valid_alt_cm;
@@ -965,6 +969,8 @@ private:
     int32_t Ugcs_get_relative_alt();
     Vector3f Ugcs_get_velocity_NED();
     float Ugcs_get_target_yaw_cd();
+    Location Ugcs_get_target_pos_location();
+    // Vector3f Ugcs_get_target_velocity_NED();
 
     void send_my_micro_image(mavlink_channel_t chan, mavlink_my_micro_image_t* my_micro_image) ;
 #if OSD_ENABLED == ENABLED
@@ -1054,6 +1060,8 @@ private:
     ModeFly mode_fly;
     ModeSearch mode_search;
     ModeAssemble mode_assemble;
+    ModeLoiterTakeoff mode_loitertkoff;
+    ModeAttack_pos mode_attack_pos;
 
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);

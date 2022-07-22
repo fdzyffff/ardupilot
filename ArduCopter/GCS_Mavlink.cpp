@@ -304,9 +304,9 @@ bool GCS_MAVLINK_Copter::try_send_message(enum ap_message id)
             0,
             MAV_CMD_USER_3,
             0,
-            (float)copter.Ucam.cam_state(),
-            copter.Ucam.get_raw_info().x, 
-            copter.Ucam.get_raw_info().y, 
+            (float)copter.Utarget.cam_state(),
+            copter.Utarget.get_raw_info().x, 
+            copter.Utarget.get_raw_info().y, 
             (float)copter.Ugcs.get_state_num(),
             (float)copter.Ugcs.get_group_distance(), 
             0, 0);
@@ -314,8 +314,8 @@ bool GCS_MAVLINK_Copter::try_send_message(enum ap_message id)
         mavlink_msg_global_position_int_send(
             chan,
             AP_HAL::millis(),
-            copter.current_loc.lat,                 // in 1E7 degrees
-            copter.current_loc.lng,                 // in 1E7 degrees
+            copter.current_loc.lat,//copter.Ugcs_get_target_pos_location().lat,                 // in 1E7 degrees
+            copter.current_loc.lng,//copter.Ugcs_get_target_pos_location().lng,                 // in 1E7 degrees
             copter.Ugcs_get_terrain_target_alt(),   // millimeters above ground/sea level
             copter.Ugcs_get_relative_alt(),         // millimeters above home
             copter.Ugcs_get_velocity_NED().x*100.f, // X speed cm/s (+ve North)
@@ -582,6 +582,13 @@ void GCS_MAVLINK_Copter::handle_att_pos_mocap(const mavlink_message_t &msg, bool
         copter.mocap_stat.z = m.z;
         copter.mocap_stat.n_count++;
         copter.mocap_stat.last_update_ms = millis();
+
+
+        if (copter.g2.user_parameters.attack_pos_test.get()==0) {
+            copter.Utarget.Ucapture.current_pos.x = m.x;
+            copter.Utarget.Ucapture.current_pos.y = m.y;
+            copter.Utarget.Ucapture.current_pos.z = m.z;
+        }
     
         Location ekf_origin;
         bool have_origin = copter.ahrs.get_origin(ekf_origin);
@@ -934,7 +941,8 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_
     }
 
     case MAV_CMD_USER_2: {
-        copter.gcs().send_text(MAV_SEVERITY_WARNING, "USER2");
+        copter.Utarget.Ucapture.handle_info(packet.param1, packet.param2, packet.param3, packet.param4);
+        // copter.gcs().send_text(MAV_SEVERITY_WARNING, "USER2");
         return MAV_RESULT_ACCEPTED;
     }
 

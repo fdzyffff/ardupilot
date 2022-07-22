@@ -8,7 +8,7 @@
 // althold_init - initialise althold controller
 bool ModeAttack_att::init(bool ignore_checks)
 {
-    if (copter.Ucam.is_active()) {
+    if (copter.Utarget.is_active()) {
         copter.Upayload.set_state(UPayload::payload_arm);
         return true;
     }
@@ -25,8 +25,8 @@ void ModeAttack_att::run()
     update_simple_mode();
 
     // get target lean angles
-    float target_roll_ang = copter.Ucam.get_target_roll_angle();
-    float target_pitch_rate = copter.Ucam.get_target_pitch_rate();
+    float target_roll_ang = copter.Utarget.get_target_roll_angle();
+    float target_pitch_rate = copter.Utarget.get_target_pitch_rate();
 
     if ( (degrees(copter.ahrs_view->pitch)*100.f + target_pitch_rate*G_Dt) > copter.g2.user_parameters.fly_pitch_limit.get() ) {
         target_pitch_rate = MIN(0.0f,target_pitch_rate);
@@ -34,7 +34,7 @@ void ModeAttack_att::run()
         target_pitch_rate = MAX(0.0f,target_pitch_rate);
     }
     // get target yaw rate
-    float target_yaw_rate = copter.Ucam.get_target_yaw_rate();
+    float target_yaw_rate = copter.Utarget.get_target_yaw_rate();
 
     motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
 

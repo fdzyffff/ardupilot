@@ -23,6 +23,9 @@ bool ModeSearch::init(bool ignore_checks)
 // should be called at 100hz or more
 void ModeSearch::run()
 {
+    if (copter.Utarget.is_active()) {
+        copter.Ugcs.do_lockon();
+    }
     copter.mode_guided.run();
 }
 

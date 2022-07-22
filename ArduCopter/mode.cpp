@@ -193,6 +193,12 @@ Mode *Copter::mode_from_mode_num(const Mode::Number mode)
         case Mode::Number::ASSEMBLE:
             ret = &mode_assemble;
             break;
+        case Mode::Number::LOITERTKOFF:
+            ret = &mode_loitertkoff;
+            break;
+        case Mode::Number::ATTACK_POS:
+            ret = &mode_attack_pos;
+            break;
 #endif
         default:
             break;

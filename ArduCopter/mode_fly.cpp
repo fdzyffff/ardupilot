@@ -10,6 +10,7 @@
 bool ModeFly::init(bool ignore_checks)
 {
     if (copter.mode_guided.init(false)) {
+        _last_ms = millis();
         return true;
     }
     return false;
@@ -26,7 +27,10 @@ void ModeFly::run()
             copter.Ugcs.dest_pos_update(false);
         }
     } else {
-        copter.mode_guided.set_destination_posvel(copter.Ugcs.get_follow_loc_vec(), copter.Ugcs.get_follow_vel_vec(), true, copter.Ugcs.get_follow_yaw_cd(), false, 0.0f, false);
+        if (millis() - _last_ms > 200) {
+            copter.mode_guided.set_destination_posvel(copter.Ugcs.get_follow_loc_vec(), copter.Ugcs.get_follow_vel_vec(), true, copter.Ugcs.get_follow_yaw_cd(), false, 0.0f, false);
+            _last_ms = millis();
+        }
     }
     copter.mode_guided.run();
 }
