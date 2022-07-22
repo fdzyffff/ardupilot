@@ -34,7 +34,7 @@ void UGround::init()
     _follow_vel_vec.zero();
     _follow_yaw_cd = 0.0f;
     _dest_loc_vec.zero();
-    _dest_loc_vec.z = copter.g2.user_parameters.gcs_target_alt.get();
+    _dest_loc_vec.z = get_final_target_alt();
     _raw_dest_loc_vec.zero();
     _dist_to_target = 0.0f;
     _bearing_to_target = 0.0f;
@@ -63,6 +63,10 @@ void UGround::handle_info(int16_t p1, float p2, float p3, float p4)
         case 4:
             copter.gcs().send_text(MAV_SEVERITY_WARNING, "Set up search dist: %f",p2);
             set_up_search_dist(p2);
+            break;
+        case 5:
+            copter.gcs().send_text(MAV_SEVERITY_WARNING, "Set up alt offset: %f",p2);
+            set_up_alt_offset(p2);
             break;
         case 10:
             copter.gcs().send_text(MAV_SEVERITY_WARNING, "Set up dest :%f, %f",p2, p3);
@@ -126,7 +130,7 @@ void UGround::do_cmd(int16_t cmd) {
             copter.gcs().send_text(MAV_SEVERITY_WARNING, "Do arm");
             break;
         case 255:
-            copter.arming.disarm(AP_Arming::Method::MAVLINK);
+            copter.arming.disarm(AP_Arming::Method::MAVLINK, false);
             break;
         default:
             break;
@@ -147,8 +151,17 @@ void UGround::set_up_alt(float target_alt) {
     refresh_dest();
 }
 
+void UGround::set_up_alt_offset(float target_alt_offset) {
+    _gcs_target_alt_offset += target_alt_offset;
+    refresh_dest();
+}
+
 void UGround::set_up_search_dist(float search_dist) {
     copter.g2.user_parameters.group_search_dist.set(search_dist);
+}
+
+float UGround::get_final_target_alt() {
+    return ((float)copter.g2.user_parameters.gcs_target_alt.get()+_gcs_target_alt_offset);
 }
 
 void UGround::refresh_dest() {
@@ -158,7 +171,7 @@ void UGround::refresh_dest() {
     tmp_m.from_euler(0.0f, 0.0f, radians(_group_target_yaw));
     offset_position = tmp_m*offset_position;
     _dest_loc_vec = _raw_dest_loc_vec+offset_position;
-    _dest_loc_vec.z = (float)copter.g2.user_parameters.gcs_target_alt.get();
+    _dest_loc_vec.z = get_final_target_alt();
 
     gcs().send_text(MAV_SEVERITY_WARNING, "[x,y,z]: [%f,%f,%f]", _dest_loc_vec.x,_dest_loc_vec.y,_dest_loc_vec.z);
 
@@ -169,19 +182,19 @@ void UGround::set_up_dest(float lat_in, float lng_in) {
     Location tmp_location;
     tmp_location.lat = (int32_t)(lat_in*1.0e7f);
     tmp_location.lng = (int32_t)(lng_in*1.0e7f);
-    tmp_location.alt = (int16_t)copter.g2.user_parameters.gcs_target_alt.get();
+    tmp_location.alt = (int16_t)get_final_target_alt();
     tmp_location.relative_alt = 1; 
 
-    gcs().send_text(MAV_SEVERITY_WARNING, "lng: %ld", tmp_location.lng);
-    gcs().send_text(MAV_SEVERITY_WARNING, "lat: %ld", tmp_location.lat);
-    gcs().send_text(MAV_SEVERITY_WARNING, "alt: %ld", tmp_location.alt);
+    gcs().send_text(MAV_SEVERITY_WARNING, "lng: %f", (float)tmp_location.lng);
+    gcs().send_text(MAV_SEVERITY_WARNING, "lat: %f", (float)tmp_location.lat);
+    gcs().send_text(MAV_SEVERITY_WARNING, "alt: %f", (float)tmp_location.alt);
 
     Vector2f res_vec;
     if (!tmp_location.get_vector_xy_from_origin_NE(res_vec)) {
         copter.gcs().send_text(MAV_SEVERITY_WARNING, "Failed setup dest");
         return;
     }
-    Vector3f target_postion = Vector3f(res_vec.x, res_vec.y, copter.g2.user_parameters.gcs_target_alt.get());
+    Vector3f target_postion = Vector3f(res_vec.x, res_vec.y, get_final_target_alt());
     Vector3f new_raw_dest_loc_vec = target_postion;
     if (norm(new_raw_dest_loc_vec.x - _raw_dest_loc_vec.x, new_raw_dest_loc_vec.y - _raw_dest_loc_vec.y) > 200.f) {
         _raw_dest_loc_vec = new_raw_dest_loc_vec;
@@ -255,7 +268,7 @@ Vector3f UGround::get_assemble_dest() {
     Matrix3f tmp_m;
     tmp_m.from_euler(0.0f, 0.0f, radians(group_dir));
     assemble_offset_position = tmp_m*assemble_offset_position;
-    _leader_loc_vec.z = (float)(copter.g2.user_parameters.gcs_target_alt.get());
+    _leader_loc_vec.z = (float)(get_final_target_alt());
     // update _yaw_middle_cd to possible target dir
     _yaw_middle_cd = wrap_360(_follow_yaw_cd*0.01f + my_group1_assemble.get_dir(copter.g.sysid_this_mav) - my_group1_assemble.get_dir(_leader_id))*100.0f;
     copter.gcs().send_text(MAV_SEVERITY_WARNING, "dir: %f",_yaw_middle_cd);
@@ -498,14 +511,14 @@ void Copter::Ugcs_handle_msg(const mavlink_message_t &msg) {
         if (rangefinder_alt_ok() ) {
             rng_offset = Ugcs_get_relative_alt()*0.1f - rangefinder_state.alt_cm;
         }
-        _target_postion_neu.z = rng_offset + (float)(copter.g2.user_parameters.gcs_target_alt.get());
+        _target_postion_neu.z = rng_offset + (float)(Ugcs.get_final_target_alt());
 
         Ugcs.set_up_follow(msg.sysid, _target_postion_neu, _target_velocity_neu, _target_heading);
     }
 }
 
 int32_t Copter::Ugcs_get_terrain_target_alt() {
-    return copter.g2.user_parameters.gcs_target_alt.get();
+    return Ugcs.get_final_target_alt();
 }
 
 int32_t Copter::Ugcs_get_relative_alt() {

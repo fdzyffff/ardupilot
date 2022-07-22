@@ -141,41 +141,41 @@ bool MAVLink_routing::check_and_forward(mavlink_channel_t in_channel, const mavl
 
     // forward on any channels matching the targets
     bool forwarded = false;
-    bool sent_to_chan[MAVLINK_COMM_NUM_BUFFERS];
-    memset(sent_to_chan, 0, sizeof(sent_to_chan));
-    for (uint8_t i=0; i<num_routes; i++) {
+//     bool sent_to_chan[MAVLINK_COMM_NUM_BUFFERS];
+//     memset(sent_to_chan, 0, sizeof(sent_to_chan));
+//     for (uint8_t i=0; i<num_routes; i++) {
 
-        // Skip if channel is private and the target system or component IDs do not match
-        if ((GCS_MAVLINK::is_private(routes[i].channel)) &&
-            (target_system != routes[i].sysid ||
-             target_component != routes[i].compid)) {
-            continue;
-        }
+//         // Skip if channel is private and the target system or component IDs do not match
+//         if ((GCS_MAVLINK::is_private(routes[i].channel)) &&
+//             (target_system != routes[i].sysid ||
+//              target_component != routes[i].compid)) {
+//             continue;
+//         }
 
-        if (broadcast_system || (target_system == routes[i].sysid &&
-                                 (broadcast_component || 
-                                  target_component == routes[i].compid ||
-                                  !match_system))) {
+//         if (broadcast_system || (target_system == routes[i].sysid &&
+//                                  (broadcast_component || 
+//                                   target_component == routes[i].compid ||
+//                                   !match_system))) {
 
-            if (in_channel != routes[i].channel && !sent_to_chan[routes[i].channel]) {
+//             if (in_channel != routes[i].channel && !sent_to_chan[routes[i].channel]) {
                 
-                if (comm_get_txspace(routes[i].channel) >= ((uint16_t)msg.len) +
-                    GCS_MAVLINK::packet_overhead_chan(routes[i].channel)) {
-#if ROUTING_DEBUG
-                    ::printf("fwd msg %u from chan %u on chan %u sysid=%d compid=%d\n",
-                             msg.msgid,
-                             (unsigned)in_channel,
-                             (unsigned)routes[i].channel,
-                             (int)target_system,
-                             (int)target_component);
-#endif
-                    _mavlink_resend_uart(routes[i].channel, &msg);
-                }
-                sent_to_chan[routes[i].channel] = true;
-                forwarded = true;
-            }
-        }
-    }
+//                 if (comm_get_txspace(routes[i].channel) >= ((uint16_t)msg.len) +
+//                     GCS_MAVLINK::packet_overhead_chan(routes[i].channel)) {
+// #if ROUTING_DEBUG
+//                     ::printf("fwd msg %u from chan %u on chan %u sysid=%d compid=%d\n",
+//                              msg.msgid,
+//                              (unsigned)in_channel,
+//                              (unsigned)routes[i].channel,
+//                              (int)target_system,
+//                              (int)target_component);
+// #endif
+//                     _mavlink_resend_uart(routes[i].channel, &msg);
+//                 }
+//                 sent_to_chan[routes[i].channel] = true;
+//                 forwarded = true;
+//             }
+//         }
+//     }
 
     if ((!forwarded && match_system) ||
         broadcast_system) {

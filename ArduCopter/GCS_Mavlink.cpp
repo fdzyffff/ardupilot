@@ -385,8 +385,8 @@ bool GCS_MAVLINK_Copter::try_send_message(enum ap_message id)
         mavlink_msg_global_position_int_send(
             chan,
             AP_HAL::millis(),
-            copter.Ugcs_get_target_pos_location().lat,                 // in 1E7 degrees
-            copter.Ugcs_get_target_pos_location().lng,                 // in 1E7 degrees
+            copter.current_loc.lat,//copter.Ugcs_get_target_pos_location().lat,                 // in 1E7 degrees
+            copter.current_loc.lng,//copter.Ugcs_get_target_pos_location().lng,                 // in 1E7 degrees
             copter.Ugcs_get_terrain_target_alt(),   // millimeters above ground/sea level
             copter.Ugcs_get_relative_alt(),         // millimeters above home
             copter.Ugcs_get_velocity_NED().x*100.f, // X speed cm/s (+ve North)
@@ -631,6 +631,35 @@ void GCS_MAVLINK_Copter::send_banner()
     char frame_and_type_string[30];
     copter.motors->get_frame_and_type_string(frame_and_type_string, ARRAY_SIZE(frame_and_type_string));
     send_text(MAV_SEVERITY_INFO, "%s", frame_and_type_string);
+}
+
+void GCS_MAVLINK_Copter::handle_att_pos_mocap(const mavlink_message_t &msg)
+{
+    // gcs().send_text(MAV_SEVERITY_INFO, "m.x ");
+    mavlink_att_pos_mocap_t m;
+    mavlink_msg_att_pos_mocap_decode(&msg, &m);
+    // static uint32_t last_update = millis();
+    if (m.target_system == 0 || m.target_system == copter.g.sysid_this_mav) {
+        copter.mocap_stat.x = m.x;
+        copter.mocap_stat.y = m.y;
+        copter.mocap_stat.z = m.z;
+        copter.mocap_stat.n_count++;
+        copter.mocap_stat.last_update_ms = millis();
+    
+        // Location ekf_origin;
+        // bool have_origin = copter.ahrs.get_origin(ekf_origin);
+        // if (!have_origin) {
+        //     last_update = millis();
+        // }
+
+        // fake_value = !(have_origin && (millis() - last_update) > 10000);
+
+        // if (copter.ahrs.initialised()) {
+            GCS_MAVLINK::handle_att_pos_mocap(msg);
+        // }
+
+    }
+
 }
 
 void GCS_MAVLINK_Copter::handle_command_ack(const mavlink_message_t &msg)
@@ -1033,6 +1062,14 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_
 
     case MAV_CMD_USER_2: {
         copter.gcs().send_text(MAV_SEVERITY_WARNING, "USER2");
+        mavlink_att_pos_mocap_t m;
+        Quaternion qq;
+        qq.from_euler(1.f,1.f,1.f);
+        m.q[0] = qq.q1;
+        m.q[1] = qq.q2;
+        m.q[2] = qq.q3;
+        m.q[3] = qq.q4;
+        mavlink_msg_att_pos_mocap_send((mavlink_channel_t)(MAVLINK_COMM_0 +3), micros(), m.q, 1.f, 1.f, 1.f, 0, 0);
         return MAV_RESULT_ACCEPTED;
     }
 
@@ -1112,6 +1149,10 @@ void GCS_MAVLINK_Copter::handleMessage(const mavlink_message_t &msg)
         POSITION_TARGET_TYPEMASK_YAW_RATE_IGNORE;
     constexpr uint32_t MAVLINK_SET_POS_TYPE_MASK_FORCE_SET =
         POSITION_TARGET_TYPEMASK_FORCE_SET;
+
+// if (chan == (mavlink_channel_t)(MAVLINK_COMM_0 +3)) {
+//      gcs().send_text(MAV_SEVERITY_INFO, "msg.msgid %d",msg.msgid);
+// }
 
     switch (msg.msgid) {
 
@@ -1466,6 +1507,11 @@ void GCS_MAVLINK_Copter::handleMessage(const mavlink_message_t &msg)
         break;
 #endif
         
+    case MAVLINK_MSG_ID_ATT_POS_MOCAP:
+        handle_att_pos_mocap(msg);
+        // gcs().send_text(MAV_SEVERITY_INFO, "Amsg.msgid %d",msg.msgid);
+        break;
+
     default:
         handle_common_message(msg);
         break;

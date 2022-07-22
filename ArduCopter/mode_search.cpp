@@ -10,9 +10,14 @@
 bool ModeSearch::init(bool ignore_checks)
 {
     if (copter.mode_guided.init(false)) {
-        if (copter.mode_guided.set_destination(copter.Ugcs.get_search_dest())) {
-            copter.gcs().send_text(MAV_SEVERITY_WARNING, "mode search");
+        if (copter.mode_guided.set_destination(copter.Ugcs.get_search_dest(), false, 0.0f, false, 0.0f, false, true)) {
+            copter.gcs().send_text(MAV_SEVERITY_WARNING, "mode search T");
             return true;
+        } else {
+            if (copter.mode_guided.set_destination(copter.Ugcs.get_search_dest(), false, 0.0f, false, 0.0f, false, false)) {
+                copter.gcs().send_text(MAV_SEVERITY_WARNING, "mode search");
+                return true;
+            }
         }
     }
     return false;

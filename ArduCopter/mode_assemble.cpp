@@ -10,9 +10,14 @@
 bool ModeAssemble::init(bool ignore_checks)
 {
     if (copter.mode_guided.init(false)) {
-        if (copter.mode_guided.set_destination(copter.Ugcs.get_assemble_dest())) {
-            copter.gcs().send_text(MAV_SEVERITY_WARNING, "mode assemble");
+        if (copter.mode_guided.set_destination(copter.Ugcs.get_assemble_dest(), false, 0.0f, false, 0.0f, false, true)) {
+            copter.gcs().send_text(MAV_SEVERITY_WARNING, "mode assemble T");
             return true;
+        } else {
+            if (copter.mode_guided.set_destination(copter.Ugcs.get_assemble_dest(), false, 0.0f, false, 0.0f, false, false)) {
+                copter.gcs().send_text(MAV_SEVERITY_WARNING, "mode assemble");
+                return true;
+            }
         }
     }
     return false;

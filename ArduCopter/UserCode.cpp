@@ -12,6 +12,7 @@ void Copter::userhook_init()
     mocap_stat.z = 0.0f;
 
     Ucam.init();
+    Ugcs.init();
     Upayload.init();
 }
 #endif
@@ -37,7 +38,7 @@ void Copter::userhook_50Hz()
 void Copter::userhook_MediumLoop()
 {
     // put your 10Hz code here
-    Ugcs_Log_Write_UCamTarget();
+    // Ugcs_Log_Write_UCamTarget();
     // Ugcs_Log_Write_Mocap();
 }
 #endif
@@ -224,9 +225,9 @@ void Copter::userhook_SuperSlowLoop_setgpsorigin() {
         if (ahrs.set_origin(ekf_origin_new)) {
             gcs().send_text(MAV_SEVERITY_WARNING, "EKF origin set up");
 
-            gcs().send_text(MAV_SEVERITY_WARNING, "alt: %ld", ekf_origin_new.alt);
-            gcs().send_text(MAV_SEVERITY_WARNING, "lng: %ld", ekf_origin_new.lng);
-            gcs().send_text(MAV_SEVERITY_WARNING, "lat: %ld", ekf_origin_new.lat);
+            gcs().send_text(MAV_SEVERITY_WARNING, "alt: %f", (float)ekf_origin_new.alt);
+            gcs().send_text(MAV_SEVERITY_WARNING, "lng: %f", (float)ekf_origin_new.lng);
+            gcs().send_text(MAV_SEVERITY_WARNING, "lat: %f", (float)ekf_origin_new.lat);
             ahrs.Log_Write_Home_And_Origin();
             // ahrs.reset();
             // if (set_home(ekf_origin_new, false)) {

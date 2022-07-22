@@ -26,12 +26,18 @@ extern const AP_HAL::HAL& hal;
 // consume vision position estimate data and send to EKF. distances in meters
 void AP_VisualOdom_MAV::handle_vision_position_estimate(uint64_t remote_time_us, uint32_t time_ms, float x, float y, float z, const Quaternion &attitude, float posErr, float angErr, uint8_t reset_counter)
 {
+
+    if (attitude.is_nan()) {
+        return;
+    }
+    // gcs().send_text(MAV_SEVERITY_INFO, "Am.x %f",x);
     const float scale_factor =  _frontend.get_pos_scale();
     Vector3f pos{x * scale_factor, y * scale_factor, z * scale_factor};
 
+    // gcs().send_text(MAV_SEVERITY_INFO, "pos.x %f",pos.x);
     posErr = constrain_float(posErr, _frontend.get_pos_noise(), 100.0f);
     angErr = constrain_float(angErr, _frontend.get_yaw_noise(), 1.5f);
-    // send attitude and position to EKF
+    // // send attitude and position to EKF
     AP::ahrs().writeExtNavData(pos, attitude, posErr, angErr, time_ms, _frontend.get_delay_ms(), get_reset_timestamp_ms(reset_counter));
 
     // calculate euler orientation for logging
@@ -39,6 +45,8 @@ void AP_VisualOdom_MAV::handle_vision_position_estimate(uint64_t remote_time_us,
     float pitch;
     float yaw;
     attitude.to_euler(roll, pitch, yaw);
+
+    // gcs().send_text(MAV_SEVERITY_INFO, "q %f,%f,%f,%f",attitude.q1,attitude.q2,attitude.q3,attitude.q4);
 
     // log sensor data
     Write_VisualPosition(remote_time_us, time_ms, pos.x, pos.y, pos.z, degrees(roll), degrees(pitch), degrees(yaw), posErr, angErr, reset_counter, false);

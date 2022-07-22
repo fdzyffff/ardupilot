@@ -1020,6 +1020,8 @@ void NavEKF3_core::writeDefaultAirSpeed(float airspeed, float uncertainty)
 
 void NavEKF3_core::writeExtNavData(const Vector3f &pos, const Quaternion &quat, float posErr, float angErr, uint32_t timeStamp_ms, uint16_t delay_ms, uint32_t resetTime_ms)
 {
+
+    // GCS_SEND_TEXT(MAV_SEVERITY_INFO, "EKF3 received");
 #if EK3_FEATURE_EXTERNAL_NAV
     // protect against NaN
     if (pos.is_nan() || isnan(posErr)) {
@@ -1056,6 +1058,8 @@ void NavEKF3_core::writeExtNavData(const Vector3f &pos, const Quaternion &quat, 
 
     // store position data to buffer
     storedExtNav.push(extNavDataNew);
+
+    // GCS_SEND_TEXT(MAV_SEVERITY_INFO, "EKF3 pushed");
 
     // protect against attitude or angle being NaN
     if (!quat.is_nan() && !isnan(angErr)) {

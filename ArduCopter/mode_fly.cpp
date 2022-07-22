@@ -24,7 +24,11 @@ void ModeFly::run()
 {
     if (copter.Ugcs.is_leader()) {
         if (copter.Ugcs.dest_pos_update()) {
-            copter.mode_guided.set_destination(copter.Ugcs.get_dest_loc_vec());
+            if (copter.mode_guided.set_destination(copter.Ugcs.get_dest_loc_vec(), false, 0.0f, false, 0.0f, false, true) ) {
+                ;
+            } else {
+                copter.mode_guided.set_destination(copter.Ugcs.get_dest_loc_vec(), false, 0.0f, false, 0.0f, false, false);
+            }
             copter.Ugcs.dest_pos_update(false);
         }
     } else {

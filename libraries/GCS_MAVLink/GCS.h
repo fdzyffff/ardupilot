@@ -630,6 +630,7 @@ protected:
     bool location_from_command_t(const mavlink_command_long_t &in, MAV_FRAME in_frame, Location &out);
     bool location_from_command_t(const mavlink_command_int_t &in, Location &out);
 
+    virtual void handle_att_pos_mocap(const mavlink_message_t &msg);
 private:
 
     // last time we got a non-zero RSSI from RADIO_STATUS
@@ -892,7 +893,6 @@ private:
     void handle_vicon_position_estimate(const mavlink_message_t &msg);
     void handle_vision_position_estimate(const mavlink_message_t &msg);
     void handle_global_vision_position_estimate(const mavlink_message_t &msg);
-    void handle_att_pos_mocap(const mavlink_message_t &msg);
     void handle_odometry(const mavlink_message_t &msg);
     void handle_common_vision_position_estimate_data(const uint64_t usec,
                                                      const float x,

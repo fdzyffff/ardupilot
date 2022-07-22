@@ -38,8 +38,10 @@ public:
     void set_up_dest(float lat_in, float lng_in);
     void refresh_dest();
     void set_up_alt(float target_alt);
+    void set_up_alt_offset(float target_alt);
     void set_up_search_dist(float search_dist);
     void clean_follow();
+    float get_final_target_alt();
 
     int16_t get_state_num();
     Vector3f get_dest_loc_vec() {return _dest_loc_vec;}
@@ -92,6 +94,7 @@ private:
     int16_t _leader_id;
     float _dist_to_target;
     float _bearing_to_target;
+    float _gcs_target_alt_offset;
 
     my_group_1_t my_group1;
     my_group_2_t my_group2;
