@@ -14,6 +14,8 @@ bool ModeAttack_att::init(bool ignore_checks)
     }
     copter.g2.user_parameters.Ucam_pid.reset_I();
     copter.g2.user_parameters.Ucam_pid.reset_filter();
+    copter.g2.user_parameters.Thr_pid.reset_I();
+    copter.g2.user_parameters.Thr_pid.reset_filter();
     return false;
 }
 
@@ -42,7 +44,7 @@ void ModeAttack_att::run()
     attitude_control->input_euler_angle_roll_euler_rate_pitch_yaw(target_roll_ang, target_pitch_rate, target_yaw_rate);
 
     // output pilot's throttle
-    attitude_control->set_throttle_out(my_get_throttle_boosted(motors->get_throttle_hover()*1.1f),
+    attitude_control->set_throttle_out(my_get_throttle_boosted(motors->get_throttle_hover()*1.0f),
                                        false,
                                        g.throttle_filt);
     
@@ -54,10 +56,18 @@ void ModeAttack_att::run()
 
 float ModeAttack_att::my_get_throttle_boosted(float throttle_in)
 {
-    float cos_tilt = copter.ahrs_view->cos_pitch() * copter.ahrs_view->cos_roll();
-    float inverted_factor = 1.0f;
-    float boost_factor = 1.0f / constrain_float(cos_tilt, cosf(ToRad(copter.g2.user_parameters.fly_pitch_limit*0.01f*0.67f)), 1.0f);
+    static float throttle_comp = 0.0f;
+    if (copter.Ucam.is_active()) {
+        float current_angle_deg = copter.Ucam.get_current_angle_deg();
+        float target_angle_deg = MAX(copter.g2.user_parameters.fly_attack_angle*0.01f, 5.0f);
 
-    float throttle_out = throttle_in * inverted_factor * boost_factor;
+        float norm_input = constrain_float((current_angle_deg - target_angle_deg)/MAX(10.0f, target_angle_deg), -1.0f, 1.0f);
+        float pitch_scalar = copter.g2.user_parameters.fly_pitch_scalar*constrain_float(fabsf(degrees(copter.ahrs_view->pitch)*100.f/copter.g2.user_parameters.fly_pitch_limit.get()), 0.3f, 1.0f);
+
+        throttle_comp = copter.g2.user_parameters.Thr_pid.update_all(0.0f, norm_input, false);
+        throttle_comp *= pitch_scalar;
+        if (throttle_comp > 0.0) {throttle_comp *= constrain_float(copter.g2.user_parameters.atk_thr_up_factor, 0.3f, 2.0f);}
+    } 
+    float throttle_out = throttle_in + throttle_comp;
     return throttle_out;
 }

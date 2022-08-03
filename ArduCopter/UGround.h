@@ -39,6 +39,7 @@ public:
     void refresh_dest();
     void set_up_alt(float target_alt);
     void set_up_alt_offset(float target_alt);
+    void clear_up_alt_offset();
     void set_up_search_dist(float search_dist);
     void clean_follow();
     float get_final_target_alt();

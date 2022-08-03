@@ -161,6 +161,7 @@ void UCam::mav_read()
                     switch(packet.command) {
                         case MAV_CMD_USER_1: {
                             handle_info(packet.param1, packet.param2, packet.param3, packet.param4);
+                            // copter.gcs().send_text(MAV_SEVERITY_WARNING, "CAM USER1");
                         }
                             break;
                         default:

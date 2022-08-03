@@ -141,7 +141,7 @@ define STORAGE_FLASH_PAGE 2
 #define HAL_BOARD_TERRAIN_DIRECTORY "/APM/TERRAIN"
 
 # enable logging to dataflash
-define HAL_LOGGING_DATAFLASH
+define HAL_LOGGING_DATAFLASH_ENABLED 1
 
 #-----------------------------------------RGB------------------------------------------
 PC13 LED_R1 OUTPUT OPENDRAIN HIGH GPIO(0)

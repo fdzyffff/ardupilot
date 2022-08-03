@@ -175,8 +175,8 @@ define HAL_PARACHUTE_ENABLED 0
 define HAL_SPRAYER_ENABLED 0
 define HAL_MOUNT_ENABLED 0
 define GENERATOR_ENABLED 0
-define AC_OAPATHPLANNER_ENABLED 0
-define PRECISION_LANDING 0
+#define AC_OAPATHPLANNER_ENABLED 0
+#define PRECISION_LANDING 0
 #-----------------------------------Other---------------------------------------
 #空闲
 
