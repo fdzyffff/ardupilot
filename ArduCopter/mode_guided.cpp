@@ -336,7 +336,9 @@ bool ModeGuided::set_destination(const Vector3f& destination, bool use_yaw, floa
         set_yaw_state(use_yaw, yaw_cd, use_yaw_rate, yaw_rate_cds, relative_yaw);
 
         // no need to check return status because terrain data is not used
-        wp_nav->set_wp_destination(destination, terrain_alt);
+        if (!wp_nav->set_wp_destination(destination, terrain_alt)) {
+            return false;
+        }
 
         // log target
         copter.Log_Write_Guided_Position_Target(guided_mode, destination, terrain_alt, Vector3f(), Vector3f());
