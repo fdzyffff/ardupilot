@@ -44,6 +44,7 @@ void UGround::init()
     _new_dist = false;
     _leader_id = copter.g.sysid_this_mav;
     _leader_loc_vec.zero();
+    _gcs_target_alt_offset = 0.0f;
 }
 
 void UGround::handle_info(int16_t p1, float p2, float p3, float p4)
@@ -153,6 +154,11 @@ void UGround::set_up_alt(float target_alt) {
 
 void UGround::set_up_alt_offset(float target_alt_offset) {
     _gcs_target_alt_offset += target_alt_offset;
+    refresh_dest();
+}
+
+void UGround::clear_up_alt_offset() {
+    _gcs_target_alt_offset = 0.0f;
     refresh_dest();
 }
 

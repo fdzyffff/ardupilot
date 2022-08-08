@@ -40,6 +40,7 @@ void UCam::init()
     _target_roll_angle = 0.0f;
     _current_angle_deg = 0.0f;
     _n_count = 0;
+    _new_data = false;
     _port = NULL;
     init_port();
 }
@@ -95,6 +96,7 @@ void UCam::handle_info(float p1, float p2, float p3, float p4)
     correct_info.x = tmp_output.y;
     correct_info.y = -tmp_output.z;
     _last_update_ms = millis();
+    _new_data = true;
     if (!_active) {
         _n_count += 1;
     }
@@ -161,6 +163,7 @@ void UCam::mav_read()
                     switch(packet.command) {
                         case MAV_CMD_USER_1: {
                             handle_info(packet.param1, packet.param2, packet.param3, packet.param4);
+                            // copter.gcs().send_text(MAV_SEVERITY_WARNING, "CAM USER1");
                         }
                             break;
                         default:
@@ -285,15 +288,18 @@ void UCam::update()
     if (copter.g2.user_parameters.cam_angle_x.get() < 30.f) {copter.g2.user_parameters.cam_angle_x.set_and_save(30.f);}
     if (copter.g2.user_parameters.cam_angle_y.get() < 30.f) {copter.g2.user_parameters.cam_angle_y.set_and_save(30.f);}
     if (copter.g2.user_parameters.fly_yaw_tc.get() < 0.1f) {copter.g2.user_parameters.fly_yaw_tc.set_and_save(0.1f);}
-    update_target_pitch_rate();
-    update_target_roll_angle();
-    update_target_yaw_rate();
-    update_target_track_angle();
+    if (_new_data) {
+        update_target_pitch_rate();
+        update_target_roll_angle();
+        update_target_yaw_rate();
+        update_target_track_angle();
+        _new_data = false;
+    }
 }
 
 void UCam::update_target_pitch_rate() {
     float measurement = (get_correct_info().y)/(0.5f*copter.g2.user_parameters.cam_pixel_y); //-1 to +0.1
-    float my_target_pitch_rate = -1.0f*copter.g2.user_parameters.Ucam_pid.update_all(copter.g2.user_parameters.cam_target_y, measurement, false)*copter.g2.user_parameters.fly_pitch_limit.get();
+    float my_target_pitch_rate = -1.0f*copter.g2.user_parameters.Ucam_pid.update_all(copter.g2.user_parameters.cam_target_y, measurement, false)*copter.g2.user_parameters.fly_pitch_rate.get();
     if (my_target_pitch_rate > 0.0f) {
         my_target_pitch_rate *= 1.0f;
     }

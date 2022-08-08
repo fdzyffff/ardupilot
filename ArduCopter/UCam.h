@@ -58,6 +58,7 @@ private:
     uint32_t _last_update_ms;
     int16_t _n_count;
     int16_t _cam_state;
+    bool _new_data;
     AP_HAL::UARTDriver* _port;
     float _target_pitch_rate;
     float _target_roll_angle;

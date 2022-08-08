@@ -8,7 +8,8 @@ class UserParameters {
 
 public:
     UserParameters() :
-        Ucam_pid(1.0f, 0.0f, 0.0f, 0.0f, 0.2f, 3.0f, 3.0f, 3.0f, 0.02f)
+        Ucam_pid(1.0f, 0.0f, 0.0f, 0.0f, 0.2f, 3.0f, 3.0f, 3.0f, 0.02f),
+        Thr_pid(1.0f, 0.0f, 0.0f, 0.0f, 0.2f, 3.0f, 3.0f, 3.0f, 0.02f)
         {}
     static const struct AP_Param::GroupInfo var_info[];
     
@@ -16,6 +17,7 @@ public:
     // UserCode usage example: g2.user_parameters.get_int8Param()
     AP_Float fly_attack_angle;
     AC_PID   Ucam_pid;
+    AC_PID   Thr_pid;
 
     AP_Float cam_angle_x;
     AP_Float cam_angle_y;
@@ -41,6 +43,7 @@ public:
 
     AP_Float fly_yaw_tc;
     AP_Float fly_pitch_limit;
+    AP_Float fly_pitch_rate;
     AP_Float fly_roll_limit;
     AP_Float fly_roll_factor;
     AP_Float fly_pitch_scalar;
@@ -54,5 +57,7 @@ public:
     AP_Int32 ekf_origin_alt;
 
     AP_Float group_search_dist;
+
+    AP_Float atk_thr_up_factor;
 
 };

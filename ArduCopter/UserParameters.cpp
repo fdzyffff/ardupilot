@@ -47,5 +47,8 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
 
     AP_GROUPINFO("_SEARCH_DIST"     , 33, UserParameters, group_search_dist, 1000.f),
 
+    AP_SUBGROUPINFO(Thr_pid, "_Thr_", 34, UserParameters, AC_PID),
+    AP_GROUPINFO("_P_UP_FACTOR"     , 35, UserParameters, atk_thr_up_factor, 1.f),
+    AP_GROUPINFO("_P_RATE"          , 36, UserParameters, fly_pitch_rate, 3000.0f),
     AP_GROUPEND
 };
