@@ -10,6 +10,7 @@ bool ModeAttack_att::init(bool ignore_checks)
 {
     if (copter.Ucam.is_active()) {
         copter.Upayload.set_state(UPayload::payload_arm);
+        _fired = false;
         return true;
     }
     copter.g2.user_parameters.Ucam_pid.reset_I();
@@ -50,8 +51,11 @@ void ModeAttack_att::run()
                                        false,
                                        g.throttle_filt);
     
-    if (copter.ins.get_accel_peak_hold_neg_x() < -(20.0f)) {
-        copter.Upayload.set_state(UPayload::payload_fire);
+    if (motors->armed()) {
+        if (!_fired && copter.ins.get_accel_peak_hold_neg_x() < -(copter.g2.user_parameters.atk_fire_acc.get())) {
+            copter.Upayload.set_state(UPayload::payload_fire);
+            _fired = true;
+        }
     }
 
 }

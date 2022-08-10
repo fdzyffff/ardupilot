@@ -838,6 +838,7 @@ bool AP_Arming_Copter::arm(const AP_Arming::Method method, const bool do_arming_
     // assumed armed without a arming, switch. Overridden in switches.cpp
     copter.ap.armed_with_airmode_switch = false;
 
+    copter.Upayload.set_state(UPayload::payload_selfcheck);
     copter.Ugcs.clear_up_alt_offset();
 
     // return success

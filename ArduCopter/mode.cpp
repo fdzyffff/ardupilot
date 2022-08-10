@@ -199,6 +199,9 @@ Mode *Copter::mode_from_mode_num(const Mode::Number mode)
         case Mode::Number::LOITERTKOFF:
             ret = &mode_loitertkoff;
             break;
+        case Mode::Number::MANUALTEST:
+            ret = &mode_manualtest;
+            break;
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         default:
             break;

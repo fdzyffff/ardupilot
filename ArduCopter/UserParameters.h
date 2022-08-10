@@ -59,5 +59,6 @@ public:
     AP_Float group_search_dist;
 
     AP_Float atk_thr_up_factor;
+    AP_Float atk_fire_acc;
 
 };

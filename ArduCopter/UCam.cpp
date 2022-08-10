@@ -309,7 +309,7 @@ void UCam::update_target_pitch_rate() {
 void UCam::update_target_roll_angle() {
     float info_x = copter.Ucam.get_correct_info().x/(0.5f*copter.g2.user_parameters.cam_pixel_x) - copter.g2.user_parameters.cam_target_x.get();
     info_x = constrain_float(info_x, -1.0f, 1.0f);
-    _target_roll_angle = copter.g2.user_parameters.fly_roll_limit*info_x*copter.g2.user_parameters.fly_roll_factor ;
+    _target_roll_angle = copter.g2.user_parameters.fly_roll_limit*info_x*copter.g2.user_parameters.fly_roll_factor;
 }
 
 void UCam::update_target_yaw_rate() {

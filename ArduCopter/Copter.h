@@ -229,6 +229,7 @@ public:
     friend class ModeSearch;
     friend class ModeAssemble;
     friend class ModeLoiterTakeoff;
+    friend class ModeManualTest;
 
     friend class UCam;
     friend class UGround;
@@ -970,6 +971,7 @@ private:
     ModeSearch mode_search;
     ModeAssemble mode_assemble;
     ModeLoiterTakeoff mode_loitertkoff;
+    ModeManualTest mode_manualtest;
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

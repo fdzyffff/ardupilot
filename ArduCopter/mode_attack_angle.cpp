@@ -15,6 +15,7 @@ bool ModeAttack_angle::init(bool ignore_checks)
         }
         copter.g2.user_parameters.Ucam_pid.reset_I();
         copter.g2.user_parameters.Ucam_pid.reset_filter();
+        _fired = false;
         copter.Upayload.set_state(UPayload::payload_arm);
         pos_control->set_max_speed_accel_z(-get_pilot_speed_dn(), g.pilot_speed_up, g.pilot_accel_z);
         pos_control->set_correction_speed_accel_z(-450.f, 200.f, g.pilot_accel_z);
@@ -79,8 +80,11 @@ void ModeAttack_angle::run()
     // call z-axis position controller
     pos_control->update_z_controller();
 
-    if (copter.ins.get_accel_peak_hold_neg_x() < -(20.0f)) {
-        copter.Upayload.set_state(UPayload::payload_fire);
+    if (motors->armed()) {
+        if (!_fired && copter.ins.get_accel_peak_hold_neg_x() < -(copter.g2.user_parameters.atk_fire_acc.get())) {
+            copter.Upayload.set_state(UPayload::payload_fire);
+            _fired = true;
+        }
     }
 
 }
