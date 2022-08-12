@@ -99,25 +99,34 @@ void UPayload::set_state(state_t state) {
         send_current_state_text();
         return;
     }
-    _desire_state = state;
 
-    switch (_desire_state) {
+    switch (state) {
         case payload_parse:
+            _desire_state = state;
             gcs().send_text(MAV_SEVERITY_WARNING, "Set Payload Parse");
             break;
         case payload_selfcheck:
+            _desire_state = state;
             gcs().send_text(MAV_SEVERITY_WARNING, "Set Payload Selfcheck");
             break;
         case payload_voltup:
+            _desire_state = state;
             gcs().send_text(MAV_SEVERITY_WARNING, "Set Payload VoltUP");
             break;
         case payload_arm:
+            _desire_state = state;
             gcs().send_text(MAV_SEVERITY_WARNING, "Set Payload Arm");
             break;
         case payload_fire:
-            gcs().send_text(MAV_SEVERITY_WARNING, "Set Payload Fire");
+            if (_current_state == payload_arm) {
+                _desire_state = state;
+                gcs().send_text(MAV_SEVERITY_WARNING, "Set Payload Fire");
+            } else {
+                gcs().send_text(MAV_SEVERITY_WARNING, "Fail Set Fire");
+            }
             break;
         case payload_none:
+            _desire_state = state;
             gcs().send_text(MAV_SEVERITY_WARNING, "Set Payload None");
         default:
             break;

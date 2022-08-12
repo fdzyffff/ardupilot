@@ -6,6 +6,7 @@
 
 bool ModeManualTest::init(bool ignore_checks)
 {
+    if (!motors->armed()) {return false;}
     copter.Upayload.set_state(UPayload::payload_arm);
     _fired = false;
     return true;

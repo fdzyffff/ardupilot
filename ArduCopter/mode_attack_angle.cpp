@@ -8,6 +8,7 @@
 // althold_init - initialise althold controller
 bool ModeAttack_angle::init(bool ignore_checks)
 {
+    if (!motors->armed()) {return false;}
     if (copter.Ucam.is_active()) {
         // initialise the vertical position controller
         if (!pos_control->is_active_z()) {

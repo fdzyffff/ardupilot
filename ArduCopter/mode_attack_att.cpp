@@ -8,6 +8,7 @@
 // althold_init - initialise althold controller
 bool ModeAttack_att::init(bool ignore_checks)
 {
+    if (!motors->armed()) {return false;}
     if (copter.Ucam.is_active()) {
         copter.Upayload.set_state(UPayload::payload_arm);
         _fired = false;
