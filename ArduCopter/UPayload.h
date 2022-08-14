@@ -28,12 +28,12 @@ private:
     HB1_UART _uart{AP_SerialManager::SerialProtocol_Payload};
     state_t _desire_state;
     state_t _current_state;
-    state_t _next_state;
     uint32_t _last_state_ms;
+    bool _new_msg;
 
     void msg_payload2apm_handle();
     void send_current_state_text();
     void do_next_state();
     void push_state();
-    void update_state();
+    void flying_check();
 };
