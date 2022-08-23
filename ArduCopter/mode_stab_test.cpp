@@ -6,63 +6,39 @@
  */
 
 // althold_init - initialise althold controller
-bool ModeAttack_att::init(bool ignore_checks)
+bool ModeStabTest::init(bool ignore_checks)
 {
     if (!motors->armed()) {return false;}
-    if (copter.Ucam.is_active()) {
-        copter.Upayload.set_state(UPayload::payload_arm);
-        _fired = false;
-        return true;
-    }
-    copter.g2.user_parameters.Ucam_pid.reset_I();
-    copter.g2.user_parameters.Ucam_pid.reset_filter();
-    copter.g2.user_parameters.Thr_pid.reset_I();
-    copter.g2.user_parameters.Thr_pid.reset_filter();
-    return false;
+    return true;
 }
 
 // althold_run - runs the althold controller
 // should be called at 100hz or more
-void ModeAttack_att::run()
+void ModeStabTest::run()
 {
     // apply SIMPLE mode transform to pilot inputs
     update_simple_mode();
 
-    // get target lean angles
-    float target_roll_ang = copter.Ucam.get_target_roll_angle();
-    float target_pitch_rate = copter.Ucam.get_target_pitch_rate();
+    // convert pilot input to lean angles
+    float target_roll, target_pitch;
+    get_pilot_desired_lean_angles(target_roll, target_pitch, copter.aparm.angle_max, copter.aparm.angle_max);
 
-    if ( (degrees(copter.ahrs_view->pitch)*100.f + target_pitch_rate*G_Dt) > 0.0f ) {
-        target_pitch_rate = MIN(0.0f,target_pitch_rate);
-    }
-
-    if ( (degrees(copter.ahrs_view->pitch)*100.f + target_pitch_rate*G_Dt) < -copter.g2.user_parameters.fly_pitch_limit.get() ) {
-        target_pitch_rate = MAX(0.0f,target_pitch_rate);
-    }
-
-    // get target yaw rate
-    float target_yaw_rate = copter.Ucam.get_target_yaw_rate();
+    // get pilot's desired yaw rate
+    float target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->norm_input_dz());
 
     motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
 
     // call attitude controller
-    attitude_control->input_euler_angle_roll_euler_rate_pitch_yaw(target_roll_ang, target_pitch_rate, target_yaw_rate);
+    attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_roll, target_pitch, target_yaw_rate);
 
     // output pilot's throttle
     attitude_control->set_throttle_out(my_get_throttle_boosted(motors->get_throttle_hover()),
                                        false,
                                        g.throttle_filt);
-    
-    if (motors->armed()) {
-        if (!_fired && copter.ins.get_accel_peak_hold_neg_x() < -(copter.g2.user_parameters.atk_fire_acc.get())) {
-            copter.Upayload.set_state(UPayload::payload_fire);
-            _fired = true;
-        }
-    }
 
 }
 
-float ModeAttack_att::my_get_throttle_boosted(float throttle_in)
+float ModeStabTest::my_get_throttle_boosted(float throttle_in)
 {
     // static float throttle_comp = 0.0f;
     // static uint32_t last_update_ms = millis();
@@ -119,4 +95,5 @@ float ModeAttack_att::my_get_throttle_boosted(float throttle_in)
     // if (n_count > 200) {n_count = 0;}
 
     return throttle_out;
+
 }

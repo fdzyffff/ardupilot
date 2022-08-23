@@ -51,5 +51,10 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     AP_GROUPINFO("_P_UP_FACTOR"     , 35, UserParameters, atk_thr_up_factor, 1.f),
     AP_GROUPINFO("_P_RATE"          , 36, UserParameters, fly_pitch_rate, 3000.0f),
     AP_GROUPINFO("_ATK_FIRE_ACC"    , 37, UserParameters, atk_fire_acc, 20.0f),
+
+    AP_GROUPINFO("_ATK_K1"          , 38, UserParameters, atk_k1, 0.1f),
+    AP_GROUPINFO("_ATK_K2"          , 39, UserParameters, atk_k2, -0.2f),
+    AP_GROUPINFO("_ATK_K3"          , 40, UserParameters, atk_k3, 0.1f),
+    AP_GROUPINFO("_ATK_T1"          , 41, UserParameters, atk_t1, 0.9f),
     AP_GROUPEND
 };

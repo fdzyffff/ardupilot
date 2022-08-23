@@ -61,4 +61,8 @@ public:
     AP_Float atk_thr_up_factor;
     AP_Float atk_fire_acc;
 
+    AP_Float atk_k1;
+    AP_Float atk_k2;
+    AP_Float atk_k3;
+    AP_Float atk_t1;
 };

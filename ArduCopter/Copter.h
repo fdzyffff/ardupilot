@@ -230,6 +230,7 @@ public:
     friend class ModeAssemble;
     friend class ModeLoiterTakeoff;
     friend class ModeManualTest;
+    friend class ModeStabTest;
 
     friend class UCam;
     friend class UGround;
@@ -972,6 +973,7 @@ private:
     ModeAssemble mode_assemble;
     ModeLoiterTakeoff mode_loitertkoff;
     ModeManualTest mode_manualtest;
+    ModeStabTest mode_stabtest;
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

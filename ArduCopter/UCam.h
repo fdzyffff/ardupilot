@@ -64,4 +64,6 @@ private:
     float _target_roll_angle;
     float _target_yaw_rate_cds;
     float _current_angle_deg;
+
+    LowPassFilterVector3f _cam_filter;
 };

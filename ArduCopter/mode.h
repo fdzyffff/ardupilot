@@ -48,6 +48,7 @@ public:
         ASSEMBLE =     46,
         LOITERTKOFF =  47,
         MANUALTEST =   48,
+        STABTEST   =   49,
     };
 
     // constructor
@@ -2123,3 +2124,30 @@ private:
     bool _fired = false;
 
 };
+
+class ModeStabTest : public Mode {
+
+public:
+    // inherit constructor
+    using Mode::Mode;
+    Number mode_number() const override { return Number::STABTEST; }
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    bool requires_GPS() const override { return false; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(AP_Arming::Method method) const override { return false; }
+    bool is_autopilot() const override { return false; }
+    bool has_user_takeoff(bool must_navigate) const override {
+        return !must_navigate;
+    }
+
+protected:
+
+    const char *name() const override { return "STABTEST"; }
+    const char *name4() const override { return "STB2"; }
+    float my_get_throttle_boosted(float throttle_in);
+
+};
+

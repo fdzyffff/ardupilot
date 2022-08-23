@@ -230,6 +230,8 @@ void UPayload::update()
 {
     if (_uart.initialized()) {
         _uart.read();
+    } else {
+        return;
     }
 
     if (_uart.get_msg_payload2apm()._msg_1.updated) {

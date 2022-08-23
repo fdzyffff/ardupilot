@@ -15,6 +15,7 @@
 //#include "UCam.h"
 
 UCam::UCam()
+    : _cam_filter(10.0f)
 {
     ;
 }
@@ -83,6 +84,10 @@ void UCam::handle_info(float p1, float p2, float p3, float p4)
         _n_count = 0;
         return;
     }
+
+    float dt = (float)(millis() - _last_update_ms)*1.0e-3f;
+    if (dt > 1.0f) {dt = 1.0f;}
+    
     raw_info.x = p1;
     raw_info.y = p2;
     Matrix3f tmp_m;
@@ -93,8 +98,9 @@ void UCam::handle_info(float p1, float p2, float p3, float p4)
     }
     Vector3f tmp_input = Vector3f(100.f,p1,-p2);
     Vector3f tmp_output = tmp_m*tmp_input;
-    correct_info.x = tmp_output.y;
-    correct_info.y = -tmp_output.z;
+    _cam_filter.apply(tmp_output, dt);
+    correct_info.x = _cam_filter.get().y;
+    correct_info.y = -_cam_filter.get().z;
     _last_update_ms = millis();
     _new_data = true;
     if (!_active) {
@@ -281,6 +287,9 @@ void UCam::update()
     }
 
     if (!_active) {
+        _target_pitch_rate = 0.0f;
+        _target_roll_angle = 0.0f;
+        _target_yaw_rate_cds = 0.0f;
         return;
     }
     if (copter.g2.user_parameters.cam_pixel_x.get() < 50.f) {copter.g2.user_parameters.cam_pixel_x.set_and_save(50.f);}
@@ -304,12 +313,13 @@ void UCam::update_target_pitch_rate() {
         my_target_pitch_rate *= 1.0f;
     }
     _target_pitch_rate = my_target_pitch_rate ;
+    // gcs().send_text(MAV_SEVERITY_INFO, "%f", _target_pitch_rate);
 }
 
 void UCam::update_target_roll_angle() {
     float info_x = copter.Ucam.get_correct_info().x/(0.5f*copter.g2.user_parameters.cam_pixel_x) - copter.g2.user_parameters.cam_target_x.get();
-    info_x = constrain_float(info_x, -1.0f, 1.0f);
-    _target_roll_angle = copter.g2.user_parameters.fly_roll_limit*info_x*copter.g2.user_parameters.fly_roll_factor;
+    info_x = constrain_float(info_x*copter.g2.user_parameters.fly_roll_factor, -1.0f, 1.0f);
+    _target_roll_angle = copter.g2.user_parameters.fly_roll_limit*info_x;
 }
 
 void UCam::update_target_yaw_rate() {
