@@ -2150,4 +2150,3 @@ protected:
     float my_get_throttle_boosted(float throttle_in);
 
 };
-
