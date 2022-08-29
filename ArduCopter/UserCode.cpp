@@ -116,7 +116,7 @@ void Copter::userhook_SuperSlowLoop_print() {
         gcs().send_text(MAV_SEVERITY_WARNING, "rpy (%0.1f,%0.1f,%0.1f)", Ucam.get_target_roll_angle()*0.01f, Ucam.get_target_pitch_rate()*0.01f, Ucam.get_target_yaw_rate()*0.01f);
     }
     if (g2.user_parameters.cam_print.get() & (1<<3)) { // 8
-        gcs().send_text(MAV_SEVERITY_WARNING, "Track Angle (%0.1f)", Ucam.get_current_angle_deg());
+        gcs().send_text(MAV_SEVERITY_WARNING, "TA (%0.1f), q(%0.1f)", Ucam.get_current_angle_deg(),  Ucam.get_q_rate_cds()*0.01f);
     }
     if (g2.user_parameters.cam_print.get() & (1<<4)) { // 16
         gcs().send_text(MAV_SEVERITY_WARNING, "Mocap [%d] [%0.1f, %0.1f, %0.1f]", mocap_stat.n_count, mocap_stat.x, mocap_stat.y, mocap_stat.z);

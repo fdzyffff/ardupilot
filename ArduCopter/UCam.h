@@ -18,6 +18,7 @@ public:
     void do_cmd(float p1);
 
     void handle_info(float p1, float p2, float p3, float p4);
+    void time_out_check();
 
     const Vector2f& get_raw_info() ;
     const Vector2f& get_correct_info() ;
@@ -28,6 +29,7 @@ public:
     float get_target_roll_angle() {return _target_roll_angle;}
     float get_target_yaw_rate() {return _target_yaw_rate_cds;}
     float get_current_angle_deg() {return _current_angle_deg;}
+    float get_q_rate_cds() {return _q_rate_cds;}
 
     bool display_info_new;
     float display_info_p1;
@@ -40,6 +42,7 @@ private:
     void update_target_roll_angle();
     void update_target_yaw_rate();
     void update_target_track_angle();
+    void update_q_rate_cds(float dt);
 
 
     AP_HAL::UARTDriver* get_port(void) {return _port;}
@@ -64,6 +67,8 @@ private:
     float _target_roll_angle;
     float _target_yaw_rate_cds;
     float _current_angle_deg;
+    float _q_rate_cds;
 
     LowPassFilterVector3f _cam_filter;
+    LowPassFilterFloat _q_cds_filter;
 };

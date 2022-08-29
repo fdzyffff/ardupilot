@@ -12,12 +12,20 @@ bool ModeAttack_att::init(bool ignore_checks)
     if (copter.Ucam.is_active()) {
         copter.Upayload.set_state(UPayload::payload_arm);
         _fired = false;
+        if (!pos_control->is_active_z()) {
+            pos_control->init_z_controller();
+        }
+        pos_control->set_max_speed_accel_z(-get_pilot_speed_dn(), g.pilot_speed_up, g.pilot_accel_z);
+        pos_control->set_correction_speed_accel_z(-450.f, 200.f, g.pilot_accel_z);
+        copter.g2.user_parameters.Ucam_pid.reset_I();
+        copter.g2.user_parameters.Ucam_pid.reset_filter();
+        copter.g2.user_parameters.Roll_pid.reset_I();
+        copter.g2.user_parameters.Roll_pid.reset_filter();
+        _stage = 1;
+        _start_ms = millis();
+        _theta_cd = 0.0f;
         return true;
     }
-    copter.g2.user_parameters.Ucam_pid.reset_I();
-    copter.g2.user_parameters.Ucam_pid.reset_filter();
-    copter.g2.user_parameters.Thr_pid.reset_I();
-    copter.g2.user_parameters.Thr_pid.reset_filter();
     return false;
 }
 
@@ -29,7 +37,8 @@ void ModeAttack_att::run()
     update_simple_mode();
 
     // get target lean angles
-    float target_roll_ang = copter.Ucam.get_target_roll_angle();
+    // float target_roll_ang = copter.Ucam.get_target_roll_angle();
+    float target_roll_ang = my_get_target_roll_angle();
     float target_pitch_rate = copter.Ucam.get_target_pitch_rate();
 
     if ( (degrees(copter.ahrs_view->pitch)*100.f + target_pitch_rate*G_Dt) > 0.0f ) {
@@ -48,10 +57,27 @@ void ModeAttack_att::run()
     // call attitude controller
     attitude_control->input_euler_angle_roll_euler_rate_pitch_yaw(target_roll_ang, target_pitch_rate, target_yaw_rate);
 
-    // output pilot's throttle
-    attitude_control->set_throttle_out(my_get_throttle_boosted(motors->get_throttle_hover()),
+
+    if (_stage == 1) {
+        // get target climb rate
+        float target_climb_rate = my_get_target_climb_rate();
+
+        // Send the commanded climb rate to the position controller
+        pos_control->set_pos_target_z_from_climb_rate_cm(target_climb_rate);
+
+        // call z-axis position controller
+        pos_control->update_z_controller();
+
+        if (degrees(fabsf(copter.ahrs_view->pitch)) > 20.f || (millis()-_start_ms)>3000) {
+            copter.gcs().send_text(MAV_SEVERITY_WARNING, "Stage 2");
+            _stage = 2;
+        }
+    } else {
+        // output pilot's throttle
+        attitude_control->set_throttle_out(my_get_throttle_boosted(motors->get_throttle_hover()),
                                        false,
                                        g.throttle_filt);
+    }
     
     if (motors->armed()) {
         if (!_fired && copter.ins.get_accel_peak_hold_neg_x() < -(copter.g2.user_parameters.atk_fire_acc.get())) {
@@ -61,6 +87,27 @@ void ModeAttack_att::run()
     }
 
 }
+
+float ModeAttack_att::my_get_target_roll_angle() {
+    float kk = constrain_float(copter.g2.user_parameters.atk_kk.get(), 0.1f, 10.0f);
+    float target_q_cds = copter.Ucam.get_q_rate_cds();
+    _theta_cd = _theta_cd + kk*G_Dt*target_q_cds;
+    _theta_cd = constrain_float(_theta_cd, -6000.f, 6000.f); // inside +/- 60
+    float target_roll_angle_cd = 100.f*fabsf(degrees(copter.ahrs_view->pitch))*tanf(radians(_theta_cd*0.01f));
+    return target_roll_angle_cd;
+}
+
+float ModeAttack_att::my_get_target_climb_rate() {
+    float current_angle_deg = copter.Ucam.get_current_angle_deg();
+    float target_angle_deg = copter.g2.user_parameters.fly_attack_angle*0.01f;
+    float climb_rate_factor = copter.g2.user_parameters.fly_climb_factor;
+    float pitch_scalar = copter.g2.user_parameters.fly_pitch_scalar*constrain_float(fabsf(degrees(copter.ahrs_view->pitch)*100.f/copter.g2.user_parameters.fly_pitch_limit.get()), 0.3f, 1.0f);
+    float norm_input = constrain_float((current_angle_deg - target_angle_deg)/MAX(10.0f, target_angle_deg), -1.0f, 1.0f);
+
+    float final_climb_rate = 450.f * (-norm_input) * climb_rate_factor * pitch_scalar;
+    return constrain_float(final_climb_rate, -450.f, 50.f);
+}
+
 
 float ModeAttack_att::my_get_throttle_boosted(float throttle_in)
 {
@@ -84,6 +131,11 @@ float ModeAttack_att::my_get_throttle_boosted(float throttle_in)
 
     // static int16_t n_count = 0;
     // n_count++;
+    float comp_track = 1.0f;
+    float current_angle_deg = copter.Ucam.get_current_angle_deg();
+    float target_angle_deg = copter.g2.user_parameters.fly_attack_angle*0.01f;
+    comp_track = 0.1*(target_angle_deg-current_angle_deg)/MAX(10.f, target_angle_deg);
+    comp_track = constrain_float(1.0f + comp_track, 1.0f, 1.10f);
 
     float costheta = cosf(fabsf(copter.ahrs_view->pitch));
     float comp_thr = 0.0f;
@@ -96,7 +148,7 @@ float ModeAttack_att::my_get_throttle_boosted(float throttle_in)
     } else {
         comp_thr = k3 + (k2-k3)/t1*costheta;
     }
-    float throttle_out = throttle_in*(costheta + comp_thr);
+    float throttle_out = throttle_in*comp_track*(costheta + comp_thr);
 
     // inverted_factor is 1 for tilt angles below 60 degrees
     // inverted_factor reduces from 1 to 0 for tilt angles between 60 and 90 degrees

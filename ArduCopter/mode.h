@@ -1908,9 +1908,14 @@ protected:
     const char *name() const override { return "ATTACK2"; }
     const char *name4() const override { return "ATK2"; }
     float my_get_throttle_boosted(float throttle_in);
+    float my_get_target_climb_rate();
+    float my_get_target_roll_angle();
 
 private:
     bool _fired = false;
+    int16_t _stage;
+    uint32_t _start_ms;
+    float _theta_cd;
 
 };
 
@@ -2148,5 +2153,7 @@ protected:
     const char *name() const override { return "STABTEST"; }
     const char *name4() const override { return "STB2"; }
     float my_get_throttle_boosted(float throttle_in);
+    float my_get_target_roll_angle();
 
+    float _theta_cd;
 };

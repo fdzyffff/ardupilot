@@ -23,6 +23,7 @@ void UPayload::msg_payload2apm_handle()
     uint8_t _target = _uart.get_msg_payload2apm()._msg_1.content.msg.target;
     uint8_t _cmd = _uart.get_msg_payload2apm()._msg_1.content.msg.cmd;
     uint8_t _ret = _uart.get_msg_payload2apm()._msg_1.content.msg.ret;
+    // copter.gcs().send_text(MAV_SEVERITY_WARNING, "Cmd[%d]:%d",_cmd,_ret);
 
     if (_target != 0x10) {
         copter.gcs().send_text(MAV_SEVERITY_WARNING, "Err: T[%d] C[%d] R[%d]",_target,_cmd,_ret);
@@ -166,7 +167,7 @@ void UPayload::do_next_state() {
             break;
         case payload_selfcheck:
             if (tmp_need_report) {gcs().send_text(MAV_SEVERITY_WARNING, "Sending Selfcheck");}
-            _uart.get_msg_apm2payload()._msg_1.content.msg.cmd = 0x01;
+            _uart.get_msg_apm2payload()._msg_1.content.msg.cmd = 0x02;
             _uart.get_msg_apm2payload()._msg_1.need_send = true;
             break;
         case payload_voltup:

@@ -47,7 +47,7 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
 
     AP_GROUPINFO("_SEARCH_DIST"     , 33, UserParameters, group_search_dist, 1000.f),
 
-    AP_SUBGROUPINFO(Thr_pid, "_Thr_", 34, UserParameters, AC_PID),
+    AP_SUBGROUPINFO(Roll_pid, "_Roll_", 34, UserParameters, AC_PID),
     AP_GROUPINFO("_P_UP_FACTOR"     , 35, UserParameters, atk_thr_up_factor, 1.f),
     AP_GROUPINFO("_P_RATE"          , 36, UserParameters, fly_pitch_rate, 3000.0f),
     AP_GROUPINFO("_ATK_FIRE_ACC"    , 37, UserParameters, atk_fire_acc, 20.0f),
@@ -56,5 +56,6 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     AP_GROUPINFO("_ATK_K2"          , 39, UserParameters, atk_k2, -0.2f),
     AP_GROUPINFO("_ATK_K3"          , 40, UserParameters, atk_k3, 0.1f),
     AP_GROUPINFO("_ATK_T1"          , 41, UserParameters, atk_t1, 0.9f),
+    AP_GROUPINFO("_ATK_KK"          , 42, UserParameters, atk_kk, 3.0f),
     AP_GROUPEND
 };

@@ -15,7 +15,8 @@
 //#include "UCam.h"
 
 UCam::UCam()
-    : _cam_filter(10.0f)
+    : _cam_filter(20.0f),
+    _q_cds_filter(10.0f)
 {
     ;
 }
@@ -87,6 +88,7 @@ void UCam::handle_info(float p1, float p2, float p3, float p4)
 
     float dt = (float)(millis() - _last_update_ms)*1.0e-3f;
     if (dt > 1.0f) {dt = 1.0f;}
+    if (dt < 0.01f) {dt = 0.01f;} // sainty check, cam info will be at around 20Hz, conrresponding to 0.05s.
     
     raw_info.x = p1;
     raw_info.y = p2;
@@ -102,10 +104,21 @@ void UCam::handle_info(float p1, float p2, float p3, float p4)
     correct_info.x = _cam_filter.get().y;
     correct_info.y = -_cam_filter.get().z;
     _last_update_ms = millis();
-    _new_data = true;
     if (!_active) {
         _n_count += 1;
     }
+
+
+    if (copter.g2.user_parameters.cam_pixel_x.get() < 50.f) {copter.g2.user_parameters.cam_pixel_x.set_and_save(50.f);}
+    if (copter.g2.user_parameters.cam_pixel_y.get() < 50.f) {copter.g2.user_parameters.cam_pixel_y.set_and_save(50.f);}
+    if (copter.g2.user_parameters.cam_angle_x.get() < 30.f) {copter.g2.user_parameters.cam_angle_x.set_and_save(30.f);}
+    if (copter.g2.user_parameters.cam_angle_y.get() < 30.f) {copter.g2.user_parameters.cam_angle_y.set_and_save(30.f);}
+    if (copter.g2.user_parameters.fly_yaw_tc.get() < 0.1f) {copter.g2.user_parameters.fly_yaw_tc.set_and_save(0.1f);}
+    update_target_pitch_rate();
+    update_target_roll_angle();
+    update_target_yaw_rate();
+    update_target_track_angle();
+    update_q_rate_cds(dt);
 }
 
 int16_t UCam::cam_state() {
@@ -269,40 +282,32 @@ void UCam::do_cmd(float p1)
 void UCam::update()
 {
     mav_read();
+    time_out_check();
+}
+
+void UCam::time_out_check() {
     const uint32_t now = millis();
     uint32_t _time_out = (uint32_t)copter.g2.user_parameters.cam_time_out.get();
     if ( _time_out!=0 && ((now - _last_update_ms) > _time_out) ) {
         _n_count = 0;
         _active = false;
+        _cam_state = 0;
+        raw_info.x = 0.0f;
+        raw_info.y = 0.0f;
     } else if (_n_count > 10) {
         _active = true;
     } else {
         _active = false;
     }
 
-    if ((now - _last_update_ms) > 2000) {
-        _cam_state = 0;
-        raw_info.x = 0.0f;
-        raw_info.y = 0.0f;
-    }
-
     if (!_active) {
         _target_pitch_rate = 0.0f;
         _target_roll_angle = 0.0f;
         _target_yaw_rate_cds = 0.0f;
+        _current_angle_deg = copter.g2.user_parameters.fly_attack_angle*0.01f;
+        _q_rate_cds = 0.0f;
+        _q_cds_filter.reset(0.0f);
         return;
-    }
-    if (copter.g2.user_parameters.cam_pixel_x.get() < 50.f) {copter.g2.user_parameters.cam_pixel_x.set_and_save(50.f);}
-    if (copter.g2.user_parameters.cam_pixel_y.get() < 50.f) {copter.g2.user_parameters.cam_pixel_y.set_and_save(50.f);}
-    if (copter.g2.user_parameters.cam_angle_x.get() < 30.f) {copter.g2.user_parameters.cam_angle_x.set_and_save(30.f);}
-    if (copter.g2.user_parameters.cam_angle_y.get() < 30.f) {copter.g2.user_parameters.cam_angle_y.set_and_save(30.f);}
-    if (copter.g2.user_parameters.fly_yaw_tc.get() < 0.1f) {copter.g2.user_parameters.fly_yaw_tc.set_and_save(0.1f);}
-    if (_new_data) {
-        update_target_pitch_rate();
-        update_target_roll_angle();
-        update_target_yaw_rate();
-        update_target_track_angle();
-        _new_data = false;
     }
 }
 
@@ -317,20 +322,34 @@ void UCam::update_target_pitch_rate() {
 }
 
 void UCam::update_target_roll_angle() {
+    // float info_x = copter.Ucam.get_correct_info().x/(0.5f*copter.g2.user_parameters.cam_pixel_x) - copter.g2.user_parameters.cam_target_x.get();
+    // info_x = constrain_float(info_x*copter.g2.user_parameters.fly_roll_factor, -1.0f, 1.0f);
+    // float pitch_limit = MAX(copter.g2.user_parameters.fly_roll_limit, degrees(fabsf(copter.ahrs_view->pitch)));
+    // _target_roll_angle = pitch_limit*info_x;
+
     float info_x = copter.Ucam.get_correct_info().x/(0.5f*copter.g2.user_parameters.cam_pixel_x) - copter.g2.user_parameters.cam_target_x.get();
-    info_x = constrain_float(info_x*copter.g2.user_parameters.fly_roll_factor, -1.0f, 1.0f);
-    _target_roll_angle = copter.g2.user_parameters.fly_roll_limit*info_x;
+    float out_x = copter.g2.user_parameters.Roll_pid.update_all(0.0f, -info_x, false);
+    float pitch_limit = MAX(copter.g2.user_parameters.fly_roll_limit, degrees(fabsf(copter.ahrs_view->pitch)));
+    _target_roll_angle = pitch_limit*out_x;
 }
 
 void UCam::update_target_yaw_rate() {
     float info_x = copter.Ucam.get_correct_info().x/(0.5f*copter.g2.user_parameters.cam_pixel_x) - copter.g2.user_parameters.cam_target_x.get();
     info_x = constrain_float(info_x, -1.0f, 1.0f);
-    float x_angle = copter.g2.user_parameters.cam_angle_x;
     float yaw_rate_tc = copter.g2.user_parameters.fly_yaw_tc;
-    float yaw_rate_cds = 100.f * (x_angle * info_x / yaw_rate_tc);
+    float yaw_rate_cds = constrain_float((3000.f * info_x * yaw_rate_tc), -3000.f, 3000.f);
     _target_yaw_rate_cds = yaw_rate_cds;
 }
 
 void UCam::update_target_track_angle() {
     _current_angle_deg = -degrees(copter.ahrs_view->pitch) - (copter.g2.user_parameters.cam_pitch_offset)*0.01f-degrees(atanf((copter.Ucam.get_correct_info().y)/(0.5f*copter.g2.user_parameters.cam_pixel_y)*tanf(0.5f*radians(copter.g2.user_parameters.cam_angle_y))));
+}
+
+void UCam::update_q_rate_cds(float dt) {
+    static float last_q_cd = 0.0f;
+    float q_cd = 100.f*degrees(copter.ahrs_view->yaw) + degrees(atanf((copter.Ucam.get_correct_info().x)/(0.5f*copter.g2.user_parameters.cam_pixel_x)*tanf(0.5f*radians(copter.g2.user_parameters.cam_angle_x))));
+    float q_cds = (q_cd - last_q_cd)/dt;
+    last_q_cd = q_cd;
+    _q_cds_filter.apply(q_cds, dt);
+    _q_rate_cds = _q_cds_filter.get();
 }

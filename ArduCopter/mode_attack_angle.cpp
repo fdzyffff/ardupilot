@@ -16,6 +16,9 @@ bool ModeAttack_angle::init(bool ignore_checks)
         }
         copter.g2.user_parameters.Ucam_pid.reset_I();
         copter.g2.user_parameters.Ucam_pid.reset_filter();
+        copter.g2.user_parameters.Roll_pid.reset_I();
+        copter.g2.user_parameters.Roll_pid.reset_filter();
+
         _fired = false;
         copter.Upayload.set_state(UPayload::payload_arm);
         pos_control->set_max_speed_accel_z(-get_pilot_speed_dn(), g.pilot_speed_up, g.pilot_accel_z);
