@@ -14,6 +14,8 @@ void Copter::userhook_init()
     Ucam.init();
     Ugcs.init();
     Upayload.init();
+
+    pitch_delay.idx = 0;
 }
 #endif
 
@@ -21,6 +23,7 @@ void Copter::userhook_init()
 void Copter::userhook_FastLoop()
 {
     // put your 100Hz code here
+    userhook_FastLoop_pitch_write();
 }
 #endif
 
@@ -59,7 +62,7 @@ void Copter::userhook_SuperSlowLoop()
     userhook_SuperSlowLoop_setgpsorigin();
     // userhook_SuperSlowLoop_gcsfeedback();
 
-    userhook_SuperSlowLoop_mocap_update();
+    // userhook_SuperSlowLoop_mocap_update();
 }
 #endif
 
@@ -103,6 +106,25 @@ void Copter::userhook_auxSwitch3(const RC_Channel::AuxSwitchPos ch_flag)
     // put your aux switch #3 handler here (CHx_OPT = 49)
 }
 #endif
+
+void Copter::userhook_FastLoop_pitch_write() {
+    float current_pitch = copter.ahrs_view->pitch;
+    pitch_delay.idx += 1;
+    if (pitch_delay.idx >= 100) {
+        pitch_delay.idx = 0;
+    }
+    pitch_delay.pitch_buffer[pitch_delay.idx] = current_pitch;
+}
+
+float Copter::userhook_FastLoop_pitch_get() {
+    uint16_t tmp_idx = pitch_delay.idx;
+    uint16_t tmp_idx_comp = 12;
+    if (tmp_idx >= tmp_idx_comp) {
+        return pitch_delay.pitch_buffer[tmp_idx - tmp_idx_comp];
+    } else {
+        return pitch_delay.pitch_buffer[100 + tmp_idx - tmp_idx_comp];
+    }
+}
 
 void Copter::userhook_SuperSlowLoop_print() {
     if ((g2.user_parameters.cam_print.get() & (1<<0)) && Ucam.display_info_new) { // 1
@@ -202,6 +224,7 @@ void Copter::userhook_SuperSlowLoop_gcsfeedback() {
 
 void Copter::userhook_SuperSlowLoop_setgpsorigin() {
     static uint32_t last_update = millis();
+
     if (!copter.ahrs.initialised()) {
         last_update = millis();
         return;
@@ -238,12 +261,10 @@ void Copter::userhook_SuperSlowLoop_setgpsorigin() {
         }
     }
 
-}
-
-void Copter::userhook_SuperSlowLoop_mocap_update() {
     mocap_stat.n_count = 0;
     mocap_stat.last_update_ms = millis();
 }
+
 
 void Copter::send_my_micro_image(mavlink_channel_t chan, mavlink_my_micro_image_t* my_micro_image) {
         // mavlink_channel_t new_chan = MAVLINK_COMM_0;

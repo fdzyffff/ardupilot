@@ -1,5 +1,7 @@
 #include "Copter.h"
 
+#define FD_COMP 1.2f
+
 #if LOGGING_ENABLED == ENABLED
 
 // Code to Write and Read packets from AP_Logger log memory
@@ -436,8 +438,8 @@ void Copter::Log_Write_Guided_Position_Target(ModeGuided::SubMode target_type, c
         pos_target_y    : pos_target.y,
         pos_target_z    : pos_target.z,
         terrain         : terrain_alt,
-        vel_target_x    : vel_target.x,
-        vel_target_y    : vel_target.y,
+        vel_target_x    : vel_target.x*FD_COMP,
+        vel_target_y    : vel_target.y*FD_COMP,
         vel_target_z    : vel_target.z,
         accel_target_x  : accel_target.x,
         accel_target_y  : accel_target.y,

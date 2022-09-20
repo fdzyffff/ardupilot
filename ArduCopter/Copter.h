@@ -932,7 +932,7 @@ private:
     bool get_wp_crosstrack_error_m(float &xtrack_error) const override;
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    struct Mocap_stat {
+    struct Mocap_stat_t {
         uint16_t n_count;
         uint32_t last_update_ms;
         float x;
@@ -940,11 +940,18 @@ private:
         float z;
     } mocap_stat;
 
+    struct pitch_delay_t {
+        uint16_t idx;
+        float pitch_buffer[100];
+    } pitch_delay;
+
     void userhook_SuperSlowLoop_print();
     void userhook_SuperSlowLoop_telemsetup();
     void userhook_SuperSlowLoop_setgpsorigin();
     void userhook_SuperSlowLoop_gcsfeedback();
-    void userhook_SuperSlowLoop_mocap_update();
+    void userhook_FastLoop_pitch_write();
+    float userhook_FastLoop_pitch_get();
+    // void userhook_SuperSlowLoop_mocap_update();
 
     UCam Ucam;
     UGround Ugcs;

@@ -82,6 +82,8 @@
 
 #include <ctype.h>
 
+#define FD_COMP 1.2f
+
 extern const AP_HAL::HAL& hal;
 
 struct GCS_MAVLINK::LastRadioStatus GCS_MAVLINK::last_radio_status;
@@ -2441,8 +2443,8 @@ void GCS_MAVLINK::send_local_position() const
         local_position.x,
         local_position.y,
         local_position.z,
-        velocity.x,
-        velocity.y,
+        velocity.x*FD_COMP,
+        velocity.y*FD_COMP,
         velocity.z);
 }
 
@@ -4982,9 +4984,9 @@ void GCS_MAVLINK::send_global_position_int()
         global_position_current_loc.lng, // in 1E7 degrees
         global_position_int_alt(),       // millimeters above ground/sea level
         global_position_int_relative_alt(), // millimeters above home
-        vel.x * 100,                     // X speed cm/s (+ve North)
-        vel.y * 100,                     // Y speed cm/s (+ve East)
-        vel.z * 100,                     // Z speed cm/s (+ve Down)
+        vel.x * 100 * FD_COMP,                     // X speed cm/s (+ve North)
+        vel.y * 100 * FD_COMP,                     // Y speed cm/s (+ve East)
+        vel.z * 100 * FD_COMP,                     // Z speed cm/s (+ve Down)
         ahrs.yaw_sensor);                // compass heading in 1/100 degree
 }
 

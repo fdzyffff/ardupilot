@@ -68,10 +68,10 @@ void ModeAttack_att::run()
         // call z-axis position controller
         pos_control->update_z_controller();
 
-        if (degrees(fabsf(copter.ahrs_view->pitch)) > 20.f || (millis()-_start_ms)>3000) {
-            copter.gcs().send_text(MAV_SEVERITY_WARNING, "Stage 2");
-            _stage = 2;
-        }
+        // if (degrees(fabsf(copter.ahrs_view->pitch)) > 20.f || (millis()-_start_ms)>3000) {
+        //     copter.gcs().send_text(MAV_SEVERITY_WARNING, "Stage 2");
+        //     _stage = 2;
+        // }
     } else {
         // output pilot's throttle
         attitude_control->set_throttle_out(my_get_throttle_boosted(motors->get_throttle_hover()),

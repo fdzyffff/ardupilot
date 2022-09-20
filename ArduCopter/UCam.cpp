@@ -342,7 +342,7 @@ void UCam::update_target_yaw_rate() {
 }
 
 void UCam::update_target_track_angle() {
-    _current_angle_deg = -degrees(copter.ahrs_view->pitch) - (copter.g2.user_parameters.cam_pitch_offset)*0.01f-degrees(atanf((copter.Ucam.get_correct_info().y)/(0.5f*copter.g2.user_parameters.cam_pixel_y)*tanf(0.5f*radians(copter.g2.user_parameters.cam_angle_y))));
+    _current_angle_deg = -degrees(copter.userhook_FastLoop_pitch_get()) - (copter.g2.user_parameters.cam_pitch_offset)*0.01f-degrees(atanf((copter.Ucam.get_correct_info().y)/(0.5f*copter.g2.user_parameters.cam_pixel_y)*tanf(0.5f*radians(copter.g2.user_parameters.cam_angle_y))));
 }
 
 void UCam::update_q_rate_cds(float dt) {

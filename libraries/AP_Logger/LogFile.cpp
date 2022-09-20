@@ -12,6 +12,8 @@
 #include "AP_Logger_MAVLink.h"
 #include "LoggerMessageWriter.h"
 
+#define FD_COMP 1.2f
+
 extern const AP_HAL::HAL& hal;
 
 
@@ -577,9 +579,9 @@ void AP_Logger::Write_PSCN(float pos_target, float pos, float vel_desired, float
         time_us         : AP_HAL::micros64(),
         pos_target    : pos_target * 0.01f,
         pos           : pos * 0.01f,
-        vel_desired   : vel_desired * 0.01f,
-        vel_target    : vel_target * 0.01f,
-        vel           : vel * 0.01f,
+        vel_desired   : vel_desired * 0.01f * FD_COMP,
+        vel_target    : vel_target * 0.01f * FD_COMP,
+        vel           : vel * 0.01f * FD_COMP,
         accel_desired : accel_desired * 0.01f,
         accel_target  : accel_target * 0.01f,
         accel         : accel * 0.01f
@@ -594,9 +596,9 @@ void AP_Logger::Write_PSCE(float pos_target, float pos, float vel_desired, float
             time_us         : AP_HAL::micros64(),
             pos_target    : pos_target * 0.01f,
             pos           : pos * 0.01f,
-            vel_desired   : vel_desired * 0.01f,
-            vel_target    : vel_target * 0.01f,
-            vel           : vel * 0.01f,
+            vel_desired   : vel_desired * 0.01f * FD_COMP,
+            vel_target    : vel_target * 0.01f * FD_COMP,
+            vel           : vel * 0.01f * FD_COMP,
             accel_desired : accel_desired * 0.01f,
             accel_target  : accel_target * 0.01f,
             accel         : accel * 0.01f
