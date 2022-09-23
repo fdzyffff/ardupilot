@@ -676,6 +676,19 @@ struct PACKED log_PSCD {
     float accel_target;
     float accel;
 };
+// position controller xy axis logging
+struct PACKED log_PSCT {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    float pos_target;
+    float pos;
+    float vel_desired;
+    float vel_target;
+    float vel;
+    float accel_desired;
+    float accel_target;
+    float accel;
+};
 
 // thread stack usage
 struct PACKED log_STAK {
@@ -1384,6 +1397,8 @@ LOG_STRUCTURE_FROM_VISUALODOM \
       "PSCE", "Qffffffff", "TimeUS,TPE,PE,DVE,TVE,VE,DAE,TAE,AE", "smmnnnooo", "F00000000" }, \
     { LOG_PSCD_MSG, sizeof(log_PSCD), \
       "PSCD", "Qffffffff", "TimeUS,TPD,PD,DVD,TVD,VD,DAD,TAD,AD", "smmnnnooo", "F00000000" }, \
+    { LOG_PSCT_MSG, sizeof(log_PSCT), \
+      "PSCT", "Qffffffff", "TimeUS,TPXY,PXY,DVXY,TVXY,VXY,DAXY,TAXY,AXY", "smmnnnooo", "F00000000" }, \
     { LOG_STAK_MSG, sizeof(log_STAK), \
       "STAK", "QBBHHN", "TimeUS,Id,Pri,Total,Free,Name", "s#----", "F-----", true }, \
     { LOG_FILE_MSG, sizeof(log_File), \
@@ -1477,6 +1492,7 @@ enum LogMessages : uint8_t {
     LOG_VIDEO_STABILISATION_MSG,
     LOG_MOTBATT_MSG,
     LOG_VER_MSG,
+    LOG_PSCT_MSG,
 
     _LOG_LAST_MSG_
 };

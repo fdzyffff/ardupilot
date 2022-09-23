@@ -63,6 +63,8 @@
 #define HAL_GPS_COM_PORT_DEFAULT 1
 #endif
 
+#define FD_COMP 1.35f
+
 extern const AP_HAL::HAL &hal;
 
 // baudrates to try to detect GPSes with
@@ -1331,7 +1333,7 @@ void AP_GPS::send_mavlink_gps_raw(mavlink_channel_t chan)
         loc.alt * 10UL, // in mm
         get_hdop(0),
         get_vdop(0),
-        ground_speed(0)*100,  // cm/s
+        ground_speed(0)*100*FD_COMP,  // cm/s
         ground_course(0)*100, // 1/100 degrees,
         num_sats(0),
         0,                    // TODO: Elipsoid height in mm
@@ -2076,7 +2078,7 @@ void AP_GPS::Write_GPS(uint8_t i)
         latitude      : loc.lat,
         longitude     : loc.lng,
         altitude      : loc.alt,
-        ground_speed  : ground_speed(i),
+        ground_speed  : ground_speed(i)*FD_COMP,
         ground_course : ground_course(i),
         vel_z         : velocity(i).z,
         yaw           : yaw_deg,

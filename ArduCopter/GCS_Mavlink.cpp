@@ -2,6 +2,8 @@
 
 #include "GCS_Mavlink.h"
 
+#define FD_COMP 1.35f
+
 MAV_TYPE GCS_Copter::frame_type() const
 {
     if (copter.motors == nullptr) {
@@ -186,11 +188,11 @@ void GCS_MAVLINK_Copter::send_position_target_local_ned()
         target_pos.x,   // x in metres
         target_pos.y,   // y in metres
         -target_pos.z,  // z in metres NED frame
-        target_vel.x,   // vx in m/s
-        target_vel.y,   // vy in m/s
+        target_vel.x * FD_COMP,   // vx in m/s
+        target_vel.y * FD_COMP,   // vy in m/s
         -target_vel.z,  // vz in m/s NED frame
-        target_accel.x, // afx in m/s/s
-        target_accel.y, // afy in m/s/s
+        target_accel.x * FD_COMP, // afx in m/s/s
+        target_accel.y * FD_COMP, // afy in m/s/s
         -target_accel.z,// afz in m/s/s NED frame
         0.0f, // yaw
         0.0f); // yaw_rate
@@ -232,7 +234,7 @@ float GCS_MAVLINK_Copter::vfr_hud_airspeed() const
     if (AP::ahrs().airspeed_vector_true(airspeed_vec_bf)) {
         // we are running the EKF3 wind estimation code which can give
         // us an airspeed estimate
-        return airspeed_vec_bf.length();
+        return airspeed_vec_bf.length() ;
     }
     return AP::gps().ground_speed();
 }

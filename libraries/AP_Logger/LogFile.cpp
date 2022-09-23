@@ -12,7 +12,7 @@
 #include "AP_Logger_MAVLink.h"
 #include "LoggerMessageWriter.h"
 
-#define FD_COMP 1.2f
+#define FD_COMP 1.35f
 
 extern const AP_HAL::HAL& hal;
 
@@ -582,9 +582,9 @@ void AP_Logger::Write_PSCN(float pos_target, float pos, float vel_desired, float
         vel_desired   : vel_desired * 0.01f * FD_COMP,
         vel_target    : vel_target * 0.01f * FD_COMP,
         vel           : vel * 0.01f * FD_COMP,
-        accel_desired : accel_desired * 0.01f,
-        accel_target  : accel_target * 0.01f,
-        accel         : accel * 0.01f
+        accel_desired : accel_desired * 0.01f * FD_COMP,
+        accel_target  : accel_target * 0.01f * FD_COMP,
+        accel         : accel * 0.01f * FD_COMP
     };
     WriteBlock(&pkt, sizeof(pkt));
 }
@@ -599,9 +599,9 @@ void AP_Logger::Write_PSCE(float pos_target, float pos, float vel_desired, float
             vel_desired   : vel_desired * 0.01f * FD_COMP,
             vel_target    : vel_target * 0.01f * FD_COMP,
             vel           : vel * 0.01f * FD_COMP,
-            accel_desired : accel_desired * 0.01f,
-            accel_target  : accel_target * 0.01f,
-            accel         : accel * 0.01f
+            accel_desired : accel_desired * 0.01f * FD_COMP,
+            accel_target  : accel_target * 0.01f * FD_COMP,
+            accel         : accel * 0.01f * FD_COMP
     };
     WriteBlock(&pkt, sizeof(pkt));
 }
@@ -619,6 +619,23 @@ void AP_Logger::Write_PSCD(float pos_target, float pos, float vel_desired, float
             accel_desired : accel_desired * 0.01f,
             accel_target  : accel_target * 0.01f,
             accel         : accel * 0.01f
+    };
+    WriteBlock(&pkt, sizeof(pkt));
+}
+
+void AP_Logger::Write_PSCT(float pos_target, float pos, float vel_desired, float vel_target, float vel, float accel_desired, float accel_target, float accel)
+{
+    const struct log_PSCE pkt{
+        LOG_PACKET_HEADER_INIT(LOG_PSCT_MSG),
+            time_us         : AP_HAL::micros64(),
+            pos_target    : pos_target * 0.01f,
+            pos           : pos * 0.01f,
+            vel_desired   : vel_desired * 0.01f * FD_COMP,
+            vel_target    : vel_target * 0.01f * FD_COMP,
+            vel           : vel * 0.01f * FD_COMP,
+            accel_desired : accel_desired * FD_COMP * FD_COMP,
+            accel_target  : accel_target * FD_COMP * FD_COMP,
+            accel         : accel * FD_COMP * FD_COMP
     };
     WriteBlock(&pkt, sizeof(pkt));
 }

@@ -43,6 +43,7 @@ void Copter::userhook_MediumLoop()
     // put your 10Hz code here
     Ugcs_Log_Write_UCamTarget();
     // Ugcs_Log_Write_Mocap();
+    userhook_MediumLoop_PSCT_log();
 }
 #endif
 
@@ -142,6 +143,9 @@ void Copter::userhook_SuperSlowLoop_print() {
     }
     if (g2.user_parameters.cam_print.get() & (1<<4)) { // 16
         gcs().send_text(MAV_SEVERITY_WARNING, "Mocap [%d] [%0.1f, %0.1f, %0.1f]", mocap_stat.n_count, mocap_stat.x, mocap_stat.y, mocap_stat.z);
+    }
+    if (g2.user_parameters.cam_print.get() & (1<<5)) { // 32
+        gcs().send_text(MAV_SEVERITY_WARNING, "avoid [%d]", copter.avoid.proximity_avoidance_enabled() );
     }
 
 
@@ -297,5 +301,17 @@ void Copter::send_my_micro_image(mavlink_channel_t chan, mavlink_my_micro_image_
                 my_micro_image->data); 
             }
         }
+    }
+}
+
+
+void Copter::userhook_MediumLoop_PSCT_log() {
+    if (copter.position_ok()) {
+        Matrix3f tmp_m;
+        tmp_m.from_euler(ahrs_view->roll, ahrs_view->pitch, ahrs_view->yaw);
+        Vector3f tmp_accel = tmp_m*copter.ins.get_accel();
+        AP::logger().Write_PSCT(0.0f, Vector2f(inertial_nav.get_position_neu_cm().x,inertial_nav.get_position_neu_cm().y).length(),
+                                0.0f, inertial_nav.get_speed_xy_cms(), Vector2f(inertial_nav.get_velocity_neu_cms().x, inertial_nav.get_velocity_neu_cms().y).length(),
+                                copter.ins.get_accel().length(), Vector3f(tmp_accel.x, tmp_accel.y, tmp_accel.z).length(), Vector2f(ahrs.get_accel_ef().x, ahrs.get_accel_ef().y).length());
     }
 }

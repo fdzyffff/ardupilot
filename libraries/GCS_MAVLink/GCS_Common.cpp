@@ -82,7 +82,7 @@
 
 #include <ctype.h>
 
-#define FD_COMP 1.2f
+#define FD_COMP 1.35f
 
 extern const AP_HAL::HAL& hal;
 
@@ -2775,8 +2775,8 @@ void GCS_MAVLINK::send_vfr_hud()
 
     mavlink_msg_vfr_hud_send(
         chan,
-        vfr_hud_airspeed(),
-        ahrs.groundspeed(),
+        vfr_hud_airspeed()*FD_COMP,
+        ahrs.groundspeed()*FD_COMP,
         (ahrs.yaw_sensor / 100) % 360,
         abs(vfr_hud_throttle()),
         vfr_hud_alt(),
@@ -4984,9 +4984,9 @@ void GCS_MAVLINK::send_global_position_int()
         global_position_current_loc.lng, // in 1E7 degrees
         global_position_int_alt(),       // millimeters above ground/sea level
         global_position_int_relative_alt(), // millimeters above home
-        vel.x * 100 * FD_COMP,                     // X speed cm/s (+ve North)
-        vel.y * 100 * FD_COMP,                     // Y speed cm/s (+ve East)
-        vel.z * 100 * FD_COMP,                     // Z speed cm/s (+ve Down)
+        vel.x * 100,                     // X speed cm/s (+ve North)
+        vel.y * 100,                     // Y speed cm/s (+ve East)
+        vel.z * 100,                     // Z speed cm/s (+ve Down)
         ahrs.yaw_sensor);                // compass heading in 1/100 degree
 }
 

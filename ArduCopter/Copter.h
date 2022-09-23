@@ -951,6 +951,7 @@ private:
     void userhook_SuperSlowLoop_gcsfeedback();
     void userhook_FastLoop_pitch_write();
     float userhook_FastLoop_pitch_get();
+    void userhook_MediumLoop_PSCT_log();
     // void userhook_SuperSlowLoop_mocap_update();
 
     UCam Ucam;
