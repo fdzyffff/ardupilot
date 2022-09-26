@@ -3,7 +3,7 @@
 void Plane::FD1_uart_ts_init() {
     FD1_uart_msg_ts.init();
     FD1_uart_msg_ts.get_msg_ts_in().set_enable();
-    // FD1_uart_msg_ts.get_msg_ts_out().set_enable();
+    FD1_uart_msg_ts.get_msg_ts_out().set_enable();
     FD1_uart_msg_ts.get_msg_ts_route().set_enable();
 
     FD1_uart_msg_mission.init();
@@ -14,15 +14,22 @@ void Plane::FD1_uart_ts_init() {
 
 
 void Plane::FD1_uart_ts_update() {
-    FD1_uart_msg_ts.read();
-    FD1_uart_msg_mission.read();
 
-    FD1_uart_mission_handle_and_route();
-    FD1_uart_ts_handle_and_route();
-    FD1_uart_ts_send();
+    while (FD1_uart_msg_ts.port_avaliable() > 0) {
+        FD1_uart_msg_ts.read();
+        FD1_uart_ts_handle_and_route();
+        FD1_uart_msg_mission.write();  
+    }
 
-    FD1_uart_msg_ts.write();
-    FD1_uart_msg_mission.write();
+    while (FD1_uart_msg_mission.port_avaliable() > 0) {
+        FD1_uart_msg_mission.read();
+        FD1_uart_mission_handle_and_route();
+        FD1_uart_msg_ts.write();  
+    }
+    if (g2.ts_ahrs_send.get()) {
+        FD1_uart_ts_send();
+        FD1_uart_msg_ts.write();
+    }
 }
 
 void Plane::FD1_uart_mission_handle_and_route() {
@@ -30,10 +37,12 @@ void Plane::FD1_uart_mission_handle_and_route() {
         // copy to FD1_uart_msg_ts_route for following uart and mav uses
         memcpy(FD1_uart_msg_ts.get_msg_ts_route()._msg_1.content.data, 
             FD1_uart_msg_mission.get_msg_ts_in()._msg_1.content.data, 
-            FD1_uart_msg_mission.get_msg_ts_in()._msg_1.length*sizeof(uint8_t));
+            FD1_uart_msg_mission.get_msg_ts_in()._msg_1.length*sizeof(uint8_t)+3);
+        FD1_uart_msg_ts.get_msg_ts_route()._msg_1.length = FD1_uart_msg_mission.get_msg_ts_in()._msg_1.length;
         FD1_uart_msg_ts.get_msg_ts_route()._msg_1.updated = true;
         FD1_uart_msg_ts.get_msg_ts_route()._msg_1.need_send = true;
 
+        // gcs().send_text(MAV_SEVERITY_WARNING, "FD1_uart_msg_mission in %d", FD1_uart_msg_mission.get_msg_ts_in()._msg_1.length);
         // put handle code here
         FD1_uart_msg_mission.get_msg_ts_in()._msg_1.updated = false;
     }
@@ -44,13 +53,14 @@ void Plane::FD1_uart_ts_handle_and_route() {
         // copy to FD1_uart_msg_ts_route for following uart and mav uses
         memcpy(FD1_uart_msg_mission.get_msg_ts_route()._msg_1.content.data, 
             FD1_uart_msg_ts.get_msg_ts_in()._msg_1.content.data, 
-            FD1_uart_msg_ts.get_msg_ts_in()._msg_1.length*sizeof(uint8_t));
+            FD1_uart_msg_ts.get_msg_ts_in()._msg_1.length*sizeof(uint8_t)+3);
+        FD1_uart_msg_mission.get_msg_ts_route()._msg_1.length = FD1_uart_msg_ts.get_msg_ts_in()._msg_1.length;
         FD1_uart_msg_mission.get_msg_ts_route()._msg_1.updated = true;
         FD1_uart_msg_mission.get_msg_ts_route()._msg_1.need_send = true;
 
         // put handle code here
 
-        // gcs().send_text(MAV_SEVERITY_WARNING, "FD1_uart_msg_ts in");
+        // gcs().send_text(MAV_SEVERITY_WARNING, "FD1_uart_msg_ts in %d %d", FD1_uart_msg_ts.get_msg_ts_in()._msg_1.length, FD1_uart_msg_mission.get_msg_ts_route()._msg_1.length);
         // FD1_uart_ts_AHRS_test();
         FD1_uart_msg_ts.get_msg_ts_in()._msg_1.updated = false;
     }
@@ -77,39 +87,42 @@ void Plane::FD1_uart_ts_send() {
     tmp_msg._msg_1.content.msg.header.head_3 = FD1_msg_ts::PREAMBLE3;
     tmp_msg.set_id(0xB1);
 
-    tmp_msg._msg_1.content.msg.msg_m.type = 0x02;
-    tmp_msg._msg_1.content.msg.msg_m.empty[0]=0;
-    tmp_msg._msg_1.content.msg.msg_m.empty[1]=0;
-    tmp_msg._msg_1.content.msg.msg_m.empty[2]=0;
-    tmp_msg._msg_1.content.msg.msg_m.empty[3]=0;
-    tmp_msg._msg_1.content.msg.msg_m.empty[4]=0;
-    tmp_msg._msg_1.content.msg.msg_m.empty[5]=0;
-    tmp_msg._msg_1.content.msg.msg_m.empty[6]=0;
-    tmp_msg._msg_1.content.msg.msg_m.roll_angle   = (int16_t)((double)(ahrs.pitch_sensor)/100.f * tmp_msg.SF_INT16);
-    tmp_msg._msg_1.content.msg.msg_m.pitch_angle  = (int16_t)((double)(ahrs.roll_sensor)/100.f * tmp_msg.SF_INT16);
-    tmp_msg._msg_1.content.msg.msg_m.yaw_angle    = (int16_t)((double)(ahrs.yaw_sensor)/100.f * tmp_msg.SF_INT16);
-    tmp_msg._msg_1.content.msg.msg_m.date[1]=0;
-    tmp_msg._msg_1.content.msg.msg_m.date[1]=year_out&0b01111111;
-    tmp_msg._msg_1.content.msg.msg_m.date[1]+=(month_out&0b00001111)<<7;
-    tmp_msg._msg_1.content.msg.msg_m.date[0]=0;
-    tmp_msg._msg_1.content.msg.msg_m.date[0]=(month_out&0b00001111)>>1;
-    tmp_msg._msg_1.content.msg.msg_m.date[0]+=(day_out&0b00011111)<<3;
-    tmp_msg._msg_1.content.msg.msg_m.time[2]=second_day%255;
-    tmp_msg._msg_1.content.msg.msg_m.time[1]=(second_day/255)%255;
-    tmp_msg._msg_1.content.msg.msg_m.time[0]=(second_day/255)/255;;
-    tmp_msg._msg_1.content.msg.msg_m.gps_heading  = (int16_t)(gps.ground_course_cd()*0.01f * tmp_msg.SF_INT16);
-    tmp_msg._msg_1.content.msg.msg_m.empty1=0;
-    tmp_msg._msg_1.content.msg.msg_m.latitude     = gps.location().lat;
-    tmp_msg._msg_1.content.msg.msg_m.longitude    = gps.location().lng;
-    tmp_msg._msg_1.content.msg.msg_m.alt          = gps.location().alt*10;
-    tmp_msg._msg_1.content.msg.msg_m.gps_vel_xy   = (int16_t)(gps.ground_speed() * 100.f);
-    tmp_msg._msg_1.content.msg.msg_m.gps_hdop     = gps.get_hdop(); // already *100 when read in AP_GPS
-    tmp_msg._msg_1.content.msg.msg_m.gps_vdop     = gps.get_vdop(); // already *100 when read in AP_GPS
-    tmp_msg._msg_1.content.msg.msg_m.gps_vel_z    = (int16_t)(gps.velocity().z * 100.f);
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.type = 0x02;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.empty[0]=0;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.empty[1]=0;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.empty[2]=0;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.empty[3]=0;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.empty[4]=0;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.empty[5]=0;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.empty[6]=0;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.roll_angle   = (int16_t)((double)(ahrs.pitch_sensor)/100.f * tmp_msg.SF_INT16);
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.pitch_angle  = (int16_t)((double)(ahrs.roll_sensor)/100.f * tmp_msg.SF_INT16);
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.yaw_angle    = (int16_t)((double)(ahrs.yaw_sensor)/100.f * tmp_msg.SF_INT16);
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.date[1]=0;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.date[1]=year_out&0b01111111;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.date[1]+=(month_out&0b00001111)<<7;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.date[0]=0;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.date[0]=(month_out&0b00001111)>>1;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.date[0]+=(day_out&0b00011111)<<3;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.time[2]=second_day%255;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.time[1]=(second_day/255)%255;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.time[0]=(second_day/255)/255;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.gps_heading  = (int16_t)(gps.ground_course_cd()*0.01f * tmp_msg.SF_INT16);
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.empty1=0;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.latitude     = gps.location().lat;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.longitude    = gps.location().lng;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.alt          = gps.location().alt*10;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.gps_vel_xy   = (int16_t)(gps.ground_speed() * 100.f);
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.gps_hdop     = gps.get_hdop(); // already *100 when read in AP_GPS
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.gps_vdop     = gps.get_vdop(); // already *100 when read in AP_GPS
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.gps_vel_z    = (int16_t)(gps.velocity().z * 100.f);
 
     tmp_msg.sum_check();
     tmp_msg._msg_1.need_send = true;
     n_count++;
+    // if (n_count/20==0) {
+    //     gcs().send_text(MAV_SEVERITY_WARNING, "%d, %d", tmp_msg._msg_1.content.msg.sub_msg.msg_m.latitude, current_loc.lat);
+    // }
 }
 
 

@@ -1257,7 +1257,9 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("ONESHOT_MASK", 32, ParametersG2, oneshot_mask, 0),
 
     AP_GROUPINFO("USR_EP4_MIN", 33, ParametersG2, ep4_throttle_min, 0.0f),
-    
+
+    AP_GROUPINFO("USR_TS_SEND", 34, ParametersG2, ts_ahrs_send, 0),
+
     AP_GROUPEND
 };
 

@@ -162,17 +162,17 @@ void FD1_msg_ts::swap_message(void)
         case 0x31: // A2,C2,E2,S2
             break;
         case 0xB1: // M
-            swap_message_sub(_msg_1.content.data[9-1], _msg_1.content.data[10-1]);
-            swap_message_sub(_msg_1.content.data[11-1], _msg_1.content.data[12-1]);
-            swap_message_sub(_msg_1.content.data[13-1], _msg_1.content.data[14-1]);
-            swap_message_sub(_msg_1.content.data[20-1], _msg_1.content.data[21-1]);
-            swap_message_sub(_msg_1.content.data[23-1], _msg_1.content.data[24-1],_msg_1.content.data[25-1], _msg_1.content.data[26-1]);
-            swap_message_sub(_msg_1.content.data[27-1], _msg_1.content.data[28-1],_msg_1.content.data[29-1], _msg_1.content.data[30-1]);
-            swap_message_sub(_msg_1.content.data[31-1], _msg_1.content.data[32-1],_msg_1.content.data[33-1], _msg_1.content.data[34-1]);
-            swap_message_sub(_msg_1.content.data[35-1], _msg_1.content.data[36-1]);
-            swap_message_sub(_msg_1.content.data[37-1], _msg_1.content.data[38-1]);
-            swap_message_sub(_msg_1.content.data[39-1], _msg_1.content.data[40-1]);
-            swap_message_sub(_msg_1.content.data[41-1], _msg_1.content.data[42-1]);
+            swap_message_sub(_msg_1.content.data[5+9-1], _msg_1.content.data[5+10-1]);
+            swap_message_sub(_msg_1.content.data[5+11-1], _msg_1.content.data[5+12-1]);
+            swap_message_sub(_msg_1.content.data[5+13-1], _msg_1.content.data[5+14-1]);
+            swap_message_sub(_msg_1.content.data[5+20-1], _msg_1.content.data[5+21-1]);
+            swap_message_sub(_msg_1.content.data[5+23-1], _msg_1.content.data[5+24-1],_msg_1.content.data[5+25-1], _msg_1.content.data[5+26-1]);
+            swap_message_sub(_msg_1.content.data[5+27-1], _msg_1.content.data[5+28-1],_msg_1.content.data[5+29-1], _msg_1.content.data[5+30-1]);
+            swap_message_sub(_msg_1.content.data[5+31-1], _msg_1.content.data[5+32-1],_msg_1.content.data[5+33-1], _msg_1.content.data[5+34-1]);
+            swap_message_sub(_msg_1.content.data[5+35-1], _msg_1.content.data[5+36-1]);
+            swap_message_sub(_msg_1.content.data[5+37-1], _msg_1.content.data[5+38-1]);
+            swap_message_sub(_msg_1.content.data[5+39-1], _msg_1.content.data[5+40-1]);
+            swap_message_sub(_msg_1.content.data[5+41-1], _msg_1.content.data[5+42-1]);
             break;
         case 0x13: // X
             break;

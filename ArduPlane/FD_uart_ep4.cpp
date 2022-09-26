@@ -11,7 +11,6 @@ void Plane::FD1_uart_ep4_init() {
     ep4_state.last_update_ms = 0;
 }
 
-
 void Plane::FD1_uart_ep4_update() {
     float ep4_throttle = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle);
     SRV_Channels::set_output_scaled(SRV_Channel::k_throttle_EP4, ep4_throttle);

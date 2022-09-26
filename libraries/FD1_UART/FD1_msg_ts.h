@@ -19,6 +19,7 @@ public:
         uint16_t pitch_version;
         uint8_t empty[18];
     };
+
     struct PACKED MSG_M {
         uint8_t type;
         uint8_t empty[7];
@@ -39,11 +40,15 @@ public:
     };
 
 
+    union PACKED MSG_Collection {
+        MSG_X msg_x;
+        MSG_M msg_m;
+    };
+
     // message structure
     struct PACKED MSG_Command_1 {
         FD1_msg_header header;
-        MSG_X msg_x;
-        MSG_M msg_m;
+        MSG_Collection sub_msg; 
     };
 
     union PACKED Content_1 {

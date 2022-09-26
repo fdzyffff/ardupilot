@@ -5,9 +5,9 @@ void Plane::FD1_uart_ts_AHRS_test()
     FD1_msg_ts &tmp_msg = FD1_uart_msg_ts.get_msg_ts_in();
 
     if (tmp_msg._msg_1.content.msg.header.id == 0xB1) {
-        gcs().send_text(MAV_SEVERITY_WARNING, "roll_angle: %d", tmp_msg._msg_1.content.msg.msg_m.roll_angle);
-        gcs().send_text(MAV_SEVERITY_WARNING, "pitch_angle: %d", tmp_msg._msg_1.content.msg.msg_m.pitch_angle);
-        gcs().send_text(MAV_SEVERITY_WARNING, "yaw_angle: %d", tmp_msg._msg_1.content.msg.msg_m.yaw_angle);
+        gcs().send_text(MAV_SEVERITY_WARNING, "roll_angle: %d", tmp_msg._msg_1.content.msg.sub_msg.msg_m.roll_angle);
+        gcs().send_text(MAV_SEVERITY_WARNING, "pitch_angle: %d", tmp_msg._msg_1.content.msg.sub_msg.msg_m.pitch_angle);
+        gcs().send_text(MAV_SEVERITY_WARNING, "yaw_angle: %d", tmp_msg._msg_1.content.msg.sub_msg.msg_m.yaw_angle);
     }
     // tmp_msg._msg_1.content.msg.header.head_1 = FD1_msg_ts::PREAMBLE1;
     // tmp_msg._msg_1.content.msg.header.head_2 = FD1_msg_ts::PREAMBLE2;

@@ -25,6 +25,8 @@ public:
     void read();
     void write();
 
+    uint32_t port_avaliable();
+
     FD1_msg_ep4_in& get_msg_ep4_in()   { return _msg_ep4_in; }
     FD1_msg_ep4_out& get_msg_ep4_out() { return _msg_ep4_out; }
 

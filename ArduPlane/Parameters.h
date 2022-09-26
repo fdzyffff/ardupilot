@@ -576,6 +576,8 @@ public:
 
     AP_Int32        oneshot_mask;
     AP_Float        ep4_throttle_min;
+
+    AP_Int8         ts_ahrs_send;
 };
 
 extern const AP_Param::Info var_info[];

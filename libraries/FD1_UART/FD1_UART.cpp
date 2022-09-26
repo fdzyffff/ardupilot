@@ -16,16 +16,22 @@ bool FD1_UART::init()
     return _initialized;
 }
 
+uint32_t FD1_UART::port_avaliable(void) {
+    if(!initialized()) {
+        return false;
+    }
+    return _port->available();
+}
 void FD1_UART::read(void)
 {    
-    if(!initialized()) {
-        return ;
-    }
-    while (_port->available() > 0) {
+    // if(!initialized()) {
+    //     return ;
+    // }
+    // while (_port->available() > 0) {
         uint8_t temp = _port->read();
         if (_msg_ep4_in.enable())   {_msg_ep4_in.parse(temp);}
         if (_msg_ts_in.enable())    {_msg_ts_in.parse(temp);}
-    }
+    // }
 }
 
 void FD1_UART::write(void)
