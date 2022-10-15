@@ -304,6 +304,31 @@ void Copter::send_my_micro_image(mavlink_channel_t chan, mavlink_my_micro_image_
     }
 }
 
+void Copter::send_my_command_long(mavlink_channel_t chan, mavlink_command_long_t* packet) {
+    uint16_t mask = GCS_MAVLINK::active_channel_mask() | GCS_MAVLINK::streaming_channel_mask();
+    // send on the remaining channels
+    for (uint8_t i=0; i<MAVLINK_COMM_NUM_BUFFERS; i++) {
+        if (mask & (1U<<i)) {
+            mavlink_channel_t channel = (mavlink_channel_t)(MAVLINK_COMM_0 + i);
+            if (comm_get_txspace(channel) >= 128 +
+               GCS_MAVLINK::packet_overhead_chan(channel)) {
+                mavlink_msg_command_long_send(
+                    chan,
+                    0,
+                    0,
+                    MAV_CMD_USER_1,
+                    0,
+                    packet->param1,
+                    packet->param2,
+                    packet->param3,
+                    packet->param4,
+                    packet->param5,
+                    packet->param6,
+                    packet->param7);
+            }
+        }
+    }
+}
 
 void Copter::userhook_MediumLoop_PSCT_log() {
     if (copter.position_ok()) {

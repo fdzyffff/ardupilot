@@ -970,8 +970,8 @@ private:
     Location Ugcs_get_target_pos_location();
     // Vector3f Ugcs_get_target_velocity_NED();
 
-    void send_my_micro_image(mavlink_channel_t chan, mavlink_my_micro_image_t* my_micro_image) ;
-
+    void send_my_micro_image(mavlink_channel_t chan, mavlink_my_micro_image_t* my_micro_image);
+    void send_my_command_long(mavlink_channel_t chan, mavlink_command_long_t* packet);
     ModeLockon mode_lockon;
     ModeAttack_att mode_attack_att;
     ModeAttack_angle mode_attack_angle;

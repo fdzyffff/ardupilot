@@ -73,6 +73,22 @@ void UGround::handle_info(int16_t p1, float p2, float p3, float p4)
             copter.gcs().send_text(MAV_SEVERITY_WARNING, "Set up dest :%f, %f",p2, p3);
             set_up_dest(p2, p3);
             break;
+        case 11:
+            switch ((int16_t)p2) {
+                // read cam param, p1 = 12, p2 = ID
+                case 1:
+                    copter.gcs().send_text(MAV_SEVERITY_WARNING, "READ PAR [%0.2f,%0.2f,%0.2f,%0.2f]", (float)p1, p2, p3, p4);
+                    copter.Ucam.do_cmd(12.f, p3);
+                    break;
+                // write cam param, p1 = 11, p2 = ID, p3 = value
+                case 2:
+                    copter.gcs().send_text(MAV_SEVERITY_WARNING, "WRITE PAR [%0.2f,%0.2f,%0.2f,%0.2f]", (float)p1, p2, p3, p4);
+                    copter.Ucam.do_cmd(11.f, p3, p4);
+                    break;
+                default:
+                    break;
+            }
+            break;
         default:
             break;
     }

@@ -15,9 +15,9 @@ public:
     int16_t cam_state();
     void init_port();
     void mav_read();
-    void do_cmd(float p1);
+    void do_cmd(float p1, float p2 = 0.0f, float p3 = 0.0f, float p4 = 0.0f);
 
-    void handle_info(float p1, float p2, float p3, float p4);
+    void handle_info(const mavlink_command_long_t* packet);
     void time_out_check();
 
     const Vector2f& get_raw_info() ;

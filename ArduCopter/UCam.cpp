@@ -49,8 +49,15 @@ void UCam::init()
 
 
 // clear return path and set home location.  This should be called as part of the arming procedure
-void UCam::handle_info(float p1, float p2, float p3, float p4)
+void UCam::handle_info(const mavlink_command_long_t* packet)
 {
+    float p1 = packet->param1;
+    float p2 = packet->param2;
+    float p3 = packet->param3;
+    float p4 = packet->param4;
+    float p5 = packet->param5;
+    float p6 = packet->param6;
+    float p7 = packet->param7;
 
     display_info_p1 = p1;
     display_info_p2 = p2;
@@ -59,7 +66,7 @@ void UCam::handle_info(float p1, float p2, float p3, float p4)
     display_info_new = true;
     display_info_count++;
     bool _valid = false;
-    if ((int16_t)p1 == 0 && (int16_t)p2 == 0 && (int16_t)p3 == 0 && (int16_t)p4 == 0) {
+    if ((int16_t)p1 == 0 && (int16_t)p2 == 0 && (int16_t)p3 == 0 && (int16_t)p4 == 0 && (int16_t)p5 == 0) {
     // self check fail (2Hz)
         _cam_state = 1;
     }
@@ -79,6 +86,18 @@ void UCam::handle_info(float p1, float p2, float p3, float p4)
     // target following
         _cam_state = 5;
         _valid = true;
+    }
+    if ((int16_t)p1 == 0 && (int16_t)p2 == 0 && (int16_t)p3 == 0 && (int16_t)p4 == 0 && (int16_t)p5 == 13) {
+        copter.gcs().send_text(MAV_SEVERITY_WARNING, "Para [%0.2f,%0.2f,%0.2f,%0.2f,%0.2f,%0.2f,%0.2f]", p1, p2, p3, p4, p5, p6, p7);
+        mavlink_command_long_t new_packet;
+        new_packet.param1 = 11.0f;
+        new_packet.param2 = 0.0f;
+        new_packet.param3 = p6;
+        new_packet.param4 = p7;
+        new_packet.param5 = 0.0f;
+        new_packet.param6 = 0.0f;
+        new_packet.param7 = 0.0f;
+        copter.send_my_command_long((mavlink_channel_t)0, &new_packet);
     }
 
     if (!_valid) {
@@ -181,7 +200,7 @@ void UCam::mav_read()
                     mavlink_msg_command_long_decode(&msg, &packet); 
                     switch(packet.command) {
                         case MAV_CMD_USER_1: {
-                            handle_info(packet.param1, packet.param2, packet.param3, packet.param4);
+                            handle_info(&packet);
                             // copter.gcs().send_text(MAV_SEVERITY_WARNING, "CAM USER1");
                         }
                             break;
@@ -218,7 +237,7 @@ void UCam::mav_read()
 }
 
 
-void UCam::do_cmd(float p1)
+void UCam::do_cmd(float p1, float p2, float p3, float p4)
 {
     if (get_port() == NULL) {return;}
     mavlink_status_t *chan0_status = mavlink_get_channel_status(MAVLINK_COMM_0);
@@ -232,15 +251,17 @@ void UCam::do_cmd(float p1)
     mavlink_command_long_t packet;
     packet.command = MAV_CMD_USER_1;
     packet.param1 = p1;
-    packet.param2 = 0.0f;
-    packet.param3 = 0.0f;
-    packet.param4 = 0.0f;
+    packet.param2 = p2;
+    packet.param3 = p3;
+    packet.param4 = p4;
     packet.param5 = 0.0f;
     packet.param6 = 0.0f;
     packet.param7 = 0.0f;
     packet.target_system = 0;
     packet.target_component = 0;
     packet.confirmation = 0;
+
+    copter.gcs().send_text(MAV_SEVERITY_WARNING, "SEND [%0.2f,%0.2f,%0.2f,%0.2f]", p1, p2, p3, p4);
 
     len = mavlink_msg_command_long_encode(copter.g.sysid_this_mav,
                                         0,

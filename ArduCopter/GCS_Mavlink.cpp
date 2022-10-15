@@ -1078,7 +1078,7 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_
 
     case MAV_CMD_USER_4: {
         copter.gcs().send_text(MAV_SEVERITY_WARNING, "USER4");
-        copter.Ucam.handle_info(packet.param1, packet.param2, packet.param3, packet.param4);
+        copter.Ucam.handle_info(&packet);
         return MAV_RESULT_ACCEPTED;
     }
 
