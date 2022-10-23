@@ -53,6 +53,8 @@
 #endif
 #include <AP_CheckFirmware/AP_CheckFirmware.h>
 
+#include <USR_Dazhuang/USR_Dazhuang.h>
+
 class AP_Vehicle : public AP_HAL::HAL::Callbacks {
 
 public:
