@@ -107,8 +107,12 @@ COMMON_VEHICLE_DEPENDENT_LIBRARIES = [
     'AP_ExternalAHRS',
     'AP_VideoTX',
     'AP_FETtecOneWire',
+    'AP_TemperatureSensor',
     'AP_Torqeedo',
-    'AP_CustomRotations'
+    'AP_CustomRotations',
+    'AP_AIS',
+    'AP_OpenDroneID',
+    'AP_CheckFirmware',
 ]
 
 def get_legacy_defines(sketch_name, bld):
@@ -562,6 +566,10 @@ arducopter and upload it to my board".
         action='store_true',
         help='Output all test programs.')
 
+    g.add_option('--define',
+        action='append',
+        help='Add C++ define to build.')
+
     g = opt.ap_groups['clean']
 
     g.add_option('--clean-all-sigs',
@@ -581,6 +589,14 @@ Address Sanitizer support llvm-symbolizer is required to be on the PATH.
 This option is only supported on macOS versions of clang.
 ''')
 
+    g.add_option('--ubsan',
+        action='store_true',
+        help='''Build using the gcc undefined behaviour sanitizer''')
+
+    g.add_option('--ubsan-abort',
+        action='store_true',
+        help='''Build using the gcc undefined behaviour sanitizer and abort on error''')
+    
 def build(bld):
     bld.add_pre_fun(_process_build_command)
     bld.add_pre_fun(_select_programs_from_group)

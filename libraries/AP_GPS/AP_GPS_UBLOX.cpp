@@ -18,8 +18,11 @@
 //	Origin code by Michael Smith, Jordi Munoz and Jose Julio, DIYDrones.com
 //  Substantially rewritten for new GPS driver structure by Andrew Tridgell
 //
-#include "AP_GPS.h"
 #include "AP_GPS_UBLOX.h"
+
+#if AP_GPS_UBLOX_ENABLED
+
+#include "AP_GPS.h"
 #include <AP_HAL/Util.h>
 #include <AP_Logger/AP_Logger.h>
 #include <GCS_MAVLink/GCS.h>
@@ -1289,6 +1292,9 @@ AP_GPS_UBLOX::_parse_gps(void)
         } else {
             state.location.alt    = _buffer.posllh.altitude_msl / 10;
         }
+        state.have_undulation = true;
+        state.undulation = (_buffer.posllh.altitude_msl - _buffer.posllh.altitude_ellipsoid) * 0.001;
+
         state.status          = next_fix;
         _new_position = true;
         state.horizontal_accuracy = _buffer.posllh.horizontal_accuracy*1.0e-3f;
@@ -1446,6 +1452,8 @@ AP_GPS_UBLOX::_parse_gps(void)
         } else {
             state.location.alt    = _buffer.pvt.h_msl / 10;
         }
+        state.have_undulation = true;
+        state.undulation = (_buffer.pvt.h_msl - _buffer.pvt.h_ellipsoid) * 0.001;
         switch (_buffer.pvt.fix_type)
         {
             case 0:
@@ -2033,3 +2041,5 @@ bool AP_GPS_UBLOX::supports_F9_config(void) const
 {
     return _hardware_generation == UBLOX_F9 && _hardware_generation != UBLOX_UNKNOWN_HARDWARE_GENERATION;
 }
+
+#endif

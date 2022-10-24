@@ -365,6 +365,7 @@ struct method_alias {
   char *name;
   char *alias;
   int line;
+  int num_args;
   enum alias_type type;
 };
 
@@ -405,6 +406,7 @@ struct userdata {
   int flags; // flags from the userdata_flags enum
   char *dependency;
   char *creation; // name of a manual creation function if set, note that this will not be used internally
+  int creation_args; // number of args for custom creation function
 };
 
 static struct userdata *parsed_userdata;
@@ -494,6 +496,7 @@ unsigned int parse_access_flags(struct type * type) {
         }
       }
     } else {
+      error(ERROR_UNKNOWN_KEYWORD, "Unknown access provided: %s", state.token);
       break;
     }
     next_token();
@@ -608,6 +611,19 @@ int parse_type(struct type *type, const uint32_t restrictions, enum range_check_
     sanatize_name(&(type->data.ud.sanatized_name), type->data.ud.name);
   }
 
+  // only allow no range check on float, int32 and uint32
+  if (type->flags & TYPE_FLAGS_NO_RANGE_CHECK) {
+    switch (type->type) {
+      case TYPE_FLOAT:
+      case TYPE_INT32_T:
+      case TYPE_UINT32_T:
+        break;
+      default:
+        error(ERROR_USERDATA, "%s types cannot skip range check", data_type);
+        break;
+    }
+  }
+
   // sanity check that only supported types are nullable
   if (type->flags & (TYPE_FLAGS_NULLABLE | TYPE_FLAGS_REFERNCE)) {
     // a switch is a very verbose way to do this, but forces users to consider new types added
@@ -717,11 +733,11 @@ void handle_userdata_field(struct userdata *data) {
   char *attribute = strchr(token, '\'');
   if (attribute != NULL) {
     if (strcmp(attribute, keyword_attr_array) != 0) {
-      error(ERROR_USERDATA, "Unknown feild attribute %s for userdata %s feild %s", attribute, data->name, field_name);
+      error(ERROR_USERDATA, "Unknown field attribute %s for userdata %s field %s", attribute, data->name, field_name);
     }
     char * token = next_token();
     string_copy(&(field->array_len), token);
-    trace(TRACE_USERDATA, "userdata %s feild %s array length %s", data->name, field->name, field->array_len);
+    trace(TRACE_USERDATA, "userdata %s field %s array length %s", data->name, field->name, field->array_len);
   }
 
   parse_type(&(field->type), TYPE_RESTRICTION_NOT_NULLABLE, RANGE_CHECK_NONE);
@@ -842,13 +858,21 @@ void handle_manual(struct userdata *node, enum alias_type type) {
   }
   char *cpp_function_name = next_token();
   if (cpp_function_name == NULL) {
-    error(ERROR_SINGLETON, "Expected a cpp name for manual %s method",node->name);
+    error(ERROR_SINGLETON, "Expected a cpp name for manual method %s %s", node->name, name);
   }
   struct method_alias *alias = allocate(sizeof(struct method_alias));
   string_copy(&(alias->name), cpp_function_name);
   string_copy(&(alias->alias), name);
   alias->line = state.line_num;
   alias->type = type;
+
+  if (type != ALIAS_TYPE_MANUAL_OPERATOR) {
+    char *num_args = next_token();
+    if (num_args == NULL) {
+      error(ERROR_SINGLETON, "Expected number of args for manual method %s %s", node->name, name);
+    }
+    alias->num_args = atoi(num_args);
+  }
   alias->next = node->method_aliases;
   node->method_aliases = alias;
 }
@@ -956,10 +980,16 @@ void handle_userdata(void) {
       if (node->creation != NULL) {
         error(ERROR_SINGLETON, "Userdata only support a single creation function");
       }
-      char *creation = strtok(NULL, "");
+      char *creation = next_token();
       if (creation == NULL) {
         error(ERROR_USERDATA, "Expected a creation string for %s",node->name);
       }
+      char *num_args = next_token();
+      if (num_args == NULL) {
+        error(ERROR_SINGLETON, "Expected number of args for creation method %s", node->name);
+      }
+      node->creation_args = atoi(num_args);
+
       string_copy(&(node->creation), creation);
 
   } else if (strcmp(type, keyword_manual_operator) == 0) {
@@ -1111,8 +1141,11 @@ void handle_ap_object(void) {
       }
       string_copy(&(node->dependency), depends);
 
+  } else if (strcmp(type, keyword_manual) == 0) {
+    handle_manual(node, ALIAS_TYPE_MANUAL);
+
   } else {
-    error(ERROR_SINGLETON, "AP_Objects only support renames, methods or semaphore keyowrds (got %s)", type);
+    error(ERROR_SINGLETON, "AP_Objects only support renames, methods, semaphore or manual keywords (got %s)", type);
   }
 
   // check that we didn't just add 2 singleton flags
@@ -2339,7 +2372,7 @@ void emit_sandbox(void) {
 void emit_argcheck_helper(void) {
   // tagging this with NOINLINE can save a large amount of flash
   // but until we need it we will allow the compilier to choose to inline this for us
-  fprintf(source, "static int binding_argcheck(lua_State *L, int expected_arg_count) {\n");
+  fprintf(source, "int binding_argcheck(lua_State *L, int expected_arg_count) {\n");
   fprintf(source, "    const int args = lua_gettop(L);\n");
   fprintf(source, "    if (args > expected_arg_count) {\n");
   fprintf(source, "        return luaL_argerror(L, args, \"too many arguments\");\n");
@@ -2486,7 +2519,19 @@ void emit_docs(struct userdata *node, int is_userdata, int emit_creation) {
       if (emit_creation) {
         // creation function
         fprintf(docs, "---@return %s\n", name);
-        fprintf(docs, "function %s() end\n\n", node->rename ? node->rename : node->sanatized_name);
+        fprintf(docs, "function %s(", node->rename ? node->rename : node->sanatized_name);
+        if (node->creation == NULL) {
+          fprintf(docs, ") end\n\n");
+        } else {
+          for (int i = 0; i < node->creation_args; ++i) {
+            fprintf(docs, "param%i", i+1);
+            if (i < node->creation_args-1) {
+              fprintf(docs, ", ");
+            }
+          }
+          fprintf(docs, ") end\n\n");
+        }
+
       }
     } else {
       // global
@@ -2499,7 +2544,7 @@ void emit_docs(struct userdata *node, int is_userdata, int emit_creation) {
       struct userdata_field *field = node->fields;
       while(field) {
           if (field->array_len == NULL) {
-            // single value feild
+            // single value field
             if (field->access_flags & ACCESS_FLAG_READ) {
               fprintf(docs, "-- get field\n");
               emit_docs_type(field->type, "---@return", "\n");
@@ -2511,7 +2556,7 @@ void emit_docs(struct userdata *node, int is_userdata, int emit_creation) {
               fprintf(docs, "function %s:%s(value) end\n\n", name, field->rename ? field->rename : field->name);
             }
           } else {
-            // array feild
+            // array field
             if (field->access_flags & ACCESS_FLAG_READ) {
               fprintf(docs, "-- get array field\n");
               fprintf(docs, "---@param index integer\n");
@@ -2540,7 +2585,6 @@ void emit_docs(struct userdata *node, int is_userdata, int emit_creation) {
     // aliases
     struct method_alias *alias = node->method_aliases;
     while(alias) {
-      // dont do manual bindings
       if (alias->type == ALIAS_TYPE_NONE) {
         // find the method this is a alias of
         struct method * method = node->methods;
@@ -2552,6 +2596,17 @@ void emit_docs(struct userdata *node, int is_userdata, int emit_creation) {
         }
 
         emit_docs_method(name, alias->alias, method);
+
+      } else if (alias->type == ALIAS_TYPE_MANUAL) {
+          // Cant do a great job, don't know types or return
+          fprintf(docs, "-- desc\nfunction %s:%s(", name, alias->alias);
+          for (int i = 0; i < alias->num_args; ++i) {
+            fprintf(docs, "param%i", i+1);
+            if (i < alias->num_args-1) {
+              fprintf(docs, ", ");
+            }
+          }
+          fprintf(docs, ") end\n\n");
       }
       alias = alias->next;
     }
@@ -2754,6 +2809,7 @@ int main(int argc, char **argv) {
 
   fprintf(header, "void load_generated_bindings(lua_State *L);\n");
   fprintf(header, "void load_generated_sandbox(lua_State *L);\n");
+  fprintf(header, "int binding_argcheck(lua_State *L, int expected_arg_count);\n");
 
   fclose(header);
   header = NULL;
@@ -2778,6 +2834,25 @@ int main(int argc, char **argv) {
   emit_docs(parsed_ap_objects, TRUE, FALSE);
 
   emit_docs(parsed_singletons, FALSE, FALSE);
+
+  // global aliases
+  if (parsed_globals != NULL) {
+    struct method_alias *alias = parsed_globals->method_aliases;
+    while(alias) {
+      if (alias->type == ALIAS_TYPE_MANUAL) {
+          // Cant do a great job, don't know types or return
+          fprintf(docs, "-- desc\nfunction %s(", alias->alias);
+          for (int i = 0; i < alias->num_args; ++i) {
+            fprintf(docs, "param%i", i+1);
+            if (i < alias->num_args-1) {
+              fprintf(docs, ", ");
+            }
+          }
+          fprintf(docs, ") end\n\n");
+      }
+      alias = alias->next;
+    }
+  }
 
   fclose(docs);
 

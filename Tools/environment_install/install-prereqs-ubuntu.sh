@@ -62,20 +62,15 @@ RELEASE_CODENAME=$(lsb_release -c -s)
 PYTHON_V="python3"  # starting from ubuntu 20.04, python isn't symlink to default python interpreter
 PIP=pip3
 
-if [ ${RELEASE_CODENAME} == 'xenial' ]; then
-    SITLFML_VERSION="2.3v5"
-    SITLCFML_VERSION="2.3"
-    PYTHON_V="python2"
+if [ ${RELEASE_CODENAME} == 'bionic' ] ; then
+    SITLFML_VERSION="2.4"
+    SITLCFML_VERSION="2.4"
+    PYTHON_V="python"
     PIP=pip2
-elif [ ${RELEASE_CODENAME} == 'disco' ]; then
+elif [ ${RELEASE_CODENAME} == 'buster' ]; then
     SITLFML_VERSION="2.5"
     SITLCFML_VERSION="2.5"
-    PYTHON_V="python2"
-    PIP=pip2
-elif [ ${RELEASE_CODENAME} == 'eoan' ]; then
-    SITLFML_VERSION="2.5"
-    SITLCFML_VERSION="2.5"
-    PYTHON_V="python2"
+    PYTHON_V="python"
     PIP=pip2
 elif [ ${RELEASE_CODENAME} == 'focal' ] || [ ${RELEASE_CODENAME} == 'ulyssa' ]; then
     SITLFML_VERSION="2.5"
@@ -88,18 +83,11 @@ elif [ ${RELEASE_CODENAME} == 'jammy' ]; then
     PYTHON_V="python3"
     PIP=pip3
 elif [ ${RELEASE_CODENAME} == 'groovy' ] ||
-         [ ${RELEASE_CODENAME} == 'hirsute' ] ||
-         [ ${RELEASE_CODENAME} == 'bullseye' ] ||
-         [ ${RELEASE_CODENAME} == 'impish' ]; then
+         [ ${RELEASE_CODENAME} == 'bullseye' ]; then
     SITLFML_VERSION="2.5"
     SITLCFML_VERSION="2.5"
     PYTHON_V="python3"
     PIP=pip3
-elif [ ${RELEASE_CODENAME} == 'trusty' ]; then
-    SITLFML_VERSION="2"
-    SITLCFML_VERSION="2"
-    PYTHON_V="python2"
-    PIP=pip2
 else
     # We assume APT based system, so let's try with apt-cache first.
     SITLCFML_VERSION=$(apt-cache search -n '^libcsfml-audio' | cut -d" " -f1 | head -1 | grep -Eo '[+-]?[0-9]+([.][0-9]+)?')
@@ -137,16 +125,16 @@ fi
 
 # Lists of packages to install
 BASE_PKGS="build-essential ccache g++ gawk git make wget"
-if [ ${RELEASE_CODENAME} == 'xenial' ] || [ ${RELEASE_CODENAME} == 'disco' ] || [ ${RELEASE_CODENAME} == 'eoan' ]; then
+if [ ${RELEASE_CODENAME} == 'bionic' ]; then
     # use fixed version for package that drop python2 support
-    PYTHON_PKGS="future lxml pymavlink MAVProxy pexpect flake8==3.7.9 geocoder empy configparser==5.0.0 click==7.1.2 decorator==4.4.2"
+    PYTHON_PKGS="future lxml pymavlink MAVProxy pexpect flake8==3.7.9 requests==2.27.1 monotonic==1.6 geocoder empy configparser==4.0.2 click==7.1.2 decorator==4.4.2 dronecan"
 else
-    PYTHON_PKGS="future lxml pymavlink MAVProxy pexpect flake8 geocoder empy"
+    PYTHON_PKGS="future lxml pymavlink MAVProxy pexpect flake8 geocoder empy dronecan"
 fi
 
 # add some Python packages required for commonly-used MAVProxy modules and hex file generation:
 if [[ $SKIP_AP_EXT_ENV -ne 1 ]]; then
-    if [ ${RELEASE_CODENAME} == 'xenial' ] || [ ${RELEASE_CODENAME} == 'disco' ] || [ ${RELEASE_CODENAME} == 'eoan' ]; then
+    if [ ${RELEASE_CODENAME} == 'bionic' ]; then
         PYTHON_PKGS="$PYTHON_PKGS pygame==2.0.3 intelhex"
     else
         PYTHON_PKGS="$PYTHON_PKGS pygame intelhex"
@@ -177,7 +165,7 @@ function install_arm_none_eabi_toolchain() {
                     heading "Installing toolchain for STM32 Boards"
                     echo "Installing toolchain for STM32 Boards"
                     echo "Downloading from ArduPilot server"
-                    sudo wget https://firmware.ardupilot.org/Tools/STM32-tools/gcc-arm-none-eabi-10-2020-q4-major-x86_64-linux.tar.bz2
+                    sudo wget --progress=dot:giga https://firmware.ardupilot.org/Tools/STM32-tools/gcc-arm-none-eabi-10-2020-q4-major-x86_64-linux.tar.bz2
                     echo "Installing..."
                     sudo chmod -R 777 gcc-arm-none-eabi-10-2020-q4-major-x86_64-linux.tar.bz2
                     sudo tar xjf gcc-arm-none-eabi-10-2020-q4-major-x86_64-linux.tar.bz2
@@ -197,7 +185,7 @@ function install_arm_none_eabi_toolchain() {
                     heading "Installing toolchain for STM32 Boards"
                     echo "Installing toolchain for STM32 Boards"
                     echo "Downloading from ArduPilot server"
-                    sudo wget https://firmware.ardupilot.org/Tools/STM32-tools/gcc-arm-none-eabi-10-2020-q4-major-aarch64-linux.tar.bz2
+                    sudo wget --progress=dot:giga https://firmware.ardupilot.org/Tools/STM32-tools/gcc-arm-none-eabi-10-2020-q4-major-aarch64-linux.tar.bz2
                     echo "Installing..."
                     sudo chmod -R 777 gcc-arm-none-eabi-10-2020-q4-major-aarch64-linux.tar.bz2
                     sudo tar xjf gcc-arm-none-eabi-10-2020-q4-major-aarch64-linux.tar.bz2
@@ -236,10 +224,8 @@ then
     BASE_PKGS+=" python-is-python3"
     SITL_PKGS+=" libpython3-stdlib" # for argparse
 elif [ ${RELEASE_CODENAME} == 'groovy' ] ||
-         [ ${RELEASE_CODENAME} == 'hirsute' ] ||
          [ ${RELEASE_CODENAME} == 'bullseye' ] ||
-         [ ${RELEASE_CODENAME} == 'jammy' ] ||
-         [ ${RELEASE_CODENAME} == 'impish' ]; then
+         [ ${RELEASE_CODENAME} == 'jammy' ]; then
     BASE_PKGS+=" python-is-python3"
     SITL_PKGS+=" libpython3-stdlib" # for argparse
 else
@@ -251,7 +237,6 @@ if [[ $SKIP_AP_GRAPHIC_ENV -ne 1 ]]; then
   if [ ${RELEASE_CODENAME} == 'bullseye' ]; then
     SITL_PKGS+=" libjpeg62-turbo-dev"
   elif [ ${RELEASE_CODENAME} == 'groovy' ] ||
-           [ ${RELEASE_CODENAME} == 'hirsute' ] ||
            [ ${RELEASE_CODENAME} == 'focal' ] ||
            [ ${RELEASE_CODENAME} == 'ulyssa'  ]; then
     SITL_PKGS+=" libjpeg8-dev"
@@ -267,11 +252,9 @@ if [[ $SKIP_AP_GRAPHIC_ENV -ne 1 ]]; then
   fi
   if [ ${RELEASE_CODENAME} == 'bullseye' ] ||
          [ ${RELEASE_CODENAME} == 'groovy' ] ||
-         [ ${RELEASE_CODENAME} == 'hirsute' ] ||
          [ ${RELEASE_CODENAME} == 'focal' ] ||
          [ ${RELEASE_CODENAME} == 'ulyssa' ] ||
-         [ ${RELEASE_CODENAME} == 'jammy' ] ||
-         [ ${RELEASE_CODENAME} == 'impish' ]; then
+         [ ${RELEASE_CODENAME} == 'jammy' ]; then
     SITL_PKGS+=" python3-wxgtk4.0"
     SITL_PKGS+=" fonts-freefont-ttf libfreetype6-dev libpng16-16 libportmidi-dev libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev libsdl1.2-dev"  # for pygame
   fi
@@ -292,7 +275,7 @@ fi
 # Install all packages
 $APT_GET install $BASE_PKGS $SITL_PKGS $PX4_PKGS $ARM_LINUX_PKGS $COVERAGE_PKGS
 # Update Pip and Setuptools on old distro
-if [ ${RELEASE_CODENAME} == 'xenial' ] || [ ${RELEASE_CODENAME} == 'disco' ] || [ ${RELEASE_CODENAME} == 'eoan' ]; then
+if [ ${RELEASE_CODENAME} == 'bionic' ]; then
     # use fixed version for package that drop python2 support
     $PIP install --user -U pip==20.3 setuptools==44.0.0
 fi
@@ -326,7 +309,8 @@ echo "Done!"
 SHELL_LOGIN=".profile"
 if $IS_DOCKER; then
     echo "Inside docker, we add the tools path into .bashrc directly"
-    SHELL_LOGIN=".bashrc"
+    SHELL_LOGIN=".ardupilot_env"
+    echo "# ArduPilot env file. Need to be loaded by your Shell." > ~/$SHELL_LOGIN
 fi
 
 heading "Adding ArduPilot Tools to environment"
@@ -387,4 +371,10 @@ if [[ $SKIP_AP_GIT_CHECK -ne 1 ]]; then
     echo "Done!"
   fi
 fi
+
+if $IS_DOCKER; then
+    echo "Finalizing ArduPilot env for Docker"
+    echo "source ~/.ardupilot_env">> ~/.bashrc
+fi
+
 echo "---------- $0 end ----------"

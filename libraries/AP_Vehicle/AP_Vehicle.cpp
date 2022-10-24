@@ -9,8 +9,11 @@
 #include <AP_OSD/AP_OSD.h>
 #include <AP_RPM/AP_RPM.h>
 #include <SRV_Channel/SRV_Channel.h>
+#include <AP_Motors/AP_Motors.h>
+#include <AP_CheckFirmware/AP_CheckFirmware.h>
 #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
 #include <AP_HAL_ChibiOS/sdcard.h>
+#include <AP_HAL_ChibiOS/hwdef/common/stm32_util.h>
 #endif
 
 #define SCHED_TASK(func, rate_hz, max_time_micros, prio) SCHED_TASK_CLASS(AP_Vehicle, &vehicle, func, rate_hz, max_time_micros, prio)
@@ -86,6 +89,30 @@ const AP_Param::GroupInfo AP_Vehicle::var_info[] = {
     AP_SUBGROUPINFO(esc_telem, "ESC_TLM", 12, AP_Vehicle, AP_ESC_Telem),
 #endif
 
+#if AP_AIS_ENABLED
+    // @Group: AIS_
+    // @Path: ../AP_AIS/AP_AIS.cpp
+    AP_SUBGROUPINFO(ais, "AIS_",  13, AP_Vehicle, AP_AIS),
+#endif
+
+#if AP_FENCE_ENABLED
+    // @Group: FENCE_
+    // @Path: ../AC_Fence/AC_Fence.cpp
+    AP_SUBGROUPINFO(fence, "FENCE_", 14, AP_Vehicle, AC_Fence),
+#endif
+
+#if AP_OPENDRONEID_ENABLED
+    // @Group: DID_
+    // @Path: ../AP_OpenDroneID/AP_OpenDroneID.cpp
+    AP_SUBGROUPINFO(opendroneid, "DID_", 15, AP_Vehicle, AP_OpenDroneID),
+#endif
+
+#if AP_TEMPERATURE_SENSOR_ENABLED
+    // @Group: TEMP
+    // @Path: ../AP_TemperatureSensor/AP_TemperatureSensor.cpp
+    AP_SUBGROUPINFO(temperature_sensor, "TEMP", 16, AP_Vehicle, AP_TemperatureSensor),
+#endif
+
     AP_GROUPEND
 };
 
@@ -111,6 +138,10 @@ void AP_Vehicle::setup()
                         "\n\nFree RAM: %u\n",
                         AP::fwversion().fw_string,
                         (unsigned)hal.util->available_memory());
+
+#if AP_CHECK_FIRMWARE_ENABLED
+    check_firmware_print();
+#endif
 
     load_parameters();
 
@@ -202,6 +233,10 @@ void AP_Vehicle::setup()
     smartaudio.init();
 #endif
 
+#if AP_TRAMP_ENABLED
+    tramp.init();
+#endif
+
 #if AP_PARAM_KEY_DUMP
     AP_Param::show_all(hal.console, true);
 #endif
@@ -212,9 +247,25 @@ void AP_Vehicle::setup()
     generator.init();
 #endif
 
+#if AP_OPENDRONEID_ENABLED
+    opendroneid.init();
+#endif
+
 // init EFI monitoring
 #if HAL_EFI_ENABLED
     efi.init();
+#endif
+
+#if AP_TEMPERATURE_SENSOR_ENABLED
+    temperature_sensor.init();
+#endif
+
+#if AP_AIS_ENABLED
+    ais.init();
+#endif
+
+#if AP_FENCE_ENABLED
+    fence.init();
 #endif
 
     custom_rotations.init();
@@ -247,7 +298,7 @@ void AP_Vehicle::loop()
     const uint32_t new_internal_errors = AP::internalerror().errors();
     if(_last_internal_errors != new_internal_errors) {
         AP::logger().Write_Error(LogErrorSubsystem::INTERNAL_ERROR, LogErrorCode::INTERNAL_ERRORS_DETECTED);
-        gcs().send_text(MAV_SEVERITY_CRITICAL, "Internal Errors %x", (unsigned)new_internal_errors);
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "Internal Errors 0x%x", (unsigned)new_internal_errors);
         _last_internal_errors = new_internal_errors;
     }
 }
@@ -285,6 +336,9 @@ const AP_Scheduler::Task AP_Vehicle::scheduler_tasks[] = {
 #if AP_AIRSPEED_ENABLED
     SCHED_TASK_CLASS(AP_Airspeed,  &vehicle.airspeed,       update,                   10, 100, 41),    // NOTE: the priority number here should be right before Plane's calc_airspeed_errors
 #endif
+#if COMPASS_CAL_ENABLED
+    SCHED_TASK_CLASS(Compass,      &vehicle.compass,        cal_update,     100, 200, 75),
+#endif
 #if HAL_RUNCAM_ENABLED
     SCHED_TASK_CLASS(AP_RunCam,    &vehicle.runcam,         update,                   50, 50, 200),
 #endif
@@ -294,6 +348,9 @@ const AP_Scheduler::Task AP_Vehicle::scheduler_tasks[] = {
 #endif
     SCHED_TASK(update_dynamic_notch_at_specified_rate,      LOOP_RATE,                    200, 215),
     SCHED_TASK_CLASS(AP_VideoTX,   &vehicle.vtx,            update,                    2, 100, 220),
+#if AP_TRAMP_ENABLED
+    SCHED_TASK_CLASS(AP_Tramp,     &vehicle.tramp,          update,                   50,  50, 225),
+#endif
     SCHED_TASK(send_watchdog_reset_statustext,         0.1,     20, 225),
 #if HAL_WITH_ESC_TELEM
     SCHED_TASK_CLASS(AP_ESC_Telem, &vehicle.esc_telem,      update,                  100,  50, 230),
@@ -301,14 +358,29 @@ const AP_Scheduler::Task AP_Vehicle::scheduler_tasks[] = {
 #if HAL_GENERATOR_ENABLED
     SCHED_TASK_CLASS(AP_Generator, &vehicle.generator,      update,                   10,  50, 235),
 #endif
+#if AP_OPENDRONEID_ENABLED
+    SCHED_TASK_CLASS(AP_OpenDroneID, &vehicle.opendroneid,  update,                   10,  50, 236),
+#endif
 #if OSD_ENABLED
     SCHED_TASK(publish_osd_info, 1, 10, 240),
 #endif
+#if AP_TEMPERATURE_SENSOR_ENABLED
+    SCHED_TASK_CLASS(AP_TemperatureSensor, &vehicle.temperature_sensor, update,        5, 50, 242),
+#endif
 #if HAL_INS_ACCELCAL_ENABLED
-    SCHED_TASK(accel_cal_update,      10,    100, 245),
+    SCHED_TASK(accel_cal_update,                                                      10, 100, 245),
+#endif
+#if AP_FENCE_ENABLED
+    SCHED_TASK_CLASS(AC_Fence,     &vehicle.fence,          update,                   10, 100, 248),
+#endif
+#if AP_AIS_ENABLED
+    SCHED_TASK_CLASS(AP_AIS,       &vehicle.ais,            update,                    5, 100, 249),
 #endif
 #if HAL_EFI_ENABLED
-    SCHED_TASK_CLASS(AP_EFI,       &vehicle.efi,            update,                   10, 200, 250),
+    SCHED_TASK_CLASS(AP_EFI,       &vehicle.efi,            update,                   50, 200, 250),
+#endif
+#if HAL_INS_ACCELCAL_ENABLED
+    SCHED_TASK(one_Hz_update,                                                         1, 100, 252),
 #endif
     SCHED_TASK(update_arming,          1,     50, 253),
 };
@@ -405,11 +477,6 @@ void AP_Vehicle::update_throttle_notch(AP_InertialSensor::HarmonicNotch &notch)
     const float min_ratio = notch.params.freq_min_ratio();
 
     const AP_Motors* motors = AP::motors();
-    if (motors->get_spool_state() == AP_Motors::SpoolState::SHUT_DOWN) {
-        notch.set_inactive(true);
-    } else {
-        notch.set_inactive(false);
-    }
     const float motors_throttle = motors != nullptr ? MAX(0,motors->get_throttle_out()) : 0;
     float throttle_freq = ref_freq * MAX(min_ratio, sqrtf(motors_throttle / ref));
 
@@ -431,12 +498,20 @@ void AP_Vehicle::update_dynamic_notch(AP_InertialSensor::HarmonicNotch &notch)
         return;
     }
 
+    const AP_Motors* motors = AP::motors();
+    if (motors != nullptr && motors->get_spool_state() == AP_Motors::SpoolState::SHUT_DOWN) {
+        notch.set_inactive(true);
+    } else {
+        notch.set_inactive(false);
+    }
+
     switch (notch.params.tracking_mode()) {
         case HarmonicNotchDynamicMode::UpdateThrottle: // throttle based tracking
             // set the harmonic notch filter frequency approximately scaled on motor rpm implied by throttle
             update_throttle_notch(notch);
             break;
 
+#if AP_RPM_ENABLED
         case HarmonicNotchDynamicMode::UpdateRPM: // rpm sensor based tracking
         case HarmonicNotchDynamicMode::UpdateRPM2: {
             const auto *rpm_sensor = AP::rpm();
@@ -450,15 +525,18 @@ void AP_Vehicle::update_dynamic_notch(AP_InertialSensor::HarmonicNotch &notch)
             }
             break;
         }
+#endif  // AP_RPM_ENABLED
 #if HAL_WITH_ESC_TELEM
         case HarmonicNotchDynamicMode::UpdateBLHeli: // BLHeli based tracking
             // set the harmonic notch filter frequency scaled on measured frequency
             if (notch.params.hasOption(HarmonicNotchFilterParams::Options::DynamicHarmonic)) {
                 float notches[INS_MAX_NOTCHES];
-                const uint8_t num_notches = AP::esc_telem().get_motor_frequencies_hz(notch.num_dynamic_notches, notches);
-
+                // ESC telemetry will return 0 for missing data, but only after 1s
+                const uint8_t num_notches = AP::esc_telem().get_motor_frequencies_hz(INS_MAX_NOTCHES, notches);
                 for (uint8_t i = 0; i < num_notches; i++) {
-                    notches[i] =  MAX(ref_freq, notches[i]);
+                    if (!is_zero(notches[i])) {
+                        notches[i] =  MAX(ref_freq, notches[i]);
+                    }
                 }
                 if (num_notches > 0) {
                     notch.update_frequencies_hz(num_notches, notches);
@@ -575,14 +653,13 @@ void AP_Vehicle::publish_osd_info()
     nav_info.wp_number = mission->get_current_nav_index();
     osd->set_nav_info(nav_info);
 }
+#endif
 
 void AP_Vehicle::get_osd_roll_pitch_rad(float &roll, float &pitch) const
 {
     roll = ahrs.roll;
     pitch = ahrs.pitch;
 }
-
-#endif
 
 #if HAL_INS_ACCELCAL_ENABLED
 
@@ -620,6 +697,36 @@ void AP_Vehicle::accel_cal_update()
 void AP_Vehicle::update_arming()
 {
     AP::arming().update();
+}
+
+/*
+  one Hz checks common to all vehicles
+ */
+void AP_Vehicle::one_Hz_update(void)
+{
+    one_Hz_counter++;
+
+    /*
+      every 10s check if using a 2M firmware on a 1M board
+     */
+    if (one_Hz_counter % 10U == 0) {
+#if defined(BOARD_CHECK_F427_USE_1M) && (BOARD_FLASH_SIZE>1024)
+        if (!hal.util->get_soft_armed() && check_limit_flash_1M()) {
+            GCS_SEND_TEXT(MAV_SEVERITY_CRITICAL, BOARD_CHECK_F427_USE_1M);
+        }
+#endif
+    }
+
+    /*
+      every 30s check if using a 1M firmware on a 2M board
+     */
+    if (one_Hz_counter % 30U == 0) {
+#if defined(BOARD_CHECK_F427_USE_1M) && (BOARD_FLASH_SIZE<=1024)
+        if (!hal.util->get_soft_armed() && !check_limit_flash_1M()) {
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO, BOARD_CHECK_F427_USE_2M);
+        }
+#endif
+    }
 }
 
 AP_Vehicle *AP_Vehicle::_singleton = nullptr;

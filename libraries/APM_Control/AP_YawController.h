@@ -11,8 +11,10 @@ public:
     AP_YawController(const AP_Vehicle::FixedWing &parms);
 
     /* Do not allow copies */
-    AP_YawController(const AP_YawController &other) = delete;
-    AP_YawController &operator=(const AP_YawController&) = delete;
+    CLASS_NO_COPY(AP_YawController);
+
+    // return true if rate control or damping is enabled
+    bool enabled() const { return rate_control_enabled() || (_K_D > 0.0); } 
 
     // return true if rate control is enabled
     bool rate_control_enabled(void) const { return _rate_enable != 0; }
@@ -25,6 +27,8 @@ public:
     float get_rate_out(float desired_rate, float scaler, bool disable_integrator);
 
     void reset_I();
+
+    void reset_rate_PID();
 
     /*
       reduce the integrator, used when we have a low scale factor in a quadplane hover
@@ -43,6 +47,7 @@ public:
     // start/stop auto tuner
     void autotune_start(void);
     void autotune_restore(void);
+    
 
     static const struct AP_Param::GroupInfo var_info[];
 

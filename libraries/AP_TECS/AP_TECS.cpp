@@ -308,6 +308,7 @@ void AP_TECS::update_50hz(void)
         _height_filter.dd_height = 0.0f;
         DT            = 0.02f; // when first starting TECS, use a
         // small time constant
+        _vdot_filter.reset();
     }
     _update_50hz_last_usec = now;
 
@@ -391,12 +392,12 @@ void AP_TECS::_update_speed(float load_factor)
         // small time constant
     }
 
-    // Get airspeed or default to halfway between min and max if
-    // airspeed is not being used and set speed rate to zero
+    // Get measured airspeed or default to trim speed and constrain to range between min and max if
+    // airspeed sensor data cannot be used
     bool use_airspeed = _use_synthetic_airspeed_once || _use_synthetic_airspeed.get() || _ahrs.airspeed_sensor_enabled();
     if (!use_airspeed || !_ahrs.airspeed_estimate(_EAS)) {
         // If no airspeed available use average of min and max
-        _EAS = 0.5f * (aparm.airspeed_min.get() + (float)aparm.airspeed_max.get());
+        _EAS = constrain_float(0.01f * (float)aparm.airspeed_cruise_cm.get(), (float)aparm.airspeed_min.get(), (float)aparm.airspeed_max.get());
     }
 
     // Implement a second order complementary filter to obtain a
@@ -664,17 +665,6 @@ void AP_TECS::_update_throttle_with_airspeed(void)
         }
         _throttle_dem = (_STE_error + STEdot_error * throttle_damp) * K_STE2Thr + ff_throttle;
 
-        // Constrain throttle demand and record clipping
-        if (_throttle_dem > _THRmaxf) {
-            _thr_clip_status = ThrClipStatus::MAX;
-            _throttle_dem = _THRmaxf;
-        } else if (_throttle_dem < _THRminf) {
-            _thr_clip_status = ThrClipStatus::MIN;
-            _throttle_dem = _THRminf;
-        } else {
-            _thr_clip_status = ThrClipStatus::NONE;
-        }
-
         float THRminf_clipped_to_zero = constrain_float(_THRminf, 0, _THRmaxf);
 
         // Calculate integrator state upper and lower limits
@@ -720,13 +710,15 @@ void AP_TECS::_update_throttle_with_airspeed(void)
         _throttle_dem = _throttle_dem + _integTHR_state;
     }
 
-    // Constrain throttle demand and record clip status
+    // Constrain throttle demand and record clipping
     if (_throttle_dem > _THRmaxf) {
         _thr_clip_status = ThrClipStatus::MAX;
         _throttle_dem = _THRmaxf;
     } else if (_throttle_dem < _THRminf) {
         _thr_clip_status = ThrClipStatus::MIN;
         _throttle_dem = _THRminf;
+    } else {
+        _thr_clip_status = ThrClipStatus::NONE;
     }
 }
 
@@ -1156,72 +1148,74 @@ void AP_TECS::update_pitch_throttle(int32_t hgt_dem_cm,
     // Calculate pitch demand
     _update_pitch();
 
-    // log to AP_Logger
-    // @LoggerMessage: TECS
-    // @Vehicles: Plane
-    // @Description: Information about the Total Energy Control System
-    // @URL: http://ardupilot.org/plane/docs/tecs-total-energy-control-system-for-speed-height-tuning-guide.html
-    // @Field: TimeUS: Time since system startup
-    // @Field: h: height estimate (UP) currently in use by TECS
-    // @Field: dh: current climb rate ("delta-height")
-    // @Field: hdem: height TECS is currently trying to achieve
-    // @Field: dhdem: climb rate TECS is currently trying to achieve
-    // @Field: spdem: True AirSpeed TECS is currently trying to achieve
-    // @Field: sp: current estimated True AirSpeed
-    // @Field: dsp: x-axis acceleration estimate ("delta-speed")
-    // @Field: ith: throttle integrator value
-    // @Field: iph: Specific Energy Balance integrator value
-    // @Field: th: throttle output
-    // @Field: ph: pitch output
-    // @Field: dspdem: demanded acceleration output ("delta-speed demand")
-    // @Field: w: current TECS prioritization of height vs speed (0==100% height,2==100% speed, 1==50%height+50%speed
-    // @Field: f: flags
-    // @FieldBits: f: Underspeed,UnachievableDescent,AutoLanding,ReachedTakeoffSpd
-    AP::logger().WriteStreaming(
-        "TECS",
-        "TimeUS,h,dh,hdem,dhdem,spdem,sp,dsp,ith,iph,th,ph,dspdem,w,f",
-        "smnmnnnn----o--",
-        "F0000000----0--",
-        "QfffffffffffffB",
-        now,
-        (double)_height,
-        (double)_climb_rate,
-        (double)_hgt_dem_adj,
-        (double)_hgt_rate_dem,
-        (double)_TAS_dem_adj,
-        (double)_TAS_state,
-        (double)_vel_dot,
-        (double)_integTHR_state,
-        (double)_integSEB_state,
-        (double)_throttle_dem,
-        (double)_pitch_dem,
-        (double)_TAS_rate_dem,
-        (double)logging.SKE_weighting,
-        _flags_byte);
-    // @LoggerMessage: TEC2
-    // @Vehicles: Plane
-    // @Description: Additional Information about the Total Energy Control System
-    // @URL: http://ardupilot.org/plane/docs/tecs-total-energy-control-system-for-speed-height-tuning-guide.html
-    // @Field: TimeUS: Time since system startup
-    // @Field: pmax: maximum allowed pitch from parameter
-    // @Field: pmin: minimum allowed pitch from parameter
-    // @Field: KErr: difference between estimated kinetic energy and desired kinetic energy
-    // @Field: PErr: difference between estimated potential energy and desired potential energy
-    // @Field: EDelta: current error in speed/balance weighting
-    // @Field: LF: aerodynamic load factor
-    // @Field: hdem1: demanded height input
-    // @Field: hdem2: rate-limited height demand
-    AP::logger().WriteStreaming("TEC2", "TimeUS,pmax,pmin,KErr,PErr,EDelta,LF,hdem1,hdem2",
-                                "s------mm",
-                                "F--------",
-                                "Qffffffff",
-                                now,
-                                (double)degrees(_PITCHmaxf),
-                                (double)degrees(_PITCHminf),
-                                (double)logging.SKE_error,
-                                (double)logging.SPE_error,
-                                (double)logging.SEB_delta,
-                                (double)load_factor,
-                                (double)hgt_dem_cm*0.01,
-                                (double)_hgt_dem);
+    if (AP::logger().should_log(_log_bitmask)){
+        // log to AP_Logger
+        // @LoggerMessage: TECS
+        // @Vehicles: Plane
+        // @Description: Information about the Total Energy Control System
+        // @URL: http://ardupilot.org/plane/docs/tecs-total-energy-control-system-for-speed-height-tuning-guide.html
+        // @Field: TimeUS: Time since system startup
+        // @Field: h: height estimate (UP) currently in use by TECS
+        // @Field: dh: current climb rate ("delta-height")
+        // @Field: hdem: height TECS is currently trying to achieve
+        // @Field: dhdem: climb rate TECS is currently trying to achieve
+        // @Field: spdem: True AirSpeed TECS is currently trying to achieve
+        // @Field: sp: current estimated True AirSpeed
+        // @Field: dsp: x-axis acceleration estimate ("delta-speed")
+        // @Field: ith: throttle integrator value
+        // @Field: iph: Specific Energy Balance integrator value
+        // @Field: th: throttle output
+        // @Field: ph: pitch output
+        // @Field: dspdem: demanded acceleration output ("delta-speed demand")
+        // @Field: w: current TECS prioritization of height vs speed (0==100% height,2==100% speed, 1==50%height+50%speed
+        // @Field: f: flags
+        // @FieldBits: f: Underspeed,UnachievableDescent,AutoLanding,ReachedTakeoffSpd
+        AP::logger().WriteStreaming(
+            "TECS",
+            "TimeUS,h,dh,hdem,dhdem,spdem,sp,dsp,ith,iph,th,ph,dspdem,w,f",
+            "smnmnnnn----o--",
+            "F0000000----0--",
+            "QfffffffffffffB",
+            now,
+            (double)_height,
+            (double)_climb_rate,
+            (double)_hgt_dem_adj,
+            (double)_hgt_rate_dem,
+            (double)_TAS_dem_adj,
+            (double)_TAS_state,
+            (double)_vel_dot,
+            (double)_integTHR_state,
+            (double)_integSEB_state,
+            (double)_throttle_dem,
+            (double)_pitch_dem,
+            (double)_TAS_rate_dem,
+            (double)logging.SKE_weighting,
+            _flags_byte);
+        // @LoggerMessage: TEC2
+        // @Vehicles: Plane
+        // @Description: Additional Information about the Total Energy Control System
+        // @URL: http://ardupilot.org/plane/docs/tecs-total-energy-control-system-for-speed-height-tuning-guide.html
+        // @Field: TimeUS: Time since system startup
+        // @Field: pmax: maximum allowed pitch from parameter
+        // @Field: pmin: minimum allowed pitch from parameter
+        // @Field: KErr: difference between estimated kinetic energy and desired kinetic energy
+        // @Field: PErr: difference between estimated potential energy and desired potential energy
+        // @Field: EDelta: current error in speed/balance weighting
+        // @Field: LF: aerodynamic load factor
+        // @Field: hdem1: demanded height input
+        // @Field: hdem2: rate-limited height demand
+        AP::logger().WriteStreaming("TEC2", "TimeUS,pmax,pmin,KErr,PErr,EDelta,LF,hdem1,hdem2",
+                                    "s------mm",
+                                    "F--------",
+                                    "Qffffffff",
+                                    now,
+                                    (double)degrees(_PITCHmaxf),
+                                    (double)degrees(_PITCHminf),
+                                    (double)logging.SKE_error,
+                                    (double)logging.SPE_error,
+                                    (double)logging.SEB_delta,
+                                    (double)load_factor,
+                                    (double)hgt_dem_cm*0.01,
+                                    (double)_hgt_dem);
+    }
 }

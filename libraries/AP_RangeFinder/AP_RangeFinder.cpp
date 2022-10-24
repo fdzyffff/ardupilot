@@ -30,6 +30,7 @@
 #include "AP_RangeFinder_LeddarOne.h"
 #include "AP_RangeFinder_USD1_Serial.h"
 #include "AP_RangeFinder_TeraRangerI2C.h"
+#include "AP_RangeFinder_TeraRanger_Serial.h"
 #include "AP_RangeFinder_VL53L0X.h"
 #include "AP_RangeFinder_VL53L1X.h"
 #include "AP_RangeFinder_NMEA.h"
@@ -175,88 +176,6 @@ RangeFinder::RangeFinder()
     _singleton = this;
 }
 
-void RangeFinder::convert_params(void) {
-    if (params[0].type.configured()) {
-        // _params[0]._type will always be configured after conversion is done the first time
-        // or the user has set a type in a defaults.parm file or via apj tool
-        return;
-    }
-
-    struct ConversionTable {
-        uint8_t old_element;
-        uint8_t new_index;
-        uint8_t instance;
-    };
-
-    const struct ConversionTable conversionTable[] = {
-        // PARAMETER_CONVERSION - Added: Feb-2019
-            // rangefinder 1
-            {0, 0, 0}, //0, TYPE 1
-            {1, 1, 0}, //1, PIN 1
-            {2, 2, 0}, //2, SCALING 1
-            {3, 3, 0}, //3, OFFSET 1
-            {4, 4, 0}, //4, FUNCTION 1
-            {5, 5, 0}, //5, MIN_CM 1
-            {6, 6, 0}, //6, MAX_CM 1
-            {7, 7, 0}, //7, STOP_PIN 1
-            {9, 8, 0}, //9, RMETRIC 1
-            {10, 9, 0}, //10, PWRRNG 1 (previously existed only once for all sensors)
-            {11, 10, 0}, //11, GNDCLEAR 1
-            {23, 11, 0}, //23, ADDR 1
-            {49, 12, 0}, //49, POS 1
-            {53, 13, 0}, //53, ORIENT 1
-
-            // rangefinder 2
-            {12, 0, 1}, //12, TYPE 2
-            {13, 1, 1}, //13, PIN 2
-            {14, 2, 1}, //14, SCALING 2
-            {15, 3, 1}, //15, OFFSET 2
-            {16, 4, 1}, //16, FUNCTION 2
-            {17, 5, 1}, //17, MIN_CM 2
-            {18, 6, 1}, //18, MAX_CM 2
-            {19, 7, 1}, //19, STOP_PIN 2
-            {21, 8, 1}, //21, RMETRIC 2
-            {10, 9, 1}, //10, PWRRNG 1 (previously existed only once for all sensors)
-            {22, 10, 1}, //22, GNDCLEAR 2
-            {24, 11, 1}, //24, ADDR 2
-            {50, 12, 1}, //50, POS 2
-            {54, 13, 1}, //54, ORIENT 2
-    };
-
-    char param_name[17] = {0};
-    AP_Param::ConversionInfo info;
-    info.new_name = param_name;
-
-#if APM_BUILD_TYPE(APM_BUILD_ArduPlane)
-    info.old_key = 71;
-#elif APM_BUILD_COPTER_OR_HELI
-    info.old_key = 53;
-#elif APM_BUILD_TYPE(APM_BUILD_ArduSub)
-    info.old_key = 35;
-#elif APM_BUILD_TYPE(APM_BUILD_Rover)
-    info.old_key = 197;
-#else
-    params[0].type.save(true);
-    return; // no conversion is supported on this platform
-#endif
-
-    for (uint8_t i = 0; i < ARRAY_SIZE(conversionTable); i++) {
-        uint8_t param_instance = conversionTable[i].instance + 1;
-        uint8_t destination_index = conversionTable[i].new_index;
-
-        info.old_group_element = conversionTable[i].old_element;
-        info.type = (ap_var_type)AP_RangeFinder_Params::var_info[destination_index].type;
-
-        hal.util->snprintf(param_name, sizeof(param_name), "RNGFND%X_%s", param_instance, AP_RangeFinder_Params::var_info[destination_index].name);
-        param_name[sizeof(param_name)-1] = '\0';
-
-        AP_Param::convert_old_parameter(&info, 1.0f, 0);
-    }
-
-    // force _params[0]._type into storage to flag that conversion has been done
-    params[0].type.save(true);
-}
-
 /*
   initialise the RangeFinder class. We do detection of attached range
   finders here. For now we won't allow for hot-plugging of
@@ -269,8 +188,6 @@ void RangeFinder::init(enum Rotation orientation_default)
         return;
     }
     init_done = true;
-
-    convert_params();
 
     // set orientation defaults
     for (uint8_t i=0; i<RANGEFINDER_MAX_INSTANCES; i++) {
@@ -343,6 +260,8 @@ bool RangeFinder::_add_backend(AP_RangeFinder_Backend *backend, uint8_t instance
 void RangeFinder::detect_instance(uint8_t instance, uint8_t& serial_instance)
 {
 #if AP_RANGEFINDER_ENABLED
+    AP_RangeFinder_Backend_Serial *(*serial_create_fn)(RangeFinder::RangeFinder_State&, AP_RangeFinder_Params&) = nullptr;
+
     const Type _type = (Type)params[instance].type.get();
     switch (_type) {
     case Type::PLI2C:
@@ -464,23 +383,17 @@ void RangeFinder::detect_instance(uint8_t instance, uint8_t& serial_instance)
         break;
     case Type::LWSER:
 #if AP_RANGEFINDER_LIGHTWARE_SERIAL_ENABLED
-        if (AP_RangeFinder_LightWareSerial::detect(serial_instance)) {
-            _add_backend(new AP_RangeFinder_LightWareSerial(state[instance], params[instance]), instance, serial_instance++);
-        }
+        serial_create_fn = AP_RangeFinder_LightWareSerial::create;
 #endif
         break;
     case Type::LEDDARONE:
 #if AP_RANGEFINDER_LEDDARONE_ENABLED
-        if (AP_RangeFinder_LeddarOne::detect(serial_instance)) {
-            _add_backend(new AP_RangeFinder_LeddarOne(state[instance], params[instance]), instance, serial_instance++);
-        }
+        serial_create_fn = AP_RangeFinder_LeddarOne::create;
 #endif
         break;
     case Type::USD1_Serial:
 #if AP_RANGEFINDER_USD1_SERIAL_ENABLED
-        if (AP_RangeFinder_USD1_Serial::detect(serial_instance)) {
-            _add_backend(new AP_RangeFinder_USD1_Serial(state[instance], params[instance]), instance, serial_instance++);
-        }
+        serial_create_fn = AP_RangeFinder_USD1_Serial::create;
 #endif
         break;
     case Type::BEBOP:
@@ -499,9 +412,7 @@ void RangeFinder::detect_instance(uint8_t instance, uint8_t& serial_instance)
         break;
     case Type::MBSER:
 #if AP_RANGEFINDER_MAXBOTIX_SERIAL_ENABLED
-        if (AP_RangeFinder_MaxsonarSerialLV::detect(serial_instance)) {
-            _add_backend(new AP_RangeFinder_MaxsonarSerialLV(state[instance], params[instance]), instance, serial_instance++);
-        }
+        serial_create_fn = AP_RangeFinder_MaxsonarSerialLV::create;
 #endif
         break;
     case Type::ANALOG:
@@ -522,37 +433,32 @@ void RangeFinder::detect_instance(uint8_t instance, uint8_t& serial_instance)
         break;
     case Type::NMEA:
 #if AP_RANGEFINDER_NMEA_ENABLED
-        if (AP_RangeFinder_NMEA::detect(serial_instance)) {
-            _add_backend(new AP_RangeFinder_NMEA(state[instance], params[instance]), instance, serial_instance++);
-        }
+        serial_create_fn = AP_RangeFinder_NMEA::create;
 #endif
         break;
     case Type::WASP:
 #if AP_RANGEFINDER_WASP_ENABLED
-        if (AP_RangeFinder_Wasp::detect(serial_instance)) {
-            _add_backend(new AP_RangeFinder_Wasp(state[instance], params[instance]), instance, serial_instance++);
-        }
+        serial_create_fn = AP_RangeFinder_Wasp::create;
 #endif
         break;
     case Type::BenewakeTF02:
 #if AP_RANGEFINDER_BENEWAKE_TF02_ENABLED
-        if (AP_RangeFinder_Benewake_TF02::detect(serial_instance)) {
-            _add_backend(new AP_RangeFinder_Benewake_TF02(state[instance], params[instance]), instance, serial_instance++);
-        }
+        serial_create_fn = AP_RangeFinder_Benewake_TF02::create;
 #endif
         break;
     case Type::BenewakeTFmini:
 #if AP_RANGEFINDER_BENEWAKE_TFMINI_ENABLED
-        if (AP_RangeFinder_Benewake_TFMini::detect(serial_instance)) {
-            _add_backend(new AP_RangeFinder_Benewake_TFMini(state[instance], params[instance]), instance, serial_instance++);
-        }
+        serial_create_fn = AP_RangeFinder_Benewake_TFMini::create;
 #endif
         break;
     case Type::BenewakeTF03:
 #if AP_RANGEFINDER_BENEWAKE_TF03_ENABLED
-        if (AP_RangeFinder_Benewake_TF03::detect(serial_instance)) {
-            _add_backend(new AP_RangeFinder_Benewake_TF03(state[instance], params[instance]), instance, serial_instance++);
-        }
+        serial_create_fn = AP_RangeFinder_Benewake_TF03::create;
+#endif
+        break;
+    case Type::TeraRanger_Serial:
+#if AP_RANGEFINDER_TERARANGER_SERIAL_ENABLED
+        serial_create_fn = AP_RangeFinder_TeraRanger_Serial::create;
 #endif
         break;
     case Type::PWM:
@@ -564,23 +470,17 @@ void RangeFinder::detect_instance(uint8_t instance, uint8_t& serial_instance)
         break;
     case Type::BLPing:
 #if AP_RANGEFINDER_BLPING_ENABLED
-        if (AP_RangeFinder_BLPing::detect(serial_instance)) {
-            _add_backend(new AP_RangeFinder_BLPing(state[instance], params[instance]), instance, serial_instance++);
-        }
+        serial_create_fn = AP_RangeFinder_BLPing::create;
 #endif
         break;
     case Type::Lanbao:
 #if AP_RANGEFINDER_LANBAO_ENABLED
-        if (AP_RangeFinder_Lanbao::detect(serial_instance)) {
-            _add_backend(new AP_RangeFinder_Lanbao(state[instance], params[instance]), instance, serial_instance++);
-        }
+        serial_create_fn = AP_RangeFinder_Lanbao::create;
 #endif
         break;
     case Type::LeddarVu8_Serial:
 #if AP_RANGEFINDER_LEDDARVU8_ENABLED
-        if (AP_RangeFinder_LeddarVu8::detect(serial_instance)) {
-            _add_backend(new AP_RangeFinder_LeddarVu8(state[instance], params[instance]), instance, serial_instance++);
-        }
+        serial_create_fn = AP_RangeFinder_LeddarVu8::create;
 #endif
         break;
 
@@ -597,9 +497,7 @@ void RangeFinder::detect_instance(uint8_t instance, uint8_t& serial_instance)
 
     case Type::GYUS42v2:
 #if AP_RANGEFINDER_GYUS42V2_ENABLED
-        if (AP_RangeFinder_GYUS42v2::detect(serial_instance)) {
-            _add_backend(new AP_RangeFinder_GYUS42v2(state[instance], params[instance]), instance, serial_instance++);
-        }
+        serial_create_fn = AP_RangeFinder_GYUS42v2::create;
 #endif
         break;
 
@@ -629,6 +527,15 @@ void RangeFinder::detect_instance(uint8_t instance, uint8_t& serial_instance)
 #endif
     case Type::NONE:
         break;
+    }
+
+    if (serial_create_fn != nullptr) {
+        if (AP::serialmanager().have_serial(AP_SerialManager::SerialProtocol_Rangefinder, serial_instance)) {
+            auto *b = serial_create_fn(state[instance], params[instance]);
+            if (b != nullptr) {
+                _add_backend(b, instance, serial_instance++);
+            }
+        }
     }
 
     // if the backend has some local parameters then make those available in the tree
@@ -851,6 +758,32 @@ bool RangeFinder::prearm_healthy(char *failure_msg, const uint8_t failure_msg_le
         if (drivers[i] == nullptr) {
             hal.util->snprintf(failure_msg, failure_msg_len, "Rangefinder %X: Not Detected", i + 1);
             return false;
+        }
+
+        // backend-specific checks.  This might end up drivers[i]->arming_checks(...).
+        switch (drivers[i]->allocated_type()) {
+        case Type::ANALOG:
+        case Type::PX4_PWM:
+        case Type::PWM: {
+            // ensure pin is configured
+            if (params[i].pin == -1) {
+                hal.util->snprintf(failure_msg, failure_msg_len, "RNGFND%u_PIN not set", unsigned(i + 1));
+                return false;
+            }
+            // ensure that the pin we're configured to use is available
+            if (!hal.gpio->valid_pin(params[i].pin)) {
+                uint8_t servo_ch;
+                if (hal.gpio->pin_to_servo_channel(params[i].pin, servo_ch)) {
+                    hal.util->snprintf(failure_msg, failure_msg_len, "RNGFND%u_PIN=%d, set SERVO%u_FUNCTION=-1", unsigned(i + 1), int(params[i].pin.get()), unsigned(servo_ch+1));
+                } else {
+                    hal.util->snprintf(failure_msg, failure_msg_len, "RNGFND%u_PIN=%d invalid", unsigned(i + 1), int(params[i].pin.get()));
+                }
+                return false;
+            }
+            break;
+        }
+        default:
+            break;
         }
 
         switch (drivers[i]->status()) {

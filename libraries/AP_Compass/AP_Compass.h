@@ -1,5 +1,7 @@
 #pragma once
 
+#include "AP_Compass_config.h"
+
 #include <inttypes.h>
 
 #include <AP_Common/AP_Common.h>
@@ -85,8 +87,7 @@ public:
     Compass();
 
     /* Do not allow copies */
-    Compass(const Compass &other) = delete;
-    Compass &operator=(const Compass&) = delete;
+    CLASS_NO_COPY(Compass);
 
     // get singleton instance
     static Compass *get_singleton() {
@@ -134,8 +135,10 @@ public:
     /// @param  offsets             Offsets to the raw mag_ values in milligauss.
     ///
     void set_and_save_offsets(uint8_t i, const Vector3f &offsets);
+#if AP_COMPASS_DIAGONALS_ENABLED
     void set_and_save_diagonals(uint8_t i, const Vector3f &diagonals);
     void set_and_save_offdiagonals(uint8_t i, const Vector3f &diagonals);
+#endif
     void set_and_save_scale_factor(uint8_t i, float scale_factor);
     void set_and_save_orientation(uint8_t i, Rotation orientation);
 
@@ -213,11 +216,13 @@ public:
     const Vector3f &get_offsets(uint8_t i) const { return _get_state(Priority(i)).offset; }
     const Vector3f &get_offsets(void) const { return get_offsets(_first_usable); }
 
+#ifndef HAL_BUILD_AP_PERIPH
     const Vector3f &get_diagonals(uint8_t i) const { return _get_state(Priority(i)).diagonals; }
     const Vector3f &get_diagonals(void) const { return get_diagonals(_first_usable); }
 
     const Vector3f &get_offdiagonals(uint8_t i) const { return _get_state(Priority(i)).offdiagonals; }
     const Vector3f &get_offdiagonals(void) const { return get_offdiagonals(_first_usable); }
+#endif
 
     // learn offsets accessor
     bool learn_offsets_enabled() const { return _learn == LEARN_INFLIGHT; }
@@ -481,8 +486,10 @@ private:
         Compass::Priority priority;
         AP_Int8     orientation;
         AP_Vector3f offset;
+#ifndef HAL_BUILD_AP_PERIPH
         AP_Vector3f diagonals;
         AP_Vector3f offdiagonals;
+#endif
         AP_Float    scale_factor;
 
         // device id detected at init.

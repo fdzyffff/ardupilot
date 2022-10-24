@@ -1,4 +1,3 @@
-#include "mode.h"
 #include "Rover.h"
 
 Mode::Mode() :
@@ -471,7 +470,7 @@ void Mode::calc_steering_from_turn_rate(float turn_rate)
                                                                       g2.motors.limit.steer_left,
                                                                       g2.motors.limit.steer_right,
                                                                       rover.G_Dt);
-    g2.motors.set_steering(steering_out * 4500.0f);
+    set_steering(steering_out * 4500.0f);
 }
 
 /*
@@ -551,6 +550,11 @@ Mode *Rover::mode_from_mode_num(const enum Mode::Number num)
     case Mode::Number::INITIALISING:
         ret = &mode_initializing;
         break;
+#if MODE_DOCK_ENABLED == ENABLED
+    case Mode::Number::DOCK:
+        ret = (Mode *)g2.mode_dock_ptr;
+        break;
+#endif
     default:
         break;
     }

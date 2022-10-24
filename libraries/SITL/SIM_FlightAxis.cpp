@@ -109,7 +109,6 @@ FlightAxis::FlightAxis(const char *frame_str) :
     Aircraft(frame_str)
 {
     use_time_sync = false;
-    num_motors = 2;
     rate_hz = 250 / target_speedup;
     heli_demix = strstr(frame_str, "helidemix") != nullptr;
     rev4_servos = strstr(frame_str, "rev4") != nullptr;
@@ -489,12 +488,12 @@ void FlightAxis::update(const struct sitl_input &input)
        can't get that from m_airspeed_MPS, so instead we calculate it
        from wind vector and ground speed
      */
-    Vector3f m_wind_ef(-state.m_windY_MPS,-state.m_windX_MPS,-state.m_windZ_MPS);
-    Vector3f airspeed_3d_ef = m_wind_ef + velocity_ef;
+    wind_ef = Vector3f(state.m_windY_MPS,state.m_windX_MPS,state.m_windZ_MPS);
+    Vector3f airspeed_3d_ef = velocity_ef - wind_ef;
     Vector3f airspeed3d = dcm.mul_transpose(airspeed_3d_ef);
 
     if (last_imu_rotation != ROTATION_NONE) {
-        airspeed3d = airspeed3d * sitl->ahrs_rotation_inv;
+        airspeed3d = sitl->ahrs_rotation * airspeed3d;
     }
     airspeed_pitot = MAX(airspeed3d.x,0);
 

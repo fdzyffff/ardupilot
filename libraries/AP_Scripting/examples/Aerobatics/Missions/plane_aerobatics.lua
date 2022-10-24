@@ -1,7 +1,7 @@
 --[[ perform simple aerobatic manoeuvres in AUTO mode
 cmd = 1: axial rolls, arg1 = roll rate dps, arg2 = number of rolls
 cmd = 2: loops or 180deg return, arg1 = pitch rate dps, arg2 = number of loops, if zero do a 1/2 cuban8-like return
-cmd = 3: rolling circle, arg1 = radius, arg2 = number of rolls
+cmd = 3: rolling circle, arg1 = earth frame yaw rate, dps, arg2 = roll rate, dps
 cmd = 4: knife edge at any angle, arg1 = roll angle to hold, arg2 = duration
 cmd = 5: pause, holding heading and alt to allow stabilization after a move, arg1 = duration in seconds
 ]]--
@@ -21,22 +21,16 @@ assert(param:add_param(PARAM_TABLE_KEY, 6,  'SPD_I', 25), 'could not add param9'
 DO_JUMP = 177
 k_throttle = 70
 
-function bind_param(name)
-   local p = Parameter()
-   assert(p:init(name), string.format('could not find %s parameter', name))
-   return p
-end
-
-local HGT_P = bind_param("AEROM_HGT_P") -- height P gain
-local HGT_I = bind_param("AEROM_HGT_I") -- height I gain
-local HGT_KE_BIAS = bind_param("AEROM_HGT_KE_ADD") -- height knifeedge addition for pitch
-local THR_PIT_FF = bind_param("AEROM_THR_PIT_FF") -- throttle FF from pitch
-local SPD_P = bind_param("AEROM_SPD_P") -- speed P gain
-local SPD_I = bind_param("AEROM_SPD_I") -- speed I gain
-local TRIM_THROTTLE = bind_param("TRIM_THROTTLE")
-local TRIM_ARSPD_CM = bind_param("TRIM_ARSPD_CM")
-local RLL2SRV_TCONST = bind_param("RLL2SRV_TCONST")
-local PITCH_TCONST = bind_param("PTCH2SRV_TCONST")
+local HGT_P = Parameter("AEROM_HGT_P") -- height P gain
+local HGT_I = Parameter("AEROM_HGT_I") -- height I gain
+local HGT_KE_BIAS = Parameter("AEROM_HGT_KE_ADD") -- height knifeedge addition for pitch
+local THR_PIT_FF = Parameter("AEROM_THR_PIT_FF") -- throttle FF from pitch
+local SPD_P = Parameter("AEROM_SPD_P") -- speed P gain
+local SPD_I = Parameter("AEROM_SPD_I") -- speed I gain
+local TRIM_THROTTLE = Parameter("TRIM_THROTTLE")
+local TRIM_ARSPD_CM = Parameter("TRIM_ARSPD_CM")
+local RLL2SRV_TCONST = Parameter("RLL2SRV_TCONST")
+local PITCH_TCONST = Parameter("PTCH2SRV_TCONST")
 
 local last_roll_err = 0.0
 local last_id = 0
@@ -164,7 +158,7 @@ local function PI_controller(kP,kI,iMax)
    -- log the controller internals
    function self.log(name, add_total)
       -- allow for an external addition to total
-      logger.write(name,'Targ,Curr,P,I,Total,Add','ffffff',_target,_current,_P,_I,_total,add_total)
+      logger:write(name,'Targ,Curr,P,I,Total,Add','ffffff',_target,_current,_P,_I,_total,add_total)
    end
    -- return the instance
    return self
@@ -342,7 +336,7 @@ local rolling_circle_yaw = 0
 local rolling_circle_last_ms = 0
 
 function do_rolling_circle(arg1, arg2)
-   -- constant roll rate circle roll, arg1 radius of circle, positive to right, neg to left, arg2 is number of rolls to do
+   -- constant roll rate circle roll, arg1 = earth frame yaw rate, dps, positive to right, neg to left, arg2 = roll rate, dps
    if not running then
       running = true
       rolling_circle_stage = 0
@@ -466,7 +460,7 @@ function resolve_jump(i)
 end
 
 function update()
-   id, cmd, arg1, arg2 = vehicle:nav_script_time()
+   id, cmd, arg1, arg2, arg3, arg4 = vehicle:nav_script_time()
    if id then
       if id ~= last_id then
          -- we've started a new command

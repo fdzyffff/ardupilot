@@ -113,7 +113,7 @@ void Plane::navigate()
 float Plane::mode_auto_target_airspeed_cm()
 {
 #if HAL_QUADPLANE_ENABLED
-    if ((quadplane.options & QuadPlane::OPTION_MISSION_LAND_FW_APPROACH) &&
+    if (quadplane.landing_with_fixed_wing_spiral_approach() &&
         ((vtol_approach_s.approach_stage == Landing_ApproachStage::APPROACH_LINE) ||
          (vtol_approach_s.approach_stage == Landing_ApproachStage::VTOL_LANDING))) {
         const float land_airspeed = TECS_controller.get_land_airspeed();
@@ -411,7 +411,7 @@ void Plane::update_fbwb_speed_height(void)
         target_altitude.last_elevator_input = elevator_input;
     }
 
-    check_fbwb_minimum_altitude();
+    check_fbwb_altitude();
 
     altitude_error_cm = calc_altitude_error_cm();
 

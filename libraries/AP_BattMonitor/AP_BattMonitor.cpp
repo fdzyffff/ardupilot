@@ -16,6 +16,7 @@
 #include "AP_BattMonitor_INA2xx.h"
 #include "AP_BattMonitor_LTC2946.h"
 #include "AP_BattMonitor_Torqeedo.h"
+#include "AP_BattMonitor_FuelLevel_Analog.h"
 
 #include <AP_HAL/AP_HAL.h>
 
@@ -49,6 +50,8 @@ const AP_Param::GroupInfo AP_BattMonitor::var_info[] = {
     // @Path: AP_BattMonitor_Sum.cpp
     // @Group: _
     // @Path: AP_BattMonitor_UAVCAN.cpp
+    // @Group: _
+    // @Path: AP_BattMonitor_FuelLevel_Analog.cpp
     AP_SUBGROUPVARPTR(drivers[0], "_", 41, AP_BattMonitor, backend_var_info[0]),
 
 #if AP_BATT_MONITOR_MAX_INSTANCES > 1
@@ -64,6 +67,8 @@ const AP_Param::GroupInfo AP_BattMonitor::var_info[] = {
     // @Path: AP_BattMonitor_Sum.cpp
     // @Group: 2_
     // @Path: AP_BattMonitor_UAVCAN.cpp
+    // @Group: 2_
+    // @Path: AP_BattMonitor_FuelLevel_Analog.cpp
     AP_SUBGROUPVARPTR(drivers[1], "2_", 42, AP_BattMonitor, backend_var_info[1]),
 #endif
 
@@ -80,6 +85,8 @@ const AP_Param::GroupInfo AP_BattMonitor::var_info[] = {
     // @Path: AP_BattMonitor_Sum.cpp
     // @Group: 3_
     // @Path: AP_BattMonitor_UAVCAN.cpp
+    // @Group: 3_
+    // @Path: AP_BattMonitor_FuelLevel_Analog.cpp
     AP_SUBGROUPVARPTR(drivers[2], "3_", 43, AP_BattMonitor, backend_var_info[2]),
 #endif
 
@@ -96,6 +103,8 @@ const AP_Param::GroupInfo AP_BattMonitor::var_info[] = {
     // @Path: AP_BattMonitor_Sum.cpp
     // @Group: 4_
     // @Path: AP_BattMonitor_UAVCAN.cpp
+    // @Group: 4_
+    // @Path: AP_BattMonitor_FuelLevel_Analog.cpp
     AP_SUBGROUPVARPTR(drivers[3], "4_", 44, AP_BattMonitor, backend_var_info[3]),
 #endif
 
@@ -112,6 +121,8 @@ const AP_Param::GroupInfo AP_BattMonitor::var_info[] = {
     // @Path: AP_BattMonitor_Sum.cpp
     // @Group: 5_
     // @Path: AP_BattMonitor_UAVCAN.cpp
+    // @Group: 5_
+    // @Path: AP_BattMonitor_FuelLevel_Analog.cpp
     AP_SUBGROUPVARPTR(drivers[4], "5_", 45, AP_BattMonitor, backend_var_info[4]),
 #endif
 
@@ -128,6 +139,8 @@ const AP_Param::GroupInfo AP_BattMonitor::var_info[] = {
     // @Path: AP_BattMonitor_Sum.cpp
     // @Group: 6_
     // @Path: AP_BattMonitor_UAVCAN.cpp
+    // @Group: 6_
+    // @Path: AP_BattMonitor_FuelLevel_Analog.cpp
     AP_SUBGROUPVARPTR(drivers[5], "6_", 46, AP_BattMonitor, backend_var_info[5]),
 #endif
 
@@ -144,6 +157,8 @@ const AP_Param::GroupInfo AP_BattMonitor::var_info[] = {
     // @Path: AP_BattMonitor_Sum.cpp
     // @Group: 7_
     // @Path: AP_BattMonitor_UAVCAN.cpp
+    // @Group: 7_
+    // @Path: AP_BattMonitor_FuelLevel_Analog.cpp
     AP_SUBGROUPVARPTR(drivers[6], "7_", 47, AP_BattMonitor, backend_var_info[6]),
 #endif
 
@@ -160,6 +175,8 @@ const AP_Param::GroupInfo AP_BattMonitor::var_info[] = {
     // @Path: AP_BattMonitor_Sum.cpp
     // @Group: 8_
     // @Path: AP_BattMonitor_UAVCAN.cpp
+    // @Group: 8_
+    // @Path: AP_BattMonitor_FuelLevel_Analog.cpp
     AP_SUBGROUPVARPTR(drivers[7], "8_", 48, AP_BattMonitor, backend_var_info[7]),
 #endif
 
@@ -176,6 +193,8 @@ const AP_Param::GroupInfo AP_BattMonitor::var_info[] = {
     // @Path: AP_BattMonitor_Sum.cpp
     // @Group: 9_
     // @Path: AP_BattMonitor_UAVCAN.cpp
+    // @Group: 9_
+    // @Path: AP_BattMonitor_FuelLevel_Analog.cpp
     AP_SUBGROUPVARPTR(drivers[8], "9_", 49, AP_BattMonitor, backend_var_info[8]),
 #endif
 
@@ -267,14 +286,21 @@ AP_BattMonitor::init()
             case Type::Sum:
                 drivers[instance] = new AP_BattMonitor_Sum(*this, state[instance], _params[instance], instance);
                 break;
-#if AP_BATTMON_FUEL_ENABLE
+#if AP_BATTMON_FUELFLOW_ENABLE
             case Type::FuelFlow:
                 drivers[instance] = new AP_BattMonitor_FuelFlow(*this, state[instance], _params[instance]);
                 break;
+#endif // AP_BATTMON_FUELFLOW_ENABLE
+#if AP_BATTMON_FUELLEVEL_PWM_ENABLE
             case Type::FuelLevel_PWM:
                 drivers[instance] = new AP_BattMonitor_FuelLevel_PWM(*this, state[instance], _params[instance]);
                 break;
-#endif // AP_BATTMON_FUEL_ENABLE
+#endif // AP_BATTMON_FUELLEVEL_PWM_ENABLE
+#if AP_BATTMON_FUELLEVEL_ANALOG_ENABLE
+            case Type::FuelLevel_Analog:
+                drivers[instance] = new AP_BattMonitor_FuelLevel_Analog(*this, state[instance], _params[instance]);
+                break;
+#endif // AP_BATTMON_FUELLEVEL_ANALOG_ENABLE
 #if HAL_GENERATOR_ENABLED
             case Type::GENERATOR_ELEC:
                 drivers[instance] = new AP_BattMonitor_Generator_Elec(*this, state[instance], _params[instance]);
@@ -618,10 +644,42 @@ bool AP_BattMonitor::get_temperature(float &temperature, const uint8_t instance)
         return false;
     } 
     
+#if AP_TEMPERATURE_SENSOR_ENABLED
+    if (state[instance].temperature_external_use) {
+        temperature = state[instance].temperature_external;
+        return true;
+    }
+#endif
+
     temperature = state[instance].temperature;
 
     return drivers[instance]->has_temperature();
 }
+
+#if AP_TEMPERATURE_SENSOR_ENABLED
+// return true when successfully setting a battery temperature from an external source by instance
+bool AP_BattMonitor::set_temperature(const float temperature, const uint8_t instance)
+{
+    if (instance >= AP_BATT_MONITOR_MAX_INSTANCES || drivers[instance] == nullptr) {
+        return false;
+    }
+    state[instance].temperature_external = temperature;
+    state[instance].temperature_external_use = true;
+    return true;
+}
+
+// return true when successfully setting a battery temperature from an external source by serial_number
+bool AP_BattMonitor::set_temperature_by_serial_number(const float temperature, const int32_t serial_number)
+{
+    bool success = false;
+    for (uint8_t i = 0; i < _num_instances; i++) {
+        if (drivers[i] != nullptr && get_serial_number(i) == serial_number) {
+            success |= set_temperature(temperature, i);
+        }
+    }
+    return success;
+}
+#endif // AP_TEMPERATURE_SENSOR_ENABLED
 
 // return true if cycle count can be provided and fills in cycles argument
 bool AP_BattMonitor::get_cycle_count(uint8_t instance, uint16_t &cycles) const

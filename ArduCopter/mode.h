@@ -39,14 +39,16 @@ public:
         AUTOROTATE =   26,  // Autonomous autorotation
         AUTO_RTL =     27,  // Auto RTL, this is not a true mode, AUTO will report as this mode if entered to perform a DO_LAND_START Landing sequence
         TURTLE =       28,  // Flip over after crash
+
+        // Mode number 127 reserved for the "drone show mode" in the Skybrush
+        // fork at https://github.com/skybrush-io/ardupilot
     };
 
     // constructor
     Mode(void);
 
     // do not allow copying
-    Mode(const Mode &other) = delete;
-    Mode &operator=(const Mode&) = delete;
+    CLASS_NO_COPY(Mode);
 
     // returns a unique number specific to this mode
     virtual Number mode_number() const = 0;
@@ -86,6 +88,11 @@ public:
     virtual int32_t wp_bearing() const { return 0; }
     virtual uint32_t wp_distance() const { return 0; }
     virtual float crosstrack_error() const { return 0.0f;}
+
+    // functions to support MAV_CMD_DO_CHANGE_SPEED
+    virtual bool set_speed_xy(float speed_xy_cms) {return false;}
+    virtual bool set_speed_up(float speed_xy_cms) {return false;}
+    virtual bool set_speed_down(float speed_xy_cms) {return false;}
 
     int32_t get_alt_above_ground_cm(void);
 
@@ -195,7 +202,7 @@ protected:
     private:
         bool _running;
         float take_off_start_alt;
-        float take_off_complete_alt ;
+        float take_off_complete_alt;
     };
 
     static _TakeOff takeoff;
@@ -288,7 +295,6 @@ public:
     bool set_mode(Mode::Number mode, ModeReason reason);
     void set_land_complete(bool b);
     GCS_Copter &gcs();
-    void set_throttle_takeoff(void);
     uint16_t get_pilot_speed_dn(void);
     // end pass-through functions
 };
@@ -443,6 +449,10 @@ public:
     bool is_taking_off() const override;
     bool use_pilot_yaw() const override;
 
+    bool set_speed_xy(float speed_xy_cms) override;
+    bool set_speed_up(float speed_up_cms) override;
+    bool set_speed_down(float speed_down_cms) override;
+
     bool requires_terrain_failsafe() const override { return true; }
 
     // return true if this flight mode supports user takeoff
@@ -458,7 +468,7 @@ public:
     bool jump_to_landing_sequence_auto_RTL(ModeReason reason);
 
     // lua accessors for nav script time support
-    bool nav_script_time(uint16_t &id, uint8_t &cmd, float &arg1, float &arg2);
+    bool nav_script_time(uint16_t &id, uint8_t &cmd, float &arg1, float &arg2, int16_t &arg3, int16_t &arg4);
     void nav_script_time_done(uint16_t id);
 
     AP_Mission mission{
@@ -507,7 +517,7 @@ private:
 
     void payload_place_run();
     bool payload_place_run_should_run();
-    void payload_place_run_loiter();
+    void payload_place_run_hover();
     void payload_place_run_descend();
     void payload_place_run_release();
 
@@ -624,6 +634,8 @@ private:
         uint8_t timeout_s;  // timeout (in seconds) provided by mission command
         float arg1;         // 1st argument provided by mission command
         float arg2;         // 2nd argument provided by mission command
+        int16_t arg3;       // 3rd argument provided by mission command
+        int16_t arg4;       // 4th argument provided by mission command
     } nav_scripting;
 #endif
 
@@ -633,7 +645,7 @@ private:
         int8_t pitch_deg;   // target pitch angle in degrees.  provided by mission command
         int16_t yaw_deg;    // target yaw angle in degrees.  provided by mission command
         float climb_rate;   // climb rate in m/s. provided by mission command
-        uint32_t start_ms;  // system time that nav attitude time command was recieved (used for timeout)
+        uint32_t start_ms;  // system time that nav attitude time command was received (used for timeout)
     } nav_attitude_time;
 };
 
@@ -824,7 +836,7 @@ private:
 };
 
 
-#if !HAL_MINIMIZE_FEATURES && AP_OPTICALFLOW_ENABLED
+#if MODE_FLOWHOLD_ENABLED == ENABLED
 /*
   class to support FLOWHOLD mode, which is a position hold mode using
   optical flow directly, avoiding the need for a rangefinder
@@ -910,7 +922,7 @@ private:
     // last time there was significant stick input
     uint32_t last_stick_input_ms;
 };
-#endif // AP_OPTICALFLOW_ENABLED
+#endif // MODE_FLOWHOLD_ENABLED
 
 
 class ModeGuided : public Mode {
@@ -967,6 +979,10 @@ public:
     bool limit_check();
 
     bool is_taking_off() const override;
+    
+    bool set_speed_xy(float speed_xy_cms) override;
+    bool set_speed_up(float speed_up_cms) override;
+    bool set_speed_down(float speed_down_cms) override;
 
     // initialises position controller to implement take-off
     // takeoff_alt_cm is interpreted as alt-above-home (in cm) or alt-above-terrain if a rangefinder is available
@@ -1492,7 +1508,7 @@ public:
     bool is_autopilot() const override { return false; }
     bool logs_attitude() const override { return true; }
 
-    void set_magnitude(float input) { waveform_magnitude = input; }
+    void set_magnitude(float input) { waveform_magnitude.set(input); }
 
     static const struct AP_Param::GroupInfo var_info[];
 

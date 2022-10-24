@@ -27,12 +27,8 @@ void Copter::init_ardupilot()
 #endif
 
     // init cargo gripper
-#if GRIPPER_ENABLED == ENABLED
+#if AP_GRIPPER_ENABLED
     g2.gripper.init();
-#endif
-
-#if AC_FENCE == ENABLED
-    fence.init();
 #endif
 
     // init winch
@@ -77,7 +73,7 @@ void Copter::init_ardupilot()
     init_rc_in();               // sets up rc channels from radio
 
     // initialise surface to be tracked in SurfaceTracking
-    // must be before rc init to not override inital switch position
+    // must be before rc init to not override initial switch position
     surface_tracking.init((SurfaceTracking::Surface)copter.g2.surftrak_mode.get());
 
     // allocate the motors class
@@ -163,7 +159,7 @@ void Copter::init_ardupilot()
     g2.beacon.init();
 #endif
 
-#if RPM_ENABLED == ENABLED
+#if AP_RPM_ENABLED
     // initialise AP_RPM library
     rpm_sensor.init();
 #endif
@@ -186,6 +182,10 @@ void Copter::init_ardupilot()
 #if AP_SCRIPTING_ENABLED
     g2.scripting.init();
 #endif // AP_SCRIPTING_ENABLED
+
+#if AC_CUSTOMCONTROL_MULTI_ENABLED == ENABLED
+    custom_control.init();
+#endif
 
     // set landed flags
     set_land_complete(true);
@@ -523,6 +523,11 @@ void Copter::allocate_motors(void)
     convert_pid_parameters();
 #if FRAME_CONFIG == HELI_FRAME
     convert_tradheli_parameters();
+#endif
+
+#if HAL_PROXIMITY_ENABLED
+    // convert PRX to PRX1_ parameters
+    convert_prx_parameters();
 #endif
 
     // param count could have changed
