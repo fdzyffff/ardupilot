@@ -54,6 +54,14 @@ void ModeAttack_att::run()
 
     motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
 
+    // reoposition
+    if (!copter.failsafe.radio) {
+        // get pilot desired lean angles
+        float target_roll = 0.0f, target_pitch = 0.0f;
+        get_pilot_desired_lean_angles(target_roll, target_pitch, copter.aparm.angle_max, attitude_control->get_althold_lean_angle_max_cd());
+        target_roll_ang += target_roll*0.45f;
+    }
+
     // call attitude controller
     attitude_control->input_euler_angle_roll_euler_rate_pitch_yaw(target_roll_ang, target_pitch_rate, target_yaw_rate);
 

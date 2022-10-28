@@ -16,6 +16,8 @@ void Copter::userhook_init()
     Upayload.init();
 
     pitch_delay.idx = 0;
+
+    Usr_throttle.set_cutoff_frequency(0.1f);
 }
 #endif
 
@@ -126,6 +128,16 @@ float Copter::userhook_FastLoop_pitch_get() {
         return pitch_delay.pitch_buffer[100 + tmp_idx - tmp_idx_comp];
     }
 }
+
+void Copter::userhook_FastLoop_throttle_write() {
+    float current_throttle = motors->get_throttle();
+    Usr_throttle.apply(current_throttle, 0.01f);
+}
+
+float Copter::userhook_FastLoop_throttle_get() {
+    return Usr_throttle.get();
+}
+
 
 void Copter::userhook_SuperSlowLoop_print() {
     if ((g2.user_parameters.cam_print.get() & (1<<0)) && Ucam.display_info_new) { // 1
