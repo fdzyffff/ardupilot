@@ -284,7 +284,7 @@ Vector3f UGround::get_search_dest() {
 }
 
 Vector3f UGround::get_assemble_dest() {
-    Vector3f assemble_offset_position = my_group1_assemble.get_offset(copter.g.sysid_this_mav, _leader_id, 1000.f);
+    Vector3f assemble_offset_position = my_group1_assemble.get_offset(copter.g.sysid_this_mav, _leader_id, 500.f);
 
     float group_dir = wrap_360(_follow_yaw_cd*0.01f - my_group1_assemble.get_dir(_leader_id)); // in degree
     Matrix3f tmp_m;

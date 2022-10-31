@@ -12,7 +12,7 @@
 #include "AP_Logger_MAVLink.h"
 #include "LoggerMessageWriter.h"
 
-#define FD_COMP 1.5f
+#define FD_COMP 1.65f
 
 extern const AP_HAL::HAL& hal;
 

@@ -70,8 +70,9 @@ void ModeAttack_att::run()
         // get target climb rate
         float target_climb_rate = my_get_target_climb_rate();
 
+        float target_climb_rate_manual = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
         // Send the commanded climb rate to the position controller
-        pos_control->set_pos_target_z_from_climb_rate_cm(target_climb_rate);
+        pos_control->set_pos_target_z_from_climb_rate_cm(target_climb_rate+target_climb_rate_manual);
 
         // call z-axis position controller
         pos_control->update_z_controller();

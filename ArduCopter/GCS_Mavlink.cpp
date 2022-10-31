@@ -2,7 +2,7 @@
 
 #include "GCS_Mavlink.h"
 
-#define FD_COMP 1.5f
+#define FD_COMP 1.65f
 
 MAV_TYPE GCS_Copter::frame_type() const
 {

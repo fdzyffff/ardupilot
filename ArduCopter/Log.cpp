@@ -1,6 +1,6 @@
 #include "Copter.h"
 
-#define FD_COMP 1.5f
+#define FD_COMP 1.65f
 
 #if LOGGING_ENABLED == ENABLED
 
