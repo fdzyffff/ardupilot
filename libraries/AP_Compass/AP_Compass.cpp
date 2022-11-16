@@ -21,6 +21,7 @@
 #include "AP_Compass_LIS3MDL.h"
 #include "AP_Compass_AK09916.h"
 #include "AP_Compass_QMC5883L.h"
+#include "AP_Compass_QMC7983.h"
 #if HAL_ENABLE_LIBUAVCAN_DRIVERS
 #include "AP_Compass_UAVCAN.h"
 #endif

@@ -123,7 +123,7 @@ public:
         DEVTYPE_BMI270       = 0x38,
         DEVTYPE_INS_BMI085   = 0x39,
         DEVTYPE_INS_ICM42670 = 0x3A,
-        DEVTYPE_INS_QMI8658  = 0x3B,
+        DEVTYPE_INS_QMI8658  = 0x3B, //59
     };
 
 protected:
