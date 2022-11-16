@@ -26,7 +26,7 @@
 class AP_InertialSensor_QMI8658 : public AP_InertialSensor_Backend {
 public:
     static AP_InertialSensor_Backend *probe(AP_InertialSensor &imu,
-                                            AP_HAL::OwnPtr<AP_HAL::Device> _dev_qmi8658,
+                                            AP_HAL::OwnPtr<AP_HAL::Device> dev_qmi8658,
                                             enum Rotation rotation);
 
     /**
@@ -64,11 +64,11 @@ private:
     //  */
     // bool write_register(uint8_t reg, uint8_t v);
 
-    AP_HAL::OwnPtr<AP_HAL::Device> dev_qmi8658;
+    AP_HAL::OwnPtr<AP_HAL::Device> _dev_qmi8658;
 
     uint8_t accel_instance;
     uint8_t gyro_instance;
-    enum Rotation rotation;
+    enum Rotation _rotation;
     uint8_t temperature_counter;
     float gyro_scale;
     float accel_scale;
