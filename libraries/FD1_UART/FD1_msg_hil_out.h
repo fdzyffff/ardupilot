@@ -1,6 +1,6 @@
 #include "FD1_message.h"
 
-#define FD1_MSG_HIL_OUT_LEN 28
+#define FD1_MSG_HIL_OUT_LEN 32
 class FD1_msg_hil_out : public FD1_message{
 public:
     struct PACKED FD1_msg_header {
@@ -23,6 +23,8 @@ public:
         int16_t eulerz;
         int16_t height_rel_home;
         int16_t velz;
+        int16_t rc7out;
+        int16_t volt;
         uint8_t sum_check;
         uint8_t end;
     };

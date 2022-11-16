@@ -292,7 +292,7 @@ void NavEKF3_core::SelectVelPosFusion()
         // normalised yaw innovations
         const float min_yaw_accuracy_deg = 5.0f;
         yaw_accuracy_deg = MAX(yaw_accuracy_deg, min_yaw_accuracy_deg);
-        writeEulerYawAngle(radians(yaw_deg), radians(yaw_accuracy_deg), gpsDataNew.time_ms, 2);
+        writeEulerYawAngle(radians(yaw_deg), radians(yaw_accuracy_deg), AP_HAL::millis()-25, 2);
     }
 
     // read GPS data from the sensor and check for new data in the buffer

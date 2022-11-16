@@ -568,7 +568,7 @@ bool AP_Arming_Copter::arm_checks(AP_Arming::Method method)
 
 #ifndef ALLOW_ARM_NO_COMPASS
     // if external source of heading is available, we can skip compass health check
-    if (!ahrs.is_ext_nav_used_for_yaw()) {
+    if (!ahrs.is_ext_nav_used_for_yaw() && copter.g2.user_parameters.usr_hil_compass == 0) {
         const Compass &_compass = AP::compass();
         // check compass health
         if (!_compass.healthy()) {

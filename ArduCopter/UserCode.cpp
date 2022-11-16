@@ -56,7 +56,7 @@ void Copter::userhook_SuperSlowLoop()
     // put your 1Hz code here
     FD1_msg_hil_out &tmp_msg = FD1_uart_msg_hil.get_msg_hil_out();
     if (g2.user_parameters.usr_print != 0) {
-        gcs().send_text(MAV_SEVERITY_INFO, "gyro (%d, %d, %d)",tmp_msg._msg_1.content.msg.gyrox, tmp_msg._msg_1.content.msg.gyroy, tmp_msg._msg_1.content.msg.gyroz);
+        // gcs().send_text(MAV_SEVERITY_INFO, "gyro (%d, %d, %d)",tmp_msg._msg_1.content.msg.gyrox, tmp_msg._msg_1.content.msg.gyroy, tmp_msg._msg_1.content.msg.gyroz);
         gcs().send_text(MAV_SEVERITY_INFO, "acc (%d, %d, %d)",tmp_msg._msg_1.content.msg.accx, tmp_msg._msg_1.content.msg.accy, tmp_msg._msg_1.content.msg.accz);
         gcs().send_text(MAV_SEVERITY_INFO, "att (%d, %d, %d)",tmp_msg._msg_1.content.msg.eulerx,tmp_msg._msg_1.content.msg.eulery,tmp_msg._msg_1.content.msg.eulerz);
         gcs().send_text(MAV_SEVERITY_INFO, "ctrl_mode %d (%d)",FD1_hil.ctrl_mode, FD1_hil.healthy);
@@ -178,8 +178,23 @@ void Copter::FD1_uart_hil_handle() {
 void Copter::FD1_uart_hil_send() {
     FD1_msg_hil_out &tmp_msg = FD1_uart_msg_hil.get_msg_hil_out();
     Vector3f tmp_gyro = ahrs.get_gyro();
-    Matrix3f M_ned_to_body = Matrix3f(ahrs.get_rotation_body_to_ned()).transposed();
-    Vector3f tmp_acc = M_ned_to_body * ahrs.get_accel_ef();
+    Matrix3f M_ned_to_body = ahrs.get_rotation_body_to_ned();
+    Vector3f tmp_acc = M_ned_to_body * ins.get_accel();
+    Vector3f tmp_gravity = Vector3f(0.f,0.f,GRAVITY_MSS);
+    tmp_acc = tmp_acc+tmp_gravity;
+    Matrix3f tmp_ned_to_rfd;
+    tmp_ned_to_rfd.from_euler(0.f, 0.f, ahrs.yaw);
+    tmp_ned_to_rfd.transpose();
+    tmp_acc = tmp_ned_to_rfd * tmp_acc;
+
+    //rc7 input
+    int16_t rc7value = rc().channel(CH_7)->get_radio_in();
+    int16_t rc7pos = 0;
+    if (rc7value>1700) {
+        rc7pos = 2;
+    } else if (rc7value>1300) {
+        rc7pos = 1;
+    }
     tmp_msg._msg_1.need_send = true;
     tmp_msg._msg_1.content.msg.sum_check = 0;
     tmp_msg._msg_1.content.msg.header.head_1 = FD1_msg_hil_out::PREAMBLE1;
@@ -196,6 +211,8 @@ void Copter::FD1_uart_hil_send() {
     tmp_msg._msg_1.content.msg.eulerz = wrap_180_cd(ahrs.yaw_sensor);
     tmp_msg._msg_1.content.msg.height_rel_home = (int16_t)copter.inertial_nav.get_altitude();
     tmp_msg._msg_1.content.msg.velz = (int16_t)copter.inertial_nav.get_velocity_z();
+    tmp_msg._msg_1.content.msg.rc7out = rc7pos;
+    tmp_msg._msg_1.content.msg.volt = (int16_t)battery.voltage();
     //gcs().send_text(MAV_SEVERITY_INFO, "att (%d, %d)",ahrs.yaw_sensor, tmp_msg._msg_1.content.msg.eulerz);
 
     for (int8_t i = 0; i < tmp_msg._msg_1.length - 2; i++) {
