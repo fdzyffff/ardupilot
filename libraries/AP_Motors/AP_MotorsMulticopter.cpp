@@ -208,6 +208,8 @@ const AP_Param::GroupInfo AP_MotorsMulticopter::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("SAFE_TIME", 42, AP_MotorsMulticopter, _safe_time, AP_MOTORS_SAFE_TIME_DEFAULT),
 
+    // AP_GROUPINFO_FRAME("BI_YAW_ANGLE", 43, AP_MotorsMulticopter, _yaw_servo_angle_max_deg, 30, AP_PARAM_FRAME_TRICOPTER),
+    // AP_GROUPINFO_FRAME("BI_PIT_ANGLE", 44, AP_MotorsMulticopter, _yaw_servo_angle_max_deg, 30, AP_PARAM_FRAME_TRICOPTER),
     AP_GROUPEND
 };
 
