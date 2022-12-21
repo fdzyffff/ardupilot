@@ -1354,7 +1354,7 @@ void AP_Logger::io_thread(void)
     while (true) {
         uint32_t now = AP_HAL::micros();
 
-        uint32_t delay = 250U; // always have some delay
+        uint32_t delay = 1000U; // always have some delay
         if (now - last_run_us < 1000) {
             delay = MAX(1000 - (now - last_run_us), delay);
         }
@@ -1390,7 +1390,7 @@ void AP_Logger::start_io_thread(void)
         return;
     }
 
-    if (!hal.scheduler->thread_create(FUNCTOR_BIND_MEMBER(&AP_Logger::io_thread, void), "log_io", HAL_LOGGING_STACK_SIZE, AP_HAL::Scheduler::PRIORITY_IO, 1)) {
+    if (!hal.scheduler->thread_create(FUNCTOR_BIND_MEMBER(&AP_Logger::io_thread, void), "log_io", HAL_LOGGING_STACK_SIZE, AP_HAL::Scheduler::PRIORITY_IO, 0)) {
         AP_HAL::panic("Failed to start Logger IO thread");
     }
 

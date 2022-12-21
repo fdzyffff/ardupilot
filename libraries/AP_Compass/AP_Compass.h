@@ -356,6 +356,8 @@ public:
     // get the first compass marked for use by COMPASSx_USE
     uint8_t get_first_usable(void) const { return _first_usable; }
 
+    // compass cal
+    void _update_calibration_trampoline_scheduler();
 private:
     static Compass *_singleton;
 

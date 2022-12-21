@@ -97,10 +97,11 @@ bool Compass::_start_calibration(uint8_t i, bool retry, float delay)
     }
     if (!_cal_thread_started) {
         _cal_requires_reboot = true;
-        if (!hal.scheduler->thread_create(FUNCTOR_BIND(this, &Compass::_update_calibration_trampoline, void), "compasscal", 2048, AP_HAL::Scheduler::PRIORITY_IO, 0)) {
-            gcs().send_text(MAV_SEVERITY_CRITICAL, "CompassCalibrator: Cannot start compass thread.");
-            return false;
-        }
+        // if (!hal.scheduler->thread_create(FUNCTOR_BIND(this, &Compass::_update_calibration_trampoline, void), "ccal", 2048, AP_HAL::Scheduler::PRIORITY_SCRIPTING, 0)) {
+        //     gcs().send_text(MAV_SEVERITY_CRITICAL, "CompassCalibrator: Cannot start compass thread.");
+        //     return false;
+        // }
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "CompassCalibrator: Do Cal in AP_Scheduler");
         _cal_thread_started = true;
     }
 
@@ -118,7 +119,18 @@ void Compass::_update_calibration_trampoline() {
             }
             _calibrator[i]->update();
         }
-        hal.scheduler->delay(1);
+        hal.scheduler->delay(20);
+    }
+}
+
+void Compass::_update_calibration_trampoline_scheduler() {
+    if (_cal_thread_started) {
+        for (Priority i(0); i<COMPASS_MAX_INSTANCES; i++) {
+            if (_calibrator[i] == nullptr) {
+                continue;
+            }
+            _calibrator[i]->update();
+        }
     }
 }
 

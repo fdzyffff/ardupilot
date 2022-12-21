@@ -470,6 +470,11 @@ void Copter::throttle_loop()
     // compensate for ground effect (if enabled)
     update_ground_effect_detector();
     update_ekf_terrain_height_stable();
+
+
+    if(AP::compass().available()) {
+        compass._update_calibration_trampoline_scheduler();
+    }
 }
 
 // update_batt_compass - read battery and compass
