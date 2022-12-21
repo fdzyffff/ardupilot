@@ -210,6 +210,7 @@ bool Compass::_accept_calibration(uint8_t i)
         return true;
     } else if (cal_report.status == CompassCalibrator::Status::SUCCESS) {
         _cal_saved[prio] = true;
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "CompassCalibrator: Saved");
 
         Vector3f ofs(cal_report.ofs), diag(cal_report.diag), offdiag(cal_report.offdiag);
         float scale_factor = cal_report.scale_factor;
@@ -391,7 +392,7 @@ MAV_RESULT Compass::handle_mag_cal_command(const mavlink_command_long_t &packet)
         bool retry = !is_zero(packet.param2);
         bool autosave = !is_zero(packet.param3);
         float delay = packet.param4;
-        bool autoreboot = !is_zero(packet.param5);
+        bool autoreboot = false;!is_zero(packet.param5);// fored disable this function since our APGDST board can not reboot automatically
 
         if (mag_mask == 0) { // 0 means all
             _reset_compass_id();
