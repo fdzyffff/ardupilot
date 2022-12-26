@@ -36,6 +36,7 @@
 #include "AP_GPS_MAV.h"
 #include "AP_GPS_MSP.h"
 #include "AP_GPS_ExternalAHRS.h"
+#include "AP_GPS_CASIC.h"
 #include "GPS_Backend.h"
 #if HAL_SIM_GPS_ENABLED
 #include "AP_GPS_SITL.h"
@@ -583,6 +584,15 @@ void AP_GPS::send_blob_start(uint8_t instance)
     }
 #endif
 
+    if (_type[instance] == GPS_TYPE_CASIC) {
+        struct detect_state *dstate = &detect_state[instance]; 
+        uint32_t baudrate = _baudrates[dstate->current_baud];
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "CASIC %ld", baudrate);
+        static const char blob[] = CASIC_SET_BINARY_115200;
+        send_blob_start(instance, blob, sizeof(blob));
+        return;
+
+    }
 #if AP_GPS_NMEA_ENABLED
     if (_type[instance] == GPS_TYPE_HEMI) {
         send_blob_start(instance, AP_GPS_NMEA_HEMISPHERE_INIT_STRING, strlen(AP_GPS_NMEA_HEMISPHERE_INIT_STRING));
@@ -831,6 +841,13 @@ AP_GPS_Backend *AP_GPS::_detect_instance(uint8_t instance)
                    AP_GPS_NMEA::_detect(dstate->nmea_detect_state, data)) {
             return new AP_GPS_NMEA(*this, state[instance], _port[instance]);
         }
+
+        if ((_type[instance] == GPS_TYPE_CASIC) &&
+                _baudrates[dstate->current_baud] >= 115200 &&
+                AP_GPS_NMEA::_detect(dstate->nmea_detect_state, data)) {
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "CASIC GPS Found");
+            return new AP_GPS_NMEA(*this, state[instance], _port[instance]);
+        }
 #endif //AP_GPS_NMEA_ENABLED
     }
 
@@ -917,7 +934,8 @@ void AP_GPS::update_instance(uint8_t instance)
             if (_type[instance] == GPS_TYPE_MAV ||
                 _type[instance] == GPS_TYPE_UAVCAN ||
                 _type[instance] == GPS_TYPE_UAVCAN_RTK_BASE ||
-                _type[instance] == GPS_TYPE_UAVCAN_RTK_ROVER) {
+                _type[instance] == GPS_TYPE_UAVCAN_RTK_ROVER ||
+                _type[instance] == GPS_TYPE_CASIC) {
                 state[instance].status = NO_FIX;
             } else {
                 // free the driver before we run the next detection, so we
@@ -925,6 +943,7 @@ void AP_GPS::update_instance(uint8_t instance)
                 delete drivers[instance];
                 drivers[instance] = nullptr;
                 state[instance].status = NO_GPS;
+                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "No GPS Data!");
             }
             // log this data as a "flag" that the GPS is no longer
             // valid (see PR#8144)
