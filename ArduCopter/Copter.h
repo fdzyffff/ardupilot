@@ -233,6 +233,9 @@ public:
     friend class ModeStabTest;
 
     friend class UCam;
+    friend class UCam_Port;
+    friend class UCam_Port_ASCII;
+    friend class UCam_Port_Mavlink;
     friend class UGround;
     friend class UPayload;
 

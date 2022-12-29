@@ -24,6 +24,7 @@ bool ModeLockon::init(bool ignore_checks)
     if (!pos_control->is_active_z()) {
         pos_control->init_z_controller();
     }
+    copter.gcs().send_text(MAV_SEVERITY_WARNING, "mode lockon");
 
     return true;
 }
