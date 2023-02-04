@@ -179,6 +179,7 @@
 #endif
 
 #include "mode.h"
+#include "UserEngine.h"
 
 class Copter : public AP_Vehicle {
 public:
@@ -226,6 +227,8 @@ public:
     friend class ModeZigZag;
     friend class ModeAutorotate;
     friend class ModeTurtle;
+    friend class UserEngine;
+    friend class UserEngines;
 
     Copter(void);
 
@@ -938,6 +941,8 @@ private:
     void userhook_auxSwitch1(const RC_Channel::AuxSwitchPos ch_flag);
     void userhook_auxSwitch2(const RC_Channel::AuxSwitchPos ch_flag);
     void userhook_auxSwitch3(const RC_Channel::AuxSwitchPos ch_flag);
+
+    UserEngines uengines;
 
 #if MODE_ACRO_ENABLED == ENABLED
 #if FRAME_CONFIG == HELI_FRAME

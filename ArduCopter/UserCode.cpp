@@ -12,6 +12,8 @@ void Copter::userhook_init()
 void Copter::userhook_FastLoop()
 {
     // put your 100Hz code here
+    uengines.update_state();
+    uengines.update_output();
 }
 #endif
 
@@ -47,11 +49,26 @@ void Copter::userhook_SuperSlowLoop()
 void Copter::userhook_auxSwitch1(const RC_Channel::AuxSwitchPos ch_flag)
 {
     // put your aux switch #1 handler here (CHx_OPT = 47)
+    if (ch_flag == AuxSwitchPos::HIGH || ch_flag == AuxSwitchPos::MIDDLE) 
+    {
+        bool pass_check = ;
+        if (pass_check)
+        {
+            uengines.set_state(UserEngines::UserEnginesState::Start);
+        } else 
+        {
+            gcs().send_text();
+        }
+    }
 }
 
 void Copter::userhook_auxSwitch2(const RC_Channel::AuxSwitchPos ch_flag)
 {
     // put your aux switch #2 handler here (CHx_OPT = 48)
+    if (ch_flag == AuxSwitchPos::HIGH || ch_flag == AuxSwitchPos::MIDDLE) 
+    {
+        uengines.set_state(UserEngines::UserEnginesState::Stop);
+    }
 }
 
 void Copter::userhook_auxSwitch3(const RC_Channel::AuxSwitchPos ch_flag)
