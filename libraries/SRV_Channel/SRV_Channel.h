@@ -199,6 +199,21 @@ public:
         k_rcin14_mapped         = 153,
         k_rcin15_mapped         = 154,
         k_rcin16_mapped         = 155,
+        k_engine_1              = 201,
+        k_engine_2              = 202,
+        k_engine_3              = 203,
+        k_engine_4              = 204,
+        k_engine_5              = 205,
+        k_engine_6              = 206,
+        k_engine_7              = 207,
+        k_engine_srv_0          = 210,
+        k_engine_srv_1          = 211,
+        k_engine_srv_2          = 212,
+        k_engine_srv_3          = 213,
+        k_engine_srv_4          = 214,
+        k_engine_srv_5          = 215,
+        k_engine_srv_6          = 216,
+        k_engine_srv_7          = 217,
         k_nr_aux_servo_functions         ///< This must be the last enum value (only add new values _before_ this one)
     } Aux_servo_function_t;
 

@@ -170,6 +170,13 @@ public:
         SerialProtocol_MSP_DisplayPort = 42,
         SerialProtocol_MAVLinkHL = 43,
         SerialProtocol_Tramp = 44,
+        SerialProtocol_Engine_1 = 201,
+        SerialProtocol_Engine_2 = 202,
+        SerialProtocol_Engine_3 = 203,
+        SerialProtocol_Engine_4 = 204,
+        SerialProtocol_Engine_5 = 205,
+        SerialProtocol_Engine_6 = 206,
+        SerialProtocol_Engine_7 = 207,
         SerialProtocol_NumProtocols                    // must be the last value
     };
 

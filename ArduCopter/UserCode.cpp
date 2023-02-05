@@ -5,6 +5,7 @@ void Copter::userhook_init()
 {
     // put your initialisation code here
     // this will be called once at start-up
+    uengines.Init();
 }
 #endif
 
@@ -12,8 +13,7 @@ void Copter::userhook_init()
 void Copter::userhook_FastLoop()
 {
     // put your 100Hz code here
-    uengines.update_state();
-    uengines.update_output();
+    uengines.Update();
 }
 #endif
 
@@ -49,15 +49,14 @@ void Copter::userhook_SuperSlowLoop()
 void Copter::userhook_auxSwitch1(const RC_Channel::AuxSwitchPos ch_flag)
 {
     // put your aux switch #1 handler here (CHx_OPT = 47)
-    if (ch_flag == AuxSwitchPos::HIGH || ch_flag == AuxSwitchPos::MIDDLE) 
+    if (ch_flag == RC_Channel::AuxSwitchPos::HIGH || ch_flag == RC_Channel::AuxSwitchPos::MIDDLE) 
     {
-        bool pass_check = ;
-        if (pass_check)
-        {
+        bool pass_check = true;
+        if (pass_check) {
+            gcs().send_text(MAV_SEVERITY_INFO, "Do start");
             uengines.set_state(UserEngines::UserEnginesState::Start);
-        } else 
-        {
-            gcs().send_text();
+        } else {
+            gcs().send_text(MAV_SEVERITY_INFO, "Err: Start");
         }
     }
 }
@@ -65,8 +64,8 @@ void Copter::userhook_auxSwitch1(const RC_Channel::AuxSwitchPos ch_flag)
 void Copter::userhook_auxSwitch2(const RC_Channel::AuxSwitchPos ch_flag)
 {
     // put your aux switch #2 handler here (CHx_OPT = 48)
-    if (ch_flag == AuxSwitchPos::HIGH || ch_flag == AuxSwitchPos::MIDDLE) 
-    {
+    if (ch_flag == RC_Channel::AuxSwitchPos::HIGH || ch_flag == RC_Channel::AuxSwitchPos::MIDDLE) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Do stop");
         uengines.set_state(UserEngines::UserEnginesState::Stop);
     }
 }

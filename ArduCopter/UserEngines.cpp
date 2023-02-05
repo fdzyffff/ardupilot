@@ -1,86 +1,87 @@
 #include "Copter.h"
 
-UserEngines::update_state()
+void UserEngines::Init()
+{
+	_engine[0].Init(AP_SerialManager::SerialProtocol_Engine_1, SRV_Channel::k_engine_1);
+	_engine[1].Init(AP_SerialManager::SerialProtocol_Engine_2, SRV_Channel::k_engine_2);
+	_engine[2].Init(AP_SerialManager::SerialProtocol_Engine_3, SRV_Channel::k_engine_3);
+	_engine[3].Init(AP_SerialManager::SerialProtocol_Engine_4, SRV_Channel::k_engine_4);
+	_engine[4].Init(AP_SerialManager::SerialProtocol_Engine_5, SRV_Channel::k_engine_5);
+	_engine[5].Init(AP_SerialManager::SerialProtocol_Engine_6, SRV_Channel::k_engine_6);
+	_engine[6].Init(AP_SerialManager::SerialProtocol_Engine_7, SRV_Channel::k_engine_7);
+
+	set_state(UserEnginesState::None);
+	copter.ap.motor_interlock_switch = true;
+}
+
+void UserEngines::Update()
+{
+	update_state();
+	update_output();
+
+}
+
+void UserEngines::set_state(UserEngines::UserEnginesState in_state)
+{
+	if (_state == in_state) {return;}
+	_state = in_state;
+	_last_state_ms = millis();
+	switch (_state) {
+		case UserEnginesState::Start:
+			for (uint8_t i_engine = 0; i_engine < ENGINE_NUM; i_engine++) {
+				_engine[i_engine].boost();
+			}
+			break;
+		case UserEnginesState::Stop:
+			for (uint8_t i_engine = 0; i_engine < ENGINE_NUM; i_engine++) {
+				_engine[i_engine].brake();
+			}
+			break;
+		default:
+			break;
+	}
+}
+
+void UserEngines::update_state()
 {
 	for (uint8_t i_engine = 0; i_engine < ENGINE_NUM; i_engine++) {
-		_engine[i_engine].update();
+		_engine[i_engine].Update();
 	}
 
 	uint32_t tnow = millis();
 	if (_state == UserEnginesState::Start)
 	{
-		if (tnow - last_state_ms < 5000) {
-			bool all_start = true;
+		if (tnow - _last_state_ms < 5000) {
 			for (uint8_t i_engine = 0; i_engine < ENGINE_NUM; i_engine++) {
-				if (!_engine[i_engine].IsState(UserEngine::EngineState::Running))
+				if (!_engine[i_engine].is_state(UserEngine::EngineState::Normal))
 				{
-					all_start = false;
+					copter.ap.motor_interlock_switch = true;
 					break;
 				}
 			}
-			copter.ap.motor_interlock_switch = true;
+			copter.ap.motor_interlock_switch = false; //allow output to motors
 		} else {
 			_state = UserEnginesState::None;
 		}
-
 	}
 
 	if (_state == UserEnginesState::Stop)
 	{
-		copter.ap.motor_interlock_switch = false;
-		if (tnow - last_state_ms > 5000) {
+		copter.ap.motor_interlock_switch = true;
+		if (tnow - _last_state_ms > 5000) {
 			_state = UserEnginesState::None;
 		}
 	}
 }
 
-UserEngines::set_state(UserEnginesState in_state)
+void UserEngines::update_output() // call at 400 Hz
 {
-	_state = in_state;
-	switch (_state) {
-		case Start:
-			for (uint8_t i_engine = 0; i_engine < ENGINE_NUM; i_engine++) {
-				if (!_engine[i_engine].IsState(UserEngine::EngineState::Running)) 
-				{
-					if (_engine[i_engine].thrPos == 0) {
-						_engine[i_engine].Boost()
-					}
-				}
-			}
-			break;
-		default:
-			break;
-	}
-}
-
-UserEngines::update_output()
-{
-	switch (_state) {
-		case Start:
-			for (uint8_t i_engine = 0; i_engine < ENGINE_NUM; i_engine++) {
-				if (!_engine[i_engine].IsState(UserEngine::EngineState::Running)) 
-				{
-					if (_engine[i_engine].thrPos == 0) {
-						_output[i_engine] = 1000; //pwm
-					} else {
-						_output[i_engine] = _engine[i_engine].get_output();
-					}
-				}
-			}
-			break;
-		case Stop:
-			for (uint8_t i_engine = 0; i_engine < ENGINE_NUM; i_engine++) {
-				if (_engine[i_engine].IsState(UserEngine::EngineState::Running)) 
-				{
-					_output[i_engine] = _engine[i_engine].get_output_min();
-				}
-			}
-			break;
+	for (uint8_t i_engine = 0; i_engine < ENGINE_NUM; i_engine++) {
+		if (_engine[i_engine].can_override()) {
+			_output[i_engine] = 1000 + (int16_t)(copter.motors->get_throttle_out()*1000.0f);
+		} else {
+			_output[i_engine] = _engine[i_engine].get_output(); // the engine is in boost or brake procedures, output are pre-set in time order with uart state feedback
 		}
-		default:
-			for (uint8_t i_engine = 0; i_engine < ENGINE_NUM; i_engine++) {
-				_output[i_engine] = 1000 + (int16_t)(copter.motors->get_throttle_out()*1000.0f);
-			}
-			break;
-
+		SRV_Channels::set_output_pwm(_engine[i_engine].get_srv_function(), _output[i_engine]);
+	}
 }
