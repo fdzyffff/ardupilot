@@ -11,7 +11,7 @@ void UserEngines::Init()
 	_engine[6].Init(AP_SerialManager::SerialProtocol_Engine_7, SRV_Channel::k_engine_7);
 
 	set_state(UserEnginesState::None);
-	copter.ap.motor_interlock_switch = true;
+	copter.ap.motor_interlock_switch = false;
 }
 
 void UserEngines::Update()
@@ -42,6 +42,11 @@ void UserEngines::set_state(UserEngines::UserEnginesState in_state)
 	}
 }
 
+bool UserEngines::is_state(UserEngines::UserEnginesState in_state)
+{
+    return (_state == in_state);
+}
+
 void UserEngines::update_state()
 {
 	for (uint8_t i_engine = 0; i_engine < ENGINE_NUM; i_engine++) {
@@ -55,21 +60,21 @@ void UserEngines::update_state()
 			for (uint8_t i_engine = 0; i_engine < ENGINE_NUM; i_engine++) {
 				if (!_engine[i_engine].is_state(UserEngine::EngineState::Normal))
 				{
-					copter.ap.motor_interlock_switch = true;
-					break;
+					copter.ap.motor_interlock_switch = false;
+					return;
 				}
 			}
-			copter.ap.motor_interlock_switch = false; //allow output to motors
+			copter.ap.motor_interlock_switch = true; //allow output to motors
 		} else {
-			_state = UserEnginesState::None;
+			set_state(UserEnginesState::None);
 		}
 	}
 
 	if (_state == UserEnginesState::Stop)
 	{
-		copter.ap.motor_interlock_switch = true;
+		copter.ap.motor_interlock_switch = false;
 		if (tnow - _last_state_ms > 5000) {
-			_state = UserEnginesState::None;
+			set_state(UserEnginesState::None);
 		}
 	}
 }
@@ -77,8 +82,8 @@ void UserEngines::update_state()
 void UserEngines::update_output() // call at 400 Hz
 {
 	for (uint8_t i_engine = 0; i_engine < ENGINE_NUM; i_engine++) {
-		if (_engine[i_engine].can_override()) {
-			_output[i_engine] = 1000 + (int16_t)(copter.motors->get_throttle_out()*1000.0f);
+		if (_engine[i_engine].can_override() && copter.ap.motor_interlock_switch) {
+			_output[i_engine] = constrain_int16(copter.g2.user_parameters.thr_low + (int16_t)(copter.motors->get_throttle_out()*800.0f), 1130, 1900);
 		} else {
 			_output[i_engine] = _engine[i_engine].get_output(); // the engine is in boost or brake procedures, output are pre-set in time order with uart state feedback
 		}

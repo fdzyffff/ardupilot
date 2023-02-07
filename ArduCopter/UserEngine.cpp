@@ -1,6 +1,6 @@
 #include "Copter.h"
 
-#define USERENGINE_THR_TRIM 1000
+#define USERENGINE_THR_TRIM 1150
 #define USERENGINE_THR_LOWEST 900
 #define USERENGINE_THR_HIGHEST 1950
 
@@ -33,22 +33,28 @@ void UserEngine::update_state()
 
     switch (_state) {
         default:
-            _output = USERENGINE_THR_TRIM;
+            _output = copter.g2.user_parameters.thr_low;
             break;
         case EngineState::Boost_1:
             _output = USERENGINE_THR_LOWEST; // lowest, 900
-            if (delta_t > 2000 && !connected()) {
+            if (delta_t > 1000 && !connected()) {
                 set_state(EngineState::Boost_2);
             }
             break;
         case EngineState::Boost_2:
-            _output = USERENGINE_THR_HIGHEST; // highest, 1950
-            if (delta_t > 2000 && !connected()) {
+            _output = copter.g2.user_parameters.thr_low; // normal low, 1150
+            if (delta_t > 1000 && !connected()) {
                 set_state(EngineState::Boost_3);
             }
             break;
         case EngineState::Boost_3:
-            _output = USERENGINE_THR_TRIM; // normal low, 1000
+            _output = USERENGINE_THR_HIGHEST; // highest, 1950
+            if (delta_t > 1000 && !connected()) {
+                set_state(EngineState::Boost_4);
+            }
+            break;
+        case EngineState::Boost_4:
+            _output = copter.g2.user_parameters.thr_low; // normal low, 1150
             if (delta_t > 1000 && !connected()) {
                 set_state(EngineState::Normal);
             }
@@ -109,6 +115,7 @@ bool UserEngine::can_override()
         case EngineState::Boost_1:
         case EngineState::Boost_2:
         case EngineState::Boost_3:
+        case EngineState::Boost_4:
         case EngineState::Brake:
             ret = false;
             break;

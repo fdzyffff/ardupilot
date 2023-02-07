@@ -10,8 +10,9 @@ public:
         Boost_1 = 0,
         Boost_2 = 1,
         Boost_3 = 2,
-        Normal = 3,
-        Brake = 4
+        Boost_4 = 3,
+        Normal = 10,
+        Brake = 20
     };
 
     void Init(AP_SerialManager::SerialProtocol in_protocol, SRV_Channel::Aux_servo_function_t in_srv_function);
@@ -48,6 +49,7 @@ public:
     void Init();
     void Update();
     void set_state(UserEngines::UserEnginesState in_state);
+    bool is_state(UserEngines::UserEnginesState in_state);
     void update_state();
     void update_output();
 

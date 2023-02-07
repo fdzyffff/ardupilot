@@ -802,7 +802,7 @@ bool AP_Arming_Copter::disarm(const AP_Arming::Method method, bool do_disarm_che
     }
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-    gcs().send_text(MAV_SEVERITY_INFO, "Disarming motors");
+    gcs().send_text(MAV_SEVERITY_INFO, "Disarming motors [%d]", (int16_t)method);
 #endif
 
     auto &ahrs = AP::ahrs();

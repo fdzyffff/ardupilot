@@ -44,7 +44,7 @@ void AP_MotorsSkateboard::init(motor_frame_class frame_class, motor_frame_type f
     SRV_Channels::set_angle(SRV_Channel::k_engine_srv_6, 4500);
     SRV_Channels::set_angle(SRV_Channel::k_engine_srv_7, 4500);
 
-    _mav_type = MAV_TYPE_SKATEBOARD;
+    _mav_type = MAV_TYPE_QUADROTOR;
 
     // record successful initialisation if what we setup was the desired frame_class
     set_initialised_ok(frame_class == MOTOR_FRAME_SKATEBOARD);
@@ -85,8 +85,8 @@ void AP_MotorsSkateboard::output_to_motors()
         case SpoolState::SPOOLING_UP:
         case SpoolState::THROTTLE_UNLIMITED:
         case SpoolState::SPOOLING_DOWN:
-            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_0, (_srv_pitch)*4500.f);
-            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_1, (_srv_roll)*4500.f);
+            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_0, (_srv_pitch*2.0f)*4500.f);
+            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_1, (_srv_roll*2.0f)*4500.f);
             SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_2, (_srv_roll+_srv_pitch)*4500.f);
             SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_3, (_srv_roll-_srv_pitch)*4500.f);
             SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_4, (_srv_roll+_srv_pitch)*4500.f);
@@ -120,14 +120,14 @@ void AP_MotorsSkateboard::output_armed_stabilizing()
     float   throttle_thrust;            // throttle thrust input value, 0.0 - 1.0
     float   throttle_avg_max;           // throttle thrust average maximum value, 0.0 - 1.0
 
-    SRV_Channels::set_angle(SRV_Channel::k_engine_srv_0, 4500);
-    SRV_Channels::set_angle(SRV_Channel::k_engine_srv_1, 4500);
-    SRV_Channels::set_angle(SRV_Channel::k_engine_srv_2, 4500);
-    SRV_Channels::set_angle(SRV_Channel::k_engine_srv_3, 4500);
-    SRV_Channels::set_angle(SRV_Channel::k_engine_srv_4, 4500);
-    SRV_Channels::set_angle(SRV_Channel::k_engine_srv_5, 4500);
-    SRV_Channels::set_angle(SRV_Channel::k_engine_srv_6, 4500);
-    SRV_Channels::set_angle(SRV_Channel::k_engine_srv_7, 4500);
+    // SRV_Channels::set_angle(SRV_Channel::k_engine_srv_0, 4500);
+    // SRV_Channels::set_angle(SRV_Channel::k_engine_srv_1, 4500);
+    // SRV_Channels::set_angle(SRV_Channel::k_engine_srv_2, 4500);
+    // SRV_Channels::set_angle(SRV_Channel::k_engine_srv_3, 4500);
+    // SRV_Channels::set_angle(SRV_Channel::k_engine_srv_4, 4500);
+    // SRV_Channels::set_angle(SRV_Channel::k_engine_srv_5, 4500);
+    // SRV_Channels::set_angle(SRV_Channel::k_engine_srv_6, 4500);
+    // SRV_Channels::set_angle(SRV_Channel::k_engine_srv_7, 4500);
 
     // apply voltage and air pressure compensation
     const float compensation_gain = get_compensation_gain();

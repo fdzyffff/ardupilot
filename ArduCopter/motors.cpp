@@ -101,12 +101,18 @@ void Copter::auto_disarm_check()
         return;
     }
 
+    // if the engines are in Start state, don't initiate auto disarm
+    if (uengines.is_state(UserEngines::UserEnginesState::Start)) {
+        auto_disarm_begin = tnow_ms;
+        return;
+    }
+
     // always allow auto disarm if using interlock switch or motors are Emergency Stopped
     if ((ap.using_interlock && !motors->get_interlock()) || SRV_Channels::get_emergency_stop()) {
 #if FRAME_CONFIG != HELI_FRAME
         // use a shorter delay if using throttle interlock switch or Emergency Stop, because it is less
         // obvious the copter is armed as the motors will not be spinning
-        disarm_delay_ms /= 2;
+        // disarm_delay_ms /= 2;
 #endif
     } else {
         bool sprung_throttle_stick = (g.throttle_behavior & THR_BEHAVE_FEEDBACK_FROM_MID_STICK) != 0;
