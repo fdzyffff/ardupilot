@@ -56,7 +56,7 @@ void UserEngine::update_state()
         case EngineState::Boost_4:
             _output = copter.g2.user_parameters.thr_low; // normal low, 1150
             if (delta_t > 1000 && !connected()) {
-                set_state(EngineState::Normal);
+                set_state(EngineState::Running);
             }
             break;
         case EngineState::Brake:
@@ -76,7 +76,7 @@ uint16_t UserEngine::get_output()
 void UserEngine::boost()
 {
     if (connected()) {
-        if (is_state(EngineState::Normal)) { 
+        if (is_state(EngineState::Running)) { 
             return;
         }
     }
@@ -109,9 +109,10 @@ bool UserEngine::can_override()
     bool ret = true;
     switch (_state) {
         default:
-        case EngineState::Normal:
+        case EngineState::Running:
             ret = true;
             break;
+        case EngineState::Normal:
         case EngineState::Boost_1:
         case EngineState::Boost_2:
         case EngineState::Boost_3:
