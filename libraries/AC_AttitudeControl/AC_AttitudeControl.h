@@ -392,6 +392,15 @@ public:
     // User settable parameters
     static const struct AP_Param::GroupInfo var_info[];
 
+    struct {
+        float p1;
+        float p2;
+        float p3;
+        float p4;
+        float p5;
+        float p6;
+    } my_info_print;
+
 protected:
 
     // Update rate_target_ang_vel using attitude_error_rot_vec_rad
