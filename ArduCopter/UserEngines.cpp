@@ -58,7 +58,7 @@ void UserEngines::update_state()
 	{
 		if (tnow - _last_state_ms < 5000) {
 			for (uint8_t i_engine = 0; i_engine < ENGINE_NUM; i_engine++) {
-				if (!_engine[i_engine].is_state(UserEngine::EngineState::Normal))
+				if (!_engine[i_engine].is_state(UserEngine::EngineState::Running))
 				{
 					copter.ap.motor_interlock_switch = false;
 					return;
@@ -83,7 +83,7 @@ void UserEngines::update_output() // call at 400 Hz
 {
 	for (uint8_t i_engine = 0; i_engine < ENGINE_NUM; i_engine++) {
 		if (_engine[i_engine].can_override() && copter.ap.motor_interlock_switch) {
-			_output[i_engine] = constrain_int16(copter.g2.user_parameters.thr_low + (int16_t)(copter.motors->get_throttle_out()*800.0f), 1130, 1900);
+			_output[i_engine] = constrain_int16(copter.g2.user_parameters.thr_low + (int16_t)(copter.motors->get_throttle_out()*800.0f), 1130, 1950);
 		} else {
 			_output[i_engine] = _engine[i_engine].get_output(); // the engine is in boost or brake procedures, output are pre-set in time order with uart state feedback
 		}

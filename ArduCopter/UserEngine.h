@@ -11,7 +11,8 @@ public:
         Boost_2 = 1,
         Boost_3 = 2,
         Boost_4 = 3,
-        Normal = 10,
+        Normal = 4,
+        Running = 10,
         Brake = 20
     };
 
@@ -43,6 +44,7 @@ public:
     enum class UserEnginesState{
         Stop = 0,
         Start = 1,
+        Running = 2,
         None = 99
     };
 
