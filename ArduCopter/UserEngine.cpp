@@ -1,7 +1,7 @@
 #include "Copter.h"
 
 #define USERENGINE_THR_TRIM 1150
-#define USERENGINE_THR_LOWEST 900
+#define USERENGINE_THR_LOWEST 980
 #define USERENGINE_THR_HIGHEST 1950
 
 void UserEngine::Init(AP_SerialManager::SerialProtocol in_protocol, SRV_Channel::Aux_servo_function_t in_srv_function)
@@ -9,7 +9,7 @@ void UserEngine::Init(AP_SerialManager::SerialProtocol in_protocol, SRV_Channel:
     if (_uart == nullptr) {
         _uart = new FD_UART(in_protocol);
     }
-    set_state(EngineState::Normal);
+    set_state(EngineState::Brake);
     _connected = false;
     _output = USERENGINE_THR_TRIM;
     _srv_function = in_srv_function;
@@ -61,9 +61,9 @@ void UserEngine::update_state()
             break;
         case EngineState::Brake:
             _output = USERENGINE_THR_LOWEST; // lowest, 900
-            if (delta_t > 3000 && !connected()) {
-                set_state(EngineState::Normal);
-            }
+            // if (delta_t > 3000 && !connected()) {
+            //     set_state(EngineState::Normal);
+            // }
             break;
     }
 }
