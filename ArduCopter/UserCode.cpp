@@ -35,10 +35,6 @@ void Copter::userhook_MediumLoop()
 void Copter::userhook_SlowLoop()
 {
     // put your 3.3Hz code here
-    // gcs().send_text(MAV_SEVERITY_INFO, "r_in: %f, des_vel: %f, gyro: %f", attitude_control->my_info_print.p1, attitude_control->my_info_print.p2, attitude_control->my_info_print.p3);
-    // attitude_control->my_info_print.p1 = 0.f;
-    // attitude_control->my_info_print.p2 = 0.f;
-    // attitude_control->my_info_print.p3 = 0.f;
 }
 #endif
 
@@ -51,6 +47,10 @@ void Copter::userhook_SuperSlowLoop()
         gcs().send_text(MAV_SEVERITY_INFO, "FS: Stop");
         uengines.set_state(UserEngines::UserEnginesState::Stop);
     }
+    // gcs().send_text(MAV_SEVERITY_INFO, "r_in: %f, des_vel: %f, gyro: %f", attitude_control->my_info_print.p1, attitude_control->my_info_print.p2, attitude_control->my_info_print.p3);
+    // attitude_control->my_info_print.p1 = 0.f;
+    // attitude_control->my_info_print.p2 = 0.f;
+    // attitude_control->my_info_print.p3 = 0.f;
 }
 #endif
 

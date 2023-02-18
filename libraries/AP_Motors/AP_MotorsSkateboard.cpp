@@ -44,7 +44,7 @@ void AP_MotorsSkateboard::init(motor_frame_class frame_class, motor_frame_type f
     SRV_Channels::set_angle(SRV_Channel::k_engine_srv_6, 4500);
     SRV_Channels::set_angle(SRV_Channel::k_engine_srv_7, 4500);
 
-    _mav_type = MAV_TYPE_QUADROTOR;
+    _mav_type = MAV_TYPE_COAXIAL;
 
     // record successful initialisation if what we setup was the desired frame_class
     set_initialised_ok(frame_class == MOTOR_FRAME_SKATEBOARD);
@@ -85,14 +85,14 @@ void AP_MotorsSkateboard::output_to_motors()
         case SpoolState::SPOOLING_UP:
         case SpoolState::THROTTLE_UNLIMITED:
         case SpoolState::SPOOLING_DOWN:
-            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_0, (_srv_pitch*2.0f)*4500.f);
-            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_1, (_srv_roll*2.0f)*4500.f);
-            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_2, (_srv_roll+_srv_pitch)*4500.f);
-            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_3, (_srv_roll-_srv_pitch)*4500.f);
-            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_4, (_srv_roll+_srv_pitch)*4500.f);
-            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_5, (_srv_roll-_srv_pitch)*4500.f);
-            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_6, (_srv_yaw)*4500.f);
-            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_7, (-_srv_yaw)*4500.f);
+            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_0, constrain_float(_srv_pitch*2.0f, -1.0f, 1.0f)*4500.f);
+            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_1, constrain_float(_srv_roll*2.0f, -1.0f, 1.0f)*4500.f);
+            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_2, constrain_float(_srv_roll+_srv_pitch, -1.0f, 1.0f)*4500.f);
+            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_3, constrain_float(_srv_roll-_srv_pitch, -1.0f, 1.0f)*4500.f);
+            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_4, constrain_float(_srv_roll+_srv_pitch, -1.0f, 1.0f)*4500.f);
+            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_5, constrain_float(_srv_roll-_srv_pitch, -1.0f, 1.0f)*4500.f);
+            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_6, constrain_float(_srv_yaw, -1.0f, 1.0f)*4500.f);
+            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_7, constrain_float(-_srv_yaw, -1.0f, 1.0f)*4500.f);
             break;
     }
 }
@@ -154,8 +154,8 @@ void AP_MotorsSkateboard::output_armed_stabilizing()
     //_thrust_left = roll_thrust * 0.5f + pitch_thrust * 1.0f;
     //_thrust_rear = 0;
 
-    _srv_roll = roll_thrust * 0.5f;
-    _srv_pitch = pitch_thrust * 0.5f;
+    _srv_roll = roll_thrust * 0.65f;
+    _srv_pitch = pitch_thrust * 0.65f;
     _srv_yaw = yaw_thrust;
 
     // compensation_gain can never be zero
