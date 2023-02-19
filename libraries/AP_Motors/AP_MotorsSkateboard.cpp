@@ -154,8 +154,8 @@ void AP_MotorsSkateboard::output_armed_stabilizing()
     //_thrust_left = roll_thrust * 0.5f + pitch_thrust * 1.0f;
     //_thrust_rear = 0;
 
-    _srv_roll = roll_thrust * 0.65f;
-    _srv_pitch = pitch_thrust * 0.65f;
+    _srv_roll = roll_thrust * 0.5f;
+    _srv_pitch = pitch_thrust * 0.5f;
     _srv_yaw = yaw_thrust;
 
     // compensation_gain can never be zero
