@@ -53,6 +53,7 @@ public:
 #if HAL_QUADPLANE_ENABLED
         LOITER_ALT_QLAND = 25,
 #endif
+        SUB_STABLIZE  = 30,
     };
 
     // Constructor
@@ -726,3 +727,17 @@ protected:
 };
 
 #endif
+
+// New mode
+class ModeFBWA : public Mode
+{
+public:
+
+    Number mode_number() const override { return Number::SUB_STABLIZE; }
+    const char *name() const override { return "SUB_STABLIZE"; }
+    const char *name4() const override { return "SSTB"; }
+
+    // methods that affect movement of the vehicle in this mode
+    void update() override;
+
+};
