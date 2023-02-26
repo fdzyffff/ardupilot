@@ -160,6 +160,7 @@ public:
     friend class ModeTakeoff;
     friend class ModeThermal;
     friend class ModeLoiterAltQLand;
+    friend class ModeSubStablize;
 
     Plane(void);
 
@@ -283,6 +284,7 @@ private:
 #if HAL_SOARING_ENABLED
     ModeThermal mode_thermal;
 #endif
+    ModeSubStablize mode_sub_stablize;
 
     // This is the state of the flight control system
     // There are multiple states defined such as MANUAL, FBW-A, AUTO
@@ -1207,6 +1209,10 @@ private:
     // last target alt we passed to tecs
     int32_t tecs_target_alt_cm;
 
+    // Attitude to servo controllers in Sub mode
+    AS_RollController as_rollController{aparm};
+    AS_PitchController as_pitchController{aparm};
+    AS_YawController as_yawController{aparm};
 public:
     void failsafe_check(void);
 #if AP_SCRIPTING_ENABLED

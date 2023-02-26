@@ -729,9 +729,10 @@ protected:
 #endif
 
 // New mode
-class ModeFBWA : public Mode
+class ModeSubStablize : public Mode
 {
 public:
+    void run() override;
 
     Number mode_number() const override { return Number::SUB_STABLIZE; }
     const char *name() const override { return "SUB_STABLIZE"; }
@@ -739,5 +740,8 @@ public:
 
     // methods that affect movement of the vehicle in this mode
     void update() override;
+protected:
+    bool _enter() override;
+    void _exit() override;
 
 };

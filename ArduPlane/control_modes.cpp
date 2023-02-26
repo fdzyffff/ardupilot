@@ -93,6 +93,9 @@ Mode *Plane::mode_from_mode_num(const enum Mode::Number num)
         ret = &mode_loiter_qland;
         break;
 #endif  // HAL_QUADPLANE_ENABLED
+    case Mode::Number::SUB_STABLIZE:
+        ret = &mode_sub_stablize;
+        break;
 
     }
     return ret;

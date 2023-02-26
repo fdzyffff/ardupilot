@@ -996,6 +996,18 @@ const AP_Param::Info Plane::var_info[] = {
     // @Path: ../libraries/AP_Vehicle/AP_Vehicle.cpp
     { AP_PARAM_GROUP, "", Parameters::k_param_vehicle, (const void *)&plane, {group_info : AP_Vehicle::var_info} },
 
+    // @Group: RLL
+    // @Path: ../libraries/APM_Control/AS_RollController.cpp
+    GOBJECT(as_rollController,         "S_RLL",   AS_RollController),
+
+    // @Group: PTCH
+    // @Path: ../libraries/APM_Control/AS_PitchController.cpp
+    GOBJECT(as_pitchController,        "S_PTCH",  AS_PitchController),
+
+    // @Group: YAW
+    // @Path: ../libraries/APM_Control/AS_YawController.cpp
+    GOBJECT(as_yawController,          "S_YAW",   AS_YawController),
+
     AP_VAREND
 };
 

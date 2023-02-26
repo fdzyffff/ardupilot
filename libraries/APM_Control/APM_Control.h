@@ -2,3 +2,6 @@
 #include "AP_PitchController.h"
 #include "AP_YawController.h"
 #include "AP_SteerController.h"
+#include "AS_RollController.h"
+#include "AS_PitchController.h"
+#include "AS_YawController.h"

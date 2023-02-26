@@ -352,6 +352,9 @@ public:
         k_param_gcs6,          // stream rates
         k_param_fence,         // vehicle fence - unused
         k_param_acro_yaw_rate,
+        k_param_as_rollController,
+        k_param_as_pitchController,
+        k_param_as_yawController,
     };
 
     AP_Int16 format_version;
