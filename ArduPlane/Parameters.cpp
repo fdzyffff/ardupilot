@@ -998,16 +998,24 @@ const AP_Param::Info Plane::var_info[] = {
 
     // @Group: RLL
     // @Path: ../libraries/APM_Control/AS_RollController.cpp
-    GOBJECT(as_rollController,         "S_RLL",   AS_RollController),
+    GOBJECT(as_rollController,         "S_R",   AS_RollController),
 
     // @Group: PTCH
     // @Path: ../libraries/APM_Control/AS_PitchController.cpp
-    GOBJECT(as_pitchController,        "S_PTCH",  AS_PitchController),
+    GOBJECT(as_pitchController,        "S_P",  AS_PitchController),
 
     // @Group: YAW
     // @Path: ../libraries/APM_Control/AS_YawController.cpp
-    GOBJECT(as_yawController,          "S_YAW",   AS_YawController),
+    GOBJECT(as_yawController,          "S_Y",   AS_YawController),
 
+    // @Param: S_TRIM_PITCH_CD
+    // @DisplayName: Pitch angle offset
+    // @Description: Offset applied to AHRS pitch used for in-flight pitch trimming. Correct ground leveling is better than changing this parameter.
+    // @Units: cdeg
+    // @Range: -4500 4500
+    // @Increment: 10
+    // @User: Advanced
+    GSCALAR(sub_pitch_trim_cd,        "S_TRIM_PITCH_CD",  0),
     AP_VAREND
 };
 

@@ -355,6 +355,8 @@ public:
         k_param_as_rollController,
         k_param_as_pitchController,
         k_param_as_yawController,
+        k_param_sub_pitch_trim_cd,
+
     };
 
     AP_Int16 format_version;
@@ -466,6 +468,8 @@ public:
     AP_Int8 override_channel;
 #endif
     AP_Int16 gcs_pid_mask;
+
+    AP_Int16 sub_pitch_trim_cd;
 };
 
 /*

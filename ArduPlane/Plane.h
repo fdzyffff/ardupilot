@@ -1213,6 +1213,15 @@ private:
     AS_RollController as_rollController{aparm};
     AS_PitchController as_pitchController{aparm};
     AS_YawController as_yawController{aparm};
+
+    void sub_stabilize();
+    void sub_stabilize_roll(float speed_scaler);
+    float sub_stabilize_roll_get_roll_out(float speed_scaler);
+    void sub_stabilize_pitch(float speed_scaler);
+    float sub_stabilize_pitch_get_pitch_out(float speed_scaler);
+    void sub_stabilize_yaw(float speed_scaler);
+    void sub_calc_nav_yaw_coordinated(float speed_scaler);
+
 public:
     void failsafe_check(void);
 #if AP_SCRIPTING_ENABLED
