@@ -150,7 +150,7 @@ float AS_PitchController::_get_rate_out(float desired_rate, float scaler, bool d
 
     const AP_AHRS &_ahrs = AP::ahrs();
 
-    const float eas2tas = _ahrs.get_EAS2TAS();
+    const float eas2tas = 1;//_ahrs.get_EAS2TAS();
     bool limit_I = fabsf(_last_out) >= 45;
     float rate_y = _ahrs.get_gyro().y;
     float old_I = rate_pid.get_i();
@@ -269,7 +269,7 @@ float AS_PitchController::_get_coordination_rate_offset(float &aspeed, bool &inv
         // don't do turn coordination handling when at very high pitch angles
         rate_offset = 0;
     } else {
-        rate_offset = cosf(_ahrs.pitch)*fabsf(ToDeg((GRAVITY_MSS / MAX((aspeed * _ahrs.get_EAS2TAS()), MAX(aparm.airspeed_min, 1))) * tanf(bank_angle) * sinf(bank_angle))) * _roll_ff;
+        rate_offset = cosf(_ahrs.pitch)*fabsf(ToDeg((GRAVITY_MSS / MAX((aspeed), MAX(aparm.airspeed_min, 1))) * tanf(bank_angle) * sinf(bank_angle))) * _roll_ff;
     }
     if (inverted) {
         rate_offset = -rate_offset;

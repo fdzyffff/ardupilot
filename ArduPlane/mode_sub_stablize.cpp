@@ -58,21 +58,35 @@ bool ModeSubStablize::_enter()
     plane.steer_state.locked_course = false;
     plane.steer_state.locked_course_err = 0;
 
+    gcs().send_text(MAV_SEVERITY_INFO, "In Sub-Stablize Mode");
     return true;
-}
-
-void ModeSubStablize::run()
-{
-
 }
 
 void ModeSubStablize::update()
 {
-    plane.nav_roll_cd = 0;
-    plane.nav_pitch_cd = 0;
+    // set nav_roll and nav_pitch using sticks
+    plane.nav_roll_cd  = plane.channel_roll->norm_input() * plane.roll_limit_cd;
+    plane.update_load_factor();
+    float pitch_input = plane.channel_pitch->norm_input();
+    if (pitch_input > 0) {
+        plane.nav_pitch_cd = pitch_input * plane.aparm.pitch_limit_max_cd;
+    } else {
+        plane.nav_pitch_cd = -(pitch_input * plane.pitch_limit_min_cd);
+    }
+    plane.adjust_nav_pitch_throttle();
+    plane.nav_pitch_cd = constrain_int32(plane.nav_pitch_cd, plane.pitch_limit_min_cd, plane.aparm.pitch_limit_max_cd.get());
+
+    if (plane.failsafe.rc_failsafe && plane.g.fs_action_short == FS_ACTION_SHORT_FBWA) {
+        // FBWA failsafe glide
+        plane.nav_roll_cd = 0;
+        plane.nav_pitch_cd = 0;
+        SRV_Channels::set_output_limit(SRV_Channel::k_throttle, SRV_Channel::Limit::MIN);
+    }
 }
 
 void ModeSubStablize::_exit()
 {
-
+    plane.as_rollController.reset_I();
+    plane.as_pitchController.reset_I();
+    plane.as_yawController.reset_I();
 }

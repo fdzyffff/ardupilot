@@ -910,7 +910,7 @@ void Plane::sub_stabilize_roll(float speed_scaler)
 float Plane::sub_stabilize_roll_get_roll_out(float speed_scaler)
 {
     bool disable_integrator = false;
-    return rollController.get_servo_out(nav_roll_cd - ahrs.roll_sensor, speed_scaler, disable_integrator, false);
+    return as_rollController.get_servo_out(nav_roll_cd - ahrs.roll_sensor, speed_scaler, disable_integrator, false);
 }
 
 /*
@@ -928,7 +928,7 @@ float Plane::sub_stabilize_pitch_get_pitch_out(float speed_scaler)
 {
     bool disable_integrator = false;
     int32_t demanded_pitch = nav_pitch_cd + g.sub_pitch_trim_cd + SRV_Channels::get_output_scaled(SRV_Channel::k_throttle) * g.kff_throttle_to_pitch;
-    return pitchController.get_servo_out(demanded_pitch - ahrs.pitch_sensor, speed_scaler, disable_integrator, false);
+    return as_pitchController.get_servo_out(demanded_pitch - ahrs.pitch_sensor, speed_scaler, disable_integrator, false);
 }
 
 /*
@@ -955,7 +955,7 @@ void Plane::sub_calc_nav_yaw_coordinated(float speed_scaler)
     int16_t commanded_rudder;
     bool using_rate_controller = false;
 
-    commanded_rudder = yawController.get_servo_out(speed_scaler, disable_integrator);
+    commanded_rudder = as_yawController.get_servo_out(speed_scaler, disable_integrator);
 
     // add in rudder mixing from roll
     commanded_rudder += SRV_Channels::get_output_scaled(SRV_Channel::k_aileron) * g.kff_rudder_mix;
@@ -967,6 +967,6 @@ void Plane::sub_calc_nav_yaw_coordinated(float speed_scaler)
         /*
           When not running the yaw rate controller, we need to reset the rate
         */
-        yawController.reset_rate_PID();
+        as_yawController.reset_rate_PID();
     }
 }

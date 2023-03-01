@@ -273,7 +273,7 @@ float AS_YawController::get_rate_out(float desired_rate, float scaler, bool disa
     const AP_AHRS &_ahrs = AP::ahrs();
 
     const float dt = AP::scheduler().get_loop_period_s();
-    const float eas2tas = _ahrs.get_EAS2TAS();
+    const float eas2tas = 1.0f;//_ahrs.get_EAS2TAS();
     bool limit_I = fabsf(_last_out) >= 45 || disable_integrator;
     float rate_z = _ahrs.get_gyro().z;
     float aspeed;

@@ -166,6 +166,9 @@ float Tiltrotor::tilt_max_change(bool up, bool in_flap_range) const
         if (plane.control_mode == &plane.mode_manual) {
             fast_tilt = true;
         }
+        if (plane.control_mode == &plane.mode_sub_stablize) {
+            fast_tilt = true;
+        }
         if (hal.util->get_soft_armed() && !quadplane.in_vtol_mode() && !quadplane.assisted_flight) {
             fast_tilt = true;
         }
@@ -283,7 +286,8 @@ void Tiltrotor::continuous_update(void)
     if (!quadplane.assisted_flight &&
         (plane.control_mode == &plane.mode_qacro ||
          plane.control_mode == &plane.mode_qstabilize ||
-         plane.control_mode == &plane.mode_qhover)) {
+         plane.control_mode == &plane.mode_qhover ||
+         plane.control_mode == &plane.mode_sub_stablize)) {
         if (quadplane.rc_fwd_thr_ch == nullptr) {
             // no manual throttle control, set angle to zero
             slew(0);

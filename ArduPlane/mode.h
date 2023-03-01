@@ -732,8 +732,6 @@ protected:
 class ModeSubStablize : public Mode
 {
 public:
-    void run() override;
-
     Number mode_number() const override { return Number::SUB_STABLIZE; }
     const char *name() const override { return "SUB_STABLIZE"; }
     const char *name4() const override { return "SSTB"; }
