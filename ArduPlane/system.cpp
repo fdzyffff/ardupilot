@@ -147,6 +147,7 @@ void Plane::init_ardupilot()
 #if GRIPPER_ENABLED == ENABLED
     g2.gripper.init();
 #endif
+    HB1_init();
 }
 
 //********************************************************************************

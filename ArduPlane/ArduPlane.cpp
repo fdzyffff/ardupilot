@@ -59,6 +59,7 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     FAST_TASK(update_control_mode),
     FAST_TASK(stabilize),
     FAST_TASK(set_servos),
+    FAST_TASK(HB1_run),
     SCHED_TASK(read_radio,             50,    100,   6),
     SCHED_TASK(check_short_failsafe,   50,    100,   9),
     SCHED_TASK(update_speed_height,    50,    200,  12),
@@ -103,9 +104,9 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
 #endif // CAMERA == ENABLED
     SCHED_TASK_CLASS(AP_Scheduler, &plane.scheduler, update_logging,         0.2,    100, 111),
     SCHED_TASK(compass_save,          0.1,    200, 114),
-    SCHED_TASK(Log_Write_FullRate,        400,    300, 117),
-    SCHED_TASK(update_logging10,        10,    300, 120),
-    SCHED_TASK(update_logging25,        25,    300, 123),
+    SCHED_TASK(Log_Write_FullRate,    400,    300, 117),
+    SCHED_TASK(update_logging10,       10,    300, 120),
+    SCHED_TASK(update_logging25,       25,    300, 123),
 #if HAL_SOARING_ENABLED
     SCHED_TASK(update_soaring,         50,    400, 126),
 #endif

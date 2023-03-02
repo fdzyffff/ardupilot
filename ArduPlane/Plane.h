@@ -111,6 +111,7 @@
 #include "avoidance_adsb.h"
 #endif
 #include "AP_Arming.h"
+#include <HB1_UART/HB1_UART.h>
 
 /*
   main APM:Plane class
@@ -160,6 +161,8 @@ public:
     friend class ModeTakeoff;
     friend class ModeThermal;
     friend class ModeLoiterAltQLand;
+
+    friend class HB1_UART;
 
     Plane(void);
 
@@ -1206,6 +1209,11 @@ private:
 
     // last target alt we passed to tecs
     int32_t tecs_target_alt_cm;
+
+    HB1_UART uart_ins{AP_SerialManager::SerialProtocol_Ins600};
+    void HB1_init();
+    void HB1_run();
+    void HB1_handle_msg();
 
 public:
     void failsafe_check(void);
