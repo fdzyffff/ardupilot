@@ -26,6 +26,7 @@ void Plane::FD1_uart_ts_update() {
         FD1_uart_mission_handle_and_route();
         FD1_uart_msg_ts.write();  
     }
+
     if (g2.ts_ahrs_send.get()) {
         FD1_uart_ts_send();
         FD1_uart_msg_ts.write();
@@ -87,7 +88,7 @@ void Plane::FD1_uart_ts_send() {
     tmp_msg._msg_1.content.msg.header.head_3 = FD1_msg_ts::PREAMBLE3;
     tmp_msg.set_id(0xB1);
 
-    tmp_msg._msg_1.content.msg.sub_msg.msg_m.type = 0x02;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.type = 0x03;
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.empty[0]=0;
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.empty[1]=0;
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.empty[2]=0;
@@ -115,7 +116,7 @@ void Plane::FD1_uart_ts_send() {
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.gps_vel_xy   = (int16_t)(gps.ground_speed() * 100.f);
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.gps_hdop     = gps.get_hdop(); // already *100 when read in AP_GPS
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.gps_vdop     = gps.get_vdop(); // already *100 when read in AP_GPS
-    tmp_msg._msg_1.content.msg.sub_msg.msg_m.gps_vel_z    = (int16_t)(gps.velocity().z * 100.f);
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.gps_vel_z    = 1;//(int16_t)(gps.velocity().z * 100.f);
 
     tmp_msg.sum_check();
     tmp_msg._msg_1.need_send = true;
