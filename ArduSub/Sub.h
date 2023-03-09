@@ -37,7 +37,6 @@
 #include <AP_Declination/AP_Declination.h>     // ArduPilot Mega Declination Helper Library
 
 // Application dependencies
-#include <AP_SerialManager/AP_SerialManager.h>   // Serial manager library
 #include <AP_GPS/AP_GPS.h>             // ArduPilot GPS library
 #include <AP_Logger/AP_Logger.h>          // ArduPilot Mega Flash Memory Library
 #include <AP_Baro/AP_Baro.h>
@@ -119,7 +118,7 @@ protected:
 private:
 
     // key aircraft parameters passed to multiple libraries
-    AP_Vehicle::MultiCopter aparm;
+    AP_MultiCopter aparm;
 
     // Global parameters are all contained within the 'g' class.
     Parameters g;
@@ -427,7 +426,7 @@ private:
     void auto_wp_start(const Vector3f& destination);
     void auto_wp_start(const Location& dest_loc);
     void auto_wp_run();
-    void auto_circle_movetoedge_start(const Location &circle_center, float radius_m);
+    void auto_circle_movetoedge_start(const Location &circle_center, float radius_m, bool ccw_turn);
     void auto_circle_start();
     void auto_circle_run();
     void auto_nav_guided_start();

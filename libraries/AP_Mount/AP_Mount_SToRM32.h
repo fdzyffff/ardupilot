@@ -5,23 +5,17 @@
 
 #include "AP_Mount_Backend.h"
 
-#ifndef HAL_MOUNT_STORM32MAVLINK_ENABLED
-#define HAL_MOUNT_STORM32MAVLINK_ENABLED HAL_MOUNT_ENABLED
-#endif
-
 #if HAL_MOUNT_STORM32MAVLINK_ENABLED
 
 #include <AP_Math/AP_Math.h>
 #include <AP_Common/AP_Common.h>
-#include <RC_Channel/RC_Channel.h>
-#include <AP_AHRS/AP_AHRS.h>
 
 class AP_Mount_SToRM32 : public AP_Mount_Backend
 {
 
 public:
     // Constructor
-    AP_Mount_SToRM32(AP_Mount &frontend, AP_Mount_Params &params, uint8_t instance);
+    using AP_Mount_Backend::AP_Mount_Backend;
 
     // init - performs any required initialisation for this instance
     void init() override {}
@@ -49,7 +43,7 @@ private:
     bool _initialised;              // true once the driver has been initialised
     uint8_t _sysid;                 // sysid of gimbal
     uint8_t _compid;                // component id of gimbal
-    mavlink_channel_t _chan;        // mavlink channel used to communicate with gimbal
+    mavlink_channel_t _chan = MAVLINK_COMM_0;        // mavlink channel used to communicate with gimbal
     uint32_t _last_send;            // system time of last do_mount_control sent to gimbal
     MountTarget _angle_rad;         // latest angle target
 };

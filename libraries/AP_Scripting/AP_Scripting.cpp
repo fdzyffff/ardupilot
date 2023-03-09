@@ -244,6 +244,15 @@ void AP_Scripting::thread(void) {
         }
         num_i2c_devices = 0;
 
+        // clear allocated PWM sources
+        for (uint8_t i=0; i<SCRIPTING_MAX_NUM_PWM_SOURCE; i++) {
+            if (_pwm_source[i] != nullptr) {
+                delete _pwm_source[i];
+                _pwm_source[i] = nullptr;
+            }
+        }
+        num_pwm_source = 0;
+
         bool cleared = false;
         while(true) {
             // 1hz check if we should restart
@@ -274,6 +283,10 @@ void AP_Scripting::handle_mission_command(const AP_Mission::Mission_Command& cmd
     if (mission_data == nullptr) {
         // load buffer
         mission_data = new ObjectBuffer<struct AP_Scripting::scripting_mission_cmd>(mission_cmd_queue_size);
+        if (mission_data != nullptr && mission_data->get_size() == 0) {
+            delete mission_data;
+            mission_data = nullptr;
+        }
         if (mission_data == nullptr) {
             gcs().send_text(MAV_SEVERITY_INFO, "Scripting: %s", "unable to receive mission command");
             return;
@@ -315,6 +328,12 @@ bool AP_Scripting::arming_checks(size_t buflen, char *buffer) const
     lua_scripts::get_last_error_semaphore()->give();
 
     return true;
+}
+
+void AP_Scripting::restart_all()
+{
+    _restart = true;
+    _stop = true;
 }
 
 AP_Scripting *AP_Scripting::_singleton = nullptr;

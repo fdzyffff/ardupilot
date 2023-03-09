@@ -86,6 +86,7 @@ void Plane::init_ardupilot()
     AP::compass().init();
 
 #if AP_AIRSPEED_ENABLED
+    airspeed.set_fixedwing_parameters(&aparm);
     airspeed.set_log_bit(MASK_LOG_IMU);
 #endif
 
@@ -100,7 +101,12 @@ void Plane::init_ardupilot()
     camera_mount.init();
 #endif
 
-#if LANDING_GEAR_ENABLED == ENABLED
+#if AP_CAMERA_ENABLED
+    // initialise camera
+    camera.init();
+#endif
+
+#if AP_LANDINGGEAR_ENABLED
     // initialise landing gear position
     g2.landing_gear.init();
 #endif
@@ -242,18 +248,6 @@ bool Plane::set_mode(Mode &new_mode, const ModeReason reason)
         return false;
     }
 
-#if !QAUTOTUNE_ENABLED
-    if (&new_mode == &plane.mode_qautotune) {
-        gcs().send_text(MAV_SEVERITY_INFO,"QAUTOTUNE disabled");
-        set_mode(plane.mode_qhover, ModeReason::UNAVAILABLE);
-        // make sad noise
-        if (reason != ModeReason::INITIALISED) {
-            AP_Notify::events.user_mode_change_failed = 1;
-        }
-        return false;
-    }
-#endif  // !QAUTOTUNE_ENABLED
-
 #else
     if (new_mode.is_vtol_mode()) {
         INTERNAL_ERROR(AP_InternalError::error_t::flow_of_control);
@@ -310,11 +304,6 @@ bool Plane::set_mode(Mode &new_mode, const ModeReason reason)
         return false;
     }
 
-    if (previous_mode == &mode_autotune) {
-        // restore last gains
-        autotune_restore();
-    }
-
     // exit previous mode
     old_mode.exit();
 
@@ -353,7 +342,7 @@ void Plane::check_long_failsafe()
     const uint32_t tnow = millis();
     // only act on changes
     // -------------------
-    if (failsafe.state != FAILSAFE_LONG && failsafe.state != FAILSAFE_GCS && flight_stage != AP_Vehicle::FixedWing::FLIGHT_LAND) {
+    if (failsafe.state != FAILSAFE_LONG && failsafe.state != FAILSAFE_GCS && flight_stage != AP_FixedWing::FlightStage::LAND) {
         uint32_t radio_timeout_ms = failsafe.last_valid_rc_ms;
         if (failsafe.state == FAILSAFE_SHORT) {
             // time is relative to when short failsafe enabled
@@ -400,7 +389,7 @@ void Plane::check_short_failsafe()
     // -------------------
     if (g.fs_action_short != FS_ACTION_SHORT_DISABLED &&
        failsafe.state == FAILSAFE_NONE &&
-       flight_stage != AP_Vehicle::FixedWing::FLIGHT_LAND) {
+       flight_stage != AP_FixedWing::FlightStage::LAND) {
         // The condition is checked and the flag rc_failsafe is set in radio.cpp
         if(failsafe.rc_failsafe) {
             failsafe_short_on_event(FAILSAFE_SHORT, ModeReason::RADIO_FAILSAFE);

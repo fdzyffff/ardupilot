@@ -73,12 +73,25 @@ extern AP_Periph_FW periph;
 #endif
 #endif
 
+#ifndef AP_PERIPH_MAG_MAX_RATE
+#define AP_PERIPH_MAG_MAX_RATE 25U
+#endif
+
 #define DEBUG_PRINTS 0
 #define DEBUG_PKTS 0
 #if DEBUG_PRINTS
  # define Debug(fmt, args ...)  do {can_printf(fmt "\n", ## args);} while(0)
 #else
  # define Debug(fmt, args ...)
+#endif
+
+#ifndef HAL_PERIPH_SUPPORT_LONG_CAN_PRINTF
+    // When enabled, can_printf() strings longer than the droneCAN max text length (90 chars)
+    // are split into multiple packets instead of truncating the string. This is
+    // especially helpful with HAL_GCS_ENABLED where libraries use the mavlink
+    // send_text() method where we support strings up to 256 chars by splitting them
+    // up into multiple 50 char mavlink packets.
+    #define HAL_PERIPH_SUPPORT_LONG_CAN_PRINTF (BOARD_FLASH_SIZE >= 1024)
 #endif
 
 static struct instance_t {
@@ -145,8 +158,8 @@ uint8_t PreferredNodeID = HAL_CAN_DEFAULT_NODE_ID;
 #define AP_PERIPH_BATTERY_MODEL_NAME CAN_APP_NODE_NAME
 #endif
 
-#ifndef CAN_PROBE_CONTINUOUS
-#define CAN_PROBE_CONTINUOUS 0
+#ifndef AP_PERIPH_PROBE_CONTINUOUS
+#define AP_PERIPH_PROBE_CONTINUOUS 0
 #endif
 
 #ifndef AP_PERIPH_ENFORCE_AT_LEAST_ONE_PORT_IS_UAVCAN_1MHz
@@ -765,6 +778,10 @@ static void handle_esc_rawcommand(CanardInstance* ins, CanardRxTransfer* transfe
         return;
     }
     periph.rcout_esc(cmd.cmd.data, cmd.cmd.len);
+
+    // Update internal copy for disabling output to ESC when CAN packets are lost
+    periph.last_esc_num_channels = cmd.cmd.len;
+    periph.last_esc_raw_command_ms = AP_HAL::millis();
 }
 
 static void handle_act_command(CanardInstance* ins, CanardRxTransfer* transfer)
@@ -1607,7 +1624,7 @@ void AP_Periph_FW::hwesc_telem_update()
     pkt.esc_index = g.esc_number;
     pkt.voltage = t.voltage;
     pkt.current = t.current;
-    pkt.temperature = MAX(t.mos_temperature, t.cap_temperature);
+    pkt.temperature = C_TO_KELVIN(MAX(t.mos_temperature, t.cap_temperature));
     pkt.rpm = t.rpm;
     pkt.power_rating_pct = t.phase_current;
     pkt.error_count = t.error_count;
@@ -1721,6 +1738,7 @@ void AP_Periph_FW::can_update()
         can_baro_update();
         can_airspeed_update();
         can_rangefinder_update();
+        can_proximity_update();
     #if defined(HAL_PERIPH_ENABLE_BUZZER_WITHOUT_NOTIFY) || defined (HAL_PERIPH_ENABLE_NOTIFY)
         can_buzzer_update();
     #endif
@@ -1763,8 +1781,17 @@ void AP_Periph_FW::can_mag_update(void)
     if (!compass.available()) {
         return;
     }
+
+#if AP_PERIPH_MAG_MAX_RATE > 0
+    // don't flood the bus with very high rate magnetometers
+    const uint32_t now_ms = AP_HAL::millis();
+    if (now_ms - last_mag_update_ms < (1000U / AP_PERIPH_MAG_MAX_RATE)) {
+        return;
+    }
+#endif
+
     compass.read();
-#if CAN_PROBE_CONTINUOUS
+#if AP_PERIPH_PROBE_CONTINUOUS
     if (compass.get_count() == 0) {
         static uint32_t last_probe_ms;
         uint32_t now = AP_HAL::native_millis();
@@ -2036,6 +2063,28 @@ void AP_Periph_FW::can_gps_update(void)
                         total_size);
 
     }
+
+    // send Heading message if we are not sending RelPosHeading messages and have yaw
+    if (gps.have_gps_yaw() && last_relposheading_ms == 0) {
+        float yaw_deg, yaw_acc_deg;
+        uint32_t yaw_time_ms;
+        if (gps.gps_yaw_deg(yaw_deg, yaw_acc_deg, yaw_time_ms) && yaw_time_ms != last_gps_yaw_ms) {
+            last_gps_yaw_ms = yaw_time_ms;
+            
+            ardupilot_gnss_Heading heading {};
+            heading.heading_valid = true;
+            heading.heading_accuracy_valid = is_positive(yaw_acc_deg);
+            heading.heading_rad = radians(yaw_deg);
+            heading.heading_accuracy_rad = radians(yaw_acc_deg);
+            uint8_t buffer[ARDUPILOT_GNSS_HEADING_MAX_SIZE] {};
+            const uint16_t total_size = ardupilot_gnss_Heading_encode(&heading, buffer, !periph.canfdout());
+            canard_broadcast(ARDUPILOT_GNSS_HEADING_SIGNATURE,
+                             ARDUPILOT_GNSS_HEADING_ID,
+                             CANARD_TRANSFER_PRIORITY_LOW,
+                             &buffer[0],
+                             total_size);
+        }
+    }
 #endif // HAL_PERIPH_ENABLE_GPS
 }
 
@@ -2096,20 +2145,19 @@ void AP_Periph_FW::send_relposheading_msg() {
     float relative_distance;
     float relative_down_pos;
     float reported_heading_acc;
-    static uint32_t last_timestamp = 0;
     uint32_t curr_timestamp = 0;
     gps.get_RelPosHeading(curr_timestamp, reported_heading, relative_distance, relative_down_pos, reported_heading_acc);
-    if (last_timestamp == curr_timestamp) {
+    if (last_relposheading_ms == curr_timestamp) {
         return;
     }
-    last_timestamp = curr_timestamp;
+    last_relposheading_ms = curr_timestamp;
     ardupilot_gnss_RelPosHeading relpos {};
     relpos.timestamp.usec = uint64_t(curr_timestamp)*1000LLU;
     relpos.reported_heading_deg = reported_heading;
     relpos.relative_distance_m = relative_distance;
     relpos.relative_down_pos_m = relative_down_pos;
     relpos.reported_heading_acc_deg = reported_heading_acc;
-    relpos.reported_heading_acc_available = true;
+    relpos.reported_heading_acc_available = !is_zero(relpos.reported_heading_acc_deg);
     uint8_t buffer[ARDUPILOT_GNSS_RELPOSHEADING_MAX_SIZE] {};
     const uint16_t total_size = ardupilot_gnss_RelPosHeading_encode(&relpos, buffer, !periph.canfdout());
     canard_broadcast(ARDUPILOT_GNSS_RELPOSHEADING_SIGNATURE,
@@ -2184,13 +2232,13 @@ void AP_Periph_FW::can_airspeed_update(void)
     if (!airspeed.enabled()) {
         return;
     }
-#if CAN_PROBE_CONTINUOUS
+#if AP_PERIPH_PROBE_CONTINUOUS
     if (!airspeed.healthy()) {
         uint32_t now = AP_HAL::native_millis();
         static uint32_t last_probe_ms;
         if (now - last_probe_ms >= 1000) {
             last_probe_ms = now;
-            airspeed.init();
+            airspeed.allocate();
         }
     }
 #endif
@@ -2244,7 +2292,7 @@ void AP_Periph_FW::can_rangefinder_update(void)
     if (rangefinder.get_type(0) == RangeFinder::Type::NONE) {
         return;
     }
-#if CAN_PROBE_CONTINUOUS
+#if AP_PERIPH_PROBE_CONTINUOUS
     if (rangefinder.num_sensors() == 0) {
         uint32_t now = AP_HAL::native_millis();
         static uint32_t last_probe_ms;
@@ -2319,6 +2367,72 @@ void AP_Periph_FW::can_rangefinder_update(void)
 #endif // HAL_PERIPH_ENABLE_RANGEFINDER
 }
 
+
+void AP_Periph_FW::can_proximity_update()
+{
+#ifdef HAL_PERIPH_ENABLE_PRX
+    if (proximity.get_type(0) == AP_Proximity::Type::None) {
+        return;
+    }
+
+    uint32_t now = AP_HAL::native_millis();
+    static uint32_t last_update_ms;
+    if (g.proximity_max_rate > 0 &&
+        now - last_update_ms < 1000/g.proximity_max_rate) {
+        // limit to max rate
+        return;
+    }
+    last_update_ms = now;
+    proximity.update();
+    AP_Proximity::Status status = proximity.get_status();
+    if (status <= AP_Proximity::Status::NoData) {
+        // don't send any data
+        return;
+    }
+
+    ardupilot_equipment_proximity_sensor_Proximity pkt {};
+
+    const uint8_t obstacle_count = proximity.get_obstacle_count();
+
+    // if no objects return
+    if (obstacle_count == 0) {
+        return;
+    }
+
+    // calculate maximum roll, pitch values from objects
+    for (uint8_t i=0; i<obstacle_count; i++) {
+        if (!proximity.get_obstacle_info(i, pkt.yaw, pkt.pitch, pkt.distance)) {
+            // not a valid obstacle
+            continue;
+        }
+
+        pkt.sensor_id = proximity.get_address(0);
+
+        switch (status) {
+        case AP_Proximity::Status::NotConnected:
+            pkt.reading_type = ARDUPILOT_EQUIPMENT_PROXIMITY_SENSOR_PROXIMITY_READING_TYPE_NOT_CONNECTED;
+            break;
+        case AP_Proximity::Status::Good:
+            pkt.reading_type = ARDUPILOT_EQUIPMENT_PROXIMITY_SENSOR_PROXIMITY_READING_TYPE_GOOD;
+            break;
+        case AP_Proximity::Status::NoData:
+        default:
+            pkt.reading_type = ARDUPILOT_EQUIPMENT_PROXIMITY_SENSOR_PROXIMITY_READING_TYPE_NO_DATA;
+            break;
+        }
+
+        uint8_t buffer[ARDUPILOT_EQUIPMENT_PROXIMITY_SENSOR_PROXIMITY_MAX_SIZE] {};
+        uint16_t total_size = ardupilot_equipment_proximity_sensor_Proximity_encode(&pkt, buffer, !periph.canfdout());
+
+        canard_broadcast(ARDUPILOT_EQUIPMENT_PROXIMITY_SENSOR_PROXIMITY_SIGNATURE,
+                        ARDUPILOT_EQUIPMENT_PROXIMITY_SENSOR_PROXIMITY_ID,
+                        CANARD_TRANSFER_PRIORITY_LOW,
+                        &buffer[0],
+                        total_size);
+
+    }
+#endif
+}
 
 #ifdef HAL_PERIPH_ENABLE_ADSB
 /*
@@ -2570,6 +2684,38 @@ void AP_Periph_FW::can_efi_update(void)
 // printf to CAN LogMessage for debugging
 void can_printf(const char *fmt, ...)
 {
+#if HAL_PERIPH_SUPPORT_LONG_CAN_PRINTF
+    const uint8_t packet_count_max = 4; // how many packets we're willing to break up an over-sized string into
+    const uint8_t packet_data_max = 90; // max single debug string length = sizeof(uavcan_protocol_debug_LogMessage.text.data)
+    uint8_t buffer_data[packet_count_max*packet_data_max] {};
+
+    va_list ap;
+    va_start(ap, fmt);
+    // strip off any negative return errors by treating result as 0
+    uint32_t char_count = MAX(vsnprintf((char*)buffer_data, sizeof(buffer_data), fmt, ap), 0);
+    va_end(ap);
+
+    // send multiple uavcan_protocol_debug_LogMessage packets if the fmt string is too long.
+    uint16_t buffer_offset = 0;
+    for (uint8_t i=0; i<packet_count_max && char_count > 0; i++) {
+        uavcan_protocol_debug_LogMessage pkt {};
+        pkt.text.len = MIN(char_count, sizeof(pkt.text.data));
+        char_count -= pkt.text.len;
+
+        memcpy(pkt.text.data, &buffer_data[buffer_offset], pkt.text.len);
+        buffer_offset += pkt.text.len;
+
+        uint8_t buffer_packet[UAVCAN_PROTOCOL_DEBUG_LOGMESSAGE_MAX_SIZE] {};
+        const uint32_t len = uavcan_protocol_debug_LogMessage_encode(&pkt, buffer_packet, !periph.canfdout());
+
+        canard_broadcast(UAVCAN_PROTOCOL_DEBUG_LOGMESSAGE_SIGNATURE,
+                        UAVCAN_PROTOCOL_DEBUG_LOGMESSAGE_ID,
+                        CANARD_TRANSFER_PRIORITY_LOW,
+                        buffer_packet,
+                        len);
+    }
+    
+#else
     uavcan_protocol_debug_LogMessage pkt {};
     uint8_t buffer[UAVCAN_PROTOCOL_DEBUG_LOGMESSAGE_MAX_SIZE] {};
     va_list ap;
@@ -2586,4 +2732,5 @@ void can_printf(const char *fmt, ...)
                     buffer,
                     len);
 
+#endif
 }

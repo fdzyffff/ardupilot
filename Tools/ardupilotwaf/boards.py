@@ -249,6 +249,9 @@ class Board:
                 env.CXXFLAGS += [
                     '-Werror=implicit-fallthrough',
                 ]
+            env.CXXFLAGS += [
+                '-fcheck-new',
+            ]
 
         if cfg.env.DEBUG:
             env.CFLAGS += [
@@ -423,9 +426,6 @@ class Board:
                 UAVCAN_NULLPTR = 'nullptr'
             )
 
-            env.INCLUDES += [
-                cfg.srcnode.find_dir('modules/uavcan/libuavcan/include').abspath()
-            ]
 
         if cfg.options.build_dates:
             env.build_dates = True
@@ -455,6 +455,16 @@ class Board:
 
         if cfg.options.ekf_single:
             env.CXXFLAGS += ['-DHAL_WITH_EKF_DOUBLE=0']
+
+        if cfg.options.consistent_builds:
+            # squash all line numbers to be the number 17
+            env.CXXFLAGS += [
+                "-D__AP_LINE__=17",
+            ]
+        else:
+            env.CXXFLAGS += [
+                "-D__AP_LINE__=__LINE__",
+            ]
 
         # add files from ROMFS_custom
         custom_dir = 'ROMFS_custom'
@@ -660,6 +670,7 @@ class sitl(Board):
 
         env.AP_LIBRARIES += [
             'AP_HAL_SITL',
+            'AP_CSVReader',
         ]
 
         if not cfg.env.AP_PERIPH:
@@ -747,7 +758,6 @@ class sitl_periph_gps(sitl):
             CAN_APP_NODE_NAME = '"org.ardupilot.ap_periph_gps"',
             AP_AIRSPEED_ENABLED = 0,
             HAL_PERIPH_ENABLE_GPS = 1,
-            HAL_WITH_DSP = 1,
             HAL_CAN_DEFAULT_NODE_ID = 0,
             HAL_RAM_RESERVE_START = 0,
             APJ_BOARD_ID = 100,
@@ -756,7 +766,7 @@ class sitl_periph_gps(sitl):
             HAL_LOGGING_MAVLINK_ENABLED = 0,
             AP_MISSION_ENABLED = 0,
             HAL_RALLY_ENABLED = 0,
-            HAL_SCHEDULER_ENABLED = 0,
+            AP_SCHEDULER_ENABLED = 0,
             CANARD_ENABLE_CANFD = 1,
             CANARD_MULTI_IFACE = 1,
             HAL_CANMANAGER_ENABLED = 0,
@@ -849,6 +859,9 @@ class esp32(Board):
     def build(self, bld):
         super(esp32, self).build(bld)
         bld.load('esp32')
+
+    def get_name(self):
+        return self.__class__.__name__
 
 
 class chibios(Board):

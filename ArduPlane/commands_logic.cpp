@@ -98,6 +98,7 @@ bool Plane::start_command(const AP_Mission::Mission_Command& cmd)
         return quadplane.do_vtol_takeoff(cmd);
 
     case MAV_CMD_NAV_VTOL_LAND:
+    case MAV_CMD_NAV_PAYLOAD_PLACE:
         if (quadplane.landing_with_fixed_wing_spiral_approach()) {
             // the user wants to approach the landing in a fixed wing flight mode
             // the waypoint will be used as a loiter_to_alt
@@ -243,10 +244,10 @@ bool Plane::verify_command(const AP_Mission::Mission_Command& cmd)        // Ret
     case MAV_CMD_NAV_LAND:
 #if HAL_QUADPLANE_ENABLED
         if (quadplane.is_vtol_land(cmd.id)) {
-            return quadplane.verify_vtol_land();            
+            return quadplane.verify_vtol_land();
         }
 #endif
-        if (flight_stage == AP_Vehicle::FixedWing::FlightStage::FLIGHT_ABORT_LAND) {
+        if (flight_stage == AP_FixedWing::FlightStage::ABORT_LANDING) {
             return landing.verify_abort_landing(prev_WP_loc, next_WP_loc, current_loc, auto_state.takeoff_altitude_rel_cm, throttle_suppressed);
 
         } else {
@@ -286,6 +287,7 @@ bool Plane::verify_command(const AP_Mission::Mission_Command& cmd)        // Ret
     case MAV_CMD_NAV_VTOL_TAKEOFF:
         return quadplane.verify_vtol_takeoff(cmd);
     case MAV_CMD_NAV_VTOL_LAND:
+    case MAV_CMD_NAV_PAYLOAD_PLACE:
         if (quadplane.landing_with_fixed_wing_spiral_approach() && !verify_landing_vtol_approach(cmd)) {
             // verify_landing_vtol_approach will return true once we have completed the approach,
             // in which case we fall over to normal vtol landing code
@@ -318,7 +320,6 @@ bool Plane::verify_command(const AP_Mission::Mission_Command& cmd)        // Ret
     case MAV_CMD_DO_LAND_START:
     case MAV_CMD_DO_FENCE_ENABLE:
     case MAV_CMD_DO_AUTOTUNE_ENABLE:
-    case MAV_CMD_DO_CONTROL_VIDEO:
     case MAV_CMD_DO_SET_CAM_TRIGG_DIST:
     case MAV_CMD_DO_SET_ROI:
     case MAV_CMD_DO_MOUNT_CONTROL:
@@ -413,9 +414,9 @@ void Plane::do_land(const AP_Mission::Mission_Command& cmd)
 
     landing.do_land(cmd, relative_altitude);
 
-    if (flight_stage == AP_Vehicle::FixedWing::FLIGHT_ABORT_LAND) {
+    if (flight_stage == AP_FixedWing::FlightStage::ABORT_LANDING) {
         // if we were in an abort we need to explicitly move out of the abort state, as it's sticky
-        set_flight_stage(AP_Vehicle::FixedWing::FLIGHT_LAND);
+        set_flight_stage(AP_FixedWing::FlightStage::LAND);
     }
 
 #if AP_FENCE_ENABLED
@@ -577,7 +578,7 @@ bool Plane::verify_takeoff()
     if (takeoff_state.start_time_ms != 0 && g2.takeoff_timeout > 0) {
         const float ground_speed = gps.ground_speed();
         const float takeoff_min_ground_speed = 4;
-        if (!hal.util->get_soft_armed()) {
+        if (!arming.is_armed_and_safety_off()) {
             return false;
         }
         if (ground_speed >= takeoff_min_ground_speed) {
@@ -870,7 +871,7 @@ bool Plane::verify_altitude_wait(const AP_Mission::Mission_Command &cmd)
 // verify_nav_delay - check if we have waited long enough
 bool Plane::verify_nav_delay(const AP_Mission::Mission_Command& cmd)
 {
-    if (hal.util->get_soft_armed()) {
+    if (arming.is_armed_and_safety_off()) {
         // don't delay while armed, we need a nav controller running
         return true;
     }
@@ -1019,6 +1020,8 @@ bool Plane::verify_landing_vtol_approach(const AP_Mission::Mission_Command &cmd)
     const int8_t direction = is_negative(radius) ? -1 : 1;
     const float abs_radius = fabsf(radius);
 
+    loiter.direction = direction;
+
     switch (vtol_approach_s.approach_stage) {
         case RTL:
             {
@@ -1160,10 +1163,10 @@ float Plane::get_wp_radius() const
  */
 void Plane::do_nav_script_time(const AP_Mission::Mission_Command& cmd)
 {
-    nav_scripting.done = false;
+    nav_scripting.enabled = true;
     nav_scripting.id++;
     nav_scripting.start_ms = AP_HAL::millis();
-    nav_scripting.current_ms = 0;
+    nav_scripting.current_ms = nav_scripting.start_ms;
 
     // start with current roll rate, pitch rate and throttle
     nav_scripting.roll_rate_dps = plane.rollController.get_pid_info().target;
@@ -1181,18 +1184,30 @@ bool Plane::verify_nav_script_time(const AP_Mission::Mission_Command& cmd)
         const uint32_t now = AP_HAL::millis();
         if (now - nav_scripting.start_ms > cmd.content.nav_script_time.timeout_s*1000U) {
             gcs().send_text(MAV_SEVERITY_INFO, "NavScriptTime timed out");
-            nav_scripting.done = true;
+            nav_scripting.enabled = false;
+            nav_scripting.rudder_offset_pct = 0;
+            nav_scripting.run_yaw_rate_controller = true;
         }
     }
-    return nav_scripting.done;
+    return !nav_scripting.enabled;
 }
 
 // check if we are in a NAV_SCRIPT_* command
-bool Plane::nav_scripting_active(void) const
+bool Plane::nav_scripting_active(void)
 {
-    return !nav_scripting.done &&
-            control_mode == &mode_auto &&
-            mission.get_current_nav_cmd().id == MAV_CMD_NAV_SCRIPT_TIME;
+    if (nav_scripting.enabled && AP_HAL::millis() - nav_scripting.current_ms > 1000) {
+        // set_target_throttle_rate_rpy has not been called from script in last 1000ms
+        nav_scripting.enabled = false;
+        nav_scripting.current_ms = 0;
+        nav_scripting.rudder_offset_pct = 0;
+        nav_scripting.run_yaw_rate_controller = true;
+        gcs().send_text(MAV_SEVERITY_INFO, "NavScript time out");
+    }
+    if (control_mode == &mode_auto &&
+        mission.get_current_nav_cmd().id != MAV_CMD_NAV_SCRIPT_TIME) {
+        nav_scripting.enabled = false;
+    }
+    return nav_scripting.enabled;
 }
 
 // support for NAV_SCRIPTING mission command
@@ -1216,7 +1231,7 @@ bool Plane::nav_script_time(uint16_t &id, uint8_t &cmd, float &arg1, float &arg2
 void Plane::nav_script_time_done(uint16_t id)
 {
     if (id == nav_scripting.id) {
-        nav_scripting.done = true;
+        nav_scripting.enabled = false;
     }
 }
 
@@ -1226,8 +1241,15 @@ void Plane::set_target_throttle_rate_rpy(float throttle_pct, float roll_rate_dps
     nav_scripting.roll_rate_dps = constrain_float(roll_rate_dps, -g.acro_roll_rate, g.acro_roll_rate);
     nav_scripting.pitch_rate_dps = constrain_float(pitch_rate_dps, -g.acro_pitch_rate, g.acro_pitch_rate);
     nav_scripting.yaw_rate_dps = constrain_float(yaw_rate_dps, -g.acro_yaw_rate, g.acro_yaw_rate);
-    nav_scripting.throttle_pct = throttle_pct;
+    nav_scripting.throttle_pct = constrain_float(throttle_pct, aparm.throttle_min, aparm.throttle_max);
     nav_scripting.current_ms = AP_HAL::millis();
+}
+
+// support for rudder offset override in aerobatic scripting
+void Plane::set_rudder_offset(float rudder_pct, bool run_yaw_rate_controller)
+{
+    nav_scripting.rudder_offset_pct = rudder_pct;
+    nav_scripting.run_yaw_rate_controller = run_yaw_rate_controller;
 }
 
 // enable NAV_SCRIPTING takeover in modes other than AUTO using script time mission commands
@@ -1244,6 +1266,7 @@ bool Plane::nav_scripting_enable(uint8_t mode)
        case Mode::Number::CRUISE:
        case Mode::Number::LOITER:
            nav_scripting.enabled = true;
+           nav_scripting.current_ms = AP_HAL::millis();
            break;
        default:
            nav_scripting.enabled = false;
@@ -1254,3 +1277,24 @@ bool Plane::nav_scripting_enable(uint8_t mode)
    return nav_scripting.enabled;
 }
 #endif // AP_SCRIPTING_ENABLED
+
+/*
+  return true if this is a LAND command
+  note that we consider a PAYLOAD_PLACE to be a land command as it
+  follows the landing logic for quadplanes
+ */
+bool Plane::is_land_command(uint16_t command) const
+{
+    return
+        command == MAV_CMD_NAV_VTOL_LAND ||
+        command == MAV_CMD_NAV_LAND ||
+        command == MAV_CMD_NAV_PAYLOAD_PLACE;
+}
+
+/*
+  return true if in a specific AUTO mission command
+ */
+bool Plane::in_auto_mission_id(uint16_t command) const
+{
+    return control_mode == &mode_auto && mission.get_current_nav_id() == command;
+}

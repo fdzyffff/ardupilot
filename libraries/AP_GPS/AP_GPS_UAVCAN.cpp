@@ -355,6 +355,14 @@ AP_GPS_UAVCAN* AP_GPS_UAVCAN::get_uavcan_backend(AP_UAVCAN* ap_uavcan, uint8_t n
                 tempslot = _detected_modules[j];
                 _detected_modules[j] = _detected_modules[j-1];
                 _detected_modules[j-1] = tempslot;
+                // also fix the _detected_module in the driver so that RTCM injection
+                // can determine if it has the bus to itself
+                if (_detected_modules[j].driver) {
+                    _detected_modules[j].driver->_detected_module = j;
+                }
+                if (_detected_modules[j-1].driver) {
+                    _detected_modules[j-1].driver->_detected_module = j-1;
+                }
             }
         }
     }
@@ -369,10 +377,9 @@ void AP_GPS_UAVCAN::handle_velocity(const float vx, const float vy, const float 
     if (!uavcan::isNaN(vx)) {
         const Vector3f vel(vx, vy, vz);
         interim_state.velocity = vel;
-        interim_state.ground_speed = vel.xy().length();
-        interim_state.ground_course = wrap_360(degrees(atan2f(vel.y, vel.x)));
+        velocity_to_speed_course(interim_state);
         // assume we have vertical velocity if we ever get a non-zero Z velocity
-        if (!isnanf(vel.z) && !is_zero(vel.z)) {
+        if (!isnan(vel.z) && !is_zero(vel.z)) {
             interim_state.have_vertical_velocity = true;
         } else {
             interim_state.have_vertical_velocity = state.have_vertical_velocity;
@@ -538,6 +545,14 @@ void AP_GPS_UAVCAN::handle_aux_msg(const AuxCb &cb)
 
 void AP_GPS_UAVCAN::handle_heading_msg(const HeadingCb &cb)
 {
+#if GPS_MOVING_BASELINE
+    if (seen_relposheading && gps.mb_params[interim_state.instance].type.get() != 0) {
+        // we prefer to use the relposheading to get yaw as it allows
+        // the user to more easily control the relative antenna positions
+        return;
+    }
+#endif
+
     WITH_SEMAPHORE(sem);
 
     if (interim_state.gps_yaw_configured == false) {
@@ -596,14 +611,10 @@ void AP_GPS_UAVCAN::handle_moving_baseline_msg(const MovingBaselineDataCb &cb, u
 */
 void AP_GPS_UAVCAN::handle_relposheading_msg(const RelPosHeadingCb &cb, uint8_t node_id)
 {
-    if (role != AP_GPS::GPS_ROLE_MB_ROVER) {
-        GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "Incorrect Role set for UAVCAN GPS, %d should be Rover", node_id);
-        return;
-    }
-
     WITH_SEMAPHORE(sem);
 
     interim_state.gps_yaw_configured = true;
+    seen_relposheading = true;
     // push raw heading data to calculate moving baseline heading states
     if (calculate_moving_base_yaw(interim_state,
                                 cb.msg->reported_heading_deg,
@@ -759,6 +770,7 @@ bool AP_GPS_UAVCAN::read(void)
             // we have had a valid GPS message time, from which we calculate
             // the time of week.
             _last_itow_ms = interim_state.time_week_ms;
+            _have_itow = true;
         }
         return true;
     }
@@ -804,11 +816,13 @@ bool AP_GPS_UAVCAN::is_configured(void) const
  */
 void AP_GPS_UAVCAN::inject_data(const uint8_t *data, uint16_t len)
 {
-    // we only handle this if we are the first UAVCAN GPS, as we send
-    // the data as broadcast on all UAVCAN devive ports and we don't
-    // want to send duplicates
-    if (_detected_module == 0) {
-        _detected_modules[0].ap_uavcan->send_RTCMStream(data, len);
+    // we only handle this if we are the first UAVCAN GPS or we are
+    // using a different uavcan instance than the first GPS, as we
+    // send the data as broadcast on all UAVCAN devive ports and we
+    // don't want to send duplicates
+    if (_detected_module == 0 ||
+        _detected_modules[_detected_module].ap_uavcan != _detected_modules[0].ap_uavcan) {
+        _detected_modules[_detected_module].ap_uavcan->send_RTCMStream(data, len);
     }
 }
 
@@ -874,5 +888,17 @@ void AP_GPS_UAVCAN::handle_param_save_response(AP_UAVCAN* ap_uavcan, const uint8
     Debug("AP_GPS_UAVCAN: sending reboot command %d\n", node_id);
     ap_uavcan->send_reboot_request(node_id);
 }
+
+#if AP_DRONECAN_SEND_GPS
+bool AP_GPS_UAVCAN::instance_exists(const AP_UAVCAN* ap_uavcan)
+{
+    for (uint8_t i=0; i<ARRAY_SIZE(_detected_modules); i++) {
+        if (ap_uavcan == _detected_modules[i].ap_uavcan) {
+            return true;
+        }
+    }
+    return false;
+}
+#endif // AP_DRONECAN_SEND_GPS
 
 #endif // HAL_ENABLE_LIBUAVCAN_DRIVERS

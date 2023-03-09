@@ -247,6 +247,26 @@ void AP_EFI::send_mavlink_status(mavlink_channel_t chan)
     if (!backend) {
         return;
     }
+
+    float ignition_voltage;
+    if (isnan(state.ignition_voltage) ||
+        is_equal(state.ignition_voltage, -1.0f)) {
+        // zero means "unknown" in mavlink, 0.0001 means 0 volts
+        ignition_voltage = 0;
+    } else if (is_zero(state.ignition_voltage)) {
+        // zero means "unknown" in mavlink, 0.0001 means 0 volts
+        ignition_voltage = 0.0001f;
+    } else {
+        ignition_voltage = state.ignition_voltage;
+    };
+
+    // If fuel pressure is supported, but is exactly zero, shift it to 0.0001
+    // to indicate that it is supported.
+    float fuel_pressure = state.fuel_pressure;
+    if (is_zero(fuel_pressure) && state.fuel_pressure_status != Fuel_Pressure_Status::NOT_SUPPORTED) {
+        fuel_pressure = 0.0001;
+    }
+
     mavlink_msg_efi_status_send(
         chan,
         AP_EFI::is_healthy(),
@@ -263,10 +283,11 @@ void AP_EFI::send_mavlink_status(mavlink_channel_t chan)
         KELVIN_TO_C(state.cylinder_status.cylinder_head_temperature),
         state.cylinder_status.ignition_timing_deg,
         state.cylinder_status.injection_time_ms,
-        state.cylinder_status.exhaust_gas_temperature,
+        KELVIN_TO_C(state.cylinder_status.exhaust_gas_temperature),
         state.throttle_out,
         state.pt_compensation,
-        state.ignition_voltage
+        ignition_voltage,
+        fuel_pressure
         );
 }
 

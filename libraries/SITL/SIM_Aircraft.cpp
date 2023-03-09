@@ -37,6 +37,10 @@
 #include <AP_Terrain/AP_Terrain.h>
 #include <AP_Scheduler/AP_Scheduler.h>
 #include <AP_BoardConfig/AP_BoardConfig.h>
+#if USE_PICOJSON
+#include "picojson.h"
+#include <AP_Filesystem/AP_Filesystem.h>
+#endif
 
 using namespace SITL;
 
@@ -641,7 +645,7 @@ void Aircraft::update_dynamics(const Vector3f &rot_accel)
     position += (velocity_ef * delta_time).todouble();
 
     // velocity relative to air mass, in earth frame
-    velocity_air_ef = velocity_ef + wind_ef;
+    velocity_air_ef = velocity_ef - wind_ef;
 
     // velocity relative to airmass in body frame
     velocity_air_bf = dcm.transposed() * velocity_air_ef;
@@ -785,6 +789,9 @@ void Aircraft::update_wind(const struct sitl_input &input)
             sinf(radians(turbulence_azimuth)) * turbulence_horizontal_speed,
             turbulence_vertical_speed);
     }
+
+    // the AHRS wants wind with opposite sense
+    wind_ef = -wind_ef;
 }
 
 /*
@@ -937,7 +944,7 @@ void Aircraft::extrapolate_sensors(float delta_time)
     // new velocity and position vectors
     velocity_ef += accel_earth * delta_time;
     position += (velocity_ef * delta_time).todouble();
-    velocity_air_ef = velocity_ef + wind_ef;
+    velocity_air_ef = velocity_ef - wind_ef;
     velocity_air_bf = dcm.transposed() * velocity_air_ef;
 }
 
@@ -1132,4 +1139,3 @@ Vector3d Aircraft::get_position_relhome() const
     pos.xy() += home.get_distance_NE_double(origin);
     return pos;
 }
-

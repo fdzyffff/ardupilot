@@ -22,12 +22,14 @@
 #include <AP_Math/AP_Math.h>
 #include <AP_ESC_Telem/AP_ESC_Telem.h>
 #include <RC_Channel/RC_Channel.h>
-#include <GCS_MAVLink/GCS.h>
+#include <GCS_MAVLink/GCS_config.h>
 #include <AP_OLC/AP_OLC.h>
 #include <AP_MSP/msp.h>
 #include <AP_Baro/AP_Baro.h>
+#if HAL_GCS_ENABLED
 #include <GCS_MAVLink/GCS_MAVLink.h>
-#include <AC_Fence/AC_Fence.h>
+#endif
+#include <AC_Fence/AC_Fence_config.h>
 
 #ifndef OSD_ENABLED
 #define OSD_ENABLED !HAL_MINIMIZE_FEATURES
@@ -38,11 +40,11 @@
 #endif
 
 #ifndef OSD_PARAM_ENABLED
-#define OSD_PARAM_ENABLED !HAL_MINIMIZE_FEATURES
+#define OSD_PARAM_ENABLED 1
 #endif
 
 #ifndef HAL_OSD_SIDEBAR_ENABLE
-#define HAL_OSD_SIDEBAR_ENABLE !HAL_MINIMIZE_FEATURES
+#define HAL_OSD_SIDEBAR_ENABLE 1
 #endif
 
 class AP_OSD_Backend;
@@ -70,10 +72,15 @@ public:
     AP_Int8 xpos;
     AP_Int8 ypos;
 
-    AP_OSD_Setting(bool enabled, uint8_t x, uint8_t y);
+    AP_OSD_Setting(bool enabled = 0, uint8_t x = 0, uint8_t y = 0);
 
     // User settable parameters
     static const struct AP_Param::GroupInfo var_info[];
+
+private:
+    const float default_enabled;
+    const float default_xpos;
+    const float default_ypos;
 };
 
 class AP_OSD;
@@ -162,12 +169,20 @@ private:
     //typical fpv camera has 80deg vertical field of view, 16 row of chars
     static constexpr float ah_pitch_rad_to_char = 16.0f/(DEG_TO_RAD * 80);
 
+    enum class VoltageType {
+        VOLTAGE,
+        RESTING_VOLTAGE,
+        AVG_CELL,
+        RESTING_CELL,
+    };
+
     AP_OSD_Setting altitude{true, 23, 8};
     AP_OSD_Setting bat_volt{true, 24, 1};
     AP_OSD_Setting rssi{true, 1, 1};
     AP_OSD_Setting link_quality{false,1,1};
     AP_OSD_Setting restvolt{false, 24, 2};
     AP_OSD_Setting avgcellvolt{false, 24, 3};
+    AP_OSD_Setting avgcellrestvolt{false, 24, 4};
     AP_OSD_Setting current{true, 25, 2};
     AP_OSD_Setting batused{true, 23, 3};
     AP_OSD_Setting sats{true, 1, 3};
@@ -181,8 +196,8 @@ private:
     AP_OSD_Setting compass{true, 15, 3};
     AP_OSD_Setting wind{false, 2, 12};
     AP_OSD_Setting aspeed{false, 2, 13};
-    AP_OSD_Setting aspd1{false, 0, 0};
-    AP_OSD_Setting aspd2{false, 0, 0};
+    AP_OSD_Setting aspd1;
+    AP_OSD_Setting aspd2;
     AP_OSD_Setting vspeed{true, 24, 9};
 #if HAL_WITH_ESC_TELEM
     AP_OSD_Setting esc_temp {false, 24, 13};
@@ -191,37 +206,37 @@ private:
 #endif
     AP_OSD_Setting gps_latitude{true, 9, 13};
     AP_OSD_Setting gps_longitude{true, 9, 14};
-    AP_OSD_Setting roll_angle{false, 0, 0};
-    AP_OSD_Setting pitch_angle{false, 0, 0};
-    AP_OSD_Setting temp{false, 0, 0};
+    AP_OSD_Setting roll_angle;
+    AP_OSD_Setting pitch_angle;
+    AP_OSD_Setting temp;
 #if BARO_MAX_INSTANCES > 1
-    AP_OSD_Setting btemp{false, 0, 0};
+    AP_OSD_Setting btemp;
 #endif
-    AP_OSD_Setting hdop{false, 0, 0};
-    AP_OSD_Setting waypoint{false, 0, 0};
-    AP_OSD_Setting xtrack_error{false, 0, 0};
+    AP_OSD_Setting hdop;
+    AP_OSD_Setting waypoint;
+    AP_OSD_Setting xtrack_error;
     AP_OSD_Setting dist{false,22,11};
     AP_OSD_Setting stat{false,0,0};
     AP_OSD_Setting flightime{false, 23, 10};
     AP_OSD_Setting climbeff{false,0,0};
     AP_OSD_Setting eff{false, 22, 10};
-    AP_OSD_Setting atemp{false, 0, 0};
-    AP_OSD_Setting bat2_vlt{false, 0, 0};
-    AP_OSD_Setting bat2used{false, 0, 0};
-    AP_OSD_Setting current2{false, 0, 0};
-    AP_OSD_Setting clk{false, 0, 0};
-    AP_OSD_Setting callsign{false, 0, 0};
-    AP_OSD_Setting vtx_power{false, 0, 0};
+    AP_OSD_Setting atemp;
+    AP_OSD_Setting bat2_vlt;
+    AP_OSD_Setting bat2used;
+    AP_OSD_Setting current2;
+    AP_OSD_Setting clk;
+    AP_OSD_Setting callsign;
+    AP_OSD_Setting vtx_power;
     AP_OSD_Setting hgt_abvterr{false, 23, 7};
     AP_OSD_Setting fence{false, 14, 9};
-    AP_OSD_Setting rngf{false, 0, 0};
+    AP_OSD_Setting rngf;
 #if HAL_PLUSCODE_ENABLE
-    AP_OSD_Setting pluscode{false, 0, 0};
+    AP_OSD_Setting pluscode;
 #endif
     AP_OSD_Setting sidebars{false, 4, 5};
 
     // MSP OSD only
-    AP_OSD_Setting crosshair{false, 0, 0};
+    AP_OSD_Setting crosshair;
     AP_OSD_Setting home_dist{true, 1, 1};
     AP_OSD_Setting home_dir{true, 1, 1};
     AP_OSD_Setting power{true, 1, 1};
@@ -236,8 +251,10 @@ private:
 #endif
 
     void draw_altitude(uint8_t x, uint8_t y);
+    void draw_bat_volt(uint8_t instance,VoltageType  type,uint8_t x, uint8_t y);
     void draw_bat_volt(uint8_t x, uint8_t y);
     void draw_avgcellvolt(uint8_t x, uint8_t y);
+    void draw_avgcellrestvolt(uint8_t x, uint8_t y);
     void draw_restvolt(uint8_t x, uint8_t y);
     void draw_rssi(uint8_t x, uint8_t y);
     void draw_link_quality(uint8_t x, uint8_t y);
@@ -313,9 +330,14 @@ private:
 /*
   class to hold one setting
  */
-class AP_OSD_ParamSetting : public AP_OSD_Setting
+class AP_OSD_ParamSetting
 {
 public:
+
+    AP_Int8 enabled;
+    AP_Int8 xpos;
+    AP_Int8 ypos;
+
     // configured index.
     AP_Int32 _param_group;
     AP_Int16 _param_key;
@@ -349,8 +371,7 @@ public:
 
     static const ParamMetadata _param_metadata[];
 
-    AP_OSD_ParamSetting(uint8_t param_number, bool enabled, uint8_t x, uint8_t y, int16_t key, int8_t idx, int32_t group,
-        int8_t type = OSD_PARAM_NONE, float min = 0.0f, float max = 1.0f, float incr = 0.001f);
+    AP_OSD_ParamSetting() {};
     AP_OSD_ParamSetting(uint8_t param_number);
     AP_OSD_ParamSetting(const Initializer& initializer);
 
@@ -377,6 +398,13 @@ public:
     static const struct AP_Param::GroupInfo var_info[];
 
 private:
+    float default_enabled;
+    float default_ypos;
+    float default_param_group;
+    float default_param_idx;
+    float default_param_key;
+    float default_type;
+
 };
 
 /*
@@ -408,8 +436,8 @@ public:
     void draw(void) override;
 #endif
 #if HAL_GCS_ENABLED
-    void handle_write_msg(const mavlink_osd_param_config_t& packet, const GCS_MAVLINK& link);
-    void handle_read_msg(const mavlink_osd_param_show_config_t& packet, const GCS_MAVLINK& link);
+    void handle_write_msg(const mavlink_osd_param_config_t& packet, const class GCS_MAVLINK& link);
+    void handle_read_msg(const mavlink_osd_param_show_config_t& packet, const class GCS_MAVLINK& link);
 #endif
     // get a setting and associated metadata
     AP_OSD_ParamSetting* get_setting(uint8_t param_idx);
@@ -421,7 +449,7 @@ public:
     static const struct AP_Param::GroupInfo var_info[];
 
 private:
-    AP_OSD_ParamSetting params[NUM_PARAMS] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+    AP_OSD_ParamSetting params[NUM_PARAMS];
 
     void save_parameters();
 #if OSD_ENABLED
@@ -506,6 +534,7 @@ public:
     AP_Float max_battery_voltage;
     AP_Int8 cell_count;
     AP_Float warn_restvolt;
+    AP_Float warn_avgcellrestvolt;
     AP_Float warn_batvolt;
     AP_Float warn_bat2volt;
     AP_Int8 msgtime_s;
@@ -593,7 +622,7 @@ public:
 #endif
     // handle OSD parameter configuration
 #if HAL_GCS_ENABLED
-    void handle_msg(const mavlink_message_t &msg, const GCS_MAVLINK& link);
+    void handle_msg(const mavlink_message_t &msg, const class GCS_MAVLINK& link);
 #endif
 
     // allow threads to lock against OSD update

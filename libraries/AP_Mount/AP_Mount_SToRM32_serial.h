@@ -5,17 +5,11 @@
 
 #include "AP_Mount_Backend.h"
 
-#ifndef HAL_MOUNT_STORM32SERIAL_ENABLED
-#define HAL_MOUNT_STORM32SERIAL_ENABLED HAL_MOUNT_ENABLED
-#endif
-
 #if HAL_MOUNT_STORM32SERIAL_ENABLED
 
 #include <AP_HAL/AP_HAL.h>
-#include <AP_AHRS/AP_AHRS.h>
 #include <AP_Math/AP_Math.h>
 #include <AP_Common/AP_Common.h>
-#include <GCS_MAVLink/GCS_MAVLink.h>
 
 #define AP_MOUNT_STORM32_SERIAL_RESEND_MS   1000    // resend angle targets to gimbal once per second
 
@@ -24,7 +18,7 @@ class AP_Mount_SToRM32_serial : public AP_Mount_Backend
 
 public:
     // Constructor
-    AP_Mount_SToRM32_serial(AP_Mount &frontend, AP_Mount_Params &params, uint8_t instance);
+    using AP_Mount_Backend::AP_Mount_Backend;
 
     // init - performs any required initialisation for this instance
     void init() override;
@@ -141,7 +135,7 @@ private:
 
     uint8_t _reply_length;
     uint8_t _reply_counter;
-    ReplyType _reply_type;
+    ReplyType _reply_type = ReplyType_UNKNOWN;
 
 
     union PACKED SToRM32_reply {

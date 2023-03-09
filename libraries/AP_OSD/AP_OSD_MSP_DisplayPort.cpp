@@ -22,6 +22,8 @@
 
 #if HAL_WITH_MSP_DISPLAYPORT
 
+#include <GCS_MAVLink/GCS.h>
+
 static const struct AP_Param::defaults_table_struct defaults_table[] = {
     /*
     { "PARAM_NAME",       value_float }
@@ -131,4 +133,12 @@ AP_OSD_Backend *AP_OSD_MSP_DisplayPort::probe(AP_OSD &osd)
     }
     return backend;
 }
+ 
+// return a correction factor used to display angles correctly
+float AP_OSD_MSP_DisplayPort::get_aspect_ratio_correction() const
+{
+    return 12.0/18.0;
+}
+
+
 #endif

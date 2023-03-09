@@ -7,6 +7,7 @@
 #include <AP_AHRS/AP_AHRS.h>
 #include <AP_Camera/AP_Camera.h>
 #include <AP_Gripper/AP_Gripper_config.h>
+#include <AP_Vehicle/AP_Vehicle_Type.h>
 
 const AP_Param::GroupInfo AP_Mission::var_info[] = {
 
@@ -279,6 +280,12 @@ void AP_Mission::update()
 
     update_exit_position();
 
+    // mission_change events
+    if (_last_change_time_prev_ms != _last_change_time_ms) {
+        _last_change_time_prev_ms = _last_change_time_ms;
+        on_mission_timestamp_change();
+    }
+
     // save persistent waypoint_num for watchdog restore
     hal.util->persistent_data.waypoint_num = _nav_cmd.index;
 
@@ -316,6 +323,12 @@ void AP_Mission::update()
     }
 }
 
+// handle events for when the mission has been updated (but maybe not changed)
+void AP_Mission::on_mission_timestamp_change()
+{
+    _jump_tag.age = 0;
+}
+
 bool AP_Mission::verify_command(const Mission_Command& cmd)
 {
     switch (cmd.id) {
@@ -336,6 +349,7 @@ bool AP_Mission::verify_command(const Mission_Command& cmd)
     case MAV_CMD_DO_AUX_FUNCTION:
     case MAV_CMD_DO_SET_RESUME_REPEAT_DIST:
     case MAV_CMD_DO_GIMBAL_MANAGER_PITCHYAW:
+    case MAV_CMD_JUMP_TAG:
         return true;
     default:
         return _cmd_verify_fn(cmd);
@@ -364,10 +378,9 @@ bool AP_Mission::start_command(const Mission_Command& cmd)
     case MAV_CMD_DO_REPEAT_SERVO:
     case MAV_CMD_DO_REPEAT_RELAY:
         return start_command_do_servorelayevents(cmd);
-    case MAV_CMD_DO_CONTROL_VIDEO:
+#if AP_CAMERA_ENABLED
     case MAV_CMD_DO_DIGICAM_CONFIGURE:
     case MAV_CMD_DO_DIGICAM_CONTROL:
-#if AP_CAMERA_ENABLED
     case MAV_CMD_DO_SET_CAM_TRIGG_DIST:
         return start_command_camera(cmd);
 #endif
@@ -381,6 +394,10 @@ bool AP_Mission::start_command(const Mission_Command& cmd)
         return command_do_set_repeat_dist(cmd);
     case MAV_CMD_DO_GIMBAL_MANAGER_PITCHYAW:
         return start_command_do_gimbal_manager_pitchyaw(cmd);
+    case MAV_CMD_JUMP_TAG:
+        _jump_tag.tag = cmd.content.jump.target;
+        _jump_tag.age = 1;
+        FALLTHROUGH; // fall through in case the vehicle handles tag events
     default:
         return _cmd_start_fn(cmd);
     }
@@ -1043,8 +1060,13 @@ MAV_MISSION_RESULT AP_Mission::mavlink_int_to_mission_cmd(const mavlink_mission_
         break;
 
     case MAV_CMD_DO_JUMP:                               // MAV ID: 177
-        cmd.content.jump.target = packet.param1;        // jump-to command number
+    case MAV_CMD_DO_JUMP_TAG:                           // MAV ID: 601
+        cmd.content.jump.target = packet.param1;        // jump-to command/tag number
         cmd.content.jump.num_times = packet.param2;     // repeat count
+        break;
+
+    case MAV_CMD_JUMP_TAG:                              // MAV ID: 600
+        cmd.content.jump.target = packet.param1;        // jump-to tag number
         break;
 
     case MAV_CMD_DO_CHANGE_SPEED:                       // MAV ID: 178
@@ -1329,17 +1351,12 @@ MAV_MISSION_RESULT AP_Mission::convert_MISSION_ITEM_to_MISSION_ITEM_INT(const ma
       any commands which use the x and y fields not as
       latitude/longitude.
      */
-    switch (packet.command) {
-    case MAV_CMD_DO_DIGICAM_CONTROL:
-    case MAV_CMD_DO_DIGICAM_CONFIGURE:
-    case MAV_CMD_NAV_ATTITUDE_TIME:
-    case MAV_CMD_DO_GIMBAL_MANAGER_PITCHYAW:
+    if (!cmd_has_location(packet.command)) {
         mav_cmd.x = packet.x;
         mav_cmd.y = packet.y;
-        break;
 
-    default:
-        // all other commands use x and y as lat/lon. We need to
+    } else {
+         //these commands use x and y as lat/lon. We need to
         // multiply by 1e7 to convert to int32_t
         if (!check_lat(packet.x)) {
             return MAV_MISSION_INVALID_PARAM5_X;
@@ -1349,7 +1366,6 @@ MAV_MISSION_RESULT AP_Mission::convert_MISSION_ITEM_to_MISSION_ITEM_INT(const ma
         }
         mav_cmd.x = packet.x * 1.0e7f;
         mav_cmd.y = packet.y * 1.0e7f;
-        break;
     }
 
     return MAV_MISSION_ACCEPTED;
@@ -1372,17 +1388,12 @@ MAV_MISSION_RESULT AP_Mission::convert_MISSION_ITEM_INT_to_MISSION_ITEM(const ma
     item.autocontinue = item_int.autocontinue;
     item.mission_type = item_int.mission_type;
 
-    switch (item_int.command) {
-    case MAV_CMD_DO_DIGICAM_CONTROL:
-    case MAV_CMD_DO_DIGICAM_CONFIGURE:
-    case MAV_CMD_NAV_ATTITUDE_TIME:
-    case MAV_CMD_DO_GIMBAL_MANAGER_PITCHYAW:
+    if (!cmd_has_location(item_int.command)) {
         item.x = item_int.x;
         item.y = item_int.y;
-        break;
 
-    default:
-        // all other commands use x and y as lat/lon. We need to
+    } else {
+        // These commands use x and y as lat/lon. We need to
         // multiply by 1e-7 to convert to float
         item.x = item_int.x * 1.0e-7f;
         item.y = item_int.y * 1.0e-7f;
@@ -1392,7 +1403,6 @@ MAV_MISSION_RESULT AP_Mission::convert_MISSION_ITEM_INT_to_MISSION_ITEM(const ma
         if (!check_lng(item.y)) {
             return MAV_MISSION_INVALID_PARAM6_Y;
         }
-        break;
     }
 
     return MAV_MISSION_ACCEPTED;
@@ -1539,8 +1549,13 @@ bool AP_Mission::mission_cmd_to_mavlink_int(const AP_Mission::Mission_Command& c
         break;
 
     case MAV_CMD_DO_JUMP:                               // MAV ID: 177
-        packet.param1 = cmd.content.jump.target;        // jump-to command number
+    case MAV_CMD_DO_JUMP_TAG:                           // MAV ID: 601
+        packet.param1 = cmd.content.jump.target;        // jump-to command/tag number
         packet.param2 = cmd.content.jump.num_times;     // repeat count
+        break;
+
+    case MAV_CMD_JUMP_TAG:                              // MAV ID: 600
+        packet.param1 = cmd.content.jump.target;        // jump-to tag number
         break;
 
     case MAV_CMD_DO_CHANGE_SPEED:                       // MAV ID: 178
@@ -1855,6 +1870,10 @@ bool AP_Mission::advance_current_nav_cmd(uint16_t starting_index)
             _nav_cmd = cmd;
             if (start_command(_nav_cmd)) {
                 _flags.nav_cmd_loaded = true;
+                if (_jump_tag.age > 0 && _jump_tag.age < UINT16_MAX) {
+                    // we're tracking a tag so increase it's age on every new NAV item
+                    _jump_tag.age++;
+                }
             }
             // save a loaded wp index in history array for when _repeat_dist is set via MAV_CMD_DO_SET_RESUME_REPEAT_DIST
             // and prevent history being re-written until vehicle returns to interrupted position
@@ -1950,6 +1969,13 @@ bool AP_Mission::get_next_cmd(uint16_t start_index, Mission_Command& cmd, bool i
             return false;
         }
 
+        // check for do-jump-tag command and convert target tag to do-jump target index and do-jump to it
+        if (temp_cmd.id == MAV_CMD_DO_JUMP_TAG) {
+            // convert tmp_cmd target from a target tag to a target index
+            temp_cmd.content.jump.target = get_index_of_jump_tag(temp_cmd.content.jump.target);
+            temp_cmd.id = MAV_CMD_DO_JUMP;
+        }
+
         // check for do-jump command
         if (temp_cmd.id == MAV_CMD_DO_JUMP) {
 
@@ -2035,6 +2061,46 @@ bool AP_Mission::get_next_do_cmd(uint16_t start_index, Mission_Command& cmd)
 ///
 /// jump handling methods
 ///
+
+// Set the mission index to the first JUMP_TAG with this tag.
+// Returns true on success, else false if no appropriate JUMP_TAG match can be found or if setting the index failed
+bool AP_Mission::jump_to_tag(const uint16_t tag)
+{
+    const uint16_t index = get_index_of_jump_tag(tag);
+    if (index == 0) {
+        return false;
+    }
+    return set_current_cmd(index);
+}
+
+// find the first JUMP_TAG with this tag and return its index.
+// Returns 0 if no appropriate JUMP_TAG match can be found.
+uint16_t AP_Mission::get_index_of_jump_tag(const uint16_t tag) const
+{
+    const auto count = num_commands();
+    for (uint16_t i = 1; i < count; i++) {
+        Mission_Command tmp;
+        if (!read_cmd_from_storage(i, tmp)) {
+            continue;
+        }
+        if (tmp.id == MAV_CMD_JUMP_TAG && tmp.content.jump.target == tag) {
+            return i;
+        }
+    }
+    return 0;
+}
+
+#if AP_SCRIPTING_ENABLED
+bool AP_Mission::get_last_jump_tag(uint16_t &tag, uint16_t &age) const
+{
+    if (_jump_tag.age == 0) {
+        return false;
+    }
+    tag = _jump_tag.tag;
+    age = _jump_tag.age;
+    return true;
+}
+#endif
 
 // init_jump_tracking - initialise jump_tracking variables
 void AP_Mission::init_jump_tracking()
@@ -2129,12 +2195,13 @@ uint16_t AP_Mission::num_commands_max(void) const
 // be found.
 uint16_t AP_Mission::get_landing_sequence_start()
 {
-    struct Location current_loc;
+    Location current_loc;
 
     if (!AP::ahrs().get_location(current_loc)) {
         return 0;
     }
 
+    const Location::AltFrame current_loc_alt_frame = current_loc.get_alt_frame();
     uint16_t landing_start_index = 0;
     float min_distance = -1;
 
@@ -2149,7 +2216,16 @@ uint16_t AP_Mission::get_landing_sequence_start()
                 // command does not have a valid location and cannot get next valid
                 continue;
             }
-            float tmp_distance = tmp.content.location.get_distance(current_loc);
+
+            float tmp_distance;
+            if (current_loc_alt_frame == tmp.content.location.get_alt_frame() || tmp.content.location.change_alt_frame(current_loc_alt_frame)) {
+                // 3D distance - altitudes are able to be compared in the same frame
+                tmp_distance = tmp.content.location.get_distance_NED(current_loc).length();
+            } else {
+                // 2D distance - no altitude
+                tmp_distance = tmp.content.location.get_distance(current_loc);
+            }
+            
             if (min_distance < 0 || tmp_distance < min_distance) {
                 min_distance = tmp_distance;
                 landing_start_index = i;
@@ -2187,7 +2263,7 @@ bool AP_Mission::jump_to_landing_sequence(void)
 // jumps the mission to the closest landing abort that is planned, returns false if unable to find a valid abort
 bool AP_Mission::jump_to_abort_landing_sequence(void)
 {
-    struct Location current_loc;
+    Location current_loc;
 
     uint16_t abort_index = 0;
     if (AP::ahrs().get_location(current_loc)) {
@@ -2292,7 +2368,7 @@ bool AP_Mission::distance_to_landing(uint16_t index, float &tot_distance, Locati
 {
     Mission_Command temp_cmd;
     tot_distance = 0.0f;
-    bool ret;
+    bool ret = false;  // reached end of loop without getting to a landing
 
     // back up jump tracking to reset after distance calculation
     jump_tracking_struct _jump_tracking_backup[AP_MISSION_MAX_NUM_DO_JUMP_COMMANDS];
@@ -2307,14 +2383,12 @@ bool AP_Mission::distance_to_landing(uint16_t index, float &tot_distance, Locati
             // get next command
             if (!get_next_cmd(cmd_index, temp_cmd, true, false)) {
                 // we got to the end of the mission
-                ret = false;
                 goto reset_do_jump_tracking;
             }
             if (temp_cmd.id == MAV_CMD_NAV_WAYPOINT || temp_cmd.id == MAV_CMD_NAV_SPLINE_WAYPOINT || is_landing_type_cmd(temp_cmd.id)) {
                 break;
             } else if (is_nav_cmd(temp_cmd) || temp_cmd.id == MAV_CMD_CONDITION_DELAY) {
                 // if we receive a nav command that we dont handle then give up as cant measure the distance e.g. MAV_CMD_NAV_LOITER_UNLIM
-                ret = false;
                 goto reset_do_jump_tracking;
             }
         }
@@ -2335,8 +2409,6 @@ bool AP_Mission::distance_to_landing(uint16_t index, float &tot_distance, Locati
             goto reset_do_jump_tracking;
         }
     }
-    // reached end of loop without getting to a landing
-    ret = false;
 
 reset_do_jump_tracking:
     for (uint8_t i=0; i<AP_MISSION_MAX_NUM_DO_JUMP_COMMANDS; i++) {
@@ -2408,8 +2480,6 @@ const char *AP_Mission::Mission_Command::type() const
         return "RepeatServo";
     case MAV_CMD_DO_REPEAT_RELAY:
         return "RepeatRelay";
-    case MAV_CMD_DO_CONTROL_VIDEO:
-        return "CtrlVideo";
     case MAV_CMD_DO_DIGICAM_CONFIGURE:
         return "DigiCamCfg";
     case MAV_CMD_DO_DIGICAM_CONTROL:
@@ -2472,6 +2542,10 @@ const char *AP_Mission::Mission_Command::type() const
         return "Scripting";
     case MAV_CMD_DO_JUMP:
         return "Jump";
+    case MAV_CMD_DO_JUMP_TAG:
+        return "JumpToTag";
+    case MAV_CMD_JUMP_TAG:
+        return "Tag";
     case MAV_CMD_DO_GO_AROUND:
         return "Go Around";
 #if AP_SCRIPTING_ENABLED
@@ -2494,7 +2568,7 @@ const char *AP_Mission::Mission_Command::type() const
 
 bool AP_Mission::contains_item(MAV_CMD command) const
 {
-    for (int i = 1; i < num_commands(); i++) {
+    for (uint16_t i = 1; i < num_commands(); i++) {
         Mission_Command tmp;
         if (!read_cmd_from_storage(i, tmp)) {
             continue;
@@ -2504,6 +2578,15 @@ bool AP_Mission::contains_item(MAV_CMD command) const
         }
     }
     return false;
+}
+
+/*
+  return true if the mission item has a location
+*/
+
+bool AP_Mission::cmd_has_location(const uint16_t command)
+{
+    return stored_in_location(command);
 }
 
 /*
@@ -2520,7 +2603,7 @@ bool AP_Mission::contains_terrain_alt_items(void)
 
 bool AP_Mission::calculate_contains_terrain_alt_items(void) const
 {
-    for (int i = 1; i < num_commands(); i++) {
+    for (uint16_t i = 1; i < num_commands(); i++) {
         Mission_Command tmp;
         if (!read_cmd_from_storage(i, tmp)) {
             continue;

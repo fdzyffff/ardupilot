@@ -19,7 +19,7 @@
 
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Math/AP_Math.h>
-#include <AP_Vehicle/AP_Vehicle.h>
+#include <AP_Vehicle/AP_Vehicle_Type.h>
 #include "SRV_Channel.h"
 
 extern const AP_HAL::HAL& hal;
@@ -99,6 +99,9 @@ uint16_t SRV_Channel::pwm_from_range(float scaled_value) const
 // convert a -angle_max..angle_max to a pwm
 uint16_t SRV_Channel::pwm_from_angle(float scaled_value) const
 {
+    if (high_out == 0) {
+        return servo_trim;
+    }
     if (reversed) {
         scaled_value = -scaled_value;
     }

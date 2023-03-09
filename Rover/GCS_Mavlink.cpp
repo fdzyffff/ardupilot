@@ -4,6 +4,7 @@
 
 #include <AP_RPM/AP_RPM_config.h>
 #include <AP_RangeFinder/AP_RangeFinder_Backend.h>
+#include <AP_EFI/AP_EFI_config.h>
 
 MAV_TYPE GCS_Rover::frame_type() const
 {
@@ -560,6 +561,7 @@ static const ap_message STREAM_EXTRA3_msgs[] = {
     MSG_SYSTEM_TIME,
     MSG_BATTERY_STATUS,
     MSG_GIMBAL_DEVICE_ATTITUDE_STATUS,
+    MSG_OPTICAL_FLOW,
     MSG_MAG_CAL_REPORT,
     MSG_MAG_CAL_PROGRESS,
     MSG_EKF_STATUS_REPORT,
@@ -569,6 +571,9 @@ static const ap_message STREAM_EXTRA3_msgs[] = {
 #endif
     MSG_WHEEL_DISTANCE,
     MSG_ESC_TELEMETRY,
+#if HAL_EFI_ENABLED
+    MSG_EFI_STATUS,
+#endif
 };
 static const ap_message STREAM_PARAMS_msgs[] = {
     MSG_NEXT_PARAM
@@ -603,7 +608,7 @@ bool GCS_MAVLINK_Rover::handle_guided_request(AP_Mission::Mission_Command &cmd)
     return rover.mode_guided.set_desired_location(cmd.content.location);
 }
 
-MAV_RESULT GCS_MAVLINK_Rover::_handle_command_preflight_calibration(const mavlink_command_long_t &packet)
+MAV_RESULT GCS_MAVLINK_Rover::_handle_command_preflight_calibration(const mavlink_command_long_t &packet, const mavlink_message_t &msg)
 {
     if (is_equal(packet.param6, 1.0f)) {
         if (rover.g2.windvane.start_direction_calibration()) {
@@ -619,7 +624,7 @@ MAV_RESULT GCS_MAVLINK_Rover::_handle_command_preflight_calibration(const mavlin
         }
     }
 
-    return GCS_MAVLINK::_handle_command_preflight_calibration(packet);
+    return GCS_MAVLINK::_handle_command_preflight_calibration(packet, msg);
 }
 
 bool GCS_MAVLINK_Rover::set_home_to_current_location(bool _lock) {
@@ -765,9 +770,6 @@ MAV_RESULT GCS_MAVLINK_Rover::handle_command_int_do_reposition(const mavlink_com
 void GCS_MAVLINK_Rover::handleMessage(const mavlink_message_t &msg)
 {
     switch (msg.msgid) {
-    case MAVLINK_MSG_ID_MANUAL_CONTROL:
-        handle_manual_control(msg);
-        break;
 
     case MAVLINK_MSG_ID_SET_ATTITUDE_TARGET:
         handle_set_attitude_target(msg);
@@ -792,27 +794,10 @@ void GCS_MAVLINK_Rover::handleMessage(const mavlink_message_t &msg)
     }
 }
 
-void GCS_MAVLINK_Rover::handle_manual_control(const mavlink_message_t &msg)
+void GCS_MAVLINK_Rover::handle_manual_control_axes(const mavlink_manual_control_t &packet, const uint32_t tnow)
 {
-    if (msg.sysid != rover.g.sysid_my_gcs) {  // Only accept control from our gcs
-        return;
-    }
-
-    mavlink_manual_control_t packet;
-    mavlink_msg_manual_control_decode(&msg, &packet);
-
-    if (packet.target != rover.g.sysid_this_mav) {
-        return; // only accept control aimed at us
-    }
-
-    uint32_t tnow = AP_HAL::millis();
-
     manual_override(rover.channel_steer, packet.y, 1000, 2000, tnow);
     manual_override(rover.channel_throttle, packet.z, 1000, 2000, tnow);
-
-    // a manual control message is considered to be a 'heartbeat' from
-    // the ground station for failsafe purposes
-    gcs().sysid_myggcs_seen(tnow);
 }
 
 void GCS_MAVLINK_Rover::handle_set_attitude_target(const mavlink_message_t &msg)

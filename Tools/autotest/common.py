@@ -195,6 +195,7 @@ class Context(object):
         self.collections = {}
         self.heartbeat_interval_ms = 1000
         self.original_heartbeat_interval_ms = None
+        self.installed_scripts = []
 
 
 # https://stackoverflow.com/questions/616645/how-do-i-duplicate-sys-stdout-to-a-log-file-in-python
@@ -1897,7 +1898,7 @@ class AutoTest(ABC):
             0,  # p7
         )
 
-    def reboot_sitl_mav(self, required_bootcount=None):
+    def reboot_sitl_mav(self, required_bootcount=None, force=False):
         """Reboot SITL instance using mavlink and wait for it to reconnect."""
         # we must make sure that stats have been reset - otherwise
         # when we reboot we'll reset statistics again and lose our
@@ -1929,6 +1930,9 @@ class AutoTest(ABC):
             # receiving an ACK from the process turns out to be really
             # quite difficult.  So just send it and hope for the best.
             self.progress("Sending reboot command")
+            p6 = 0
+            if force:
+                p6 = 20190226  # magic force-reboot value
             self.send_cmd(
                 mavutil.mavlink.MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN,
                 1,
@@ -1936,7 +1940,7 @@ class AutoTest(ABC):
                 0,
                 0,
                 0,
-                0,
+                p6,
                 0)
             do_context = True
         if do_context:
@@ -1971,12 +1975,12 @@ class AutoTest(ABC):
                                        0,
                                        0)
 
-    def reboot_sitl(self, required_bootcount=None):
+    def reboot_sitl(self, required_bootcount=None, force=False):
         """Reboot SITL instance and wait for it to reconnect."""
-        if self.armed():
+        if self.armed() and not force:
             raise NotAchievedException("Reboot attempted while armed")
         self.progress("Rebooting SITL")
-        self.reboot_sitl_mav(required_bootcount=required_bootcount)
+        self.reboot_sitl_mav(required_bootcount=required_bootcount, force=force)
         self.do_heartbeats(force=True)
         self.assert_simstate_location_is_at_startup_location()
 
@@ -2020,6 +2024,15 @@ class AutoTest(ABC):
 
         self.progress("Calling initialise-after-reboot")
         self.initialise_after_reboot_sitl()
+
+    def scripting_restart(self):
+        '''restart scripting subsystem'''
+        self.progress("Restarting Scripting")
+        self.run_cmd_int(
+            mavutil.mavlink.MAV_CMD_SCRIPTING,
+            mavutil.mavlink.SCRIPTING_CMD_STOP_AND_RESTART,
+            0, 0, 0, 0, 0, 0,
+            timeout=5)
 
     def set_streamrate(self, streamrate, timeout=20, stream=mavutil.mavlink.MAV_DATA_STREAM_ALL):
         '''set MAV_DATA_STREAM_ALL; timeout is wallclock time'''
@@ -2112,7 +2125,382 @@ class AutoTest(ABC):
             17 # squawk
         )
 
+    def get_sim_parameter_documentation_get_whitelist(self):
+        # common parameters
+        ret = set([
+            "SIM_ACC1_BIAS_X",
+            "SIM_ACC1_BIAS_Y",
+            "SIM_ACC1_BIAS_Z",
+            "SIM_ACC1_RND",
+            "SIM_ACC1_SCAL_X",
+            "SIM_ACC1_SCAL_Y",
+            "SIM_ACC1_SCAL_Z",
+            "SIM_ACC2_BIAS_X",
+            "SIM_ACC2_BIAS_Y",
+            "SIM_ACC2_BIAS_Z",
+            "SIM_ACC2_RND",
+            "SIM_ACC2_SCAL_X",
+            "SIM_ACC2_SCAL_Y",
+            "SIM_ACC2_SCAL_Z",
+            "SIM_ACC3_BIAS_X",
+            "SIM_ACC3_BIAS_Y",
+            "SIM_ACC3_BIAS_Z",
+            "SIM_ACC3_RND",
+            "SIM_ACC3_SCAL_X",
+            "SIM_ACC3_SCAL_Y",
+            "SIM_ACC3_SCAL_Z",
+            "SIM_ACC_FILE_RW",
+            "SIM_ACC_TRIM_X",
+            "SIM_ACC_TRIM_Y",
+            "SIM_ACC_TRIM_Z",
+            "SIM_ADSB_ALT",
+            "SIM_ADSB_COUNT",
+            "SIM_ADSB_RADIUS",
+            "SIM_ADSB_TX",
+            "SIM_ARSPD2_FAIL",
+            "SIM_ARSPD2_FAILP",
+            "SIM_ARSPD2_OFS",
+            "SIM_ARSPD2_PITOT",
+            "SIM_ARSPD2_RATIO",
+            "SIM_ARSPD2_RND",
+            "SIM_ARSPD2_SIGN",
+            "SIM_ARSPD_FAILP",
+            "SIM_ARSPD_OFS",
+            "SIM_ARSPD_PITOT",
+            "SIM_ARSPD_RATIO",
+            "SIM_ARSPD_RND",
+            "SIM_ARSPD_SIGN",
+            "SIM_BAR2_DELAY",
+            "SIM_BAR2_DISABLE",
+            "SIM_BAR2_DRIFT",
+            "SIM_BAR2_FREEZE",
+            "SIM_BAR2_WCF_BAK",
+            "SIM_BAR2_WCF_DN",
+            "SIM_BAR2_WCF_FWD",
+            "SIM_BAR2_WCF_LFT",
+            "SIM_BAR2_WCF_RGT",
+            "SIM_BAR2_WCF_UP",
+            "SIM_BAR3_DELAY",
+            "SIM_BAR3_DISABLE",
+            "SIM_BAR3_DRIFT",
+            "SIM_BAR3_FREEZE",
+            "SIM_BAR3_WCF_BAK",
+            "SIM_BAR3_WCF_DN",
+            "SIM_BAR3_WCF_FWD",
+            "SIM_BAR3_WCF_LFT",
+            "SIM_BAR3_WCF_RGT",
+            "SIM_BAR3_WCF_UP",
+            "SIM_BARO_COUNT",
+            "SIM_BARO_DELAY",
+            "SIM_BARO_DISABLE",
+            "SIM_BARO_DRIFT",
+            "SIM_BARO_FREEZE",
+            "SIM_BARO_WCF_BAK",
+            "SIM_BARO_WCF_DN",
+            "SIM_BARO_WCF_FWD",
+            "SIM_BARO_WCF_LFT",
+            "SIM_BARO_WCF_RGT",
+            "SIM_BARO_WCF_UP",
+            "SIM_BATT_CAP_AH",
+            "SIM_BATT_VOLTAGE",
+            "SIM_BAUDLIMIT_EN",
+            "SIM_DRIFT_SPEED",
+            "SIM_DRIFT_TIME",
+            "SIM_EFI_TYPE",
+            "SIM_ENGINE_FAIL",
+            "SIM_ENGINE_MUL",
+            "SIM_ESC_ARM_RPM",
+            "SIM_FLOAT_EXCEPT",
+            "SIM_FLOW_DELAY",
+            "SIM_FLOW_ENABLE",
+            "SIM_FLOW_POS_X",
+            "SIM_FLOW_POS_Y",
+            "SIM_FLOW_POS_Z",
+            "SIM_FLOW_RATE",
+            "SIM_FLOW_RND",
+            "SIM_FTOWESC_ENA",
+            "SIM_FTOWESC_POW",
+            "SIM_GND_BEHAV",
+            "SIM_GPS2_ACC",
+            "SIM_GPS2_ALT_OFS",
+            "SIM_GPS2_BYTELOS",
+            "SIM_GPS2_DRFTALT",
+            "SIM_GPS2_GLTCH_X",
+            "SIM_GPS2_GLTCH_Y",
+            "SIM_GPS2_GLTCH_Z",
+            "SIM_GPS2_HDG",
+            "SIM_GPS2_HZ",
+            "SIM_GPS2_LAG_MS",
+            "SIM_GPS2_LCKTIME",
+            "SIM_GPS2_NOISE",
+            "SIM_GPS2_NUMSATS",
+            "SIM_GPS2_POS_X",
+            "SIM_GPS2_POS_Y",
+            "SIM_GPS2_POS_Z",
+            "SIM_GPS2_TYPE",
+            "SIM_GPS2_VERR_X",
+            "SIM_GPS2_VERR_Y",
+            "SIM_GPS2_VERR_Z",
+            "SIM_GPS_ACC",
+            "SIM_GPS_ALT_OFS",
+            "SIM_GPS_BYTELOSS",
+            "SIM_GPS_DRIFTALT",
+            "SIM_GPS_GLITCH_X",
+            "SIM_GPS_GLITCH_Y",
+            "SIM_GPS_GLITCH_Z",
+            "SIM_GPS_HDG",
+            "SIM_GPS_HZ",
+            "SIM_GPS_LAG_MS",
+            "SIM_GPS_LOCKTIME",
+            "SIM_GPS_LOG_NUM",
+            "SIM_GPS_NOISE",
+            "SIM_GPS_NUMSATS",
+            "SIM_GPS_POS_X",
+            "SIM_GPS_POS_Y",
+            "SIM_GPS_POS_Z",
+            "SIM_GPS_TYPE",
+            "SIM_GPS_VERR_X",
+            "SIM_GPS_VERR_Y",
+            "SIM_GPS_VERR_Z",
+            "SIM_GYR1_RND",
+            "SIM_GYR1_SCALE_X",
+            "SIM_GYR1_SCALE_Y",
+            "SIM_GYR1_SCALE_Z",
+            "SIM_GYR2_RND",
+            "SIM_GYR2_SCALE_X",
+            "SIM_GYR2_SCALE_Y",
+            "SIM_GYR2_SCALE_Z",
+            "SIM_GYR3_RND",
+            "SIM_GYR3_SCALE_X",
+            "SIM_GYR3_SCALE_Y",
+            "SIM_GYR3_SCALE_Z",
+            "SIM_GYR_FAIL_MSK",
+            "SIM_GYR_FILE_RW",
+            "SIM_IE24_ENABLE",
+            "SIM_IE24_ERROR",
+            "SIM_IE24_STATE",
+            "SIM_IMU_COUNT",
+            "SIM_IMU_POS_X",
+            "SIM_IMU_POS_Y",
+            "SIM_IMU_POS_Z",
+            "SIM_IMUT1_ACC1_X",
+            "SIM_IMUT1_ACC1_Y",
+            "SIM_IMUT1_ACC1_Z",
+            "SIM_IMUT1_ACC2_X",
+            "SIM_IMUT1_ACC2_Y",
+            "SIM_IMUT1_ACC2_Z",
+            "SIM_IMUT1_ACC3_X",
+            "SIM_IMUT1_ACC3_Y",
+            "SIM_IMUT1_ACC3_Z",
+            "SIM_IMUT1_ENABLE",
+            "SIM_IMUT1_GYR1_X",
+            "SIM_IMUT1_GYR1_Y",
+            "SIM_IMUT1_GYR1_Z",
+            "SIM_IMUT1_GYR2_X",
+            "SIM_IMUT1_GYR2_Y",
+            "SIM_IMUT1_GYR2_Z",
+            "SIM_IMUT1_GYR3_X",
+            "SIM_IMUT1_GYR3_Y",
+            "SIM_IMUT1_GYR3_Z",
+            "SIM_IMUT1_TMAX",
+            "SIM_IMUT1_TMIN",
+            "SIM_IMUT2_ACC1_X",
+            "SIM_IMUT2_ACC1_Y",
+            "SIM_IMUT2_ACC1_Z",
+            "SIM_IMUT2_ACC2_X",
+            "SIM_IMUT2_ACC2_Y",
+            "SIM_IMUT2_ACC2_Z",
+            "SIM_IMUT2_ACC3_X",
+            "SIM_IMUT2_ACC3_Y",
+            "SIM_IMUT2_ACC3_Z",
+            "SIM_IMUT2_ENABLE",
+            "SIM_IMUT2_GYR1_X",
+            "SIM_IMUT2_GYR1_Y",
+            "SIM_IMUT2_GYR1_Z",
+            "SIM_IMUT2_GYR2_X",
+            "SIM_IMUT2_GYR2_Y",
+            "SIM_IMUT2_GYR2_Z",
+            "SIM_IMUT2_GYR3_X",
+            "SIM_IMUT2_GYR3_Y",
+            "SIM_IMUT2_GYR3_Z",
+            "SIM_IMUT2_TMAX",
+            "SIM_IMUT2_TMIN",
+            "SIM_IMUT3_ACC1_X",
+            "SIM_IMUT3_ACC1_Y",
+            "SIM_IMUT3_ACC1_Z",
+            "SIM_IMUT3_ACC2_X",
+            "SIM_IMUT3_ACC2_Y",
+            "SIM_IMUT3_ACC2_Z",
+            "SIM_IMUT3_ACC3_X",
+            "SIM_IMUT3_ACC3_Y",
+            "SIM_IMUT3_ACC3_Z",
+            "SIM_IMUT3_ENABLE",
+            "SIM_IMUT3_GYR1_X",
+            "SIM_IMUT3_GYR1_Y",
+            "SIM_IMUT3_GYR1_Z",
+            "SIM_IMUT3_GYR2_X",
+            "SIM_IMUT3_GYR2_Y",
+            "SIM_IMUT3_GYR2_Z",
+            "SIM_IMUT3_GYR3_X",
+            "SIM_IMUT3_GYR3_Y",
+            "SIM_IMUT3_GYR3_Z",
+            "SIM_IMUT3_TMAX",
+            "SIM_IMUT3_TMIN",
+            "SIM_IMUT_END",
+            "SIM_IMUT_FIXED",
+            "SIM_IMUT_START",
+            "SIM_IMUT_TCONST",
+            "SIM_INIT_ALT_OFS",
+            "SIM_INIT_LAT_OFS",
+            "SIM_INIT_LON_OFS",
+            "SIM_INS_THR_MIN",
+            "SIM_LED_LAYOUT",
+            "SIM_LOOP_DELAY",
+            "SIM_MAG1_DEVID",
+            "SIM_MAG1_SCALING",
+            "SIM_MAG2_DEVID",
+            "SIM_MAG2_DIA_X",
+            "SIM_MAG2_DIA_Y",
+            "SIM_MAG2_DIA_Z",
+            "SIM_MAG2_ODI_X",
+            "SIM_MAG2_ODI_Y",
+            "SIM_MAG2_ODI_Z",
+            "SIM_MAG2_OFS_X",
+            "SIM_MAG2_OFS_Y",
+            "SIM_MAG2_OFS_Z",
+            "SIM_MAG2_ORIENT",
+            "SIM_MAG2_SCALING",
+            "SIM_MAG3_DEVID",
+            "SIM_MAG3_DIA_X",
+            "SIM_MAG3_DIA_Y",
+            "SIM_MAG3_DIA_Z",
+            "SIM_MAG3_ODI_X",
+            "SIM_MAG3_ODI_Y",
+            "SIM_MAG3_ODI_Z",
+            "SIM_MAG3_OFS_X",
+            "SIM_MAG3_OFS_Y",
+            "SIM_MAG3_OFS_Z",
+            "SIM_MAG3_ORIENT",
+            "SIM_MAG3_SCALING",
+            "SIM_MAG4_DEVID",
+            "SIM_MAG5_DEVID",
+            "SIM_MAG6_DEVID",
+            "SIM_MAG7_DEVID",
+            "SIM_MAG8_DEVID",
+            "SIM_MAG_ALY_HGT",
+            "SIM_MAG_ALY_X",
+            "SIM_MAG_ALY_Y",
+            "SIM_MAG_ALY_Z",
+            "SIM_MAG_DELAY",
+            "SIM_MAG1_DIA_X",
+            "SIM_MAG1_DIA_Y",
+            "SIM_MAG1_DIA_Z",
+            "SIM_MAG_MOT_X",
+            "SIM_MAG_MOT_Y",
+            "SIM_MAG_MOT_Z",
+            "SIM_MAG1_ODI_X",
+            "SIM_MAG1_ODI_Y",
+            "SIM_MAG1_ODI_Z",
+            "SIM_MAG1_OFS_X",
+            "SIM_MAG1_OFS_Y",
+            "SIM_MAG1_OFS_Z",
+            "SIM_MAG1_ORIENT",
+            "SIM_MAG_RND",
+            "SIM_ODOM_ENABLE",
+            "SIM_OPOS_ALT",
+            "SIM_OPOS_HDG",
+            "SIM_OPOS_LAT",
+            "SIM_OPOS_LNG",
+            "SIM_PARA_ENABLE",
+            "SIM_PARA_PIN",
+            "SIM_PIN_MASK",
+            "SIM_PLD_ALT_LMT",
+            "SIM_PLD_DIST_LMT",
+            "SIM_RATE_HZ",
+            "SIM_RC_CHANCOUNT",
+            "SIM_RICH_CTRL",
+            "SIM_RICH_ENABLE",
+            "SIM_SAFETY_STATE",
+            "SIM_SERVO_SPEED",
+            "SIM_SHIP_DSIZE",
+            "SIM_SHIP_ENABLE",
+            "SIM_SHIP_OFS_X",
+            "SIM_SHIP_OFS_Y",
+            "SIM_SHIP_OFS_Z",
+            "SIM_SHIP_PSIZE",
+            "SIM_SHIP_SPEED",
+            "SIM_SHIP_SYSID",
+            "SIM_SHOVE_TIME",
+            "SIM_SHOVE_X",
+            "SIM_SHOVE_Y",
+            "SIM_SHOVE_Z",
+            "SIM_SONAR_GLITCH",
+            "SIM_SONAR_POS_X",
+            "SIM_SONAR_POS_Y",
+            "SIM_SONAR_POS_Z",
+            "SIM_SONAR_RND",
+            "SIM_SONAR_ROT",
+            "SIM_SONAR_SCALE",
+            "SIM_TA_ENABLE",
+            "SIM_TEMP_BFACTOR",
+            "SIM_TEMP_BRD_OFF",
+            "SIM_TEMP_START",
+            "SIM_TEMP_TCONST",
+            "SIM_TERRAIN",
+            "SIM_THML_SCENARI",
+            "SIM_TIDE_DIR",
+            "SIM_TIDE_SPEED",
+            "SIM_TIME_JITTER",
+            "SIM_TWIST_TIME",
+            "SIM_TWIST_X",
+            "SIM_TWIST_Y",
+            "SIM_TWIST_Z",
+            "SIM_VIB_FREQ_X",
+            "SIM_VIB_FREQ_Y",
+            "SIM_VIB_FREQ_Z",
+            "SIM_VIB_MOT_HMNC",
+            "SIM_VIB_MOT_MASK",
+            "SIM_VIB_MOT_MAX",
+            "SIM_VIB_MOT_MULT",
+            "SIM_VICON_FAIL",
+            "SIM_VICON_GLIT_X",
+            "SIM_VICON_GLIT_Y",
+            "SIM_VICON_GLIT_Z",
+            "SIM_VICON_POS_X",
+            "SIM_VICON_POS_Y",
+            "SIM_VICON_POS_Z",
+            "SIM_VICON_TMASK",
+            "SIM_VICON_VGLI_X",
+            "SIM_VICON_VGLI_Y",
+            "SIM_VICON_VGLI_Z",
+            "SIM_VICON_YAW",
+            "SIM_VICON_YAWERR",
+            "SIM_WAVE_AMP",
+            "SIM_WAVE_DIR",
+            "SIM_WAVE_ENABLE",
+            "SIM_WAVE_LENGTH",
+            "SIM_WAVE_SPEED",
+            "SIM_WIND_DIR_Z",
+            "SIM_WIND_T",
+        ])
+
+        vinfo_key = self.vehicleinfo_key()
+        if vinfo_key == "Rover":
+            ret.update([
+            ])
+        if vinfo_key == "ArduSub":
+            ret.update([
+                "SIM_BUOYANCY",
+            ])
+
+        return ret
+
     def test_parameter_documentation_get_all_parameters(self):
+        # this is a set of SIM_parameters which we know aren't currently
+        # documented - but they really should be.  We use this whitelist
+        # to ensure any new SIM_ parameters added are documented
+        sim_parameters_missing_documentation = self.get_sim_parameter_documentation_get_whitelist()
+
         xml_filepath = os.path.join(self.buildlogs_dirpath(), "apm.pdef.xml")
         param_parse_filepath = os.path.join(self.rootdir(), 'Tools', 'autotest', 'param_metadata', 'param_parse.py')
         try:
@@ -2145,13 +2533,19 @@ class AutoTest(ABC):
         fail = False
         for param in parameters.keys():
             if param.startswith("SIM_"):
-                # too many of these to worry about
-                continue
+                if param in sim_parameters_missing_documentation:
+                    if param in htree:
+                        self.progress("%s is in both XML and whitelist; remove it from the whitelist" % param)
+                        fail = True
+                    # hopefully these get documented sometime....
+                    continue
             if param not in htree:
                 self.progress("%s not in XML" % param)
                 fail = True
         if fail:
             raise NotAchievedException("Downloaded parameters missing in XML")
+
+        self.progress("There are %u SIM_ parameters left to document" % len(sim_parameters_missing_documentation))
 
         # FIXME: this should be doable if we filter out e.g BRD_* and CAN_*?
 #        self.progress("Checking no extra parameters present in XML")
@@ -2945,6 +3339,9 @@ class AutoTest(ABC):
         '''test sending of HIGH_LATENCY2'''
 
         # set airspeed sensor type to DLVR for air temperature message testing
+        if not self.is_plane():
+            # Plane does not have enable parameter
+            self.set_parameter("ARSPD_ENABLE", 1)
         self.set_parameter("ARSPD_BUS", 2)
         self.set_parameter("ARSPD_TYPE", 7)
         self.reboot_sitl()
@@ -3740,6 +4137,24 @@ class AutoTest(ABC):
             return
         self.mav.message_hooks.remove(hook)
 
+    def install_example_script_context(self, scriptname):
+        '''installs an example script which will be removed when the context goes
+        away'''
+        self.install_example_script(scriptname)
+        self.context_get().installed_scripts.append(scriptname)
+
+    def install_test_script_context(self, scriptname):
+        '''installs an test script which will be removed when the context goes
+        away'''
+        self.install_test_script(scriptname)
+        self.context_get().installed_scripts.append(scriptname)
+
+    def install_applet_script_context(self, scriptname):
+        '''installs an applet script which will be removed when the context goes
+        away'''
+        self.install_applet_script(scriptname)
+        self.context_get().installed_scripts.append(scriptname)
+
     def rootdir(self):
         this_dir = os.path.dirname(__file__)
         return os.path.realpath(os.path.join(this_dir, "../.."))
@@ -3752,6 +4167,7 @@ class AutoTest(ABC):
             mavutil.mavlink.MAV_CMD_NAV_RETURN_TO_LAUNCH,
             mavutil.mavlink.MAV_CMD_NAV_LOITER_TIME,
             mavutil.mavlink.MAV_CMD_DO_JUMP,
+            mavutil.mavlink.MAV_CMD_DO_JUMP_TAG,
             mavutil.mavlink.MAV_CMD_DO_DIGICAM_CONTROL,
             mavutil.mavlink.MAV_CMD_DO_SET_SERVO,
             mavutil.mavlink.MAV_CMD_DO_PAUSE_CONTINUE,
@@ -3839,7 +4255,7 @@ class AutoTest(ABC):
                 raise ValueError("count %u not handled" % count)
         self.progress("Files same")
 
-    def assert_not_receive_message(self, message, timeout=1, mav=None):
+    def assert_not_receive_message(self, message, timeout=1, mav=None, condition=None):
         '''this is like assert_not_receiving_message but uses sim time not
         wallclock time'''
         self.progress("making sure we're not getting %s messages" % message)
@@ -3848,7 +4264,7 @@ class AutoTest(ABC):
 
         tstart = self.get_sim_time_cached()
         while True:
-            m = mav.recv_match(type=message, blocking=True, timeout=0.1)
+            m = mav.recv_match(type=message, blocking=True, timeout=0.1, condition=condition)
             if m is not None:
                 self.progress("Received: %s" % self.dump_message_verbose(m))
                 raise PreconditionFailedException("Receiving %s messages" % message)
@@ -3858,15 +4274,26 @@ class AutoTest(ABC):
             if self.get_sim_time_cached() - tstart > timeout:
                 return
 
-    def assert_receive_message(self, type, timeout=1, verbose=False, very_verbose=False, mav=None):
+    def assert_receive_message(self,
+                               type,
+                               timeout=1,
+                               verbose=False,
+                               very_verbose=False,
+                               mav=None,
+                               condition=None,
+                               delay_fn=None):
         if mav is None:
             mav = self.mav
         m = None
         tstart = time.time()  # timeout in wallclock
-        while m is None:
-            m = mav.recv_match(type=type, blocking=True, timeout=0.05)
+        while True:
+            m = mav.recv_match(type=type, blocking=True, timeout=0.05, condition=condition)
+            if m is not None:
+                break
             if time.time() - tstart > timeout:
                 raise NotAchievedException("Did not get %s" % type)
+            if delay_fn is not None:
+                delay_fn()
         if verbose:
             self.progress("Received (%s)" % str(m))
         if very_verbose:
@@ -4215,9 +4642,13 @@ class AutoTest(ABC):
                     raise NotAchievedException("Frame not same (got=%s want=%s)" %
                                                (self.string_for_frame(downloaded_item_val),
                                                 self.string_for_frame(item_val)))
-                if abs(item.z - downloaded_item.z) > 1.0E-3: # error should be less than 1 mm
-                    raise NotAchievedException("Z not preserved (got=%f want=%f)" %
-                                               (downloaded_item.z, item.z))
+                if downloaded_item.z == 0:
+                    delta = abs(item.z)
+                else:
+                    delta = 1 - abs(item.z / downloaded_item.z)
+                if delta > 0.01: # error should be less than 1 mm, but float precision issues in Python...
+                    raise NotAchievedException("Z not preserved (got=%f want=%f delta=%f%%)" %
+                                               (downloaded_item.z, item.z, delta))
 
     def check_fence_items_same(self, want, got, strict=True):
         check_atts = ['mission_type', 'command', 'x', 'y', 'seq', 'param1']
@@ -5145,6 +5576,8 @@ class AutoTest(ABC):
         # we really don't want...
         for hook in dead.message_hooks:
             self.remove_message_hook(hook)
+        for script in dead.installed_scripts:
+            self.remove_installed_script(script)
         if dead.sitl_commandline_customised and len(self.contexts):
             self.contexts[-1].sitl_commandline_customised = True
 
@@ -5314,11 +5747,13 @@ class AutoTest(ABC):
         )
         self.run_cmd_get_ack(command, want_result, timeout, quiet=quiet, mav=mav)
 
-    def run_cmd_get_ack(self, command, want_result, timeout, quiet=False, mav=None):
+    def run_cmd_get_ack(self, command, want_result, timeout, quiet=False, mav=None, ignore_in_progress=None):
         # note that the caller should ensure that this cached
         # timestamp is reasonably up-to-date!
         if mav is None:
             mav = self.mav
+        if ignore_in_progress is None:
+            ignore_in_progress = want_result != mavutil.mavlink.MAV_RESULT_IN_PROGRESS
         tstart = self.get_sim_time_cached()
         while True:
             if mav != self.mav:
@@ -5334,6 +5769,8 @@ class AutoTest(ABC):
             if not quiet:
                 self.progress("ACK received: %s (%fs)" % (str(m), delta_time))
             if m.command == command:
+                if m.result == mavutil.mavlink.MAV_RESULT_IN_PROGRESS and ignore_in_progress:
+                    continue
                 if m.result != want_result:
                     raise ValueError("Expected %s got %s" % (
                         mavutil.mavlink.enums["MAV_RESULT"][want_result].name,
@@ -5493,6 +5930,9 @@ class AutoTest(ABC):
             0,
             0
         )
+
+    def assert_mode(self, mode):
+        self.wait_mode(mode, timeout=0)
 
     def change_mode(self, mode, timeout=60):
         '''change vehicle flightmode'''
@@ -5747,6 +6187,15 @@ class AutoTest(ABC):
         self.progress(r % (seconds_to_wait,))
         while tstart + seconds_to_wait > tnow:
             tnow = self.get_sim_time(drain_mav=False)
+
+    def send_terrain_check_message(self):
+        here = self.mav.location()
+        self.mav.mav.terrain_check_send(int(here.lat * 1e7), int(here.lng * 1e7))
+
+    def get_terrain_height(self, verbose=False):
+        self.send_terrain_check_message()
+        m = self.assert_receive_message('TERRAIN_REPORT', very_verbose=True)
+        return m.terrain_height
 
     def get_altitude(self, relative=False, timeout=30, altitude_source=None):
         '''returns vehicles altitude in metres, possibly relative-to-home'''
@@ -6087,6 +6536,7 @@ class AutoTest(ABC):
                                 maximum,
                                 current_value_getter,
                                 validator=None,
+                                value_averager=None,
                                 timeout=30,
                                 print_diagnostics_as_target_not_range=False,
                                 **kwargs):
@@ -6145,28 +6595,45 @@ class AutoTest(ABC):
                          achieved_duration_bit)
                     )
                 else:
-                    self.progress(
-                        "%s=%0.2f (%s between %s and %s)%s" %
-                        (value_name,
-                         last_value,
-                         want_or_got,
-                         str(minimum),
-                         str(maximum),
-                         achieved_duration_bit)
-                    )
+                    if type(last_value) is float:
+                        self.progress(
+                            "%s=%0.2f (%s between %s and %s)%s" %
+                            (value_name,
+                             last_value,
+                             want_or_got,
+                             str(minimum),
+                             str(maximum),
+                             achieved_duration_bit)
+                        )
+                    else:
+                        self.progress(
+                            "%s=%s (%s between %s and %s)%s" %
+                            (value_name,
+                             last_value,
+                             want_or_got,
+                             str(minimum),
+                             str(maximum),
+                             achieved_duration_bit)
+                        )
                 last_print_time = self.get_sim_time_cached()
             if is_value_valid:
-                sum_of_achieved_values += last_value
-                count_of_achieved_values += 1.0
+                if value_averager is not None:
+                    average = value_averager.add_value(last_value)
+                else:
+                    sum_of_achieved_values += last_value
+                    count_of_achieved_values += 1.0
+                    average = sum_of_achieved_values / count_of_achieved_values
                 if achieving_duration_start is None:
                     achieving_duration_start = self.get_sim_time_cached()
                 if self.get_sim_time_cached() - achieving_duration_start >= minimum_duration:
-                    self.progress("Attained %s=%f" % (value_name, sum_of_achieved_values / count_of_achieved_values))
+                    self.progress("Attained %s=%s" % (value_name, average))
                     return True
             else:
                 achieving_duration_start = None
                 sum_of_achieved_values = 0.0
                 count_of_achieved_values = 0
+                if value_averager is not None:
+                    value_averager.reset()
         if print_diagnostics_as_target_not_range:
             raise AutoTestTimeoutException(
                 "Failed to attain %s want %s, reached %s" %
@@ -6575,7 +7042,7 @@ class AutoTest(ABC):
         if seq != wpnum:
             raise NotAchievedException("Incorrect current wp")
 
-    def wait_current_waypoint(self, wpnum, timeout=60):
+    def wait_current_waypoint(self, wpnum, timeout=70):
         tstart = self.get_sim_time()
         while True:
             if self.get_sim_time() - tstart > timeout:
@@ -6754,7 +7221,10 @@ class AutoTest(ABC):
             t2 = self.get_sim_time_cached()
             if t2 - tstart > timeout:
                 self.progress("Prearm bit never went true.  Attempting arm to elicit reason from autopilot")
-                self.arm_vehicle()
+                try:
+                    self.arm_vehicle()
+                except Exception:
+                    pass
                 raise AutoTestTimeoutException("Prearm bit never went true")
             if self.sensor_has_state(mavutil.mavlink.MAV_SYS_STATUS_PREARM_CHECK, True, True, True):
                 break
@@ -6857,11 +7327,11 @@ class AutoTest(ABC):
         self.wait_ekf_happy(timeout=timeout, require_absolute=require_absolute)
         if require_absolute:
             self.wait_gps_sys_status_not_present_or_enabled_and_healthy()
-        armable_time = self.get_sim_time() - start
         if require_absolute:
             self.poll_home_position()
         if check_prearm_bit:
             self.wait_prearm_sys_status_healthy(timeout=timeout)
+        armable_time = self.get_sim_time() - start
         self.progress("Took %u seconds to become armable" % armable_time)
         self.total_waiting_to_arm_time += armable_time
         self.waiting_to_arm_count += 1
@@ -7047,11 +7517,18 @@ Also, ignores heartbeats not from our target system'''
     def script_test_source_path(self, scriptname):
         return os.path.join(self.rootdir(), "libraries", "AP_Scripting", "tests", scriptname)
 
-    def installed_script_path(self, scriptname):
-        return os.path.join("scripts", scriptname)
+    def script_applet_source_path(self, scriptname):
+        return os.path.join(self.rootdir(), "libraries", "AP_Scripting", "applets", scriptname)
 
-    def install_script(self, source, scriptname):
-        dest = self.installed_script_path(scriptname)
+    def installed_script_path(self, scriptname):
+        return os.path.join("scripts", os.path.basename(scriptname))
+
+    def install_script(self, source, scriptname, install_name=None):
+        if install_name is not None:
+            dest = self.installed_script_path(install_name)
+        else:
+            dest = self.installed_script_path(scriptname)
+
         destdir = os.path.dirname(dest)
         if not os.path.exists(destdir):
             os.mkdir(destdir)
@@ -7066,8 +7543,12 @@ Also, ignores heartbeats not from our target system'''
         source = self.script_test_source_path(scriptname)
         self.install_script(source, scriptname)
 
-    def remove_example_script(self, scriptname):
-        dest = self.installed_script_path(scriptname)
+    def install_applet_script(self, scriptname, install_name=None):
+        source = self.script_applet_source_path(scriptname)
+        self.install_script(source, scriptname, install_name=install_name)
+
+    def remove_installed_script(self, scriptname):
+        dest = self.installed_script_path(os.path.basename(scriptname))
         try:
             os.unlink(dest)
         except IOError:
@@ -7961,9 +8442,9 @@ Also, ignores heartbeats not from our target system'''
                      )
         self.progress("zeroed mag parameters")
         params = [
-            [("SIM_MAG_OFS_X", "COMPASS_OFS_X", 0),
-             ("SIM_MAG_OFS_Y", "COMPASS_OFS_Y", 0),
-             ("SIM_MAG_OFS_Z", "COMPASS_OFS_Z", 0), ],
+            [("SIM_MAG1_OFS1_X", "COMPASS_OFS_X", 0),
+             ("SIM_MAG1_OFS1_Y", "COMPASS_OFS_Y", 0),
+             ("SIM_MAG1_OFS1_Z", "COMPASS_OFS_Z", 0), ],
         ]
         for count in range(2, compass_count + 1):
             params += [
@@ -7977,12 +8458,12 @@ Also, ignores heartbeats not from our target system'''
         self.progress("Forty twoing Mag DIA and ODI parameters")
         self.get_sim_time()
         params = [
-            [("SIM_MAG_DIA_X", "COMPASS_DIA_X", 42.0),
-             ("SIM_MAG_DIA_Y", "COMPASS_DIA_Y", 42.0),
-             ("SIM_MAG_DIA_Z", "COMPASS_DIA_Z", 42.0),
-             ("SIM_MAG_ODI_X", "COMPASS_ODI_X", 42.0),
-             ("SIM_MAG_ODI_Y", "COMPASS_ODI_Y", 42.0),
-             ("SIM_MAG_ODI_Z", "COMPASS_ODI_Z", 42.0), ],
+            [("SIM_MAG1_DIA_X", "COMPASS_DIA_X", 42.0),
+             ("SIM_MAG1_DIA_Y", "COMPASS_DIA_Y", 42.0),
+             ("SIM_MAG1_DIA_Z", "COMPASS_DIA_Z", 42.0),
+             ("SIM_MAG1_ODI_X", "COMPASS_ODI_X", 42.0),
+             ("SIM_MAG1_ODI_Y", "COMPASS_ODI_Y", 42.0),
+             ("SIM_MAG1_ODI_Z", "COMPASS_ODI_Z", 42.0), ],
         ]
         for count in range(2, compass_count + 1):
             params += [
@@ -8061,15 +8542,15 @@ Also, ignores heartbeats not from our target system'''
             MAG_DIA = 1.0
             MAG_ODI = 0.004
             params += [
-                [("SIM_MAG_OFS_X", "COMPASS_OFS_X", MAG_OFS),
-                 ("SIM_MAG_OFS_Y", "COMPASS_OFS_Y", MAG_OFS + 100),
-                 ("SIM_MAG_OFS_Z", "COMPASS_OFS_Z", MAG_OFS + 200),
-                 ("SIM_MAG_DIA_X", "COMPASS_DIA_X", MAG_DIA),
-                 ("SIM_MAG_DIA_Y", "COMPASS_DIA_Y", MAG_DIA + 0.1),
-                 ("SIM_MAG_DIA_Z", "COMPASS_DIA_Z", MAG_DIA + 0.2),
-                 ("SIM_MAG_ODI_X", "COMPASS_ODI_X", MAG_ODI),
-                 ("SIM_MAG_ODI_Y", "COMPASS_ODI_Y", MAG_ODI + 0.001),
-                 ("SIM_MAG_ODI_Z", "COMPASS_ODI_Z", MAG_ODI + 0.001), ],
+                [("SIM_MAG1_OFS_X", "COMPASS_OFS_X", MAG_OFS),
+                 ("SIM_MAG1_OFS_Y", "COMPASS_OFS_Y", MAG_OFS + 100),
+                 ("SIM_MAG1_OFS_Z", "COMPASS_OFS_Z", MAG_OFS + 200),
+                 ("SIM_MAG1_DIA_X", "COMPASS_DIA_X", MAG_DIA),
+                 ("SIM_MAG1_DIA_Y", "COMPASS_DIA_Y", MAG_DIA + 0.1),
+                 ("SIM_MAG1_DIA_Z", "COMPASS_DIA_Z", MAG_DIA + 0.2),
+                 ("SIM_MAG1_ODI_X", "COMPASS_ODI_X", MAG_ODI),
+                 ("SIM_MAG1_ODI_Y", "COMPASS_ODI_Y", MAG_ODI + 0.001),
+                 ("SIM_MAG1_ODI_Z", "COMPASS_ODI_Z", MAG_ODI + 0.001), ],
             ]
             for count in range(2, compass_count + 1):
                 params += [
@@ -8100,7 +8581,7 @@ Also, ignores heartbeats not from our target system'''
             self.progress("Setting SITL Magnetometer model value")
             self.set_parameter("COMPASS_AUTO_ROT", 0)
             # MAG_ORIENT = 4
-            # self.set_parameter("SIM_MAG_ORIENT", MAG_ORIENT)
+            # self.set_parameter("SIM_MAG1_ORIENT", MAG_ORIENT)
             # for count in range(2, compass_count + 1):
             #     self.set_parameter("SIM_MAG%d_ORIENT" % count, MAG_ORIENT * (count % 41))
             #     # set compass external to check that orientation is found and auto set
@@ -8245,7 +8726,7 @@ Also, ignores heartbeats not from our target system'''
                 if m.get_type() == "MAG_CAL_REPORT":
                     if report_get[m.compass_id] == 0:
                         self.progress("Report: %s" % self.dump_message_verbose(m))
-                        param_names = ["SIM_MAG_ORIENT"]
+                        param_names = ["SIM_MAG1_ORIENT"]
                         for i in range(2, compass_tnumber+1):
                             param_names.append("SIM_MAG%u_ORIENT" % i)
                         for param_name in param_names:
@@ -8290,7 +8771,7 @@ Also, ignores heartbeats not from our target system'''
                          timeout=20,
                          )
             self.check_mag_parameters(params, compass_tnumber)
-            self.verify_parameter_values({"COMPASS_ORIENT": self.get_parameter("SIM_MAG_ORIENT")})
+            self.verify_parameter_values({"COMPASS_ORIENT": self.get_parameter("SIM_MAG1_ORIENT")})
             for count in range(2, compass_tnumber + 1):
                 self.verify_parameter_values({"COMPASS_ORIENT%d" % count: self.get_parameter("SIM_MAG%d_ORIENT" % count)})
             self.try_arm(False, "Compass calibrated requires reboot")
@@ -8560,9 +9041,9 @@ Also, ignores heartbeats not from our target system'''
                 "COMPASS_ODI3_Z": 0,
             }
             self.set_parameters({
-                "SIM_MAG_OFS_X": MAG_OFS_X,
-                "SIM_MAG_OFS_Y": MAG_OFS_Y,
-                "SIM_MAG_OFS_Z": MAG_OFS_Z,
+                "SIM_MAG1_OFS_X": MAG_OFS_X,
+                "SIM_MAG1_OFS_Y": MAG_OFS_Y,
+                "SIM_MAG1_OFS_Z": MAG_OFS_Z,
 
                 "SIM_MAG2_OFS_X": MAG_OFS_X,
                 "SIM_MAG2_OFS_Y": MAG_OFS_Y,
@@ -8862,6 +9343,7 @@ Also, ignores heartbeats not from our target system'''
     def ArmFeatures(self):
         '''Arm features'''
         # TEST ARMING/DISARM
+        self.delay_sim_time(12)  # wait for gyros/accels to be happy
         if self.get_parameter("ARMING_CHECK") != 1.0 and not self.is_sub():
             raise ValueError("Arming check should be 1")
         if not self.is_sub() and not self.is_tracker():
@@ -9248,6 +9730,8 @@ Also, ignores heartbeats not from our target system'''
 
     def SET_MESSAGE_INTERVAL(self):
         '''Test MAV_CMD_SET_MESSAGE_INTERVAL'''
+        self.set_parameter("CAM1_TYPE", 1) # Camera with servo trigger
+        self.reboot_sitl() # needed for CAM1_TYPE to take effect
         self.start_subtest('Basic tests')
         self.test_set_message_interval_basic()
         self.start_subtest('Many-message tests')
@@ -9344,7 +9828,9 @@ Also, ignores heartbeats not from our target system'''
         if ex is not None:
             raise ex
 
-    def send_poll_message(self, message_id, target_sysid=None, target_compid=None, quiet=False):
+    def send_poll_message(self, message_id, target_sysid=None, target_compid=None, quiet=False, mav=None):
+        if mav is None:
+            mav = self.mav
         if type(message_id) == str:
             message_id = eval("mavutil.mavlink.MAVLINK_MSG_ID_%s" % message_id)
         self.send_cmd(mavutil.mavlink.MAV_CMD_REQUEST_MESSAGE,
@@ -9357,24 +9843,30 @@ Also, ignores heartbeats not from our target system'''
                       0,
                       target_sysid=target_sysid,
                       target_compid=target_compid,
-                      quiet=quiet)
+                      quiet=quiet,
+                      mav=mav)
 
-    def poll_message(self, message_id, timeout=10, quiet=False):
+    def poll_message(self, message_id, timeout=10, quiet=False, mav=None):
+        if mav is None:
+            mav = self.mav
         if type(message_id) == str:
             message_id = eval("mavutil.mavlink.MAVLINK_MSG_ID_%s" % message_id)
         tstart = self.get_sim_time() # required for timeout in run_cmd_get_ack to work
-        self.send_poll_message(message_id, quiet=quiet)
+        self.send_poll_message(message_id, quiet=quiet, mav=mav)
         self.run_cmd_get_ack(
             mavutil.mavlink.MAV_CMD_REQUEST_MESSAGE,
             mavutil.mavlink.MAV_RESULT_ACCEPTED,
             timeout,
             quiet=quiet,
+            mav=mav
         )
         while True:
             if self.get_sim_time_cached() - tstart > timeout:
                 raise NotAchievedException("Did not receive polled message")
-            m = self.mav.recv_match(blocking=True,
-                                    timeout=0.1)
+            m = mav.recv_match(blocking=True,
+                               timeout=0.1)
+            if self.mav != mav:
+                self.drain_mav()
             if m is None:
                 continue
             if m.id != message_id:
@@ -9405,6 +9897,8 @@ Also, ignores heartbeats not from our target system'''
 
     def REQUEST_MESSAGE(self, timeout=60):
         '''Test MAV_CMD_REQUEST_MESSAGE'''
+        self.set_parameter("CAM1_TYPE", 1) # Camera with servo trigger
+        self.reboot_sitl() # needed for CAM1_TYPE to take effect
         rate = round(self.get_message_rate("CAMERA_FEEDBACK", 10))
         if rate != 0:
             raise PreconditionFailedException("Receiving camera feedback")
@@ -9524,12 +10018,17 @@ Also, ignores heartbeats not from our target system'''
 
     def Gripper(self):
         '''Test gripper'''
+        self.GripperType(1)  # servo
+        self.GripperType(2)  # EPM
+
+    def GripperType(self, gripper_type):
+        '''test specific gripper type'''
         self.context_push()
         self.set_parameters({
             "GRIP_ENABLE": 1,
             "GRIP_GRAB": 2000,
             "GRIP_RELEASE": 1000,
-            "GRIP_TYPE": 1,
+            "GRIP_TYPE": gripper_type,
             "SIM_GRPS_ENABLE": 1,
             "SIM_GRPS_PIN": 8,
             "SERVO8_FUNCTION": 28,
@@ -10707,13 +11206,15 @@ switch value'''
 
     def AdvancedFailsafe(self):
         '''Test Advanced Failsafe'''
-        self.context_push()
         ex = None
         try:
             self.drain_mav()
-            self.assert_no_capability(mavutil.mavlink.MAV_PROTOCOL_CAPABILITY_FLIGHT_TERMINATION)
-            self.set_parameter("AFS_ENABLE", 1)
-            self.set_parameter("SYSID_MYGCS", self.mav.source_system)
+            if self.is_plane():  # other vehicles can always terminate
+                self.assert_no_capability(mavutil.mavlink.MAV_PROTOCOL_CAPABILITY_FLIGHT_TERMINATION)
+            self.set_parameters({
+                "AFS_ENABLE": 1,
+                "SYSID_MYGCS": self.mav.source_system,
+            })
             self.drain_mav()
             self.assert_capability(mavutil.mavlink.MAV_PROTOCOL_CAPABILITY_FLIGHT_TERMINATION)
             self.set_parameter("AFS_TERM_ACTION", 42)
@@ -10721,19 +11222,29 @@ switch value'''
             self.context_collect("STATUSTEXT")
             self.change_mode("AUTO") # must go to auto for AFS to latch on
             self.wait_statustext("AFS State: AFS_AUTO", check_context=True)
-            self.change_mode("MANUAL")
+            if self.is_plane():
+                self.change_mode("MANUAL")
+            elif self.is_copter():
+                self.change_mode("STABILIZE")
+
             self.start_subtest("RC Failure")
-            self.set_parameter("AFS_RC_FAIL_TIME", 1)
-            self.set_parameter("SIM_RC_FAIL", 1)
+            self.context_push()
+            self.context_collect("STATUSTEXT")
+            self.set_parameters({
+                "AFS_RC_FAIL_TIME": 1,
+                "SIM_RC_FAIL": 1,
+            })
             self.wait_statustext("Terminating due to RC failure", check_context=True)
-            self.set_parameter("AFS_RC_FAIL_TIME", 0)
-            self.set_parameter("SIM_RC_FAIL", 0)
+            self.context_pop()
             self.set_parameter("AFS_TERMINATE", 0)
 
             if not self.is_plane():
                 # plane requires a polygon fence...
                 self.start_subtest("Altitude Limit breach")
-                self.set_parameter("AFS_AMSL_LIMIT", 100)
+                self.set_parameters({
+                    "AFS_AMSL_LIMIT": 100,
+                    "AFS_QNH_PRESSURE": 1015.2,
+                })
                 self.do_fence_enable()
                 self.wait_statustext("Terminating due to fence breach", check_context=True)
                 self.set_parameter("AFS_AMSL_LIMIT", 0)
@@ -10741,13 +11252,19 @@ switch value'''
                 self.do_fence_disable()
 
             self.start_subtest("GPS Failure")
-            self.set_parameter("AFS_MAX_GPS_LOSS", 1)
-            self.set_parameter("SIM_GPS_DISABLE", 1)
+            self.context_push()
+            self.context_collect("STATUSTEXT")
+            self.set_parameters({
+                "AFS_MAX_GPS_LOSS": 1,
+                "SIM_GPS_DISABLE": 1,
+            })
             self.wait_statustext("AFS State: GPS_LOSS", check_context=True)
-            self.set_parameter("SIM_GPS_DISABLE", 0)
-            self.set_parameter("AFS_MAX_GPS_LOSS", 0)
+            self.context_pop()
             self.set_parameter("AFS_TERMINATE", 0)
 
+            self.start_subtest("GCS Request")
+            self.context_push()
+            self.context_collect("STATUSTEXT")
             self.run_cmd(
                 mavutil.mavlink.MAV_CMD_DO_FLIGHTTERMINATION,
                 1,  # terminate
@@ -10759,6 +11276,8 @@ switch value'''
                 0,
             )
             self.wait_statustext("Terminating due to GCS request", check_context=True)
+            self.context_pop()
+            self.set_parameter("AFS_TERMINATE", 0)
 
         except Exception as e:
             ex = e
@@ -10767,7 +11286,6 @@ switch value'''
         except ValueError:
             # may not actually be enabled....
             pass
-        self.context_pop()
         if ex is not None:
             raise ex
 
@@ -11423,14 +11941,18 @@ switch value'''
         text = ""
 
         self.context_collect('STATUSTEXT')
-        self.run_cmd(mavutil.mavlink.MAV_CMD_PREFLIGHT_CALIBRATION,
-                     0, # p1
-                     0, # p2
-                     1, # p3, baro
-                     0, # p4
-                     0, # p5
-                     0, # p6
-                     0) # p7
+        command = mavutil.mavlink.MAV_CMD_PREFLIGHT_CALIBRATION
+        self.send_cmd(command,
+                      0, # p1
+                      0, # p2
+                      1, # p3, baro
+                      0, # p4
+                      0, # p5
+                      0, # p6
+                      0) # p7
+        # this is a test for asynchronous handling of mavlink messages:
+        self.run_cmd_get_ack(command, mavutil.mavlink.MAV_RESULT_IN_PROGRESS, 2)
+        self.run_cmd_get_ack(command, mavutil.mavlink.MAV_RESULT_ACCEPTED, 5)
 
         received_frsky_texts = []
         last_len_received_statustexts = 0
@@ -11835,7 +12357,7 @@ switch value'''
             raise NotAchievedException("Did not get BATTERY_STATUS message")
         battery_status_current_a = batt.current_battery * 0.01 # cA -> A
         self.progress("BATTERY_STATUS current==%f frsky==%f" % (battery_status_current_a, current_a))
-        if self.compare_number_percent(battery_status_current_a, current_a, 10):
+        if self.compare_number_percent(round(battery_status_current_a * 10), round(current_a * 10), 10):
             return True
         return False
 
@@ -12787,3 +13309,16 @@ SERIAL5_BAUD 128
 
             self.progress("vtol and landed states match")
             return
+
+    def setGCSfailsafe(self, paramValue):
+        # Slow down the sim rate if GCS Failsafe is in use
+        if paramValue == 0:
+            self.set_parameters({
+                "FS_GCS_ENABLE": paramValue,
+                "SIM_SPEEDUP": 10,
+            })
+        else:
+            self.set_parameters({
+                "SIM_SPEEDUP": 4,
+                "FS_GCS_ENABLE": paramValue,
+            })

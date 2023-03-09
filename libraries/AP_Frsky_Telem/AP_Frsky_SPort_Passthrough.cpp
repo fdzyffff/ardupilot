@@ -1,5 +1,7 @@
 #include "AP_Frsky_SPort_Passthrough.h"
 
+#if AP_FRSKY_SPORT_PASSTHROUGH_ENABLED
+
 #include <AP_AHRS/AP_AHRS.h>
 #include <AP_BattMonitor/AP_BattMonitor.h>
 #include <AP_GPS/AP_GPS.h>
@@ -565,7 +567,7 @@ uint32_t AP_Frsky_SPort_Passthrough::calc_ap_status(void)
 {
     // IMU temperature: offset -19, 0 means temp =< 19°, 63 means temp => 82°
     uint8_t imu_temp = 0;
-#if HAL_INS_ENABLED
+#if AP_INERTIALSENSOR_ENABLED
     imu_temp = (uint8_t) roundf(constrain_float(AP::ins().get_temperature(0), AP_IMU_TEMP_MIN, AP_IMU_TEMP_MAX) - AP_IMU_TEMP_MIN);
 #endif
 
@@ -966,3 +968,5 @@ AP_Frsky_SPort_Passthrough *frsky_passthrough_telem()
     return AP_Frsky_SPort_Passthrough::get_singleton();
 }
 };
+
+#endif  // AP_FRSKY_SPORT_PASSTHROUGH_ENABLED

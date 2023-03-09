@@ -3,6 +3,7 @@
 #include "Plane.h"
 #include <AP_RPM/AP_RPM_config.h>
 #include <AP_Airspeed/AP_Airspeed_config.h>
+#include <AP_EFI/AP_EFI_config.h>
 
 MAV_TYPE GCS_Plane::frame_type() const
 {
@@ -356,7 +357,7 @@ void GCS_MAVLINK_Plane::send_pid_tuning()
         pid_info = &plane.steerController.get_pid_info();
         send_pid_info(pid_info, PID_TUNING_STEER, pid_info->actual);
     }
-    if ((g.gcs_pid_mask & TUNING_BITS_LAND) && (plane.flight_stage == AP_Vehicle::FixedWing::FLIGHT_LAND)) {
+    if ((g.gcs_pid_mask & TUNING_BITS_LAND) && (plane.flight_stage == AP_FixedWing::FlightStage::LAND)) {
         AP_AHRS &ahrs = AP::ahrs();
         const Vector3f &gyro = ahrs.get_gyro();
         send_pid_info(plane.landing.get_pid_info(), PID_TUNING_LANDING, degrees(gyro.z));
@@ -621,7 +622,9 @@ static const ap_message STREAM_EXTRA1_msgs[] = {
     MSG_PID_TUNING,
     MSG_LANDING,
     MSG_ESC_TELEMETRY,
+#if HAL_EFI_ENABLED
     MSG_EFI_STATUS,
+#endif
 #if AP_AIRSPEED_HYGROMETER_ENABLE
     MSG_HYGROMETER,
 #endif
@@ -693,10 +696,10 @@ void GCS_MAVLINK_Plane::handle_change_alt_request(AP_Mission::Mission_Command &c
 }
 
 
-MAV_RESULT GCS_MAVLINK_Plane::handle_command_preflight_calibration(const mavlink_command_long_t &packet)
+MAV_RESULT GCS_MAVLINK_Plane::handle_command_preflight_calibration(const mavlink_command_long_t &packet, const mavlink_message_t &msg)
 {
     plane.in_calibration = true;
-    MAV_RESULT ret = GCS_MAVLINK::handle_command_preflight_calibration(packet);
+    MAV_RESULT ret = GCS_MAVLINK::handle_command_preflight_calibration(packet, msg);
     plane.in_calibration = false;
 
     return ret;
@@ -724,6 +727,14 @@ bool GCS_MAVLINK_Plane::set_home_to_current_location(bool _lock)
     if (_lock) {
         AP::ahrs().lock_home();
     }
+    if ((plane.control_mode == &plane.mode_rtl)
+#if HAL_QUADPLANE_ENABLED
+            || (plane.control_mode == &plane.mode_qrtl)
+#endif
+                                                        ) {
+        // if in RTL head to the updated home location
+        plane.control_mode->enter();
+    }
     return true;
 }
 bool GCS_MAVLINK_Plane::set_home(const Location& loc, bool _lock)
@@ -733,6 +744,14 @@ bool GCS_MAVLINK_Plane::set_home(const Location& loc, bool _lock)
     }
     if (_lock) {
         AP::ahrs().lock_home();
+    }
+    if ((plane.control_mode == &plane.mode_rtl)
+#if HAL_QUADPLANE_ENABLED
+            || (plane.control_mode == &plane.mode_qrtl)
+#endif
+                                                        ) {
+        // if in RTL head to the updated home location
+        plane.control_mode->enter();
     }
     return true;
 }
@@ -1019,9 +1038,8 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_long_packet(const mavlink_command_l
     case MAV_CMD_DO_GO_AROUND:
         {
             uint16_t mission_id = plane.mission.get_current_nav_cmd().id;
-            bool is_in_landing = (plane.flight_stage == AP_Vehicle::FixedWing::FLIGHT_LAND) ||
-                                 (mission_id == MAV_CMD_NAV_LAND) ||
-                                 (mission_id == MAV_CMD_NAV_VTOL_LAND);
+            bool is_in_landing = (plane.flight_stage == AP_FixedWing::FlightStage::LAND) ||
+                plane.is_land_command(mission_id);
             if (is_in_landing) {
                 // fly a user planned abort pattern if available
                 if (plane.mission.jump_to_abort_landing_sequence()) {
@@ -1058,40 +1076,6 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_long_packet(const mavlink_command_l
             }
         }
         return MAV_RESULT_FAILED;
-
-    case MAV_CMD_DO_SET_HOME: {
-        // param1 : use current (1=use current location, 0=use specified location)
-        // param5 : latitude
-        // param6 : longitude
-        // param7 : altitude (absolute)
-        if (is_equal(packet.param1,1.0f)) {
-            if (!plane.set_home_persistently(AP::gps().location())) {
-                return MAV_RESULT_FAILED;
-            }
-            AP::ahrs().lock_home();
-        } else {
-            // ensure param1 is zero
-            if (!is_zero(packet.param1)) {
-                return MAV_RESULT_FAILED;
-            }
-            Location new_home_loc;
-            if (!location_from_command_t(packet, MAV_FRAME_GLOBAL, new_home_loc)) {
-                return MAV_RESULT_DENIED;
-            }
-            if (!set_home(new_home_loc, true)) {
-                return MAV_RESULT_FAILED;
-            }
-        }
-        if ((plane.control_mode == &plane.mode_rtl)
-#if HAL_QUADPLANE_ENABLED
-                || (plane.control_mode == &plane.mode_qrtl)
-#endif
-                                                            ) {
-            // if in RTL head to the updated home location
-            plane.control_mode->enter();
-        }
-        return MAV_RESULT_ACCEPTED;
-    }
 
     case MAV_CMD_DO_AUTOTUNE_ENABLE:
         // param1 : enable/disable
@@ -1172,35 +1156,20 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_long_packet(const mavlink_command_l
     }
 }
 
+// this is called on receipt of a MANUAL_CONTROL packet and is
+// expected to call manual_override to override RC input on desired
+// axes.
+void GCS_MAVLINK_Plane::handle_manual_control_axes(const mavlink_manual_control_t &packet, const uint32_t tnow)
+{
+    manual_override(plane.channel_roll, packet.y, 1000, 2000, tnow);
+    manual_override(plane.channel_pitch, packet.x, 1000, 2000, tnow, true);
+    manual_override(plane.channel_throttle, packet.z, 0, 1000, tnow);
+    manual_override(plane.channel_rudder, packet.r, 1000, 2000, tnow);
+}
+
 void GCS_MAVLINK_Plane::handleMessage(const mavlink_message_t &msg)
 {
     switch (msg.msgid) {
-
-    case MAVLINK_MSG_ID_MANUAL_CONTROL:
-    {
-        if (msg.sysid != plane.g.sysid_my_gcs) {
-            break; // only accept control from our gcs
-        }
-
-        mavlink_manual_control_t packet;
-        mavlink_msg_manual_control_decode(&msg, &packet);
-
-        if (packet.target != plane.g.sysid_this_mav) {
-            break; // only accept messages aimed at us
-        }
-
-        uint32_t tnow = AP_HAL::millis();
-
-        manual_override(plane.channel_roll, packet.y, 1000, 2000, tnow);
-        manual_override(plane.channel_pitch, packet.x, 1000, 2000, tnow, true);
-        manual_override(plane.channel_throttle, packet.z, 0, 1000, tnow);
-        manual_override(plane.channel_rudder, packet.r, 1000, 2000, tnow);
-
-        // a manual control message is considered to be a 'heartbeat'
-        // from the ground station for failsafe purposes
-        gcs().sysid_myggcs_seen(tnow);
-        break;
-    }
 
     case MAVLINK_MSG_ID_RADIO:
     case MAVLINK_MSG_ID_RADIO_STATUS:
@@ -1413,7 +1382,7 @@ uint64_t GCS_MAVLINK_Plane::capabilities() const
 int16_t GCS_MAVLINK_Plane::high_latency_target_altitude() const
 {
     AP_AHRS &ahrs = AP::ahrs();
-    struct Location global_position_current;
+    Location global_position_current;
     UNUSED_RESULT(ahrs.get_location(global_position_current));
 
 #if HAL_QUADPLANE_ENABLED

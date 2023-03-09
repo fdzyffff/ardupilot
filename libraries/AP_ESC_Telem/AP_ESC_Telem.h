@@ -2,18 +2,13 @@
 
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Param/AP_Param.h>
-#include <AP_TemperatureSensor/AP_TemperatureSensor_config.h>
+#include <SRV_Channel/SRV_Channel_config.h>
 #include "AP_ESC_Telem_Backend.h"
 
 #if HAL_WITH_ESC_TELEM
 
-#ifdef NUM_SERVO_CHANNELS
- #define ESC_TELEM_MAX_ESCS NUM_SERVO_CHANNELS
-#elif !HAL_MINIMIZE_FEATURES && BOARD_FLASH_SIZE > 1024
- #define ESC_TELEM_MAX_ESCS 32
-#else
- #define ESC_TELEM_MAX_ESCS 16
-#endif
+#define ESC_TELEM_MAX_ESCS NUM_SERVO_CHANNELS
+static_assert(ESC_TELEM_MAX_ESCS > 0, "Cannot have 0 ESC telemetry instances");
 
 #define ESC_TELEM_DATA_TIMEOUT_MS 5000UL
 #define ESC_RPM_DATA_TIMEOUT_US 1000000UL
@@ -118,11 +113,6 @@ private:
     volatile AP_ESC_Telem_Backend::RpmData _rpm_data[ESC_TELEM_MAX_ESCS];
     // telemetry data
     volatile AP_ESC_Telem_Backend::TelemetryData _telem_data[ESC_TELEM_MAX_ESCS];
-
-#if AP_TEMPERATURE_SENSOR_ENABLED
-    bool _temperature_is_external[ESC_TELEM_MAX_ESCS];
-    bool _motor_temp_is_external[ESC_TELEM_MAX_ESCS];
-#endif
 
     uint32_t _last_telem_log_ms[ESC_TELEM_MAX_ESCS];
     uint32_t _last_rpm_log_us[ESC_TELEM_MAX_ESCS];

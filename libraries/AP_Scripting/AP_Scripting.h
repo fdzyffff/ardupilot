@@ -28,6 +28,8 @@
   #define SCRIPTING_MAX_NUM_I2C_DEVICE 4
 #endif
 
+#define SCRIPTING_MAX_NUM_PWM_SOURCE 4
+
 class AP_Scripting
 {
 public:
@@ -50,6 +52,8 @@ public:
     void handle_mission_command(const class AP_Mission::Mission_Command& cmd);
 
     bool arming_checks(size_t buflen, char *buffer) const;
+    
+    void restart_all(void);
 
    // User parameters for inputs into scripts 
    AP_Float _user[6];
@@ -86,6 +90,10 @@ public:
         uint32_t time_ms;
     };
     ObjectBuffer<struct scripting_mission_cmd> * mission_data;
+
+    // PWMSource storage
+    uint8_t num_pwm_source;
+    AP_HAL::PWMSource *_pwm_source[SCRIPTING_MAX_NUM_PWM_SOURCE];
 
 private:
 
