@@ -573,6 +573,12 @@ void AP_SerialManager::init()
                     // Note init is handled by AP_MSP
                     break;
 #endif
+                case SerialProtocol_Nacelle:
+                case SerialProtocol_GCS:
+                    uart->begin(map_baudrate(state[i].baud), 
+                                         128,
+                                         256);
+                    break;
                 default:
                     uart->begin(state[i].baudrate());
             }

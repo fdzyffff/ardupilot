@@ -180,6 +180,8 @@
 
 #include "mode.h"
 
+#include <FD1_UART/FD1_UART.h>
+
 class Copter : public AP_Vehicle {
 public:
     friend class GCS_MAVLINK_Copter;
@@ -938,6 +940,19 @@ private:
     void userhook_auxSwitch1(const RC_Channel::AuxSwitchPos ch_flag);
     void userhook_auxSwitch2(const RC_Channel::AuxSwitchPos ch_flag);
     void userhook_auxSwitch3(const RC_Channel::AuxSwitchPos ch_flag);
+
+    // Uart initialization
+    void FD1_uart_init();
+    void FD1_uart_update();
+    // User customization for optical nacelle
+    FD1_UART FD1_uart_msg_nacelle{AP_SerialManager::SerialProtocol_Nacelle};
+    FD1_UART FD1_uart_msg_gcs{AP_SerialManager::SerialProtocol_GCS};
+    void FD1_uart_nacelle_init();
+    void FD1_uart_nacelle_update();
+    void FD1_uart_nacelle_send();
+    void FD1_uart_gcs_handle_and_route();
+    void FD1_uart_nacelle_handle_and_route();
+    void FD1_uart_nacelle_AHRS_test();
 
 #if MODE_ACRO_ENABLED == ENABLED
 #if FRAME_CONFIG == HELI_FRAME
