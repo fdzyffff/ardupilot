@@ -181,6 +181,7 @@
 #include "mode.h"
 
 #include <FD1_UART/FD1_UART.h>
+#include "FD_netgun.h"
 
 class Copter : public AP_Vehicle {
 public:
@@ -228,6 +229,7 @@ public:
     friend class ModeZigZag;
     friend class ModeAutorotate;
     friend class ModeTurtle;
+    friend class UserNetgun;
 
     Copter(void);
 
@@ -941,6 +943,7 @@ private:
     void userhook_auxSwitch2(const RC_Channel::AuxSwitchPos ch_flag);
     void userhook_auxSwitch3(const RC_Channel::AuxSwitchPos ch_flag);
 
+    UserNetgun netgun;
     // Uart initialization
     void FD1_uart_init();
     void FD1_uart_update();
