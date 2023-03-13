@@ -1008,6 +1008,10 @@ const AP_Param::Info Plane::var_info[] = {
     // @Path: ../libraries/APM_Control/AS_YawController.cpp
     GOBJECT(as_yawController,          "S_Y",   AS_YawController),
 
+    // @Group: BARO
+    // @Path: ../libraries/AP_Depth/AP_Depth.cpp
+    GOBJECT(depth_sensor, "DEPTH", AP_Depth),
+
     // @Param: S_TRIM_PITCH_CD
     // @DisplayName: Pitch angle offset
     // @Description: Offset applied to AHRS pitch used for in-flight pitch trimming. Correct ground leveling is better than changing this parameter.

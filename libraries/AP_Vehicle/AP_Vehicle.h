@@ -56,6 +56,7 @@
 #include <AP_AIS/AP_AIS.h>
 #include <AC_Fence/AC_Fence.h>
 #include <AP_CheckFirmware/AP_CheckFirmware.h>
+#include <AP_Depth/AP_Depth.h>
 
 class AP_Vehicle : public AP_HAL::HAL::Callbacks {
 
@@ -426,6 +427,8 @@ protected:
 #if AP_SIM_ENABLED
     SITL::SIM sitl;
 #endif
+
+    AP_Depth depth_sensor;
 
 private:
 
