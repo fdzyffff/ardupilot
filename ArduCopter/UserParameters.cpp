@@ -5,9 +5,9 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     
     // Put your parameters definition here
     // Note the maximum length of parameter name is 13 chars
-    AP_GROUPINFO("_INT8", 0, UserParameters, _int8, 0),
-    AP_GROUPINFO("_INT16", 1, UserParameters, _int16, 0),
-    AP_GROUPINFO("_FLOAT", 2, UserParameters, _float, 0),
+    // Note that there should be LESS THAN 63 parameters in one group
+    AP_GROUPINFO("_NG_ANG_MAX", 0, UserParameters, netgun_max, 9000),
+    AP_GROUPINFO("_NG_ANG_NIN", 1, UserParameters, netgun_min, 0),
     
     AP_GROUPEND
 };

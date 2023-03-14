@@ -1013,7 +1013,7 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_
     }
 
     case MAV_CMD_USER_1: {
-        if ((int16_t)packet.param1 == 1) {copter.netgun.Trigger();}
+        copter.netgun.handle_info(packet.param1, packet.param2, packet.param3, packet.param4, packet.param5, packet.param6, packet.param7);
         return MAV_RESULT_ACCEPTED;
     }
 

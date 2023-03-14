@@ -73,10 +73,64 @@ void UserNetgun::Init()
     _barrels[0].Init(SRV_Channel::k_netgun_1);
     _barrels[1].Init(SRV_Channel::k_netgun_2);
     _barrel_idx = 0;
+
+    SRV_Channels::set_range(SRV_Channel::k_netgun_pitch,  1000);
+    _do_stab = true;
+    _angle_target = 0.0f;
+    _angle_stab = 0.0f;
+    _angle_trim = 0.0f;
+    check_param();
+}
+
+void UserNetgun::check_param()
+{
+    _angle_max = (float)copter.g2.user_parameters.netgun_max;
+    _angle_min = (float)copter.g2.user_parameters.netgun_min;
+
+    _angle_max = constrain_float(_angle_max, -1500.f, 13500.f);
+    _angle_min = constrain_float(_angle_min, -4500.f, _angle_max - 3000.f);
+    _angle_max = MAX(_angle_min, _angle_max);
+}
+
+void UserNetgun::handle_info(float p1, float p2, float p3, float p4, float p5, float p6, float p7)
+{
+    if ((uint16_t)p1 == 1) {
+        set_trim(p2);
+    }
+    if ((uint16_t)p1 == 2) {
+        set_target(p3);
+        set_trim(p2);
+    }
+}
+
+void UserNetgun::Stabilize()
+{
+    check_param();
+    _angle_stab = -(0.0f - degrees(copter.ahrs_view->pitch)*100.f); //nose down in negative, thus need to trans
+    float _output = constrain_float(_angle_target + _angle_stab + _angle_trim, _angle_min, _angle_max);
+    float _output_norm = _output/(_angle_max - _angle_min)*1000.f;
+
+    SRV_Channels::set_output_scaled(SRV_Channel::k_netgun_pitch, _output_norm);
+}
+
+void UserNetgun::set_target(float v_in) //norm 1000
+{
+    _angle_target = constrain_float(v_in, 0.0f, 1000.f)*9.0f;
+}
+
+void UserNetgun::set_trim(float v_in) //norm 1000
+{
+    _angle_trim = constrain_float(v_in, -1000.0f, 1000.f)*9.0f;
+}
+
+void UserNetgun::set_stabilize(bool v_in)
+{
+    _do_stab = v_in;
 }
 
 void UserNetgun::Update()
 {
+    Stabilize();
     for (uint8_t i_barrel = 0; i_barrel < NETGUN_NUM; i_barrel++) {
         _barrels[i_barrel].Update();
     }
