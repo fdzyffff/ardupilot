@@ -6,7 +6,7 @@
 
 #include "ap_version.h"
 
-#define THISFIRMWARE "AC117 v0.1.2"
+#define THISFIRMWARE "AC117 v0.1.4"
 
 // the following line is parsed by the autotest scripts
 #define FIRMWARE_VERSION 4,3,4,FIRMWARE_VERSION_TYPE_OFFICIAL

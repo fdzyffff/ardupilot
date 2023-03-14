@@ -618,11 +618,11 @@ bool RC_Channel_Copter::do_aux_function(const aux_func_t ch_option, const AuxSwi
             break;
 #endif
 
-        case AUX_FUNC::NETGUN_TRIGGER:
-            if (ch_flag == AuxSwitchPos::HIGH) {
-                copter.netgun.Trigger();
-            }
-            break;
+        // case AUX_FUNC::NETGUN_TRIGGER:
+        //     if (ch_flag == AuxSwitchPos::HIGH) {
+        //         copter.netgun.Trigger(0);
+        //     }
+        //     break;
 
     default:
         return RC_Channel::do_aux_function(ch_option, ch_flag);

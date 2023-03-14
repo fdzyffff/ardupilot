@@ -7,31 +7,35 @@ class UserBarrel {
 public:
     enum class BarrelState{
         NORMAL = 0,
-        FIRED = 1
+        FIRED = 1,
+        CUT = 2
     };
-    void Init(SRV_Channel::Aux_servo_function_t in_srv_function);
+    enum cut_channel{
+        FIRE_CHANNEL = 0,
+        CUT_CHANNEL = 1
+    };
+    void Init(SRV_Channel::Aux_servo_function_t in_srv_function_fire, SRV_Channel::Aux_servo_function_t in_srv_function_cut);
     void Update();
     void update_state();
-    void release();
-    void trigger();
-    uint16_t get_output();
+    void cut();
+    void fire();
+    uint16_t get_output(uint16_t channel);
     void set_state(UserBarrel::BarrelState in_state);
     bool is_state(UserBarrel::BarrelState in_state);
-    SRV_Channel::Aux_servo_function_t get_srv_function() {return _srv_function;}
-
 
 private:
     BarrelState _state;
-    uint16_t _output;
+    uint16_t _output[2];
     uint32_t _last_state_ms;
-    SRV_Channel::Aux_servo_function_t _srv_function;
+    SRV_Channel::Aux_servo_function_t _srv_function[2];
 };    
 
 class UserNetgun {
 public:
     void Init();
     void Update();
-    void Trigger();
+    void Fire(uint16_t channel);
+    void Cut(uint16_t channel);
     void Stabilize();
     void set_target(float v_in);
     void set_trim(float v_in);
@@ -40,7 +44,6 @@ public:
     void handle_info(float p1, float p2, float p3, float p4, float p5, float p6, float p7);
 
     UserBarrel _barrels[NETGUN_NUM];
-    uint8_t _barrel_idx;
     bool _do_stab;
     float _angle_target;
     float _angle_stab; //cd

@@ -200,8 +200,10 @@ public:
         k_rcin15_mapped         = 154,
         k_rcin16_mapped         = 155,
         k_netgun_pitch          = 200,
-        k_netgun_1              = 201,
-        k_netgun_2              = 202,
+        k_netgun_fire_1         = 201,
+        k_netgun_fire_2         = 202,
+        k_netgun_cut_1          = 211,
+        k_netgun_cut_2          = 212,
         k_nr_aux_servo_functions         ///< This must be the last enum value (only add new values _before_ this one)
     } Aux_servo_function_t;
 

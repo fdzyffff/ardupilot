@@ -1,12 +1,13 @@
 #include "Copter.h"
 
-#define USERENGINE_THR_LOWEST 1000
-#define USERENGINE_THR_HIGHEST 2100
+#define USERENGINE_LOWEST 1000
+#define USERENGINE_HIGHEST 2100
 
-void UserBarrel::Init(SRV_Channel::Aux_servo_function_t in_srv_function)
+void UserBarrel::Init(SRV_Channel::Aux_servo_function_t in_srv_function_fire, SRV_Channel::Aux_servo_function_t in_srv_function_cut)
 {
     set_state(BarrelState::NORMAL);
-    _srv_function = in_srv_function;
+    _srv_function[FIRE_CHANNEL] = in_srv_function_fire;
+    _srv_function[CUT_CHANNEL] = in_srv_function_cut;
 }
 
 void UserBarrel::Update()
@@ -20,46 +21,59 @@ void UserBarrel::update_state()
 
     switch (_state) {
         default:
-            _output = USERENGINE_THR_LOWEST;
+            _output[FIRE_CHANNEL] = USERENGINE_LOWEST;
+            _output[CUT_CHANNEL] = 0;
             break;
         case BarrelState::NORMAL:
-            _output = USERENGINE_THR_LOWEST; // lowest
+            _output[FIRE_CHANNEL] = USERENGINE_LOWEST; // lowest
+            _output[CUT_CHANNEL] = 0;
             break;
         case BarrelState::FIRED:
-            _output = USERENGINE_THR_HIGHEST; // highest
+            _output[FIRE_CHANNEL] = USERENGINE_HIGHEST; // highest
+            _output[CUT_CHANNEL] = 0;
+            if (delta_t > 1000) {
+                set_state(BarrelState::NORMAL);
+            }
+            break;
+        case BarrelState::CUT:
+            _output[FIRE_CHANNEL] = USERENGINE_LOWEST;
+            _output[CUT_CHANNEL] = 1000; // highest
             if (delta_t > 1000) {
                 set_state(BarrelState::NORMAL);
             }
             break;
     }
-    SRV_Channels::set_output_pwm(_srv_function, _output);
+    SRV_Channels::set_output_pwm(_srv_function[FIRE_CHANNEL], _output[FIRE_CHANNEL]);
+    SRV_Channels::set_output_scaled(_srv_function[CUT_CHANNEL], _output[CUT_CHANNEL]);
 }
 
-uint16_t UserBarrel::get_output()
+uint16_t UserBarrel::get_output(uint16_t channel)
 {
-    return _output;
-}
-
-void UserBarrel::trigger()
-{
-    if (is_state(BarrelState::FIRED)) { 
-        return;
+    if (channel != 0 || channel != 1) {
+        return 0;
     }
-    set_state(BarrelState::FIRED);
+    return _output[channel];
 }
 
-void UserBarrel::release()
+void UserBarrel::fire()
 {
     if (is_state(BarrelState::NORMAL)) { 
-        return;
+        set_state(BarrelState::FIRED);
     }
-    set_state(BarrelState::NORMAL);
+}
+
+void UserBarrel::cut()
+{
+    if (is_state(BarrelState::NORMAL)) { 
+        set_state(BarrelState::CUT);
+    }
 }
 
 void UserBarrel::set_state(UserBarrel::BarrelState in_state)
 {
     _state = in_state;
     _last_state_ms = millis();
+    update_state();
 }
 
 bool UserBarrel::is_state(UserBarrel::BarrelState in_state)
@@ -70,11 +84,12 @@ bool UserBarrel::is_state(UserBarrel::BarrelState in_state)
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 void UserNetgun::Init()
 {
-    _barrels[0].Init(SRV_Channel::k_netgun_1);
-    _barrels[1].Init(SRV_Channel::k_netgun_2);
-    _barrel_idx = 0;
-
+    _barrels[0].Init(SRV_Channel::k_netgun_fire_1, SRV_Channel::k_netgun_cut_1);
+    _barrels[1].Init(SRV_Channel::k_netgun_fire_2, SRV_Channel::k_netgun_cut_2);
+ 
     SRV_Channels::set_range(SRV_Channel::k_netgun_pitch,  1000);
+    SRV_Channels::set_range(SRV_Channel::k_netgun_cut_1,  1000);
+    SRV_Channels::set_range(SRV_Channel::k_netgun_cut_2,  1000);
     _do_stab = true;
     _angle_target = 0.0f;
     _angle_stab = 0.0f;
@@ -95,9 +110,18 @@ void UserNetgun::check_param()
 void UserNetgun::handle_info(float p1, float p2, float p3, float p4, float p5, float p6, float p7)
 {
     if ((uint16_t)p1 == 1) {
-        set_trim(p2);
+        Fire((uint16_t)p2);
     }
     if ((uint16_t)p1 == 2) {
+        ;
+    }
+    if ((uint16_t)p1 == 3) {
+        set_trim(p2);
+    }
+    if ((uint16_t)p1 == 4) {
+        Cut((uint16_t)p2);
+    }
+    if ((uint16_t)p1 == 10) {
         set_target(p3);
         set_trim(p2);
     }
@@ -136,12 +160,22 @@ void UserNetgun::Update()
     }
 }
 
-void UserNetgun::Trigger()
+void UserNetgun::Fire(uint16_t channel)
 {
-    if (_barrel_idx >= NETGUN_NUM) {
-        _barrel_idx = 0;
+    for(uint8_t i_barrel = 0; i_barrel < NETGUN_NUM; i_barrel++) {
+        if (channel == 0 || channel == (i_barrel+1)) {
+            _barrels[i_barrel].fire();
+            gcs().send_text(MAV_SEVERITY_INFO, "Fire Net %d", i_barrel);
+        }
     }
-    _barrels[_barrel_idx].trigger();
-    gcs().send_text(MAV_SEVERITY_INFO, "Trigger Net %d", _barrel_idx);
-    _barrel_idx++;
+}
+
+void UserNetgun::Cut(uint16_t channel)
+{
+    for(uint8_t i_barrel = 0; i_barrel < NETGUN_NUM; i_barrel++) {
+        if (channel == 0 || channel == (i_barrel+1)) {
+            _barrels[i_barrel].cut();
+            gcs().send_text(MAV_SEVERITY_INFO, "Cut Net %d", i_barrel);
+        }
+    }
 }
