@@ -130,7 +130,7 @@ void UserNetgun::handle_info(float p1, float p2, float p3, float p4, float p5, f
 void UserNetgun::Stabilize()
 {
     check_param();
-    _angle_stab = -(0.0f - degrees(copter.ahrs_view->pitch)*100.f); //nose down in negative, thus need to trans
+    _angle_stab = (0.0f - degrees(copter.ahrs_view->pitch)*100.f); //nose down in negative, thus need to trans
     float _output = constrain_float(_angle_target + _angle_stab + _angle_trim, _angle_min, _angle_max);
     float _output_norm = _output/(_angle_max - _angle_min)*1000.f;
 
