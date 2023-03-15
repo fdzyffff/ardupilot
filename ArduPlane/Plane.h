@@ -1222,6 +1222,8 @@ private:
     void sub_stabilize_yaw(float speed_scaler);
     void sub_calc_nav_yaw_coordinated(float speed_scaler);
 
+    void one_hz_loop();
+
 public:
     void failsafe_check(void);
 #if AP_SCRIPTING_ENABLED

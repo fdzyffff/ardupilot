@@ -22,6 +22,7 @@
 #include <AP_Math/AP_Math.h>
 #include <AP_Math/crc.h>
 #include <AP_BoardConfig/AP_BoardConfig.h>
+#include <GCS_MAVLink/GCS.h>
 
 extern const AP_HAL::HAL &hal;
 
@@ -71,11 +72,13 @@ AP_Depth_Backend *AP_Depth_MS56XX::probe(AP_Depth &depth,
     if (!dev) {
         return nullptr;
     }
+    gcs().send_text(MAV_SEVERITY_INFO, "MS5783 init");
     AP_Depth_MS56XX *sensor = new AP_Depth_MS56XX(depth, std::move(dev), ms56xx_type);
     if (!sensor || !sensor->_init()) {
         delete sensor;
         return nullptr;
     }
+    gcs().send_text(MAV_SEVERITY_INFO, "Probe depth");
     return sensor;
 }
 

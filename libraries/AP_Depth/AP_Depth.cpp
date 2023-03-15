@@ -47,8 +47,8 @@
  #define HAL_BARO_FILTER_DEFAULT 0 // turned off by default
 #endif
 
-#if !defined(HAL_PROBE_EXTERNAL_I2C_BAROS) && !HAL_MINIMIZE_FEATURES
-#define HAL_PROBE_EXTERNAL_I2C_BAROS
+#if !defined(HAL_PROBE_EXTERNAL_I2C_DEPTHS) && !HAL_MINIMIZE_FEATURES
+#define HAL_PROBE_EXTERNAL_I2C_DEPTHS
 #endif
 
 #ifndef HAL_BARO_PROBE_EXT_DEFAULT
@@ -158,7 +158,7 @@ const AP_Param::GroupInfo AP_Depth::var_info[] = {
     // @Increment: 1
     AP_GROUPINFO("_FLTR_RNG", 13, AP_Depth, _filter_range, HAL_BARO_FILTER_DEFAULT),
 
-#if defined(HAL_PROBE_EXTERNAL_I2C_BAROS) || defined(AP_BARO_MSP_ENABLED)
+#if defined(HAL_PROBE_EXTERNAL_I2C_DEPTHS) || defined(AP_BARO_MSP_ENABLED)
     // @Param: _PROBE_EXT
     // @DisplayName: External barometers to probe
     // @Description: This sets which types of external i2c barometer to look for. It is a bitmask of barometer types. The I2C buses to probe is based on GND_EXT_BUS. If BARO_EXT_BUS is -1 then it will probe all external buses, otherwise it will probe just the bus number given in GND_EXT_BUS.
@@ -199,9 +199,9 @@ const AP_Param::GroupInfo AP_Depth::var_info[] = {
 AP_Depth *AP_Depth::_singleton;
 
 #if HAL_GCS_ENABLED
-#define BARO_SEND_TEXT(severity, format, args...) gcs().send_text(severity, format, ##args)
+#define DEPTH_SEND_TEXT(severity, format, args...) gcs().send_text(severity, format, ##args)
 #else
-#define BARO_SEND_TEXT(severity, format, args...)
+#define DEPTH_SEND_TEXT(severity, format, args...)
 #endif
 
 /*
@@ -226,24 +226,18 @@ void AP_Depth::calibrate(bool save)
     }
 
     if (hal.util->was_watchdog_reset()) {
-        BARO_SEND_TEXT(MAV_SEVERITY_INFO, "Baro: skipping calibration after WDG reset");
+        DEPTH_SEND_TEXT(MAV_SEVERITY_INFO, "Baro: skipping calibration after WDG reset");
         return;
     }
-
-#if AP_SIM_BARO_ENABLED
-    if (AP::sitl()->baro_count == 0) {
-        return;
-    }
-#endif
 
     #ifdef HAL_BARO_ALLOW_INIT_NO_BARO
     if (_num_drivers == 0 || _num_sensors == 0 || drivers[0] == nullptr) {
-            BARO_SEND_TEXT(MAV_SEVERITY_INFO, "Baro: no sensors found, skipping calibration");
+            DEPTH_SEND_TEXT(MAV_SEVERITY_INFO, "Baro: no sensors found, skipping calibration");
             return;
     }
     #endif
     
-    BARO_SEND_TEXT(MAV_SEVERITY_INFO, "Calibrating barometer");
+    DEPTH_SEND_TEXT(MAV_SEVERITY_INFO, "Calibrating barometer");
 
     // reset the altitude offset when we calibrate. The altitude
     // offset is supposed to be for within a flight
@@ -302,7 +296,7 @@ void AP_Depth::calibrate(bool save)
     uint8_t num_calibrated = 0;
     for (uint8_t i=0; i<_num_sensors; i++) {
         if (sensors[i].calibrated) {
-            BARO_SEND_TEXT(MAV_SEVERITY_INFO, "Barometer %u calibration complete", i+1);
+            DEPTH_SEND_TEXT(MAV_SEVERITY_INFO, "Barometer %u calibration complete", i+1);
             num_calibrated++;
         }
     }
@@ -540,6 +534,8 @@ void AP_Depth::init(void)
     for (uint8_t i = 0; i < DEPTH_MAX_INSTANCES; i++) {
         sensors[i].bus_id.set(0);
     }
+
+    DEPTH_SEND_TEXT(MAV_SEVERITY_INFO, "Depth init");
 
     ADD_BACKEND(AP_Depth_MS56XX::probe(*this,
                                       std::move(GET_I2C_DEVICE(_ext_bus, HAL_DEPTH_MS5837_I2C_ADDR)), AP_Depth_MS56XX::BARO_MS5837));
