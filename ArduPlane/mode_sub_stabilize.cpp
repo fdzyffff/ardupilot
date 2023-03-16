@@ -43,7 +43,7 @@
 //     AP_GROUPEND
 // };
 
-bool ModeSubStablize::_enter()
+bool ModeSubStabilize::_enter()
 {
     // if we haven't run the rate controllers for 2 seconds then
     // reset the integrators
@@ -62,7 +62,7 @@ bool ModeSubStablize::_enter()
     return true;
 }
 
-void ModeSubStablize::update()
+void ModeSubStabilize::update()
 {
     // set nav_roll and nav_pitch using sticks
     plane.nav_roll_cd  = plane.channel_roll->norm_input() * plane.roll_limit_cd;
@@ -84,7 +84,7 @@ void ModeSubStablize::update()
     }
 }
 
-void ModeSubStablize::_exit()
+void ModeSubStabilize::_exit()
 {
     plane.as_rollController.reset_I();
     plane.as_pitchController.reset_I();

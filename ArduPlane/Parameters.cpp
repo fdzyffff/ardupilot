@@ -1012,6 +1012,10 @@ const AP_Param::Info Plane::var_info[] = {
     // @Path: ../libraries/AP_Depth/AP_Depth.cpp
     GOBJECT(depth_sensor, "DEPTH", AP_Depth),
 
+    // @Group: TKOFF_
+    // @Path: mode_sub_althold.cpp
+    GOBJECT(mode_sub_althold, "TKOFF_", ModeSubAltHold),
+
     // @Param: S_TRIM_PITCH_CD
     // @DisplayName: Pitch angle offset
     // @Description: Offset applied to AHRS pitch used for in-flight pitch trimming. Correct ground leveling is better than changing this parameter.

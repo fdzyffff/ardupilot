@@ -160,7 +160,8 @@ public:
     friend class ModeTakeoff;
     friend class ModeThermal;
     friend class ModeLoiterAltQLand;
-    friend class ModeSubStablize;
+    friend class ModeSubStabilize;
+    friend class ModeSubAltHold;
 
     Plane(void);
 
@@ -284,7 +285,8 @@ private:
 #if HAL_SOARING_ENABLED
     ModeThermal mode_thermal;
 #endif
-    ModeSubStablize mode_sub_stablize;
+    ModeSubStabilize mode_sub_stablize;
+    ModeSubAltHold mode_sub_althold;
 
     // This is the state of the flight control system
     // There are multiple states defined such as MANUAL, FBW-A, AUTO

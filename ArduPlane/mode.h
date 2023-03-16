@@ -6,6 +6,7 @@
 #include <AP_Soaring/AP_Soaring.h>
 #include <AP_ADSB/AP_ADSB.h>
 #include <AP_Vehicle/ModeReason.h>
+#include <AC_PID/AC_PID.h>
 #include "quadplane.h"
 
 class AC_PosControl;
@@ -54,6 +55,7 @@ public:
         LOITER_ALT_QLAND = 25,
 #endif
         SUB_STABLIZE  = 30,
+        SUB_ALTHOLD   = 31,
     };
 
     // Constructor
@@ -729,7 +731,7 @@ protected:
 #endif
 
 // New mode
-class ModeSubStablize : public Mode
+class ModeSubStabilize : public Mode
 {
 public:
     Number mode_number() const override { return Number::SUB_STABLIZE; }
@@ -742,4 +744,34 @@ protected:
     bool _enter() override;
     void _exit() override;
 
+};
+
+
+// New mode
+class ModeSubAltHold : public Mode
+{
+public:
+    Number mode_number() const override { return Number::SUB_ALTHOLD; }
+    const char *name() const override { return "SUB_ALTHOLD"; }
+    const char *name4() const override { return "SALT"; }
+
+    // methods that affect movement of the vehicle in this mode
+    void update() override;
+
+    // var_info for holding parameter information
+    static const struct AP_Param::GroupInfo var_info[];
+protected:
+    void get_target_alt_cm(float pitch_input);
+    float get_target_vel_cms(float target_alt_cms);
+    int32_t get_target_pitch_cd(float target_vel_cms);
+    bool _enter() override;
+    void _exit() override;
+
+    //(float initial_p, float initial_i, float initial_d, float initial_ff, float initial_imax, float initial_filt_T_hz, float initial_filt_E_hz, float initial_filt_D_hz, float dt, float initial_srmax=0, float initial_srtau=1.0);
+    AC_PID _vel_pid{0.1f, 0.05f, 0.001f, 0.0f, 0.5f, 20.f, 20.f, 20.f, 0.0025f};
+    AP_Float _max_vel_cms;
+    AP_Float _max_acc_cmss;
+    AP_Float _pos_p;
+
+    float _target_alt_cms;
 };

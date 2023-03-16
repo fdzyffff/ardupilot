@@ -85,8 +85,9 @@ void GCS_Plane::update_vehicle_sensor_status_flags(void)
         control_sensors_health |= MAV_SYS_STATUS_SENSOR_XY_POSITION_CONTROL;
         break;
 
-    case Mode::Number::INITIALISING:
     case Mode::Number::SUB_STABLIZE:
+    case Mode::Number::SUB_ALTHOLD:
+    case Mode::Number::INITIALISING:
         break;
     }
 

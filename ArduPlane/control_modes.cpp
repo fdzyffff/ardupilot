@@ -97,6 +97,9 @@ Mode *Plane::mode_from_mode_num(const enum Mode::Number num)
         ret = &mode_sub_stablize;
         break;
 
+    case Mode::Number::SUB_ALTHOLD:
+        ret = &mode_sub_althold;
+        break;
     }
     return ret;
 }

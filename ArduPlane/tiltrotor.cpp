@@ -286,8 +286,7 @@ void Tiltrotor::continuous_update(void)
     if (!quadplane.assisted_flight &&
         (plane.control_mode == &plane.mode_qacro ||
          plane.control_mode == &plane.mode_qstabilize ||
-         plane.control_mode == &plane.mode_qhover ||
-         plane.control_mode == &plane.mode_sub_stablize)) {
+         plane.control_mode == &plane.mode_qhover)) {
         if (quadplane.rc_fwd_thr_ch == nullptr) {
             // no manual throttle control, set angle to zero
             slew(0);

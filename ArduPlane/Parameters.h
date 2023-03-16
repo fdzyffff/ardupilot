@@ -357,6 +357,7 @@ public:
         k_param_as_yawController,
         k_param_sub_pitch_trim_cd,
         k_param_depth_sensor,   // barometer ground calibration
+        k_param_mode_sub_althold,
 
     };
 

@@ -1767,7 +1767,8 @@ void QuadPlane::update(void)
         if (plane.control_mode == &plane.mode_manual ||
             plane.control_mode == &plane.mode_acro ||
             plane.control_mode == &plane.mode_training||
-            plane.control_mode == &plane.mode_sub_stablize) {
+            plane.control_mode == &plane.mode_sub_stablize||
+            plane.control_mode == &plane.mode_sub_althold) {
             // in manual modes quad motors are always off
             if (!tiltrotor.motors_active() && !tailsitter.enabled()) {
                 set_desired_spool_state(AP_Motors::DesiredSpoolState::SHUT_DOWN);
