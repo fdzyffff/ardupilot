@@ -820,7 +820,10 @@ void Plane::get_osd_roll_pitch_rad(float &roll, float &pitch) const
 
 void Plane::one_hz_loop()
 {
-    gcs().send_text(MAV_SEVERITY_INFO, "Depth: %0.1f [%0.1f]", depth_sensor.get_altitude()*100.f, depth_sensor.get_climb_rate()*100.f);
+    // gcs().send_text(MAV_SEVERITY_INFO, "Depth: [%d]%0.1f [%0.1f]", depth_sensor.all_healthy(), depth_sensor.get_altitude()*100.f, depth_sensor.get_climb_rate()*100.f);
+    if (g2.depth_print) {
+        depth_sensor.print_info();
+    }
 }
 
 AP_HAL_MAIN_CALLBACKS(&plane);

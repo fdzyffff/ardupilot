@@ -225,85 +225,85 @@ void AP_Depth::calibrate(bool save)
         sensors[i].alt_ok = true;
     }
 
-    if (hal.util->was_watchdog_reset()) {
-        DEPTH_SEND_TEXT(MAV_SEVERITY_INFO, "Baro: skipping calibration after WDG reset");
-        return;
-    }
+    // if (hal.util->was_watchdog_reset()) {
+    //     DEPTH_SEND_TEXT(MAV_SEVERITY_INFO, "Baro: skipping calibration after WDG reset");
+    //     return;
+    // }
 
-    #ifdef HAL_BARO_ALLOW_INIT_NO_BARO
-    if (_num_drivers == 0 || _num_sensors == 0 || drivers[0] == nullptr) {
-            DEPTH_SEND_TEXT(MAV_SEVERITY_INFO, "Baro: no sensors found, skipping calibration");
-            return;
-    }
-    #endif
+    // #ifdef HAL_BARO_ALLOW_INIT_NO_BARO
+    // if (_num_drivers == 0 || _num_sensors == 0 || drivers[0] == nullptr) {
+    //         DEPTH_SEND_TEXT(MAV_SEVERITY_INFO, "Baro: no sensors found, skipping calibration");
+    //         return;
+    // }
+    // #endif
     
-    DEPTH_SEND_TEXT(MAV_SEVERITY_INFO, "Calibrating barometer");
+    // DEPTH_SEND_TEXT(MAV_SEVERITY_INFO, "Calibrating barometer");
 
-    // reset the altitude offset when we calibrate. The altitude
-    // offset is supposed to be for within a flight
-    _alt_offset.set_and_save(0);
+    // // reset the altitude offset when we calibrate. The altitude
+    // // offset is supposed to be for within a flight
+    // _alt_offset.set_and_save(0);
 
-    // let the barometer settle for a full second after startup
-    // the MS5611 reads quite a long way off for the first second,
-    // leading to about 1m of error if we don't wait
-    for (uint8_t i = 0; i < 10; i++) {
-        uint32_t tstart = AP_HAL::millis();
-        do {
-            update();
-            if (AP_HAL::millis() - tstart > 500) {
-                AP_BoardConfig::config_error("Baro: unable to calibrate");
-            }
-            hal.scheduler->delay(10);
-        } while (!healthy());
-        hal.scheduler->delay(100);
-    }
+    // // let the barometer settle for a full second after startup
+    // // the MS5611 reads quite a long way off for the first second,
+    // // leading to about 1m of error if we don't wait
+    // for (uint8_t i = 0; i < 10; i++) {
+    //     uint32_t tstart = AP_HAL::millis();
+    //     do {
+    //         update();
+    //         if (AP_HAL::millis() - tstart > 500) {
+    //             AP_BoardConfig::config_error("Baro: unable to calibrate");
+    //         }
+    //         hal.scheduler->delay(10);
+    //     } while (!healthy());
+    //     hal.scheduler->delay(100);
+    // }
 
-    // now average over 5 values for the ground pressure settings
-    float sum_pressure[DEPTH_MAX_INSTANCES] = {0};
-    uint8_t count[DEPTH_MAX_INSTANCES] = {0};
-    const uint8_t num_samples = 5;
+    // // now average over 5 values for the ground pressure settings
+    // float sum_pressure[DEPTH_MAX_INSTANCES] = {0};
+    // uint8_t count[DEPTH_MAX_INSTANCES] = {0};
+    // const uint8_t num_samples = 5;
 
-    for (uint8_t c = 0; c < num_samples; c++) {
-        uint32_t tstart = AP_HAL::millis();
-        do {
-            update();
-            if (AP_HAL::millis() - tstart > 500) {
-                AP_BoardConfig::config_error("Baro: unable to calibrate");
-            }
-        } while (!healthy());
-        for (uint8_t i=0; i<_num_sensors; i++) {
-            if (healthy(i)) {
-                sum_pressure[i] += sensors[i].pressure;
-                count[i] += 1;
-            }
-        }
-        hal.scheduler->delay(100);
-    }
-    for (uint8_t i=0; i<_num_sensors; i++) {
-        if (count[i] == 0) {
-            sensors[i].calibrated = false;
-        } else {
-            if (save) {
-                float p0_sealevel = get_sealevel_pressure(sum_pressure[i] / count[i]);
-                sensors[i].ground_pressure.set_and_save(p0_sealevel);
-            }
-        }
-    }
+    // for (uint8_t c = 0; c < num_samples; c++) {
+    //     uint32_t tstart = AP_HAL::millis();
+    //     do {
+    //         update();
+    //         if (AP_HAL::millis() - tstart > 500) {
+    //             AP_BoardConfig::config_error("Baro: unable to calibrate");
+    //         }
+    //     } while (!healthy());
+    //     for (uint8_t i=0; i<_num_sensors; i++) {
+    //         if (healthy(i)) {
+    //             sum_pressure[i] += sensors[i].pressure;
+    //             count[i] += 1;
+    //         }
+    //     }
+    //     hal.scheduler->delay(100);
+    // }
+    // for (uint8_t i=0; i<_num_sensors; i++) {
+    //     if (count[i] == 0) {
+    //         sensors[i].calibrated = false;
+    //     } else {
+    //         if (save) {
+    //             float p0_sealevel = get_sealevel_pressure(sum_pressure[i] / count[i]);
+    //             sensors[i].ground_pressure.set_and_save(p0_sealevel);
+    //         }
+    //     }
+    // }
 
-    _guessed_ground_temperature = get_external_temperature();
+    // _guessed_ground_temperature = get_external_temperature();
 
-    // panic if all sensors are not calibrated
-    uint8_t num_calibrated = 0;
-    for (uint8_t i=0; i<_num_sensors; i++) {
-        if (sensors[i].calibrated) {
-            DEPTH_SEND_TEXT(MAV_SEVERITY_INFO, "Barometer %u calibration complete", i+1);
-            num_calibrated++;
-        }
-    }
-    if (num_calibrated) {
-        return;
-    }
-    AP_BoardConfig::config_error("Baro: all sensors uncalibrated");
+    // // panic if all sensors are not calibrated
+    // uint8_t num_calibrated = 0;
+    // for (uint8_t i=0; i<_num_sensors; i++) {
+    //     if (sensors[i].calibrated) {
+    //         DEPTH_SEND_TEXT(MAV_SEVERITY_INFO, "Barometer %u calibration complete", i+1);
+    //         num_calibrated++;
+    //     }
+    // }
+    // if (num_calibrated) {
+    //     return;
+    // }
+    // AP_BoardConfig::config_error("Baro: all sensors uncalibrated");
 }
 
 /*
@@ -539,8 +539,13 @@ void AP_Depth::init(void)
 
     ADD_BACKEND(AP_Depth_MS56XX::probe(*this,
                                       std::move(GET_I2C_DEVICE(_ext_bus, HAL_DEPTH_MS5837_I2C_ADDR)), AP_Depth_MS56XX::BARO_MS5837));
+
+    calibrate();
 }
 
+void AP_Depth::print_info(void) {
+    DEPTH_SEND_TEXT(MAV_SEVERITY_INFO, "Depth info: %f, %f [%d %d %d]", get_altitude()*100.f, get_climb_rate()*100.f, sensors[0].healthy, sensors[0].alt_ok, sensors[0].calibrated);
+}
 /*
   call update on all drivers
  */

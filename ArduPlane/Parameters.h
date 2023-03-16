@@ -571,6 +571,8 @@ public:
 
     AP_Int32        oneshot_mask;
 
+    AP_Int8         depth_print;
+
     // just to make compilation easier when all things are compiled out...
     uint8_t unused_integer;
 };

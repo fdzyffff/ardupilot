@@ -17,8 +17,8 @@
 #define DEPTH_MAX_DRIVERS 1
 
 // timeouts for health reporting
-#define BARO_TIMEOUT_MS                 500     // timeout in ms since last successful read
-#define BARO_DATA_CHANGE_TIMEOUT_MS     2000    // timeout in ms since last successful read that involved temperature of pressure changing
+#define DEPTH_TIMEOUT_MS                 500     // timeout in ms since last successful read
+#define DEPTH_DATA_CHANGE_TIMEOUT_MS     2000    // timeout in ms since last successful read that involved temperature of pressure changing
 
 class AP_Depth_Backend;
 
@@ -50,6 +50,8 @@ public:
     // update the barometer object, asking backends to push data to
     // the frontend
     void update(void);
+
+    void print_info(void);
 
     // healthy - returns true if sensor and derived altitude are good
     bool healthy(void) const { return healthy(_primary); }

@@ -1014,7 +1014,7 @@ const AP_Param::Info Plane::var_info[] = {
 
     // @Group: TKOFF_
     // @Path: mode_sub_althold.cpp
-    GOBJECT(mode_sub_althold, "TKOFF_", ModeSubAltHold),
+    GOBJECT(mode_sub_althold, "DALT_", ModeSubAltHold),
 
     // @Param: S_TRIM_PITCH_CD
     // @DisplayName: Pitch angle offset
@@ -1258,6 +1258,8 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @Group: FOLL
     // @Path: ../libraries/AP_Follow/AP_Follow.cpp
     AP_SUBGROUPINFO(follow, "FOLL", 33, ParametersG2, AP_Follow),
+
+    AP_GROUPINFO("DALT_PRINT", 34, ParametersG2, depth_print, 0),
 #endif
     
     AP_GROUPEND

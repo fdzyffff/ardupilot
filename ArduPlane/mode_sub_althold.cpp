@@ -5,7 +5,7 @@
  */
 const AP_Param::GroupInfo ModeSubAltHold::var_info[] = {
 
-    AP_SUBGROUPINFO(_vel_pid, "_VEL_",  1, ModeSubAltHold, AC_PID),
+    AP_SUBGROUPINFO(_vel_pid, "VEL_",  1, ModeSubAltHold, AC_PID),
 
     AP_GROUPINFO("VEL_MAX", 2, ModeSubAltHold, _max_vel_cms, 200.f),
 
@@ -70,7 +70,6 @@ void ModeSubAltHold::update()
     if (_max_vel_cms < 10.f) {_max_vel_cms.set(10.f);}
     // set nav_roll and nav_pitch using sticks
     plane.nav_roll_cd  = plane.channel_roll->norm_input() * plane.roll_limit_cd;
-    plane.update_load_factor();
 
     float pitch_input = plane.channel_pitch->norm_input();
     get_target_alt_cm(pitch_input);
