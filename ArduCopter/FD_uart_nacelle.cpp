@@ -2,14 +2,13 @@
 
 void Copter::FD1_uart_nacelle_init() {
     FD1_uart_msg_nacelle.init();
-    FD1_uart_msg_nacelle.get_msg_nacelle_in().set_enable();
-    FD1_uart_msg_nacelle.get_msg_nacelle_out().set_enable();
-    FD1_uart_msg_nacelle.get_msg_nacelle_route().set_enable();
+    FD1_uart_msg_nacelle.get_msg_gcs2nacelle().set_enable();
+    FD1_uart_msg_nacelle.get_msg_nacelle2gcs().set_enable();
 
     FD1_uart_msg_gcs.init();
-    FD1_uart_msg_gcs.get_msg_nacelle_in().set_enable();
-    FD1_uart_msg_gcs.get_msg_nacelle_out().set_enable();
-    FD1_uart_msg_gcs.get_msg_nacelle_route().set_enable();
+    // FD1_uart_msg_gcs.set_port(hal.serial(1));
+    FD1_uart_msg_gcs.get_msg_gcs2nacelle().set_enable();
+    FD1_uart_msg_gcs.get_msg_nacelle2gcs().set_enable();
 }
 
 
@@ -17,14 +16,22 @@ void Copter::FD1_uart_nacelle_update() {
 
     // msg from nacelle uart, route to the gcs uart
     while (FD1_uart_msg_nacelle.port_avaliable() > 0) {
-        FD1_uart_msg_nacelle.read();
+        user_stat.nacelle_byte_count++;
+        uint8_t temp = FD1_uart_msg_nacelle.read();
+        if (g2.user_parameters.stat_print.get() & (2<<0)) {
+            gcs().send_text(MAV_SEVERITY_WARNING, "down: %x", temp);
+        }
         FD1_uart_nacelle_handle_and_route();
         FD1_uart_msg_gcs.write();  
     }
 
     // msg from gcs uart, route to the nacelle uart
     while (FD1_uart_msg_gcs.port_avaliable() > 0) {
-        FD1_uart_msg_gcs.read();
+        user_stat.gcs_byte_count++;
+        uint8_t temp = FD1_uart_msg_gcs.read();
+        if (g2.user_parameters.stat_print.get() & (2<<0)) {
+            gcs().send_text(MAV_SEVERITY_WARNING, "up: %x", temp);
+        }
         FD1_uart_gcs_handle_and_route();
         FD1_uart_msg_nacelle.write();  
     }
@@ -36,36 +43,36 @@ void Copter::FD1_uart_nacelle_update() {
 }
 
 void Copter::FD1_uart_gcs_handle_and_route() {
-    if (FD1_uart_msg_gcs.get_msg_nacelle_in()._msg_1.updated) {
+    if (FD1_uart_msg_gcs.get_msg_gcs2nacelle()._msg_1.updated) {
         // copy to FD1_uart_msg_nacelle_route for following uart and mav uses
-        memcpy(FD1_uart_msg_nacelle.get_msg_nacelle_route()._msg_1.content.data, 
-            FD1_uart_msg_gcs.get_msg_nacelle_in()._msg_1.content.data, 
-            FD1_uart_msg_gcs.get_msg_nacelle_in()._msg_1.length*sizeof(uint8_t)+3);
-        FD1_uart_msg_nacelle.get_msg_nacelle_route()._msg_1.length = FD1_uart_msg_gcs.get_msg_nacelle_in()._msg_1.length;
-        FD1_uart_msg_nacelle.get_msg_nacelle_route()._msg_1.updated = true;
-        FD1_uart_msg_nacelle.get_msg_nacelle_route()._msg_1.need_send = true;
+        memcpy(FD1_uart_msg_nacelle.get_msg_gcs2nacelle()._msg_1.content.data, 
+            FD1_uart_msg_gcs.get_msg_gcs2nacelle()._msg_1.content.data, 
+            FD1_uart_msg_gcs.get_msg_gcs2nacelle()._msg_1.length*sizeof(uint8_t)+3);
+        FD1_uart_msg_nacelle.get_msg_gcs2nacelle()._msg_1.length = FD1_uart_msg_gcs.get_msg_gcs2nacelle()._msg_1.length;
+        FD1_uart_msg_nacelle.get_msg_gcs2nacelle()._msg_1.updated = true;
+        FD1_uart_msg_nacelle.get_msg_gcs2nacelle()._msg_1.need_send = true;
 
-        // gcs().send_text(MAV_SEVERITY_WARNING, "FD1_uart_msg_gcs in %d", FD1_uart_msg_gcs.get_msg_nacelle_in()._msg_1.length);
+        // gcs().send_text(MAV_SEVERITY_WARNING, "FD1_uart_msg_gcs in %d", FD1_uart_msg_gcs.get_msg_gcs2nacelle()._msg_1.length);
         // put handle code here
-        FD1_uart_msg_gcs.get_msg_nacelle_in()._msg_1.updated = false;
+        FD1_uart_msg_gcs.get_msg_gcs2nacelle()._msg_1.updated = false;
     }
 }
 
 void Copter::FD1_uart_nacelle_handle_and_route() {
-    if (FD1_uart_msg_nacelle.get_msg_nacelle_in()._msg_1.updated) {
+    if (FD1_uart_msg_nacelle.get_msg_nacelle2gcs()._msg_1.updated) {
         // copy to FD1_uart_msg_nacelle_route for following uart and mav uses
-        memcpy(FD1_uart_msg_gcs.get_msg_nacelle_route()._msg_1.content.data, 
-            FD1_uart_msg_nacelle.get_msg_nacelle_in()._msg_1.content.data, 
-            FD1_uart_msg_nacelle.get_msg_nacelle_in()._msg_1.length*sizeof(uint8_t)+3);
-        FD1_uart_msg_gcs.get_msg_nacelle_route()._msg_1.length = FD1_uart_msg_nacelle.get_msg_nacelle_in()._msg_1.length;
-        FD1_uart_msg_gcs.get_msg_nacelle_route()._msg_1.updated = true;
-        FD1_uart_msg_gcs.get_msg_nacelle_route()._msg_1.need_send = true;
+        memcpy(FD1_uart_msg_gcs.get_msg_nacelle2gcs()._msg_1.content.data, 
+            FD1_uart_msg_nacelle.get_msg_nacelle2gcs()._msg_1.content.data, 
+            FD1_uart_msg_nacelle.get_msg_nacelle2gcs()._msg_1.length*sizeof(uint8_t)+3);
+        FD1_uart_msg_gcs.get_msg_nacelle2gcs()._msg_1.length = FD1_uart_msg_nacelle.get_msg_nacelle2gcs()._msg_1.length;
+        FD1_uart_msg_gcs.get_msg_nacelle2gcs()._msg_1.updated = true;
+        FD1_uart_msg_gcs.get_msg_nacelle2gcs()._msg_1.need_send = true;
 
         // put handle code here
 
         // gcs().send_text(MAV_SEVERITY_WARNING, "FD1_uart_msg_nacelle in %d %d", FD1_uart_msg_nacelle.get_msg_nacelle_in()._msg_1.length, FD1_uart_msg_gcs.get_msg_nacelle_route()._msg_1.length);
         // FD1_uart_nacelle_AHRS_test();
-        FD1_uart_msg_nacelle.get_msg_nacelle_in()._msg_1.updated = false;
+        FD1_uart_msg_nacelle.get_msg_nacelle2gcs()._msg_1.updated = false;
     }
 }
 

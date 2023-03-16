@@ -2,7 +2,7 @@
 
 void Copter::FD1_uart_nacelle_AHRS_test()
 {
-    FD1_msg_nacelle &tmp_msg = FD1_uart_msg_nacelle.get_msg_nacelle_in();
+    FD1_msg_nacelle2gcs &tmp_msg = FD1_uart_msg_nacelle.get_msg_nacelle2gcs();
 
     if (tmp_msg._msg_1.content.msg.header.id == 0xB1) {
         gcs().send_text(MAV_SEVERITY_WARNING, "roll_angle: %d", tmp_msg._msg_1.content.msg.sub_msg.msg_m.roll_angle);

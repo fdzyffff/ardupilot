@@ -22,16 +22,21 @@ uint32_t FD1_UART::port_avaliable(void) {
     }
     return _port->available();
 }
-void FD1_UART::read(void)
+
+uint8_t FD1_UART::read(void)
 {    
-    // if(!initialized()) {
-    //     return ;
-    // }
-    // while (_port->available() > 0) {
-        uint8_t temp = _port->read();
-        if (_msg_nacelle_in.enable())    {_msg_nacelle_in.parse(temp);}
-    // }
+    uint8_t temp = _port->read();
+    if (_msg_gcs2nacelle.enable())    {_msg_gcs2nacelle.parse(temp);}
+    if (_msg_nacelle2gcs.enable())    {_msg_nacelle2gcs.parse(temp);}
+    return temp;
 }
+
+// void FD1_UART::read(void)
+// {    
+//     uint8_t temp = _port->read();
+//     if (_msg_gcs2nacelle.enable())    {_msg_gcs2nacelle.parse(temp);}
+//     if (_msg_nacelle2gcs.enable())    {_msg_nacelle2gcs.parse(temp);}
+// }
 
 void FD1_UART::write(void)
 {
@@ -40,34 +45,24 @@ void FD1_UART::write(void)
     }
     int16_t i = 0;
 
-    if (_msg_nacelle_in._msg_1.need_send)
+    if (_msg_gcs2nacelle._msg_1.need_send)
     {
-        _msg_nacelle_in.swap_message();
-        for(i = 0;i <= _msg_nacelle_in._msg_1.length+2 ; i ++) {
-            _port->write(_msg_nacelle_in._msg_1.content.data[i]);
+        _msg_gcs2nacelle.swap_message();
+        for(i = 0;i < _msg_gcs2nacelle._msg_1.length ; i ++) {
+            _port->write(_msg_gcs2nacelle._msg_1.content.data[i]);
         }
-        //_msg_nacelle_in._msg_1.updated = false;
-        _msg_nacelle_in._msg_1.need_send = false;
-        _msg_nacelle_in.swap_message();
+        //_msg_gcs2nacelle._msg_1.updated = false;
+        _msg_gcs2nacelle._msg_1.need_send = false;
+        _msg_gcs2nacelle.swap_message();
     }
-    if (_msg_nacelle_out._msg_1.need_send)
+    if (_msg_nacelle2gcs._msg_1.need_send)
     {
-        _msg_nacelle_out.swap_message();
-        for(i = 0;i <= _msg_nacelle_out._msg_1.length+2 ; i ++) {
-            _port->write(_msg_nacelle_out._msg_1.content.data[i]);
+        _msg_nacelle2gcs.swap_message();
+        for(i = 0;i < _msg_nacelle2gcs._msg_1.length ; i ++) {
+            _port->write(_msg_nacelle2gcs._msg_1.content.data[i]);
         }
-        //_msg_nacelle_out._msg_1.updated = false;
-        _msg_nacelle_out._msg_1.need_send = false;
-        _msg_nacelle_out.swap_message();
-    }
-    if (_msg_nacelle_route._msg_1.need_send)
-    {
-        _msg_nacelle_route.swap_message();
-        for(i = 0;i <= _msg_nacelle_route._msg_1.length+2 ; i ++) {
-            _port->write(_msg_nacelle_route._msg_1.content.data[i]);
-        }
-        //_msg_nacelle_route._msg_1.updated = false;
-        _msg_nacelle_route._msg_1.need_send = false;
-        _msg_nacelle_route.swap_message();
+        //_msg_nacelle2gcs._msg_1.updated = false;
+        _msg_nacelle2gcs._msg_1.need_send = false;
+        _msg_nacelle2gcs.swap_message();
     }
 }

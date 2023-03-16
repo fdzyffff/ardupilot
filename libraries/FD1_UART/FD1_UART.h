@@ -1,7 +1,8 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_SerialManager/AP_SerialManager.h>
 
-#include "FD1_msg_nacelle.h"
+#include "FD1_msg_gcs2nacelle.h"
+#include "FD1_msg_nacelle2gcs.h"
 
 class FD1_UART {
 public:
@@ -20,14 +21,15 @@ public:
     // init - perform required initialisation
     bool init();
     bool initialized() {return _initialized;}
-    void read();
+    // void read();
+    uint8_t read();
     void write();
+    void set_port(AP_HAL::UARTDriver *port_in) {_port = port_in;}
 
     uint32_t port_avaliable();
 
-    FD1_msg_nacelle& get_msg_nacelle_in()    { return _msg_nacelle_in; }
-    FD1_msg_nacelle& get_msg_nacelle_out()   { return _msg_nacelle_out; }
-    FD1_msg_nacelle& get_msg_nacelle_route() { return _msg_nacelle_route; }
+    FD1_msg_gcs2nacelle& get_msg_gcs2nacelle()    { return _msg_gcs2nacelle; }
+    FD1_msg_nacelle2gcs& get_msg_nacelle2gcs()    { return _msg_nacelle2gcs; }
 
 private:
 
@@ -35,7 +37,6 @@ private:
     AP_SerialManager::SerialProtocol _protocol; // protocol used - detected using SerialManager's SERIAL#_PROTOCOL parameter
     bool _initialized;
 
-    FD1_msg_nacelle _msg_nacelle_in;
-    FD1_msg_nacelle _msg_nacelle_out;
-    FD1_msg_nacelle _msg_nacelle_route;
+    FD1_msg_gcs2nacelle _msg_gcs2nacelle;
+    FD1_msg_nacelle2gcs _msg_nacelle2gcs;
 };

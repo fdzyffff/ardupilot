@@ -957,6 +957,11 @@ private:
     void FD1_uart_nacelle_handle_and_route();
     void FD1_uart_nacelle_AHRS_test();
 
+    struct user_statistic {
+        int16_t nacelle_byte_count;
+        int16_t gcs_byte_count;
+    } user_stat;
+
 #if MODE_ACRO_ENABLED == ENABLED
 #if FRAME_CONFIG == HELI_FRAME
     ModeAcro_Heli mode_acro;

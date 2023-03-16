@@ -1,7 +1,7 @@
 #include "FD1_message.h"
 
-#define FD1_MSG_NACELLE_LEN 55
-class FD1_msg_nacelle : public FD1_message{
+#define FD1_MSG_NACELLE2gcs2GCS_LEN 55
+class FD1_msg_nacelle2gcs : public FD1_message{
 public:
     struct PACKED FD1_msg_header {
         uint8_t head_1;
@@ -53,7 +53,7 @@ public:
 
     union PACKED Content_1 {
         MSG_Command_1 msg;
-        uint8_t data[FD1_MSG_NACELLE_LEN];
+        uint8_t data[FD1_MSG_NACELLE2gcs2GCS_LEN];
     };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -82,23 +82,24 @@ public:
         uint16_t read_idx;
         uint8_t length;
         uint16_t count;
-        uint8_t data[FD1_MSG_NACELLE_LEN];
+        uint8_t data[FD1_MSG_NACELLE2gcs2GCS_LEN];
     } _msg;
 
-    FD1_msg_nacelle();
+    FD1_msg_nacelle2gcs();
     
     /* Do not allow copies */
-    FD1_msg_nacelle(const FD1_msg_nacelle &other) = delete;
-    FD1_msg_nacelle &operator=(const FD1_msg_nacelle&) = delete;
+    FD1_msg_nacelle2gcs(const FD1_msg_nacelle2gcs &other) = delete;
+    FD1_msg_nacelle2gcs &operator=(const FD1_msg_nacelle2gcs&) = delete;
 
-    static const uint8_t PREAMBLE1 = 0x55;
-    static const uint8_t PREAMBLE2 = 0xAA;
+    static const uint8_t PREAMBLE1 = 0xAA;
+    static const uint8_t PREAMBLE2 = 0x55;
     static const uint8_t POSTAMBLE1 = 0xAA;
     static const uint8_t POSTAMBLE2 = 0x55;
 
     void process_message(void) override;
     void parse(uint8_t temp) override;
     void reset(uint8_t temp) override;
+    void reset2(uint8_t temp);
     void swap_message() override;
 
     FD1UART_MSG_1 _msg_1;

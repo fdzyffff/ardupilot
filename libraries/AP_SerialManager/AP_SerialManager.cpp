@@ -577,7 +577,7 @@ void AP_SerialManager::init()
                 case SerialProtocol_GCS:
                     uart->begin(map_baudrate(state[i].baud), 
                                          128,
-                                         256);
+                                         128);
                     break;
                 default:
                     uart->begin(state[i].baudrate());

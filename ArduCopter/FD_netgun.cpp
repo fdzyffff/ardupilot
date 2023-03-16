@@ -49,7 +49,7 @@ void UserBarrel::update_state()
 
 uint16_t UserBarrel::get_output(uint16_t channel)
 {
-    if (channel != 0 || channel != 1) {
+    if (channel != 0 && channel != 1) {
         return 0;
     }
     return _output[channel];
