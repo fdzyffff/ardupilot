@@ -10,6 +10,8 @@ void Copter::userhook_init()
 
     user_stat.nacelle_byte_count = 0;
     user_stat.gcs_byte_count = 0;
+    user_stat.nacelle_valid_byte_count = 0;
+    user_stat.gcs_valid_byte_count = 0;
 }
 #endif
 
@@ -48,10 +50,12 @@ void Copter::userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
     if (g2.user_parameters.stat_print.get() & (1<<0)) { // 1
-        gcs().send_text(MAV_SEVERITY_WARNING, "up %d/s, down %d/s", user_stat.gcs_byte_count, user_stat.nacelle_byte_count);
+        gcs().send_text(MAV_SEVERITY_WARNING, "up %d/s[%d], down %d/s[%d]", user_stat.gcs_byte_count, user_stat.gcs_valid_byte_count, user_stat.nacelle_byte_count, user_stat.nacelle_valid_byte_count);
     }
     user_stat.nacelle_byte_count = 0;
     user_stat.gcs_byte_count = 0;
+    user_stat.nacelle_valid_byte_count = 0;
+    user_stat.gcs_valid_byte_count = 0;
 }
 #endif
 

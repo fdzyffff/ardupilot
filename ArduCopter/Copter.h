@@ -960,6 +960,8 @@ private:
     struct user_statistic {
         int16_t nacelle_byte_count;
         int16_t gcs_byte_count;
+        int16_t nacelle_valid_byte_count;
+        int16_t gcs_valid_byte_count;
     } user_stat;
 
 #if MODE_ACRO_ENABLED == ENABLED

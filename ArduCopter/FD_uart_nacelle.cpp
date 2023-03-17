@@ -44,6 +44,7 @@ void Copter::FD1_uart_nacelle_update() {
 
 void Copter::FD1_uart_gcs_handle_and_route() {
     if (FD1_uart_msg_gcs.get_msg_gcs2nacelle()._msg_1.updated) {
+        user_stat.gcs_valid_byte_count+=55;
         // copy to FD1_uart_msg_nacelle_route for following uart and mav uses
         memcpy(FD1_uart_msg_nacelle.get_msg_gcs2nacelle()._msg_1.content.data, 
             FD1_uart_msg_gcs.get_msg_gcs2nacelle()._msg_1.content.data, 
@@ -60,6 +61,7 @@ void Copter::FD1_uart_gcs_handle_and_route() {
 
 void Copter::FD1_uart_nacelle_handle_and_route() {
     if (FD1_uart_msg_nacelle.get_msg_nacelle2gcs()._msg_1.updated) {
+        user_stat.nacelle_valid_byte_count+=55;
         // copy to FD1_uart_msg_nacelle_route for following uart and mav uses
         memcpy(FD1_uart_msg_gcs.get_msg_nacelle2gcs()._msg_1.content.data, 
             FD1_uart_msg_nacelle.get_msg_nacelle2gcs()._msg_1.content.data, 
