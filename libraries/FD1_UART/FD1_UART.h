@@ -1,3 +1,5 @@
+#pragma once
+
 #include <AP_HAL/AP_HAL.h>
 #include <AP_SerialManager/AP_SerialManager.h>
 
@@ -25,6 +27,7 @@ public:
     uint8_t read();
     void write();
     void set_port(AP_HAL::UARTDriver *port_in) {_port = port_in;}
+    AP_HAL::UARTDriver* get_port() {return _port;}
 
     uint32_t port_avaliable();
 

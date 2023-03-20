@@ -5,13 +5,9 @@ void Copter::userhook_init()
 {
     // put your initialisation code here
     // this will be called once at start-up
-    FD1_uart_init();
     netgun.Init();
+    nacelle.Init();
 
-    user_stat.nacelle_byte_count = 0;
-    user_stat.gcs_byte_count = 0;
-    user_stat.nacelle_valid_byte_count = 0;
-    user_stat.gcs_valid_byte_count = 0;
 }
 #endif
 
@@ -19,8 +15,8 @@ void Copter::userhook_init()
 void Copter::userhook_FastLoop()
 {
     // put your 100Hz code here
-    FD1_uart_update();
     netgun.Update();
+    nacelle.Update();
 }
 #endif
 
@@ -49,13 +45,7 @@ void Copter::userhook_SlowLoop()
 void Copter::userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
-    if (g2.user_parameters.stat_print.get() & (1<<0)) { // 1
-        gcs().send_text(MAV_SEVERITY_WARNING, "up %d/s[%d], down %d/s[%d]", user_stat.gcs_byte_count, user_stat.gcs_valid_byte_count, user_stat.nacelle_byte_count, user_stat.nacelle_valid_byte_count);
-    }
-    user_stat.nacelle_byte_count = 0;
-    user_stat.gcs_byte_count = 0;
-    user_stat.nacelle_valid_byte_count = 0;
-    user_stat.gcs_valid_byte_count = 0;
+    nacelle.print_info();
 }
 #endif
 

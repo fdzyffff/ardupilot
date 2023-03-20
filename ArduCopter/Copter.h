@@ -180,8 +180,9 @@
 
 #include "mode.h"
 
-#include <FD1_UART/FD1_UART.h>
+// #include <FD1_UART/FD1_UART.h>
 #include "FD_netgun.h"
+#include "FD_nacelle.h"
 
 class Copter : public AP_Vehicle {
 public:
@@ -230,6 +231,7 @@ public:
     friend class ModeAutorotate;
     friend class ModeTurtle;
     friend class UserNetgun;
+    friend class UserNacelle;
 
     Copter(void);
 
@@ -944,25 +946,7 @@ private:
     void userhook_auxSwitch3(const RC_Channel::AuxSwitchPos ch_flag);
 
     UserNetgun netgun;
-    // Uart initialization
-    void FD1_uart_init();
-    void FD1_uart_update();
-    // User customization for optical nacelle
-    FD1_UART FD1_uart_msg_nacelle{AP_SerialManager::SerialProtocol_Nacelle};
-    FD1_UART FD1_uart_msg_gcs{AP_SerialManager::SerialProtocol_GCS};
-    void FD1_uart_nacelle_init();
-    void FD1_uart_nacelle_update();
-    void FD1_uart_nacelle_send();
-    void FD1_uart_gcs_handle_and_route();
-    void FD1_uart_nacelle_handle_and_route();
-    void FD1_uart_nacelle_AHRS_test();
-
-    struct user_statistic {
-        int16_t nacelle_byte_count;
-        int16_t gcs_byte_count;
-        int16_t nacelle_valid_byte_count;
-        int16_t gcs_valid_byte_count;
-    } user_stat;
+    UserNacelle nacelle;
 
 #if MODE_ACRO_ENABLED == ENABLED
 #if FRAME_CONFIG == HELI_FRAME
