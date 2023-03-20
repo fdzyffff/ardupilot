@@ -110,9 +110,11 @@ void Plane::FD1_uart_ts_send() {
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.time[0]=(second_day/255)/255;
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.gps_heading  = (int16_t)(gps.ground_course_cd()*0.01f * tmp_msg.SF_INT16);
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.empty1=0;
+    int32_t rel_alt = current_loc.alt;
+    bool rel_alt_valid = current_loc.get_alt_cm(Location::AltFrame::ABOVE_HOME,rel_alt);
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.latitude     = gps.location().lat;
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.longitude    = gps.location().lng;
-    tmp_msg._msg_1.content.msg.sub_msg.msg_m.alt          = gps.location().alt*10;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.alt          = rel_alt_valid?(rel_alt*10):0;
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.gps_vel_xy   = (int16_t)(gps.ground_speed() * 100.f);
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.gps_hdop     = gps.get_hdop(); // already *100 when read in AP_GPS
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.gps_vdop     = gps.get_vdop(); // already *100 when read in AP_GPS
