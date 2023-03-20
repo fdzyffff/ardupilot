@@ -1226,6 +1226,8 @@ private:
 
     void one_hz_loop();
 
+    void Log_Write_Depth();
+
 public:
     void failsafe_check(void);
 #if AP_SCRIPTING_ENABLED

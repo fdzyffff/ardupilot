@@ -84,13 +84,16 @@ void ModeSubAltHold::update()
         plane.nav_pitch_cd = 0;
         SRV_Channels::set_output_limit(SRV_Channel::k_throttle, SRV_Channel::Limit::MIN);
     }
+    subalt_stat.target_input = plane.channel_pitch->norm_input();
+    subalt_stat.target_climb_rate = target_vel;
+    subalt_stat.target_depth = _target_alt_cms;
 }
 
 void ModeSubAltHold::get_target_alt_cm(float pitch_input)
 {
     float curr_alt_cms = plane.depth_sensor.get_altitude()*100.f;
     float target_delta_v = pitch_input*_max_vel_cms;
-    _target_alt_cms = constrain_float(_target_alt_cms+target_delta_v*plane.G_Dt, curr_alt_cms - 500.f, curr_alt_cms + 500.f);
+    _target_alt_cms = constrain_float(_target_alt_cms+target_delta_v*plane.G_Dt, curr_alt_cms - _max_vel_cms*1.5f, curr_alt_cms + _max_vel_cms*1.5f);
 }
 
 float ModeSubAltHold::get_target_vel_cms(float target_alt_cms)

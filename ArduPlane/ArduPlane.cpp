@@ -570,6 +570,7 @@ void Plane::update_alt()
                                                  aerodynamic_load_factor);
     }
     depth_sensor.update();
+    Log_Write_Depth();
 }
 
 /*

@@ -758,6 +758,11 @@ public:
     // methods that affect movement of the vehicle in this mode
     void update() override;
 
+    struct subalt_stat_t {
+        float target_input;
+        float target_climb_rate;
+        float target_depth;
+    } subalt_stat;
     // var_info for holding parameter information
     static const struct AP_Param::GroupInfo var_info[];
 protected:

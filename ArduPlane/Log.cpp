@@ -259,6 +259,33 @@ void Plane::Log_Write_Guided(void)
 #endif // OFFBOARD_GUIDED == ENABLED
 }
 
+struct PACKED log_Depth_Target {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    uint8_t valid;
+    float stick_input;
+    float sensor_depth;
+    float target_depth;
+    float sensor_climb_rate;
+    float target_climb_rate;
+};
+
+// Write a Depth control packet.
+void Plane::Log_Write_Depth()
+{
+    struct log_Depth_Target pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_DEPTH_MSG),
+        time_us                : AP_HAL::micros64(),
+        valid                  : depth_sensor.all_healthy(),
+        stick_input            : mode_sub_althold.subalt_stat.target_input,
+        sensor_depth           : depth_sensor.get_altitude()*100.f,
+        target_depth           : mode_sub_althold.subalt_stat.target_depth,
+        sensor_climb_rate      : depth_sensor.get_climb_rate()*100.f,
+        target_climb_rate      : mode_sub_althold.subalt_stat.target_climb_rate
+    };
+    logger.WriteBlock(&pkt, sizeof(pkt));
+}
+
 // incoming-to-vehicle mavlink COMMAND_INT can be logged
 struct PACKED log_CMDI {
     LOG_PACKET_HEADER;
@@ -464,6 +491,8 @@ const struct LogStructure Plane::log_structure[] = {
     { LOG_CMDH_MSG, sizeof(log_CMDI),     
       "CMDH", "QHBBBBffffiifB",    "TimeUS,CId,TSys,TCmp,cur,cont,Prm1,Prm2,Prm3,Prm4,Lat,Lng,Alt,F", "s---------DUm-", "F---------GGB-" }, 
 
+    { LOG_DEPTH_MSG, sizeof(log_Depth_Target),
+      "DPTH",  "QBfffff",    "TimeUS,Valid,Input,Depth,TDepth,ClimbRt,TClimbRt", "s------", "F------", true},
 };
 
 
