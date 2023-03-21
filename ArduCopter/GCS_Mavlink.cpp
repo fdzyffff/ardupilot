@@ -368,6 +368,13 @@ bool GCS_MAVLINK_Copter::try_send_message(enum ap_message id)
         break;
     }
 
+    case MSG_NACELLE:
+    {
+        CHECK_PAYLOAD_SIZE(MY_OPTIC_DATA);
+        send_nacelle();
+        break;
+    }
+
     default:
         return GCS_MAVLINK::try_send_message(id);
     }
@@ -1495,6 +1502,14 @@ void GCS_MAVLINK_Copter::send_wind() const
         degrees(atan2f(-wind.y, -wind.x)),
         wind.length(),
         wind.z);
+}
+
+void GCS_MAVLINK_Copter::send_nacelle() const
+{
+    // if (copter.nacelle.FD1_uart_msg_gcs.get_msg_nacelle2gcs()._msg_1.need_send) {
+        mavlink_msg_my_optic_data_send(chan,copter.nacelle.FD1_uart_msg_gcs.get_msg_nacelle2gcs()._msg_1.content.data);
+    //     copter.nacelle.FD1_uart_msg_gcs.get_msg_nacelle2gcs()._msg_1.need_send = false;
+    // }
 }
 
 #if HAL_HIGH_LATENCY2_ENABLED

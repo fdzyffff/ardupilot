@@ -19,13 +19,13 @@ void UserNacelle::Init() {
 void UserNacelle::Update() {
     // msg from nacelle uart, route to the gcs uart
     while (FD1_uart_msg_nacelle.port_avaliable() > 0) {
-        uint8_t temp = FD1_uart_msg_nacelle.read();
+        uint8_t temp = FD1_uart_msg_nacelle.port_read();
         nacelle_read(temp);
     }
 
     // msg from gcs uart, route to the nacelle uart
     while (FD1_uart_msg_gcs.port_avaliable() > 0) {
-        uint8_t temp = FD1_uart_msg_gcs.read();
+        uint8_t temp = FD1_uart_msg_gcs.port_read();
         gcs_read(temp);
         // FD1_uart_msg_nacelle.write();  
     }
@@ -35,6 +35,7 @@ void UserNacelle::Update() {
 void UserNacelle::nacelle_read(uint8_t temp) 
 {
     user_stat.nacelle_byte_count++;
+    FD1_uart_msg_nacelle.read(temp);
     if (copter.g2.user_parameters.stat_print.get() & (2<<0)) {
         gcs().send_text(MAV_SEVERITY_WARNING, "down: %x", temp);
     }
@@ -46,6 +47,7 @@ void UserNacelle::nacelle_read(uint8_t temp)
 void UserNacelle::gcs_read(uint8_t temp) 
 {
     user_stat.gcs_byte_count++;
+    FD1_uart_msg_gcs.read(temp);
     if (copter.g2.user_parameters.stat_print.get() & (2<<0)) {
         gcs().send_text(MAV_SEVERITY_WARNING, "up: %x", temp);
     }
@@ -87,6 +89,8 @@ void UserNacelle::nacelle_handle_and_route() {
         // gcs().send_text(MAV_SEVERITY_WARNING, "FD1_uart_msg_nacelle in %d %d", FD1_uart_msg_nacelle.get_msg_nacelle_in()._msg_1.length, FD1_uart_msg_gcs.get_msg_nacelle_route()._msg_1.length);
         // FD1_uart_nacelle_AHRS_test();
         FD1_uart_msg_nacelle.get_msg_nacelle2gcs()._msg_1.updated = false;
+        gcs().send_text(MAV_SEVERITY_WARNING, "nacelle route");
+        copter.gcs().send_message(MSG_NACELLE);
     }
 }
 

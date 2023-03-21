@@ -23,20 +23,17 @@ uint32_t FD1_UART::port_avaliable(void) {
     return _port->available();
 }
 
-uint8_t FD1_UART::read(void)
+uint8_t FD1_UART::port_read(void)
 {    
     uint8_t temp = _port->read();
-    if (_msg_gcs2nacelle.enable())    {_msg_gcs2nacelle.parse(temp);}
-    if (_msg_nacelle2gcs.enable())    {_msg_nacelle2gcs.parse(temp);}
     return temp;
 }
 
-// void FD1_UART::read(void)
-// {    
-//     uint8_t temp = _port->read();
-//     if (_msg_gcs2nacelle.enable())    {_msg_gcs2nacelle.parse(temp);}
-//     if (_msg_nacelle2gcs.enable())    {_msg_nacelle2gcs.parse(temp);}
-// }
+void FD1_UART::read(uint8_t temp)
+{    
+    if (_msg_gcs2nacelle.enable())    {_msg_gcs2nacelle.parse(temp);}
+    if (_msg_nacelle2gcs.enable())    {_msg_nacelle2gcs.parse(temp);}
+}
 
 void FD1_UART::write(void)
 {
