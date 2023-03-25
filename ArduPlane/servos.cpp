@@ -569,6 +569,8 @@ void Plane::set_servos_controlled(void)
                control_mode == &mode_training ||
                control_mode == &mode_acro ||
                control_mode == &mode_fbwa ||
+               control_mode == &mode_sub_stablize ||
+               control_mode == &mode_sub_althold ||
                control_mode == &mode_autotune) {
         // a manual throttle mode
         if (!rc().has_valid_input()) {
