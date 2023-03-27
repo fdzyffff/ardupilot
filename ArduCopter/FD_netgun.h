@@ -37,6 +37,7 @@ public:
     void Fire(uint16_t channel);
     void Cut(uint16_t channel);
     void Stabilize();
+    void set_target_angle(float angle_in);
     void set_target(float v_in);
     void set_trim(float v_in);
     void set_stabilize(bool v_in);

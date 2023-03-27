@@ -24,10 +24,23 @@ uint32_t FD1_UART::port_avaliable(void) {
 }
 
 uint8_t FD1_UART::port_read(void)
-{    
+{
+    if(!initialized()) {
+        return false;
+    }
     uint8_t temp = _port->read();
     return temp;
 }
+
+void FD1_UART::port_write(uint8_t temp)
+{
+    if(!initialized()) {
+        return;
+    }
+    _port->write(temp);
+    return ;
+}
+
 
 void FD1_UART::read(uint8_t temp)
 {    

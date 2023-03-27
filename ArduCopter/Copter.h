@@ -230,6 +230,7 @@ public:
     friend class ModeZigZag;
     friend class ModeAutorotate;
     friend class ModeTurtle;
+    friend class ModeLockon;
     friend class UserNetgun;
     friend class UserNacelle;
 
@@ -1024,6 +1025,9 @@ private:
 #endif
 #if MODE_TURTLE_ENABLED == ENABLED
     ModeTurtle mode_turtle;
+#endif
+#if MODE_LOITER_ENABLED == ENABLED
+    ModeLockon mode_lockon;
 #endif
 
     // mode.cpp

@@ -6,42 +6,38 @@ public:
     struct PACKED FD1_msg_header {
         uint8_t head_1;
         uint8_t head_2;
-        uint8_t head_3;
-        uint8_t info;
-        uint8_t id;
     };
 
-    struct PACKED MSG_X {
-        uint8_t name;
-        uint8_t class_number;
-        uint16_t serial_number;
-        uint16_t yaw_version;
-        uint16_t pitch_version;
-        uint8_t empty[18];
+    // struct PACKED MSG_X {
+    //     uint8_t name;
+    //     uint8_t class_number;
+    //     uint16_t serial_number;
+    //     uint16_t yaw_version;
+    //     uint16_t pitch_version;
+    //     uint8_t empty[18];
+    // };
+
+    struct PACKED MSG_M_LASER {
+        uint8_t data[17];
     };
 
     struct PACKED MSG_M {
-        uint8_t type;
-        uint8_t empty[7];
-        int16_t roll_angle;
+        uint8_t length;
         int16_t pitch_angle;
         int16_t yaw_angle;
-        uint8_t date[2];
-        uint8_t time[3];
-        int16_t gps_heading;
-        uint8_t empty1;
-        int32_t latitude;
-        int32_t longitude;
-        int32_t alt;
-        int16_t gps_vel_xy;
-        int16_t gps_hdop;
-        int16_t gps_vdop;
-        int16_t gps_vel_z;
+        uint8_t reserved1[2];
+        int16_t pitch_rate;
+        int16_t yaw_rate;
+        uint8_t reserved2[2];
+        int16_t fov;
+        uint8_t reserved3[4];
+        MSG_M_LASER laser;
+        uint8_t reserved4[15];
     };
 
 
     union PACKED MSG_Collection {
-        MSG_X msg_x;
+        // MSG_X msg_x;
         MSG_M msg_m;
     };
 
@@ -103,6 +99,4 @@ public:
     void swap_message() override;
 
     FD1UART_MSG_1 _msg_1;
-
-    const float SF_INT16 = 65536.f/360.f;
 };

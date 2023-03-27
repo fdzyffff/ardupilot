@@ -113,7 +113,7 @@ void UserNetgun::handle_info(float p1, float p2, float p3, float p4, float p5, f
         Fire((uint16_t)p2);
     }
     if ((uint16_t)p1 == 2) {
-        ;
+        copter.set_mode(Mode::Number::LOCKON, ModeReason::GCS_COMMAND);
     }
     if ((uint16_t)p1 == 3) {
         set_trim(p2);
@@ -130,8 +130,8 @@ void UserNetgun::handle_info(float p1, float p2, float p3, float p4, float p5, f
 void UserNetgun::Stabilize()
 {
     check_param();
-    _angle_stab = (0.0f - degrees(copter.ahrs_view->pitch)*100.f); //nose down in negative, thus need to trans
-    float _output = constrain_float(_angle_target + _angle_stab + _angle_trim, _angle_min, _angle_max);
+    _angle_stab = (degrees(copter.ahrs_view->pitch)*100.f); //nose down in negative, thus need to trans
+    float _output = constrain_float(_angle_target + _angle_stab - _angle_trim, _angle_min, _angle_max);
     float _output_norm = _output/(_angle_max - _angle_min)*1000.f;
 
     SRV_Channels::set_output_scaled(SRV_Channel::k_netgun_pitch, _output_norm);
@@ -139,12 +139,20 @@ void UserNetgun::Stabilize()
 
 void UserNetgun::set_target(float v_in) //norm 1000
 {
-    _angle_target = constrain_float(v_in, 0.0f, 1000.f)*9.0f;
+    check_param();
+    _angle_target = constrain_float(v_in, 0.0f, 1000.f)*(_angle_max - _angle_min);
+}
+
+void UserNetgun::set_target_angle(float angle_in) // cd
+{
+    check_param();
+    _angle_target = constrain_float(angle_in, _angle_min, _angle_max);
 }
 
 void UserNetgun::set_trim(float v_in) //norm 1000
 {
-    _angle_trim = constrain_float(v_in, -1000.0f, 1000.f)*9.0f;
+    check_param();
+    _angle_trim = constrain_float(v_in, -1000.0f, 1000.f)*0.001*(_angle_max - _angle_min);
 }
 
 void UserNetgun::set_stabilize(bool v_in)
