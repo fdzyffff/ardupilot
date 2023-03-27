@@ -12,4 +12,5 @@ public:
     AP_Int8 stat_print; //bit1: nacelle stream byte
     AP_Int16 netgun_max; //look down is 9000
     AP_Int16 netgun_min; //look at skyline is 0
+    AP_Int16 netgun_slew; //slew rate in cd/s
 };

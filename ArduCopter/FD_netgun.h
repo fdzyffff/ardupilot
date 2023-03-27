@@ -46,9 +46,11 @@ public:
 
     UserBarrel _barrels[NETGUN_NUM];
     bool _do_stab;
+    float _angle_current;
     float _angle_target;
     float _angle_stab; //cd
     float _angle_trim; //cd
     float _angle_max;
     float _angle_min;
+    float _slew_rate; // cd/s
 };

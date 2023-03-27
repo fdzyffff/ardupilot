@@ -9,6 +9,7 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     AP_GROUPINFO("_STAT_PRINT", 0, UserParameters, stat_print, 0),
     AP_GROUPINFO("_NC_ANG_MAX", 1, UserParameters, netgun_max, 9000),
     AP_GROUPINFO("_NC_ANG_NIN", 2, UserParameters, netgun_min, 0),
+    AP_GROUPINFO("_NC_SLEW", 3, UserParameters, netgun_slew, 5000),
     
     AP_GROUPEND
 };

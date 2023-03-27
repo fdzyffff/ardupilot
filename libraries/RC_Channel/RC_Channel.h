@@ -235,24 +235,28 @@ public:
         CAMERA_ZOOM =        167, // camera zoom high = zoom in, middle = hold, low = zoom out
         CAMERA_MANUAL_FOCUS = 168,// camera manual focus.  high = long shot, middle = stop focus, low = close shot
         CAMERA_AUTO_FOCUS =  169, // camera auto focus
-        NETGUN_TRIGGER =     170, 
+
+        NETGUN_FIRE_1 =      201,
+        NETGUN_FIRE_2 =      202,
+        NETGUN_CUT_1 =       211,
+        NETGUN_CUT_2 =       212,
 
         // inputs from 200 will eventually used to replace RCMAP
-        ROLL =               201, // roll input
-        PITCH =              202, // pitch input
-        THROTTLE =           203, // throttle pilot input
-        YAW =                204, // yaw pilot input
-        MAINSAIL =           207, // mainsail input
-        FLAP =               208, // flap input
-        FWD_THR =            209, // VTOL manual forward throttle
-        AIRBRAKE =           210, // manual airbrake control
-        WALKING_HEIGHT =     211, // walking robot height input
-        MOUNT1_ROLL =        212, // mount1 roll input
-        MOUNT1_PITCH =       213, // mount1 pitch input
-        MOUNT1_YAW =         214, // mount1 yaw input
-        MOUNT2_ROLL =        215, // mount2 roll input
-        MOUNT2_PITCH =       216, // mount3 pitch input
-        MOUNT2_YAW =         217, // mount4 yaw input
+        ROLL =               251, // roll input
+        PITCH =              252, // pitch input
+        THROTTLE =           253, // throttle pilot input
+        YAW =                254, // yaw pilot input
+        MAINSAIL =           257, // mainsail input
+        FLAP =               258, // flap input
+        FWD_THR =            259, // VTOL manual forward throttle
+        AIRBRAKE =           260, // manual airbrake control
+        WALKING_HEIGHT =     261, // walking robot height input
+        MOUNT1_ROLL =        262, // mount1 roll input
+        MOUNT1_PITCH =       263, // mount1 pitch input
+        MOUNT1_YAW =         264, // mount1 yaw input
+        MOUNT2_ROLL =        265, // mount2 roll input
+        MOUNT2_PITCH =       266, // mount3 pitch input
+        MOUNT2_YAW =         267, // mount4 yaw input
 
         // inputs 248-249 are reserved for the Skybrush fork at
         // https://github.com/skybrush-io/ardupilot
