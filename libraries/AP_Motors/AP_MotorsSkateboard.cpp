@@ -72,15 +72,15 @@ void AP_MotorsSkateboard::output_to_motors()
     // SRV_Channels::set_output_scaled(function, angle_cd);
     switch (_spool_state) {
         case SpoolState::SHUT_DOWN:
-            // SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_0, 0.0f);
-            // SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_1, 0.0f);
-            // SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_2, 0.0f);
-            // SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_3, 0.0f);
-            // SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_4, 0.0f);
-            // SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_5, 0.0f);
-            // SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_6, 0.0f);
-            // SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_7, 0.0f);
-            // break;
+            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_0, 0.0f);
+            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_1, 0.0f);
+            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_2, 0.0f);
+            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_3, 0.0f);
+            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_4, 0.0f);
+            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_5, 0.0f);
+            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_6, 0.0f);
+            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_7, 0.0f);
+            break;
         case SpoolState::GROUND_IDLE:
         case SpoolState::SPOOLING_UP:
         case SpoolState::THROTTLE_UNLIMITED:

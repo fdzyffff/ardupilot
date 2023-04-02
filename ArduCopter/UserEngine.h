@@ -13,7 +13,8 @@ public:
         Boost_4 = 3,
         Normal = 4,
         Running = 10,
-        Brake = 20
+        Brake_1 = 20,
+        Brake_2 = 21
     };
 
     void Init(AP_SerialManager::SerialProtocol in_protocol, SRV_Channel::Aux_servo_function_t in_srv_function);

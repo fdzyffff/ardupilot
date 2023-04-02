@@ -83,7 +83,8 @@ void UserEngines::update_output() // call at 400 Hz
 {
 	for (uint8_t i_engine = 0; i_engine < ENGINE_NUM; i_engine++) {
 		if (_engine[i_engine].can_override() && copter.ap.motor_interlock_switch) {
-			_output[i_engine] = constrain_int16(copter.g2.user_parameters.thr_low + (int16_t)(copter.motors->get_throttle_out()*800.0f), 1130, 1950);
+			float delta_throttle = 2000 - copter.g2.user_parameters.thr_low.get();
+			_output[i_engine] = constrain_int16(copter.g2.user_parameters.thr_low + (int16_t)(copter.motors->get_throttle_out()*delta_throttle), copter.g2.user_parameters.thr_low, 2000);
 		} else {
 			_output[i_engine] = _engine[i_engine].get_output(); // the engine is in boost or brake procedures, output are pre-set in time order with uart state feedback
 		}
