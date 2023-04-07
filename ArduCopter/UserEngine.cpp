@@ -4,15 +4,25 @@
 #define USERENGINE_THR_LOWEST 980
 #define USERENGINE_THR_HIGHEST 2000
 
-void UserEngine::Init(AP_SerialManager::SerialProtocol in_protocol, SRV_Channel::Aux_servo_function_t in_srv_function)
+void UserEngine::Init(SRV_Channel::Aux_servo_function_t in_srv_function, uint8_t id_in)
 {
-    if (_uart == nullptr) {
-        _uart = new FD_UART(in_protocol);
-    }
     set_state(EngineState::Brake_2);
     _connected = false;
     _output = USERENGINE_THR_TRIM;
     _srv_function = in_srv_function;
+    _id = id_in;
+}
+
+void UserEngine::Set_msg(FD_engine* engine_in)
+{
+    _msg = engine_in;
+    _msg->set_enable();
+    _msg->PREAMBLE_ID = _id;
+}
+
+FD_engine* UserEngine::Get_msg()
+{
+    return _msg;
 }
 
 void UserEngine::Update()
@@ -21,6 +31,7 @@ void UserEngine::Update()
     if (copter.g2.user_parameters.thr_low.get() < 1000) {
         copter.g2.user_parameters.thr_low.set(1000);
     }
+
     if (copter.g2.user_parameters.thr_low.get() > 1200) {
         copter.g2.user_parameters.thr_low.set(1200);
     }
@@ -30,8 +41,33 @@ void UserEngine::Update()
 
 void UserEngine::update_uart() 
 {
+    if (_msg == nullptr) {
+        set_connected(false);
+        return;
+    }
+    if (_msg->_msg_1.updated) {
+        _msg_state.last_ms = millis();
+        _msg->_msg_1.updated = false;
+        _msg->_msg_1.need_send = true;
+    }
+    if (_msg_state.last_ms == 0 || millis() - _msg_state.last_ms > 5000) {
+        set_connected(false);
+    } else {
+        set_connected(true);
+    }
+}
 
-    _connected = false;
+void UserEngine::set_connected(bool v_in)
+{
+    if (v_in == _connected) {
+        return;
+    }
+    _connected = v_in;
+    if (_connected) {
+        gcs().send_text(MAV_SEVERITY_INFO, "[%d] connect", _id);
+    } else {
+        gcs().send_text(MAV_SEVERITY_INFO, "[%d] lost", _id);
+    }
 }
 
 void UserEngine::update_state()
@@ -44,31 +80,31 @@ void UserEngine::update_state()
             break;
         case EngineState::Boost_1:
             _output = USERENGINE_THR_LOWEST; // lowest, 980
-            if (delta_t > 1000 && !connected()) {
+            if (delta_t > 1000) {
                 set_state(EngineState::Boost_2);
             }
             break;
         case EngineState::Boost_2:
             _output = copter.g2.user_parameters.thr_low; // normal low, 1150
-            if (delta_t > 1000 && !connected()) {
+            if (delta_t > 1000) {
                 set_state(EngineState::Boost_3);
             }
             break;
         case EngineState::Boost_3:
             _output = USERENGINE_THR_HIGHEST; // highest, 1950
-            if (delta_t > 1000 && !connected()) {
+            if (delta_t > 1000) {
                 set_state(EngineState::Boost_4);
             }
             break;
         case EngineState::Boost_4:
             _output = copter.g2.user_parameters.thr_low; // normal low, 1150
-            if (delta_t > 1000 && !connected()) {
+            if (delta_t > 1000) {
                 set_state(EngineState::Running);
             }
             break;
         case EngineState::Brake_1:
             _output = copter.g2.user_parameters.thr_low; // normal low, 1150
-            if (delta_t > 5000 && !connected()) {
+            if (delta_t > 5000) {
                 set_state(EngineState::Brake_2);
             }
             break;

@@ -25,10 +25,25 @@ void FD_UART::read(void)
     }
     while (_port->available() > 0) {
         uint8_t temp = _port->read();
-        //if (_msg_apm2payload.enable())   {_msg_apm2payload.parse(temp);}
-        if (_msg_payload2apm.enable())   {_msg_payload2apm.parse(temp);}
+        for (uint8_t i_instance = 0; i_instance < MAX_ENGINE_PORT_NUM; i_instance++) {
+            if (_msg_engine[i_instance].enable())   {_msg_engine[i_instance].parse(temp);}
+        }
     }
 }
+
+FD_engine& FD_UART::get_msg_engine()
+{ 
+    return _msg_engine[0]; 
+}
+
+FD_engine& FD_UART::get_msg_engine(uint8_t instance) 
+{
+    if (instance < MAX_ENGINE_PORT_NUM) {
+        return _msg_engine[instance]; 
+    }
+    return _msg_engine[0]; 
+}
+
 
 void FD_UART::write(void)
 {

@@ -6,7 +6,7 @@
 
 #include "ap_version.h"
 
-#define THISFIRMWARE "ArduCopter V4.3.2-SKB-v1.0.1"
+#define THISFIRMWARE "ArduCopter V4.3.2-SKB-v1.0.2"
 
 // the following line is parsed by the autotest scripts
 #define FIRMWARE_VERSION 4,3,2,FIRMWARE_VERSION_TYPE_OFFICIAL
@@ -19,5 +19,7 @@
 #include <AP_Common/AP_FWVersionDefine.h>
 
 // Log
+// ArduCopter V4.3.2-SKB-v1.0.2
+// Add engine msg forward
 // ArduCopter V4.3.2-SKB-v1.0.1
-// refine the brake procedure
+// refine the engine brake procedure

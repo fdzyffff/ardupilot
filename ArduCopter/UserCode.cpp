@@ -41,6 +41,10 @@ void Copter::userhook_SlowLoop()
 #ifdef USERHOOK_SUPERSLOWLOOP
 void Copter::userhook_SuperSlowLoop()
 {
+    if (uengines.need_send) {
+        gcs().send_message(MSG_MY_ENGINE);
+    }
+
     // put your 1Hz code here
     // gcs().send_text(MAV_SEVERITY_INFO, "motors->get_interlock(): %d", motors->get_interlock());
     if (copter.failsafe.radio) {

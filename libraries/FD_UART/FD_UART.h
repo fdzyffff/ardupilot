@@ -3,7 +3,9 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_SerialManager/AP_SerialManager.h>
 
-#include "FD_payload2apm.h"
+#include "FD_engine.h"
+
+#define MAX_ENGINE_PORT_NUM 7
 
 class FD_UART {
 public:
@@ -24,8 +26,10 @@ public:
     bool initialized() {return _initialized;}
     void read();
     void write();
+    AP_HAL::UARTDriver* get_port() {return _port;}
 
-    FD_payload2apm& get_msg_payload2apm() { return _msg_payload2apm; }
+    FD_engine& get_msg_engine();
+    FD_engine& get_msg_engine(uint8_t instance);
 
 private:
 
@@ -33,5 +37,5 @@ private:
     AP_SerialManager::SerialProtocol _protocol; // protocol used - detected using SerialManager's SERIAL#_PROTOCOL parameter
     bool _initialized;
 
-    FD_payload2apm _msg_payload2apm;
+    FD_engine _msg_engine[MAX_ENGINE_PORT_NUM];
 };

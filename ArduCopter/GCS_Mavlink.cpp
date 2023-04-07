@@ -367,6 +367,10 @@ bool GCS_MAVLINK_Copter::try_send_message(enum ap_message id)
 #endif
         break;
     }
+    case MSG_MY_ENGINE:
+        CHECK_PAYLOAD_SIZE(MY_ENGINE_MSG);
+        send_engine();
+        break;
 
     default:
         return GCS_MAVLINK::try_send_message(id);
@@ -1487,6 +1491,12 @@ void GCS_MAVLINK_Copter::send_wind() const
         degrees(atan2f(-wind.y, -wind.x)),
         wind.length(),
         wind.z);
+}
+
+void GCS_MAVLINK_Copter::send_engine() const
+{
+    mavlink_msg_my_engine_msg_send(chan,copter.uengines.engine_msg);
+    copter.uengines.need_send = false;
 }
 
 #if HAL_HIGH_LATENCY2_ENABLED
