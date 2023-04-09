@@ -42,6 +42,7 @@ MAV_MODE GCS_MAVLINK_Plane::base_mode() const
     case Mode::Number::QHOVER:
     case Mode::Number::QLOITER:
     case Mode::Number::QLAND:
+    case Mode::Number::QMLAND:
 #if QAUTOTUNE_ENABLED
     case Mode::Number::QAUTOTUNE:
 #endif
@@ -665,6 +666,7 @@ void GCS_MAVLINK_Plane::packetReceived(const mavlink_status_t &status,
     // pass message to follow library
     plane.g2.follow.handle_msg(msg);
 #endif
+    plane.ubase.handle_msg(msg);
     GCS_MAVLINK::packetReceived(status, msg);
 }
 

@@ -112,6 +112,8 @@
 #endif
 #include "AP_Arming.h"
 
+#include "UBase.h"
+
 /*
   main APM:Plane class
  */
@@ -160,6 +162,9 @@ public:
     friend class ModeTakeoff;
     friend class ModeThermal;
     friend class ModeLoiterAltQLand;
+    friend class ModeQMLand;
+
+    friend class UBase;
 
     Plane(void);
 
@@ -283,6 +288,7 @@ private:
 #if HAL_SOARING_ENABLED
     ModeThermal mode_thermal;
 #endif
+    ModeQMLand mode_qmland;
 
     // This is the state of the flight control system
     // There are multiple states defined such as MANUAL, FBW-A, AUTO
@@ -1206,6 +1212,10 @@ private:
 
     // last target alt we passed to tecs
     int32_t tecs_target_alt_cm;
+
+    // User info
+    UBase ubase;
+    void user_50Hz();
 
 public:
     void failsafe_check(void);

@@ -562,6 +562,10 @@ public:
 
     AP_Int32        oneshot_mask;
 
+
+    AP_Int16 ubase_time_out;
+    AP_Int8  ubase_print;
+
     // just to make compilation easier when all things are compiled out...
     uint8_t unused_integer;
 };

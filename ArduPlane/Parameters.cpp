@@ -1231,7 +1231,10 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @Path: ../libraries/AP_Follow/AP_Follow.cpp
     AP_SUBGROUPINFO(follow, "FOLL", 33, ParametersG2, AP_Follow),
 #endif
-    
+
+    AP_GROUPINFO("USR_TIMEOUT", 34, ParametersG2, ubase_time_out, 100),
+    AP_GROUPINFO("USR_PRINT", 35, ParametersG2, ubase_print, 0),
+
     AP_GROUPEND
 };
 

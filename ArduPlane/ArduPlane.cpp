@@ -131,6 +131,8 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
 #if LANDING_GEAR_ENABLED == ENABLED
     SCHED_TASK(landing_gear_update, 5, 50, 159),
 #endif
+
+    SCHED_TASK(user_50Hz,           50,    200,   100),
 };
 
 void Plane::get_scheduler_tasks(const AP_Scheduler::Task *&tasks,
@@ -811,6 +813,10 @@ void Plane::get_osd_roll_pitch_rad(float &roll, float &pitch) const
     if (!(g2.flight_options & FlightOptions::OSD_REMOVE_TRIM_PITCH_CD)) {  // correct for TRIM_PITCH_CD
         pitch -= g.pitch_trim_cd * 0.01 * DEG_TO_RAD;
     }
+}
+
+void Plane::user_50Hz() {
+    ubase.update();
 }
 
 AP_HAL_MAIN_CALLBACKS(&plane);
