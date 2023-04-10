@@ -21,9 +21,6 @@ UBase::UBase()
 // initialise
 void UBase::init()
 {
-    _last_ms = 0;
-    _active = false;
-    _new_data = false;
     // _target_loc = plane.current_loc;
     display_info.p1 = 0.0f;
     display_info.p2 = 0.0f;
@@ -35,156 +32,40 @@ void UBase::init()
     display_info.p14 = 0.0f;
     display_info.count = 0;
 
-    _target_pos.zero();
-    _target_vel.zero();
-    _target_bearing = 0.0f;
-}
+    mlstate.throttle_switch = throttle_pos::HIGH;
+    mlstate.landing_stage = land_stage::HOLDOFF;
+    mlstate.have_target = false;
+    mlstate.target_heading = 0.0f;
+    mlstate.vehicle_mode = 0;
+    mlstate.reached_alt = false;
 
-void UBase::handle_info(Location target_loc_in, Vector3f target_pos_in, Vector3f target_vel_in, float target_heading_in)
-{
-    // display_info.p1 = pitch_in;
-    // display_info.p2 = roll_in;
-    // display_info.p3 = yaw_in;
-    // display_info.p4 = abs_yaw_in;
-    display_info.count++;
-
-    _target_loc = target_loc_in;
-    _target_pos = target_pos_in;
-    _target_vel = target_vel_in;
-    _target_bearing = target_heading_in;
-
-    _new_data = true;
-    _last_ms = millis();
+    // check_parameters();
 }
 
 
+// const struct convert_table {
+//     const char* p_name;
+//     float new_val;
+// }  conversion_table[] = {
+//     // PARAMETER_CONVERSION - Added: Aug-2021
+//     {"FOLL_ENABLE", 1},
+//     {"FOLL_OFS_TYPE", 1},
+//     {"FOLL_ALT_TYPE", 1},
+// };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// support takeoff and landing on moving platforms for VTOL planes
-
-// local PARAM_TABLE_KEY = 7
-// local PARAM_TABLE_PREFIX = "SHIP_"
-
-// local MODE_MANUAL = 0
-// local MODE_RTL = 11
-// local MODE_QRTL = 21
-// local MODE_AUTO = 10
-// local MODE_QLOITER = 19
-
-// local NAV_TAKEOFF = 22
-// local NAV_VTOL_TAKEOFF = 84
-
-// local ALT_FRAME_ABSOLUTE = 0
-
-// -- 3 throttle position
-// local THROTTLE_LOW = 0
-// local THROTTLE_MID = 1
-// local THROTTLE_HIGH = 2
-
-// // setup SHIP specific parameters
-// assert(param:add_table(PARAM_TABLE_KEY, PARAM_TABLE_PREFIX, 3), 'could not add param table')
-// SHIP_ENABLE     = bind_add_param('ENABLE', 1, 0)
-// SHIP_LAND_ANGLE = bind_add_param('LAND_ANGLE', 2, 0)
-// SHIP_AUTO_OFS   = bind_add_param('AUTO_OFS', 3, 0)
-
-// // other parameters
-// RCMAP_THROTTLE  = bind_param("RCMAP_THROTTLE")
-// ALT_HOLD_RTL    = bind_param("ALT_HOLD_RTL")
-// Q_RTL_ALT       = bind_param("Q_RTL_ALT")
-// TRIM_ARSPD_CM   = bind_param("TRIM_ARSPD_CM")
-// TECS_LAND_ARSPD = bind_param("TECS_LAND_ARSPD")
-// Q_TRANS_DECEL   = bind_param("Q_TRANS_DECEL")
-// WP_LOITER_RAD   = bind_param("WP_LOITER_RAD")
-// FOLL_OFS_X      = bind_param("FOLL_OFS_X")
-// FOLL_OFS_Y      = bind_param("FOLL_OFS_Y")
-// FOLL_OFS_Z      = bind_param("FOLL_OFS_Z")
-
-// an auth ID to disallow arming when we don't have the beacon
-// local auth_id = arming:get_aux_auth_id()
-// arming:set_aux_auth_failed(auth_id, "Ship: no beacon")
-
-// -- current target
-// local target_pos = Location()
-// local current_pos = Location()
-// local target_velocity = Vector3f()
-// local target_heading = 0.0
-
-// -- landing stages
-// local STAGE_HOLDOFF = 0
-// local STAGE_DESCEND = 1
-// local STAGE_APPROACH = 2
-// local STAGE_IDLE = 2
-// local landing_stage = STAGE_HOLDOFF
-
-// -- other state
-// local vehicle_mode = MODE_MANUAL
-// local reached_alt = false
-// local throttle_pos = THROTTLE_HIGH
-// local have_target = false
-
-const struct convert_table {
-    const char* p_name;
-    float new_val;
-}  conversion_table[] = {
-    // PARAMETER_CONVERSION - Added: Aug-2021
-    {"FOLL_ENABLE", 1},
-    {"FOLL_OFS_TYPE", 1},
-    {"FOLL_ALT_TYPE", 1},
-};
-
-// check key parameters
-void UBase::check_parameters()
-{
-    for (const auto & elem : conversion_table) {
-        float val = 0.0f;
-        if (AP_Param::get(elem.p_name, val)) {
-            AP_Param::set_by_name(elem.p_name, elem.new_val);
-            gcs().send_text(MAV_SEVERITY_INFO,"Parameter %s set to %.2f was %.2f", elem.p_name, elem.new_val, val);
-        } else {
-            gcs().send_text(MAV_SEVERITY_INFO,"Parameter %s not found", elem.p_name);
-        }
-    }
-}
+// // check key parameters
+// void UBase::check_parameters()
+// {
+//     for (const auto & elem : conversion_table) {
+//         float val = 0.0f;
+//         if (AP_Param::get(elem.p_name, val)) {
+//             AP_Param::set_by_name(elem.p_name, elem.new_val);
+//             gcs().send_text(MAV_SEVERITY_INFO,"Parameter %s set to %.2f was %.2f", elem.p_name, elem.new_val, val);
+//         } else {
+//             gcs().send_text(MAV_SEVERITY_INFO,"Parameter %s not found", elem.p_name);
+//         }
+//     }
+// }
 
 // update the pilots throttle position
 void UBase::update_throttle_pos()
@@ -211,7 +92,7 @@ void UBase::update_throttle_pos()
             t_throttle_pos = throttle_pos::LOW;
         }
     }
-    if (t_throttle_pos != mlstate.throttle_pos) {
+    if (t_throttle_pos != mlstate.throttle_switch) {
         mlstate.reached_alt = false;
         if (mlstate.landing_stage == land_stage::HOLDOFF && t_throttle_pos <= throttle_pos::MID) {
             mlstate.landing_stage = land_stage::DESCEND;
@@ -221,17 +102,17 @@ void UBase::update_throttle_pos()
             gcs:send_text(MAV_SEVERITY_INFO, "Climbing for holdoff");
             mlstate.landing_stage = land_stage::HOLDOFF;
         }
-        mlstate.throttle_pos = t_throttle_pos;
+        mlstate.throttle_switch = t_throttle_pos;
     }
 }
 
 // get landing airspeed
 float UBase:: get_land_airspeed()
 {
-    if (TECS_LAND_ARSPD.get() < 0.0f ) {
-        return TRIM_ARSPD_CM.get() * 0.01f;
+    if (plane.TECS_controller.get_land_airspeed() < 0.0f ) {
+        return plane.aparm.airspeed_cruise_cm * 0.01f;
     }
-    return TECS_LAND_ARSPD.get();
+    return plane.TECS_controller.get_land_airspeed();
 }
 
 //   calculate stopping distance assuming we are flying at
@@ -307,7 +188,7 @@ bool UBase::check_approach_tangent()
 {
     float distance = mlstate.current_pos.get_distance(mlstate.target_pos);
     float holdoff_dist = get_holdoff_distance();
-    if (mlstate.landing_stage == land_state::HOLDOFF and mlstate.throttle_pos <= throttle_pos::MID && distance < 4.0f*holdoff_dist) {
+    if (mlstate.landing_stage == land_state::HOLDOFF and mlstate.throttle_switch <= throttle_pos::MID && distance < 4.0f*holdoff_dist) {
         gcs().send_text(MAV_SEVERITY_INFO, "Descending for approach (hd=%.1fm)", holdoff_dist);
         mlstate.landing_stage = land_state::DESCEND;
     }
@@ -470,7 +351,7 @@ void UBase::update()
         holdoff_pos.set_alt_cm(get_target_alt()*100.f, Location::AltFrame::ALT_FRAME_ABSOLUTE);
         plane.update_target_location(next_WP, holdoff_pos);
 
-        if (mlstate.throttle_pos == THROTTLE_LOW) {
+        if (mlstate.throttle_switch == THROTTLE_LOW) {
             check_approach_tangent();
         }
     }
@@ -480,7 +361,7 @@ void UBase::update()
         t_target_pos.set_alt_cm(next_WP.get_alt_frame(), next_WP.alt);
         plane.update_target_location(next_WP, t_target_pos);
 
-        if (mlstate.throttle_pos == THROTTLE_HIGH) {
+        if (mlstate.throttle_switch == THROTTLE_HIGH) {
             check_approach_abort();
         }
     }
