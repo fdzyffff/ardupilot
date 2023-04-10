@@ -90,7 +90,7 @@ void Copter::auto_disarm_check()
 
     // exit immediately if we are already disarmed, or if auto
     // disarming is disabled
-    if (!motors->armed() || disarm_delay_ms == 0 || flightmode->mode_number() == Mode::Number::THROW) {
+    if (!motors->armed() || disarm_delay_ms == 0 || flightmode->mode_number() == Mode::Number::THROW || AP::user_dazhuang().active()) {
         auto_disarm_begin = tnow_ms;
         return;
     }

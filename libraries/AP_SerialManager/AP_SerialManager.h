@@ -169,12 +169,12 @@ public:
         SerialProtocol_AIS = 40,
         SerialProtocol_CoDevESC = 41,
         SerialProtocol_MSP_DisplayPort = 42,
-        SerialProtocol_DazhuangM1 = 43,
-        SerialProtocol_DazhuangM2 = 44,
-        SerialProtocol_DazhuangM3 = 45,
-        SerialProtocol_DazhuangM4 = 46,
-        SerialProtocol_DazhuangM5 = 47,
-        SerialProtocol_DazhuangM6 = 48,
+        SerialProtocol_DazhuangM1 = 51,
+        SerialProtocol_DazhuangM2 = 52,
+        SerialProtocol_DazhuangM3 = 53,
+        SerialProtocol_DazhuangM4 = 54,
+        SerialProtocol_DazhuangM5 = 55,
+        SerialProtocol_DazhuangM6 = 56,
         SerialProtocol_NumProtocols                    // must be the last value
     };
 

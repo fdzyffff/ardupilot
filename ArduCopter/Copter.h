@@ -222,6 +222,7 @@ public:
 
 private:
 
+    USR_Dazhuang dazhuang;
     // key aircraft parameters passed to multiple libraries
     AP_Vehicle::MultiCopter aparm;
 

@@ -8,11 +8,7 @@
 class USR_Dazhuang {
 public:
 
-    USR_Dazhuang()
-    {
-        _initialized = false;
-        _count = 0;
-    }
+    USR_Dazhuang();
 
     /* Do not allow copies */
     USR_Dazhuang(const USR_Dazhuang &other) = delete;
@@ -23,18 +19,23 @@ public:
     }
 
     // init - perform required initialisation
-    bool add_new(enum AP_SerialManager::SerialProtocol protocol);
+    bool add_new(enum AP_SerialManager::SerialProtocol protocol, SRV_Channel::Aux_servo_function_t function_in);
     bool initialized() {return _initialized;}
     void read(void);
     void start();
     void close();
-    void setup(int16_t instance, float value);
+    void setup(SRV_Channel::Aux_servo_function_t function_in, float value);
+    void make_frame();
     void write(void);
+    void active(bool v_in) {_active = v_in;}
+    bool active() {return _active;}
+    void print();
 
 private:
 
     static USR_Dazhuang *_singleton;
     bool _initialized;
+    bool _active;
     int16_t _count;
     USR_Dazhuang_backend* USR_Dazhuang_instance[USR_DAZHUANG_MAX];
 
