@@ -95,8 +95,8 @@ void Plane::FD1_uart_ts_send() {
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.empty[4]=0;
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.empty[5]=0;
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.empty[6]=0;
-    tmp_msg._msg_1.content.msg.sub_msg.msg_m.roll_angle   = (int16_t)((double)(ahrs.pitch_sensor)/100.f * tmp_msg.SF_INT16);
-    tmp_msg._msg_1.content.msg.sub_msg.msg_m.pitch_angle  = (int16_t)((double)(ahrs.roll_sensor)/100.f * tmp_msg.SF_INT16);
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.roll_angle   = (int16_t)((double)(ahrs.roll_sensor)/100.f * tmp_msg.SF_INT16);
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.pitch_angle  = (int16_t)((double)(ahrs.pitch_sensor)/100.f * tmp_msg.SF_INT16);
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.yaw_angle    = (int16_t)((double)(ahrs.yaw_sensor)/100.f * tmp_msg.SF_INT16);
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.date[1]=0;
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.date[1]=year_out&0b01111111;
