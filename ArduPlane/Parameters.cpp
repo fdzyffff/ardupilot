@@ -1232,8 +1232,10 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_SUBGROUPINFO(follow, "FOLL", 33, ParametersG2, AP_Follow),
 #endif
 
-    AP_GROUPINFO("USR_TIMEOUT", 34, ParametersG2, ubase_time_out, 100),
-    AP_GROUPINFO("USR_PRINT", 35, ParametersG2, ubase_print, 0),
+    AP_GROUPINFO("USR_PRINT", 34, ParametersG2, ubase_print, 0),
+    AP_GROUPINFO("USR_ENABLE", 35, ParametersG2, ubase_land_enable, 0),
+    AP_GROUPINFO("USR_ANGLE", 36, ParametersG2, ubase_land_angle, 0.0f),
+    AP_GROUPINFO("USR_AUTO_OFS", 37, ParametersG2, ubase_land_auto_offset, 0),
 
     AP_GROUPEND
 };

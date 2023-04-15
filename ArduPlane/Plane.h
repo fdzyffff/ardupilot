@@ -162,7 +162,6 @@ public:
     friend class ModeTakeoff;
     friend class ModeThermal;
     friend class ModeLoiterAltQLand;
-    friend class ModeQMLand;
 
     friend class UBase;
 
@@ -288,7 +287,6 @@ private:
 #if HAL_SOARING_ENABLED
     ModeThermal mode_thermal;
 #endif
-    ModeQMLand mode_qmland;
 
     // This is the state of the flight control system
     // There are multiple states defined such as MANUAL, FBW-A, AUTO
@@ -1214,7 +1212,12 @@ private:
     int32_t tecs_target_alt_cm;
 
     // User info
+    bool position_ok();
+    bool ekf_has_absolute_position();
+    bool ekf_has_relative_position();
+
     UBase ubase;
+    void user_1Hz();
     void user_50Hz();
 
 public:

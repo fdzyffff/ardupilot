@@ -32,3 +32,53 @@ Plane::Plane(void)
 
 Plane plane;
 AP_Vehicle& vehicle = plane;
+
+
+
+// position_ok - returns true if the horizontal absolute position is ok and home position is set
+bool Plane::position_ok() 
+{
+    // check ekf position estimate
+    return (ekf_has_absolute_position() || ekf_has_relative_position());
+}
+
+// ekf_has_absolute_position - returns true if the EKF can provide an absolute WGS-84 position estimate
+bool Plane::ekf_has_absolute_position() 
+{
+    if (!ahrs.have_inertial_nav()) {
+        // do not allow navigation with dcm position
+        return false;
+    }
+
+    // with EKF use filter status and ekf check
+    nav_filter_status filt_status;
+    ahrs.get_filter_status(filt_status);
+
+    // if disarmed we accept a predicted horizontal position
+    if (!arming.is_armed()) {
+        return ((filt_status.flags.horiz_pos_abs || filt_status.flags.pred_horiz_pos_abs));
+    } else {
+        // once armed we require a good absolute position and EKF must not be in const_pos_mode
+        return (filt_status.flags.horiz_pos_abs && !filt_status.flags.const_pos_mode);
+    }
+}
+
+// ekf_has_relative_position - returns true if the EKF can provide a position estimate relative to it's starting position
+bool Plane::ekf_has_relative_position() 
+{
+    // return immediately if EKF not used
+    if (!ahrs.have_inertial_nav()) {
+        return false;
+    }
+
+    // get filter status from EKF
+    nav_filter_status filt_status;
+    ahrs.get_filter_status(filt_status);
+
+    // if disarmed we accept a predicted horizontal relative position
+    if (!arming.is_armed()) {
+        return (filt_status.flags.pred_horiz_pos_rel);
+    } else {
+        return (filt_status.flags.horiz_pos_rel && !filt_status.flags.const_pos_mode);
+    }
+}

@@ -562,9 +562,10 @@ public:
 
     AP_Int32        oneshot_mask;
 
-
-    AP_Int16 ubase_time_out;
     AP_Int8  ubase_print;
+    AP_Int8  ubase_land_enable;
+    AP_Float  ubase_land_angle;
+    AP_Int8  ubase_land_auto_offset;
 
     // just to make compilation easier when all things are compiled out...
     uint8_t unused_integer;

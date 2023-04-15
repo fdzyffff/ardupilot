@@ -89,6 +89,10 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     SCHED_TASK(three_hz_loop,           3,     75,  93),
     SCHED_TASK(check_long_failsafe,     3,    400,  96),
     SCHED_TASK_CLASS(AP_RPM,           &plane.rpm_sensor,     update,     10, 100,  99),
+
+    SCHED_TASK(user_50Hz,              50,    200,  100),
+    SCHED_TASK(user_1Hz,                1,    200,  100),
+
 #if AP_AIRSPEED_AUTOCAL_ENABLE
     SCHED_TASK(airspeed_ratio_update,   1,    100,  102),
 #endif // AP_AIRSPEED_AUTOCAL_ENABLE
@@ -132,7 +136,6 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     SCHED_TASK(landing_gear_update, 5, 50, 159),
 #endif
 
-    SCHED_TASK(user_50Hz,           50,    200,   100),
 };
 
 void Plane::get_scheduler_tasks(const AP_Scheduler::Task *&tasks,
@@ -817,6 +820,10 @@ void Plane::get_osd_roll_pitch_rad(float &roll, float &pitch) const
 
 void Plane::user_50Hz() {
     ubase.update();
+}
+
+void Plane::user_1Hz() {
+    // ubase.print();
 }
 
 AP_HAL_MAIN_CALLBACKS(&plane);

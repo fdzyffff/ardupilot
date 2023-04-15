@@ -28,10 +28,10 @@ public:
     };
 
     enum class land_stage {
-        HOLDOFF = 0;
-        DESCEND = 1;
-        APPROACH = 2;
-        IDLE = 3;
+        HOLDOFF = 0,
+        DESCEND = 1,
+        APPROACH = 2,
+        IDLE = 3,
     };
 
     struct mlstate_t {
@@ -44,10 +44,11 @@ public:
         float target_heading;
         uint8_t vehicle_mode;
         bool reached_alt;
+        uint8_t auth_id;
     };
 
     void init();
-    // void check_parameters();
+    void check_parameters();
     void update_throttle_pos();
     float get_land_airspeed();
     float stopping_distance();
@@ -62,8 +63,9 @@ public:
     void update_auto_offset();
     // void handle_msg(const mavlink_message_t &msg);
     void update();
+    void print();
 
-    mlstate_t.mlstate;
+    mlstate_t mlstate;
 private:
-    ;
+    bool _enabled;
 };

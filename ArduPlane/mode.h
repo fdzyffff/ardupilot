@@ -53,7 +53,6 @@ public:
 #if HAL_QUADPLANE_ENABLED
         LOITER_ALT_QLAND = 25,
 #endif
-        QMLAND        = 30,
     };
 
     // Constructor
@@ -727,34 +726,3 @@ protected:
 };
 
 #endif
-
-
-class ModeQMLand : public Mode
-{
-public:
-
-    Number mode_number() const override { return Number::QMLAND; }
-    const char *name() const override { return "QMLD"; }
-    const char *name4() const override { return "QMLD"; }
-
-    bool is_vtol_mode() const override { return true; }
-
-    // methods that affect movement of the vehicle in this mode
-    void update() override;
-
-    void run() override;
-
-    bool allows_arming() const override { return false; }
-
-    bool does_auto_throttle() const override { return true; }
-
-    bool allows_throttle_nudging() const override { return false; }
-
-protected:
-
-    bool _enter() override;
-
-private:
-
-};
-

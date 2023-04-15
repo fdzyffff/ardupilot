@@ -42,7 +42,6 @@ MAV_MODE GCS_MAVLINK_Plane::base_mode() const
     case Mode::Number::QHOVER:
     case Mode::Number::QLOITER:
     case Mode::Number::QLAND:
-    case Mode::Number::QMLAND:
 #if QAUTOTUNE_ENABLED
     case Mode::Number::QAUTOTUNE:
 #endif
