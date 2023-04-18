@@ -287,12 +287,15 @@ void Copter::FD1_uart_landing_gear(int16_t landing_gear) {
     if (_lg_old == _lg_release) {return;}
     if (_lg_release) {
         SRV_Channels::set_output_scaled(SRV_Channel::k_my_landing_gear, 0);
+    // SRV_Channels::set_output_pwm(SRV_Channel::k_my_landing_gear, 1200);
         gcs().send_text(MAV_SEVERITY_INFO, "#LandingGear Release");
     } else {
         SRV_Channels::set_output_scaled(SRV_Channel::k_my_landing_gear, 1000);
+    // SRV_Channels::set_output_pwm(SRV_Channel::k_my_landing_gear, 1990);
         gcs().send_text(MAV_SEVERITY_INFO, "#LandingGear Rise");
     }
     _lg_old = _lg_release;
+
 }
 
 // gcs().send_text(MAV_SEVERITY_INFO, "#UP MODE (%d)", tmp_msg._msg.data[26]);

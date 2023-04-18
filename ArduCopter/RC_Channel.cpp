@@ -579,6 +579,19 @@ void RC_Channel_Copter::do_aux_function(const aux_func_t ch_option, const aux_sw
             }
             break;
 
+        case AUX_FUNC::LANDING_GEAR_CTRL:
+            switch (ch_flag) {
+            case LOW:
+                copter.FD1_uart_landing_gear(0);
+                break;
+            case MIDDLE:
+                break;
+            case HIGH:
+                copter.FD1_uart_landing_gear(1);
+                break;
+            }
+            break;
+
     default:
         RC_Channel::do_aux_function(ch_option, ch_flag);
         break;
