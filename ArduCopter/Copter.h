@@ -941,6 +941,7 @@ private:
     void FD1_uart_hil_test_send();
     void FD1_uart_update();
     void FD1_get_ctrl_in(int16_t ctrl_mode, int16_t scene_mode, float ctrl_roll_cd, float ctrl_pitch_cd, float ctrl_yaw_cd, float ctrl_yaw_rate_crads, float ctrl_vel_z_cms);
+    void FD1_uart_landing_gear(int16_t landing_gear);
     // /void Log_Write_ATTHOLD();
 
 #if OSD_ENABLED == ENABLED

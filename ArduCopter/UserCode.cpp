@@ -5,6 +5,7 @@ void Copter::userhook_init()
 {
     // put your initialisation code here
     // this will be called once at start-up
+    FD1_uart_landing_gear(0);
 }
 #endif
 
@@ -130,6 +131,7 @@ void Copter::FD1_uart_hil_handle() {
     FD1_msg_hil_in &tmp_msg = FD1_uart_msg_hil.get_msg_hil_in();
     if (tmp_msg._msg_1.updated) {
         FD1_hil.last_update_ms = millis();
+        FD1_uart_landing_gear(tmp_msg._msg_1.content.msg.landing_gear);
         if (last_control_mode != FD1_hil.ctrl_mode) {
             if (FD1_hil.ctrl_mode == tmp_msg._msg_1.content.msg.ctrl_mode
                 || FD1_hil.ctrl_mode == 1) {
@@ -212,7 +214,7 @@ void Copter::FD1_uart_hil_send() {
     tmp_msg._msg_1.content.msg.height_rel_home = (int16_t)copter.inertial_nav.get_altitude();
     tmp_msg._msg_1.content.msg.velz = (int16_t)copter.inertial_nav.get_velocity_z();
     tmp_msg._msg_1.content.msg.rc7out = rc7pos;
-    tmp_msg._msg_1.content.msg.volt = (int16_t)battery.voltage();
+    tmp_msg._msg_1.content.msg.volt = (int16_t)(battery.voltage()*100.f);
     //gcs().send_text(MAV_SEVERITY_INFO, "att (%d, %d)",ahrs.yaw_sensor, tmp_msg._msg_1.content.msg.eulerz);
 
     for (int8_t i = 0; i < tmp_msg._msg_1.length - 2; i++) {
@@ -279,6 +281,19 @@ void Copter::FD1_get_ctrl_in(int16_t ctrl_mode, int16_t scene_mode, float ctrl_r
     }
 }
 
+void Copter::FD1_uart_landing_gear(int16_t landing_gear) {
+    static bool _lg_old = false;
+    bool _lg_release = (landing_gear == 0);
+    if (_lg_old == _lg_release) {return;}
+    if (_lg_release) {
+        SRV_Channels::set_output_scaled(SRV_Channel::k_my_landing_gear, 0);
+        gcs().send_text(MAV_SEVERITY_INFO, "#LandingGear Release");
+    } else {
+        SRV_Channels::set_output_scaled(SRV_Channel::k_my_landing_gear, 1000);
+        gcs().send_text(MAV_SEVERITY_INFO, "#LandingGear Rise");
+    }
+    _lg_old = _lg_release;
+}
 
 // gcs().send_text(MAV_SEVERITY_INFO, "#UP MODE (%d)", tmp_msg._msg.data[26]);
 // gcs().send_text(MAV_SEVERITY_INFO, "##UP MODE (%d)", tmp_msg._msg_1.content.msg.ctrl_mode);

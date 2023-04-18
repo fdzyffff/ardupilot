@@ -1,6 +1,6 @@
 #include "FD1_message.h"
 
-#define FD1_MSG_HIL_IN_LEN 28
+#define FD1_MSG_HIL_IN_LEN 30
 class FD1_msg_hil_in : public FD1_message{
 public:
     struct PACKED FD1_msg_header {
@@ -13,6 +13,7 @@ public:
         FD1_msg_header header;
         int16_t scene_mode;
         int16_t ctrl_mode;
+        int16_t landing_gear;
         int16_t ctrl_pitch_cd;
         int16_t ctrl_roll_cd;
         int16_t ctrl_x_vel_cms;
