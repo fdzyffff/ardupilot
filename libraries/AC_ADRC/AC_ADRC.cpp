@@ -133,8 +133,8 @@ float AC_ADRC::update_all(float target, float measurement, float dt, bool limit)
     _u_k[AC_ADRC_MAX_DELAY-1] = _u_k1;
 
     _u_k0 = _u_k[0]; // 0 is the oldest
-    _y_k0 = measurement;
-    _r_k1 = target;
+    _y_k0 = _target - _error;
+    _r_k1 = _target;
 
     _beta1 = 3.0f*_omega0;
     _beta2 = 3.0f*_omega0*_omega0;
