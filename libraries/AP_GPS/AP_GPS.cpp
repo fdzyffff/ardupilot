@@ -591,6 +591,7 @@ void AP_GPS::send_blob_start(uint8_t instance)
         static const char blob[] = CASIC_SET_BINARY_115200;
         send_blob_start(instance, blob, sizeof(blob));
         return;
+    }
 
 #if AP_GPS_NMEA_ENABLED
     if (_type[instance] == GPS_TYPE_HEMI) {
