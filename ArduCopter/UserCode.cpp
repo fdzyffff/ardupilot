@@ -43,6 +43,8 @@ void Copter::userhook_SuperSlowLoop()
 {
     if (uengines.need_send) {
         gcs().send_message(MSG_MY_ENGINE);
+        gcs().send_text(MAV_SEVERITY_INFO, "Engine send");
+        uengines.need_send = false;
     }
 
     // put your 1Hz code here

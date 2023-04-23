@@ -1496,7 +1496,6 @@ void GCS_MAVLINK_Copter::send_wind() const
 void GCS_MAVLINK_Copter::send_engine() const
 {
     mavlink_msg_my_engine_msg_send(chan,copter.uengines.engine_msg);
-    copter.uengines.need_send = false;
 }
 
 #if HAL_HIGH_LATENCY2_ENABLED

@@ -1,41 +1,43 @@
 #include "FD_message.h"
 
-#define FD_MSG_ENGINE_LEN 7
+#define FD_MSG_ENGINE_LEN 9
 class FD_engine : public FD_message{
 public:
     // message structure
-    struct PACKED Msg_err {
-        uint8_t code;
-        uint8_t temperature;
-        uint8_t throttle;
-        uint8_t voltage_pump;
-    };
+    // struct PACKED Msg_err {
+    //     uint8_t code;
+    //     uint8_t temperature;
+    //     uint8_t throttle;
+    //     uint8_t voltage_pump;
+    // };
 
-    struct PACKED Msg_attach {
-        uint8_t voltage_idle;
-        uint8_t voltage_max;
-        uint8_t reserved;
-        uint8_t voltage_batt;
-    };
+    // struct PACKED Msg_attach {
+    //     uint8_t voltage_idle;
+    //     uint8_t voltage_max;
+    //     uint8_t reserved;
+    //     uint8_t voltage_batt;
+    // };
 
-    struct PACKED Msg_common {
-        uint8_t rpm;
-        uint8_t temperature;
-        uint8_t throttle;
-        uint8_t voltage_pump;
+    // struct PACKED Msg_common {
+    //     uint8_t rpm;
+    //     uint8_t temperature;
+    //     uint8_t throttle;
+    //     uint8_t voltage_pump;
+    // };
+
+    struct PACKED Msg_header {
+        uint8_t head_1;
+        uint8_t head_2;
     };
 
     union PACKED Msg_sub {
-        Msg_err msg_err;
-        Msg_attach msg_attach;
-        Msg_common msg_common;
-        uint8_t data[4];
+        // Msg_err msg_err;
+        uint8_t data[6];
     };
 
     struct PACKED MSG_Command_1 {
-        uint8_t header;
+        Msg_header header;
         uint8_t id;
-        uint8_t status;
         Msg_sub msg_sub;
     };
 
@@ -60,7 +62,9 @@ public:
         enum
         {
             FD_UART_PREAMBLE1 = 0,
+            FD_UART_PREAMBLE2,
             FD_UART_PREAMBLE_ID,
+            FD_UART_PREAMBLE_ID_2,
             FD_UART_DATA
         } msg_state;
 
@@ -75,8 +79,10 @@ public:
     FD_engine(const FD_engine &other) = delete;
     FD_engine &operator=(const FD_engine&) = delete;
 
-    static const uint8_t PREAMBLE1 = 0xFF;
-    uint8_t PREAMBLE_ID = 0x0;
+    static const uint8_t PREAMBLE1 = 0xAA;
+    static const uint8_t PREAMBLE2 = 0x55;
+    uint8_t PREAMBLE_ID = 0x01;
+    uint8_t PREAMBLE_ID_SUB = 0x01;
 
     void process_message(void) override;
     void parse(uint8_t temp) override;
@@ -84,4 +90,5 @@ public:
     void swap_message() override {};
 
     FD_UART_MSG_1 _msg_1;
+    uint32_t last_ms;
 };

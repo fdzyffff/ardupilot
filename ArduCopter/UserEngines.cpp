@@ -128,12 +128,17 @@ void UserEngines::update_output() // call at 400 Hz
 void UserEngines::engine_msg_pack()
 {
     for (uint8_t i_engine = 0; i_engine < ENGINE_NUM; i_engine++) {
-        uint8_t *temp_data = _engine[i_engine].Get_msg()->_msg_1.content.data;
-        memcpy((engine_msg+i_engine*5), temp_data+2, 5);
-        need_send |= _engine[i_engine].Get_msg()->_msg_1.need_send;
-        _engine[i_engine].Get_msg()->_msg_1.need_send = false;
+        if (_engine[i_engine].Get_msg()->_msg_1.updated) {
+            uint8_t *temp_data = _engine[i_engine].Get_msg()->_msg_1.content.data;
+            memcpy((engine_msg+i_engine*5), temp_data+4, 5);
+            need_send |= _engine[i_engine].Get_msg()->_msg_1.updated;
+            _engine[i_engine].Get_msg()->_msg_1.updated = false;
+        } else {
+            memset((engine_msg+i_engine*5), 0, 5);
+        }
     }
     // if (_uart->initialized() && need_send) {
     //     _uart->get_port()->write(engine_msg, sizeof(engine_msg));
+    //     need_send = false;
     // }
 }

@@ -45,12 +45,8 @@ void UserEngine::update_uart()
         set_connected(false);
         return;
     }
-    if (_msg->_msg_1.updated) {
-        _msg_state.last_ms = millis();
-        _msg->_msg_1.updated = false;
-        _msg->_msg_1.need_send = true;
-    }
-    if (_msg_state.last_ms == 0 || millis() - _msg_state.last_ms > 5000) {
+
+    if (_msg->last_ms == 0 || millis() - _msg->last_ms > 1000) {
         set_connected(false);
     } else {
         set_connected(true);

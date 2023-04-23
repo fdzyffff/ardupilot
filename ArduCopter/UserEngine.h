@@ -33,9 +33,6 @@ public:
     uint16_t get_output();
     SRV_Channel::Aux_servo_function_t get_srv_function() {return _srv_function;}
 
-    struct _msg_state_t {
-        uint32_t last_ms;
-    } _msg_state;
 private:
     FD_engine* _msg;
     EngineState _state;
