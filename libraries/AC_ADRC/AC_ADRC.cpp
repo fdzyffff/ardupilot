@@ -9,50 +9,62 @@ const AP_Param::GroupInfo AC_ADRC::var_info[] = {
 
     AP_GROUPINFO("B", 0, AC_ADRC, _b0, 0),
 
-    AP_GROUPINFO("O_C", 1, AC_ADRC, _omegac, 0),
+    AP_GROUPINFO("KP", 1, AC_ADRC, _kp, 0),
+    AP_GROUPINFO("KD", 2, AC_ADRC, _kd, 0),
+    AP_GROUPINFO("KA", 3, AC_ADRC, _ka, 0),
+    AP_GROUPINFO("KB", 4, AC_ADRC, _kb, 0),
+    AP_GROUPINFO("KC", 5, AC_ADRC, _kc, 0),
 
-    AP_GROUPINFO("O_0", 2, AC_ADRC, _omega0, 0),
+
+    AP_GROUPINFO("O_0", 6, AC_ADRC, _omega0, 0),
 
     // @Param: IMAX
     // @DisplayName: PID Integral Maximum
     // @Description: The maximum/minimum value that the I term can output
-    AP_GROUPINFO("IMAX", 3, AC_ADRC, _kimax, 0),
+    AP_GROUPINFO("IMAX", 7, AC_ADRC, _kimax, 0),
     // @Param: FLTT
     // @DisplayName: PID Target filter frequency in Hz
     // @Description: Target filter frequency in Hz
     // @Units: Hz
-    AP_GROUPINFO("FLTT", 4, AC_ADRC, _filt_T_hz, AC_ADRC_TFILT_HZ_DEFAULT),
+    AP_GROUPINFO("FLTT", 8, AC_ADRC, _filt_T_hz, AC_ADRC_TFILT_HZ_DEFAULT),
 
     // @Param: FLTE
     // @DisplayName: PID Error filter frequency in Hz
     // @Description: Error filter frequency in Hz
     // @Units: Hz
-    AP_GROUPINFO("FLTE", 5, AC_ADRC, _filt_E_hz, AC_ADRC_EFILT_HZ_DEFAULT),
+    AP_GROUPINFO("FLTE", 9, AC_ADRC, _filt_E_hz, AC_ADRC_EFILT_HZ_DEFAULT),
 
     // @Param: FLTD
     // @DisplayName: PID Derivative term filter frequency in Hz
     // @Description: Derivative filter frequency in Hz
     // @Units: Hz
-    AP_GROUPINFO("FLTD", 6, AC_ADRC, _filt_D_hz, AC_ADRC_DFILT_HZ_DEFAULT),
+    AP_GROUPINFO("FLTD", 10, AC_ADRC, _filt_D_hz, AC_ADRC_DFILT_HZ_DEFAULT),
     // @Param: SMAX
     // @DisplayName: Slew rate limit
     // @Description: Sets an upper limit on the slew rate produced by the combined P and D gains. If the amplitude of the control action produced by the rate feedback exceeds this value, then the D+P gain is reduced to respect the limit. This limits the amplitude of high frequency oscillations caused by an excessive gain. The limit should be set to no more than 25% of the actuators maximum slew rate to allow for load effects. Note: The gain will not be reduced to less than 10% of the nominal value. A value of zero will disable this feature.
     // @Range: 0 200
     // @Increment: 0.5
     // @User: Advanced
-    AP_GROUPINFO("SMAX", 7, AC_ADRC, _slew_rate_max, 0),
+    AP_GROUPINFO("SMAX", 11, AC_ADRC, _slew_rate_max, 0),
+
+    AP_GROUPINFO("INFO", 12, AC_ADRC, _print_info, 0),
 
     AP_GROUPEND
 };
 
 // Constructor
-AC_ADRC::AC_ADRC(float initial_b0, float initial_omegac, float initial_omega0, float initial_imax, float initial_filt_T_hz, float initial_filt_E_hz, float initial_filt_D_hz, float initial_srmax, float initial_srtau)
+AC_ADRC::AC_ADRC(float initial_b0, float intial_kp, float intial_kd, float intial_ka, float intial_kb, float intial_kc, float initial_omega0, float initial_imax, float initial_filt_T_hz, float initial_filt_E_hz, float initial_filt_D_hz, float initial_srmax, float initial_srtau)
 {
     // load parameter values from eeprom
     AP_Param::setup_object_defaults(this, var_info);
 
     _b0.set_and_default(initial_b0);
-    _omegac.set_and_default(initial_omegac);
+    // _omegac.set_and_default(initial_omegac);
+    _kp.set_and_default(intial_kp); 
+    _kd.set_and_default(intial_kd); 
+    _ka.set_and_default(intial_ka); 
+    _kb.set_and_default(intial_kb); 
+    _kc.set_and_default(intial_kc);
     _omega0.set_and_default(initial_omega0);
     _kimax.set_and_default(initial_imax);
     _filt_T_hz.set_and_default(initial_filt_T_hz);
@@ -136,9 +148,9 @@ float AC_ADRC::update_all(float target, float measurement, float dt, bool limit)
     _y_k0 = _target - _error;
     _r_k1 = _target;
 
-    _beta1 = 3.0f*_omega0;
-    _beta2 = 3.0f*_omega0*_omega0;
-    _beta3 = _omega0*_omega0*_omega0;
+    _beta1 = _ka*_omega0;
+    _beta2 = _kb*_omega0*_omega0;
+    _beta3 = _kc*_omega0*_omega0*_omega0;
 
     // calculate output
     float a11 = 1-dt*_beta1;
@@ -178,11 +190,13 @@ float AC_ADRC::update_all(float target, float measurement, float dt, bool limit)
     _z3_k1 = V_Z_k1.z;
 
     // gcs().send_text(MAV_SEVERITY_INFO, "CC3 P8");
-    _kp = _omegac*_omegac;
-    _kd = 2*_omegac;
+    // _kp = _omegac*_omegac;
+    // _kd = 2*_omegac;
     _u_k1 = (-_z3_k1 + _kp*(_r_k1-_z1_k1)-_kd*_z2_k1)/_b0;
-    // gcs().send_text(MAV_SEVERITY_INFO, "CC3 uk1 %f", _u_k1);
-    _u_k1 = constrain_float(_u_k1, -1.0f, 1.0f);
+    if (_print_info.get()) {
+        gcs().send_text(MAV_SEVERITY_INFO, "[%f, %f]CC3 uk1 %f", _kp.get(), _kd.get(), _u_k1);
+    }
+    // _u_k1 = constrain_float(_u_k1, -1.0f, 1.0f);
     return _u_k1;
 }
 
@@ -195,7 +209,12 @@ void AC_ADRC::reset_I()
 void AC_ADRC::load_gains()
 {
     _b0.load();
-    _omegac.load();
+    // _omegac.load();
+    _kp.load();
+    _kd.load();
+    _ka.load();
+    _kb.load();
+    _kc.load();
     _omega0.load();
     _kimax.load();
     _kimax.set_and_save(fabsf(_kimax.get()));
@@ -209,7 +228,12 @@ void AC_ADRC::load_gains()
 void AC_ADRC::save_gains()
 {
     _b0.save();
-    _omegac.save();
+    // _omegac.save();
+    _kp.save();
+    _kd.save();
+    _ka.save();
+    _kb.save();
+    _kc.save();
     _omega0.save();
     _kimax.save();
     _filt_T_hz.save();
@@ -219,10 +243,15 @@ void AC_ADRC::save_gains()
 }
 
 /// Overload the function call operator to permit easy initialisation
-void AC_ADRC::operator()(float b0_val, float omegac_val, float omega0_val, float imax_val, float filt_T_hz_val, float filt_E_hz_val, float filt_D_hz_val, float slew_rate_max_val)
+void AC_ADRC::operator()(float b0_val, float kp_val, float kd_val, float ka_val, float kb_val, float kc_val, float omega0_val, float imax_val, float filt_T_hz_val, float filt_E_hz_val, float filt_D_hz_val, float slew_rate_max_val)
 {
     _b0.set(b0_val);
-    _omegac.set(omegac_val);
+    // _omegac.set(omegac_val);
+    _kp.set(kp_val);
+    _kd.set(kd_val);
+    _ka.set(ka_val);
+    _kb.set(kb_val);
+    _kc.set(kc_val);
     _omega0.set(omega0_val);
     _kimax.set(imax_val);
     _filt_T_hz.set(filt_T_hz_val);

@@ -24,7 +24,7 @@ class AC_ADRC {
 public:
 
     // Constructor for PID
-    AC_ADRC(float initial_b0, float initial_omegac, float initial_omega0, float initial_imax, float initial_filt_T_hz, float initial_filt_E_hz, float initial_filt_D_hz,
+    AC_ADRC(float initial_b0, float intial_kp, float intial_kd, float intial_ka, float intial_kb, float intial_kc, float initial_omega0, float initial_imax, float initial_filt_T_hz, float initial_filt_E_hz, float initial_filt_D_hz,
            float initial_srmax=0, float initial_srtau=1.0);
 
     CLASS_NO_COPY(AC_ADRC);
@@ -58,7 +58,7 @@ public:
     void save_gains();
 
     /// operator function call for easy initialisation
-    void operator()(float p_val, float i_val, float d_val, float ff_val, float imax_val, float input_filt_T_hz, float input_filt_E_hz, float input_filt_D_hz);
+    void operator()(float b0_val, float kp_val, float kd_val, float ka_val, float kb_val, float kc_val, float omega0_val, float imax_val, float filt_T_hz_val, float filt_E_hz_val, float filt_D_hz_val, float slew_rate_max_val);
 
     // get accessors
     float kP() { return _kp; }
@@ -112,13 +112,18 @@ protected:
 
     // parameters
     AP_Float _b0;
-    AP_Float _omegac;
+    AP_Float _kp;
+    AP_Float _kd;
+    AP_Float _ka;
+    AP_Float _kb;
+    AP_Float _kc;
     AP_Float _omega0;
     AP_Float _kimax;
     AP_Float _filt_T_hz;         // PID target filter frequency in Hz
     AP_Float _filt_E_hz;         // PID error filter frequency in Hz
     AP_Float _filt_D_hz;         // PID derivative filter frequency in Hz
     AP_Float _slew_rate_max;
+    AP_Int8  _print_info;
 
     SlewLimiter _slew_limiter{_slew_rate_max, _slew_rate_tau};
 
@@ -144,8 +149,6 @@ protected:
     float _beta3;
     float _target;            // target value to enable filtering
     float _error;             // error value to enable filtering
-    float _kp;
-    float _kd;
     float _derivative;        // derivative value to enable filtering
 
     AP_PIDInfo _pid_info;

@@ -9,6 +9,7 @@
 // #include "AC_CustomControl_Empty.h"
 #include "AC_CustomControl_PID.h"
 #include "AC_CustomControl_ADRC.h"
+// #include "AC_CustomControl_ADRC_ang.h"
 
 // table of user settable parameters
 const AP_Param::GroupInfo AC_CustomControl::var_info[] = {
