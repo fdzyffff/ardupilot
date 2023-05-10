@@ -8,7 +8,7 @@
 #include "AC_CustomControl_Backend.h"
 // #include "AC_CustomControl_Empty.h"
 #include "AC_CustomControl_PID.h"
-#include "AC_CustomControl_ADRC.h"
+#include "AC_CustomControl_ADRC_3rd.h"
 // #include "AC_CustomControl_ADRC_ang.h"
 
 // table of user settable parameters
@@ -67,8 +67,8 @@ void AC_CustomControl::init(void)
             _backend_var_info[get_type()] = AC_CustomControl_PID::var_info;
             break;
         case CustomControlType::CONT_ADRC:
-            _backend = new AC_CustomControl_ADRC(*this, _ahrs, _att_control, _motors, _dt);
-            _backend_var_info[get_type()] = AC_CustomControl_ADRC::var_info;
+            _backend = new AC_CustomControl_ADRC_3rd(*this, _ahrs, _att_control, _motors, _dt);
+            _backend_var_info[get_type()] = AC_CustomControl_ADRC_3rd::var_info;
             break;
         default:
             return;
