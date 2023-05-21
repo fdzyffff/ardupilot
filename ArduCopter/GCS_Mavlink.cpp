@@ -1015,6 +1015,11 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_
         GCS_MAVLINK_Copter::convert_COMMAND_LONG_to_COMMAND_INT(packet, packet_int);
         return handle_command_pause_continue(packet_int);
     }
+    
+    case MAV_CMD_USER_3: {
+        copter.uengines.forward_engine_control(packet.param1, packet.param2, packet.param3, packet.param4, packet.param5, packet.param6, packet.param7);
+        return MAV_RESULT_ACCEPTED;
+    }
     default:
         return GCS_MAVLINK::handle_command_long_packet(packet);
     }

@@ -90,5 +90,5 @@ void Copter::update_using_interlock()
 //     // which uses the interlock to stop motors while the copter is being thrown
 //     ap.using_interlock = rc().find_channel_for_option(RC_Channel::AUX_FUNC::MOTOR_INTERLOCK) != nullptr;
 // #endif
-    ap.using_interlock = true;
+    ap.using_interlock = false;
 }

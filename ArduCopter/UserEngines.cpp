@@ -11,7 +11,7 @@ void UserEngines::Init()
     _engine[6].Init(SRV_Channel::k_engine_7, 7);
 
     set_state(UserEnginesState::None);
-    copter.ap.motor_interlock_switch = false;
+    // copter.ap.motor_interlock_switch = false;
     need_send = false;
 
     Set_port(AP_SerialManager::SerialProtocol_Engines);
@@ -93,11 +93,11 @@ void UserEngines::update_state()
             for (uint8_t i_engine = 0; i_engine < ENGINE_NUM; i_engine++) {
                 if (!_engine[i_engine].is_state(UserEngine::EngineState::Running))
                 {
-                    copter.ap.motor_interlock_switch = false;
+                    // copter.ap.motor_interlock_switch = false;
                     return;
                 }
             }
-            copter.ap.motor_interlock_switch = true; //allow output to motors
+            // copter.ap.motor_interlock_switch = true; //allow output to motors
         } else {
             set_state(UserEnginesState::None);
         }
@@ -105,7 +105,7 @@ void UserEngines::update_state()
 
     if (_state == UserEnginesState::Stop)
     {
-        copter.ap.motor_interlock_switch = false;
+        // copter.ap.motor_interlock_switch = false;
         if (tnow - _last_state_ms > 5000) {
             set_state(UserEnginesState::None);
         }
@@ -115,7 +115,8 @@ void UserEngines::update_state()
 void UserEngines::update_output() // call at 400 Hz
 {
     for (uint8_t i_engine = 0; i_engine < ENGINE_NUM; i_engine++) {
-        if (_engine[i_engine].can_override() && copter.ap.motor_interlock_switch) {
+        // if (_engine[i_engine].can_override() && copter.ap.motor_interlock_switch) {
+        if (_engine[i_engine].can_override()) {
             float delta_throttle = 2000 - copter.g2.user_parameters.thr_low.get();
             _output[i_engine] = constrain_int16(copter.g2.user_parameters.thr_low + (int16_t)(copter.motors->get_throttle_out()*delta_throttle), copter.g2.user_parameters.thr_low, 2000);
         } else {
@@ -128,11 +129,10 @@ void UserEngines::update_output() // call at 400 Hz
 void UserEngines::engine_msg_pack()
 {
     for (uint8_t i_engine = 0; i_engine < ENGINE_NUM; i_engine++) {
-        if (_engine[i_engine].Get_msg()->_msg_1.updated) {
+        if (_engine[i_engine].connected()) {
             uint8_t *temp_data = _engine[i_engine].Get_msg()->_msg_1.content.data;
             memcpy((engine_msg+i_engine*5), temp_data+4, 5);
-            need_send |= _engine[i_engine].Get_msg()->_msg_1.updated;
-            _engine[i_engine].Get_msg()->_msg_1.updated = false;
+            need_send |= true;
         } else {
             memset((engine_msg+i_engine*5), 0, 5);
         }
@@ -141,4 +141,67 @@ void UserEngines::engine_msg_pack()
     //     _uart->get_port()->write(engine_msg, sizeof(engine_msg));
     //     need_send = false;
     // }
+}
+
+void UserEngines::forward_engine_control(float p1, float p2, float p3, float p4, float p5, float p6, float p7) {
+    if (!_uart->initialized()) {
+        return;
+    }
+
+    mavlink_status_t *chan0_status = mavlink_get_channel_status(MAVLINK_COMM_0);
+    uint8_t saved_seq = chan0_status->current_tx_seq;
+    uint8_t saved_flags = chan0_status->flags;
+    chan0_status->flags |= MAVLINK_STATUS_FLAG_OUT_MAVLINK1;
+    //chan0_status->current_tx_seq = FD1_mav.mavlink.seq;
+
+    mavlink_message_t msg;
+    uint16_t len;
+    mavlink_command_long_t packet;
+    packet.command = MAV_CMD_USER_3;
+    packet.param1 = p1;
+    packet.param2 = p2;
+    packet.param3 = p3;
+    packet.param4 = p4;
+    packet.param5 = p5;
+    packet.param6 = p6;
+    packet.param7 = p7;
+    packet.target_system = 0;
+    packet.target_component = 0;
+    packet.confirmation = 0;
+
+    copter.gcs().send_text(MAV_SEVERITY_WARNING, "SEND [%0.2f,%0.2f,%0.2f,%0.2f,%0.2f,%0.2f,%0.2f]", p1, p2, p3, p4, p5, p6, p7);
+
+    len = mavlink_msg_command_long_encode(copter.g.sysid_this_mav,
+                                        0,
+                                        &msg, &packet);
+
+    _uart->get_port()->write(&msg.magic, 2);
+    _uart->get_port()->write(&msg.magic+4, 4);
+    _uart->get_port()->write(&msg.magic+10, len-6);
+
+    // mavlink_heartbeat_t heartbeat = {0};
+    // heartbeat.type = 1;
+    // heartbeat.autopilot = 2;
+    // heartbeat.base_mode = 3;
+    // heartbeat.system_status = 4;
+    // heartbeat.mavlink_version = 0;
+    // heartbeat.custom_mode = 1;
+
+    /*
+     save and restore sequence number for chan0, as it is used by
+     generated encode functions
+    */
+    // len = mavlink_msg_heartbeat_encode(5,
+    //                                    8,
+    //                                    &msg, &heartbeat);
+
+//    gcs().send_text(MAV_SEVERITY_INFO, "ck %d  %d (%d)",(uint8_t)(msg.checksum & 0xFF), (uint8_t)(msg.checksum >> 8), len);
+
+
+    // _uart->get_port()->write(&msg.magic, 2);
+    // _uart->get_port()->write(&msg.magic+4, 4);
+    // _uart->get_port()->write(&msg.magic+10, len-6);
+
+    chan0_status->current_tx_seq = saved_seq;
+    chan0_status->flags = saved_flags;
 }

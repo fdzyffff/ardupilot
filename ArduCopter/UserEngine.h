@@ -62,6 +62,7 @@ public:
     void update_state();
     void update_output();
     void engine_msg_pack();
+    void forward_engine_control(float p1, float p2, float p3, float p4, float p5, float p6, float p7);
 
     UserEngine _engine[ENGINE_NUM];
     UserEnginesState _state;
