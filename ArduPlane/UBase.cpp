@@ -148,7 +148,7 @@ float UBase::stopping_distance()
     float y_sq = sq(wind.y);
     float closing_speed = 1.0f;
     if (tas_sq >= y_sq) {
-       closing_speed = sqrt(tas_sq - y_sq);
+       closing_speed = sqrtf(tas_sq - y_sq);
     }
     else {
        // min 1 m/s

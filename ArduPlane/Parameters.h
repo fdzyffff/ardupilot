@@ -547,9 +547,9 @@ public:
     AC_PID guidedHeading{5000.0,  0.0,   0.0, 0 ,  10.0,   5.0,  5.0 ,  5.0  , 0.2};
 #endif
 
-#if AP_SCRIPTING_ENABLED
+// #if AP_SCRIPTING_ENABLED
     AP_Follow follow;
-#endif
+// #endif
 
     AP_Float        fs_ekf_thresh;
 

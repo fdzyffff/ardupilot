@@ -724,7 +724,7 @@ bool Plane::get_wp_crosstrack_error_m(float &xtrack_error) const
     return true;
 }
 
-#if AP_SCRIPTING_ENABLED
+// #if AP_SCRIPTING_ENABLED
 // set target location (for use by scripting)
 bool Plane::set_target_location(const Location &target_loc)
 {
@@ -799,7 +799,7 @@ bool Plane::set_velocity_match(const Vector2f &velocity)
     return false;
 }
 
-#endif // AP_SCRIPTING_ENABLED
+// #endif // AP_SCRIPTING_ENABLED
 
 // correct AHRS pitch for TRIM_PITCH_CD in non-VTOL modes, and return VTOL view in VTOL
 void Plane::get_osd_roll_pitch_rad(float &roll, float &pitch) const

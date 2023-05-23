@@ -1227,6 +1227,11 @@ public:
     bool get_target_location(Location& target_loc) override;
     bool update_target_location(const Location &old_loc, const Location &new_loc) override;
     bool set_velocity_match(const Vector2f &velocity) override;
+#else
+    bool set_target_location(const Location& target_loc);
+    bool get_target_location(Location& target_loc);
+    bool update_target_location(const Location &old_loc, const Location &new_loc);
+    bool set_velocity_match(const Vector2f &velocity);
 #endif // AP_SCRIPTING_ENABLED
 
 };
