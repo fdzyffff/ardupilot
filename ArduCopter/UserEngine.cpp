@@ -2,7 +2,7 @@
 
 #define USERENGINE_THR_TRIM 1130
 #define USERENGINE_THR_LOWEST 980
-#define USERENGINE_THR_HIGHEST 1920
+#define USERENGINE_THR_HIGHEST 2000
 
 void UserEngine::Init(SRV_Channel::Aux_servo_function_t in_srv_function, uint8_t id_in)
 {
