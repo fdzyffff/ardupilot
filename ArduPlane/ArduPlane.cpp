@@ -818,12 +818,4 @@ void Plane::get_osd_roll_pitch_rad(float &roll, float &pitch) const
     }
 }
 
-void Plane::user_50Hz() {
-    ubase.update();
-}
-
-void Plane::user_1Hz() {
-    // ubase.print();
-}
-
 AP_HAL_MAIN_CALLBACKS(&plane);

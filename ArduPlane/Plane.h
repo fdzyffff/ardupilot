@@ -1234,6 +1234,8 @@ public:
     bool set_velocity_match(const Vector2f &velocity);
 #endif // AP_SCRIPTING_ENABLED
 
+    bool allow_to_land();
+
 };
 
 extern Plane plane;
