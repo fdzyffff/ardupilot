@@ -45,8 +45,8 @@ void UBase::init()
     mlstate.reached_alt = false;
 
     // check_parameters();
-    plane.arming.get_aux_auth_id(mlstate.auth_id);
-    plane.arming.set_aux_auth_failed(mlstate.auth_id, "Ship: no beacon");
+    // plane.arming.get_aux_auth_id(mlstate.auth_id);
+    // plane.arming.set_aux_auth_failed(mlstate.auth_id, "Ship: no beacon");
     check_parameters();
     _enabled = true;
 }
@@ -58,7 +58,7 @@ const struct convert_table {
     // PARAMETER_CONVERSION - Added: Aug-2021
     {"FOLL_ENABLE", 1},
     {"FOLL_OFS_TYPE", 1},
-    {"FOLL_ALT_TYPE", 1},
+    {"FOLL_ALT_TYPE", 0},
 };
 
 // check key parameters
@@ -246,7 +246,7 @@ void UBase::update_mode()
     if (mlstate.vehicle_mode == Mode::Number::RTL) {
         mlstate.landing_stage = land_stage::HOLDOFF;
         mlstate.reached_alt = false;
-    } else if (mlstate.vehicle_mode != Mode::Number::RTL) {
+    } else if (mlstate.vehicle_mode != Mode::Number::QRTL) {
         mlstate.landing_stage = land_stage::IDLE;
         mlstate.reached_alt = false;
     }
@@ -258,14 +258,14 @@ void UBase::update_target()
     if (!plane.g2.follow.have_target()) {
         if (mlstate.have_target) {
             gcs().send_text(MAV_SEVERITY_INFO,"Lost beacon");
-            plane.arming.set_aux_auth_failed(mlstate.auth_id, "Ship: no beacon");
+            // plane.arming.set_aux_auth_failed(mlstate.auth_id, "Ship: no beacon");
         }
         mlstate.have_target = false;
     }
     else {
         if (!mlstate.have_target) {
             gcs().send_text(MAV_SEVERITY_INFO,"Have beacon");
-            plane.arming.set_aux_auth_passed(mlstate.auth_id);
+            // plane.arming.set_aux_auth_passed(mlstate.auth_id);
         }
         mlstate.have_target = true;
         plane.g2.follow.get_target_location_and_velocity_ofs(mlstate.target_pos, mlstate.target_velocity);
@@ -376,9 +376,9 @@ void UBase::update()
         t_target_pos.set_alt_cm(next_WP.alt, next_WP.get_alt_frame());
         plane.update_target_location(next_WP, t_target_pos);
 
-        if (mlstate.throttle_switch == throttle_pos::HIGH) {
-            check_approach_abort();
-        }
+        // if (mlstate.throttle_switch == throttle_pos::HIGH) {
+        //     check_approach_abort();
+        // }
     }
     else if (mlstate.vehicle_mode == Mode::Number::AUTO) {
         uint16_t id = plane.mission.get_current_nav_id();

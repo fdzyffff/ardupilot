@@ -116,7 +116,7 @@ void ModeQRTL::run()
             }
             if (poscontrol.get_state() >= QuadPlane::QPOS_POSITION2) {
                 // start landing logic
-                quadplane.verify_vtol_land();
+                // quadplane.verify_vtol_land();
             }
 
             // when in approach allow stick mixing
