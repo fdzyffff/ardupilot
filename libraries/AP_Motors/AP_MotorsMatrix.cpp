@@ -586,6 +586,17 @@ bool AP_MotorsMatrix::setup_quad_matrix(motor_frame_type frame_type)
         add_motors(motors, ARRAY_SIZE(motors));
         break;
     }
+    case MOTOR_FRAME_TYPE_4X4: {
+        _frame_type_string = "4X4";
+        static const AP_MotorsMatrix::MotorDef motors[] {
+            {  90, 0,  2 },
+            { -90, 0,  4 },
+            {   0, 0,  1 },
+            { 180, 0,  3 },
+        };
+        add_motors(motors, ARRAY_SIZE(motors));
+        break;
+    }
     case MOTOR_FRAME_TYPE_X: {
         _frame_type_string = "X";
         static const AP_MotorsMatrix::MotorDef motors[] {

@@ -169,6 +169,10 @@ void SRV_Channel::aux_servo_function_setup(void)
     case k_pitch_out:
     case k_yaw_out:
     case k_rcin1_mapped ... k_rcin16_mapped:
+    case k_smotor1:
+    case k_smotor2:
+    case k_smotor3:
+    case k_smotor4:
         set_angle(4500);
         break;
     case k_throttle:

@@ -180,6 +180,8 @@
 
 #include "mode.h"
 
+#include "USrv.h"
+
 class Copter : public AP_Vehicle {
 public:
     friend class GCS_MAVLINK_Copter;
@@ -226,6 +228,7 @@ public:
     friend class ModeZigZag;
     friend class ModeAutorotate;
     friend class ModeTurtle;
+    friend class USrv;
 
     Copter(void);
 
@@ -1021,6 +1024,7 @@ private:
     Mode *mode_from_mode_num(const Mode::Number mode);
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);
 
+    USrv usrv;
 public:
     void failsafe_check();      // failsafe.cpp
 };

@@ -431,6 +431,20 @@ void Mode::get_pilot_desired_lean_angles(float &roll_out_cd, float &pitch_out_cd
     pitch_out_cd = pitch_out_deg * 100.0;
 }
 
+void Mode::get_pilot_desired_output(float &roll_out, float &pitch_out) const
+{
+    // throttle failsafe check
+    if (copter.failsafe.radio || !copter.ap.rc_receiver_present) {
+        roll_out = 0.0;
+        pitch_out = 0.0;
+        return;
+    }
+
+    //get pilot's normalised roll or pitch stick input 
+    roll_out = channel_roll->get_control_in()*(1.0/ROLL_PITCH_YAW_INPUT_MAX);
+    pitch_out = channel_pitch->get_control_in()*(1.0/ROLL_PITCH_YAW_INPUT_MAX);
+}
+
 // transform pilot's roll or pitch input into a desired velocity
 Vector2f Mode::get_pilot_desired_velocity(float vel_max) const
 {

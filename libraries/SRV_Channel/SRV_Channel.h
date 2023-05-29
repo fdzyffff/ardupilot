@@ -199,6 +199,10 @@ public:
         k_rcin14_mapped         = 153,
         k_rcin15_mapped         = 154,
         k_rcin16_mapped         = 155,
+        k_smotor1               = 201,
+        k_smotor2               = 202,
+        k_smotor3               = 203,
+        k_smotor4               = 204,
         k_nr_aux_servo_functions         ///< This must be the last enum value (only add new values _before_ this one)
     } Aux_servo_function_t;
 
