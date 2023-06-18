@@ -89,7 +89,7 @@ void UserEngines::update_state()
     uint32_t tnow = millis();
     if (_state == UserEnginesState::Start)
     {
-        if (tnow - _last_state_ms < 5000) {
+        if (tnow - _last_state_ms < 10000) {
             for (uint8_t i_engine = 0; i_engine < ENGINE_NUM; i_engine++) {
                 if (!_engine[i_engine].is_state(UserEngine::EngineState::Running))
                 {
@@ -106,7 +106,7 @@ void UserEngines::update_state()
     if (_state == UserEnginesState::Stop)
     {
         // copter.ap.motor_interlock_switch = false;
-        if (tnow - _last_state_ms > 5000) {
+        if (tnow - _last_state_ms > 6000) {
             set_state(UserEnginesState::None);
         }
     }

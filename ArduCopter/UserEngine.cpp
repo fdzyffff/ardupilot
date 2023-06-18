@@ -76,19 +76,19 @@ void UserEngine::update_state()
             break;
         case EngineState::Boost_1:
             _output = USERENGINE_THR_LOWEST; // lowest, 980
-            if (delta_t > 1000) {
+            if (delta_t > 2000) {
                 set_state(EngineState::Boost_2);
             }
             break;
         case EngineState::Boost_2:
             _output = copter.g2.user_parameters.thr_low; // normal low, 1150
-            if (delta_t > 1000) {
+            if (delta_t > 2000) {
                 set_state(EngineState::Boost_3);
             }
             break;
         case EngineState::Boost_3:
             _output = USERENGINE_THR_HIGHEST; // highest, 1950
-            if (delta_t > 1000) {
+            if (delta_t > 5000) {
                 set_state(EngineState::Boost_4);
             }
             break;
@@ -100,7 +100,7 @@ void UserEngine::update_state()
             break;
         case EngineState::Brake_1:
             _output = copter.g2.user_parameters.thr_low; // normal low, 1150
-            if (delta_t > 5000) {
+            if (delta_t > 3000) {
                 set_state(EngineState::Brake_2);
             }
             break;

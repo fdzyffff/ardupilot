@@ -95,6 +95,22 @@ void AP_MotorsSkateboard::output_to_motors()
             SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_7, constrain_float(-_srv_yaw, -1.0f, 1.0f)*4500.f);
             break;
     }
+    switch (_spool_state) {
+        case SpoolState::SHUT_DOWN:
+            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_motor, 0.0f);
+            break;
+        case SpoolState::GROUND_IDLE:
+        case SpoolState::SPOOLING_UP:
+            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_motor, 0.12f);
+            break;
+        case SpoolState::THROTTLE_UNLIMITED:
+            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_motor, constrain_float(_throttle_out*100.f, 0.0f, 100.f));
+            break;
+        case SpoolState::SPOOLING_DOWN:
+        default:
+            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_motor, 0.0f);
+            break;
+    }
 }
 
 // get_motor_mask - returns a bitmask of which outputs are being used for motors or servos (1 means being used)
@@ -199,6 +215,9 @@ void AP_MotorsSkateboard::_output_test_seq(uint8_t motor_seq, int16_t pwm)
         case 8:
             SRV_Channels::set_output_pwm(SRV_Channel::k_engine_srv_7, pwm);
             break;
+        case 9:
+            SRV_Channels::set_output_pwm(SRV_Channel::k_engine_motor, pwm);
+            break;
         default:
             // do nothing
             break;
@@ -228,6 +247,7 @@ void AP_MotorsSkateboard::output_motor_mask(float thrust, uint8_t mask, float ru
     SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_5, 0.0f);
     SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_6, 0.0f);
     SRV_Channels::set_output_scaled(SRV_Channel::k_engine_srv_7, 0.0f);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_engine_motor, 0.0f);
 }
 
 float AP_MotorsSkateboard::get_roll_factor(uint8_t i)
