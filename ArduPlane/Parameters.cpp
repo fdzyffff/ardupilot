@@ -1282,7 +1282,7 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("HB1_GG_SEC", 38, ParametersG2, hb1_gg_sec, 0.5f),
     AP_GROUPINFO("MIS_N_WP", 39, ParametersG2, hb1_num_wp, 0),
     AP_GROUPINFO("MIS_N_INTERIM", 40, ParametersG2, hb1_num_interim, 0),
-    AP_GROUPINFO("MIS_N_ATTACK", 41, ParametersG2, hb1_num_attack, 0),
+    AP_GROUPINFO("MIS_N_ATTACK", 41, ParametersG2, hb1_num_land, 0),
     AP_GROUPINFO("HIL_TEST", 42, ParametersG2, hil_test, 0),
     AP_GROUPINFO("HB1_GG_SPD", 46, ParametersG2, hb1_gg_spd, 50.f),
     AP_GROUPINFO("HB1_CAM_RATE", 47, ParametersG2, hb1_cam_rate, 20),

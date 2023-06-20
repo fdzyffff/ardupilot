@@ -1134,10 +1134,10 @@ private:
         HB1_Mission_None                = 0,
         HB1_Mission_Takeoff             = 1,
         HB1_Mission_WP                  = 2,
-        HB1_Mission_PreAttack           = 3,
+        HB1_Mission_PreLand           = 3,
         HB1_Mission_Hover               = 4,
         HB1_Mission_Hover2              = 5,
-        HB1_Mission_Attack              = 6,
+        HB1_Mission_Land              = 6,
         HB1_Mission_Follow              = 7,
         HB1_Mission_FsGPS               = 8,
         HB1_Mission_FsNoGPS             = 9,
@@ -1179,6 +1179,7 @@ private:
         float HB1_engine_temp;
         float HB1_engine_fuel;
         uint32_t last_update_ms;
+        uint32_t status_ms;
         int8_t send_counter;
         int16_t HB1_engine_startcount;
     } HB1_Power;
@@ -1193,9 +1194,10 @@ private:
     void HB1_uart_update_50Hz();
     void HB1_uart_update_10Hz();
     void HB1_msg_apm2cam_send();
-    void HB1_msg_apm2power_send();
+    void HB1_msg_apm2power_set();
     void HB1_msg_apm2mission_send();
     void HB1_msg_power2apm_handle();
+    void HB1_uart_power_send();
     void HB1_msg_mission2apm_handle();
     void HB1_uart_print();
     //void HB1_msg_mission2apm_v1_handle();
@@ -1229,11 +1231,11 @@ private:
     void HB1_msg_mission2apm_takeoff_handle();
     void HB1_msg_mission2apm_set_wp_handle();
     void HB1_msg_mission2apm_set_interim_handle();
-    void HB1_msg_mission2apm_set_attack_handle();
+    void HB1_msg_mission2apm_set_land_handle();
     void HB1_msg_mission2apm_away_handle(HB1_mission2apm &tmp_msg);
     void HB1_msg_mission2apm_follow_handle();
-    void HB1_msg_mission2apm_attack_handle();
-    void HB1_msg_mission2apm_preattack_handle(int32_t time_s);
+    void HB1_msg_mission2apm_land_handle();
+    void HB1_msg_mission2apm_preland_handle(int32_t time_s);
     void HB1_msg_mission2apm_speed_up_handle();
     void HB1_msg_mission2apm_speed_down_handle();
     void HB1_msg_mission2apm_EngineSTART_handle();
@@ -1255,6 +1257,7 @@ private:
     void HB1_Power_update();
     void HB1_Power_pwm_update();
     void HB1_Power_status_update();
+    void HB1_Power_request();
     void HB1_Power_throttle_update();
     void HB1_Power_on_send();
     bool HB1_Power_running();

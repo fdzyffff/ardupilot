@@ -192,8 +192,8 @@ void Plane::test_HB1_uart_msg5(uint8_t option){
     tmp_msg._msg_1.content.msg.header.head_2 = HB1_apm2power::PREAMBLE2;
     tmp_msg._msg_1.content.msg.sum_check = 0;
 
-    tmp_msg._msg_1.content.msg.ctrl_cmd = option;
-    tmp_msg._msg_1.content.msg.thr_value = option;
+    tmp_msg._msg_1.content.msg.c[0] = option;
+    tmp_msg._msg_1.content.msg.c[1] = option;
     
     for (int8_t i = 0; i < tmp_msg._msg_1.length - 1; i++) {
         tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];

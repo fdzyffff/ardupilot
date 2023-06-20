@@ -60,15 +60,9 @@ void Plane::HB1_Mission_update() {
                 }
             }
             break;
-        case HB1_Mission_PreAttack :
+        case HB1_Mission_PreLand :
             if (HB1_Status.mission_complete || mission.get_current_nav_index() > (g2.hb1_num_wp + g2.hb1_num_interim)) {
-                if (g2.hb1_follow_hover_attack_time > 10000) {
-                    HB1_status_set_HB_Mission_Action(HB1_Mission_Hover2);
-                    HB1_Status.mission_complete = false;
-                    HB1_Status.time_out = g2.hb1_follow_hover_attack_time;
-                } else {
-                    HB1_status_set_HB_Mission_Action(HB1_Mission_Attack);
-                }
+                HB1_status_set_HB_Mission_Action(HB1_Mission_Land);
             }
             if (HB1_status_noGPS_check()) {
                 HB1_status_set_HB_Mission_Action(HB1_Mission_FsNoGPS);
@@ -87,11 +81,11 @@ void Plane::HB1_Mission_update() {
         case HB1_Mission_Hover :
             if ( timer > HB1_Status.time_out ){
                 if (g2.hb1_pilot_type == 0) {
-                    if (g2.hb1_num_attack > 0) {
+                    if (g2.hb1_num_land > 0) {
                         HB1_Status.mission_complete = false;
-                        HB1_status_set_HB_Mission_Action(HB1_Mission_PreAttack);
+                        HB1_status_set_HB_Mission_Action(HB1_Mission_PreLand);
                     } else {
-                        HB1_status_set_HB_Mission_Action(HB1_Mission_Attack);
+                        HB1_status_set_HB_Mission_Action(HB1_Mission_Land);
                     }
                 }
                 if (g2.hb1_pilot_type == 1) {
@@ -106,7 +100,7 @@ void Plane::HB1_Mission_update() {
             break;
         case HB1_Mission_Hover2 :
             if ((HB1_Status.time_out>0) && (timer > HB1_Status.time_out)) {
-                HB1_status_set_HB_Mission_Action(HB1_Mission_Attack);
+                HB1_status_set_HB_Mission_Action(HB1_Mission_Land);
             }
             if (HB1_status_noGPS_check()) {
                 HB1_status_set_HB_Mission_Action(HB1_Mission_FsNoGPS);
@@ -123,14 +117,14 @@ void Plane::HB1_Mission_update() {
             break;
         case HB1_Mission_FsNoGPS :
             if (timer > (uint32_t)g2.hb1_follow_nogps_time) {
-                HB1_status_set_HB_Mission_Action(HB1_Mission_Attack);
+                HB1_status_set_HB_Mission_Action(HB1_Mission_Land);
             }
             if (!HB1_status_noGPS_check()) {
                 HB1_status_set_HB_Mission_Action(HB1_Mission_WP);
                 HB1_Status.time_out = g2.hb1_follow_hover_wp_time;
             }
             break;
-        case HB1_Mission_Attack :
+        case HB1_Mission_Land :
         case HB1_Mission_FsAuto :
             break;
         default:
@@ -160,7 +154,7 @@ void Plane::HB1_status_set_HB_Mission_Action(HB1_Mission_t action, bool Force_se
             set_mode(mode_auto, MODE_REASON_UNAVAILABLE);
             HB1_Status.state = action;
             break;
-        case HB1_Mission_PreAttack :
+        case HB1_Mission_PreLand :
             set_mode(mode_auto, MODE_REASON_UNAVAILABLE);
             auto_state.next_wp_crosstrack = false;
             mission.set_current_cmd(g2.hb1_num_wp+MIN(g2.hb1_num_interim,1));
@@ -197,11 +191,7 @@ void Plane::HB1_status_set_HB_Mission_Action(HB1_Mission_t action, bool Force_se
             set_mode(mode_fsauto, MODE_REASON_UNAVAILABLE);
             HB1_Status.state = action;
             break;
-        case HB1_Mission_Attack :
-            if (g2.hb1_num_attack == 0) {
-                HB1_attack_cmd.content.location = next_WP_loc;
-            }
-            set_mode(mode_gg, MODE_REASON_UNAVAILABLE);
+        case HB1_Mission_Land :
             HB1_Status.state = action;
             break;
         default:
@@ -219,8 +209,8 @@ void Plane::HB1_status_set_HB_Mission_Action(HB1_Mission_t action, bool Force_se
         case HB1_Mission_WP :
             gcs().send_text(MAV_SEVERITY_INFO, "HB1 WP");
             break;
-        case HB1_Mission_PreAttack :
-            gcs().send_text(MAV_SEVERITY_INFO, "HB1 PreAttack");
+        case HB1_Mission_PreLand :
+            gcs().send_text(MAV_SEVERITY_INFO, "HB1 PreLand");
             break;
         case HB1_Mission_FsGPS :
             gcs().send_text(MAV_SEVERITY_INFO, "HB1 FsGPS");
@@ -240,8 +230,8 @@ void Plane::HB1_status_set_HB_Mission_Action(HB1_Mission_t action, bool Force_se
         case HB1_Mission_FsAuto :
             gcs().send_text(MAV_SEVERITY_INFO, "HB1 FsAuto");
             break;
-        case HB1_Mission_Attack :
-            gcs().send_text(MAV_SEVERITY_INFO, "HB1 Attack");
+        case HB1_Mission_Land :
+            gcs().send_text(MAV_SEVERITY_INFO, "HB1 Land");
             break;
         default:
             gcs().send_text(MAV_SEVERITY_INFO, "HB1 Unknow");
@@ -263,10 +253,10 @@ uint8_t Plane::HB1_status_get_HB_Mission_Action() {
         case HB1_Mission_WP :
             return 3;
             break;
-        case HB1_Mission_PreAttack :
+        case HB1_Mission_PreLand :
             return 4;
             break;
-        case HB1_Mission_Attack :
+        case HB1_Mission_Land :
             return 5;
             break;
         case HB1_Mission_Hover :

@@ -590,7 +590,7 @@ public:
     AP_Int8 hb1_rpm_used;
     AP_Int16 hb1_num_wp;
     AP_Int16 hb1_num_interim;
-    AP_Int16 hb1_num_attack;
+    AP_Int16 hb1_num_land;
     AP_Int16 hb1_cam_rate;
     AP_Float hb1_engine60_min;
     AP_Int32 hb1_rocket_timer_ms;

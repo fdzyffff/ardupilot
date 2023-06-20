@@ -11,17 +11,17 @@ void Plane::HB1_wp_init() {
     if (g2.hb1_num_interim != 0) {
         read_interim = plane.mission.read_cmd_from_storage(g2.hb1_num_wp+g2.hb1_num_interim,HB1_interim_cmd);     
     }
-    if (g2.hb1_num_attack != 0) {
-        read_attack = plane.mission.read_cmd_from_storage(g2.hb1_num_wp+g2.hb1_num_interim+g2.hb1_num_attack,HB1_attack_cmd);     
+    if (g2.hb1_num_land != 0) {
+        read_attack = plane.mission.read_cmd_from_storage(g2.hb1_num_wp+g2.hb1_num_interim+g2.hb1_num_land,HB1_attack_cmd);     
     }
     if (!read_wp || !read_interim || !read_attack) {
         g2.hb1_num_wp.set_and_save(0);
         g2.hb1_num_interim.set_and_save(0);
-        g2.hb1_num_attack.set_and_save(0);
+        g2.hb1_num_land.set_and_save(0);
         plane.mission.clear();
-        gcs().send_text(MAV_SEVERITY_INFO, "clean mis %d(%d):%d(%d):%d(%d)",read_wp,g2.hb1_num_wp,read_interim,g2.hb1_num_interim,read_attack,g2.hb1_num_attack);
+        gcs().send_text(MAV_SEVERITY_INFO, "clean mis %d(%d):%d(%d):%d(%d)",read_wp,g2.hb1_num_wp,read_interim,g2.hb1_num_interim,read_attack,g2.hb1_num_land);
     } else {
-        gcs().send_text(MAV_SEVERITY_INFO, "recover mis %d(%d):%d(%d):%d(%d)",read_wp,g2.hb1_num_wp,read_interim,g2.hb1_num_interim,read_attack,g2.hb1_num_attack);
+        gcs().send_text(MAV_SEVERITY_INFO, "recover mis %d(%d):%d(%d):%d(%d)",read_wp,g2.hb1_num_wp,read_interim,g2.hb1_num_interim,read_attack,g2.hb1_num_land);
         HB1_Status.wp_to_renew = true;
     }
 }
@@ -59,13 +59,13 @@ void Plane::HB1_msg_mission2apm_set_wp_handle() {
     point_index = MIN(0xFF,point_index);
     tmp_cmd.p1 = (line_index << 8) | (point_index & 0x00FF);
 
-    if (HB1_Status.wp_to_renew || g2.hb1_num_wp == 0 || g2.hb1_num_interim != 0|| g2.hb1_num_attack != 0) {
+    if (HB1_Status.wp_to_renew || g2.hb1_num_wp == 0 || g2.hb1_num_interim != 0|| g2.hb1_num_land != 0) {
         plane.mission.clear();
         plane.mission.add_cmd(tmp_cmd);
         plane.mission.write_home_to_storage();
         g2.hb1_num_wp.set_and_save(0);
         g2.hb1_num_interim.set_and_save(0);
-        g2.hb1_num_attack.set_and_save(0);
+        g2.hb1_num_land.set_and_save(0);
         HB1_Status.wp_to_renew = false;
     }
     if (plane.mission.add_cmd(tmp_cmd)) {
@@ -76,7 +76,7 @@ void Plane::HB1_msg_mission2apm_set_wp_handle() {
 }
 
 void Plane::HB1_msg_mission2apm_set_interim_handle() {
-    if (HB1_Status.state == HB1_Mission_Hover2 || HB1_Status.state == HB1_Mission_Attack) {return;}
+    if (HB1_Status.state == HB1_Mission_Hover2 || HB1_Status.state == HB1_Mission_Land) {return;}
     HB1_mission2apm &tmp_msg = HB1_uart_mission.get_msg_mission2apm();
 
     uint16_t line_index = tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.line_index;
@@ -96,7 +96,7 @@ void Plane::HB1_msg_mission2apm_set_interim_handle() {
     tmp_interim_cmd.p1 = (line_index << 8) | (point_index & 0x00FF);
 
     if (point_index == 1) {
-        if (g2.hb1_num_attack == 0) {
+        if (g2.hb1_num_land == 0) {
             if (g2.hb1_num_interim == 0) {
                 plane.mission.add_cmd(tmp_interim_cmd);
                 g2.hb1_num_interim.set_and_save(1);
@@ -119,7 +119,7 @@ void Plane::HB1_msg_mission2apm_set_interim_handle() {
         // udpate HB1_interim_cmd
         HB1_interim_cmd = tmp_interim_cmd;
     } else if (point_index == 2) {
-        if (g2.hb1_num_attack == 0) {
+        if (g2.hb1_num_land == 0) {
             if (g2.hb1_num_interim == 0) {
                 plane.mission.add_cmd(tmp_interim_cmd);
                 g2.hb1_num_interim.set_and_save(1);
@@ -149,19 +149,19 @@ void Plane::HB1_msg_mission2apm_set_interim_handle() {
         }
     }
 
-    if ((HB1_Status.state == HB1_Mission_PreAttack) && (control_mode == &mode_auto) ) {
-        HB1_status_set_HB_Mission_Action(HB1_Mission_PreAttack,true);
+    if ((HB1_Status.state == HB1_Mission_PreLand) && (control_mode == &mode_auto) ) {
+        HB1_status_set_HB_Mission_Action(HB1_Mission_PreLand,true);
         gcs().send_text(MAV_SEVERITY_INFO, "Interim (%d / %d) reset and saved", g2.hb1_num_interim.get(), plane.mission.num_commands());
     } else {
         gcs().send_text(MAV_SEVERITY_INFO, "Interim (%d / %d) saved", g2.hb1_num_interim.get(), plane.mission.num_commands());
     }
 }
 
-void Plane::HB1_msg_mission2apm_set_attack_handle() {
-    if (HB1_Status.state == HB1_Mission_Hover2 || HB1_Status.state == HB1_Mission_Attack) {return;}
+void Plane::HB1_msg_mission2apm_set_land_handle() {
+    if (HB1_Status.state == HB1_Mission_Hover2 || HB1_Status.state == HB1_Mission_Land) {return;}
     HB1_mission2apm &tmp_msg = HB1_uart_mission.get_msg_mission2apm();
 
-    HB1_attack_cmd.id = MAV_CMD_NAV_WAYPOINT;
+    HB1_attack_cmd.id = MAV_CMD_NAV_LAND;
     HB1_attack_cmd.content.location.lat = (int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.latitude/tmp_msg.SF_LL);
     HB1_attack_cmd.content.location.lng = (int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.longitude/tmp_msg.SF_LL);
     HB1_attack_cmd.content.location.set_alt_cm((int32_t)((double)tmp_msg._msg_1.content.msg.remote_cmd.cmd_attack.alt*100.f/tmp_msg.SF_ALT), Location::AltFrame::ABOVE_HOME);
@@ -173,14 +173,14 @@ void Plane::HB1_msg_mission2apm_set_attack_handle() {
     point_index = MIN(0xFF,point_index);
     HB1_attack_cmd.p1 = (line_index << 8) | (point_index & 0x00FF);
 
-    if (g2.hb1_num_attack == 0) {
+    if (g2.hb1_num_land == 0) {
         plane.mission.add_cmd(HB1_attack_cmd);
-        g2.hb1_num_attack.set_and_save(1);
+        g2.hb1_num_land.set_and_save(1);
     } else {
         plane.mission.replace_cmd(plane.mission.num_commands()-1, HB1_attack_cmd);
-        g2.hb1_num_attack.set_and_save(1);
+        g2.hb1_num_land.set_and_save(1);
     }
-    gcs().send_text(MAV_SEVERITY_INFO, "Attack (%d / %d) saved", g2.hb1_num_attack.get(), plane.mission.num_commands());
+    gcs().send_text(MAV_SEVERITY_INFO, "Land (%d / %d) saved", g2.hb1_num_land.get(), plane.mission.num_commands());
 }
 
 void Plane::HB1_msg_mission2apm_Search_wp_handle() {
@@ -227,7 +227,7 @@ void Plane::HB1_msg_mission2apm_Search_wp_pack_next() {
     HB1_Status.search_ms = tnow;
     gcs().send_text(MAV_SEVERITY_INFO, "sent waypoint %d ", HB1_Status.search_id);
     HB1_Status.search_id++;
-    if (HB1_Status.search_id > g2.hb1_num_wp.get() + g2.hb1_num_interim.get() + g2.hb1_num_attack.get()) {
+    if (HB1_Status.search_id > g2.hb1_num_wp.get() + g2.hb1_num_interim.get() + g2.hb1_num_land.get()) {
         HB1_Status.search_wp = false;
     }
     // gcs().send_text(MAV_SEVERITY_INFO, "can not find waypoint %d ", target_wp_id);
@@ -270,30 +270,30 @@ void Plane::HB1_msg_mission2apm_speed_down_handle() {
     gcs().send_text(MAV_SEVERITY_INFO, "Spd : %0.1f", current_spd/100.f);
 }
 
-void Plane::HB1_msg_mission2apm_preattack_handle(int32_t time_s) {
+void Plane::HB1_msg_mission2apm_preland_handle(int32_t time_s) {
     if (g2.hb1_pilot_type == 1) {
-        gcs().send_text(MAV_SEVERITY_INFO, "Not attack type (%d)", g2.hb1_pilot_type.get());
+        gcs().send_text(MAV_SEVERITY_INFO, "Not Land type (%d)", g2.hb1_pilot_type.get());
         return;
     }
     g2.hb1_follow_hover_attack_time.set_and_save(time_s*1000);
-    HB1_status_set_HB_Mission_Action(HB1_Mission_PreAttack);
+    HB1_status_set_HB_Mission_Action(HB1_Mission_PreLand);
     if (g2.hb1_num_interim > 0) {
-        gcs().send_text(MAV_SEVERITY_INFO, "PreAttack received (#%d) [%d ms]", g2.hb1_num_wp.get()+1, g2.hb1_follow_hover_attack_time.get());
+        gcs().send_text(MAV_SEVERITY_INFO, "PreLandreceived (#%d) [%d ms]", g2.hb1_num_wp.get()+1, g2.hb1_follow_hover_attack_time.get());
     } else {
         gcs().send_text(MAV_SEVERITY_INFO, "no interim WP! (#%d)", g2.hb1_num_wp.get()+g2.hb1_num_interim.get());
     }
 }
 
-void Plane::HB1_msg_mission2apm_attack_handle() {
-    if ( (HB1_Status.state == HB1_Mission_PreAttack) || (HB1_Status.state == HB1_Mission_Hover2) ) {
-        if (g2.hb1_num_attack > 0) {
-            HB1_status_set_HB_Mission_Action(HB1_Mission_Attack);
-            gcs().send_text(MAV_SEVERITY_INFO, "Attack received (#%d)", g2.hb1_num_wp+g2.hb1_num_interim+1);
+void Plane::HB1_msg_mission2apm_land_handle() {
+    if ( (HB1_Status.state == HB1_Mission_PreLand) || (HB1_Status.state == HB1_Mission_Hover2) ) {
+        if (g2.hb1_num_land > 0) {
+            HB1_status_set_HB_Mission_Action(HB1_Mission_Land);
+            gcs().send_text(MAV_SEVERITY_INFO, "Land received (#%d)", g2.hb1_num_wp+g2.hb1_num_interim+1);
         } else {
-            gcs().send_text(MAV_SEVERITY_INFO, "no attack WP!");
+            gcs().send_text(MAV_SEVERITY_INFO, "no Land WP!");
         }
     } else {
-        gcs().send_text(MAV_SEVERITY_INFO, "Not in PreAttack!");
+        gcs().send_text(MAV_SEVERITY_INFO, "Not in PreLand!");
     }
 }
 

@@ -599,9 +599,9 @@ bool Plane::verify_nav_wp(const AP_Mission::Mission_Command& cmd)
 
     uint8_t cmd_passby = 0;//HIGHBYTE(cmd.p1); // distance in meters to pass beyond the wp
     uint16_t cmd_acceptance_distance = 0;//LOWBYTE(cmd.p1); // radius in meters to accept reaching the wp
-    if (HB1_Status.state == HB1_Mission_PreAttack) {
+    if (HB1_Status.state == HB1_Mission_PreLand) {
         cmd_acceptance_distance += g2.hb1_acc_radius_preattack.get();
-    } else if (HB1_Status.state == HB1_Mission_Attack) {
+    } else if (HB1_Status.state == HB1_Mission_Land) {
         ;
     } else {
         cmd_acceptance_distance += g2.hb1_acc_radius.get();

@@ -77,22 +77,30 @@ void Plane::HB1_uart_update_50Hz()
 
     //FD1_mav_read();
     FD1_mav_send();
+    HB1_uart_power_send();
+
+}
+
+void Plane::HB1_uart_power_send() 
+{
+    if (HB1_Power.send_counter > 0) {
+        HB1_Power.send_counter--;
+        HB1_uart_power.write();
+        HB1_uart_power.get_msg_apm2power()._msg_1.need_send = true;
+    } else if (millis() - HB1_Power.status_ms > 200) {
+        HB1_Power.status_ms = millis();
+        HB1_Power_request();
+        HB1_uart_power.write();
+    } else {
+        HB1_Power_throttle_update();
+        HB1_uart_power.write();
+    }
 }
 
 void Plane::HB1_uart_update_10Hz()
 {
     HB1_msg_apm2mission_send();
     HB1_msg_apm2cam_send();
-
-    if (HB1_uart_power.get_msg_apm2power()._msg_1.need_send && HB1_Power.send_counter > 0) {
-        if (HB1_Power.send_counter > 1) {
-            HB1_Power.send_counter--;
-            HB1_uart_power.get_msg_apm2power()._msg_1.need_send = true;
-        }
-    } else {
-        HB1_Power_throttle_update();
-    }
-    HB1_uart_power.write();
     HB1_uart_print();
 }
 
@@ -112,12 +120,12 @@ void Plane::HB1_msg_mission2apm_handle() {
             // tmp_msg._msg_1.print = true;
             break;
         case 0x66:
-            HB1_msg_mission2apm_set_interim_handle();
+            // HB1_msg_mission2apm_set_interim_handle();
             // tmp_msg._msg_1.print = true;
             break;
         case 0x33:
             // if (!HB1_status_noGPS_check()) {
-                HB1_msg_mission2apm_set_attack_handle();
+                HB1_msg_mission2apm_set_land_handle();
             // }
             // tmp_msg._msg_1.print = true;
             break;
@@ -128,11 +136,11 @@ void Plane::HB1_msg_mission2apm_handle() {
         //     break;
         case 0xE5:
             HB1_Status.grouped = false;
-            HB1_msg_mission2apm_attack_handle();
+            HB1_msg_mission2apm_land_handle();
             break;
         case 0x69:
             HB1_Status.grouped = false;
-            HB1_msg_mission2apm_preattack_handle(tmp_msg._msg_1.content.msg.remote_cmd.cmd_preattack.time_s);
+            HB1_msg_mission2apm_preland_handle(tmp_msg._msg_1.content.msg.remote_cmd.cmd_preattack.time_s);
             break;
         case 0x3A:
             HB1_msg_mission2apm_speed_up_handle();
@@ -314,52 +322,6 @@ void Plane::HB1_msg_apm2cam_send() {
     };
 
     tmp_msg._msg_1.print = true;
-}
-
-void Plane::HB1_msg_apm2power_send() {
-    HB1_apm2power &tmp_msg = HB1_uart_power.get_msg_apm2power();
-    tmp_msg._msg_1.need_send = false;
-    tmp_msg._msg_1.content.msg.ctrl_cmd = 0;
-    tmp_msg._msg_1.content.msg.thr_value = 0;
-    switch (HB1_Power.state) {
-        case HB1_PowerAction_RocketON:
-        case HB1_PowerAction_GROUND_RocketON:
-            tmp_msg._msg_1.content.msg.ctrl_cmd = 8;
-            tmp_msg._msg_1.need_send = true;
-            break;
-        case HB1_PowerAction_GROUND_EngineSTART:
-            tmp_msg._msg_1.content.msg.ctrl_cmd = 4;
-            tmp_msg._msg_1.need_send = true;
-            break;
-        case HB1_PowerAction_GROUND_EngineSTART_PRE:
-        case HB1_PowerAction_EnginePullUP:
-            tmp_msg._msg_1.content.msg.ctrl_cmd = 0;
-            tmp_msg._msg_1.need_send = false;
-            break;
-        case HB1_PowerAction_EngineOFF:
-        case HB1_PowerAction_GROUND_EngineOFF:
-            tmp_msg._msg_1.content.msg.ctrl_cmd = 2;
-            tmp_msg._msg_1.need_send = true;
-            break;
-        case HB1_PowerAction_ParachuteON:
-            tmp_msg._msg_1.content.msg.ctrl_cmd = 1;
-            tmp_msg._msg_1.need_send = true;
-            break;
-        default:
-            tmp_msg._msg_1.content.msg.ctrl_cmd = 0;
-            tmp_msg._msg_1.need_send = false;
-            break;
-    }
-    if (!tmp_msg._msg_1.need_send) {return;}
-
-    tmp_msg._msg_1.content.msg.header.head_1 = HB1_apm2power::PREAMBLE1;
-    tmp_msg._msg_1.content.msg.header.head_2 = HB1_apm2power::PREAMBLE2;
-    tmp_msg._msg_1.content.msg.sum_check = 0;
-    for (int8_t i = 0; i < tmp_msg._msg_1.length - 1; i++) {
-        tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
-    }
-    tmp_msg._msg_1.print = true;
-    return;
 }
 
 void Plane::HB1_uart_print(){
