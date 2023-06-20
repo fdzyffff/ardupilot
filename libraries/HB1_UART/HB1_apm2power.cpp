@@ -19,7 +19,9 @@ void HB1_apm2power::process_message(void)
 
 void HB1_apm2power::swap_message(void)
 {
-    swap_message_sub(_msg_1.content.data[3], _msg_1.content.data[4]);
+    // if (_msg_1.content.msg.c[0] == 0x48 && _msg_1.content.msg.c[1] == 0x06) {
+    //     swap_message_sub(_msg_1.content.msg.c[2], _msg_1.content.msg.c[3], _msg_1.content.msg.c[4], _msg_1.content.msg.c[5]);
+    // }
 }
 
 void HB1_apm2power::set_rocket_on()

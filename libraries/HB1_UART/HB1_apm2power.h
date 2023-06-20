@@ -54,8 +54,8 @@ public:
     HB1_apm2power(const HB1_apm2power &other) = delete;
     HB1_apm2power &operator=(const HB1_apm2power&) = delete;
 
-    static const uint8_t PREAMBLE1 = 0xEB;
-    static const uint8_t PREAMBLE2 = 0x92;
+    static const uint8_t PREAMBLE1 = 0x92;
+    static const uint8_t PREAMBLE2 = 0x01;
 
     void process_message(void) override;
     void parse(uint8_t temp) override;
