@@ -47,17 +47,14 @@ void Plane::test_HB1_uart_msg1(uint8_t option){
     tmp_msg._msg_1.print = true;
     tmp_msg._msg_1.content.msg.header.head_1 = HB1_power2apm::PREAMBLE1;
     tmp_msg._msg_1.content.msg.header.head_2 = HB1_power2apm::PREAMBLE2;
-    tmp_msg._msg_1.content.msg.sum_check = 0;
 
     for (int8_t i = 2; i < tmp_msg._msg_1.length; i++) {
         tmp_msg._msg_1.content.data[i] = 0;
     }
     
-    tmp_msg._msg_1.content.msg.CYS350_rpm = 10000;
-    tmp_msg._msg_1.content.msg.CYS350_temp = 700;
-    for (int8_t i = 0; i < tmp_msg._msg_1.length - 1; i++) {
-        tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
-    }
+    tmp_msg._msg_1.content.msg.rpm = 10000;
+    tmp_msg._msg_1.content.msg.temperature = 300;
+    tmp_msg._msg_1.content.msg.crc8_itu = tmp_msg.crc8_itu(tmp_msg._msg_1.content.data, tmp_msg._msg_1.length-1);
 }
 
 void Plane::test_HB1_uart_msg2(uint8_t option){
