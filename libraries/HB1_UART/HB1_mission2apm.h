@@ -88,15 +88,13 @@ public:
         int16_t leader_dir;
         uint8_t leader_target_id;
         bool net_timeout;
-        int16_t target_vx;
-        int16_t target_vy;
-        int16_t target_vz;
+        uint8_t reserved[5]; 
         uint8_t sum_check;
     };
 
     union PACKED Content_1 {
         MSG_Command_1 msg;
-        uint8_t data[52];
+        uint8_t data[51];
     };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -105,7 +103,7 @@ public:
         bool print;
         bool updated;
         bool need_send;
-        const uint16_t length = 52;
+        const uint16_t length = 51;
         Content_1 content;
     };
 
@@ -125,7 +123,7 @@ public:
         uint16_t read;
         uint8_t sum_check;
         HB1_mission2apm_header header;
-        uint8_t data[52];;
+        uint8_t data[51];;
     } _msg;
 
     HB1_mission2apm();

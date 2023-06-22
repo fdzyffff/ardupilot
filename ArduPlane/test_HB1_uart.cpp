@@ -41,7 +41,7 @@ void Plane::test_HB1_uart(uint8_t msg_id, uint8_t option)
 
 void Plane::test_HB1_uart_msg1(uint8_t option){
     gcs().send_text(MAV_SEVERITY_INFO, "SIM power2apm :");
-    HB1_power2apm &tmp_msg = HB1_uart_power.get_msg_power2apm();
+    HB1_power2apm &tmp_msg = HB1_uart_mission.get_msg_power2apm();
     tmp_msg._msg_1.updated = true;
     tmp_msg._msg_1.need_send = true;
     tmp_msg._msg_1.print = true;
@@ -181,7 +181,7 @@ void Plane::test_HB1_uart_msg4(uint8_t option){
 
 void Plane::test_HB1_uart_msg5(uint8_t option){
     gcs().send_text(MAV_SEVERITY_INFO, "SIM apm2power :");
-    HB1_apm2power &tmp_msg = HB1_uart_power.get_msg_apm2power();
+    HB1_apm2power &tmp_msg = HB1_uart_mission.get_msg_apm2power();
     tmp_msg._msg_1.updated = true;
     tmp_msg._msg_1.need_send = true;
     tmp_msg._msg_1.print = true;

@@ -12,13 +12,13 @@ public:
     struct PACKED MSG_Command_1 {
         HB1_mission2apm_header header;
         uint8_t length;
-        uint8_t remote_index;
-        uint8_t line_index;
-        uint8_t point_index;
+        // uint8_t remote_index;
+        // uint8_t line_index;
+        // uint8_t point_index;
         int32_t longitude;
         int32_t latitude;
         int16_t alt;
-        uint8_t control_id;
+        // uint8_t control_id;
         int16_t ptich;
         int16_t roll;
         int16_t yaw;
@@ -32,14 +32,15 @@ public:
         int16_t gspd_dir;
         uint8_t mission_state;
         uint8_t control_type;
-        int16_t target_dist;
-        uint8_t target_control_id;
+        // int16_t target_dist;
+        // uint8_t target_control_id;
+        uint8_t reserved[2];
         uint8_t sum_check;
     };
 
     union PACKED Content_1 {
         MSG_Command_1 msg;
-        uint8_t data[41];
+        uint8_t data[36];
     };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -48,7 +49,7 @@ public:
         bool print;
         bool updated;
         bool need_send;
-        const uint16_t length = 41;
+        const uint16_t length = 36;
         Content_1 content;
     };
 

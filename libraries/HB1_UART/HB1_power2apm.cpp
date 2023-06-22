@@ -1,4 +1,5 @@
 #include "HB1_power2apm.h"
+#include <GCS_MAVLink/GCS.h>
 
 HB1_power2apm::HB1_power2apm(void)
 {

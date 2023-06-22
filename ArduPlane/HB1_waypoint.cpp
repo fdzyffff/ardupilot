@@ -207,17 +207,17 @@ void Plane::HB1_msg_mission2apm_Search_wp_pack() {
     // if (HIGHBYTE(tmp_cmd.p1) == HB1_Status.search_line_index) {
     if (HB1_Status.search_line_index == 1) {
         HB1_apm2mission &new_msg = HB1_uart_mission.get_msg_apm2mission();
-        new_msg._msg_1.content.msg.remote_index = HB1_Status.remote_index;
-        new_msg._msg_1.content.msg.line_index = 1;// HIGHBYTE(tmp_cmd.p1);
-        new_msg._msg_1.content.msg.point_index = HB1_Status.search_id;//LOWBYTE(tmp_cmd.p1);
+        // new_msg._msg_1.content.msg.remote_index = HB1_Status.remote_index;
+        // new_msg._msg_1.content.msg.line_index = 1;// HIGHBYTE(tmp_cmd.p1);
+        // new_msg._msg_1.content.msg.point_index = HB1_Status.search_id;//LOWBYTE(tmp_cmd.p1);
         new_msg._msg_1.content.msg.longitude = (int32_t)((double)tmp_cmd.content.location.lng * new_msg.SF_LL);
         new_msg._msg_1.content.msg.latitude = (int32_t)((double)tmp_cmd.content.location.lat * new_msg.SF_LL);
         int32_t alt_target = 0;
-        if (!tmp_cmd.content.location.get_alt_cm(Location::AltFrame::ABOVE_HOME, alt_target)) {
-            gcs().send_text(MAV_SEVERITY_INFO, "get waypoint %d alt failed, set to 0", new_msg._msg_1.content.msg.point_index);
-        }
+        // if (!tmp_cmd.content.location.get_alt_cm(Location::AltFrame::ABOVE_HOME, alt_target)) {
+        //     gcs().send_text(MAV_SEVERITY_INFO, "get waypoint %d alt failed, set to 0", new_msg._msg_1.content.msg.point_index);
+        // }
         new_msg._msg_1.content.msg.alt = (int16_t)((float)alt_target * new_msg.SF_ALT);
-        new_msg._msg_1.content.msg.control_id = HIGHBYTE(tmp_cmd.p1);
+        // new_msg._msg_1.content.msg.control_id = HIGHBYTE(tmp_cmd.p1);
     }
     return;
 }

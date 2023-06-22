@@ -195,9 +195,9 @@ void Plane::test_HB1_mission_update_msg() {
     tmp_msg._msg_1.content.msg.leader_dir = (int16_t)(wrap_180(HB1_test.follow_dir)*tmp_msg.SF_ANG);
     tmp_msg._msg_1.content.msg.leader_target_id = 0;
     tmp_msg._msg_1.content.msg.net_timeout = false;
-    tmp_msg._msg_1.content.msg.target_vx = 0;
-    tmp_msg._msg_1.content.msg.target_vy = 0;
-    tmp_msg._msg_1.content.msg.target_vz = 0;
+    // tmp_msg._msg_1.content.msg.target_vx = 0;
+    // tmp_msg._msg_1.content.msg.target_vy = 0;
+    // tmp_msg._msg_1.content.msg.target_vz = 0;
     
     switch (HB1_test.cmd_type) {
         case 1: // cmd takeoff
@@ -359,9 +359,9 @@ void Plane::test_HB1_mission_send_msg() {
     tmp_msg._msg_1.content.msg.leader_dir = (int16_t)(gps.ground_course_cd()*0.01f * tmp_msg.SF_ANG);
     tmp_msg._msg_1.content.msg.leader_target_id = mission.get_current_nav_index();
     tmp_msg._msg_1.content.msg.net_timeout = false;
-    tmp_msg._msg_1.content.msg.target_vx = 0;
-    tmp_msg._msg_1.content.msg.target_vy = 0;
-    tmp_msg._msg_1.content.msg.target_vz = 0;
+    // tmp_msg._msg_1.content.msg.target_vx = 0;
+    // tmp_msg._msg_1.content.msg.target_vy = 0;
+    // tmp_msg._msg_1.content.msg.target_vz = 0;
     
     switch (HB1_test.cmd_type2) {
         case 1: // cmd takeoff

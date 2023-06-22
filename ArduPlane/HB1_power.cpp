@@ -301,7 +301,7 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force
 }
 
 void Plane::HB1_msg_apm2power_set() {
-    HB1_apm2power &tmp_msg = HB1_uart_power.get_msg_apm2power();
+    HB1_apm2power &tmp_msg = HB1_uart_mission.get_msg_apm2power();
     tmp_msg._msg_1.need_send = false;
     switch (HB1_Power.state) {
         case HB1_PowerAction_RocketON:
@@ -345,7 +345,7 @@ void Plane::HB1_msg_apm2power_set() {
 }
 
 void Plane::HB1_Power_request() {
-    HB1_apm2power &tmp_msg = HB1_uart_power.get_msg_apm2power();
+    HB1_apm2power &tmp_msg = HB1_uart_mission.get_msg_apm2power();
     tmp_msg._msg_1.need_send = true;
     tmp_msg.set_request();
     tmp_msg.make_sum();
@@ -354,8 +354,8 @@ void Plane::HB1_Power_request() {
 }
 
 void Plane::HB1_Power_throttle_update() {
-    float rpm_out = 10.f*SRV_Channels::get_output_scaled(SRV_Channel::k_throttle_HB1);
-    HB1_apm2power &tmp_msg = HB1_uart_power.get_msg_apm2power();
+    float rpm_out = 1000.f*SRV_Channels::get_output_scaled(SRV_Channel::k_throttle_HB1);
+    HB1_apm2power &tmp_msg = HB1_uart_mission.get_msg_apm2power();
     tmp_msg._msg_1.need_send = true;
     tmp_msg.set_throttle(rpm_out);
     tmp_msg.make_sum();
@@ -364,7 +364,7 @@ void Plane::HB1_Power_throttle_update() {
 }
 
 void Plane::HB1_Power_on_send() {
-    // HB1_apm2power &tmp_msg = HB1_uart_power.get_msg_apm2power();
+    // HB1_apm2power &tmp_msg = HB1_uart_mission.get_msg_apm2power();
     // tmp_msg._msg_1.need_send = true;
     // tmp_msg._msg_1.content.msg.ctrl_cmd = 11;
     // tmp_msg._msg_1.content.msg.thr_value = 0;

@@ -20,12 +20,12 @@ void Plane::HB1_uart_update_50Hz()
     if (HB1_uart_mission.initialized()) {
         HB1_uart_mission.read();
     }
-    if (HB1_uart_cam.initialized()) {
-        HB1_uart_cam.read();
-    }
-    if (HB1_uart_power.initialized()) {
-        HB1_uart_power.read();
-    }
+    // if (HB1_uart_cam.initialized()) {
+    //     HB1_uart_cam.read();
+    // }
+    // if (HB1_uart_power.initialized()) {
+    //     HB1_uart_power.read();
+    // }
 
     // uart mission
     if (HB1_uart_mission.get_msg_mission2apm()._msg_1.updated) {
@@ -165,10 +165,10 @@ void Plane::HB1_msg_mission2apm_handle() {
             HB1_msg_mission2apm_Disarm_handle();
             break;
         case 0xE7:
-            HB1_msg_mission2apm_EngineFULL_handle();
+            // HB1_msg_mission2apm_EngineFULL_handle();
             break;
         case 0xB4:
-            HB1_msg_mission2apm_EngineMID_handle();
+            // HB1_msg_mission2apm_EngineMID_handle();
             break;
         case 0x55:
             HB1_msg_mission2apm_RocketON_handle();
@@ -195,7 +195,7 @@ void Plane::HB1_msg_mission2apm_handle() {
 }
 
 void Plane::HB1_msg_power2apm_handle() {
-    HB1_power2apm &tmp_msg = HB1_uart_power.get_msg_power2apm();
+    HB1_power2apm &tmp_msg = HB1_uart_mission.get_msg_power2apm();
     HB1_Power.HB1_engine_fuel = (float)tmp_msg._msg_1.content.msg.consumption;
     HB1_Power.HB1_engine_rpm.apply((float)tmp_msg._msg_1.content.msg.rpm);
     HB1_Power.HB1_engine_temp = (float)tmp_msg._msg_1.content.msg.temperature;
@@ -214,13 +214,13 @@ void Plane::HB1_msg_apm2mission_send() {
     if (HB1_Status.search_wp) {
         HB1_msg_mission2apm_Search_wp_pack();
     } else {
-        tmp_msg._msg_1.content.msg.remote_index = 0xFF;
-        tmp_msg._msg_1.content.msg.line_index = 0;
-        tmp_msg._msg_1.content.msg.point_index = 0;
+        // tmp_msg._msg_1.content.msg.remote_index = 0xFF;
+        // tmp_msg._msg_1.content.msg.line_index = 0;
+        // tmp_msg._msg_1.content.msg.point_index = 0;
         tmp_msg._msg_1.content.msg.longitude = (int32_t)((double)current_loc.lng * tmp_msg.SF_LL);
         tmp_msg._msg_1.content.msg.latitude = (int32_t)((double)current_loc.lat * tmp_msg.SF_LL);
         tmp_msg._msg_1.content.msg.alt = (int16_t)(relative_ground_altitude(false) * tmp_msg.SF_ALT);
-        tmp_msg._msg_1.content.msg.control_id = 0;
+        // tmp_msg._msg_1.content.msg.control_id = 0;
     }
 
     tmp_msg._msg_1.content.msg.ptich = (int16_t)((float)(ahrs.pitch_sensor/100) * tmp_msg.SF_ANG);
@@ -238,12 +238,12 @@ void Plane::HB1_msg_apm2mission_send() {
     tmp_msg._msg_1.content.msg.gspd_dir = (int16_t)(gps.ground_course_cd()*0.01f * tmp_msg.SF_ANG);
     tmp_msg._msg_1.content.msg.mission_state = HB1_status_get_HB_Mission_Action();
     tmp_msg._msg_1.content.msg.control_type = 0;
-    tmp_msg._msg_1.content.msg.target_dist = 0;
-    tmp_msg._msg_1.content.msg.target_control_id = 0;
-    if (plane.control_mode == &plane.mode_auto && arming.is_armed()) {
-        tmp_msg._msg_1.content.msg.target_dist = (int16_t)current_loc.get_distance(next_WP_loc);
-        tmp_msg._msg_1.content.msg.target_control_id = HIGHBYTE(mission.get_current_nav_cmd().p1);
-    }
+    // tmp_msg._msg_1.content.msg.target_dist = 0;
+    // tmp_msg._msg_1.content.msg.target_control_id = 0;
+    // if (plane.control_mode == &plane.mode_auto && arming.is_armed()) {
+    //     tmp_msg._msg_1.content.msg.target_dist = (int16_t)current_loc.get_distance(next_WP_loc);
+    //     tmp_msg._msg_1.content.msg.target_control_id = HIGHBYTE(mission.get_current_nav_cmd().p1);
+    // }
     tmp_msg._msg_1.content.msg.sum_check = 0;
     
     for (int8_t i = 2; i < tmp_msg._msg_1.length - 1; i++) {
@@ -306,16 +306,16 @@ void Plane::HB1_uart_print(){
     //                bit2: mission2cam
     //                bit1: power2apm 
 
-    if (HB1_uart_power.get_msg_power2apm()._msg_1.print) {
+    if (HB1_uart_mission.get_msg_power2apm()._msg_1.print) {
         if (g2.hb1_msg_print.get() & (1<<0)) {
-            HB1_uart_power.get_msg_power2apm().swap_message();
+            HB1_uart_mission.get_msg_power2apm().swap_message();
             gcs().send_text(MAV_SEVERITY_INFO, "power2apm :");
-            for (int8_t i = 0; i < HB1_uart_power.get_msg_power2apm()._msg_1.length; i++) {
-                gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i+1 , HB1_uart_power.get_msg_power2apm()._msg_1.content.data[i]);
+            for (int8_t i = 0; i < HB1_uart_mission.get_msg_power2apm()._msg_1.length; i++) {
+                gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i+1 , HB1_uart_mission.get_msg_power2apm()._msg_1.content.data[i]);
             }
-            HB1_uart_power.get_msg_power2apm().swap_message();
+            HB1_uart_mission.get_msg_power2apm().swap_message();
         }
-        HB1_uart_power.get_msg_power2apm()._msg_1.print = false;
+        HB1_uart_mission.get_msg_power2apm()._msg_1.print = false;
     }
 
     if (HB1_uart_mission.get_msg_mission2cam()._msg_1.print) {
@@ -362,16 +362,16 @@ void Plane::HB1_uart_print(){
         HB1_uart_cam.get_msg_cam2mission()._msg_1.print = false;
     }
 
-    if (HB1_uart_power.get_msg_apm2power()._msg_1.print) {
+    if (HB1_uart_mission.get_msg_apm2power()._msg_1.print) {
         if (g2.hb1_msg_print.get() & (1<<4)) {
-            HB1_uart_power.get_msg_apm2power().swap_message();
+            HB1_uart_mission.get_msg_apm2power().swap_message();
             gcs().send_text(MAV_SEVERITY_INFO, "apm2power :");
-            for (int8_t i = 0; i < HB1_uart_power.get_msg_apm2power()._msg_1.length; i++) {
-                gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i+1 , HB1_uart_power.get_msg_apm2power()._msg_1.content.data[i]);
+            for (int8_t i = 0; i < HB1_uart_mission.get_msg_apm2power()._msg_1.length; i++) {
+                gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i+1 , HB1_uart_mission.get_msg_apm2power()._msg_1.content.data[i]);
             }
-            HB1_uart_power.get_msg_apm2power().swap_message();
+            HB1_uart_mission.get_msg_apm2power().swap_message();
         }
-        HB1_uart_power.get_msg_apm2power()._msg_1.print = false;
+        HB1_uart_mission.get_msg_apm2power()._msg_1.print = false;
     }
 
     if (HB1_uart_mission.get_msg_apm2mission()._msg_1.print) {
