@@ -43,6 +43,7 @@ void AP_MotorsSkateboard::init(motor_frame_class frame_class, motor_frame_type f
     SRV_Channels::set_angle(SRV_Channel::k_engine_srv_5, 4500);
     SRV_Channels::set_angle(SRV_Channel::k_engine_srv_6, 4500);
     SRV_Channels::set_angle(SRV_Channel::k_engine_srv_7, 4500);
+    SRV_Channels::set_range(SRV_Channel::k_engine_motor, 100);
 
     _mav_type = MAV_TYPE_COAXIAL;
 
@@ -101,7 +102,7 @@ void AP_MotorsSkateboard::output_to_motors()
             break;
         case SpoolState::GROUND_IDLE:
         case SpoolState::SPOOLING_UP:
-            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_motor, 0.12f);
+            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_motor, 12.f);
             break;
         case SpoolState::THROTTLE_UNLIMITED:
             SRV_Channels::set_output_scaled(SRV_Channel::k_engine_motor, constrain_float(_throttle_out*100.f, 0.0f, 100.f));
