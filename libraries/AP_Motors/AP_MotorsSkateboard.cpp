@@ -105,7 +105,7 @@ void AP_MotorsSkateboard::output_to_motors()
             SRV_Channels::set_output_scaled(SRV_Channel::k_engine_motor, 12.f);
             break;
         case SpoolState::THROTTLE_UNLIMITED:
-            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_motor, constrain_float(_throttle_out*100.f, 0.0f, 100.f));
+            SRV_Channels::set_output_scaled(SRV_Channel::k_engine_motor, constrain_float(12.f+_throttle_out*88.f,12.0f, 100.f));
             break;
         case SpoolState::SPOOLING_DOWN:
         default:
