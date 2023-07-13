@@ -199,6 +199,7 @@ void Plane::HB1_msg_power2apm_handle() {
     HB1_Power.HB1_engine_fuel = (float)tmp_msg._msg_1.content.msg.consumption;
     HB1_Power.HB1_engine_rpm.apply((float)tmp_msg._msg_1.content.msg.rpm);
     HB1_Power.HB1_engine_temp = (float)tmp_msg._msg_1.content.msg.temperature;
+    HB1_Power.HB1_engine_pump_rpm.apply((float)tmp_msg._msg_1.content.msg.pump_rpm);
     HB1_Power.last_update_ms = millis();
 }
 

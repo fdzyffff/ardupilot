@@ -1176,6 +1176,7 @@ private:
         uint32_t timer;
         HB1_Power_Action_t state;
         LowPassFilterFloat HB1_engine_rpm;
+        LowPassFilterFloat HB1_engine_pump_rpm;
         float HB1_engine_temp;
         float HB1_engine_fuel;
         uint32_t last_update_ms;
