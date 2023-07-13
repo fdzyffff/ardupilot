@@ -6,6 +6,8 @@ void Plane::HB1_Power_update() {
 }
 
 void Plane::HB1_Power_pwm_update() {
+    static uint32_t last_ctrl_ms = millis();
+    uint32_t tnow = millis();
     float throttle = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle);
     float HB1_throttle = 0.0f;
     float thr_min = 0.0f;
@@ -20,6 +22,7 @@ void Plane::HB1_Power_pwm_update() {
             case HB1_PowerAction_RocketON:
             case HB1_PowerAction_EnginePullUP:
             case HB1_PowerAction_EngineON:
+            case HB1_PowerAction_EngineLOW:
             case HB1_PowerAction_EngineOFF:
             case HB1_PowerAction_ParachuteON:
             case HB1_PowerAction_GROUND_RocketON:
@@ -31,9 +34,6 @@ void Plane::HB1_Power_pwm_update() {
                 break;
             case HB1_PowerAction_GROUND_EngineON:
                 HB1_throttle = thr_min;
-                break;
-            case HB1_PowerAction_GROUND_EngineOFF:
-                HB1_throttle = 0.0f;
                 break;
             case HB1_PowerAction_GROUND_EngineFULL:
                 if (timer < 2000.f) {
@@ -73,19 +73,13 @@ void Plane::HB1_Power_pwm_update() {
                 HB1_throttle = thr_min;
                 break;
             case HB1_PowerAction_EnginePullUP:
-                {   
-                    float timer_delay = MAX(timer - 0.0f, 0.0f);
-                    if (timer_delay < 800.f) {
-                        HB1_throttle = constrain_float(35.f*timer_delay/800.f, thr_min, 35.f);
-                    } else if (timer_delay < 1500.f) {
-                        HB1_throttle = constrain_float(35.f + 65.f*(timer_delay-800.f)/700.f, 35.f, thr_max);
-                    }
-                    break;
-                }
+                HB1_throttle = constrain_float(throttle, thr_min, thr_max);
             case HB1_PowerAction_EngineON:
                 HB1_throttle = constrain_float(throttle, 30.f, thr_max);
                 break;
-            case HB1_PowerAction_GROUND_EngineOFF:
+            case HB1_PowerAction_EngineLOW:
+                HB1_throttle = 30.f;
+                break;
             case HB1_PowerAction_EngineOFF:
             case HB1_PowerAction_ParachuteON:
                 HB1_throttle = 0.0f;
@@ -102,7 +96,11 @@ void Plane::HB1_Power_pwm_update() {
                 break;
         }
     }
-    SRV_Channels::set_output_scaled(SRV_Channel::k_throttle_HB1, HB1_throttle);
+    uint32_t delta_t = constrain_int16(g2.hb1_engine_update_ms.get(), 0, 5000);
+    if (tnow - last_ctrl_ms > delta_t) {
+        last_ctrl_ms = tnow;
+        SRV_Channels::set_output_scaled(SRV_Channel::k_throttle_HB1, HB1_throttle);
+    }
 }
 
 void Plane::HB1_Power_status_update() {
@@ -146,13 +144,14 @@ void Plane::HB1_Power_status_update() {
                 }
             }
             break;
+        case HB1_PowerAction_EngineLOW:
+            if (timer > 5000) {
+                HB1_status_set_HB_Power_Action(HB1_PowerAction_EngineOFF);
+            }
+            break;
         case HB1_PowerAction_EngineOFF:
             if (timer > 3000) {
-                if (arming.is_armed()) {
-                    HB1_status_set_HB_Power_Action(HB1_PowerAction_None);
-                } else {
-                    HB1_status_set_HB_Power_Action(HB1_PowerAction_None);
-                }
+                HB1_status_set_HB_Power_Action(HB1_PowerAction_None);
             }
             break;
         case HB1_PowerAction_GROUND_EngineFULL:
@@ -194,8 +193,6 @@ void Plane::HB1_Power_status_update() {
             if (timer > 10000) {
                 HB1_status_set_HB_Power_Action(HB1_PowerAction_None);
             }
-        case HB1_PowerAction_GROUND_EngineOFF: // triggered by RC OR cmd
-            break;
         default:
             break;
     }
@@ -279,11 +276,11 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force
             relay.on(2);
             relay.off(3);
             break;
-        case HB1_PowerAction_GROUND_EngineOFF:
-            gcs().send_text(MAV_SEVERITY_INFO, "G Engine OFF");
+        case HB1_PowerAction_EngineLOW:
+            gcs().send_text(MAV_SEVERITY_INFO, "Engine LOW");
             relay.off(0);
             relay.off(1);
-            relay.on(2);
+            relay.off(2);
             relay.off(3);
             break;
         case HB1_PowerAction_ParachuteON:
@@ -318,7 +315,6 @@ void Plane::HB1_msg_apm2power_set() {
             tmp_msg._msg_1.need_send = false;
             break;
         case HB1_PowerAction_EngineOFF:
-        case HB1_PowerAction_GROUND_EngineOFF:
         case HB1_PowerAction_ParachuteON:
             tmp_msg.set_engine_stop();
             tmp_msg._msg_1.need_send = true;

@@ -1288,6 +1288,7 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("HB1_CAM_RATE", 47, ParametersG2, hb1_cam_rate, 20),
     AP_GROUPINFO("HB1_60_MIN", 48, ParametersG2, hb1_engine60_min, 12.f),
     AP_GROUPINFO("HB1_RKT_MS", 49, ParametersG2, hb1_rocket_timer_ms, 2000),
+    AP_GROUPINFO("HB1_EGN_T", 50, ParametersG2, hb1_engine_update_ms, 200),
 
     AP_GROUPEND
 };

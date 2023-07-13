@@ -1125,9 +1125,9 @@ private:
         HB1_PowerAction_GROUND_EngineSTART_PRE = 7,
         HB1_PowerAction_GROUND_EngineSTART     = 8,
         HB1_PowerAction_GROUND_EngineON        = 9,
-        HB1_PowerAction_GROUND_EngineOFF       = 10,
         HB1_PowerAction_GROUND_EngineFULL      = 11,
         HB1_PowerAction_GROUND_EngineMID       = 12,
+        HB1_PowerAction_EngineLOW       = 13,
     };
 
     enum HB1_Mission_t {

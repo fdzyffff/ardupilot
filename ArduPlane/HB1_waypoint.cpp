@@ -320,7 +320,7 @@ void Plane::HB1_msg_mission2apm_EngineSTART_handle() {
 }
 
 void Plane::HB1_msg_mission2apm_EngineOFF_handle() {
-    HB1_status_set_HB_Power_Action(HB1_PowerAction_GROUND_EngineOFF, true);
+    HB1_status_set_HB_Power_Action(HB1_PowerAction_EngineLOW, true);
 }
 
 void Plane::HB1_msg_mission2apm_ParachuteON_handle() {

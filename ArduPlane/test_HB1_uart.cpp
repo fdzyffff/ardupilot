@@ -81,7 +81,7 @@ void Plane::test_HB1_uart_msg2(uint8_t option){
 
 void Plane::test_HB1_uart_msg3(uint8_t option){
     // done in test_HB1_follwo.cpp test_HB1_mission_update_msg()
-/*    gcs().send_text(MAV_SEVERITY_INFO, "SIM mission2apm :");
+    gcs().send_text(MAV_SEVERITY_INFO, "SIM mission2apm :");
     HB1_mission2apm &tmp_msg = HB1_uart_mission.get_msg_mission2apm();
     tmp_msg._msg_1.updated = true;
     tmp_msg._msg_1.need_send = true;
@@ -154,7 +154,7 @@ void Plane::test_HB1_uart_msg3(uint8_t option){
     tmp_msg._msg_1.content.msg.leader_lat = (int32_t)(10.33333f * tmp_msg.SF_LL);
     tmp_msg._msg_1.content.msg.leader_alt = (int16_t)(100.f * tmp_msg.SF_ALT);
 
-    tmp_msg._msg_1.content.msg.leader_dir = (int16_t)((float)wrap_180_cd(ahrs.yaw_sensor/100) * tmp_msg.SF_ANG);*/
+    tmp_msg._msg_1.content.msg.leader_dir = (int16_t)((float)wrap_180_cd(ahrs.yaw_sensor/100) * tmp_msg.SF_ANG);
 
 }
 
