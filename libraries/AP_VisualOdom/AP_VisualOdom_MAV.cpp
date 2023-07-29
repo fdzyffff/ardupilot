@@ -28,6 +28,9 @@ void AP_VisualOdom_MAV::handle_vision_position_estimate(uint64_t remote_time_us,
 {
 
     if (attitude.is_nan()) {
+        mocap_pos_x.reset();
+        mocap_pos_y.reset();
+        mocap_pos_z.reset();
         return;
     }
     // gcs().send_text(MAV_SEVERITY_INFO, "Am.x %f",x);
@@ -51,6 +54,11 @@ void AP_VisualOdom_MAV::handle_vision_position_estimate(uint64_t remote_time_us,
     // log sensor data
     Write_VisualPosition(remote_time_us, time_ms, pos.x, pos.y, pos.z, degrees(roll), degrees(pitch), degrees(yaw), posErr, angErr, reset_counter, false);
 
+    mocap_pos_x.update(pos.x, time_ms);
+    mocap_pos_y.update(pos.y, time_ms);
+    mocap_pos_z.update(pos.z, time_ms);
+    Vector3f vel= Vector3f(mocap_pos_x.slope()*1.0e3f, mocap_pos_y.slope()*1.0e3f, mocap_pos_z.slope()*1.0e3f);
+    handle_vision_speed_estimate(remote_time_us, time_ms, vel, 0);
     // record time for health monitoring
     _last_update_ms = AP_HAL::millis();
 }

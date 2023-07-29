@@ -1,6 +1,8 @@
 #pragma once
 
 #include "AP_VisualOdom_Backend.h"
+#include <Filter/Filter.h>
+#include <Filter/DerivativeFilter.h>
 
 #if HAL_VISUALODOM_ENABLED
 
@@ -16,6 +18,10 @@ public:
 
     // consume vision velocity estimate data and send to EKF, velocity in NED meters per second
     void handle_vision_speed_estimate(uint64_t remote_time_us, uint32_t time_ms, const Vector3f &vel, uint8_t reset_counter) override;
+
+    DerivativeFilterFloat_Size5 mocap_pos_x;
+    DerivativeFilterFloat_Size5 mocap_pos_y;
+    DerivativeFilterFloat_Size5 mocap_pos_z;
 };
 
 #endif
