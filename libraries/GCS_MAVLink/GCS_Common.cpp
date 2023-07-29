@@ -3294,9 +3294,14 @@ void GCS_MAVLINK::handle_att_pos_mocap(const mavlink_message_t &msg)
     if (visual_odom == nullptr) {
         return;
     }
+    float mm[4];
+    mm[0] = m.q[0];
+    mm[1] = m.q[1];
+    mm[2] = m.q[2];
+    mm[3] = m.q[3];
 
     // note: att_pos_mocap does not include reset counter
-    visual_odom->handle_vision_position_estimate(m.time_usec, timestamp_ms, m.x, m.y, m.z, m.q, 0, 0, 0);
+    visual_odom->handle_vision_position_estimate(m.time_usec, timestamp_ms, m.x, m.y, m.z, mm, 0, 0, 0);
 #endif
 }
 

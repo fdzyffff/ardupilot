@@ -55,6 +55,7 @@ public:
     float _target_yaw_rate_cds;
     float _current_angle_deg;
     float _q_rate_cds;
+    uint8_t _port_type;
 
     UCam_Port* _Ucam_port;
 
@@ -108,6 +109,7 @@ public:
     float get_number();
     void fill_number();
     void handle_info();
+    void term_clear();
 
 private:
     char _term[20];                ///< buffer for the current term within the current sentence

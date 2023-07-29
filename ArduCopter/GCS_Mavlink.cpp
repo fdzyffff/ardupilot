@@ -1064,14 +1064,14 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_
 
     case MAV_CMD_USER_2: {
         copter.gcs().send_text(MAV_SEVERITY_WARNING, "USER2");
-        mavlink_att_pos_mocap_t m;
         Quaternion qq;
         qq.from_euler(1.f,1.f,1.f);
-        m.q[0] = qq.q1;
-        m.q[1] = qq.q2;
-        m.q[2] = qq.q3;
-        m.q[3] = qq.q4;
-        mavlink_msg_att_pos_mocap_send((mavlink_channel_t)(MAVLINK_COMM_0 +3), micros(), m.q, 1.f, 1.f, 1.f, 0, 0);
+        float mm[4];
+        mm[0] = qq.q1;
+        mm[1] = qq.q2;
+        mm[2] = qq.q3;
+        mm[3] = qq.q4;
+        mavlink_msg_att_pos_mocap_send((mavlink_channel_t)(MAVLINK_COMM_0 +3), micros(), mm, 1.f, 1.f, 1.f, 0, 0, 0);
         return MAV_RESULT_ACCEPTED;
     }
 

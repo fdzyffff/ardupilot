@@ -35,7 +35,7 @@ void Copter::userhook_50Hz()
     // put your 50Hz code here
     Ucam.update();
     Ugcs.update();
-    Upayload.update();
+    // Upayload.update();
 }
 #endif
 
