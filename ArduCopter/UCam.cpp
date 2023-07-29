@@ -165,19 +165,22 @@ void UCam::init_port()
     // check for protocol configured for a serial port - only the first serial port with one of these protocols will then run (cannot have FrSky on multiple serial ports)
     _port = serial_manager.find_serial(AP_SerialManager::SerialProtocol_CamMavlink, 0);
     if (_port != nullptr) {
-        gcs().send_text(MAV_SEVERITY_INFO, "CAM MAV init");
+        gcs().send_text(MAV_SEVERITY_WARNING, "CAM MAV init");
         _Ucam_port = new UCam_Port_Mavlink(*this);
+        _port_type = 1;
         return;
     }
 
     _port = serial_manager.find_serial(AP_SerialManager::SerialProtocol_CamASCII, 0);
     if (_port != nullptr) {
-        gcs().send_text(MAV_SEVERITY_INFO, "CAM ASCII init");
+        gcs().send_text(MAV_SEVERITY_WARNING, "CAM ASCII init");
         _Ucam_port = new UCam_Port_ASCII(*this);
+        _port_type = 2;
         return;
     }
 
-    gcs().send_text(MAV_SEVERITY_INFO, "CAM MAV init FAILED");
+    _port_type = 0;
+    gcs().send_text(MAV_SEVERITY_WARNING, "CAM MAV init FAILED");
 }
 
 void UCam::port_read()

@@ -140,11 +140,6 @@ void Copter::init_ardupilot()
     // initialise landing gear position
     landinggear.init();
 #endif
-
-#ifdef USERHOOK_INIT
-    USERHOOK_INIT
-#endif
-
     // read Baro pressure at ground
     //-----------------------------
     barometer.set_log_baro_bit(MASK_LOG_IMU);
@@ -211,6 +206,10 @@ void Copter::init_ardupilot()
         // set mode to STABILIZE will trigger mode change notification to pilot
         set_mode(Mode::Number::STABILIZE, ModeReason::UNAVAILABLE);
     }
+
+#ifdef USERHOOK_INIT
+    USERHOOK_INIT
+#endif
 
     // flag that initialisation has completed
     ap.initialised = true;

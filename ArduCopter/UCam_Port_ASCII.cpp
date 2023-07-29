@@ -39,6 +39,7 @@ void UCam_Port_ASCII::port_read() {
                     _term_offset = 0;
                     _term_number = 0;
                 }
+                term_clear();
                 break;
             case ',':
                 if (_line_state == 1) {
@@ -47,6 +48,7 @@ void UCam_Port_ASCII::port_read() {
                     fill_number();
                 }
                 _term_offset = 0;
+                term_clear();
                 break;
             case '\r':
             case '\n':
@@ -61,6 +63,7 @@ void UCam_Port_ASCII::port_read() {
                 _line_state = 0;
                 _term_offset = 0;
                 _term_number = 0;
+                term_clear();
                 break;
             default:
                 // ordinary characters
@@ -78,6 +81,10 @@ void UCam_Port_ASCII::port_read() {
         //gcs().send_text(MAV_SEVERITY_INFO, "raw: %d, att: %d, arspd: %d", pk0_count, pk1_count, pk2_count);
         last_update_ms = tnow;
     }
+}
+
+void UCam_Port_ASCII::term_clear() {
+    memset(&_term, 0, sizeof(_term));
 }
 
 bool UCam_Port_ASCII::detect_sentence() {
