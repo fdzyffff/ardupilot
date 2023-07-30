@@ -162,7 +162,7 @@ void UCam_Port_ASCII::handle_info() {
     if (!_frotend._active) {
         _frotend._n_count += 1;
     }
-    _frotend.udpate_value(dt);
+    _frotend.update_value(dt);
 }
 
 void UCam_Port_ASCII::do_cmd(float p1, float p2, float p3, float p4) {

@@ -236,6 +236,7 @@ public:
     friend class UCam_Port;
     friend class UCam_Port_ASCII;
     friend class UCam_Port_Mavlink;
+    friend class UCam_Port_SIM;
     friend class UGround;
     friend class UPayload;
 

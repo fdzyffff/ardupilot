@@ -57,5 +57,9 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     AP_GROUPINFO("_ATK_K3"          , 40, UserParameters, atk_k3, 0.1f),
     AP_GROUPINFO("_ATK_T1"          , 41, UserParameters, atk_t1, 0.9f),
     AP_GROUPINFO("_ATK_KK"          , 42, UserParameters, atk_kk, 3.0f),
+
+    AP_GROUPINFO("_TSIM_X"          , 43, UserParameters, target_sim_x, 0.0f),
+    AP_GROUPINFO("_TSIM_Y"          , 44, UserParameters, target_sim_y, 0.0f),
+    AP_GROUPINFO("_TSIM_Z"          , 45, UserParameters, target_sim_z, 0.0f),
     AP_GROUPEND
 };

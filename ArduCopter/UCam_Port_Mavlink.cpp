@@ -49,7 +49,7 @@ void UCam_Port_Mavlink::port_read() {
                     mavlink_msg_command_long_decode(&msg, &packet); 
                     switch(packet.command) {
                         case MAV_CMD_USER_1: {
-                            _frotend.handle_info(&packet);
+                            handle_info(&packet);
                             // copter.gcs().send_text(MAV_SEVERITY_WARNING, "CAM USER1");
                         }
                             break;
@@ -85,6 +85,85 @@ void UCam_Port_Mavlink::port_read() {
     }
 }
 
+void UCam_Port_Mavlink::handle_info(const mavlink_command_long_t* packet)
+{
+    float p1 = packet->param1;
+    float p2 = packet->param2;
+    float p3 = packet->param3;
+    float p4 = packet->param4;
+    float p5 = packet->param5;
+    float p6 = packet->param6;
+    float p7 = packet->param7;
+
+    _frotend.display_info_p1 = p1;
+    _frotend.display_info_p2 = p2;
+    _frotend.display_info_p3 = p3;
+    _frotend.display_info_p4 = p4;
+    _frotend.display_info_new = true;
+    _frotend.display_info_count++;
+    bool _valid = false;
+    if ((int16_t)p1 == 0 && (int16_t)p2 == 0 && (int16_t)p3 == 0 && (int16_t)p4 == 0 && (int16_t)p5 == 0) {
+    // self check fail (2Hz)
+        _frotend._cam_state = 1;
+    }
+    if ((int16_t)p1 == 0 && (int16_t)p2 == 0 && (int16_t)p3 == 0 && (int16_t)p4 == 1) {
+    // self check pass (2Hz)
+        _frotend._cam_state = 2;
+    }
+    if ((int16_t)p1 == 0 && (int16_t)p2 == 0 && (int16_t)p3 == 0 && (int16_t)p4 == 3) {
+    // handle cmd from apm
+        _frotend._cam_state = 3;
+    }
+    if ((int16_t)p1 == 0 && (int16_t)p2 == 0 && (int16_t)p3 == 0 && (int16_t)p4 == 2) {
+    // working
+        _frotend._cam_state = 4;
+    }
+    if ((int16_t)p3 == 1 && (int16_t)p4 == 1) {
+    // target following
+        _frotend._cam_state = 5;
+        _valid = true;
+    }
+    if ((int16_t)p1 == 0 && (int16_t)p2 == 0 && (int16_t)p3 == 0 && (int16_t)p4 == 0 && (int16_t)p5 == 13) {
+        copter.gcs().send_text(MAV_SEVERITY_WARNING, "Para [%0.2f,%0.2f,%0.2f,%0.2f,%0.2f,%0.2f,%0.2f]", p1, p2, p3, p4, p5, p6, p7);
+        mavlink_command_long_t new_packet;
+        new_packet.param1 = 11.0f;
+        new_packet.param2 = 0.0f;
+        new_packet.param3 = p6;
+        new_packet.param4 = p7;
+        new_packet.param5 = 0.0f;
+        new_packet.param6 = 0.0f;
+        new_packet.param7 = 0.0f;
+        copter.send_my_command_long((mavlink_channel_t)0, &new_packet);
+    }
+
+    if (!_valid) {
+        _frotend._n_count = 0;
+        return;
+    }
+
+    float dt = (float)(millis() - _frotend._last_update_ms)*1.0e-3f;
+    if (dt > 1.0f) {dt = 1.0f;}
+    if (dt < 0.01f) {dt = 0.01f;} // sainty check, cam info will be at around 20Hz, conrresponding to 0.05s.
+    
+    _frotend.raw_info.x = p1;
+    _frotend.raw_info.y = p2;
+    Matrix3f tmp_m;
+    if (is_zero(copter.g2.user_parameters.fly_roll_factor)) {
+        tmp_m.from_euler(0.0f, 0.0f, 0.0f);
+    } else {
+        tmp_m.from_euler(copter.ahrs_view->roll, 0.0f, 0.0f);
+    }
+    Vector3f tmp_input = Vector3f(100.f,p1,-p2);
+    Vector3f tmp_output = tmp_m*tmp_input;
+    _frotend._cam_filter.apply(tmp_output, dt);
+    _frotend.correct_info.x = _frotend._cam_filter.get().y;
+    _frotend.correct_info.y = -_frotend._cam_filter.get().z;
+    _frotend._last_update_ms = millis();
+    if (!_frotend._active) {
+        _frotend._n_count += 1;
+    }
+    _frotend.update_value(dt);
+}
 void UCam_Port_Mavlink::do_cmd(float p1, float p2, float p3, float p4) {
     mavlink_status_t *chan0_status = mavlink_get_channel_status(MAVLINK_COMM_0);
     uint8_t saved_seq = chan0_status->current_tx_seq;

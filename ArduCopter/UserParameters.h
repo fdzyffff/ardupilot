@@ -66,4 +66,8 @@ public:
     AP_Float atk_k3;
     AP_Float atk_t1;
     AP_Float atk_kk;
+
+    AP_Float target_sim_x;
+    AP_Float target_sim_y;
+    AP_Float target_sim_z;
 };
