@@ -49,6 +49,7 @@ public:
         LOITERTKOFF =  47,
         MANUALTEST =   48,
         STABTEST   =   49,
+        ATTACK_POS =   50,  // Attack
     };
 
     // constructor
@@ -2162,4 +2163,35 @@ protected:
     float my_get_target_roll_angle();
 
     float _theta_cd;
+};
+
+class ModeAttack_pos : public Mode {
+
+public:
+    // inherit constructor
+    using Mode::Mode;
+    Number mode_number() const override { return Number::ATTACK_POS; }
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    bool requires_GPS() const override { return false; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(AP_Arming::Method method) const override { return false; }
+    bool is_autopilot() const override { return false; }
+    bool has_user_takeoff(bool must_navigate) const override {
+        return !must_navigate;
+    }
+
+protected:
+
+    const char *name() const override { return "ATTACK3"; }
+    const char *name4() const override { return "ATK3"; }
+    float my_get_target_climb_rate();
+    float my_get_target_roll_angle();
+
+private:
+    bool _fired = false;
+    float _theta_cd;
+
 };

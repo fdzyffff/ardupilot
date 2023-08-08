@@ -231,6 +231,7 @@ public:
     friend class ModeLoiterTakeoff;
     friend class ModeManualTest;
     friend class ModeStabTest;
+    friend class ModeAttack_pos;
 
     friend class UCam;
     friend class UCam_Port;
@@ -990,6 +991,7 @@ private:
     ModeLoiterTakeoff mode_loitertkoff;
     ModeManualTest mode_manualtest;
     ModeStabTest mode_stabtest;
+    ModeAttack_pos mode_attack_pos;
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -22,6 +22,7 @@ public:
     void update_value(float dt);
     void update_value_SIM(float dt);
     void handle_current_pos_info(float x, float y, float z);
+    uint8_t port_type() {return _port_type;}
 
     const Vector2f& get_raw_info() ;
     const Vector2f& get_correct_info() ;
