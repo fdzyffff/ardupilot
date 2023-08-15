@@ -74,3 +74,16 @@ bool ModeCruise::get_target_heading_cd(int32_t &target_heading) const
     target_heading = locked_heading_cd;
     return locked_heading;
 }
+
+bool ModeCruise::change_target_heading_cd(int32_t delta_cd) {
+    locked_heading_cd = wrap_360_cd(locked_heading_cd + delta_cd);
+    plane.prev_WP_loc = plane.current_loc;
+    locked_heading = true;
+    lock_timer_ms = 0;
+    return true;
+}
+
+bool ModeCruise::change_target_altitude_cm(int32_t delta_cm) {
+    plane.change_target_altitude(delta_cm);
+    return true;
+}
