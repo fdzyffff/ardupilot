@@ -225,6 +225,8 @@ public:
     // handle a guided target request from GCS
     bool handle_guided_request(Location target_loc) override;
 
+    void update_follow();
+
 protected:
 
     bool _enter() override;

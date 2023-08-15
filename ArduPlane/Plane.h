@@ -111,6 +111,7 @@
 #include "avoidance_adsb.h"
 #endif
 #include "AP_Arming.h"
+#include "UFollow.h"
 
 /*
   main APM:Plane class
@@ -161,6 +162,7 @@ public:
     friend class ModeThermal;
     friend class ModeLoiterAltQLand;
 
+    friend class UFollow;
     Plane(void);
 
 private:
@@ -1212,6 +1214,10 @@ private:
 
     // last target alt we passed to tecs
     int32_t tecs_target_alt_cm;
+
+    void userhook_50Hz();
+    void userhook_1Hz();
+    UFollow ufollow;
 
 public:
     void failsafe_check(void);
