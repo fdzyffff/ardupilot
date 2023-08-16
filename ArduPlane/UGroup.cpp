@@ -180,7 +180,6 @@ float my_group_1_assemble_t::get_dir(int16_t id_in) {
     }
 }
 
-
 Vector3f my_group_1_assemble_t::get_offset(int16_t this_id, int16_t sender_id, float dist) {
     Vector3f offset_position = Vector3f(0.0f, 0.0f, 0.0f);
     if (this_id <=8 && sender_id <=8 ){

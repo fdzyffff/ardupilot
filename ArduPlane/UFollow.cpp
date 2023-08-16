@@ -2,7 +2,7 @@
 
 UFollow::UFollow()
 {
-    _active = false;
+    init();
 }
 
 void UFollow::init()
