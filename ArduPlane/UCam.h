@@ -76,35 +76,17 @@ public:
 
     UCam_Port(UCam &frotend_in): _frotend(frotend_in) {};
     virtual void port_read() = 0;
-    virtual void do_cmd(float p1, float p2 = 0.0f, float p3 = 0.0f, float p4 = 0.0f) = 0;
+    virtual void do_cmd() = 0;
     UCam &_frotend;
 };
 
-class UCam_Port_Mavlink: public UCam_Port {
+class UCam_Port_DYT: public UCam_Port {
 public:
     friend class UCam;
 
-    UCam_Port_Mavlink(UCam &frotend_in);
+    UCam_Port_DYT(UCam &frotend_in AP_HAL::UARTDriver* port_in);
     void port_read() override;
-    void do_cmd(float p1, float p2 = 0.0f, float p3 = 0.0f, float p4 = 0.0f) override;
-
-private:
-    struct {
-        // socket to telem2 on aircraft
-        bool connected;
-        mavlink_message_t rxmsg;
-        mavlink_status_t status;
-        uint8_t seq;
-    } mavlink;
-};
-
-class UCam_Port_ASCII: public UCam_Port {
-public:
-    friend class UCam;
-
-    UCam_Port_ASCII(UCam &frotend_in);
-    void port_read() override;
-    void do_cmd(float p1, float p2 = 0.0f, float p3 = 0.0f, float p4 = 0.0f) override;
+    void do_cmd() override;
     bool detect_sentence();
     float get_number();
     void fill_number();
@@ -112,13 +94,5 @@ public:
     void term_clear();
 
 private:
-    char _term[20];                ///< buffer for the current term within the current sentence
-    // uint8_t _sentence_type;        ///< the sentence type currently being processed
-    uint8_t _term_number;          ///< term index within the current sentence
-    uint8_t _term_offset;          ///< character offset with the term being received
-    uint8_t _line_state;           /// 1 for correct line, 0 for invalid line which can not be recongnized correctlly 
-    float _left;
-    float _right;
-    float _top;
-    float _bottom;
+    FD1_UART* FD1_uart_ptr;
 };

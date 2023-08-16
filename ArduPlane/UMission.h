@@ -3,7 +3,7 @@
 class UMission {
     UMission();
 public:
-    enum class Mission{
+    enum class Mission_Role{
         Leader = 0;
         Follower = 1;
     }
@@ -12,4 +12,7 @@ public:
     void handle_info(const mavlink_command_long_t* packet);
     void do_offboard();
     void do_group();
+
+
+    Mission_Role _role;
 }
