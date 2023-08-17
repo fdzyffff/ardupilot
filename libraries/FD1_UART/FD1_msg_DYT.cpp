@@ -1,13 +1,13 @@
-#include "FD1_msg_ue4_ahrs.h"
+#include "FD1_msg_DYT.h"
 
-FD1_msg_ue4_ahrs::FD1_msg_ue4_ahrs(void)
+FD1_msg_DYT::FD1_msg_DYT(void)
 {
     _enable = false;
     _msg_1.need_send = false;
     _msg_1.updated = false;
 }
 
-void FD1_msg_ue4_ahrs::parse(uint8_t temp)
+void FD1_msg_DYT::parse(uint8_t temp)
 {
     switch (_msg.msg_state)
     {
@@ -62,7 +62,7 @@ void FD1_msg_ue4_ahrs::parse(uint8_t temp)
     }
 }
 
-void FD1_msg_ue4_ahrs::process_message(void)
+void FD1_msg_DYT::process_message(void)
 {
     int16_t i = 0;
 
@@ -75,7 +75,7 @@ void FD1_msg_ue4_ahrs::process_message(void)
     _msg_1.print = true;
 }
 
-void FD1_msg_ue4_ahrs::swap_message(void)
+void FD1_msg_DYT::swap_message(void)
 {
     swap_message_sub(_msg_1.content.data[4-1] , _msg_1.content.data[5-1] , _msg_1.content.data[6-1] , _msg_1.content.data[7-1]);
     swap_message_sub(_msg_1.content.data[8-1] , _msg_1.content.data[9-1] , _msg_1.content.data[10-1], _msg_1.content.data[11-1]);

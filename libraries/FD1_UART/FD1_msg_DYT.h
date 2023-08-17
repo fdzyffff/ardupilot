@@ -1,7 +1,7 @@
 #include "FD1_message.h"
 
-#define FD1_MSG_UE4_AHRS_LEN 28
-class FD1_msg_ue4_ahrs : public FD1_message{
+#define FD1_MSG_DYT_LEN 28
+class FD1_msg_DYT : public FD1_message{
 public:
     struct PACKED FD1_msg_header {
         uint8_t head_1;
@@ -23,7 +23,7 @@ public:
 
     union PACKED Content_1 {
         MSG_Command_1 msg;
-        uint8_t data[FD1_MSG_UE4_AHRS_LEN];
+        uint8_t data[FD1_MSG_DYT_LEN];
     };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -32,7 +32,7 @@ public:
         bool print;
         bool updated;
         bool need_send;
-        const uint16_t length = FD1_MSG_UE4_AHRS_LEN;
+        const uint16_t length = FD1_MSG_DYT_LEN;
         Content_1 content;
     };
 
@@ -50,14 +50,14 @@ public:
         uint16_t length;
         uint16_t read;
         uint8_t sum_check;
-        uint8_t data[FD1_MSG_UE4_AHRS_LEN];
+        uint8_t data[FD1_MSG_DYT_LEN];
     } _msg;
 
-    FD1_msg_ue4_ahrs();
+    FD1_msg_DYT();
     
     /* Do not allow copies */
-    FD1_msg_ue4_ahrs(const FD1_msg_ue4_ahrs &other) = delete;
-    FD1_msg_ue4_ahrs &operator=(const FD1_msg_ue4_ahrs&) = delete;
+    FD1_msg_DYT(const FD1_msg_DYT &other) = delete;
+    FD1_msg_DYT &operator=(const FD1_msg_DYT&) = delete;
 
     static const uint8_t PREAMBLE1 = 0xAA;
     static const uint8_t PREAMBLE2 = 0x55;
