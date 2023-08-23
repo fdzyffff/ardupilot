@@ -664,6 +664,7 @@ void GCS_MAVLINK_Plane::packetReceived(const mavlink_status_t &status,
 #if AP_SCRIPTING_ENABLED
     // pass message to follow library
     plane.g2.follow.handle_msg(msg);
+    plane.useruartfwd.handle_msg(msg);
 #endif
     GCS_MAVLINK::packetReceived(status, msg);
 }
@@ -1118,6 +1119,13 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_long_packet(const mavlink_command_l
         return MAV_RESULT_FAILED;
 #endif
         
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    case MAV_CMD_USER_1: {
+        if ((int16_t)packet.param1 == 1) {
+            plane.useruartfwd.set_target_sysid((int16_t)packet.param2);
+        }
+        return MAV_RESULT_ACCEPTED;
+    }
     default:
         return GCS_MAVLINK::handle_command_long_packet(packet);
     }

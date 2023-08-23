@@ -149,6 +149,7 @@ void Plane::init_ardupilot()
 #endif
 
     ubase.init();
+    useruartfwd.init();
 }
 
 //********************************************************************************

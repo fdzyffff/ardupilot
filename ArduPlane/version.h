@@ -6,7 +6,7 @@
 
 #include "ap_version.h"
 
-#define THISFIRMWARE "[AP431]-v1-ms-20230528"
+#define THISFIRMWARE "[AP431]-v1-20230823"
 
 // the following line is parsed by the autotest scripts
 #define FIRMWARE_VERSION 4,3,1,FIRMWARE_VERSION_TYPE_OFFICIAL

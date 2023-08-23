@@ -113,7 +113,7 @@
 #include "AP_Arming.h"
 
 #include "UBase.h"
-
+#include "UserUartFWD.h"
 /*
   main APM:Plane class
  */
@@ -164,6 +164,7 @@ public:
     friend class ModeLoiterAltQLand;
 
     friend class UBase;
+    friend class UserUartFWD;
 
     Plane(void);
 
@@ -1219,6 +1220,8 @@ private:
     UBase ubase;
     void user_1Hz();
     void user_50Hz();
+
+    UserUartFWD useruartfwd{AP_SerialManager::SerialProtocol_Uart_Forward};
 
 public:
     void failsafe_check(void);

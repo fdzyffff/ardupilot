@@ -67,6 +67,8 @@
 
 #include "mode.h"
 
+#include "UserUartFWD.h"
+
 class Rover : public AP_Vehicle {
 public:
     friend class GCS_MAVLINK_Rover;
@@ -98,6 +100,8 @@ public:
     friend class RC_Channels_Rover;
 
     friend class Sailboat;
+
+    friend class UserUartFWD;
 
     Rover(void);
 
@@ -394,6 +398,7 @@ private:
     static_assert(_failsafe_priorities[ARRAY_SIZE(_failsafe_priorities) - 1] == -1,
                   "_failsafe_priorities is missing the sentinel");
 
+    UserUartFWD useruartfwd{AP_SerialManager::SerialProtocol_Uart_Forward};
 
 public:
     void failsafe_check();
