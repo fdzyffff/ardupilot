@@ -399,6 +399,7 @@ void GCS_MAVLINK_Rover::packetReceived(const mavlink_status_t &status, const mav
 {
     // pass message to follow library
     rover.g2.follow.handle_msg(msg);
+    rover.useruartfwd.handle_msg(msg);
     GCS_MAVLINK::packetReceived(status, msg);
 }
 
@@ -533,7 +534,7 @@ static const ap_message STREAM_EXTENDED_STATUS_msgs[] = {
 };
 static const ap_message STREAM_POSITION_msgs[] = {
     MSG_LOCATION,
-    MSG_LOCAL_POSITION
+    MSG_LOCAL_POSITION,
 };
 static const ap_message STREAM_RAW_CONTROLLER_msgs[] = {
     MSG_SERVO_OUT,
@@ -718,7 +719,13 @@ MAV_RESULT GCS_MAVLINK_Rover::handle_command_long_packet(const mavlink_command_l
                                               static_cast<uint8_t>(packet.param2),
                                               static_cast<int16_t>(packet.param3),
                                               packet.param4);
-
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    case MAV_CMD_USER_1: {
+        if ((int16_t)packet.param1 == 1) {
+            rover.useruartfwd.set_target_sysid((int16_t)packet.param2);
+        }
+        return MAV_RESULT_ACCEPTED;
+    }
     default:
         return GCS_MAVLINK::handle_command_long_packet(packet);
     }

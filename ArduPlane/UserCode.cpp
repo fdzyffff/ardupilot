@@ -3,6 +3,7 @@
 
 void Plane::user_50Hz() {
     ubase.update();
+    useruartfwd.update();
 }
 
 void Plane::user_1Hz() {

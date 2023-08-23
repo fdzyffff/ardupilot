@@ -6,7 +6,8 @@
 
 #include "ap_version.h"
 
-#define THISFIRMWARE "ArduRover V4.3.0-beta3"
+// #define THISFIRMWARE "ArduRover V4.3.0-beta3"
+#define THISFIRMWARE "[AR430]-v0-20230823"
 
 // the following line is parsed by the autotest scripts
 #define FIRMWARE_VERSION 4,3,0,FIRMWARE_VERSION_TYPE_BETA+3

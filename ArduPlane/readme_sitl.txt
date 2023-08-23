@@ -15,4 +15,4 @@ cd /mnt/d/git_code/ArduPilot/Plane-4.3.1-movablelanding/ardupilot/Rover/
 
 OR
 
-/mnt/d/git_code/ArduPilot/Plane-4.3.1-movablelanding/ardupilot/build/sitl/bin/ardurover -S --model rover --speedup 1 --slave 0 --uart0=tcp:5780 --uartC=uart:/dev/ttyS61:115200 --defaults ../Tools/autotest/default_params/rover.parm -I2
+/mnt/d/git_code/ArduPilot/Plane-4.3.1-movablelanding/ardupilot/build/sitl/bin/ardurover -S --model rover --speedup 1 --slave 0 --serial0=tcp:5780:nowait --uartC=uart:/dev/ttyS61:115200 --defaults ../Tools/autotest/default_params/rover.parm -I 2
