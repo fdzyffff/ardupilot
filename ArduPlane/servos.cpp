@@ -816,6 +816,7 @@ void Plane::force_flare(void)
 */
 void Plane::set_servos(void)
 {
+    user_second_thr.update();
     // start with output corked. the cork is released when we run
     // servos_output(), which is run from all code paths in this
     // function

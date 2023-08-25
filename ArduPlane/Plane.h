@@ -112,6 +112,7 @@
 #endif
 #include "AP_Arming.h"
 
+#include "User_second_thr.h"
 /*
   main APM:Plane class
  */
@@ -161,6 +162,7 @@ public:
     friend class ModeThermal;
     friend class ModeLoiterAltQLand;
 
+    friend class User_second_thr;
     Plane(void);
 
 private:
@@ -1213,6 +1215,7 @@ private:
     // last target alt we passed to tecs
     int32_t tecs_target_alt_cm;
 
+    User_second_thr user_second_thr;
 public:
     void failsafe_check(void);
 #if AP_SCRIPTING_ENABLED
