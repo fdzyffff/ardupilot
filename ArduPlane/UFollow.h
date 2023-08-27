@@ -1,4 +1,5 @@
 #pragma once
+#include "UGroup.h"
 
 class UFollow {
 
@@ -17,6 +18,7 @@ public:
     void print();
 
     int16_t _leader_id;
+    UGroup ugroup;
 private:
 
 	bool _active;

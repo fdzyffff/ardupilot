@@ -53,6 +53,7 @@ public:
 #if HAL_QUADPLANE_ENABLED
         LOITER_ALT_QLAND = 25,
 #endif
+        ATTACK        = 40,
     };
 
     // Constructor
@@ -445,7 +446,9 @@ public:
     bool get_target_heading_cd(int32_t &target_heading) const;
 
     bool does_auto_throttle() const override { return true; }
-
+    bool get_target_heading_cd(int32_t &target_heading);
+    bool change_target_heading_cd(int32_t delta_cd);
+    bool change_target_altitude_cm(int32_t delta_cm);
 protected:
 
     bool _enter() override;
@@ -728,3 +731,19 @@ protected:
 };
 
 #endif
+
+class ModeAttack : public Mode
+{
+public:
+
+    Mode::Number mode_number() const override { return Mode::Number::ATTACK; }
+    const char *name() const override { return "ATTACK"; }
+    const char *name4() const override { return "ATTACK"; }
+
+    // methods that affect movement of the vehicle in this mode
+    void update() override;
+
+protected:
+
+    bool _enter() override;
+};

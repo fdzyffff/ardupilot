@@ -112,6 +112,9 @@
 #endif
 #include "AP_Arming.h"
 #include "UFollow.h"
+#include "UAttack.h"
+#include "UMission.h"
+#include "UGroup.h"
 
 /*
   main APM:Plane class
@@ -162,7 +165,12 @@ public:
     friend class ModeThermal;
     friend class ModeLoiterAltQLand;
 
+    friend class ModeAttack;
     friend class UFollow;
+    friend class UAttack;
+    friend class UCam_DYT;
+    friend class UMission;
+    friend class UGroup;
     Plane(void);
 
 private:
@@ -285,6 +293,7 @@ private:
 #if HAL_SOARING_ENABLED
     ModeThermal mode_thermal;
 #endif
+    ModeAttack mode_attack;
 
     // This is the state of the flight control system
     // There are multiple states defined such as MANUAL, FBW-A, AUTO
@@ -863,6 +872,7 @@ private:
     void stabilize_yaw(float speed_scaler);
     void stabilize_training(float speed_scaler);
     void stabilize_acro(float speed_scaler);
+    void stabilize_attack(float speed_scaler);
     void calc_nav_yaw_coordinated(float speed_scaler);
     void calc_nav_yaw_course(void);
     void calc_nav_yaw_ground(void);
@@ -1215,9 +1225,11 @@ private:
     // last target alt we passed to tecs
     int32_t tecs_target_alt_cm;
 
-    void userhook_50Hz();
+    void userhook_100Hz();
     void userhook_1Hz();
     UFollow ufollow;
+    UAttack uattack;
+    UMission umission;
 
 public:
     void failsafe_check(void);

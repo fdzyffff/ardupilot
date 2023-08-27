@@ -60,7 +60,7 @@ bool ModeGuided::handle_guided_request(Location target_loc)
 
 void ModeGuided::update_follow()
 {
-    if (!plane.ufollow.is_active() || !plane.umission.in_group()) {
+    if (!plane.ufollow.is_active() || !plane.umission.group_state.in_group) {
         // plane.prev_WP_loc = plane.current_loc;
         return;
     }

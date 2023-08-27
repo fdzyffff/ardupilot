@@ -1234,7 +1234,12 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
 
     AP_GROUPINFO("UFOLO_KP", 34, ParametersG2, follow_speed_ratio, 0.1f),
     AP_GROUPINFO("UFOLO_LIM", 35, ParametersG2, follow_speed_range, 10.0f),
-    
+    AP_GROUPINFO("UATK_K", 36, ParametersG2, user_attack_k, 2.0f),
+    AP_GROUPINFO("UATK_THR", 37, ParametersG2, user_attack_throttle, 75.0f),
+    AP_GROUPINFO("UPRINT", 38, ParametersG2, user_print, 0),
+    AP_GROUPINFO("UGRP_ID", 39, ParametersG2, user_group_id, 1),
+    AP_GROUPINFO("UGRP_DIST", 40, ParametersG2, group_distance, 100.f),
+
     AP_GROUPEND
 };
 

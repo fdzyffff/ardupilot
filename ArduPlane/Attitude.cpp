@@ -472,6 +472,28 @@ void Plane::stabilize_acro(float speed_scaler)
 }
 
 /*
+  this is the ATTACK mode function, it does stabilization in roll axes while rate control in pitch and yaw
+ */
+void Plane::stabilize_attack(float speed_scaler)
+{
+    int32_t roll_angle_cd = 0;
+    float pitch_rate = 0.0f;
+    float yaw_rate = 0.0f;
+    if (uattack.is_active()) {
+        roll_angle_cd = (int32_t)(uattack.get_target_roll_angle() * 100.f);
+        pitch_rate = uattack.get_target_pitch_rate();
+        yaw_rate = uattack.get_target_yaw_rate();
+    }
+
+    SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, rollController.get_servo_out(roll_angle_cd, speed_scaler, false, false));
+    SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, pitchController.get_rate_out(pitch_rate,  speed_scaler));
+    if (yawController.rate_control_enabled()){
+        steering_control.steering = steering_control.rudder = yawController.get_rate_out(yaw_rate,  speed_scaler, false);
+    }
+
+}
+
+/*
   main stabilization function for all 3 axes
  */
 void Plane::stabilize()
@@ -525,6 +547,8 @@ void Plane::stabilize()
 #endif
     } else if (control_mode == &mode_acro) {
         stabilize_acro(speed_scaler);
+    } else if (control_mode == &mode_attack) {
+        stabilize_attack(speed_scaler);
 #if HAL_QUADPLANE_ENABLED
     } else if (control_mode->is_vtol_mode() && !quadplane.tailsitter.in_vtol_transition(now)) {
         // run controlers specific to this mode

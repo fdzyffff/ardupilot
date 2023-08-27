@@ -4,20 +4,21 @@
 //
 
 UCam_DYT::UCam_DYT(UAttack &frotend_in, AP_HAL::UARTDriver* port_in):
-    UCam_Port(frotend_in)
+    UCam_base(frotend_in)
 {
-    FD1_uart_ptr = new FD1_uart_msg(port_in);
-    FD1_uart_ptr->FD1_msg_DYT().set_enable();
+    FD1_uart_ptr = new FD1_UART(port_in);
+    FD1_uart_ptr->get_msg_DYT().set_enable();
     _yaw_rate_filter.set_cutoff_frequency(100.f, 20.f);
+    return;
 }
 
 void UCam_DYT::update() {
     static uint32_t last_update_ms = millis();
     uint32_t tnow = millis();
-    _yaw_rate_filter.apply(plane.ahrs.yaw_rate);
+    _yaw_rate_filter.apply(degrees(plane.ahrs.get_yaw_rate_earth()));
 
     FD1_uart_ptr->read();
-    FD1_msg_DYT &tmp_msg = FD1_uart_ptr->FD1_msg_DYT();
+    FD1_msg_DYT &tmp_msg = FD1_uart_ptr->get_msg_DYT();
     if (tmp_msg._msg_1.updated) {
         _valid = true;
         _last_ms = millis();
@@ -46,13 +47,7 @@ bool UCam_DYT::is_valid() {
 }
 
 void UCam_DYT::handle_info() {
-    _frotend.display_info_p1 = _left;
-    _frotend.display_info_p2 = _right;
-    _frotend.display_info_p3 = _top;
-    _frotend.display_info_p4 = _bottom;
-    _frotend.display_info_new = true;
-    _frotend.display_info_count++;
-
+    // FD1_msg_DYT &tmp_msg = FD1_uart_ptr->get_msg_DYT();
     float p1 = 0.0f; // x-axis
     float p2 = 0.0f; // y-axis
 
@@ -60,7 +55,7 @@ void UCam_DYT::handle_info() {
     _frotend.raw_info.y = p2;
 
     Matrix3f tmp_m;
-    tmp_m.from_euler(plane.ahrs_view->roll, plane.ahrs_view->pitch, 0.0f);
+    tmp_m.from_euler(plane.ahrs.roll, plane.ahrs.pitch, 0.0f);
 
     float dist_z = -tanf(p1);
     float dist_y = tanf(p2);
@@ -77,9 +72,12 @@ void UCam_DYT::handle_info() {
     _frotend.correct_info.x = _yaw_rate_filter.get() + _yaw_filter.slope()*1000.f;
     _frotend.correct_info.y = _pitch_filter.slope()*1000.f;
 
-    _frotend.udpate_value();
-}
+    _frotend.udpate_control_value();
 
-void UCam_DYT::do_cmd() {
-    ;
+    _frotend.display_info_p1 = p1;
+    _frotend.display_info_p2 = p2;
+    _frotend.display_info_p3 = 0.0f;
+    _frotend.display_info_p4 = 0.0f;
+    _frotend.display_info_new = true;
+    _frotend.display_info_count++;
 }

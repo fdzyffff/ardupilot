@@ -1,7 +1,7 @@
 #include "Plane.h"
 
-Vector3f my_group_t::get_offset(int16_t this_id, int16_t sender_id, float dist) {
-    int16_t group_id = plane.g2.group_id.get();
+Vector3f UGroup::get_offset(int16_t this_id, int16_t sender_id, float dist) {
+    int16_t group_id = plane.g2.user_group_id.get();
     switch (group_id) {
         default:
         case 1:

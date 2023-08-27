@@ -14,7 +14,7 @@ void UMission::update() {
     update_group();
 }
 
-void UMission::handle_info(const mavlink_command_long_t* packet) {
+void UMission::handle_msg(const mavlink_message_t &msg) {
     if (msg.msgid == MAVLINK_MSG_ID_COMMAND_INT) {
         // decode packet
         mavlink_command_long_t packet;
@@ -44,8 +44,8 @@ void UMission::handle_info(const mavlink_command_long_t* packet) {
 }
 
 void UMission::do_offboard_cruise(float p2) {
-    if (control_mode != &mode_cruise) {
-        plane.set_mode(mode_cruise, ModeReason::GCS_COMMAND);
+    if (plane.control_mode != &plane.mode_cruise) {
+        plane.set_mode(plane.mode_cruise, ModeReason::GCS_COMMAND);
     }
 
     int16_t option = p2;
@@ -72,16 +72,16 @@ void UMission::do_group() {
     if (group_state.in_group) {
         if (_role == Mission_Role::Leader) {
             if (group_state.type == 1) {
-                set_mode(mode_cruise);
+                set_mode(plane.mode_cruise);
             } else {
-                set_mode(mode_auto);
+                set_mode(plane.mode_auto);
             }
         } else {
-            set_mode(mode_guided);
+            set_mode(plane.mode_guided);
         }
         gcs().send_text(MAV_SEVERITY_INFO, "group engaged.");
     } else {
-        plane.set_mode(mode_auto, ModeReason::GCS_COMMAND);
+        plane.set_mode(plane.mode_auto, ModeReason::GCS_COMMAND);
         gcs().send_text(MAV_SEVERITY_INFO, "group exit.");
     }
 }
@@ -113,16 +113,16 @@ void UMission::update_group() {
     // failsafe check in case no leader position message.
     if (_role == Mission_Role::Follower) {
         if (!plane.ufollow.is_active()) {
-            set_mode(mode_auto);
+            set_mode(plane.mode_auto);
         } else {
-            set_mode(mode_guided);
+            set_mode(plane.mode_guided);
         }
     }
 }
 
 void UMission::set_mode(Mode& new_mode) {
     if (plane.set_mode(new_mode, ModeReason::GCS_COMMAND)) {
-        group_state.mode = new_mode;
+        group_state.mode = &new_mode;
     } else {
         group_state.in_group = false;
         gcs().send_text(MAV_SEVERITY_INFO, "Mode change failed, group exit.");

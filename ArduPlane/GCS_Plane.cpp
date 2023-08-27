@@ -35,6 +35,7 @@ void GCS_Plane::update_vehicle_sensor_status_flags(void)
 #if HAL_QUADPLANE_ENABLED
     case Mode::Number::QACRO:
 #endif
+    case Mode::Number::ATTACK:
         rate_controlled = true;
         break;
 

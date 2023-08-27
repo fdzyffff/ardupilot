@@ -1,7 +1,7 @@
 #include "Plane.h"
 //#include "UCam.h"
 
-UAttack::UCam()
+UAttack::UAttack()
 {
     ;
 }
@@ -10,7 +10,6 @@ UAttack::UCam()
 void UAttack::init()
 {
     _active = false;
-    _cam_state = 0;
     raw_info.x = 0.0f;
     raw_info.y = 0.0f;
     correct_info.x = 0.0f;
@@ -21,24 +20,20 @@ void UAttack::init()
     display_info_p3 = 0.0f;
     display_info_p4 = 0.0f;
     display_info_count = 0;
-    _target_pitch_rate_cds = 0.0f;
-    _target_yaw_rate_cds = 0.0f;
-    _target_roll_angle_cd = 0.0f;
-    _port = NULL;
+    _target_pitch_rate = 0.0f;
+    _target_yaw_rate = 0.0f;
+    _target_roll_angle = 0.0f;
+    _cam_port_type = 0;
+    _UCam_ptr = nullptr;
     init_cam_port();
 }
 
 
 
-void UAttack::udpate_value(){
-    // if (copter.g2.user_parameters.cam_pixel_x.get() < 50.f) {copter.g2.user_parameters.cam_pixel_x.set_and_save(50.f);}
-    // if (copter.g2.user_parameters.cam_pixel_y.get() < 50.f) {copter.g2.user_parameters.cam_pixel_y.set_and_save(50.f);}
-    // if (copter.g2.user_parameters.cam_angle_x.get() < 30.f) {copter.g2.user_parameters.cam_angle_x.set_and_save(30.f);}
-    // if (copter.g2.user_parameters.cam_angle_y.get() < 30.f) {copter.g2.user_parameters.cam_angle_y.set_and_save(30.f);}
-    // if (copter.g2.user_parameters.fly_yaw_tc.get() < 0.1f) {copter.g2.user_parameters.fly_yaw_tc.set_and_save(0.1f);}
-    update_target_pitch_rate_cds();
-    update_target_yaw_rate_cd();
-    update_target_roll_angle_cd();
+void UAttack::udpate_control_value(){
+    update_target_pitch_rate();
+    update_target_yaw_rate();
+    update_target_roll_angle();
 }
 
 const Vector2f& UAttack::get_raw_info() {
@@ -52,14 +47,18 @@ const Vector2f& UAttack::get_correct_info() {
 
 void UAttack::init_cam_port()
 {
+    if (_cam_port_type != 0) {
+        gcs().send_text(MAV_SEVERITY_WARNING, "CAM already init");
+        return;
+    }
     const AP_SerialManager &serial_manager = AP::serialmanager();
 
     // check for protocol configured for a serial port - only the first serial port with one of these protocols will then run (cannot have FrSky on multiple serial ports)
-    _cam_port = serial_manager.find_serial(AP_SerialManager::SerialProtocol_CamMavlink, 0);
+    _cam_port = serial_manager.find_serial(AP_SerialManager::SerialProtocol_CamDYT, 0);
     if (_cam_port != nullptr) {
-        gcs().send_text(MAV_SEVERITY_WARNING, "CAM Uart init");
-        _cam_port = new UCam_Port_Mavlink(*this, _cam_port);
-        _port_type = 1;
+        gcs().send_text(MAV_SEVERITY_WARNING, "CAM DYT init");
+        _UCam_ptr = new UCam_DYT(*this, _cam_port);
+        _cam_port_type = 1;
         return;
     }
 
@@ -67,19 +66,20 @@ void UAttack::init_cam_port()
     gcs().send_text(MAV_SEVERITY_WARNING, "CAM init FAILED");
 }
 
+// called at 100 Hz
 void UAttack::cam_update()
 {
     if (get_port() == NULL) {return;}
-    if (_Ucam_port == nullptr) {return;}
-    _Ucam_port->update();
+    if (_UCam_ptr == nullptr) {return;}
+    _UCam_ptr->update();
 }
 
 
 void UAttack::do_cmd(float p1, float p2, float p3, float p4)
 {
     if (get_port() == NULL) {return;}
-    if (_Ucam_port == nullptr) {return;}
-    _Ucam_port->do_cmd(p1, p2, p3, p4);
+    if (_UCam_ptr == nullptr) {return;}
+    _UCam_ptr->do_cmd();
 }
 
 
@@ -91,10 +91,10 @@ void UAttack::update()
 }
 
 void UAttack::time_out_check() {
-    if (!_UCam_ptr->valid()) { 
-        _target_pitch_rate_cds = 0.0f;
-        _target_roll_angle_cd = 0.0f;
-        _target_yaw_rate_cds = 0.0f;
+    if (!_UCam_ptr->is_valid()) { 
+        _target_pitch_rate = 0.0f;
+        _target_roll_angle = 0.0f;
+        _target_yaw_rate = 0.0f;
         _active = false;
         return;
     } else {
@@ -102,15 +102,20 @@ void UAttack::time_out_check() {
     }
 }
 
-void UAttack::update_target_pitch_rate_cds() {
-    _target_pitch_rate_cds = 1.0f * correct_info.y;
+// degree/second
+void UAttack::update_target_pitch_rate() {
+    float k = plane.g2.user_attack_k.get();
+    _target_pitch_rate = k * correct_info.y;
     // gcs().send_text(MAV_SEVERITY_INFO, "%f", _target_pitch_rate_cds);
 }
 
-void UAttack::update_target_roll_angle_cd() {
-    _target_roll_angle_cd = 0.0f;
+// degree
+void UAttack::update_target_roll_angle() {
+    _target_roll_angle = constrain_int16(0.5f * get_target_yaw_rate(), -plane.roll_limit_cd/100, plane.roll_limit_cd/100);
 }
 
-void UAttack::update_target_yaw_rate_cd() {
-    _target_yaw_rate_cds = 1.0f * correct_info.x;
+// degree/second
+void UAttack::update_target_yaw_rate() {
+    float k = plane.g2.user_attack_k.get();
+    _target_yaw_rate = k * correct_info.x;
 }

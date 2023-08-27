@@ -30,6 +30,7 @@ MAV_MODE GCS_MAVLINK_Plane::base_mode() const
     case Mode::Number::MANUAL:
     case Mode::Number::TRAINING:
     case Mode::Number::ACRO:
+    case Mode::Number::ATTACK:
 #if HAL_QUADPLANE_ENABLED
     case Mode::Number::QACRO:
         _base_mode = MAV_MODE_FLAG_MANUAL_INPUT_ENABLED;

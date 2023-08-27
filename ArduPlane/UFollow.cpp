@@ -53,7 +53,7 @@ void UFollow::update()
 
 void UFollow::get_target_pos(Location &loc)
 {
-    Vector3f offset_position = plane.ugroup.get_offset(plane.g.sysid_this_mav, _leader_id, plane.g2.group_distance);
+    Vector3f offset_position = ugroup.get_offset(plane.g.sysid_this_mav, _leader_id, plane.g2.group_distance);
     Matrix3f tmp_m;
     tmp_m.from_euler(0.0f, 0.0f, radians(_target_bearing));
     offset_position = tmp_m*offset_position;

@@ -567,6 +567,12 @@ public:
 
     AP_Float follow_speed_ratio;
     AP_Float follow_speed_range;
+
+    AP_Float user_attack_k;
+    AP_Float user_attack_throttle;
+    AP_Int16 user_print;
+    AP_Int8 user_group_id;
+    AP_Float group_distance;
 };
 
 extern const AP_Param::Info var_info[];

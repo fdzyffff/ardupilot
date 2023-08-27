@@ -14,7 +14,7 @@ public:
         init();
     }
 
-    FD1_UART(AP_HAL::UARTDriver *port_in):
+    FD1_UART(AP_HAL::UARTDriver *port_in)
     {
         _port = port_in;
         _initialized = true;
