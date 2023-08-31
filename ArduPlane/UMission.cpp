@@ -15,7 +15,7 @@ void UMission::update() {
 }
 
 void UMission::handle_msg(const mavlink_message_t &msg) {
-    if (msg.msgid == MAVLINK_MSG_ID_COMMAND_INT) {
+    if (msg.msgid == MAVLINK_MSG_ID_COMMAND_LONG) {
         // decode packet
         mavlink_command_long_t packet;
         mavlink_msg_command_long_decode(&msg, &packet);

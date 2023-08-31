@@ -1,7 +1,10 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_SerialManager/AP_SerialManager.h>
 
-#include "FD1_msg_DYT.h"
+#include "FD1_msg_DYTTELEM.h"
+#include "FD1_msg_DYTTARGET.h"
+#include "FD1_msg_APM2DYTCONTROL.h"
+#include "FD1_msg_APM2DYTTELEM.h"
 
 class FD1_UART {
 public:
@@ -28,11 +31,15 @@ public:
     bool init();
     bool initialized() {return _initialized;}
     void read();
+    void read(uint8_t temp);
     void write();
 
     uint32_t port_avaliable();
 
-    FD1_msg_DYT& get_msg_DYT()   { return _msg_DYT; }
+    FD1_msg_DYTTELEM& get_msg_DYTTELEM()   { return _msg_DYTTELEM; }
+    FD1_msg_DYTTARGET& get_msg_DYTTARGET()   { return _msg_DYTTARGET; }
+    FD1_msg_APM2DYTCONTROL& get_msg_APM2DYTCONTROL()   { return _msg_APM2DYTCONTROL; }
+    FD1_msg_APM2DYTTELEM& get_msg_APM2DYTTELEM()   { return _msg_APM2DYTTELEM; }
 
 private:
 
@@ -40,5 +47,8 @@ private:
     AP_SerialManager::SerialProtocol _protocol; // protocol used - detected using SerialManager's SERIAL#_PROTOCOL parameter
     bool _initialized;
 
-    FD1_msg_DYT _msg_DYT;
+    FD1_msg_DYTTELEM _msg_DYTTELEM;
+    FD1_msg_DYTTARGET _msg_DYTTARGET;
+    FD1_msg_APM2DYTCONTROL _msg_APM2DYTCONTROL;
+    FD1_msg_APM2DYTTELEM _msg_APM2DYTTELEM;
 };

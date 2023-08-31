@@ -1227,6 +1227,7 @@ private:
 
     void userhook_100Hz();
     void userhook_1Hz();
+    void get_Time(uint8_t &year_out, uint8_t &month_out, uint8_t &day_out, uint8_t &hour_out, uint8_t &minute_out, uint8_t &second_out, uint8_t &second_10ms_out);
     UFollow ufollow;
     UAttack uattack;
     UMission umission;

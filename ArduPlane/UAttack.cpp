@@ -105,7 +105,7 @@ void UAttack::time_out_check() {
 // degree/second
 void UAttack::update_target_pitch_rate() {
     float k = plane.g2.user_attack_k.get();
-    _target_pitch_rate = k * correct_info.y;
+    _target_pitch_rate = k * correct_info.y; // degrees/s
     // gcs().send_text(MAV_SEVERITY_INFO, "%f", _target_pitch_rate_cds);
 }
 

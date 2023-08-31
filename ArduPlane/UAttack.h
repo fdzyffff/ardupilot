@@ -1,5 +1,6 @@
 #pragma once
 
+#include <AP_HAL/AP_HAL.h>
 #include "FD1_UART/FD1_UART.h"
 class UCam_base;
 
@@ -62,6 +63,7 @@ public:
     virtual void update() = 0;
     virtual void do_cmd() = 0;
     virtual void handle_info() = 0;
+    virtual void handle_msg(const mavlink_message_t &msg) = 0;
     UAttack &_frotend;
     bool _valid;
 
@@ -76,7 +78,10 @@ public:
     void update() override;
     void do_cmd() override;
     void handle_info() override;
+    void handle_msg(const mavlink_message_t &msg) override;
 
+    void fill_state_msg();
+    void foward_DYT_mavlink();
 private:
     FD1_UART* FD1_uart_ptr;
     uint32_t _last_ms;

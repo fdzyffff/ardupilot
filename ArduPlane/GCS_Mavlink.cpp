@@ -720,6 +720,10 @@ void GCS_MAVLINK_Plane::packetReceived(const mavlink_status_t &status,
     plane.g2.follow.handle_msg(msg);
 #endif
     plane.ufollow.handle_my_follow_msg(msg);
+    if (plane.uattack._cam_port_type == 1) {
+        plane.uattack._UCam_ptr->handle_msg(msg);
+    }
+    plane.umission.handle_msg(msg);
     GCS_MAVLINK::packetReceived(status, msg);
 }
 
@@ -1172,7 +1176,6 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_long_packet(const mavlink_command_l
         }
         return MAV_RESULT_FAILED;
 #endif
-        
     default:
         return GCS_MAVLINK::handle_command_long_packet(packet);
     }
