@@ -28,14 +28,15 @@ using namespace SITL;
 Plane::Plane(const char *frame_str) :
     Aircraft(frame_str)
 {
-    mass = 2.0f;
+    mass = 190.0f;//2.0f;对应羚控飞机
 
     /*
        scaling from motor power to Newtons. Allows the plane to hold
        vertically against gravity when the motor is at hover_throttle
     */
-    thrust_scale = (mass * GRAVITY_MSS) / hover_throttle;
-    frame_height = 0.1f;
+    thrust_scale = (80 * GRAVITY_MSS) / hover_throttle;//地面推力/悬停油门，thrust现在单独计算
+    //thrust_scale = (mass * GRAVITY_MSS) / hover_throttle;// 重力/悬停油门
+    frame_height = 1.0f;//0.1f;机体高度
 
     ground_behavior = GROUND_BEHAVIOR_FWD_ONLY;
     lock_step_scheduled = true;
@@ -155,6 +156,11 @@ Vector3f Plane::getTorque(float inputAileron, float inputElevator, float inputRu
     const float s = coefficient.s;
     const float c = coefficient.c;
     const float b = coefficient.b;
+
+    const float Ixx = coefficient.Ixx;//增加转动惯量的影响
+    const float Iyy = coefficient.Iyy;
+    const float Izz = coefficient.Izz;
+
     const float c_l_0 = coefficient.c_l_0;
     const float c_l_b = coefficient.c_l_b;
     const float c_l_p = coefficient.c_l_p;
@@ -176,24 +182,24 @@ Vector3f Plane::getTorque(float inputAileron, float inputElevator, float inputRu
     float rho = air_density;
 
 	//read angular rates
-	double p = gyro.x;
-	double q = gyro.y;
-	double r = gyro.z;
+    double p = gyro.x;
+    double q = gyro.y;
+    double r = gyro.z;
 
-	double qbar = 1.0/2.0*rho*pow(effective_airspeed,2)*s; //Calculate dynamic pressure
-	double la, na, ma;
-	if (is_zero(effective_airspeed))
-	{
-		la = 0;
-		ma = 0;
-		na = 0;
-	}
-	else
-	{
-		la = qbar*b*(c_l_0 + c_l_b*beta + c_l_p*b*p/(2*effective_airspeed) + c_l_r*b*r/(2*effective_airspeed) + c_l_deltaa*inputAileron + c_l_deltar*inputRudder);
-		ma = qbar*c*(c_m_0 + c_m_a*alpha + c_m_q*c*q/(2*effective_airspeed) + c_m_deltae*inputElevator);
-		na = qbar*b*(c_n_0 + c_n_b*beta + c_n_p*b*p/(2*effective_airspeed) + c_n_r*b*r/(2*effective_airspeed) + c_n_deltaa*inputAileron + c_n_deltar*inputRudder);
-	}
+    double qbar = 1.0/2.0*rho*pow(effective_airspeed,2)*s; //Calculate dynamic pressure，计算飞机当前的动压
+    double la, na, ma;
+    if (is_zero(effective_airspeed))
+    {
+        la = 0;
+        ma = 0;
+        na = 0;
+    }
+    else
+    {
+        la = qbar*b*(c_l_0 + c_l_b*beta + c_l_p*b*p/(2*effective_airspeed) + c_l_r*b*r/(2*effective_airspeed) + c_l_deltaa*inputAileron + c_l_deltar*inputRudder);//计算滚转力矩
+        ma = qbar*c*(c_m_0 + c_m_a*alpha + c_m_q*c*q/(2*effective_airspeed) + c_m_deltae*inputElevator);//计算俯仰力矩
+        na = qbar*b*(c_n_0 + c_n_b*beta + c_n_p*b*p/(2*effective_airspeed) + c_n_r*b*r/(2*effective_airspeed) + c_n_deltaa*inputAileron + c_n_deltar*inputRudder);//计算偏航力矩
+    }
 
 
 	// Add torque to force misalignment with CG
@@ -201,6 +207,10 @@ Vector3f Plane::getTorque(float inputAileron, float inputElevator, float inputRu
 	la +=  CGOffset.y * force.z - CGOffset.z * force.y;
 	ma += -CGOffset.x * force.z + CGOffset.z * force.x;
 	na += -CGOffset.y * force.x + CGOffset.x * force.y;
+
+    la /= Ixx;
+    ma /= Iyy;
+    na /= Izz;
 
 	return Vector3f(la, ma, na);
 }

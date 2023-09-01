@@ -194,6 +194,7 @@ void Plane::startup_ground(void)
     // mid-flight, so set the serial ports non-blocking once we are
     // ready to fly
     serial_manager.set_blocking_writes_all(false);
+    usersimmsg.init();
 }
 
 
