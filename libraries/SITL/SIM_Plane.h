@@ -46,49 +46,53 @@ protected:
     float beta;
 
     struct {
-        // from last_letter skywalker_2013/aerodynamics.yaml
-        // thanks to Georacer!
-        float s = 0.45;
-        float b = 1.88;
-        float c = 0.24;
-        float c_lift_0 = 0.56;
-        float c_lift_deltae = 0;
-        float c_lift_a = 6.9;
-        float c_lift_q = 0;
-        float mcoeff = 50;
-        float oswald = 0.9;
-        float alpha_stall = 0.4712;
-        float c_drag_q = 0;
-        float c_drag_deltae = 0.0;
-        float c_drag_p = 0.1;
+        // 20230821-羚控气动数据
+
+        float s = 4.6;//0.45;机翼面积
+        float b = 7.2;//1.88;翼展
+        float c = 0.34;//0.24;平均气动弦
+        float Ixx = 147;//x方向转动惯量kgm2
+        float Iyy = 142;//y方向转动惯量
+        float Izz = 264;//z方向转动惯量
+        float c_lift_0 = 0.1053;//0.56;0度迎角下的升力系数
+        float c_lift_deltae = 0.4698;//0;//升降舵对升力系数的影响,每弧度舵偏角
+        float c_lift_a = 4.76;//6.9;升力线斜率，弧度
+        float c_lift_q = 0;//动导数
+        float mcoeff = 50;//分离因子？
+        float oswald = 0.8;//0.9;//和展弦比相关，展弦比2.64
+        float alpha_stall = 0.2443;//0.4712;失速迎角14度
+        float c_drag_q = 0;//动导数
+        float c_drag_deltae = 0.0;//升降舵对阻力系数的影响
+        float c_drag_p = 0.038;//0.1;//零升阻力系数
         float c_y_0 = 0;
-        float c_y_b = -0.98;
-        float c_y_p = 0;
-        float c_y_r = 0;
-        float c_y_deltaa = 0;
-        float c_y_deltar = -0.2;
+        float c_y_b = -0.8366;//-0.98;侧力导数
+        float c_y_p = 0;//动导数
+        float c_y_r = 0;//动导数
+        float c_y_deltaa = 0;//副翼对侧力的影响
+        float c_y_deltar = -0.2;//方向舵对侧力的影响
         float c_l_0 = 0;
-        float c_l_p = -1.0;
-        float c_l_b = -0.12;
-        float c_l_r = 0.14;
-        float c_l_deltaa = 0.25;
-        float c_l_deltar = -0.037;
-        float c_m_0 = 0.045;
-        float c_m_a = -0.7;
-        float c_m_q = -20;
-        float c_m_deltae = 1.0;
+        float c_l_p = -0.265;//-1.0;//动导数
+        float c_l_b = -0.4;//-0.12;//侧滑对滚转力矩的影响
+        float c_l_r = 0.14;//偏航速度对滚转的影响，借鉴
+        float c_l_deltaa = 0.057;//0.25; 正负有待确认
+        float c_l_deltar = -0.037;//方向舵对滚转力矩影响
+        float c_m_0 = 0.1015;//0.045;//零迎角下的力矩系数
+        float c_m_a = -3.38;//-0.7;//静导数，纵向稳定性相关，弧度单位，接近中立稳定
+        float c_m_q = -20;//-20;动导数
+        float c_m_deltae = 1.169;//1.0;  每弧度单位(0.008/度),默认的1.0对应0.0174，正负？
         float c_n_0 = 0;
-        float c_n_b = 0.25;
-        float c_n_p = 0.022;
-        float c_n_r = -1;
-        float c_n_deltaa = 0.00;
-        float c_n_deltar = 0.1;
-        float deltaa_max = 0.3491;
-        float deltae_max = 0.3491;
-        float deltar_max = 0.3491;
+        float c_n_b = 0.23;// 0.25;//侧滑对偏航力矩的影响
+        float c_n_p = 0.022;//动导数，借鉴
+        float c_n_r = -0.058;//-1;动导数
+        float c_n_deltaa = 0.00;//副翼对偏航力矩的影响
+        float c_n_deltar = 0.023;//0.1; 0.0013*57.3,弧度，方向舵舵效
+        float deltaa_max = 0.3491;//最大20度
+        float deltae_max = 0.3491;//最大20度
+        float deltar_max = 0.3491;//最大20度
         // the X CoG offset should be -0.02, but that makes the plane too tail heavy
         // in manual flight. Adjusted to -0.15 gives reasonable flight
-        Vector3f CGOffset{-0.15, 0, -0.05};
+        //Vector3f CGOffset{-0.15, 0, -0.05};
+        Vector3f CGOffset{0, 0, -0.05};
     } coefficient;
 
     float thrust_scale;

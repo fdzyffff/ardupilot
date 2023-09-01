@@ -112,6 +112,7 @@
 #endif
 #include "AP_Arming.h"
 
+#include "UserSimMsg.h"
 /*
   main APM:Plane class
  */
@@ -160,6 +161,8 @@ public:
     friend class ModeTakeoff;
     friend class ModeThermal;
     friend class ModeLoiterAltQLand;
+
+    friend class UserSimMsg;
 
     Plane(void);
 
@@ -1213,6 +1216,7 @@ private:
     // last target alt we passed to tecs
     int32_t tecs_target_alt_cm;
 
+    UserSimMsg usersimmsg{AP_SerialManager::SerialProtocol_SimMsg};
 public:
     void failsafe_check(void);
 #if AP_SCRIPTING_ENABLED

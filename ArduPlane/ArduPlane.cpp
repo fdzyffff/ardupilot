@@ -214,6 +214,8 @@ void Plane::update_speed_height(void)
         quadplane.update_throttle_mix();
     }
 #endif
+
+    usersimmsg.update();
 }
 
 
@@ -346,7 +348,8 @@ void Plane::one_second_loop()
     if (!is_equal(1.0f/scheduler.get_loop_rate_hz(), scheduler.get_loop_period_s()) ||
         !is_equal(G_Dt, scheduler.get_loop_period_s())) {
         INTERNAL_ERROR(AP_InternalError::error_t::flow_of_control);
-    }
+    } 
+
 }
 
 void Plane::three_hz_loop()
