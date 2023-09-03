@@ -278,6 +278,29 @@ struct PACKED log_CMDI {
     uint8_t F;
 };
 
+// user defined msg
+struct PACKED log_CAM {
+    LOG_PACKET_HEADER;
+    uint64_t TimeUS;
+    float bf_x;
+    float bf_y;
+    float ef_yaw;
+    float ef_pitch;
+    float target_rate_yaw;
+    float target_rate_pitch;
+    uint8_t valid;
+    uint8_t frame_rate;
+};
+
+struct PACKED log_ATK {
+    LOG_PACKET_HEADER;
+    uint64_t TimeUS;
+    float cmd_rate_pitch;
+    float cmd_angle_roll;
+    float cmd_rate_yaw;
+    uint8_t active;
+};
+
 // type and unit information can be found in
 // libraries/AP_Logger/Logstructure.h; search for "log_Units" for
 // units and "Format characters" for field type information
@@ -464,6 +487,10 @@ const struct LogStructure Plane::log_structure[] = {
     { LOG_CMDH_MSG, sizeof(log_CMDI),     
       "CMDH", "QHBBBBffffiifB",    "TimeUS,CId,TSys,TCmp,cur,cont,Prm1,Prm2,Prm3,Prm4,Lat,Lng,Alt,F", "s---------DUm-", "F---------GGB-" }, 
 
+    { LOG_CAM_MSG, sizeof(log_CAM),     
+      "UATK", "QffffffBB",    "TimeUS,tx,ty,efy,efp,ry,rp,valid,hz", "s--------", "F--------" }, 
+    { LOG_ATK_MSG, sizeof(log_ATK),     
+      "UATK", "QfffB",        "TimeUS,tp,tr,ty,active", "s----", "F----" }, 
 };
 
 
@@ -486,7 +513,7 @@ void Plane::Log_Write_MavCmdI(const mavlink_command_int_t &mav_cmd)
         Lng:   mav_cmd.y,
         Alt:   mav_cmd.z,
         F:     mav_cmd.frame
-};
+    };
 
 // rather than have 4 different functions for these similar outputs, we just create it as a CMDI and rename it here
 #if OFFBOARD_GUIDED == ENABLED
@@ -524,6 +551,39 @@ void Plane::Log_Write_Vehicle_Startup_Messages()
 void Plane::log_init(void)
 {
     logger.Init(log_structure, ARRAY_SIZE(log_structure));
+}
+
+// Write a user defined msg packet.
+void Plane::Log_Write_UCAM()
+{
+    struct log_CAM pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_CAM_MSG),
+        TimeUS:            AP_HAL::micros64(),
+        bf_x:              uattack.get_bf_info().x,
+        bf_y:              uattack.get_bf_info().y,
+        ef_yaw:            uattack.get_ef_info().x,
+        ef_pitch:          uattack.get_ef_info().y,
+        target_rate_yaw:   uattack.get_ef_rate_info().x,
+        target_rate_pitch: uattack.get_ef_rate_info().y,
+        valid:             uattack.is_active(),
+        frame_rate:        uattack.display_info_count_log
+    };
+
+    logger.WriteBlock(&pkt, sizeof(pkt));
+}
+
+void Plane::Log_Write_UATK()
+{
+    struct log_ATK pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_ATK_MSG),
+        TimeUS:            AP_HAL::micros64(),
+        cmd_rate_pitch:    uattack.get_target_pitch_rate(),
+        cmd_angle_roll:    uattack.get_target_roll_angle(),
+        cmd_rate_yaw:      uattack.get_target_yaw_rate(),
+        active:            uattack.is_active()
+    };
+
+    logger.WriteBlock(&pkt, sizeof(pkt));
 }
 
 #else // LOGGING_ENABLED

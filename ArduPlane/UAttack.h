@@ -17,8 +17,9 @@ public:
     void init_cam_port();
     void update();
     void do_cmd(float p1, float p2, float p3, float p4);
-    const Vector2f& get_raw_info();
-    const Vector2f& get_correct_info();
+    const Vector2f& get_bf_info();
+    const Vector2f& get_ef_info();
+    const Vector2f& get_ef_rate_info();
 
     float get_target_pitch_rate() {return _target_pitch_rate;}
     float get_target_roll_angle() {return _target_roll_angle;}
@@ -31,10 +32,12 @@ public:
     float display_info_p2;
     float display_info_p3;
     float display_info_p4;
-    int16_t display_info_count;
+    uint8_t display_info_count;
+    uint8_t display_info_count_log;
 
-    Vector2f raw_info;
-    Vector2f correct_info;
+    Vector2f bf_info;
+    Vector2f ef_info;
+    Vector2f ef_rate_info;
     bool _active;
     AP_HAL::UARTDriver* _cam_port;
     float _target_pitch_rate;

@@ -103,6 +103,8 @@ enum log_messages {
     LOG_CMDA_MSG,
     LOG_CMDS_MSG,
     LOG_CMDH_MSG,
+    LOG_ATK_MSG,
+    LOG_CAM_MSG,
 };
 
 #define MASK_LOG_ATTITUDE_FAST          (1<<0)

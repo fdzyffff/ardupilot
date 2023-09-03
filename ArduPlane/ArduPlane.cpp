@@ -356,6 +356,8 @@ void Plane::three_hz_loop()
 #if AP_FENCE_ENABLED
     fence_check();
 #endif
+    Log_Write_UATK();
+    Log_Write_UCAM();
 }
 
 void Plane::compass_save()

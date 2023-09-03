@@ -116,8 +116,8 @@ void UCam_DYT::handle_info() {
     float p1 = (float)(tmp_msg._msg_1.content.msg.target_x) / 0.005f; // x-axis
     float p2 = (float)(tmp_msg._msg_1.content.msg.target_y) / 0.005f; // y-axis
 
-    _frotend.raw_info.x = p1;
-    _frotend.raw_info.y = p2;
+    _frotend.bf_info.x = p1; // degree
+    _frotend.bf_info.y = p2; // degree
 
     Matrix3f tmp_m;
     tmp_m.from_euler(plane.ahrs.roll, plane.ahrs.pitch, 0.0f);
@@ -131,18 +131,21 @@ void UCam_DYT::handle_info() {
     float angle_pitch = wrap_180(degrees(atan2f(-tmp_output.z, tmp_output.x)));
     float angle_yaw = wrap_180(degrees(atan2f(tmp_output.y, tmp_output.x)));
 
-    _pitch_filter.update(angle_pitch, millis());
-    _yaw_filter.update(angle_yaw, millis());
+    _frotend.ef_info.x = wrap_360(angle_yaw + degrees(plane.ahrs.yaw));
+    _frotend.ef_info.y = angle_pitch;
 
-    _frotend.correct_info.x = _yaw_rate_filter.get() + _yaw_filter.slope()*1000.f;
-    _frotend.correct_info.y = _pitch_filter.slope()*1000.f;
+    _yaw_filter.update(angle_yaw, millis());
+    _pitch_filter.update(angle_pitch, millis());
+
+    _frotend.ef_rate_info.x = _yaw_rate_filter.get() + _yaw_filter.slope()*1000.f;
+    _frotend.ef_rate_info.y = _pitch_filter.slope()*1000.f;
 
     _frotend.udpate_control_value();
 
-    _frotend.display_info_p1 = p1;
-    _frotend.display_info_p2 = p2;
-    _frotend.display_info_p3 = 0.0f;
-    _frotend.display_info_p4 = 0.0f;
+    _frotend.display_info_p1 = _frotend.bf_info.x;
+    _frotend.display_info_p2 = _frotend.bf_info.y;
+    _frotend.display_info_p3 = _frotend.ef_info.x;
+    _frotend.display_info_p4 = _frotend.ef_info.y;
     _frotend.display_info_new = true;
     _frotend.display_info_count++;
 }

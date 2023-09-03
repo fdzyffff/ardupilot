@@ -10,16 +10,19 @@ UAttack::UAttack()
 void UAttack::init()
 {
     _active = false;
-    raw_info.x = 0.0f;
-    raw_info.y = 0.0f;
-    correct_info.x = 0.0f;
-    correct_info.y = 0.0f;
+    bf_info.x = 0.0f;
+    bf_info.y = 0.0f;
+    ef_info.x = 0.0f;
+    ef_info.y = 0.0f;
+    ef_rate_info.x = 0.0f;
+    ef_rate_info.y = 0.0f;
     display_info_new = false;
     display_info_p1 = 0.0f;
     display_info_p2 = 0.0f;
     display_info_p3 = 0.0f;
     display_info_p4 = 0.0f;
     display_info_count = 0;
+    display_info_count_log = 0;
     _target_pitch_rate = 0.0f;
     _target_yaw_rate = 0.0f;
     _target_roll_angle = 0.0f;
@@ -36,12 +39,16 @@ void UAttack::udpate_control_value(){
     update_target_roll_angle();
 }
 
-const Vector2f& UAttack::get_raw_info() {
-    return raw_info;
+const Vector2f& UAttack::get_bf_info() {
+    return bf_info;
 }
 
-const Vector2f& UAttack::get_correct_info() {
-    return correct_info;
+const Vector2f& UAttack::get_ef_info() {
+    return ef_info;
+}
+
+const Vector2f& UAttack::get_ef_rate_info() {
+    return ef_rate_info;
 }
 
 
@@ -69,6 +76,15 @@ void UAttack::init_cam_port()
 // called at 100 Hz
 void UAttack::cam_update()
 {
+    // for log purpose
+    static uint32_t last_count_ms = millis();
+    uint32_t tnow_ms = millis();
+    if (tnow_ms - last_count_ms > 1000) {
+        display_info_count_log = display_info_count;
+        display_info_count = 0;
+        last_count_ms = tnow_ms;
+    }
+
     if (get_port() == NULL) {return;}
     if (_UCam_ptr == nullptr) {return;}
     _UCam_ptr->update();
@@ -91,6 +107,13 @@ void UAttack::update()
 }
 
 void UAttack::time_out_check() {
+    if (_UCam_ptr == nullptr) {
+        _target_pitch_rate = 0.0f;
+        _target_roll_angle = 0.0f;
+        _target_yaw_rate = 0.0f;
+        _active = false;
+        return;
+    }
     if (!_UCam_ptr->is_valid()) { 
         _target_pitch_rate = 0.0f;
         _target_roll_angle = 0.0f;
@@ -105,7 +128,7 @@ void UAttack::time_out_check() {
 // degree/second
 void UAttack::update_target_pitch_rate() {
     float k = plane.g2.user_attack_k.get();
-    _target_pitch_rate = k * correct_info.y; // degrees/s
+    _target_pitch_rate = k * ef_rate_info.y; // degrees/s
     // gcs().send_text(MAV_SEVERITY_INFO, "%f", _target_pitch_rate_cds);
 }
 
@@ -117,5 +140,5 @@ void UAttack::update_target_roll_angle() {
 // degree/second
 void UAttack::update_target_yaw_rate() {
     float k = plane.g2.user_attack_k.get();
-    _target_yaw_rate = k * correct_info.x;
+    _target_yaw_rate = k * ef_rate_info.x;
 }

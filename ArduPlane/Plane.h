@@ -892,6 +892,8 @@ private:
     void Log_Write_AETR();
     void Log_Write_MavCmdI(const mavlink_command_int_t &packet);
     void log_init();
+    void Log_Write_UATK();
+    void Log_Write_UCAM();
 
     // Parameters.cpp
     void load_parameters(void) override;
