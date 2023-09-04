@@ -111,6 +111,7 @@
 #include "avoidance_adsb.h"
 #endif
 #include "AP_Arming.h"
+#include <FD1_UART/FD1_UART.h>
 #include "UFollow.h"
 #include "UAttack.h"
 #include "UMission.h"
@@ -1227,6 +1228,7 @@ private:
     // last target alt we passed to tecs
     int32_t tecs_target_alt_cm;
 
+    void userhook_init();
     void userhook_100Hz();
     void userhook_1Hz();
     void get_Time(uint8_t &year_out, uint8_t &month_out, uint8_t &day_out, uint8_t &hour_out, uint8_t &minute_out, uint8_t &second_out, uint8_t &second_10ms_out);

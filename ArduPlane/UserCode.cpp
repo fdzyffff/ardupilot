@@ -1,5 +1,12 @@
 #include "Plane.h"
 
+void Plane::userhook_init()
+{
+    uattack.init();
+    ufollow.init();
+    umission.init();
+}
+
 void Plane::userhook_100Hz()
 {
     uattack.update();

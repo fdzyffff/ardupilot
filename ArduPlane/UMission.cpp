@@ -33,7 +33,9 @@ void UMission::handle_msg(const mavlink_message_t &msg) {
                         do_group();
                         break;
                     case 3:
-                        do_offboard_cruise(packet.param2);
+                        if (_role == Mission_Role::Leader) {
+                            do_offboard_cruise(packet.param2);
+                        }
                         break;
                 }
                 break;
@@ -79,10 +81,10 @@ void UMission::do_group() {
         } else {
             set_mode(plane.mode_guided);
         }
-        gcs().send_text(MAV_SEVERITY_INFO, "group engaged.");
+        // gcs().send_text(MAV_SEVERITY_INFO, "group engaged.");
     } else {
         plane.set_mode(plane.mode_auto, ModeReason::GCS_COMMAND);
-        gcs().send_text(MAV_SEVERITY_INFO, "group exit.");
+        // gcs().send_text(MAV_SEVERITY_INFO, "group exit.");
     }
 }
 

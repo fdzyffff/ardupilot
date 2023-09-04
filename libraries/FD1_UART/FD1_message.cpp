@@ -13,9 +13,9 @@ void FD1_message::swap_message_sub(uint8_t &p1, uint8_t &p2, uint8_t &p3, uint8_
 }
 
 void FD1_message::swap_message_sub2(int16_t &bytes_in) {
-    uint8_t data[2];
-    (int16_t *)data = &bytes_in;
-    swap_message_sub(data[0]. data[1]);
+    // uint8_t data[2];
+    // (int16_t *)data = &bytes_in;
+    // swap_message_sub(data[0]. data[1]);
 }
 
 void FD1_message::swap_message_sub2(uint16_t &bytes_in)      {

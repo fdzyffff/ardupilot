@@ -27,6 +27,7 @@ void UCam_DYT::update() {
         _last_ms = millis();
         // DYT -> APM
         handle_info();
+        tmp_msg._msg_1.updated = false;
     }
 
     if (tnow - _last_ms > 1000) {
@@ -158,12 +159,13 @@ void UCam_DYT::handle_msg(const mavlink_message_t &msg)
         mavlink_my_optic_data_t my_optic_data;
         mavlink_msg_my_optic_data_decode(&msg, &my_optic_data);
         uint8_t i = 0;
-        for (i = 0; i < sizeof(my_optic_data.data); i++) {
+        for (i = 0; i < 32; i++) {
             FD1_uart_ptr->read(my_optic_data.data[i]);
         }
     }
     if (FD1_uart_ptr->get_msg_APM2DYTCONTROL()._msg_1.updated) {
         FD1_uart_ptr->get_msg_APM2DYTCONTROL()._msg_1.need_send = true;
+        FD1_uart_ptr->get_msg_APM2DYTCONTROL()._msg_1.updated = false;
     }
     FD1_uart_ptr->write();
 }
