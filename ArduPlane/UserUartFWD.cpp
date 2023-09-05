@@ -64,6 +64,7 @@ void UserUartFWD::send_mav()
     uint32_t tnow = millis();
     // uint16_t mask = GCS_MAVLINK::active_channel_mask() | GCS_MAVLINK::streaming_channel_mask();
     if (tnow - _last_send_ms > 100) {
+        _last_send_ms = tnow;
         for (uint8_t i=0; i<gcs().num_gcs(); i++) {
             mavlink_channel_t channel = (mavlink_channel_t)(MAVLINK_COMM_0 + i);
             // if (mask & (1U<<i)) {

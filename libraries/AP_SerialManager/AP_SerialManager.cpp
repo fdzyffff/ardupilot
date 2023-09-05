@@ -572,8 +572,8 @@ void AP_SerialManager::init()
 #endif
                 case SerialProtocol_Uart_Forward:
                     uart->begin(state[i].baudrate(),
-                                         512,
-                                         512);
+                                         256,
+                                         256);
                     break;
                 default:
                     uart->begin(state[i].baudrate());

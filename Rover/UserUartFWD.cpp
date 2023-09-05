@@ -64,6 +64,7 @@ void UserUartFWD::send_mav()
     uint32_t tnow = millis();
     // uint16_t mask = GCS_MAVLINK::active_channel_mask() | GCS_MAVLINK::streaming_channel_mask();
     if (tnow - _last_send_ms > 100) {
+        _last_send_ms = tnow;
         for (uint8_t i=0; i<gcs().num_gcs(); i++) {
             mavlink_channel_t channel = (mavlink_channel_t)(MAVLINK_COMM_0 + i);
             // if (mask & (1U<<i)) {
@@ -71,8 +72,8 @@ void UserUartFWD::send_mav()
                     data_buffer_instance[i].set_active();
                     mavlink_my_uart_forward_t my_uart_forward;
                     my_uart_forward.data_len = data_buffer_instance[i].get_data(my_uart_forward.data);
-                    // gcs().send_text(MAV_SEVERITY_INFO, "data_len %d", my_uart_forward.data_len );
                     if (my_uart_forward.data_len > 0) {
+                    gcs().send_text(MAV_SEVERITY_INFO, "data_len %d", my_uart_forward.data_len );
                         mavlink_msg_my_uart_forward_send(
                             channel,
                             my_uart_forward.data_len,
