@@ -39,6 +39,7 @@ public:
         AUTOROTATE =   26,  // Autonomous autorotation
         AUTO_RTL =     27,  // Auto RTL, this is not a true mode, AUTO will report as this mode if entered to perform a DO_LAND_START Landing sequence
         TURTLE =       28,  // Flip over after crash
+        MLAND =        30,
 
         // Mode number 127 reserved for the "drone show mode" in the Skybrush
         // fork at https://github.com/skybrush-io/ardupilot
@@ -1320,6 +1321,8 @@ protected:
 
     void set_descent_target_alt(uint32_t alt) { rtl_path.descent_target.alt = alt; }
 
+    uint8_t _rtl_type;
+
 private:
 
     void climb_start();
@@ -1872,3 +1875,34 @@ private:
 
 };
 #endif
+
+class ModeMLand : public ModeGuided {
+
+public:
+
+    // inherit constructor
+    using ModeGuided::Mode;
+    Number mode_number() const override { return Number::MLAND; }
+
+    bool init(bool ignore_checks) override;
+    void exit() override;
+    void run() override;
+
+    bool requires_GPS() const override { return true; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(AP_Arming::Method method) const override { return false; }
+    bool is_autopilot() const override { return true; }
+    bool is_landing() const override;
+protected:
+
+    const char *name() const override { return "M-Land"; }
+    const char *name4() const override { return "MLnd"; }
+
+    // for reporting to GCS
+    bool get_wp(Location &loc) const override;
+    uint32_t wp_distance() const override;
+    int32_t wp_bearing() const override;
+
+    uint32_t last_log_ms;   // system time of last time desired velocity was logging
+    uint8_t _stage;
+};

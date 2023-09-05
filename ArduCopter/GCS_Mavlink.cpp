@@ -35,6 +35,7 @@ MAV_MODE GCS_MAVLINK_Copter::base_mode() const
     case Mode::Number::POSHOLD:
     case Mode::Number::BRAKE:
     case Mode::Number::SMART_RTL:
+    case Mode::Number::MLAND:
         _base_mode |= MAV_MODE_FLAG_GUIDED_ENABLED;
         // note that MAV_MODE_FLAG_AUTO_ENABLED does not match what
         // APM does in any mode, as that is defined as "system finds its own goal
@@ -589,6 +590,7 @@ void GCS_MAVLINK_Copter::packetReceived(const mavlink_status_t &status,
     // pass message to follow library
     copter.g2.follow.handle_msg(msg);
 #endif
+    copter.useruartfwd.handle_msg(msg);
     GCS_MAVLINK::packetReceived(status, msg);
 }
 
@@ -1010,6 +1012,13 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_
         mavlink_command_int_t packet_int;
         GCS_MAVLINK_Copter::convert_COMMAND_LONG_to_COMMAND_INT(packet, packet_int);
         return handle_command_pause_continue(packet_int);
+    }
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    case MAV_CMD_USER_1: {
+        if ((int16_t)packet.param1 == 1) {
+            copter.useruartfwd.set_target_sysid((int16_t)packet.param2);
+        }
+        return MAV_RESULT_ACCEPTED;
     }
     default:
         return GCS_MAVLINK::handle_command_long_packet(packet);

@@ -12,6 +12,13 @@
 // rtl_init - initialise rtl controller
 bool ModeRTL::init(bool ignore_checks)
 {
+    if (copter.mode_mland.init(false))
+    {
+        _rtl_type = 1;
+        return true;
+    }
+
+    _rtl_type = 0;
     if (!ignore_checks) {
         if (!AP::ahrs().home_is_set()) {
             return false;
@@ -59,6 +66,10 @@ ModeRTL::RTLAltType ModeRTL::get_alt_type() const
 // should be called at 100hz or more
 void ModeRTL::run(bool disarm_on_land)
 {
+    if (_rtl_type == 1) {
+        copter.mode_mland.run();
+        return;
+    }
     if (!motors->armed()) {
         return;
     }
@@ -390,6 +401,9 @@ void ModeRTL::land_start()
 
 bool ModeRTL::is_landing() const
 {
+    if (_rtl_type == 1) {
+        return copter.mode_mland.is_landing();
+    }
     return _state == SubMode::LAND;
 }
 
