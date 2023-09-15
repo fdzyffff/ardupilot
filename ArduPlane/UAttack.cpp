@@ -118,9 +118,15 @@ void UAttack::time_out_check() {
         _target_pitch_rate = 0.0f;
         _target_roll_angle = 0.0f;
         _target_yaw_rate = 0.0f;
+        if (_active) {
+            gcs().send_text(MAV_SEVERITY_INFO, "Lost CAM");
+        }
         _active = false;
         return;
     } else {
+        if (!_active) {
+            gcs().send_text(MAV_SEVERITY_INFO, "Got CAM");
+        }
         _active = true;
     }
 }

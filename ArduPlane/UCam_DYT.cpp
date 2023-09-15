@@ -23,14 +23,15 @@ void UCam_DYT::update() {
     FD1_uart_ptr->read();
     FD1_msg_DYTTELEM &tmp_msg = FD1_uart_ptr->get_msg_DYTTELEM();
     if (tmp_msg._msg_1.updated) {
-        _valid = true;
-        _last_ms = millis();
         // DYT -> APM
-        handle_info();
+        float p1 = (float)(tmp_msg._msg_1.content.msg.target_x) * 0.005f; // x-axis
+        float p2 = (float)(tmp_msg._msg_1.content.msg.target_y) * 0.005f; // y-axis
+        handle_info(p1, p2);
         tmp_msg._msg_1.updated = false;
+        _last_ms = tnow;
     }
 
-    if (tnow - _last_ms > 1000) {
+    if (tnow - _last_ms > 2000) {
         _valid = false;
         _pitch_filter.reset();
         _yaw_filter.reset();
@@ -83,7 +84,7 @@ void UCam_DYT::fill_state_msg()
     tmp_msg._msg_1.content.msg.yaw = (int16_t)(wrap_180_cd(plane.ahrs.yaw_sensor));
     tmp_msg._msg_1.content.msg.lat = plane.gps.location().lat;
     tmp_msg._msg_1.content.msg.lng = plane.gps.location().lng;
-    tmp_msg._msg_1.content.msg.alt_abs = (int16_t)(plane.gps.location().alt*20);
+    tmp_msg._msg_1.content.msg.alt_abs = (int16_t)(plane.gps.location().alt/20);
     tmp_msg._msg_1.content.msg.alt_rel = (int16_t)(temp_hagl*5.0f);
     tmp_msg._msg_1.content.msg.year = year_out;
     tmp_msg._msg_1.content.msg.month = month_out;
@@ -112,10 +113,9 @@ bool UCam_DYT::is_valid() {
     return _valid;
 }
 
-void UCam_DYT::handle_info() {
-    FD1_msg_DYTTELEM &tmp_msg = FD1_uart_ptr->get_msg_DYTTELEM();
-    float p1 = (float)(tmp_msg._msg_1.content.msg.target_x) / 0.005f; // x-axis
-    float p2 = (float)(tmp_msg._msg_1.content.msg.target_y) / 0.005f; // y-axis
+void UCam_DYT::handle_info(float p1, float p2) {
+    _valid = true;
+    _last_ms = millis();
 
     _frotend.bf_info.x = p1; // degree
     _frotend.bf_info.y = p2; // degree
@@ -123,8 +123,8 @@ void UCam_DYT::handle_info() {
     Matrix3f tmp_m;
     tmp_m.from_euler(plane.ahrs.roll, plane.ahrs.pitch, 0.0f);
 
-    float dist_z = -tanf(radians(p1));
-    float dist_y = tanf(radians(p2));
+    float dist_z = -tanf(radians(p2));
+    float dist_y = tanf(radians(p1));
 
     Vector3f tmp_input = Vector3f(1.0f,dist_y,dist_z);
     Vector3f tmp_output = tmp_m*tmp_input;

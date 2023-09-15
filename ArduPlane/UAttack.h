@@ -65,11 +65,10 @@ public:
     virtual bool is_valid() = 0;
     virtual void update() = 0;
     virtual void do_cmd() = 0;
-    virtual void handle_info() = 0;
+    virtual void handle_info(float p1, float p2) = 0;
     virtual void handle_msg(const mavlink_message_t &msg) = 0;
     UAttack &_frotend;
     bool _valid;
-
 };
 
 class UCam_DYT: public UCam_base {
@@ -80,7 +79,7 @@ public:
     bool is_valid() override;
     void update() override;
     void do_cmd() override;
-    void handle_info() override;
+    void handle_info(float p1, float p2) override;
     void handle_msg(const mavlink_message_t &msg) override;
 
     void fill_state_msg();

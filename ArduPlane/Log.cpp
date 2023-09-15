@@ -488,7 +488,7 @@ const struct LogStructure Plane::log_structure[] = {
       "CMDH", "QHBBBBffffiifB",    "TimeUS,CId,TSys,TCmp,cur,cont,Prm1,Prm2,Prm3,Prm4,Lat,Lng,Alt,F", "s---------DUm-", "F---------GGB-" }, 
 
     { LOG_CAM_MSG, sizeof(log_CAM),     
-      "UATK", "QffffffBB",    "TimeUS,tx,ty,efy,efp,ry,rp,valid,hz", "s--------", "F--------" }, 
+      "UCAM", "QffffffBB",    "TimeUS,tx,ty,efy,efp,ry,rp,valid,hz", "s--------", "F--------" }, 
     { LOG_ATK_MSG, sizeof(log_ATK),     
       "UATK", "QfffB",        "TimeUS,tp,tr,ty,active", "s----", "F----" }, 
 };

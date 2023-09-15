@@ -637,7 +637,15 @@ bool Plane::verify_nav_wp(const AP_Mission::Mission_Command& cmd)
             flex_next_WP_loc.offset_bearing(bearing_deg, cmd_passby);
         }
     }
-
+#if HAL_QUADPLANE_ENABLED
+    uint8_t static pre_ts_state = 0;
+    // gcs().send_text(MAV_SEVERITY_INFO, "%d, %d, %d", quadplane.tailsitter.enabled(), quadplane.transition->get_log_transition_state(), pre_ts_state);
+    if (quadplane.tailsitter.enabled() && quadplane.transition->get_log_transition_state() == 2 && pre_ts_state == 0) {
+        TECS_controller.reset();
+        gcs().send_text(MAV_SEVERITY_INFO, "reset alt after vtol done!");// %d, %d", relative_target_altitude_cm(), temp_alt);
+    }
+    pre_ts_state = quadplane.transition->get_log_transition_state();
+#endif
     if (auto_state.crosstrack) {
         nav_controller->update_waypoint(prev_WP_loc, flex_next_WP_loc);
     } else {

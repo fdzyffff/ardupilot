@@ -484,8 +484,10 @@ void Plane::stabilize_attack(float speed_scaler)
         pitch_rate = uattack.get_target_pitch_rate();
         yaw_rate = uattack.get_target_yaw_rate();
     }
+    plane.nav_roll_cd = roll_angle_cd;
+    stabilize_roll(speed_scaler);
 
-    SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, rollController.get_servo_out(roll_angle_cd, speed_scaler, false, false));
+    // SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, rollController.get_servo_out(roll_angle_cd, speed_scaler, false, false));
     SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, pitchController.get_rate_out(pitch_rate,  speed_scaler));
     if (yawController.rate_control_enabled()){
         steering_control.steering = steering_control.rudder = yawController.get_rate_out(yaw_rate,  speed_scaler, false);

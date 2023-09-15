@@ -5,6 +5,7 @@ bool ModeCruise::_enter()
 {
     locked_heading = false;
     lock_timer_ms = 0;
+    locked_heading_cd = plane.gps.ground_course_cd();
 
 #if HAL_SOARING_ENABLED
     // for ArduSoar soaring_controller

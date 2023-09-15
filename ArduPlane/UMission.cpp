@@ -42,6 +42,22 @@ void UMission::handle_msg(const mavlink_message_t &msg) {
             default:
                 break;
         }
+        switch (packet.command) {
+            case MAV_CMD_USER_2:
+                switch ((int16_t)packet.param1) {
+                    default:
+                        break;
+                    case 1:
+                        if (plane.uattack._cam_port_type == 1) {
+                            gcs().send_text(MAV_SEVERITY_INFO, "Test [%f, %f]", packet.param2, packet.param3);
+                            plane.uattack._UCam_ptr->handle_info(packet.param2, packet.param3);
+                        }
+                        break;
+                }
+                break;
+            default:
+                break;
+        }
     }
 }
 
