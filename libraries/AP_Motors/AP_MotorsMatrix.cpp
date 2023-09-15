@@ -841,6 +841,16 @@ bool AP_MotorsMatrix::setup_hexa_matrix(motor_frame_type frame_type)
         add_motors(motors, ARRAY_SIZE(motors));
         break;
     }
+    case MOTOR_FRAME_TYPE_YAW_X: {
+        _frame_type_string = "YAW_X";
+        add_motor_raw(AP_MOTORS_MOT_1, -1.0f,  1.0f,  0.0f, 1);
+        add_motor_raw(AP_MOTORS_MOT_2, -1.0f, -1.0f,  0.0f, 2);
+        add_motor_raw(AP_MOTORS_MOT_3,  1.0f, -1.0f,  0.0f, 3);
+        add_motor_raw(AP_MOTORS_MOT_4,  1.0f,  1.0f,  0.0f, 4);
+        add_motor_raw(AP_MOTORS_MOT_5,  0.0f,  0.0f,  1.0f, 5, 0.0f);
+        add_motor_raw(AP_MOTORS_MOT_6,  0.0f,  0.0f, -1.0f, 6, 0.0f);
+        break;
+    }
     default:
         // hexa frame class does not support this frame type
         _frame_type_string = "UNSUPPORTED";
