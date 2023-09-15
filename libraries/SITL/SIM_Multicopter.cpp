@@ -38,6 +38,12 @@ MultiCopter::MultiCopter(const char *frame_str) :
     frame_height = 0.1;
     ground_behavior = GROUND_BEHAVIOR_NO_MOVEMENT;
     lock_step_scheduled = true;
+
+    // if (strstr(frame_str, "-throw")) {
+        have_launcher = true;
+        launch_accel = 25;
+        launch_time = 0.4;
+    // }
 }
 
 // calculate rotational and linear accelerations
@@ -48,6 +54,29 @@ void MultiCopter::calculate_forces(const struct sitl_input &input, Vector3f &rot
 
     add_shove_forces(rot_accel, body_accel);
     add_twist_forces(rot_accel);
+
+    bool launch_triggered = input.servos[6] > 1700;
+    if (have_launcher) {
+        /*
+          simple simulation of a launcher
+         */
+        if (launch_triggered) {
+            uint64_t now = AP_HAL::millis64();
+            if (launch_start_ms == 0) {
+                printf("Trigger\n");
+                launch_start_ms = now;
+                set_ground_level(get_ground_level() - 100);
+            }
+            if (now - launch_start_ms < launch_time*1000) {
+                rot_accel.x += 2;
+                rot_accel.y += 2;
+                rot_accel.z += 2;
+            }
+        } else {
+            // allow reset of catapult
+            launch_start_ms = 0;
+        }
+    }
 }
     
 /*

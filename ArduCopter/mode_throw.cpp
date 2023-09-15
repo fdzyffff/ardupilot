@@ -67,12 +67,12 @@ void ModeThrow::run()
         stage = Throw_HgtStabilise;
 
         // initialise the z controller
-        pos_control->init_z_controller_no_descent();
+        pos_control->init_z_controller();
 
         // initialise the demanded height to 3m above the throw height
         // we want to rapidly clear surrounding obstacles
         if (g2.throw_type == ThrowType::Drop) {
-            pos_control->set_pos_target_z_cm(inertial_nav.get_position_z_up_cm() - 100);
+            pos_control->set_pos_target_z_cm(inertial_nav.get_position_z_up_cm() - 1500);
         } else {
             pos_control->set_pos_target_z_cm(inertial_nav.get_position_z_up_cm() + 300);
         }
@@ -80,7 +80,7 @@ void ModeThrow::run()
         // Set the auto_arm status to true to avoid a possible automatic disarm caused by selection of an auto mode with throttle at minimum
         copter.set_auto_armed(true);
 
-    } else if (stage == Throw_HgtStabilise && throw_height_good()) {
+    } else if (stage == Throw_HgtStabilise && throw_height_good() && copter.position_ok()) {
         gcs().send_text(MAV_SEVERITY_INFO,"height achieved - controlling position");
         stage = Throw_PosHold;
 
@@ -250,10 +250,10 @@ void ModeThrow::run()
 bool ModeThrow::throw_detected()
 {
     // Check that we have a valid navigation solution
-    nav_filter_status filt_status = inertial_nav.get_filter_status();
-    if (!filt_status.flags.attitude || !filt_status.flags.horiz_pos_abs || !filt_status.flags.vert_pos) {
-        return false;
-    }
+    // nav_filter_status filt_status = inertial_nav.get_filter_status();
+    // if (!filt_status.flags.attitude || !filt_status.flags.horiz_pos_abs || !filt_status.flags.vert_pos) {
+    //     return false;
+    // }
 
     // Check for high speed (>500 cm/s)
     bool high_speed = inertial_nav.get_velocity_neu_cms().length_squared() > (THROW_HIGH_SPEED * THROW_HIGH_SPEED);
