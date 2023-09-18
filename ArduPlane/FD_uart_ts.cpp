@@ -26,6 +26,7 @@ void Plane::FD1_uart_ts_update() {
         FD1_uart_mission_handle_and_route();
         FD1_uart_msg_ts.write();  
     }
+
     if (g2.ts_ahrs_send.get()) {
         FD1_uart_ts_send();
         FD1_uart_msg_ts.write();
@@ -87,7 +88,7 @@ void Plane::FD1_uart_ts_send() {
     tmp_msg._msg_1.content.msg.header.head_3 = FD1_msg_ts::PREAMBLE3;
     tmp_msg.set_id(0xB1);
 
-    tmp_msg._msg_1.content.msg.sub_msg.msg_m.type = 0x02;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.type = 0x03;
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.empty[0]=0;
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.empty[1]=0;
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.empty[2]=0;
@@ -109,13 +110,15 @@ void Plane::FD1_uart_ts_send() {
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.time[0]=(second_day/255)/255;
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.gps_heading  = (int16_t)(gps.ground_course_cd()*0.01f * tmp_msg.SF_INT16);
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.empty1=0;
+    int32_t rel_alt = current_loc.alt;
+    bool rel_alt_valid = current_loc.get_alt_cm(Location::AltFrame::ABOVE_HOME,rel_alt);
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.latitude     = gps.location().lat;
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.longitude    = gps.location().lng;
-    tmp_msg._msg_1.content.msg.sub_msg.msg_m.alt          = gps.location().alt*10;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.alt          = rel_alt_valid?(rel_alt*10):0;
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.gps_vel_xy   = (int16_t)(gps.ground_speed() * 100.f);
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.gps_hdop     = gps.get_hdop(); // already *100 when read in AP_GPS
     tmp_msg._msg_1.content.msg.sub_msg.msg_m.gps_vdop     = gps.get_vdop(); // already *100 when read in AP_GPS
-    tmp_msg._msg_1.content.msg.sub_msg.msg_m.gps_vel_z    = (int16_t)(gps.velocity().z * 100.f);
+    tmp_msg._msg_1.content.msg.sub_msg.msg_m.gps_vel_z    = 1;//(int16_t)(gps.velocity().z * 100.f);
 
     tmp_msg.sum_check();
     tmp_msg._msg_1.need_send = true;
