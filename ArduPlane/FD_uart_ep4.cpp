@@ -16,8 +16,13 @@ void Plane::FD1_uart_ep4_update() {
     SRV_Channels::set_output_scaled(SRV_Channel::k_throttle_EP4, ep4_throttle);
 
     if (FD1_uart_msg_ep4.initialized()) {
-        FD1_uart_msg_ep4.read();
-        FD1_uart_ep4_handle_and_route();
+
+        while (FD1_uart_msg_ep4.port_avaliable() > 0) {
+            FD1_uart_msg_ep4.read();
+            FD1_uart_ep4_handle_and_route();
+            FD1_uart_msg_ep4.write();  
+        }
+
         FD1_uart_ep4_send();
         FD1_uart_msg_ep4.write();
     }
@@ -84,6 +89,7 @@ void Plane::FD1_uart_ep4_send() {
 // for mavlink
 void Plane::send_ep4_ecu(mavlink_channel_t chan) {
     FD1_msg_ep4_in &tmp_msg = plane.FD1_uart_msg_ep4_route.get_msg_ep4_in();
+    gcs().send_text(MAV_SEVERITY_INFO, "update, %d", tmp_msg._msg_1.updated);
     if (tmp_msg._msg_1.updated) {
         tmp_msg.swap_message();
         mavlink_msg_ep4_ecu_send(chan, 0, 0, tmp_msg._msg_1.length, tmp_msg._msg_1.content.data);

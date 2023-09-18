@@ -52,7 +52,6 @@ void FD1_msg_ep4_in::parse(uint8_t temp)
         case FD1UART_msg_parser::FD1UART_SUM:
             _msg.data[_msg.read] = temp;
             _msg.read++;
-
             if (_msg.sum_check == temp)
             {
                 process_message();
