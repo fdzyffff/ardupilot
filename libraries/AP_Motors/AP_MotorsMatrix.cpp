@@ -841,8 +841,8 @@ bool AP_MotorsMatrix::setup_hexa_matrix(motor_frame_type frame_type)
         add_motors(motors, ARRAY_SIZE(motors));
         break;
     }
-    case MOTOR_FRAME_TYPE_YAW_X: {
-        _frame_type_string = "YAW_X";
+    case MOTOR_FRAME_TYPE_YAW_H: {
+        _frame_type_string = "YAW_H";
         add_motor_raw(AP_MOTORS_MOT_1, -1.0f,  1.0f,  0.0f, 1);
         add_motor_raw(AP_MOTORS_MOT_2, -1.0f, -1.0f,  0.0f, 2);
         add_motor_raw(AP_MOTORS_MOT_3,  1.0f, -1.0f,  0.0f, 3);
@@ -969,6 +969,18 @@ bool AP_MotorsMatrix::setup_octa_matrix(motor_frame_type frame_type)
             {  -22.5f,  AP_MOTORS_MATRIX_YAW_FACTOR_CW,   8 },
         };
         add_motors(motors, ARRAY_SIZE(motors));
+        break;
+    }
+    case MOTOR_FRAME_TYPE_YAW_H: {
+        _frame_type_string = "YAW_HH";
+        add_motor_raw(AP_MOTORS_MOT_1, -1.0f,  1.0f,  0.0f, 1);
+        add_motor_raw(AP_MOTORS_MOT_2, -1.0f,  0.0f,  0.0f, 2);
+        add_motor_raw(AP_MOTORS_MOT_3, -1.0f, -1.0f,  0.0f, 3);
+        add_motor_raw(AP_MOTORS_MOT_4,  1.0f, -1.0f,  0.0f, 4);
+        add_motor_raw(AP_MOTORS_MOT_5,  1.0f,  0.0f,  0.0f, 5);
+        add_motor_raw(AP_MOTORS_MOT_6,  1.0f,  1.0f,  0.0f, 6);
+        add_motor_raw(AP_MOTORS_MOT_7,  0.0f,  0.0f,  1.0f, 7, 0.0f);
+        add_motor_raw(AP_MOTORS_MOT_8,  0.0f,  0.0f, -1.0f, 8, 0.0f);
         break;
     }
     default:
