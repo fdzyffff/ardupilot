@@ -11,7 +11,7 @@ UCam_DYT::UCam_DYT(UAttack &frotend_in, AP_HAL::UARTDriver* port_in):
     FD1_uart_ptr->get_msg_DYTTARGET().set_enable();
     FD1_uart_ptr->get_msg_APM2DYTCONTROL().set_enable();
     FD1_uart_ptr->get_msg_APM2DYTTELEM().set_enable();
-    _yaw_rate_filter.set_cutoff_frequency(100.f, 20.f);
+    _yaw_rate_filter.set_cutoff_frequency(10.f, 25.f);
     return;
 }
 
@@ -28,7 +28,6 @@ void UCam_DYT::update() {
         float p2 = (float)(tmp_msg._msg_1.content.msg.target_y) * 0.005f; // y-axis
         handle_info(p1, p2);
         tmp_msg._msg_1.updated = false;
-        _last_ms = tnow;
     }
 
     if (tnow - _last_ms > 2000) {
@@ -117,8 +116,8 @@ void UCam_DYT::handle_info(float p1, float p2) {
     _valid = true;
     _last_ms = millis();
 
-    _frotend.bf_info.x = p1; // degree
-    _frotend.bf_info.y = p2; // degree
+    _frotend.bf_info.x = p1; // yaw degree
+    _frotend.bf_info.y = p2; // pitch degree
 
     Matrix3f tmp_m;
     tmp_m.from_euler(plane.ahrs.roll, plane.ahrs.pitch, 0.0f);
@@ -139,14 +138,20 @@ void UCam_DYT::handle_info(float p1, float p2) {
     _pitch_filter.update(angle_pitch, millis());
 
     _frotend.ef_rate_info.x = _yaw_rate_filter.get() + _yaw_filter.slope()*1000.f;
+    // _frotend.ef_rate_info.x = _yaw_filter.slope()*1000.f;
     _frotend.ef_rate_info.y = _pitch_filter.slope()*1000.f;
 
     _frotend.udpate_control_value();
 
-    _frotend.display_info_p1 = _frotend.bf_info.x;
-    _frotend.display_info_p2 = _frotend.bf_info.y;
+    _frotend.display_info_p1 = _yaw_rate_filter.get();
+    _frotend.display_info_p2 = _yaw_filter.slope()*1000.f;
     _frotend.display_info_p3 = _frotend.ef_info.x;
     _frotend.display_info_p4 = _frotend.ef_info.y;
+
+    // _frotend.display_info_p1 = _frotend.bf_info.x;
+    // _frotend.display_info_p2 = _frotend.bf_info.y;
+    // _frotend.display_info_p3 = _frotend.ef_info.x;
+    // _frotend.display_info_p4 = _frotend.ef_info.y;
     _frotend.display_info_new = true;
     _frotend.display_info_count++;
 }

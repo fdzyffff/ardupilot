@@ -574,6 +574,7 @@ void AP_SerialManager::init()
                     break;
 #endif
                 case SerialProtocol_CamDYT:
+                case SerialProtocol_UE4:
                     uart->begin(state[i].baudrate(),
                                          128,
                                          128);

@@ -112,6 +112,7 @@
 #endif
 #include "AP_Arming.h"
 #include <FD1_UART/FD1_UART.h>
+#include <FD2_UART/FD2_UART.h>
 #include "UFollow.h"
 #include "UAttack.h"
 #include "UMission.h"
@@ -1236,6 +1237,9 @@ private:
     UAttack uattack;
     UMission umission;
 
+    void sim_init();
+    void sim_update();
+    FD2_UART FD2_uart_msg_ue4{AP_SerialManager::SerialProtocol_UE4};
 public:
     void failsafe_check(void);
 #if AP_SCRIPTING_ENABLED

@@ -113,6 +113,7 @@ COMMON_VEHICLE_DEPENDENT_LIBRARIES = [
     'AP_OpenDroneID',
     'AP_CheckFirmware',
     'FD1_UART',
+    'FD2_UART',
 ]
 
 def get_legacy_defines(sketch_name, bld):
