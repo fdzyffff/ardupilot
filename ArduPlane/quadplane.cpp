@@ -1849,6 +1849,7 @@ void QuadPlane::update_transition(void)
             }
             transition_state = TRANSITION_AIRSPEED_WAIT;
             if (transition_start_ms == 0) {
+                // plane.ep4_ctrl.start();
                 transition_start_ms = now;
             }
         }
@@ -1901,6 +1902,7 @@ void QuadPlane::update_transition(void)
         // we hold in hover until the required airspeed is reached
         if (transition_start_ms == 0) {
             gcs().send_text(MAV_SEVERITY_INFO, "Transition airspeed wait");
+            // plane.ep4_ctrl.start();
             transition_start_ms = now;
         }
 

@@ -1,6 +1,6 @@
 #include "Plane.h"
 
-void Plane::test_EP4_uart(uint8_t msg_id, uint8_t option)
+void EP4_ctrl_t::test_EP4_uart(uint8_t msg_id, uint8_t option)
 {
     switch (msg_id) {
         case 1:
@@ -14,9 +14,9 @@ void Plane::test_EP4_uart(uint8_t msg_id, uint8_t option)
     }
 }
 
-void Plane::test_EP4_in(uint8_t option) {
+void EP4_ctrl_t::test_EP4_in(uint8_t option) {
     static uint8_t n_count = 0;
-    FD1_msg_ep4_in &tmp_msg = FD1_uart_msg_ep4.get_msg_ep4_in();
+    FD1_msg_ep4_in &tmp_msg = uart_msg_ep4.get_msg_ep4_in();
     tmp_msg._msg_1.content.msg.ecu_status      = 1 ;     
     tmp_msg._msg_1.content.msg.damper          = 1 ;      //unit: 0.1%, value = real * 10
     tmp_msg._msg_1.content.msg.rpm             = 1 ;      //rpm
@@ -50,10 +50,10 @@ void Plane::test_EP4_in(uint8_t option) {
     n_count++;
 }
 
-void Plane::test_EP4_out(uint8_t option) {
+void EP4_ctrl_t::test_EP4_out(uint8_t option) {
     static uint8_t n_count = 0;
 
-    FD1_msg_ep4_out &tmp_msg = FD1_uart_msg_ep4.get_msg_ep4_out();
+    FD1_msg_ep4_out &tmp_msg = uart_msg_ep4.get_msg_ep4_out();
 
     tmp_msg._msg_1.content.msg.sum_check = 0;
     tmp_msg._msg_1.content.msg.damper = 1;

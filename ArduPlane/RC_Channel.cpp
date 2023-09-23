@@ -163,6 +163,8 @@ void RC_Channel_Plane::init_aux_function(const RC_Channel::aux_func_t ch_option,
     case AUX_FUNC::PARACHUTE_RELEASE:
     case AUX_FUNC::MODE_SWITCH_RESET:
     case AUX_FUNC::FW_AUTOTUNE:
+    case AUX_FUNC::EP4_START:
+    case AUX_FUNC::EP4_STOP:
         break;
 
     case AUX_FUNC::Q_ASSIST:
@@ -330,6 +332,29 @@ case AUX_FUNC::ARSPD_CALIBRATE:
         plane.autotune_enable(ch_flag == AuxSwitchPos::HIGH);
         break;
 
+    case AUX_FUNC::EP4_START:
+            switch (ch_flag) {
+            case AuxSwitchPos::HIGH:
+                plane.ep4_ctrl.start();
+                break;
+            case AuxSwitchPos::MIDDLE:
+                break;
+            case AuxSwitchPos::LOW:
+                break;
+            }
+        break;
+
+    case AUX_FUNC::EP4_STOP:
+            switch (ch_flag) {
+            case AuxSwitchPos::HIGH:
+                plane.ep4_ctrl.stop();
+                break;
+            case AuxSwitchPos::MIDDLE:
+                break;
+            case AuxSwitchPos::LOW:
+                break;
+            }
+        break;
     default:
         return RC_Channel::do_aux_function(ch_option, ch_flag);
     }

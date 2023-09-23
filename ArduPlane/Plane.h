@@ -123,6 +123,7 @@
 #include <SITL/SITL.h>
 #endif
 
+#include "FD_ep4.h"
 /*
   main APM:Plane class
  */
@@ -166,6 +167,8 @@ public:
     friend class ModeQAutotune;
     friend class ModeTakeoff;
     friend class ModeThermal;
+
+    friend class EP4_ctrl_t;
 
     Plane(void);
 
@@ -1151,24 +1154,11 @@ private:
     float rudder_in_expo(bool use_dz) const;
 
     // User customization for ep4
-    FD1_UART FD1_uart_msg_ep4{AP_SerialManager::SerialProtocol_EP4};
-    FD1_UART FD1_uart_msg_ep4_route{AP_SerialManager::SerialProtocol_EP4_OUT};
+    EP4_ctrl_t ep4_ctrl;
     void FD1_uart_init();
     void FD1_uart_update();
-    void FD1_uart_ep4_init();
-    void FD1_uart_ep4_update();
-    void FD1_uart_ep4_handle_and_route();
-    void FD1_uart_ep4_send();
     void send_ep4_ecu(mavlink_channel_t chan);
     void send_esc_telemetry_mavlink_fake(mavlink_channel_t chan);
-    struct {
-        //bool gcs_new;
-        uint32_t last_update_ms;
-    } ep4_state;
-
-    void test_EP4_uart(uint8_t msg_id, uint8_t option);
-    void test_EP4_in(uint8_t option);
-    void test_EP4_out(uint8_t option);
 
     // User costomization for TS cam
     FD1_UART FD1_uart_msg_ts{AP_SerialManager::SerialProtocol_TS};
