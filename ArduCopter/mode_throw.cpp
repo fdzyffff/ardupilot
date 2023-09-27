@@ -74,7 +74,7 @@ void ModeThrow::run()
         if (g2.throw_type == ThrowType::Drop) {
             pos_control->set_pos_target_z_cm(inertial_nav.get_position_z_up_cm() - 1500);
         } else {
-            pos_control->set_pos_target_z_cm(inertial_nav.get_position_z_up_cm() + 300);
+            pos_control->set_pos_target_z_cm(inertial_nav.get_position_z_up_cm() + 30);
         }
 
         // Set the auto_arm status to true to avoid a possible automatic disarm caused by selection of an auto mode with throttle at minimum

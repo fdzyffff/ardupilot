@@ -573,6 +573,12 @@ void AP_SerialManager::init()
                     // Note init is handled by AP_MSP
                     break;
 #endif
+                case SerialProtocol_UE4:
+                case SerialProtocol_Drop:
+                    uart->begin(state[i].baudrate(), 
+                                         128,
+                                         128);
+                    break;
                 default:
                     uart->begin(state[i].baudrate());
             }
