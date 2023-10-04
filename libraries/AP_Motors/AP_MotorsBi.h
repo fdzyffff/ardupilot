@@ -57,7 +57,7 @@ protected:
     // call vehicle supplied thrust compensation if set
     void                thrust_compensation(void) override;
 
-    const char* _get_frame_string() const override { return "TRI"; }
+    const char* _get_frame_string() const override { return "BI"; }
 
     // output_test_seq - spin a motor at the pwm value specified
     //  motor_seq is the motor's sequence number from 1 to the number of motors on the frame
