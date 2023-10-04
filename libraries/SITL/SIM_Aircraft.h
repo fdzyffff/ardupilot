@@ -150,6 +150,9 @@ public:
 
     float get_battery_voltage() const { return battery_voltage; }
 
+    void set_ground_level(float input_height) {ground_level = input_height; }
+    float get_ground_level() {return ground_level; }
+
 protected:
     SIM *sitl;
     // origin of position vector
