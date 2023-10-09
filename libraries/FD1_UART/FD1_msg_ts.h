@@ -20,6 +20,47 @@ public:
         uint8_t empty[18];
     };
 
+    struct PACKED MSG_sub_T1 {
+        uint8_t empty[2];
+        int32_t plane_lat;
+        int32_t plane_lng;
+        int16_t plane_alt;
+        int32_t target_lat;
+        int32_t target_lng;
+        int16_t target_alt;
+    };
+
+    struct PACKED MSG_sub_F1 {
+        uint8_t empty[1];
+    };
+
+    struct PACKED MSG_sub_B1 {
+        uint8_t empty[6];
+    };
+
+    struct PACKED MSG_sub_D1 {
+        uint8_t empty[12];
+    };
+
+    struct PACKED MSG_sub_K1 {
+        uint8_t ret[5];
+        uint8_t status;
+        uint8_t target_ret;
+        uint16_t target_x1;
+        uint16_t target_y1;
+        uint16_t target_x2;
+        uint16_t target_y2;
+        float confidence_level;
+    };
+
+    struct PACKED MSG_40 {
+        MSG_sub_T1 sub_t1;
+        MSG_sub_F1 sub_f1;
+        MSG_sub_B1 sub_b1;
+        MSG_sub_D1 sub_d1;
+        MSG_sub_K1 sub_k1;
+    };
+
     struct PACKED MSG_M {
         uint8_t type;
         uint8_t empty[7];
@@ -41,8 +82,9 @@ public:
 
 
     union PACKED MSG_Collection {
-        MSG_X msg_x;
-        MSG_M msg_m;
+        MSG_X  msg_x;
+        MSG_M  msg_m;
+        MSG_40 msg_40;
     };
 
     // message structure

@@ -43,6 +43,7 @@ public:
         QAUTOTUNE     = 22,
         QACRO         = 23,
         THERMAL       = 24,
+        GIMBALFOLLOW  = 30,
     };
 
     // Constructor
@@ -647,3 +648,30 @@ protected:
 };
 
 #endif
+
+
+class ModeGimbalFollow : public Mode
+{
+public:
+
+    Number mode_number() const override { return Number::GIMBALFOLLOW; }
+    const char *name() const override { return "G_Follow"; }
+    const char *name4() const override { return "GFLW"; }
+
+    // methods that affect movement of the vehicle in this mode
+    void update() override;
+
+    void navigate() override;
+
+    virtual bool is_guided_mode() const override { return true; }
+
+    bool allows_throttle_nudging() const override { return true; }
+
+    bool does_auto_navigation() const override { return true; }
+
+    bool does_auto_throttle() const override { return true; }
+
+protected:
+
+    bool _enter() override;
+};

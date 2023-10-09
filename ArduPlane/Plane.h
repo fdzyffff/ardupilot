@@ -124,6 +124,8 @@
 #endif
 
 #include "FD_ep4.h"
+#include "FD_TS.h"
+
 /*
   main APM:Plane class
  */
@@ -167,8 +169,10 @@ public:
     friend class ModeQAutotune;
     friend class ModeTakeoff;
     friend class ModeThermal;
+    friend class ModeGimbalFollow;
 
     friend class EP4_ctrl_t;
+    friend class TS_ctrl_t;
 
     Plane(void);
 
@@ -298,6 +302,7 @@ private:
 #if HAL_SOARING_ENABLED
     ModeThermal mode_thermal;
 #endif
+    ModeGimbalFollow mode_gimbalfollow;
 
     // This is the state of the flight control system
     // There are multiple states defined such as MANUAL, FBW-A, AUTO
@@ -1161,16 +1166,8 @@ private:
     void send_esc_telemetry_mavlink_fake(mavlink_channel_t chan);
 
     // User costomization for TS cam
-    FD1_UART FD1_uart_msg_ts{AP_SerialManager::SerialProtocol_TS};
-    FD1_UART FD1_uart_msg_mission{AP_SerialManager::SerialProtocol_MISSION};
+    TS_ctrl_t ts_ctrl;
 
-    void FD1_uart_ts_init();
-    void FD1_uart_ts_update();
-    void FD1_uart_ts_send();
-    void FD1_uart_mission_handle_and_route();
-    void FD1_uart_ts_handle_and_route();
-    void get_Time(uint8_t &year_out, uint8_t &month_out, uint8_t &day_out, uint8_t &hour_out, uint8_t &minute_out, uint8_t &second_out);
-    void FD1_uart_ts_AHRS_test();
 
 public:
     void failsafe_check(void);
