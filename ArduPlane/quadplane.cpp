@@ -2771,14 +2771,19 @@ void QuadPlane::vtol_position_controller(void)
         const uint32_t min_airbrake_ms = 1000;
         if (poscontrol.get_state() == QPOS_AIRBRAKE &&
             poscontrol.time_since_state_start_ms() > min_airbrake_ms &&
-            (aspeed < aspeed_threshold ||
+            (aspeed < MIN(aspeed_threshold, plane.aparm.airspeed_min/2) ||
+            //     closing_speed < 10.0f ||
+            //     desired_closing_speed < 5.0f ||
+            // false) ) {
              closing_speed > MAX(desired_closing_speed*1.2, desired_closing_speed+2) ||
              labs(plane.ahrs.roll_sensor - plane.nav_roll_cd) > attitude_error_threshold_cd ||
-             labs(plane.ahrs.pitch_sensor - plane.nav_pitch_cd) > attitude_error_threshold_cd)) {
-            gcs().send_text(MAV_SEVERITY_INFO,"VTOL position1 v=%.1f d=%.1f h=%.1f dc=%.1f",
+             labs(plane.ahrs.pitch_sensor - plane.nav_pitch_cd) > attitude_error_threshold_cd) )
+            {
+            gcs().send_text(MAV_SEVERITY_INFO,"VTOL position1 v=%.1f d=%.1f h=%.1f c=%0.1f, dc=%.1f",
                             (double)groundspeed,
                             (double)plane.auto_state.wp_distance,
                             plane.relative_ground_altitude(plane.g.rangefinder_landing),
+                            closing_speed,
                             desired_closing_speed);
             poscontrol.set_state(QPOS_POSITION1);
 
@@ -2846,7 +2851,15 @@ void QuadPlane::vtol_position_controller(void)
         // calculate speed we should be at to reach the position2
         // target speed at the position2 distance threshold, assuming
         // Q_TRANS_DECEL is correct
-        const float stopping_speed = safe_sqrt(MAX(0, distance-position2_dist_threshold) * 2 * transition_decel) + position2_target_speed;
+        float delta_x = MAX(0, distance-position2_dist_threshold);
+        float temp_speed_threshold = 20.0f;
+        float temp_target_speed = 0.0f;
+        if (delta_x > temp_speed_threshold * temp_speed_threshold / (2.0f * transition_decel) ) {
+            temp_target_speed = safe_sqrt(delta_x * 2 * transition_decel);
+        } else {
+            temp_target_speed = delta_x * (2.0f * transition_decel) / temp_speed_threshold;
+        }
+        const float stopping_speed = temp_target_speed + position2_target_speed;
 
         float target_speed = stopping_speed;
 
@@ -2857,6 +2870,7 @@ void QuadPlane::vtol_position_controller(void)
 
         // limit target speed to initial pos1 speed, but at least twice the Q_WP_SPEED
         target_speed = MIN(MAX(poscontrol.pos1_start_speed, 2*wp_speed), target_speed);
+        // target_speed = MIN(poscontrol.pos1_start_speed, target_speed);
 
         if (poscontrol.reached_wp_speed ||
             current_speed_sq < sq(wp_speed) ||
@@ -4004,7 +4018,7 @@ float QuadPlane::stopping_distance(float ground_speed_squared)
     // use v^2/(2*accel). This is only quite approximate as the drag
     // varies with pitch, but it gives something for the user to
     // control the transition distance in a reasonable way
-    return ground_speed_squared / (2 * transition_decel);
+    return ground_speed_squared / (2 * transition_decel);// + 50.f;
 }
 
 /*
@@ -4218,7 +4232,7 @@ Vector2f QuadPlane::landing_desired_closing_velocity()
     }
 
     // base target speed based on sqrt of distance
-    float target_speed = safe_sqrt(2*transition_decel*dist);
+    float target_speed = safe_sqrt(2*transition_decel*MAX(0, dist-50.0f));
     Vector2f target_speed_xy = diff_wp.normalized() * target_speed;
 
     return target_speed_xy;
