@@ -50,7 +50,7 @@ public:
         uint16_t target_y1;
         uint16_t target_x2;
         uint16_t target_y2;
-        float confidence_level;
+        int16_t confidence_level;
     };
 
     struct PACKED MSG_40 {
