@@ -27,4 +27,20 @@ public:
 	uint16_t current_cmd_id;
 	uint16_t total_cmd;
 	bool running;
+
+	void packup_1st_1p1();
+	void packup_1st_2p1();
+	void packup_1st_3p1();
+	void packup_1st_1p2();
+	void packup_1st_2p2();
+	void packup_1st_3p2();
+	void packup_1st_1p3();
+	void packup_1st_2p3();
+	void packup_1st_3p3();
+	void packup_2nd_1p4();
+	void packup_2nd_2p4();
+	void packup_2nd_3p4();
+	void packup_2nd_4p4();
+	void packup_2nd_5p4();
+	void packup_2nd_6p4();
 };

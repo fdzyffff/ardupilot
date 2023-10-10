@@ -164,8 +164,80 @@ void Ucmd_list::verify_choose(Ucmd &cmd) {
 
 void Ucmd_list::packup_1st_1p1()
 {
-	uint16_t temp_id = 0
-	ucmds[temp_id] = new Ucmd();
-	temp_id++;
+	ucmds[total_cmd] = new Ucmd();
 	total_cmd++;
+}
+
+
+void Ucmd_list::packup_1st_1p2()
+{
+	ucmds[total_cmd] = new Ucmd();
+	total_cmd++;
+}
+
+
+void Ucmd_list::packup_1st_1p3()
+{
+	ucmds[total_cmd] = new Ucmd();
+	total_cmd++;
+}
+
+void Ucmd_list::packup_1st_2p1()
+{
+	;
+}
+
+void Ucmd_list::packup_1st_2p2()
+{
+	;
+}
+
+void Ucmd_list::packup_1st_3p2()
+{
+	;
+}
+
+void Ucmd_list::packup_1st_1p3()
+{
+	;
+}
+
+void Ucmd_list::packup_1st_2p3()
+{
+	;
+}
+
+void Ucmd_list::packup_1st_3p3()
+{
+	;
+}
+
+void Ucmd_list::packup_2nd_1p4()
+{
+	;
+}
+
+void Ucmd_list::packup_2nd_2p4()
+{
+	;
+}
+
+void Ucmd_list::packup_2nd_3p4()
+{
+	;
+}
+
+void Ucmd_list::packup_2nd_4p4()
+{
+	;
+}
+
+void Ucmd_list::packup_2nd_5p4()
+{
+	;
+}
+
+void Ucmd_list::packup_2nd_6p4()
+{
+	;
 }
