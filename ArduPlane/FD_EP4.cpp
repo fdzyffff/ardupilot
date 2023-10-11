@@ -1,20 +1,24 @@
 #include "Plane.h"
 
 void EP4_ctrl_t::init() {
-    uart_msg_ep4.init();
-    uart_msg_ep4.get_msg_ep4_in().set_enable();
-    uart_msg_ep4.get_msg_ep4_out().set_enable();
+    if (plane.g2.engine_type == 1) {
+        uart_msg_ep4.init();
+        uart_msg_ep4.get_msg_ep4_in().set_enable();
+        uart_msg_ep4.get_msg_ep4_out().set_enable();
 
-    uart_msg_ep4_route.init();
-    uart_msg_ep4_route.get_msg_ep4_in().set_enable();
+        uart_msg_ep4_route.init();
+        uart_msg_ep4_route.get_msg_ep4_in().set_enable();
 
-    SRV_Channels::set_range(SRV_Channel::k_throttle_EP4, 100);
-    SRV_Channels::set_range(SRV_Channel::k_throttle_Starter, 100);
+        SRV_Channels::set_range(SRV_Channel::k_throttle_EP4, 100);
+        SRV_Channels::set_range(SRV_Channel::k_throttle_Starter, 100);
 
-    _last_msg_update_ms = 0;
+        _last_msg_update_ms = 0;
+        _initialized = true;
+    }
 }
 
 void EP4_ctrl_t::update() {
+    if (!_initialized) {return;}
     update_state();
     update_uart();
     update_pwm();
@@ -31,7 +35,7 @@ void EP4_ctrl_t::update_connection() {
     if (connected() && is_state(EngineState::Running)) {
         FD1_msg_ep4_in &tmp_msg = uart_msg_ep4_route.get_msg_ep4_in();
         uint16_t rpm = tmp_msg._msg_1.content.msg.rpm;
-        if (millis() - _last_ms > 5000) {
+        if (millis() - _last_ms > 5000 && (rpm < 3000)) {
             gcs().send_text(MAV_SEVERITY_INFO, "Low rpm %d", rpm);
             _last_ms = millis();
         }
@@ -102,6 +106,10 @@ void EP4_ctrl_t::update_state() {
 
 void EP4_ctrl_t::start()
 {
+    if (!_initialized) {
+        gcs().send_text(MAV_SEVERITY_INFO, "EP4 disabled!");
+        return;
+    }
     if (is_state(EngineState::Prepare) || is_state(EngineState::Start)) { return;}
     FD1_msg_ep4_in &tmp_msg = uart_msg_ep4_route.get_msg_ep4_in();
     uint16_t rpm = tmp_msg._msg_1.content.msg.rpm;
@@ -117,6 +125,10 @@ void EP4_ctrl_t::start()
 
 void EP4_ctrl_t::stop()
 {
+    if (!_initialized) {
+        gcs().send_text(MAV_SEVERITY_INFO, "EP4 disabled!");
+        return;
+    }
     if (is_state(EngineState::Stop)) { return; }
     set_state(EngineState::Stop);
 }

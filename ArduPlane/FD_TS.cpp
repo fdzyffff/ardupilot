@@ -80,6 +80,9 @@ void TS_ctrl_t::ts_handle_and_route() {
                 temp_loc.lng = tmp_msg._msg_1.content.msg.sub_msg.msg_40.sub_t1.target_lng;
                 temp_loc.alt = tmp_msg._msg_1.content.msg.sub_msg.msg_40.sub_t1.target_alt*100;
                 set_target_loc(temp_loc);
+                if (plane.control_mode == &plane.mode_auto) {
+                    plane.set_mode(plane.mode_gimbalfollow, ModeReason::MISSION_END);
+                }
             }
         }
         uart_msg_ts.get_msg_ts_in()._msg_1.updated = false;
@@ -335,4 +338,5 @@ void TS_ctrl_t::set_target_loc(Location& loc_in)
     _target_loc.lng = loc_in.lng;
     _target_loc.alt = plane.target_altitude.amsl_cm;
     _last_msg_update_ms = millis();
+    set_valid(true);
 }

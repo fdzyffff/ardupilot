@@ -18,6 +18,12 @@ void ModeGimbalFollow::update()
         plane.prev_WP_loc = plane.current_loc;
         plane.next_WP_loc = plane.ts_ctrl.get_target_loc();
     } else {
+        if (plane.previous_mode == &plane.mode_auto) {
+            if (plane.set_mode(plane.mode_auto, ModeReason::MISSION_END)) {
+                gcs().send_text(MAV_SEVERITY_ALERT, "Back to AUTO mode");
+                return;
+            }
+        }
         Location tmp_loc = plane.next_WP_loc;
         if (plane.set_mode(plane.mode_loiter, ModeReason::MISSION_END)) {
             plane.next_WP_loc = tmp_loc;

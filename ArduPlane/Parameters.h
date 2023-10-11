@@ -578,6 +578,7 @@ public:
     AP_Float        ep4_throttle_min;
 
     AP_Int8         ts_ahrs_send;
+    AP_Int8         engine_type;
 };
 
 extern const AP_Param::Info var_info[];

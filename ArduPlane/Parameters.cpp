@@ -1260,6 +1260,8 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
 
     AP_GROUPINFO("USR_TS_SEND", 34, ParametersG2, ts_ahrs_send, 0),
 
+    AP_GROUPINFO("USR_ENGINE", 35, ParametersG2, engine_type, 1),
+
     AP_GROUPEND
 };
 

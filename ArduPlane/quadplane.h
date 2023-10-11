@@ -388,6 +388,9 @@ private:
 
     // manual forward throttle input
     AP_Float fwd_thr_max;
+
+    AP_Int8 pos1_brake_type;
+
     RC_Channel *rc_fwd_thr_ch;
 
     // QACRO mode max roll/pitch/yaw rates
@@ -493,6 +496,7 @@ private:
         bool reached_wp_speed;
         uint32_t last_run_ms;
         float pos1_start_speed;
+        float pos1_start_dist;
     private:
         uint32_t last_state_change_ms;
         enum position_control_state state;

@@ -44,6 +44,7 @@ public:
     float starter_output;
 
 private:
+    bool _initialized;
     bool _connected;
     EngineState _state;
 };

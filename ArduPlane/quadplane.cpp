@@ -559,6 +559,8 @@ const AP_Param::GroupInfo QuadPlane::var_info2[] = {
     // @Range: 10 500
     AP_GROUPINFO("TAILSIT_RAT_VT", 25, QuadPlane, tailsitter.transition_rate_vtol, 50),
 
+    AP_GROUPINFO("POS1_TYPE", 26, QuadPlane, pos1_brake_type, 0),
+
     AP_GROUPEND
 };
 
@@ -2631,6 +2633,11 @@ void QuadPlane::PosControlState::set_state(enum position_control_state s)
             reached_wp_speed = false;
             qp.attitude_control->reset_yaw_target_and_rate();
             pos1_start_speed = plane.ahrs.groundspeed_vector().length();
+            const Vector2f diff_wp = plane.current_loc.get_distance_NE(plane.next_WP_loc);
+            pos1_start_dist = diff_wp.length();
+            if (state == QPOS_AIRBRAKE) {
+                gcs().send_text(MAV_SEVERITY_INFO, "decel: %0.1f",pos1_start_speed / safe_sqrt(2.0f *MAX(10.0f, pos1_start_dist-5.0f)));
+            }
         } else if (s == QPOS_POSITION2) {
             // POSITION2 changes target speed, so we need to change it
             // back to normal
@@ -2851,13 +2858,20 @@ void QuadPlane::vtol_position_controller(void)
         // calculate speed we should be at to reach the position2
         // target speed at the position2 distance threshold, assuming
         // Q_TRANS_DECEL is correct
-        float delta_x = MAX(0, distance-position2_dist_threshold);
-        float temp_speed_threshold = 20.0f;
         float temp_target_speed = 0.0f;
-        if (delta_x > temp_speed_threshold * temp_speed_threshold / (2.0f * transition_decel) ) {
-            temp_target_speed = safe_sqrt(delta_x * 2 * transition_decel);
+        if (pos1_brake_type == 0) {
+            float delta_x = MAX(0, distance-position2_dist_threshold);
+            float decel = poscontrol.pos1_start_speed / safe_sqrt(2.0f *MAX(10.0f, poscontrol.pos1_start_dist-position2_dist_threshold));
+            float temp_speed_threshold = 20.0f;
+            if (delta_x > temp_speed_threshold * temp_speed_threshold / (2.0f * decel) ) {
+                temp_target_speed = safe_sqrt(delta_x * 2 * decel);
+            } else {
+                temp_target_speed = delta_x * (2.0f * decel) / temp_speed_threshold;
+            }
         } else {
-            temp_target_speed = delta_x * (2.0f * transition_decel) / temp_speed_threshold;
+            float delta_x = MAX(0, distance-position2_dist_threshold);
+            float decel = poscontrol.pos1_start_speed / safe_sqrt(2.0f *MAX(10.0f, poscontrol.pos1_start_dist-position2_dist_threshold));
+            temp_target_speed = safe_sqrt(2.0f * decel * delta_x);
         }
         const float stopping_speed = temp_target_speed + position2_target_speed;
 
