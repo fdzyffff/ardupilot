@@ -1168,6 +1168,9 @@ private:
     // User costomization for TS cam
     TS_ctrl_t ts_ctrl;
 
+    void userhook_init();
+    void userhook_100Hz();
+    void userhook_1Hz();
 
 public:
     void failsafe_check(void);

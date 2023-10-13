@@ -116,6 +116,8 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     SCHED_TASK(efi_update,             10,    200),
 #endif
     SCHED_TASK(FD1_uart_update,        20,    400),
+    SCHED_TASK(userhook_100Hz,         100,    100),
+    SCHED_TASK(userhook_1Hz,             1,    100),
 };
 
 void Plane::get_scheduler_tasks(const AP_Scheduler::Task *&tasks,

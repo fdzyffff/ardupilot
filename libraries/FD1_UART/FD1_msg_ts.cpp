@@ -177,6 +177,17 @@ void FD1_msg_ts::swap_message(void)
         case 0x13: // X
             break;
         case 0x40: // T1,F1,B1,D1,R2
+            _msg_1.content.msg.sub_msg.msg_40.sub_t1.plane_lat = swap_message_int32_t(_msg_1.content.msg.sub_msg.msg_40.sub_t1.plane_lat);
+            _msg_1.content.msg.sub_msg.msg_40.sub_t1.plane_lng = swap_message_int32_t(_msg_1.content.msg.sub_msg.msg_40.sub_t1.plane_lng);
+            _msg_1.content.msg.sub_msg.msg_40.sub_t1.plane_alt = swap_message_int16_t(_msg_1.content.msg.sub_msg.msg_40.sub_t1.plane_alt);
+            _msg_1.content.msg.sub_msg.msg_40.sub_t1.target_lat = swap_message_int32_t(_msg_1.content.msg.sub_msg.msg_40.sub_t1.target_lat);
+            _msg_1.content.msg.sub_msg.msg_40.sub_t1.target_lng = swap_message_int32_t(_msg_1.content.msg.sub_msg.msg_40.sub_t1.target_lng);
+            _msg_1.content.msg.sub_msg.msg_40.sub_t1.target_alt = swap_message_int16_t(_msg_1.content.msg.sub_msg.msg_40.sub_t1.target_alt);
+            _msg_1.content.msg.sub_msg.msg_40.sub_k1.target_x1 = swap_message_uint16_t(_msg_1.content.msg.sub_msg.msg_40.sub_k1.target_x1);
+            _msg_1.content.msg.sub_msg.msg_40.sub_k1.target_y1 = swap_message_uint16_t(_msg_1.content.msg.sub_msg.msg_40.sub_k1.target_y1);
+            _msg_1.content.msg.sub_msg.msg_40.sub_k1.target_x2 = swap_message_uint16_t(_msg_1.content.msg.sub_msg.msg_40.sub_k1.target_x2);
+            _msg_1.content.msg.sub_msg.msg_40.sub_k1.target_y2 = swap_message_uint16_t(_msg_1.content.msg.sub_msg.msg_40.sub_k1.target_y2);
+            _msg_1.content.msg.sub_msg.msg_40.sub_k1.confidence_level = swap_message_int16_t(_msg_1.content.msg.sub_msg.msg_40.sub_k1.confidence_level);
             break;
         case 0x41: // T2,F2,B2,D2
             break;
