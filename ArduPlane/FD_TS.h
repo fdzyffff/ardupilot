@@ -25,6 +25,8 @@ public:
     FD1_UART uart_msg_ts{AP_SerialManager::SerialProtocol_TS};
     FD1_UART uart_msg_mission{AP_SerialManager::SerialProtocol_MISSION};
 
+    LowPassFilterVector3f _target_pos{1.0};
+
     bool _valid;
     uint32_t _last_msg_update_ms;
     Location _target_loc;

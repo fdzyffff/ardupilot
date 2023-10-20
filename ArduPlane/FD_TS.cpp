@@ -75,10 +75,10 @@ void TS_ctrl_t::ts_handle_and_route() {
         if (tmp_msg._msg_1.content.msg.header.id == 0x40) {
             uint8_t target_ret = tmp_msg._msg_1.content.msg.sub_msg.msg_40.sub_k1.target_ret;
             if (target_ret & 0b00100000) {
-                Location temp_loc;
-                temp_loc.lat = tmp_msg._msg_1.content.msg.sub_msg.msg_40.sub_t1.target_lat;
-                temp_loc.lng = tmp_msg._msg_1.content.msg.sub_msg.msg_40.sub_t1.target_lng;
-                temp_loc.alt = tmp_msg._msg_1.content.msg.sub_msg.msg_40.sub_t1.target_alt*100;
+                int32_t lat = tmp_msg._msg_1.content.msg.sub_msg.msg_40.sub_t1.target_lat;
+                int32_t lng = tmp_msg._msg_1.content.msg.sub_msg.msg_40.sub_t1.target_lng;
+                int32_t alt = tmp_msg._msg_1.content.msg.sub_msg.msg_40.sub_t1.target_alt*100;
+                Location temp_loc(lat, lng, alt, Location::AltFrame::ABSOLUTE);
                 set_target_loc(temp_loc);
                 if (plane.control_mode == &plane.mode_auto) {
                     plane.set_mode(plane.mode_gimbalfollow, ModeReason::MISSION_END);
@@ -334,9 +334,13 @@ void TS_ctrl_t::set_valid(bool v_in)
 
 void TS_ctrl_t::set_target_loc(Location& loc_in) 
 {
-    _target_loc.lat = loc_in.lat;
-    _target_loc.lng = loc_in.lng;
-    _target_loc.alt = plane.target_altitude.amsl_cm;
-    _last_msg_update_ms = millis();
-    set_valid(true);
+    Vector3f temp_pos;
+    Vector3f target_pos;
+    if (loc_in.get_vector_from_origin_NEU(temp_pos)) {
+        _target_pos.apply(temp_pos);
+        _target_loc = Location(_target_pos.get(), Location::AltFrame::ABOVE_ORIGIN);
+        // _target_loc.alt = plane.target_altitude.amsl_cm;
+        _last_msg_update_ms = millis();
+        set_valid(true);
+    }
 }
