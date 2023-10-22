@@ -564,6 +564,9 @@ public:
 
     // just to make compilation easier when all things are compiled out...
     uint8_t unused_integer;
+
+    AP_Float follow_speed_ratio;
+    AP_Float follow_speed_range;
 };
 
 extern const AP_Param::Info var_info[];

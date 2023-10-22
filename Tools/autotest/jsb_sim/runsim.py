@@ -5,7 +5,7 @@
 from __future__ import print_function
 import atexit
 import errno
-import fdpexpect
+from pexpect import fdpexpect
 import math
 import os
 import select
@@ -18,7 +18,8 @@ import time
 import pexpect
 from pymavlink import fgFDM
 
-from .. pysim import util
+sys.path.append("..")
+from pysim import util
 
 
 class control_state(object):
