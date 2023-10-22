@@ -14,7 +14,7 @@ public:
     void init();
     void update();
     void handle_msg(const mavlink_message_t &msg);
-    void do_offboard_cruise(float p2);
+    void do_offboard_control(float p2);
     void do_group();
     void do_set_leader(float p2);
     void update_leader();

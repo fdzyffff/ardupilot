@@ -166,6 +166,7 @@ public:
     friend class ModeTakeoff;
     friend class ModeThermal;
     friend class ModeLoiterAltQLand;
+    friend class ModeQTakeoff;
 
     friend class ModeAttack;
     friend class UFollow;
@@ -296,6 +297,7 @@ private:
     ModeThermal mode_thermal;
 #endif
     ModeAttack mode_attack;
+    ModeQTakeoff mode_qtakeoff;
 
     // This is the state of the flight control system
     // There are multiple states defined such as MANUAL, FBW-A, AUTO

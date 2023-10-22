@@ -5,6 +5,7 @@ bool ModeCircle::_enter()
 {
     // the altitude to circle at is taken from the current altitude
     plane.next_WP_loc.alt = plane.current_loc.alt;
+    _roll_cd = plane.roll_limit_cd / 3;
 
     return true;
 }
@@ -15,9 +16,8 @@ void ModeCircle::update()
     // or we just want to fly around in a gentle circle w/o GPS,
     // holding altitude at the altitude we set when we
     // switched into the mode
-    plane.nav_roll_cd  = plane.roll_limit_cd / 3;
+    plane.nav_roll_cd  = _roll_cd;
     plane.update_load_factor();
     plane.calc_nav_pitch();
     plane.calc_throttle();
 }
-

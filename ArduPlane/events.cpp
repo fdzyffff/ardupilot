@@ -58,6 +58,7 @@ void Plane::failsafe_short_on_event(enum failsafe_state fstype, ModeReason reaso
     case Mode::Number::QAUTOTUNE:
 #endif
     case Mode::Number::QACRO:
+    case Mode::Number::QTAKEOFF:
         if (quadplane.option_is_set(QuadPlane::OPTION::FS_RTL)) {
             set_mode(mode_rtl, reason);
         } else if (quadplane.option_is_set(QuadPlane::OPTION::FS_QRTL)) {
@@ -154,6 +155,7 @@ void Plane::failsafe_long_on_event(enum failsafe_state fstype, ModeReason reason
 #if QAUTOTUNE_ENABLED
     case Mode::Number::QAUTOTUNE:
 #endif
+    case Mode::Number::QTAKEOFF:
         if (quadplane.option_is_set(QuadPlane::OPTION::FS_RTL)) {
             set_mode(mode_rtl, reason);
         } else if (quadplane.option_is_set(QuadPlane::OPTION::FS_QRTL)) {

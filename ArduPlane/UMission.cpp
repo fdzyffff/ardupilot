@@ -34,9 +34,14 @@ void UMission::handle_msg(const mavlink_message_t &msg) {
                         break;
                     case 3:
                         if (_role == Mission_Role::Leader) {
-                            do_offboard_cruise(packet.param2);
+                            do_offboard_control(packet.param2);
                         }
                         break;
+#if HAL_QUADPLANE_ENABLED
+                    case 4:
+                        plane.set_mode(plane.mode_qtakeoff, ModeReason::GCS_COMMAND);
+                        break;
+#endif
                 }
                 break;
             default:
@@ -61,26 +66,59 @@ void UMission::handle_msg(const mavlink_message_t &msg) {
     }
 }
 
-void UMission::do_offboard_cruise(float p2) {
-    if (plane.control_mode != &plane.mode_cruise) {
-        plane.set_mode(plane.mode_cruise, ModeReason::GCS_COMMAND);
-    }
+void UMission::do_offboard_control(float p2) {
 
     int16_t option = p2;
     switch (option) {
         default:
             break;
         case 1:
+            if (plane.control_mode != &plane.mode_cruise) {
+                plane.set_mode(plane.mode_cruise, ModeReason::GCS_COMMAND);
+            }
             plane.mode_cruise.change_target_altitude_cm(1000);
             break;
         case 2:
+            if (plane.control_mode != &plane.mode_cruise) {
+                plane.set_mode(plane.mode_cruise, ModeReason::GCS_COMMAND);
+            }
             plane.mode_cruise.change_target_altitude_cm(-1000);
             break;
         case 3:
+            if (plane.control_mode != &plane.mode_cruise) {
+                plane.set_mode(plane.mode_cruise, ModeReason::GCS_COMMAND);
+            }
             plane.mode_cruise.change_target_heading_cd(-3000);
             break;
         case 4:
+            if (plane.control_mode != &plane.mode_cruise) {
+                plane.set_mode(plane.mode_cruise, ModeReason::GCS_COMMAND);
+            }
             plane.mode_cruise.change_target_heading_cd(3000);
+            break;
+        case 5:
+            if (plane.control_mode != &plane.mode_loiter) {
+                plane.set_mode(plane.mode_loiter, ModeReason::GCS_COMMAND);
+            }
+            plane.mode_loiter.do_circle_ccw();
+            break;
+        case 6:
+            if (plane.control_mode != &plane.mode_loiter) {
+                plane.set_mode(plane.mode_loiter, ModeReason::GCS_COMMAND);
+            }
+            plane.mode_loiter.do_circle_cw();
+            break;
+        case 7:
+            if (plane.control_mode != &plane.mode_cruise) {
+                plane.set_mode(plane.mode_cruise, ModeReason::GCS_COMMAND);
+            }
+            plane.mode_cruise.do_cmd_1();
+            break;
+        case 8:
+            if (plane.control_mode != &plane.mode_cruise) {
+                plane.set_mode(plane.mode_cruise, ModeReason::GCS_COMMAND);
+            }
+            plane.mode_cruise.do_cmd_2();
             break;
     }
 

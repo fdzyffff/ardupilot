@@ -231,7 +231,9 @@ void Plane::stabilize_stick_mixing_direct()
         control_mode == &mode_qautotune ||
 #endif
 #endif
-        control_mode == &mode_training) {
+        control_mode == &mode_training ||
+        control_mode == &mode_qtakeoff ||
+        control_mode == &mode_attack  ) {
         return;
     }
     float aileron = SRV_Channels::get_output_scaled(SRV_Channel::k_aileron);
@@ -270,7 +272,9 @@ void Plane::stabilize_stick_mixing_fbw()
         control_mode == &mode_qautotune ||
 #endif
 #endif  // HAL_QUADPLANE_ENABLED
-        control_mode == &mode_training) {
+        control_mode == &mode_training ||
+        control_mode == &mode_qtakeoff ||
+        control_mode == &mode_attack) {
         return;
     }
     // do FBW style stick mixing. We don't treat it linearly

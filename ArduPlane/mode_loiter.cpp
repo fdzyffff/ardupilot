@@ -95,3 +95,13 @@ void ModeLoiter::navigate()
     plane.update_loiter(0);
 }
 
+
+void ModeLoiter::do_circle_cw() {
+    plane.do_loiter_at_location();
+    plane.aparm.loiter_radius.set(abs(plane.aparm.loiter_radius));
+}
+
+void ModeLoiter::do_circle_ccw() {
+    plane.do_loiter_at_location();
+    plane.aparm.loiter_radius.set(-abs(plane.aparm.loiter_radius));
+}

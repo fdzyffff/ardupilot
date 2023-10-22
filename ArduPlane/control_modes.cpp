@@ -96,6 +96,9 @@ Mode *Plane::mode_from_mode_num(const enum Mode::Number num)
     case Mode::Number::ATTACK:
         ret = &mode_attack;
         break;
+    case Mode::Number::QTAKEOFF:
+        ret = &mode_qtakeoff;
+        break;
 
     }
     return ret;

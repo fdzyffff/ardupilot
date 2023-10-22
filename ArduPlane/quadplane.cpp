@@ -1887,7 +1887,10 @@ void QuadPlane::update_throttle_suppression(void)
     if (plane.control_mode == &plane.mode_auto && is_vtol_takeoff(plane.mission.get_current_nav_cmd().id)) {
         return;
     }
-
+    // allow for qtakeoff
+    if (plane.control_mode == &plane.mode_qtakeoff) {
+        return;
+    }
 idle_state:
     // motors should be in the spin when armed state to warn user they could become active
     set_desired_spool_state(AP_Motors::DesiredSpoolState::GROUND_IDLE);
@@ -2132,7 +2135,8 @@ bool QuadPlane::in_vtol_posvel_mode(void) const
             (plane.control_mode->is_guided_mode() &&
             plane.auto_state.vtol_loiter &&
              poscontrol.get_state() > QPOS_APPROACH) ||
-            in_vtol_auto());
+            in_vtol_auto() ||
+            plane.control_mode == &plane.mode_qtakeoff);
 }
 
 /*
@@ -2759,7 +2763,7 @@ void QuadPlane::vtol_position_controller(void)
                 break;
             }
         }
-        if (plane.control_mode == &plane.mode_guided || vtol_loiter_auto) {
+        if (plane.control_mode == &plane.mode_guided || vtol_loiter_auto || plane.control_mode == &plane.mode_qtakeoff) {
             plane.ahrs.get_location(plane.current_loc);
             int32_t target_altitude_cm;
             if (!plane.next_WP_loc.get_alt_cm(Location::AltFrame::ABOVE_HOME,target_altitude_cm)) {
@@ -2944,7 +2948,7 @@ void QuadPlane::takeoff_controller(void)
                                                                   get_pilot_input_yaw_rate_cds() + get_weathervane_yaw_rate_cds());
 
     float vel_z = wp_nav->get_default_speed_up();
-    if (plane.control_mode == &plane.mode_guided && guided_takeoff) {
+    if (plane.control_mode == &plane.mode_qtakeoff || (plane.control_mode == &plane.mode_guided && guided_takeoff)) {
         // for guided takeoff we aim for a specific height with zero
         // velocity at that height
         Location origin;
@@ -3639,7 +3643,7 @@ void QuadPlane::set_alt_target_current(void)
 // user initiated takeoff for guided mode
 bool QuadPlane::do_user_takeoff(float takeoff_altitude)
 {
-    if (plane.control_mode != &plane.mode_guided) {
+    if (plane.control_mode != &plane.mode_guided && plane.control_mode != &plane.mode_qtakeoff ) {
         gcs().send_text(MAV_SEVERITY_INFO, "User Takeoff only in GUIDED mode");
         return false;
     }

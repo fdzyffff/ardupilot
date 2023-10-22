@@ -1,0 +1,1 @@
+../Tools/autotest/sim_vehicle.py --model quadplane-copter_tailsitter --add-param-file ../Tools/autotest/default_params/quadplane-copter_tailsitter.parm
