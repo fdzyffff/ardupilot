@@ -38,7 +38,13 @@ public:
     // message structure
     struct PACKED MSG_Command_1 {
         FD1_msg_header header; //2
-        uint8_t empty1[7];     //7
+        uint8_t device_class;
+        uint8_t device_type;
+        uint8_t device_id;
+        uint8_t gcs_class;
+        uint8_t gcs_id;
+        uint8_t frame_id;
+        uint8_t empty1;        //7
         MSG_Param_1 param;     //114
         uint8_t count;         //1
         uint16_t sum_check;    //2
