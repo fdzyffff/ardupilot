@@ -29,8 +29,11 @@ void FD1_UART::read(void)
     // }
     // while (_port->available() > 0) {
         uint8_t temp = _port->read();
-        if (_msg_ep4_in.enable())   {_msg_ep4_in.parse(temp);}
-        if (_msg_ts_in.enable())    {_msg_ts_in.parse(temp);}
+        if (_msg_init.enable())   {_msg_init.parse(temp);}
+        if (_msg_control.enable())   {_msg_control.parse(temp);}
+        if (_msg_mission.enable())   {_msg_mission.parse(temp);}
+        if (_msg_guide.enable())   {_msg_guide.parse(temp);}
+        if (_msg_info.enable())   {_msg_info.parse(temp);}
     // }
 }
 
@@ -40,54 +43,54 @@ void FD1_UART::write(void)
         return ;
     }
     int16_t i = 0;
-    if (_msg_ep4_in._msg_1.need_send)
+    if (_msg_init._msg_1.need_send)
     {
-        _msg_ep4_in.swap_message();
-        for(i = 0;i < _msg_ep4_in._msg_1.length ; i ++) {
-            _port->write(_msg_ep4_in._msg_1.content.data[i]);
+        _msg_init.swap_message();
+        for(i = 0;i < _msg_init._msg_1.length ; i ++) {
+            _port->write(_msg_init._msg_1.content.data[i]);
         }
-        //_msg_ep4_in._msg_1.updated = false;
-        _msg_ep4_in._msg_1.need_send = false;
-        _msg_ep4_in.swap_message();
+        //_msg_init._msg_1.updated = false;
+        _msg_init._msg_1.need_send = false;
+        _msg_init.swap_message();
     }
-    if (_msg_ep4_out._msg_1.need_send)
+    if (_msg_control._msg_1.need_send)
     {
-        _msg_ep4_out.swap_message();
-        for(i = 0;i < _msg_ep4_out._msg_1.length ; i ++) {
-            _port->write(_msg_ep4_out._msg_1.content.data[i]);
+        _msg_control.swap_message();
+        for(i = 0;i < _msg_control._msg_1.length ; i ++) {
+            _port->write(_msg_control._msg_1.content.data[i]);
         }
-        //_msg_ep4_out._msg_1.updated = false;
-        _msg_ep4_out._msg_1.need_send = false;
-        _msg_ep4_out.swap_message();
+        //_msg_control._msg_1.updated = false;
+        _msg_control._msg_1.need_send = false;
+        _msg_control.swap_message();
     }
-    if (_msg_ts_in._msg_1.need_send)
+    if (_msg_mission._msg_1.need_send)
     {
-        _msg_ts_in.swap_message();
-        for(i = 0;i <= _msg_ts_in._msg_1.length+2 ; i ++) {
-            _port->write(_msg_ts_in._msg_1.content.data[i]);
+        _msg_mission.swap_message();
+        for(i = 0;i < _msg_mission._msg_1.length ; i ++) {
+            _port->write(_msg_mission._msg_1.content.data[i]);
         }
-        //_msg_ts_in._msg_1.updated = false;
-        _msg_ts_in._msg_1.need_send = false;
-        _msg_ts_in.swap_message();
+        //_msg_mission._msg_1.updated = false;
+        _msg_mission._msg_1.need_send = false;
+        _msg_mission.swap_message();
     }
-    if (_msg_ts_out._msg_1.need_send)
+    if (_msg_guide._msg_1.need_send)
     {
-        _msg_ts_out.swap_message();
-        for(i = 0;i <= _msg_ts_out._msg_1.length+2 ; i ++) {
-            _port->write(_msg_ts_out._msg_1.content.data[i]);
+        _msg_guide.swap_message();
+        for(i = 0;i < _msg_guide._msg_1.length ; i ++) {
+            _port->write(_msg_guide._msg_1.content.data[i]);
         }
-        //_msg_ts_out._msg_1.updated = false;
-        _msg_ts_out._msg_1.need_send = false;
-        _msg_ts_out.swap_message();
+        //_msg_guide._msg_1.updated = false;
+        _msg_guide._msg_1.need_send = false;
+        _msg_guide.swap_message();
     }
-    if (_msg_ts_route._msg_1.need_send)
+    if (_msg_info._msg_1.need_send)
     {
-        _msg_ts_route.swap_message();
-        for(i = 0;i <= _msg_ts_route._msg_1.length+2 ; i ++) {
-            _port->write(_msg_ts_route._msg_1.content.data[i]);
+        _msg_info.swap_message();
+        for(i = 0;i < _msg_info._msg_1.length ; i ++) {
+            _port->write(_msg_info._msg_1.content.data[i]);
         }
-        //_msg_ts_route._msg_1.updated = false;
-        _msg_ts_route._msg_1.need_send = false;
-        _msg_ts_route.swap_message();
+        //_msg_info._msg_1.updated = false;
+        _msg_info._msg_1.need_send = false;
+        _msg_info.swap_message();
     }
 }

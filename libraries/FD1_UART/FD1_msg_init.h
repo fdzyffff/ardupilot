@@ -77,7 +77,7 @@ public:
         } msg_state;
 
         uint16_t read;
-        uint8_t length;
+        const uint8_t length = FD1_MSG_INIT_LEN;
         uint8_t count;
         uint16_t sum_check;
         uint8_t data[FD1_MSG_INIT_LEN];
@@ -91,6 +91,8 @@ public:
 
     static const uint8_t PREAMBLE1 = 0xEB;
     static const uint8_t PREAMBLE2 = 0x90;
+    static const uint8_t FRAMETYPE = 0x11;
+    static const uint8_t FRAMEID = 0xB1;
 
     void process_message(void) override;
     void parse(uint8_t temp) override;
