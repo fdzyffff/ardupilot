@@ -474,6 +474,8 @@ const AP_Param::GroupInfo QuadPlane::var_info2[] = {
     // @Values: 0.5:Very Soft, 0.2:Soft, 0.15:Medium, 0.1:Crisp, 0.05:Very Crisp
     // @User: Standard
     AP_SUBGROUPINFO(command_model_pilot, "PLT_Y_", 33, QuadPlane, AC_CommandModel),
+    // @User: Advanced
+    AP_GROUPINFO("TKOFF_ALT", 34, QuadPlane, takeoff_q_alt, 10.0f),
 
     AP_GROUPEND
 };
@@ -3644,7 +3646,7 @@ void QuadPlane::set_alt_target_current(void)
 bool QuadPlane::do_user_takeoff(float takeoff_altitude)
 {
     if (plane.control_mode != &plane.mode_guided && plane.control_mode != &plane.mode_qtakeoff ) {
-        gcs().send_text(MAV_SEVERITY_INFO, "User Takeoff only in GUIDED mode");
+        gcs().send_text(MAV_SEVERITY_INFO, "User Takeoff only in GUIDED | QTKOFF mode");
         return false;
     }
     if (!hal.util->get_soft_armed()) {

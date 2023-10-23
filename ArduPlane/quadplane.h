@@ -673,6 +673,8 @@ private:
      */
     void setup_rp_fw_angle_gains(void);
 
+    AP_Float takeoff_q_alt;
+
 public:
     void motor_test_output();
     MAV_RESULT mavlink_motor_test_start(mavlink_channel_t chan, uint8_t motor_seq, uint8_t throttle_type,

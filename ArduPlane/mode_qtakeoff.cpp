@@ -6,7 +6,7 @@ bool ModeQTakeoff::_enter()
 #if HAL_QUADPLANE_ENABLED
 
     // set vertical speed and acceleration limits
-    quadplane.do_user_takeoff(40.0f);
+    quadplane.do_user_takeoff(MAX(plane.quadplane.takeoff_q_alt, 1.0f));
     gcs().send_text(MAV_SEVERITY_INFO, "tk");
     plane.quadplane.poscontrol.set_state(QuadPlane::QPOS_POSITION2);
     return true;
