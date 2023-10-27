@@ -149,6 +149,7 @@ void UAttack::update_target_roll_angle() {
 // degree/second
 void UAttack::update_target_yaw_rate() {
     float k = plane.g2.user_attack_k.get();
+    float k2 = plane.g2.user_attack_k2.get();
     // float boost_factor = constrain_float(fabsf(bf_info.x)/15.0f, 0.0f, 1.0f) * 2.0f;
     float angle_comp = constrain_float(bf_info.x, -15.0f, 15.0f);
     _target_yaw_rate = k * 1.5f * ef_rate_info.x + k2 * angle_comp;
