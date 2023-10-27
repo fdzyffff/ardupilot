@@ -143,15 +143,15 @@ void UCam_DYT::handle_info(float p1, float p2) {
 
     _frotend.udpate_control_value();
 
-    _frotend.display_info_p1 = _yaw_rate_filter.get();
-    _frotend.display_info_p2 = _yaw_filter.slope()*1000.f;
-    _frotend.display_info_p3 = _frotend.ef_info.x;
-    _frotend.display_info_p4 = _frotend.ef_info.y;
-
-    // _frotend.display_info_p1 = _frotend.bf_info.x;
-    // _frotend.display_info_p2 = _frotend.bf_info.y;
+    // _frotend.display_info_p1 = _yaw_rate_filter.get();
+    // _frotend.display_info_p2 = _yaw_filter.slope()*1000.f;
     // _frotend.display_info_p3 = _frotend.ef_info.x;
     // _frotend.display_info_p4 = _frotend.ef_info.y;
+
+    _frotend.display_info_p1 = _frotend.bf_info.x;
+    _frotend.display_info_p2 = _frotend.bf_info.y;
+    _frotend.display_info_p3 = _frotend.ef_info.x;
+    _frotend.display_info_p4 = _frotend.ef_info.y;
     _frotend.display_info_new = true;
     _frotend.display_info_count++;
 }
