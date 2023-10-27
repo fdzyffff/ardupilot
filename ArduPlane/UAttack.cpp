@@ -134,9 +134,10 @@ void UAttack::time_out_check() {
 // degree/second
 void UAttack::update_target_pitch_rate() {
     float k = plane.g2.user_attack_k.get();
+    float k2 = plane.g2.user_attack_k2.get();
     // float boost_factor = constrain_float(fabsf(bf_info.y)/15.0f, 0.0f, 1.0f) * 2.0f;
     float angle_comp = constrain_float(bf_info.y, -15.0f, 15.0f);
-    _target_pitch_rate = k * ef_rate_info.y + angle_comp; // degrees/s
+    _target_pitch_rate = k * ef_rate_info.y + k2 * angle_comp; // degrees/s
     // gcs().send_text(MAV_SEVERITY_INFO, "%f", _target_pitch_rate_cds);
 }
 
@@ -150,5 +151,5 @@ void UAttack::update_target_yaw_rate() {
     float k = plane.g2.user_attack_k.get();
     // float boost_factor = constrain_float(fabsf(bf_info.x)/15.0f, 0.0f, 1.0f) * 2.0f;
     float angle_comp = constrain_float(bf_info.x, -15.0f, 15.0f);
-    _target_yaw_rate = k * 1.5f * ef_rate_info.x + angle_comp;
+    _target_yaw_rate = k * 1.5f * ef_rate_info.x + k2 * angle_comp;
 }

@@ -569,6 +569,7 @@ public:
     AP_Float follow_speed_range;
 
     AP_Float user_attack_k;
+    AP_Float user_attack_k2;
     AP_Float user_attack_throttle;
     AP_Int16 user_print;
     AP_Int8 user_group_id;
