@@ -1231,6 +1231,9 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @Path: ../libraries/AP_Follow/AP_Follow.cpp
     AP_SUBGROUPINFO(follow, "FOLL", 33, ParametersG2, AP_Follow),
 #endif
+
+    AP_GROUPINFO("UFOLO_KP", 34, ParametersG2, follow_speed_ratio, 0.1f),
+    AP_GROUPINFO("UFOLO_LIM", 35, ParametersG2, follow_speed_range, 10.0f),
     
     AP_GROUPEND
 };
