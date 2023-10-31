@@ -4,7 +4,7 @@
 #include <SRV_Channel/SRV_Channel.h>
 #include <AP_SerialManager/AP_SerialManager.h>      // Serial manager library
 
-class TS_ctrl_t {
+class UCtrl {
 public:
     void init();
     void update();
@@ -22,7 +22,16 @@ public:
     void set_target_loc(Location& loc_in); 
     Location get_target_loc() {return _target_loc;}
 
+    void do_loiter_left();
+    void do_loiter_right();
+    void do_cruise_up();
+    void do_cruise();
+    void do_cruise_alt(float targe_alt_m);
+    void do_cruise_speed(float target_speed_kmh);
+
     FD1_UART uart_msg_ctrl{AP_SerialManager::SerialProtocol_UCtrl};
+
+    LowPassFilterVector3f _target_pos{1.0};
 
     bool _valid;
     uint32_t _last_msg_update_ms;

@@ -112,6 +112,7 @@
 #endif
 #include "AP_Arming.h"
 #include "UFollow.h"
+#include "UCtrl.h"
 
 /*
   main APM:Plane class
@@ -163,6 +164,7 @@ public:
     friend class ModeLoiterAltQLand;
 
     friend class UFollow;
+    friend class UCtrl;
     Plane(void);
 
 private:
@@ -1215,9 +1217,11 @@ private:
     // last target alt we passed to tecs
     int32_t tecs_target_alt_cm;
 
+    void userhook_init();
     void userhook_50Hz();
     void userhook_1Hz();
     UFollow ufollow;
+    UCtrl uctrl;
 
 public:
     void failsafe_check(void);

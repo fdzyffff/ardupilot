@@ -25,7 +25,6 @@ void FD1_msg_control::parse(uint8_t temp)
         case FD1UART_msg_parser::FD1UART_PREAMBLE2:
             if (temp == PREAMBLE2)
             {
-                _msg.length = _msg_1.length;
                 _msg.read = 2;
                 //_msg.sum_check += temp;
                 _msg.msg_state = FD1UART_msg_parser::FD1UART_DATA;

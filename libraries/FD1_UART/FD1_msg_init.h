@@ -32,7 +32,7 @@ public:
         uint8_t role;
         uint8_t status;
         uint8_t number;
-        MSG_Status_1 status[5]; //70
+        MSG_Status_1 status_array[5]; //70
     };
 
     // message structure

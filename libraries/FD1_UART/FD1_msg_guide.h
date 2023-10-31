@@ -20,7 +20,7 @@ public:
         float platform_vx;
         float platform_vy;
         float platform_vz;
-    }
+    };
 
     // message structure
     struct PACKED MSG_Command_1 {

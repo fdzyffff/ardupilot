@@ -60,7 +60,7 @@ public:
         uint8_t cmd1;
         uint8_t cmd2;          //8
         MSG_Info_1 info;       //112
-        uint8_t empty[20]      //20
+        uint8_t empty[20];     //20
         uint8_t count;         //1
         uint16_t sum_check;    //2
     };
