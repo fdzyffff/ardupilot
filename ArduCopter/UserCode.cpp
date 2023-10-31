@@ -12,6 +12,13 @@ void Copter::userhook_init()
 void Copter::userhook_FastLoop()
 {
     // put your 100Hz code here
+    // hal.serial(2)->write(0xEE);
+    // hal.serial(3)->write(0xEE);
+    // hal.serial(4)->write(0xEE);
+    // hal.serial(5)->write(0xEE);
+    // hal.serial(6)->write(0xEE);
+    // hal.serial(7)->write(0xEE);
+    // hal.serial(8)->write(0xEE);
 }
 #endif
 
@@ -26,6 +33,10 @@ void Copter::userhook_50Hz()
 void Copter::userhook_MediumLoop()
 {
     // put your 10Hz code here
+    // if (hal.serial(4)->available()) {
+    //     gcs().send_text(MAV_SEVERITY_INFO, "ssss %x", hal.serial(4)->read());
+    // }
+    // hal.serial(4)->write(0xEE);
 }
 #endif
 
