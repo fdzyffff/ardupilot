@@ -1,4 +1,5 @@
 #include "FD1_UART.h"
+#include <GCS_MAVLink/GCS.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -29,6 +30,7 @@ void FD1_UART::read(void)
     // }
     // while (_port->available() > 0) {
         uint8_t temp = _port->read();
+        // gcs().send_text(MAV_SEVERITY_INFO, "X :%x", temp);
         if (_msg_init.enable())   {_msg_init.parse(temp);}
         if (_msg_control.enable())   {_msg_control.parse(temp);}
         if (_msg_mission.enable())   {_msg_mission.parse(temp);}
@@ -42,6 +44,8 @@ void FD1_UART::write(void)
     if(!initialized()) {
         return ;
     }
+    
+    // gcs().send_text(MAV_SEVERITY_INFO, "_msg_info._msg_1.need_send %d", _msg_info._msg_1.need_send);
     int16_t i = 0;
     if (_msg_init._msg_1.need_send)
     {
@@ -86,9 +90,9 @@ void FD1_UART::write(void)
     if (_msg_info._msg_1.need_send)
     {
         _msg_info.swap_message();
-        for(i = 0;i < _msg_info._msg_1.length ; i ++) {
-            _port->write(_msg_info._msg_1.content.data[i]);
-        }
+        // for(i = 0;i < _msg_info._msg_1.length ; i ++) {
+            _port->write(_msg_info._msg_1.content.data, _msg_info._msg_1.length);
+        // }
         //_msg_info._msg_1.updated = false;
         _msg_info._msg_1.need_send = false;
         _msg_info.swap_message();

@@ -50,7 +50,7 @@ public:
         bool print;
         bool updated;
         bool need_send;
-        uint8_t length;
+        const uint8_t length = FD1_MSG_GUIDE_LEN;
         Content_1 content;
     };
 
@@ -80,7 +80,7 @@ public:
 
     static const uint8_t PREAMBLE1 = 0xEB;
     static const uint8_t PREAMBLE2 = 0x90;
-    static const uint8_t FRAMETYPE = 0x11;
+    static const uint8_t FRAMETYPE = 0x01;
     static const uint8_t FRAMEID = 0xF1;
 
     void process_message(void) override;

@@ -9,6 +9,9 @@ void UCtrl::init() {
     uart_msg_ctrl.get_msg_guide().set_enable();
     uart_msg_ctrl.get_msg_info().set_enable();
 
+    uart_msg_ctrl_send.init();
+    uart_msg_ctrl_send.get_msg_info().set_enable();
+
     _valid = false;
     _last_msg_update_ms = 0;
     _target_loc.lat = plane.current_loc.lat;
@@ -29,7 +32,7 @@ void UCtrl::update() {
 
     ctrl_send();
 
-    uart_msg_ctrl.write();
+    uart_msg_ctrl_send.write();
 
     update_valid();
 }
@@ -56,6 +59,7 @@ void UCtrl::msg_handle_control() {
         tmp_msg._msg_1.updated = false;
     }
     bool do_print = false;
+    bool do_print2 = false;
     switch (tmp_msg._msg_1.content.msg.cmd1) {
         case 0x01: //自主控制
             plane.set_mode(plane.mode_auto, ModeReason::GCS_COMMAND);
@@ -101,9 +105,11 @@ void UCtrl::msg_handle_control() {
             break;
         case 0x0F: //爬升开
             do_cruise_up();
+            do_print = true;
             break;
         case 0x10: //爬升关
-            do_cruise();
+            do_cruise_alt((float)plane.current_loc.alt * 0.01f);
+            do_print = true;
             break;
         case 0x30: //刹车
             do_print = true;
@@ -130,6 +136,7 @@ void UCtrl::msg_handle_control() {
             do_print = true;
             break;
         case 0x3C: //解锁
+            plane.arming.arm(AP_Arming::Method::MAVLINK);
             do_print = true;
             break;
         case 0x3E: //弹射
@@ -144,9 +151,11 @@ void UCtrl::msg_handle_control() {
         switch (tmp_msg._msg_1.content.msg.cmd2) {
             case 0x01: //高度保持
                 do_cruise_alt(tmp_msg._msg_1.content.msg.content2);
+                do_print2 = true;
                 break;
             case 0x02: //速度保持
                 do_cruise_speed(tmp_msg._msg_1.content.msg.content2);
+                do_print2 = true;
                 break;
             case 0x03: //航点切换
                 do_print = true;
@@ -167,6 +176,9 @@ void UCtrl::msg_handle_control() {
 
     if (do_print) {
         gcs().send_text(MAV_SEVERITY_INFO, "cmd1:%x,cmd2:%x",tmp_msg._msg_1.content.msg.cmd1,tmp_msg._msg_1.content.msg.cmd2);
+    }
+    if (do_print2) {
+        gcs().send_text(MAV_SEVERITY_INFO, "cmd1:%x,cmd2:%x,cont:%f",tmp_msg._msg_1.content.msg.cmd1,tmp_msg._msg_1.content.msg.cmd2,tmp_msg._msg_1.content.msg.content2);
     }
 }
 
@@ -229,56 +241,97 @@ void UCtrl::msg_handle_guide() {
 // }
 
 void UCtrl::ctrl_send() {
+    static uint32_t _last_send_ms = millis();
+    if (millis() - _last_send_ms > 1000) {
+        _last_send_ms = millis();
+    } else {
+        return;
+    }
+
+    if (plane.gps.status() < AP_GPS::GPS_OK_FIX_3D) {
+        return;
+    }
     static uint8_t n_count = 0;
-    // calculate the absolute altitude.
-    int32_t abs_alt = plane.current_loc.alt;
-    if (plane.current_loc.get_alt_cm(Location::AltFrame::ABSOLUTE,abs_alt)) {
-        ;
+
+    SITL::SIM* _sitl = AP::sitl();
+    if (_sitl == nullptr) {
+        return;
     }
+    if (_sitl) {
+        // const struct SITL::sitl_fdm &fdm = _sitl->state;
 
-    // calculate the sink rate.
-    Vector3f vel;
-    if (plane.ahrs.get_velocity_NED(vel)) {
-        ;
+        // FD2_msg_ue4_ahrs &tmp_msg = FD2_uart_msg_ue4.get_msg_ue4_ahrs();
+        // tmp_msg._msg_1.content.msg.header.head_1 = FD2_msg_ue4_ahrs::PREAMBLE1;
+        // tmp_msg._msg_1.content.msg.header.head_2 = FD2_msg_ue4_ahrs::PREAMBLE2;
+        // tmp_msg._msg_1.content.msg.vehicle_id = 0;
+        // tmp_msg._msg_1.content.msg.lat = fdm.latitude * 1e7;
+        // tmp_msg._msg_1.content.msg.lng = fdm.longitude * 1e7;
+        // tmp_msg._msg_1.content.msg.alt = fdm.altitude*100;
+        // tmp_msg._msg_1.content.msg.roll = fdm.rollDeg;
+        // tmp_msg._msg_1.content.msg.pitch = fdm.pitchDeg;
+        // tmp_msg._msg_1.content.msg.yaw = fdm.yawDeg;
+        // tmp_msg._msg_1.content.msg.sum_check = 0;
+
+
+
+        // calculate the absolute altitude.
+        int32_t abs_alt = plane.current_loc.alt;
+        if (plane.current_loc.get_alt_cm(Location::AltFrame::ABSOLUTE,abs_alt)) {
+            ;
+        }
+
+        // calculate the sink rate.
+        Vector3f vel;
+        if (plane.ahrs.get_velocity_NED(vel)) {
+            ;
+        }
+
+        FD1_msg_info &tmp_msg = uart_msg_ctrl_send.get_msg_info();
+
+        tmp_msg._msg_1.content.msg.header.head_1 = FD1_msg_info::PREAMBLE1;
+        tmp_msg._msg_1.content.msg.header.head_2 = FD1_msg_info::PREAMBLE2;
+        tmp_msg._msg_1.content.msg.device_id = FD1_msg_info::FRAMETYPE;
+        tmp_msg._msg_1.content.msg.frame_id = FD1_msg_info::FRAMEID;
+        tmp_msg._msg_1.content.msg.device_class = 0;
+        tmp_msg._msg_1.content.msg.device_type = 0x01;
+        tmp_msg._msg_1.content.msg.gcs_class = 0x01;
+        tmp_msg._msg_1.content.msg.gcs_id = 0x01;
+        tmp_msg._msg_1.content.msg.info.lng = ((double)plane.current_loc.lng)*1e-7;
+        tmp_msg._msg_1.content.msg.info.lat = ((double)plane.current_loc.lat)*1e-7;
+        tmp_msg._msg_1.content.msg.info.alt = ((float)abs_alt)*0.01f;
+        tmp_msg._msg_1.content.msg.info.roll = ((float)plane.ahrs.roll_sensor)/100.f;
+        tmp_msg._msg_1.content.msg.info.pitch = ((float)plane.ahrs.pitch_sensor)/100.f;
+        tmp_msg._msg_1.content.msg.info.yaw = ((float)plane.ahrs.yaw_sensor)/100.f;
+        tmp_msg._msg_1.content.msg.info.ve = vel.y;
+        tmp_msg._msg_1.content.msg.info.vn = vel.x;
+        tmp_msg._msg_1.content.msg.info.vu = -vel.z;
+        tmp_msg._msg_1.content.msg.info.airspeed = plane.airspeed.get_airspeed();
+        tmp_msg._msg_1.content.msg.info.gps_speed = ((float)plane.gps.ground_speed());
+        tmp_msg._msg_1.content.msg.info.attack_angle = 0.0f;
+        tmp_msg._msg_1.content.msg.info.side_slip_angle = 0.0f;
+        tmp_msg._msg_1.content.msg.info.climb_rate = 11.0f;
+        tmp_msg._msg_1.content.msg.info.wind_speed = 10.0f;
+        tmp_msg._msg_1.content.msg.info.wind_direction = 0.0f;
+        tmp_msg._msg_1.content.msg.info.flap_left = SRV_Channels::get_output_norm(SRV_Channel::k_flap)*25.0f;
+        tmp_msg._msg_1.content.msg.info.flap_right = -SRV_Channels::get_output_norm(SRV_Channel::k_flap)*25.0f;
+        tmp_msg._msg_1.content.msg.info.elevator_left = SRV_Channels::get_output_norm(SRV_Channel::k_elevator)*25.0f;
+        tmp_msg._msg_1.content.msg.info.elevator_right = -SRV_Channels::get_output_norm(SRV_Channel::k_elevator)*25.0f;
+        tmp_msg._msg_1.content.msg.info.rudder_left = SRV_Channels::get_output_norm(SRV_Channel::k_rudder)*25.0f;
+        tmp_msg._msg_1.content.msg.info.rudder_right = -SRV_Channels::get_output_norm(SRV_Channel::k_rudder)*25.0f;
+        tmp_msg._msg_1.content.msg.info.flight_stage = 0;
+        tmp_msg._msg_1.content.msg.info.flight_mode = 0;
+        tmp_msg._msg_1.content.msg.info.landinggear_state = 0;
+        tmp_msg._msg_1.content.msg.info.refly_state = 0;
+        tmp_msg._msg_1.content.msg.info.fule = 100.f;
+        tmp_msg._msg_1.content.msg.info.rpm = 100.f;
+        tmp_msg._msg_1.content.msg.info.wp_distance = 1000.f;
+        tmp_msg._msg_1.content.msg.count = n_count;
+
+        tmp_msg.sum_check();
+        tmp_msg._msg_1.content.msg.sum_check = 0;
+        tmp_msg._msg_1.need_send = true;
+        n_count++;
     }
-
-    FD1_msg_info &tmp_msg = uart_msg_ctrl.get_msg_info();
-
-    tmp_msg._msg_1.content.msg.header.head_1 = FD1_msg_info::PREAMBLE1;
-    tmp_msg._msg_1.content.msg.header.head_2 = FD1_msg_info::PREAMBLE2;
-    tmp_msg._msg_1.content.msg.device_id = FD1_msg_info::FRAMETYPE;
-    tmp_msg._msg_1.content.msg.frame_id = FD1_msg_info::FRAMEID;
-    tmp_msg._msg_1.content.msg.info.lng = ((double)plane.current_loc.lng)*1e-7;
-    tmp_msg._msg_1.content.msg.info.lat = ((double)plane.current_loc.lat)*1e-7;
-    tmp_msg._msg_1.content.msg.info.alt = ((float)abs_alt)*0.01f;
-    tmp_msg._msg_1.content.msg.info.pitch = ((float)plane.ahrs.pitch_sensor)/100.f;
-    tmp_msg._msg_1.content.msg.info.roll = ((float)plane.ahrs.roll_sensor)/100.f;
-    tmp_msg._msg_1.content.msg.info.yaw_rate = ((float)plane.ahrs.yaw_sensor)/100.f;
-    tmp_msg._msg_1.content.msg.info.ve = vel.y;
-    tmp_msg._msg_1.content.msg.info.vn = vel.x;
-    tmp_msg._msg_1.content.msg.info.vu = -vel.z;
-    tmp_msg._msg_1.content.msg.info.airspeed = plane.airspeed.get_airspeed();
-    tmp_msg._msg_1.content.msg.info.gps_speed = ((float)plane.gps.ground_speed());
-    tmp_msg._msg_1.content.msg.info.attack_angle = 0.0f;
-    tmp_msg._msg_1.content.msg.info.side_slip_angle = 0.0f;
-    tmp_msg._msg_1.content.msg.info.wind_speed = 0.0f;
-    tmp_msg._msg_1.content.msg.info.wind_direction = 0.0f;
-    tmp_msg._msg_1.content.msg.info.flap_left = SRV_Channels::get_output_norm(SRV_Channel::k_flap)*25.0f;
-    tmp_msg._msg_1.content.msg.info.flap_right = -SRV_Channels::get_output_norm(SRV_Channel::k_flap)*25.0f;
-    tmp_msg._msg_1.content.msg.info.elevator_left = SRV_Channels::get_output_norm(SRV_Channel::k_elevator)*25.0f;
-    tmp_msg._msg_1.content.msg.info.elevator_right = -SRV_Channels::get_output_norm(SRV_Channel::k_elevator)*25.0f;
-    tmp_msg._msg_1.content.msg.info.rudder_left = SRV_Channels::get_output_norm(SRV_Channel::k_rudder)*25.0f;
-    tmp_msg._msg_1.content.msg.info.rudder_right = -SRV_Channels::get_output_norm(SRV_Channel::k_rudder)*25.0f;
-    tmp_msg._msg_1.content.msg.info.flight_stage = 0;
-    tmp_msg._msg_1.content.msg.info.flight_mode = 0;
-    tmp_msg._msg_1.content.msg.info.landinggear_state = 0;
-    tmp_msg._msg_1.content.msg.info.refly_state = 0;
-    tmp_msg._msg_1.content.msg.info.fule = 100.f;
-    tmp_msg._msg_1.content.msg.info.rpm = 100.f;
-    tmp_msg._msg_1.content.msg.info.wp_distance = 1000.f;
-    tmp_msg._msg_1.content.msg.count = n_count;
-
-    tmp_msg.sum_check();
 }
 
 void UCtrl::update_valid() {
@@ -348,13 +401,14 @@ void UCtrl::do_cruise()
 void UCtrl::do_cruise_alt(float targe_alt_m)
 {
     do_cruise();
-    plane.mode_cruise.change_target_altitude_cm(targe_alt_m*100.f);
+    plane.mode_cruise.change_target_altitude_cm((int32_t)targe_alt_m*100 - plane.target_altitude.amsl_cm);
+    gcs().send_text(MAV_SEVERITY_INFO, "plane.target_altitude.amsl_cm %d", plane.target_altitude.amsl_cm);
 }
 
-void UCtrl::do_cruise_speed(float target_speed_kmh)
+void UCtrl::do_cruise_speed(float target_speed_ms)
 {
     do_cruise();
-    float speed_ms = target_speed_kmh/3.6f;
+    float speed_ms = target_speed_ms;
     if (speed_ms >= plane.aparm.airspeed_min.get() && speed_ms <= plane.aparm.airspeed_max.get())  {
         // airspeed_cruise_cm.set(speed_ms * 100f);
         gcs().send_text(MAV_SEVERITY_INFO, "Set airspeed %f m/s", speed_ms);

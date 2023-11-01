@@ -1,5 +1,6 @@
 #pragma once
 #include <AP_HAL/AP_HAL.h>
+#include <GCS_MAVLink/GCS.h>
 
 class FD1_message {
 public:

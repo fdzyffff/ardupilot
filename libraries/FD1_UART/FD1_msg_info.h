@@ -1,6 +1,6 @@
 #include "FD1_message.h"
 
-#define FD1_MSG_INFO_LEN 145
+#define FD1_MSG_INFO_LEN 281
 class FD1_msg_info : public FD1_message{
 public:
     struct PACKED FD1_msg_header {
@@ -21,9 +21,9 @@ public:
         double lng;
         double lat;
         float alt;
-        float pitch;
         float roll;
-        float yaw_rate;
+        float pitch;
+        float yaw;
         float ve;
         float vn;
         float vu;
@@ -31,6 +31,7 @@ public:
         float gps_speed;
         float attack_angle;
         float side_slip_angle;
+        float climb_rate;
         float wind_speed;
         float wind_direction;
         float flap_left;
@@ -46,6 +47,7 @@ public:
         float fule;
         float rpm;
         float wp_distance; // 112
+        uint8_t empty[136];
     };
 
     // message structure
@@ -76,7 +78,7 @@ public:
         bool print;
         bool updated;
         bool need_send;
-        uint8_t length;
+        const uint16_t length = FD1_MSG_INFO_LEN;
         Content_1 content;
     };
 
@@ -92,7 +94,7 @@ public:
         } msg_state;
 
         uint16_t read;
-        const uint8_t length = FD1_MSG_INFO_LEN;
+        const uint16_t length = FD1_MSG_INFO_LEN;
         uint8_t count;
         uint16_t sum_check;
         uint8_t data[FD1_MSG_INFO_LEN];
@@ -106,7 +108,7 @@ public:
 
     static const uint8_t PREAMBLE1 = 0xEB;
     static const uint8_t PREAMBLE2 = 0x90;
-    static const uint8_t FRAMETYPE = 0x11;
+    static const uint8_t FRAMETYPE = 0x01;
     static const uint8_t FRAMEID = 0x41;
 
     void process_message(void) override;

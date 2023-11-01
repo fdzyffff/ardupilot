@@ -248,6 +248,9 @@ size_t UARTDriver::write(uint8_t c)
 }
 size_t UARTDriver::write(const uint8_t *buffer, size_t size)
 {
+    // if (_is_udp) {
+    //     AP_HAL::panic("Space %d, Size %ld", txspace(), size);
+    // }
     if (txspace() <= size) {
         size = txspace();
     }

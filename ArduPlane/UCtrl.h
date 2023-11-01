@@ -27,9 +27,10 @@ public:
     void do_cruise_up();
     void do_cruise();
     void do_cruise_alt(float targe_alt_m);
-    void do_cruise_speed(float target_speed_kmh);
+    void do_cruise_speed(float target_speed_ms);
 
     FD1_UART uart_msg_ctrl{AP_SerialManager::SerialProtocol_UCtrl};
+    FD1_UART uart_msg_ctrl_send{AP_SerialManager::SerialProtocol_UCtrl_Send};
 
     LowPassFilterVector3f _target_pos{1.0};
 

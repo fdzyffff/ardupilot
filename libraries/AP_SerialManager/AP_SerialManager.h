@@ -171,6 +171,7 @@ public:
         SerialProtocol_MAVLinkHL = 43,
         SerialProtocol_Tramp = 44,
         SerialProtocol_UCtrl = 100,
+        SerialProtocol_UCtrl_Send = 101,
         SerialProtocol_NumProtocols                    // must be the last value
     };
 
