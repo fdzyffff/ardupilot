@@ -692,6 +692,9 @@ void UARTDriver::_timer_tick(void)
 #if !defined(HAL_BUILD_AP_PERIPH)
     SITL::SIM *_sitl = AP::sitl();
     if (_sitl && _sitl->telem_baudlimit_enable) {
+                if (_is_udp) {
+                    fprintf(stderr, "telem_baudlimit_enable\n");
+                }
         // limit byte rate to configured baudrate
         uint32_t now = AP_HAL::micros();
         float dt = 1.0e-6 * (now - last_tick_us);
@@ -705,11 +708,12 @@ void UARTDriver::_timer_tick(void)
     if (_packetise) {
         uint16_t n = _writebuffer.available();
         n = MIN(n, max_bytes);
-#if HAL_GCS_ENABLED
-        if (n > 0) {
-            n = mavlink_packetise(_writebuffer, n);
-        }
-#endif
+
+// #if HAL_GCS_ENABLED
+//         if (n > 0) {
+//             n = mavlink_packetise(_writebuffer, n);
+//         }
+// #endif
         if (n > 0) {
             // keep as a single UDP packet
             uint8_t tmpbuf[n];

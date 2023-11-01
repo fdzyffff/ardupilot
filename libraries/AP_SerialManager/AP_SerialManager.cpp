@@ -580,8 +580,8 @@ void AP_SerialManager::init()
                     break;
                 case SerialProtocol_UCtrl_Send:
                     uart->begin(state[i].baudrate(),
-                                         256,
-                                         256);
+                                         512,
+                                         512);
                     break;
 
                 default:
