@@ -1080,6 +1080,11 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_long_packet(const mavlink_command_l
         return MAV_RESULT_ACCEPTED;
     }
 
+    case MAV_CMD_USER_2: {
+        plane.ts_ctrl.test_ts_uart((int16_t)packet.param1, (uint8_t)packet.param2);
+        return MAV_RESULT_ACCEPTED;
+    }
+
     default:
         return GCS_MAVLINK::handle_command_long_packet(packet);
     }

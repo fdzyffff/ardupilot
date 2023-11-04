@@ -5,6 +5,7 @@ bool ModeGimbalFollow::_enter()
 {
     if (plane.ts_ctrl.valid()) {
         plane.set_target_altitude_current();
+        plane.next_WP_loc = plane.current_loc;
         return true;
     }
     gcs().send_text(MAV_SEVERITY_ALERT, "No Target Position");
@@ -16,7 +17,8 @@ void ModeGimbalFollow::update()
 
     if (plane.ts_ctrl.valid()) {
         plane.prev_WP_loc = plane.current_loc;
-        plane.next_WP_loc = plane.ts_ctrl.get_target_loc();
+        plane.next_WP_loc.lat = plane.ts_ctrl.get_target_loc().lat;
+        plane.next_WP_loc.lng = plane.ts_ctrl.get_target_loc().lng;
     } else {
         if (plane.previous_mode == &plane.mode_auto) {
             if (plane.set_mode(plane.mode_auto, ModeReason::MISSION_END)) {

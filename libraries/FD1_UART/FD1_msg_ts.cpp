@@ -145,7 +145,7 @@ bool FD1_msg_ts::sum_check(void)
     uint8_t sum_check = 0;
     _msg_1.length = _msg_1.content.msg.header.info&0b00111111;
 
-    if (_msg_1.length<4 || _msg_1.length>FD1_MSG_TS_LEN-3) {return false;}
+    if (_msg_1.length < 4 || _msg_1.length>FD1_MSG_TS_LEN-3) {return false;}
     for (i = 3; i <= _msg_1.length+1; i ++) {
         sum_check ^= _msg_1.content.data[i];
     }

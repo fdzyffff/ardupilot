@@ -21,24 +21,38 @@ void TS_ctrl_t::init() {
 
 void TS_ctrl_t::update() {
 
-    while (uart_msg_ts.port_avaliable() > 0) {
+    // while (uart_msg_ts.port_avaliable() > 0) {
+    //     uart_msg_ts.read();
+    //     ts_handle_and_route();
+    //     uart_msg_mission.write();  
+    // }
+
+    // while (uart_msg_mission.port_avaliable() > 0) {
+    //     uart_msg_mission.read();
+    //     mission_handle_and_route();
+    //     uart_msg_ts.write();  
+    // }
+
+    do {
         uart_msg_ts.read();
         ts_handle_and_route();
         uart_msg_mission.write();  
-    }
+    } while (uart_msg_ts.port_avaliable() > 0);
 
-    while (uart_msg_mission.port_avaliable() > 0) {
+    do {
         uart_msg_mission.read();
         mission_handle_and_route();
         uart_msg_ts.write();  
-    }
+    } while (uart_msg_mission.port_avaliable() > 0);
 
     if (plane.g2.ts_ahrs_send.get()) {
         ts_send();
         uart_msg_ts.write();
     }
 
-    update_valid();
+    test_ts_update();
+
+    valid_update();
 }
 
 void TS_ctrl_t::mission_handle_and_route() {
@@ -304,7 +318,7 @@ void TS_ctrl_t::get_Time(uint8_t &year_out, uint8_t &month_out, uint8_t &day_out
     second_out = second;
 }
 
-void TS_ctrl_t::update_valid() {
+void TS_ctrl_t::valid_update() {
     if (_last_msg_update_ms == 0 || millis() - _last_msg_update_ms > 1000) {
         set_valid(false);
     } else {
