@@ -4,7 +4,7 @@
 void UCam::handle_current_pos_info(float x, float y, float z) {
     current_pos_SIM.x = x;
     current_pos_SIM.y = y;
-    current_pos_SIM.z = z;
+    current_pos_SIM.z = -z;
 }
 
 void UCam::update_value_SIM(float dt){
@@ -42,7 +42,7 @@ void UCam::update_target_yaw_rate_SIM() {
     float info_x = wrap_180(target_yaw - current_yaw)/30.f;
     info_x = constrain_float(info_x, -1.0f, 1.0f);
     float yaw_rate_tc = copter.g2.user_parameters.fly_yaw_tc;
-    float yaw_rate_cds = constrain_float((3000.f * info_x * yaw_rate_tc), -3000.f, 3000.f);
+    float yaw_rate_cds = constrain_float((3000.f * info_x * yaw_rate_tc), -6000.f, 6000.f);
     _target_yaw_rate_cds = yaw_rate_cds;
 }
 
@@ -55,6 +55,7 @@ void UCam::update_target_track_angle_SIM() {
 void UCam::update_q_rate_cds_SIM(float dt) {
     static float last_q_cd = 0.0f;
     float q_cd = 100.f*degrees(atan2f(target_pos_SIM.y - current_pos_SIM.y, target_pos_SIM.x - current_pos_SIM.x));
+    q_cd = wrap_180_cd(q_cd);
     float q_cds = (q_cd - last_q_cd)/dt;
     last_q_cd = q_cd;
     _q_cds_filter.apply(q_cds, dt);

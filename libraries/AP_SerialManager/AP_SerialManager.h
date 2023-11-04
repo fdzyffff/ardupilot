@@ -173,6 +173,7 @@ public:
         SerialProtocol_CamMavlink = 44,
         SerialProtocol_CamASCII = 45,
         SerialProtocol_CamSIM = 46,
+        SerialProtocol_UE4 = 100,
         SerialProtocol_NumProtocols                    // must be the last value
     };
 

@@ -86,11 +86,11 @@ void UCam_Port_SIM::port_read() {
     _frotend.target_pos_SIM.x = copter.g2.user_parameters.target_sim_x.get();
     _frotend.target_pos_SIM.y = copter.g2.user_parameters.target_sim_y.get();
     _frotend.target_pos_SIM.z = copter.g2.user_parameters.target_sim_z.get();
-    if (copter.mocap_stat.n_count == 0) {
+    // if (copter.mocap_stat.n_count == 0) {
         _frotend.current_pos_SIM.x = copter.inertial_nav.get_position_xy_cm().x*0.01f; //meter
         _frotend.current_pos_SIM.y = copter.inertial_nav.get_position_xy_cm().y*0.01f; //meter
         _frotend.current_pos_SIM.z = copter.inertial_nav.get_position_z_up_cm()*0.01f; //meter
-    }
+    // }
     handle_info();
 }
 

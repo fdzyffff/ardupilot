@@ -136,7 +136,7 @@ private:
     float _bottom;
 };
 
-
+// for motive capture simulation
 class UCam_Port_SIM: public UCam_Port {
 public:
     friend class UCam;
@@ -149,3 +149,18 @@ public:
 private:
     ;
 };
+
+// for unreal engine 4 simulation
+class UCam_Port_UE4: public UCam_Port {
+public:
+    friend class UCam;
+
+    UCam_Port_UE4(UCam &frotend_in);
+    void port_read() override;
+    void do_cmd(float p1, float p2 = 0.0f, float p3 = 0.0f, float p4 = 0.0f) override;
+    void handle_info(float x, float y);
+
+private:
+    ;
+};
+

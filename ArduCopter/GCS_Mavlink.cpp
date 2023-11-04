@@ -648,7 +648,7 @@ void GCS_MAVLINK_Copter::handle_att_pos_mocap(const mavlink_message_t &msg)
         copter.mocap_stat.n_count++;
         copter.mocap_stat.last_update_ms = millis();
 
-        copter.Ucam.handle_current_pos_info(m.x, m.y, m.z);
+        // copter.Ucam.handle_current_pos_info(m.x, m.y, m.z);
     
         // Location ekf_origin;
         // bool have_origin = copter.ahrs.get_origin(ekf_origin);

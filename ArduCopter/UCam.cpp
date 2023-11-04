@@ -105,6 +105,14 @@ void UCam::init_port()
         return;
     }
 
+    _port = serial_manager.find_serial(AP_SerialManager::SerialProtocol_UE4, 0);
+    if (_port != nullptr) {
+        gcs().send_text(MAV_SEVERITY_WARNING, "CAM UE4 init");
+        _Ucam_port = new UCam_Port_UE4(*this);
+        _port_type = 4;
+        return;
+    }
+
     _port_type = 0;
     gcs().send_text(MAV_SEVERITY_WARNING, "CAM MAV init FAILED");
 }

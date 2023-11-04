@@ -18,6 +18,8 @@ void Copter::userhook_init()
     pitch_delay.idx = 0;
 
     Usr_throttle.set_cutoff_frequency(0.1f);
+
+    sim_init();
 }
 #endif
 
@@ -26,6 +28,7 @@ void Copter::userhook_FastLoop()
 {
     // put your 100Hz code here
     userhook_FastLoop_pitch_write();
+    sim_update();
 }
 #endif
 
