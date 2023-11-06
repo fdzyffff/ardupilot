@@ -348,11 +348,15 @@ void TS_ctrl_t::set_valid(bool v_in)
 
 void TS_ctrl_t::set_target_loc(Location& loc_in) 
 {
+    static uint32_t _last_loc_update_ms = 0;
     Vector3f temp_pos;
     Vector3f target_pos;
     if (loc_in.get_vector_from_origin_NEU(temp_pos)) {
         _target_pos.apply(temp_pos);
-        _target_loc = Location(_target_pos.get(), Location::AltFrame::ABOVE_ORIGIN);
+        if (millis() - _last_loc_update_ms > 60000) {
+            _target_loc = Location(_target_pos.get(), Location::AltFrame::ABOVE_ORIGIN);
+            _last_loc_update_ms = millis();
+        }
         // _target_loc.alt = plane.target_altitude.amsl_cm;
         _last_msg_update_ms = millis();
         set_valid(true);
