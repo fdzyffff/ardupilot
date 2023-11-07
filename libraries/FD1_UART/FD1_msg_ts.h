@@ -31,7 +31,7 @@ public:
     };
 
     struct PACKED MSG_sub_F1 {
-        uint8_t empty[1];
+        uint8_t status;
     };
 
     struct PACKED MSG_sub_B1 {

@@ -87,8 +87,9 @@ void TS_ctrl_t::ts_handle_and_route() {
         // FD1_uart_ts_AHRS_test();
         FD1_msg_ts &tmp_msg = uart_msg_ts.get_msg_ts_in();
         if (tmp_msg._msg_1.content.msg.header.id == 0x40) {
-            uint8_t target_ret = tmp_msg._msg_1.content.msg.sub_msg.msg_40.sub_k1.target_ret;
-            if (target_ret & 0b00100000) {
+            bool target_ret_k1 = (tmp_msg._msg_1.content.msg.sub_msg.msg_40.sub_k1.target_ret & 0b00100000);
+            bool target_ret_f1 = (tmp_msg._msg_1.content.msg.sub_msg.msg_40.sub_f1.status & 0b00010000);
+            if (target_ret_k1 && target_ret_f1) {
                 int32_t lat = tmp_msg._msg_1.content.msg.sub_msg.msg_40.sub_t1.target_lat;
                 int32_t lng = tmp_msg._msg_1.content.msg.sub_msg.msg_40.sub_t1.target_lng;
                 int32_t alt = tmp_msg._msg_1.content.msg.sub_msg.msg_40.sub_t1.target_alt*100;
