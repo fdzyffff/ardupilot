@@ -108,7 +108,7 @@ bool FD1_msg_ts::set_id(uint8_t id)
     _msg_1.length = 0;
     switch (id) {
         case 0x30:
-            _msg_1.length = 34+1+3; // A1,C1,E1,S1,R1
+            _msg_1.length = 39; // A1,C1,E1,S1,J1
             break;
         case 0x31:
             _msg_1.length = 21+3; // A2,C2,E2,S2
@@ -157,7 +157,10 @@ bool FD1_msg_ts::sum_check(void)
 void FD1_msg_ts::swap_message(void)
 {
     switch (_msg_1.content.msg.header.id) {
-        case 0x30: // A1,C1,E1,S1,R1
+        case 0x30: // A1,C1,E1,S1,J1
+            _msg_1.content.msg.sub_msg.msg_30.sub_s1.latitude = swap_message_int32_t(_msg_1.content.msg.sub_msg.msg_30.sub_s1.latitude);
+            _msg_1.content.msg.sub_msg.msg_30.sub_s1.longitude = swap_message_int32_t(_msg_1.content.msg.sub_msg.msg_30.sub_s1.longitude);
+            _msg_1.content.msg.sub_msg.msg_30.sub_s1.alt = swap_message_int32_t(_msg_1.content.msg.sub_msg.msg_30.sub_s1.alt);
             break;
         case 0x31: // A2,C2,E2,S2
             break;

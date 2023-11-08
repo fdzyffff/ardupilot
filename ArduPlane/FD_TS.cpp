@@ -46,8 +46,12 @@ void TS_ctrl_t::update() {
     } while (uart_msg_mission.port_avaliable() > 0);
 
     if (plane.g2.ts_ahrs_send.get()) {
-        ts_send();
+        ts_ahrs_send();
         uart_msg_ts.write();
+    }
+
+    if (valid()) {
+        ts_roi_send();
     }
 
     test_ts_update();
@@ -104,7 +108,7 @@ void TS_ctrl_t::ts_handle_and_route() {
     }
 }
 
-void TS_ctrl_t::ts_send() {
+void TS_ctrl_t::ts_ahrs_send() {
     static uint8_t n_count = 0;
 
     uint8_t year_out = 0;
@@ -165,6 +169,35 @@ void TS_ctrl_t::ts_send() {
     // }
 }
 
+void TS_ctrl_t::ts_roi_send() {
+    static uint8_t n_count = 0;
+    static uint32_t _last_send_ms;
+    if (millis() - _last_send_ms > 10000) {
+        _last_send_ms = millis();
+    } else {
+        return;
+    }
+
+    FD1_msg_ts &tmp_msg = uart_msg_ts.get_msg_ts_out();
+
+    tmp_msg._msg_1.content.msg.header.head_1 = FD1_msg_ts::PREAMBLE1;
+    tmp_msg._msg_1.content.msg.header.head_2 = FD1_msg_ts::PREAMBLE2;
+    tmp_msg._msg_1.content.msg.header.head_3 = FD1_msg_ts::PREAMBLE3;
+    tmp_msg.set_id(0x30);
+
+    tmp_msg._msg_1.content.msg.sub_msg.msg_30.sub_a1.status    = 0x08;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_30.sub_s1.cmd       = 0x01;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_30.sub_s1.latitude  = get_target_loc().lat;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_30.sub_s1.longitude = get_target_loc().lng;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_30.sub_s1.alt       = get_target_loc().alt*10;
+
+    tmp_msg.sum_check();
+    tmp_msg._msg_1.need_send = true;
+    n_count++;
+    // if (n_count/20==0) {
+    //     gcs().send_text(MAV_SEVERITY_WARNING, "%d, %d", tmp_msg._msg_1.content.msg.sub_msg.msg_m.latitude, current_loc.lat);
+    // }
+}
 void TS_ctrl_t::get_Time(uint8_t &year_out, uint8_t &month_out, uint8_t &day_out, uint8_t &hour_out, uint8_t &minute_out, uint8_t &second_out)
 {
     uint32_t days;
@@ -353,9 +386,13 @@ void TS_ctrl_t::set_target_loc(Location& loc_in)
     Vector3f temp_pos;
     Vector3f target_pos;
     if (loc_in.get_vector_from_origin_NEU(temp_pos)) {
-        _target_pos.apply(temp_pos);
+        if (millis() - _last_msg_update_ms > 30000) {
+            _target_pos.reset(temp_pos);
+        } else {
+            _target_pos.apply(temp_pos);
+        }
         if (millis() - _last_loc_update_ms > 60000) {
-            _target_loc = Location(_target_pos.get(), Location::AltFrame::ABOVE_ORIGIN);
+            _target_loc = Location(_target_pos.get(), Location::AltFrame::ABSOLUTE);
             _last_loc_update_ms = millis();
         }
         // _target_loc.alt = plane.target_altitude.amsl_cm;

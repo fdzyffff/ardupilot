@@ -61,6 +61,38 @@ public:
         MSG_sub_K1 sub_k1;
     };
 
+    struct PACKED MSG_sub_A1 {
+        uint8_t status;
+        uint8_t empty[8];
+    };
+
+    struct PACKED MSG_sub_C1 {
+        uint8_t empty[2];
+    };
+
+    struct PACKED MSG_sub_E1 {
+        uint8_t empty[3];
+    };
+
+    struct PACKED MSG_sub_S1 {
+        uint8_t cmd;
+        uint8_t empty;
+        int32_t latitude;
+        int32_t longitude;
+        int32_t alt;
+    };
+
+    struct PACKED MSG_sub_J1 {
+        uint8_t empty[8];
+    };
+
+    struct PACKED MSG_30 {
+        MSG_sub_A1 sub_a1;
+        MSG_sub_C1 sub_c1;
+        MSG_sub_E1 sub_e1;
+        MSG_sub_S1 sub_s1;
+        MSG_sub_J1 sub_j1;
+    };
     struct PACKED MSG_M {
         uint8_t type;
         uint8_t empty[7];
@@ -85,6 +117,7 @@ public:
         MSG_X  msg_x;
         MSG_M  msg_m;
         MSG_40 msg_40;
+        MSG_30 msg_30;
     };
 
     // message structure

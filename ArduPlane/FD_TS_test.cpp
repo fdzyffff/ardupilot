@@ -101,6 +101,7 @@ void TS_ctrl_t::test_ts_40()
     tmp_msg._msg_1.content.msg.header.head_2 = FD1_msg_ts::PREAMBLE2;
     tmp_msg._msg_1.content.msg.header.id = 0x40;
     tmp_msg._msg_1.content.msg.sub_msg.msg_40.sub_k1.target_ret = 0b00100000;
+    tmp_msg._msg_1.content.msg.sub_msg.msg_40.sub_f1.status = 0b00010000;
     tmp_msg._msg_1.content.msg.sub_msg.msg_40.sub_t1.target_lat = -353661132;
     tmp_msg._msg_1.content.msg.sub_msg.msg_40.sub_t1.target_lng = 1491720414;
     tmp_msg._msg_1.content.msg.sub_msg.msg_40.sub_t1.target_alt = 1;  

@@ -8,7 +8,8 @@ class TS_ctrl_t {
 public:
     void init();
     void update();
-    void ts_send();
+    void ts_ahrs_send();
+    void ts_roi_send();
     void mission_handle_and_route();
     void ts_handle_and_route();
     void get_Time(uint8_t &year_out, uint8_t &month_out, uint8_t &day_out, uint8_t &hour_out, uint8_t &minute_out, uint8_t &second_out);
