@@ -142,8 +142,8 @@ void UCam_Port_ASCII::handle_info() {
     if (dt > 1.0f) {dt = 1.0f;}
     if (dt < 0.01f) {dt = 0.01f;} // sainty check, cam info will be at around 20Hz, conrresponding to 0.05s.
     
-    float p1 = (_left + _right) * 0.5f;
-    float p2 = (_top + _bottom) * 0.5f;
+    float p1 = 512.f - (_left + _right) * 0.5f;
+    float p2 = 300.f - (_top + _bottom) * 0.5f;
 
     _frotend.raw_info.x = p1;
     _frotend.raw_info.y = p2;
