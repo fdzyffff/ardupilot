@@ -47,89 +47,7 @@ void UCam::init()
     init_port();
 }
 
-
-// clear return path and set home location.  This should be called as part of the arming procedure
-void UCam::handle_info(const mavlink_command_long_t* packet)
-{
-    float p1 = packet->param1;
-    float p2 = packet->param2;
-    float p3 = packet->param3;
-    float p4 = packet->param4;
-    float p5 = packet->param5;
-    float p6 = packet->param6;
-    float p7 = packet->param7;
-
-    display_info_p1 = p1;
-    display_info_p2 = p2;
-    display_info_p3 = p3;
-    display_info_p4 = p4;
-    display_info_new = true;
-    display_info_count++;
-    bool _valid = false;
-    if ((int16_t)p1 == 0 && (int16_t)p2 == 0 && (int16_t)p3 == 0 && (int16_t)p4 == 0 && (int16_t)p5 == 0) {
-    // self check fail (2Hz)
-        _cam_state = 1;
-    }
-    if ((int16_t)p1 == 0 && (int16_t)p2 == 0 && (int16_t)p3 == 0 && (int16_t)p4 == 1) {
-    // self check pass (2Hz)
-        _cam_state = 2;
-    }
-    if ((int16_t)p1 == 0 && (int16_t)p2 == 0 && (int16_t)p3 == 0 && (int16_t)p4 == 3) {
-    // handle cmd from apm
-        _cam_state = 3;
-    }
-    if ((int16_t)p1 == 0 && (int16_t)p2 == 0 && (int16_t)p3 == 0 && (int16_t)p4 == 2) {
-    // working
-        _cam_state = 4;
-    }
-    if ((int16_t)p3 == 1 && (int16_t)p4 == 1) {
-    // target following
-        _cam_state = 5;
-        _valid = true;
-    }
-    if ((int16_t)p1 == 0 && (int16_t)p2 == 0 && (int16_t)p3 == 0 && (int16_t)p4 == 0 && (int16_t)p5 == 13) {
-        copter.gcs().send_text(MAV_SEVERITY_WARNING, "Para [%0.2f,%0.2f,%0.2f,%0.2f,%0.2f,%0.2f,%0.2f]", p1, p2, p3, p4, p5, p6, p7);
-        mavlink_command_long_t new_packet;
-        new_packet.param1 = 11.0f;
-        new_packet.param2 = 0.0f;
-        new_packet.param3 = p6;
-        new_packet.param4 = p7;
-        new_packet.param5 = 0.0f;
-        new_packet.param6 = 0.0f;
-        new_packet.param7 = 0.0f;
-        copter.send_my_command_long((mavlink_channel_t)0, &new_packet);
-    }
-
-    if (!_valid) {
-        _n_count = 0;
-        return;
-    }
-
-    float dt = (float)(millis() - _last_update_ms)*1.0e-3f;
-    if (dt > 1.0f) {dt = 1.0f;}
-    if (dt < 0.01f) {dt = 0.01f;} // sainty check, cam info will be at around 20Hz, conrresponding to 0.05s.
-    
-    raw_info.x = p1;
-    raw_info.y = p2;
-    Matrix3f tmp_m;
-    if (is_zero(copter.g2.user_parameters.fly_roll_factor)) {
-        tmp_m.from_euler(0.0f, 0.0f, 0.0f);
-    } else {
-        tmp_m.from_euler(copter.ahrs_view->roll, 0.0f, 0.0f);
-    }
-    Vector3f tmp_input = Vector3f(100.f,p1,-p2);
-    Vector3f tmp_output = tmp_m*tmp_input;
-    _cam_filter.apply(tmp_output, dt);
-    correct_info.x = _cam_filter.get().y;
-    correct_info.y = -_cam_filter.get().z;
-    _last_update_ms = millis();
-    if (!_active) {
-        _n_count += 1;
-    }
-    udpate_value(dt);
-}
-
-void UCam::udpate_value(float dt){
+void UCam::update_value(float dt){
     if (copter.g2.user_parameters.cam_pixel_x.get() < 50.f) {copter.g2.user_parameters.cam_pixel_x.set_and_save(50.f);}
     if (copter.g2.user_parameters.cam_pixel_y.get() < 50.f) {copter.g2.user_parameters.cam_pixel_y.set_and_save(50.f);}
     if (copter.g2.user_parameters.cam_angle_x.get() < 30.f) {copter.g2.user_parameters.cam_angle_x.set_and_save(30.f);}
@@ -176,6 +94,22 @@ void UCam::init_port()
         gcs().send_text(MAV_SEVERITY_WARNING, "CAM ASCII init");
         _Ucam_port = new UCam_Port_ASCII(*this);
         _port_type = 2;
+        return;
+    }
+
+    _port = serial_manager.find_serial(AP_SerialManager::SerialProtocol_CamSIM, 0);
+    if (_port != nullptr) {
+        gcs().send_text(MAV_SEVERITY_WARNING, "CAM SIM init");
+        _Ucam_port = new UCam_Port_SIM(*this);
+        _port_type = 3;
+        return;
+    }
+
+    _port = serial_manager.find_serial(AP_SerialManager::SerialProtocol_UE4, 0);
+    if (_port != nullptr) {
+        gcs().send_text(MAV_SEVERITY_WARNING, "CAM UE4 init");
+        _Ucam_port = new UCam_Port_UE4(*this);
+        _port_type = 4;
         return;
     }
 

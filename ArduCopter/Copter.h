@@ -173,6 +173,7 @@
 #include "UCam.h"
 #include "UGround.h"
 #include "UPayload.h"
+#include <FD2_UART/FD2_UART.h>
 
 class Copter : public AP_Vehicle {
 public:
@@ -231,11 +232,14 @@ public:
     friend class ModeLoiterTakeoff;
     friend class ModeManualTest;
     friend class ModeStabTest;
+    friend class ModeAttack_pos;
 
     friend class UCam;
     friend class UCam_Port;
     friend class UCam_Port_ASCII;
     friend class UCam_Port_Mavlink;
+    friend class UCam_Port_SIM;
+    friend class UCam_Port_UE4;
     friend class UGround;
     friend class UPayload;
 
@@ -989,6 +993,7 @@ private:
     ModeLoiterTakeoff mode_loitertkoff;
     ModeManualTest mode_manualtest;
     ModeStabTest mode_stabtest;
+    ModeAttack_pos mode_attack_pos;
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1073,6 +1078,10 @@ private:
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);
+
+    void sim_init();
+    void sim_update();
+    FD2_UART FD2_uart_msg_ue4{AP_SerialManager::SerialProtocol_UE4};
 
 public:
     void failsafe_check();      // failsafe.cpp

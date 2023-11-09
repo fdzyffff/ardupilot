@@ -464,6 +464,7 @@ void AP_SerialManager::init()
                 case SerialProtocol_Payload:
                 case SerialProtocol_CamMavlink:
                 case SerialProtocol_CamASCII:
+                case SerialProtocol_CamSIM:
                     uart->begin(map_baudrate(state[i].baud), 
                                          AP_SERIALMANAGER_MAVLINK_BUFSIZE_RX,
                                          AP_SERIALMANAGER_MAVLINK_BUFSIZE_TX);

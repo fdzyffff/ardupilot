@@ -205,6 +205,9 @@ Mode *Copter::mode_from_mode_num(const Mode::Number mode)
         case Mode::Number::STABTEST:
             ret = &mode_stabtest;
             break;
+        case Mode::Number::ATTACK_POS:
+            ret = &mode_attack_pos;
+            break;
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         default:
             break;

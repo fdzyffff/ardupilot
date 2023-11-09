@@ -18,9 +18,11 @@ public:
     void init_port();
     void port_read();
     void do_cmd(float p1, float p2 = 0.0f, float p3 = 0.0f, float p4 = 0.0f);
-    void handle_info(const mavlink_command_long_t* packet);
     void time_out_check();
-    void udpate_value(float dt);
+    void update_value(float dt);
+    void update_value_SIM(float dt);
+    void handle_current_pos_info(float x, float y, float z);
+    uint8_t port_type() {return _port_type;}
 
     const Vector2f& get_raw_info() ;
     const Vector2f& get_correct_info() ;
@@ -62,12 +64,22 @@ public:
     LowPassFilterVector3f _cam_filter;
     LowPassFilterFloat _q_cds_filter;
 
+    Vector3f target_pos_SIM;
+    Vector3f current_pos_SIM;
+
 private:
     void update_target_pitch_rate();
     void update_target_roll_angle();
     void update_target_yaw_rate();
     void update_target_track_angle();
     void update_q_rate_cds(float dt);
+
+
+    void update_target_pitch_rate_SIM();
+    void update_target_roll_angle_SIM();
+    void update_target_yaw_rate_SIM();
+    void update_target_track_angle_SIM();
+    void update_q_rate_cds_SIM(float dt);
 };
 
 class UCam_Port {
@@ -87,6 +99,7 @@ public:
     UCam_Port_Mavlink(UCam &frotend_in);
     void port_read() override;
     void do_cmd(float p1, float p2 = 0.0f, float p3 = 0.0f, float p4 = 0.0f) override;
+    void handle_info(const mavlink_command_long_t* packet);
 
 private:
     struct {
@@ -122,3 +135,32 @@ private:
     float _top;
     float _bottom;
 };
+
+// for motive capture simulation
+class UCam_Port_SIM: public UCam_Port {
+public:
+    friend class UCam;
+
+    UCam_Port_SIM(UCam &frotend_in);
+    void port_read() override;
+    void do_cmd(float p1, float p2 = 0.0f, float p3 = 0.0f, float p4 = 0.0f) override;
+    void handle_info();
+
+private:
+    ;
+};
+
+// for unreal engine 4 simulation
+class UCam_Port_UE4: public UCam_Port {
+public:
+    friend class UCam;
+
+    UCam_Port_UE4(UCam &frotend_in);
+    void port_read() override;
+    void do_cmd(float p1, float p2 = 0.0f, float p3 = 0.0f, float p4 = 0.0f) override;
+    void handle_info(float x, float y);
+
+private:
+    ;
+};
+

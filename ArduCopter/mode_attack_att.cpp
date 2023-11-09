@@ -81,6 +81,7 @@ void ModeAttack_att::run()
         //     copter.gcs().send_text(MAV_SEVERITY_WARNING, "Stage 2");
         //     _stage = 2;
         // }
+        // copter.gcs().send_text(MAV_SEVERITY_WARNING, "C: %f", target_climb_rate+target_climb_rate_manual);
     } else {
         // output pilot's throttle
         attitude_control->set_throttle_out(my_get_throttle_boosted(motors->get_throttle_hover()),

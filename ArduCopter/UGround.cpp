@@ -466,7 +466,17 @@ bool UGround::do_lockon()  // lock on target
 
 bool UGround::do_attack()
 {
-    return copter.set_mode(Mode::Number::ATTACK_ANGLE, ModeReason::TOY_MODE);
+    switch (copter.Ucam.port_type()) {
+        case 3:
+            gcs().send_text(MAV_SEVERITY_INFO, "ATK 50");
+            return copter.set_mode(Mode::Number::ATTACK_POS, ModeReason::TOY_MODE);
+            break;
+        default:
+            gcs().send_text(MAV_SEVERITY_INFO, "ATK 42");
+            return copter.set_mode(Mode::Number::ATTACK_ANGLE, ModeReason::TOY_MODE);
+            break;
+    }
+    return false;
 }
 
 bool UGround::do_fs1()     // failsafe type1

@@ -647,6 +647,8 @@ void GCS_MAVLINK_Copter::handle_att_pos_mocap(const mavlink_message_t &msg)
         copter.mocap_stat.z = m.z;
         copter.mocap_stat.n_count++;
         copter.mocap_stat.last_update_ms = millis();
+
+        // copter.Ucam.handle_current_pos_info(m.x, m.y, m.z);
     
         // Location ekf_origin;
         // bool have_origin = copter.ahrs.get_origin(ekf_origin);
@@ -1075,12 +1077,11 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_
         return MAV_RESULT_ACCEPTED;
     }
 
-
-    case MAV_CMD_USER_4: {
-        copter.gcs().send_text(MAV_SEVERITY_WARNING, "USER4");
-        copter.Ucam.handle_info(&packet);
-        return MAV_RESULT_ACCEPTED;
-    }
+    // case MAV_CMD_USER_4: {
+    //     copter.gcs().send_text(MAV_SEVERITY_WARNING, "USER4");
+    //     copter.Ucam.handle_info(&packet);
+    //     return MAV_RESULT_ACCEPTED;
+    // }
 
     case MAV_CMD_USER_5: {
         copter.Upayload.cmd_handle((int16_t)packet.param1);
