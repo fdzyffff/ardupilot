@@ -20,7 +20,7 @@ public:
         uint8_t cmd1;
         uint8_t cmd2;         //8
         float content2;
-        int16_t ctrl_ptich;
+        int16_t ctrl_pitch;
         int16_t ctrl_roll;
         int16_t ctrl_yaw;
         uint8_t brake_left;

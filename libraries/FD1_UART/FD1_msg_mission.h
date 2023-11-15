@@ -1,6 +1,6 @@
 #include "FD1_message.h"
 
-#define FD1_MSG_MISSION_LEN 28
+#define FD1_MSG_MISSION_LEN 55
 class FD1_msg_mission : public FD1_message{
 public:
     struct PACKED FD1_msg_header {
@@ -21,8 +21,8 @@ public:
         uint8_t wp_num;
         uint8_t wp_id;
         uint8_t wp_type;       //10 普通航路点：0x00, 五边航点：0x40, 着陆航点：0X50, 其余无效
-        double lng;
-        double lat;
+        float lng;
+        float lat;
         float alt;
         float bearing;
         uint8_t empty[24];
@@ -71,7 +71,7 @@ public:
 
     static const uint8_t PREAMBLE1 = 0xEB;
     static const uint8_t PREAMBLE2 = 0x90;
-    static const uint8_t FRAMETYPE = 0x11;
+    static const uint8_t FRAMETYPE = 0x01;
     static const uint8_t FRAMEID = 0x11;
 
     void process_message(void) override;

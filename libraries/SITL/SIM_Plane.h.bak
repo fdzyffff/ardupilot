@@ -1,0 +1,132 @@
+/*
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+/*
+  simple plane simulator class
+*/
+
+#pragma once
+
+#include "SIM_Aircraft.h"
+#include "SIM_ICEngine.h"
+#include <Filter/LowPassFilter.h>
+
+namespace SITL {
+
+/*
+  a very simple plane simulator
+ */
+class Plane : public Aircraft {
+public:
+    Plane(const char *frame_str);
+
+    /* update model by one time step */
+    virtual void update(const struct sitl_input &input) override;
+
+    /* static object creator */
+    static Aircraft *create(const char *frame_str) {
+        return new Plane(frame_str);
+    }
+
+protected:
+    const float hover_throttle = 0.5f;
+    const float air_density = 1.225; // kg/m^3 at sea level, ISA conditions
+    float angle_of_attack;
+    float beta;
+
+    struct {
+        float s = 56.49;//0.45;机翼面积4.6
+        float b = 13.05;//1.88;翼展7.2
+        float c = 4.861560;//0.24;平均气动弦0.34
+        float Ixx = 38912;//x方向转动惯量kgm2
+        float Iyy = 223846;//y方向转动惯量
+        float Izz = 254758;//z方向转动惯量
+        float Ixz = 705;//xz转动惯量
+        float c_lift_0 = 0.0600;//0.56;0度迎角下的升力系数 0.1053Lift_due_to_alpha
+        float c_lift_deltae = 0.5730;//0;//升降舵对升力系数的影响,每弧度舵偏角0.4698Lift_due_to_Elevator_Deflection
+        float c_lift_a = 17.2232;//6.9;升力线斜率，弧度4.76Lift_due_to_alpha_rate
+        float c_lift_q = -17.2232;//动导数0Lift_due_to_pitch_rate
+        float mcoeff = 50;//分离因子？
+        float oswald = 0.8;//0.9;//和展弦比相关，展弦比2.64
+        float alpha_stall = 0.6; // 0.4712; 失速迎角14度0.2443
+        float c_drag_q = 0;//动导数
+        float c_drag_deltae = 0.0438;//升降舵对阻力系数的影响0.0Drag_due_to_Elevator_Deflection
+        float c_drag_p = 0;//0.583*angle_of_attack ^2 + 0.0612*angle_of_attack + 0.0232;//0.1;//零升阻力系数0.038Drag_induced
+        float c_y_0 = 0.1984;//*********0?（0侧滑角下的系数？）Drag_due_to_beta
+        float c_y_b = 0;//-1.7169*beta^2 + 1.3043*beta - 0.1912;//-0.98;侧力导数-0.8366Side_force_due_to_beta均值-0.3309y = -1.7169x2 + 1.3043x - 0.1912
+        float c_y_p = 0;//动导数
+        float c_y_r = 0;//动导数
+        float c_y_deltaa = -0.0012;//副翼对侧力的影响0Side_force_due_to_aileron
+        float c_y_deltar = 0.3724;//方向舵对侧力的影响-0.2Side_force_due_to_rudder
+        float c_l_0 = -0.0573;//*******0?（0侧滑角下的系数？）Roll_moment_due_to_beta
+        float c_l_p = 0;//1.6475*angle_of_attack + 0.349;//-1.0;//动导数-0.265Roll_moment_due_to_roll_rate_(roll_damping)均值-0.355y = 1.6475x + 0.349
+        float c_l_b = 0;//-0.0302*beta - 0.1047;//-0.12;//侧滑对滚转力矩的影响-0.4Roll_moment_due_to_beta均值-0.1318y = -0.0302x - 0.1047
+        float c_l_r = 0.0001;//偏航速度对滚转的影响，借鉴0.14Roll_moment_due_to_yaw_rate
+        float c_l_deltaa = -0.02118;//0.25; 正负有待确认0.057Roll_moment_due_to_aileron均值
+        float c_l_deltar = 0.0115;//方向舵对滚转力矩影响-0.037Roll_moment_due_to_rudder
+        float c_m_0 = -0.2292;//0.045;//零迎角下的力矩系数0.1015Pitch_moment_due_to_alpha
+        float c_m_a = -11.8870;//-0.7;//静导数，纵向稳定性相关，弧度单位，接近中立稳定-3.38Pitch_moment_due_to_alpha_rate
+        float c_m_q = -4.7000;//-20;动导数-20Pitch_moment_due_to_pitch_rate
+        float c_m_deltae = 0.4580;//1.0;  每弧度单位(0.008/度),默认的1.0对应0.0174，正负？1.169Pitch_moment_due_to_elevator_deflection
+        float c_n_0 = 0.1776;//*******0?（0侧滑角下的系数？）Yaw_moment_due_to_beta
+        float c_n_b = 0;//1.3981*beta^3 - 1.1705*beta^2 - 0.2811*beta + 0.1776;// 0.25;//侧滑对偏航力矩的影响0.23Yaw_moment_due_to_betay = 1.3981x3 - 1.1705x2 - 0.2811x + 0.1776
+        float c_n_p = 0;//-0.1652*angle_of_attack - 0.0404;//动导数，借鉴0.022Yaw_moment_due_to_roll_rate均值-0.071666667y = -0.1652x - 0.0404
+        float c_n_r = -0.4447;//-1;动导数-0.058Yaw_moment_due_to_yaw_rate
+        float c_n_deltaa = 0.0022;//副翼对偏航力矩的影响0.00
+        float c_n_deltar = 0.04015;//0.1; 0.0013*57.3,弧度，方向舵舵效0.023均值
+        float deltaa_max = 0.35;//最大20度0.3491
+        float deltae_max = 0.3;//最大20度0.3491
+        float deltar_max = 0.35;//最大20度0.3491
+        // the X CoG offset should be -0.02, but that makes the plane too tail heavy
+        // in manual flight. Adjusted to -0.15 gives reasonable flight
+        //Vector3f CGOffset{-0.15, 0, -0.05};
+        Vector3f CGOffset{0, 0, -0.05};
+    } coefficient;
+
+    float thrust_scale;
+    bool reverse_thrust;
+    bool elevons;
+    bool vtail;
+    bool dspoilers;
+    bool reverse_elevator_rudder;
+    bool ice_engine;
+    bool tailsitter;
+    bool copter_tailsitter;
+    bool have_launcher;
+    float launch_accel;
+    float launch_time;
+    uint64_t launch_start_ms;
+
+    const uint8_t throttle_servo = 2;
+    const int8_t choke_servo = 14;
+    const int8_t ignition_servo = 12;
+    const int8_t starter_servo = 13;
+    const float slewrate = 100;
+    ICEngine icengine{
+        throttle_servo,
+        choke_servo,
+        ignition_servo,
+        starter_servo,
+        slewrate,
+        true
+    };
+
+    float liftCoeff(float alpha) const;
+    float dragCoeff(float alpha) const;
+    Vector3f getForce(float inputAileron, float inputElevator, float inputRudder) const;
+    Vector3f getTorque(float inputAileron, float inputElevator, float inputRudder, float inputThrust, const Vector3f &force) const;
+    void calculate_forces(const struct sitl_input &input, Vector3f &rot_accel);
+};
+
+} // namespace SITL

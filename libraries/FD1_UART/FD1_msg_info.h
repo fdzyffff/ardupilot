@@ -18,8 +18,8 @@ public:
 
     // message param
     struct PACKED MSG_Info_1 {
-        double lng;
-        double lat;
+        float lng;
+        float lat;
         float alt;
         float roll;
         float pitch;
@@ -46,8 +46,9 @@ public:
         uint8_t refly_state;
         float fule;
         float rpm;
-        float wp_distance; // 112
-        uint8_t empty[136];
+        float wp_distance;
+        uint8_t role; // 105
+        uint8_t empty[133];
     };
 
     // message structure

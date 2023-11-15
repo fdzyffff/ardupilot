@@ -38,7 +38,7 @@ void UCtrl::update() {
 }
 
 void UCtrl::msg_handle_init() {
-    static uint32_t _last_print_ms = millis();
+    static uint32_t _last_print_ms = 0;
     if (uart_msg_ctrl.get_msg_init()._msg_1.updated) {
         if (millis() - _last_print_ms > 3000) {
             gcs().send_text(MAV_SEVERITY_INFO, "INFO: init");
@@ -49,14 +49,20 @@ void UCtrl::msg_handle_init() {
 }
 
 void UCtrl::msg_handle_control() {
-    static uint32_t _last_print_ms = millis();
+    static uint32_t _last_print_ms = 0;
     FD1_msg_control &tmp_msg = uart_msg_ctrl.get_msg_control();
     if (tmp_msg._msg_1.updated) {
+        if (tmp_msg._msg_1.content.msg.device_id != plane.g.sysid_this_mav) {
+            tmp_msg._msg_1.updated = false;
+            return;
+        }
         if (millis() - _last_print_ms > 3000) {
         gcs().send_text(MAV_SEVERITY_INFO, "INFO: control");
             _last_print_ms = millis();
         }
         tmp_msg._msg_1.updated = false;
+    } else {
+        return;
     }
     bool do_print = false;
     bool do_print2 = false;
@@ -174,6 +180,17 @@ void UCtrl::msg_handle_control() {
         }
     }
 
+    float temp_pitch = ((float)tmp_msg._msg_1.content.msg.ctrl_pitch) /65.535f; 
+    float temp_roll = ((float)tmp_msg._msg_1.content.msg.ctrl_roll) /65.535f; 
+    float temp_throttle = ((float)tmp_msg._msg_1.content.msg.ctrl_throttle) /65.535f; 
+    float temp_yaw = ((float)tmp_msg._msg_1.content.msg.ctrl_yaw) /65.535f; 
+
+    uint32_t tnow = millis();
+    RC_Channels::set_override(0, constrain_int16(1500 + (int16_t)temp_pitch,1000,2000), tnow);      // pitch
+    RC_Channels::set_override(1, constrain_int16(1500 + (int16_t)temp_roll,1000,2000), tnow);       // roll
+    RC_Channels::set_override(2, constrain_int16(1000 + (int16_t)temp_throttle,1000,2000), tnow);   // throttle
+    RC_Channels::set_override(3, constrain_int16(1500 + (int16_t)temp_yaw,1000,2000), tnow);        // yaw
+
     if (do_print) {
         gcs().send_text(MAV_SEVERITY_INFO, "cmd1:%x,cmd2:%x",tmp_msg._msg_1.content.msg.cmd1,tmp_msg._msg_1.content.msg.cmd2);
     }
@@ -183,19 +200,93 @@ void UCtrl::msg_handle_control() {
 }
 
 void UCtrl::msg_handle_mission() {
-    static uint32_t _last_print_ms = millis();
+    static uint32_t _last_print_ms = 0;
     FD1_msg_mission &tmp_msg = uart_msg_ctrl.get_msg_mission();
     if (tmp_msg._msg_1.updated) {
+        if (tmp_msg._msg_1.content.msg.device_id != plane.g.sysid_this_mav) {
+            tmp_msg._msg_1.updated = false;
+            return;
+        }
         if (millis() - _last_print_ms > 3000) {
-        gcs().send_text(MAV_SEVERITY_INFO, "INFO: mission");
+            gcs().send_text(MAV_SEVERITY_INFO, "INFO: mission");
             _last_print_ms = millis();
         }
+
+        gcs().send_text(MAV_SEVERITY_INFO, "wp_id: %d", tmp_msg._msg_1.content.msg.wp_id);
+        gcs().send_text(MAV_SEVERITY_INFO, "lat: %f", tmp_msg._msg_1.content.msg.lat);
+        gcs().send_text(MAV_SEVERITY_INFO, "lng: %f", tmp_msg._msg_1.content.msg.lng);
+        gcs().send_text(MAV_SEVERITY_INFO, "alt: %f", tmp_msg._msg_1.content.msg.alt);
+        // gcs().send_text(MAV_SEVERITY_INFO, "A plane.mission.num_commands(): %d", plane.mission.num_commands());
+        // if (plane.mission.num_commands() == 0) {
+        //     plane.mission.write_home_to_storage();
+        // }
+        // gcs().send_text(MAV_SEVERITY_INFO, "plane.mission.num_commands(): %d", plane.mission.num_commands());
+
+        if ( (plane.mission.num_commands() != tmp_msg._msg_1.content.msg.wp_id) 
+            && (plane.mission.num_commands() != 0) ) {
+            gcs().send_text(MAV_SEVERITY_INFO, "INFO: clean current mission, (%d / %d)", tmp_msg._msg_1.content.msg.wp_id, plane.mission.num_commands());
+            plane.mission.clear();
+            // plane.mission.write_home_to_storage();
+        }
+
+        if (plane.mission.num_commands() == 0) {
+            AP_Mission::Mission_Command tmp_cmd;
+            tmp_cmd.id = MAV_CMD_NAV_TAKEOFF;
+            tmp_cmd.content.location.lat = (int32_t)(tmp_msg._msg_1.content.msg.lat*1.0e7);
+            tmp_cmd.content.location.lng = (int32_t)(tmp_msg._msg_1.content.msg.lng*1.0e7);
+            tmp_cmd.content.location.set_alt_cm(100, Location::AltFrame::ABOVE_HOME);
+            plane.mission.add_cmd(tmp_cmd);
+            // plane.mission.write_home_to_storage();
+        }
+
+        if (plane.mission.num_commands() == tmp_msg._msg_1.content.msg.wp_id) {
+            AP_Mission::Mission_Command tmp_cmd;
+            tmp_cmd.id = MAV_CMD_NAV_WAYPOINT;
+            tmp_cmd.content.location.lat = (int32_t)(tmp_msg._msg_1.content.msg.lat*1.0e7);
+            tmp_cmd.content.location.lng = (int32_t)(tmp_msg._msg_1.content.msg.lng*1.0e7);
+            tmp_cmd.content.location.set_alt_cm((int32_t)(tmp_msg._msg_1.content.msg.alt*100.f), Location::AltFrame::ABSOLUTE);
+            plane.mission.add_cmd(tmp_cmd);
+            gcs().send_text(MAV_SEVERITY_INFO, "[%d] WP (%d / %d) saved", 1, tmp_msg._msg_1.content.msg.wp_id, plane.mission.num_commands());
+        } else {
+            gcs().send_text(MAV_SEVERITY_INFO, "INFO: wrong WP ID, (%d / %d)", tmp_msg._msg_1.content.msg.wp_id, plane.mission.num_commands());
+        }
+        gcs().send_text(MAV_SEVERITY_INFO, "plane.mission.num_commands(): %d", plane.mission.num_commands());
+
+
+
+
+
+    // uint16_t line_index = tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.line_index;
+    // uint16_t point_index = tmp_msg._msg_1.content.msg.remote_cmd.cmd_wp.point_index;  
+
+    // line_index = MIN(0xFF,line_index);// now for control_id
+    // point_index = MIN(0xFF,point_index);
+    // tmp_cmd.p1 = (line_index << 8) | (point_index & 0x00FF);
+
+    // if (HB1_Status.wp_to_renew || g2.hb1_num_wp == 0 || g2.hb1_num_interim != 0|| g2.hb1_num_land != 0) {
+    //     plane.mission.clear();
+    //     plane.mission.add_cmd(tmp_cmd);
+    //     plane.mission.write_home_to_storage();
+    //     g2.hb1_num_wp.set_and_save(0);
+    //     g2.hb1_num_interim.set_and_save(0);
+    //     g2.hb1_num_land.set_and_save(0);
+    //     HB1_Status.wp_to_renew = false;
+    // }
+    // if (plane.mission.add_cmd(tmp_cmd)) {
+    //     g2.hb1_num_wp.set_and_save(g2.hb1_num_wp.get()+1);
+    //     gcs().send_text(MAV_SEVERITY_INFO, "[%d] WP (%d / %d) saved", line_index, g2.hb1_num_wp.get(), plane.mission.num_commands());
+    //     HB1_lastWP_cmd = tmp_cmd;
+    // }
+
+
+
+
         tmp_msg._msg_1.updated = false;
     }
 }
 
 void UCtrl::msg_handle_guide() {
-    static uint32_t _last_print_ms = millis();
+    static uint32_t _last_print_ms = 0;
     FD1_msg_guide &tmp_msg = uart_msg_ctrl.get_msg_guide();
     if (tmp_msg._msg_1.updated) {
         if (millis() - _last_print_ms > 3000) {
@@ -242,7 +333,7 @@ void UCtrl::msg_handle_guide() {
 
 void UCtrl::ctrl_send() {
     static uint32_t _last_send_ms = millis();
-    if (millis() - _last_send_ms > 1000) {
+    if (millis() - _last_send_ms > 100) {
         _last_send_ms = millis();
     } else {
         return;
@@ -258,7 +349,7 @@ void UCtrl::ctrl_send() {
         return;
     }
     if (_sitl) {
-        // const struct SITL::sitl_fdm &fdm = _sitl->state;
+        const struct SITL::sitl_fdm &fdm = _sitl->state;
 
         // FD2_msg_ue4_ahrs &tmp_msg = FD2_uart_msg_ue4.get_msg_ue4_ahrs();
         // tmp_msg._msg_1.content.msg.header.head_1 = FD2_msg_ue4_ahrs::PREAMBLE1;
@@ -281,10 +372,17 @@ void UCtrl::ctrl_send() {
         }
 
         // calculate the sink rate.
-        Vector3f vel;
-        if (plane.ahrs.get_velocity_NED(vel)) {
-            ;
-        }
+        float _attack_angle = 0.0f;
+        float _side_slip_angle = 0.0f;
+        Vector3f vel = Vector3f(fdm.speedN, fdm.speedE, fdm.speedD);
+        // if (plane.ahrs.get_velocity_NED(vel)) {
+            Matrix3f tmp_m;
+            tmp_m.from_euler(plane.ahrs.roll, plane.ahrs.pitch, plane.ahrs.yaw);
+            Vector3f new_vel = tmp_m.transposed()*vel;
+            _attack_angle = wrap_180(degrees(-atan2f(new_vel.z, new_vel.x)));
+            _side_slip_angle = wrap_180(degrees(atan2f(new_vel.y, new_vel.x)));
+            // gcs().send_text(MAV_SEVERITY_INFO, "%f, %f", _attack_angle, _side_slip_angle);
+        // }
 
         FD1_msg_info &tmp_msg = uart_msg_ctrl_send.get_msg_info();
 
@@ -294,10 +392,11 @@ void UCtrl::ctrl_send() {
         tmp_msg._msg_1.content.msg.frame_id = FD1_msg_info::FRAMEID;
         tmp_msg._msg_1.content.msg.device_class = 0;
         tmp_msg._msg_1.content.msg.device_type = 0x01;
+        tmp_msg._msg_1.content.msg.device_id = plane.g.sysid_this_mav;
         tmp_msg._msg_1.content.msg.gcs_class = 0x01;
         tmp_msg._msg_1.content.msg.gcs_id = 0x01;
-        tmp_msg._msg_1.content.msg.info.lng = ((double)plane.current_loc.lng)*1e-7;
-        tmp_msg._msg_1.content.msg.info.lat = ((double)plane.current_loc.lat)*1e-7;
+        tmp_msg._msg_1.content.msg.info.lng = ((float)plane.current_loc.lng)*1e-7;
+        tmp_msg._msg_1.content.msg.info.lat = ((float)plane.current_loc.lat)*1e-7;
         tmp_msg._msg_1.content.msg.info.alt = ((float)abs_alt)*0.01f;
         tmp_msg._msg_1.content.msg.info.roll = ((float)plane.ahrs.roll_sensor)/100.f;
         tmp_msg._msg_1.content.msg.info.pitch = ((float)plane.ahrs.pitch_sensor)/100.f;
@@ -307,11 +406,11 @@ void UCtrl::ctrl_send() {
         tmp_msg._msg_1.content.msg.info.vu = -vel.z;
         tmp_msg._msg_1.content.msg.info.airspeed = plane.airspeed.get_airspeed();
         tmp_msg._msg_1.content.msg.info.gps_speed = ((float)plane.gps.ground_speed());
-        tmp_msg._msg_1.content.msg.info.attack_angle = 0.0f;
-        tmp_msg._msg_1.content.msg.info.side_slip_angle = 0.0f;
-        tmp_msg._msg_1.content.msg.info.climb_rate = 11.0f;
-        tmp_msg._msg_1.content.msg.info.wind_speed = 10.0f;
-        tmp_msg._msg_1.content.msg.info.wind_direction = 0.0f;
+        tmp_msg._msg_1.content.msg.info.attack_angle = _attack_angle;
+        tmp_msg._msg_1.content.msg.info.side_slip_angle = _side_slip_angle;
+        tmp_msg._msg_1.content.msg.info.climb_rate = -vel.z;
+        tmp_msg._msg_1.content.msg.info.wind_speed = _sitl->wind_speed.get();
+        tmp_msg._msg_1.content.msg.info.wind_direction = _sitl->wind_direction.get();
         tmp_msg._msg_1.content.msg.info.flap_left = SRV_Channels::get_output_norm(SRV_Channel::k_flap)*25.0f;
         tmp_msg._msg_1.content.msg.info.flap_right = -SRV_Channels::get_output_norm(SRV_Channel::k_flap)*25.0f;
         tmp_msg._msg_1.content.msg.info.elevator_left = SRV_Channels::get_output_norm(SRV_Channel::k_elevator)*25.0f;
@@ -320,7 +419,7 @@ void UCtrl::ctrl_send() {
         tmp_msg._msg_1.content.msg.info.rudder_right = -SRV_Channels::get_output_norm(SRV_Channel::k_rudder)*25.0f;
         tmp_msg._msg_1.content.msg.info.flight_stage = 0;
         tmp_msg._msg_1.content.msg.info.flight_mode = 0;
-        tmp_msg._msg_1.content.msg.info.landinggear_state = 0;
+        tmp_msg._msg_1.content.msg.info.landinggear_state = plane.is_flying()?1:0;
         tmp_msg._msg_1.content.msg.info.refly_state = 0;
         tmp_msg._msg_1.content.msg.info.fule = 100.f;
         tmp_msg._msg_1.content.msg.info.rpm = 100.f;

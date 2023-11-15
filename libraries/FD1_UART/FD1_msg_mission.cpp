@@ -64,11 +64,17 @@ void FD1_msg_mission::parse(uint8_t temp)
         case FD1UART_msg_parser::FD1UART_SUM:
             _msg.data[_msg.read] = temp;
             _msg.read++;
-            if (_msg.read >= _msg.length && _msg.sum_check == (((uint16_t)_msg.data[_msg.read-2] << 8) | _msg.data[_msg.read-1])) 
+            // gcs().send_text(MAV_SEVERITY_INFO, "%d, %d", _msg.sum_check, (((uint16_t)_msg.data[_msg.read-2] << 8) | _msg.data[_msg.read-1]));
+            if (_msg.read >= _msg.length) 
             {
-                process_message();
+                _msg.sum_check = 0;
+                if (_msg.sum_check == (((uint16_t)_msg.data[_msg.read-2] << 8) | _msg.data[_msg.read-1]))
+                {
+                    process_message();
+                    gcs().send_text(MAV_SEVERITY_INFO, "OK");
+                }
+                _msg.msg_state = FD1UART_msg_parser::FD1UART_PREAMBLE1;
             }
-            _msg.msg_state = FD1UART_msg_parser::FD1UART_PREAMBLE1;
             break;
     }
 }
