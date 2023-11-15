@@ -43,5 +43,6 @@ public:
     my_group_1_t my_group1;
     my_group_2_t my_group2;
     my_group_base_t *current_group;
+    // void set_group(uint8_t group_type_in);
     Vector3f get_offset(int16_t this_id, int16_t sender_id, float dist);
 };

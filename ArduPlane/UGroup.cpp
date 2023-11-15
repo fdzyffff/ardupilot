@@ -1,5 +1,9 @@
 #include "Plane.h"
 
+// void UGroup::set_group(uint8_t group_type_in) {
+
+// }
+
 Vector3f UGroup::get_offset(int16_t this_id, int16_t sender_id, float dist) {
     int16_t group_id = plane.g2.user_group_id.get();
     switch (group_id) {
@@ -22,32 +26,29 @@ Vector3f UGroup::get_offset(int16_t this_id, int16_t sender_id, float dist) {
 Vector3f my_group_1_t::get_pos(int16_t id_in, float dist) {
     switch (id_in) {
         default:
-        case 0:
-            return Vector3f(0.0f,  0.0f,      0.0f);
-            break;
         case 1:
-            return Vector3f(0.0f, -0.5f*dist, 0.0f);
+            return Vector3f(0.0f            ,  0.0f          , 0.0f);
             break;
         case 2:
-            return Vector3f(0.0f,  0.5f*dist, 0.0f);
+            return Vector3f(-1.0f*0.71f*dist, 1.0f*0.71f*dist, 0.0f);
             break;
         case 3:
-            return Vector3f(0.0f, -1.5f*dist, 0.0f);
+            return Vector3f(-2.0f*0.71f*dist, 2.0f*0.71f*dist, 0.0f);
             break;
         case 4:
-            return Vector3f(0.0f,  1.5f*dist, 0.0f);
+            return Vector3f(-3.0f*0.71f*dist, 3.0f*0.71f*dist, 0.0f);
             break;
         case 5:
-            return Vector3f(0.0f, -2.5f*dist, 0.0f);
+            return Vector3f(-4.0f*0.71f*dist, 4.0f*0.71f*dist, 0.0f);
             break;
         case 6:
-            return Vector3f(0.0f,  2.5f*dist, 0.0f);
+            return Vector3f(-5.0f*0.71f*dist, 5.0f*0.71f*dist, 0.0f);
             break;
         case 7:
-            return Vector3f(0.0f, -3.5f*dist, 0.0f);
+            return Vector3f(-6.0f*0.71f*dist, 6.0f*0.71f*dist, 0.0f);
             break;
         case 8:
-            return Vector3f(0.0f,  3.5f*dist, 0.0f);
+            return Vector3f(-7.0f*0.71f*dist, 7.0f*0.71f*dist, 0.0f);
             break;
     }
 }
@@ -68,32 +69,29 @@ Vector3f my_group_1_t::get_search_dest(int16_t id, float group_dist, float searc
 Vector3f my_group_2_t::get_pos(int16_t id_in, float dist) {
     switch (id_in) {
         default:
-        case 0:
-            return Vector3f(0.0f,                       0.0f,                       0.0f);
-            break;
         case 1:
-            return Vector3f(sinf(radians(247.5f))*dist, cosf(radians(247.5f))*dist, 0.0f);
+            return Vector3f(0.0f            ,  0.0f          , 0.0f);
             break;
         case 2:
-            return Vector3f(sinf(radians(292.5f))*dist, cosf(radians(292.5f))*dist, 0.0f);
+            return Vector3f(-1.0f*0.71f*dist, -1.0f*0.71f*dist, 0.0f);
             break;
         case 3:
-            return Vector3f(sinf(radians(202.5f))*dist, cosf(radians(202.5f))*dist, 0.0f);
+            return Vector3f(-1.0f*0.71f*dist,  1.0f*0.71f*dist, 0.0f);
             break;
         case 4:
-            return Vector3f(sinf(radians(337.5f))*dist, cosf(radians(337.5f))*dist, 0.0f);
+            return Vector3f(-2.0f*0.71f*dist, -2.0f*0.71f*dist, 0.0f);
             break;
         case 5:
-            return Vector3f(sinf(radians(157.5f))*dist, cosf(radians(157.5f))*dist, 0.0f);
+            return Vector3f(-2.0f*0.71f*dist,  2.0f*0.71f*dist, 0.0f);
             break;
         case 6:
-            return Vector3f(sinf(radians( 22.5f))*dist, cosf(radians( 22.5f))*dist, 0.0f);
+            return Vector3f(-3.0f*0.71f*dist, -1.0f*0.71f*dist, 0.0f);
             break;
         case 7:
-            return Vector3f(sinf(radians(112.5f))*dist, cosf(radians(112.5f))*dist, 0.0f);
+            return Vector3f(-3.0f*0.71f*dist,  1.0f*0.71f*dist, 0.0f);
             break;
         case 8:
-            return Vector3f(sinf(radians( 67.5f))*dist, cosf(radians( 67.5f))*dist, 0.0f);
+            return Vector3f(-4.0f*0.71f*dist,  0.0f*0.71f*dist, 0.0f);
             break;
     }
 }

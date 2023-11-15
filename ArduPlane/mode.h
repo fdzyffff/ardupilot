@@ -232,6 +232,9 @@ public:
 protected:
 
     bool _enter() override;
+    void _exit() override;
+
+    float _target_speed;
 };
 
 class ModeCircle: public Mode

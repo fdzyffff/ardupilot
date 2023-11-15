@@ -21,7 +21,13 @@ bool ModeGuided::_enter()
 #endif
 
     plane.set_guided_WP(loc);
+    _target_speed = plane.aparm.airspeed_cruise_cm.get();
     return true;
+}
+
+void ModeGuided::_exit()
+{
+    plane.aparm.airspeed_cruise_cm.set(_target_speed);
 }
 
 void ModeGuided::update()

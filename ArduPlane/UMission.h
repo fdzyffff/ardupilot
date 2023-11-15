@@ -20,6 +20,7 @@ public:
     void update_leader();
     void update_group();
     void set_mode(Mode& new_mode);
+    uint8_t get_leader_id() {return _leader_id;}
 
 
     struct group_state_t {

@@ -13,7 +13,7 @@ public:
     void handle_my_follow_msg(const mavlink_message_t &msg);
     void update();
     void get_target_pos(Location &loc);
-    float get_target_vel() {return _target_vel;}
+    float get_target_vel() {return _target_vel.xy().length();}
     float get_target_bearing() {return _target_bearing;}
     void print();
 
@@ -23,8 +23,8 @@ private:
 
 	bool _active;
 	Location _raw_target_loc;
-	uint32_t _last_update_ms;
+    Vector3f _target_vel;
 	float _target_bearing; // degree
-	float _target_vel;
+    // uint32_t _last_update_ms;
 };
 

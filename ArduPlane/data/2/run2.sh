@@ -1,0 +1,1 @@
+../../../build/sitl/bin/arduplane --model quadplane-copter_tailsitter --uartA tcp:0 --uartA udpclient:127.0.0.1:14550 --uartC udpclient:127.0.0.1:14551 --uartD uart:/dev/ttyS61:115200 --instance 2 --defaults ../../../Tools/autotest/default_params/quadplane-copter_tailsitter.parm,2.parm 

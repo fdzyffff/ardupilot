@@ -502,7 +502,8 @@ void UARTDriver::_udp_start_multicast(const char *address, uint16_t port)
 #endif
     sockaddr.sin_port = htons(port);
     sockaddr.sin_family = AF_INET;
-    sockaddr.sin_addr.s_addr = inet_addr(address);
+    // sockaddr.sin_addr.s_addr = inet_addr(address);
+    sockaddr.sin_addr.s_addr = htonl(INADDR_ANY);//inet_addr(address);
 
     _mc_fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (_mc_fd == -1) {

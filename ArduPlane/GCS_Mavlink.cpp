@@ -718,7 +718,7 @@ void GCS_MAVLINK_Plane::packetReceived(const mavlink_status_t &status,
 #endif
 #if AP_SCRIPTING_ENABLED
     // pass message to follow library
-    plane.g2.follow.handle_msg(msg);
+    // plane.g2.follow.handle_msg(msg);
 #endif
     plane.ufollow.handle_my_follow_msg(msg);
     if (plane.uattack._cam_port_type == 1) {

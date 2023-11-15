@@ -1,0 +1,9 @@
+# Firmware suitable for flashing into a APz407 to experience Simulation-on-Hardware
+
+include ../APz407/hwdef.dat
+include ../include/SimOnHW.inc
+
+# short board name override (23 chars)
+define CHIBIOS_SHORT_BOARD_NAME "APz407SimOnHW"
+
+AUTOBUILD_TARGETS Copter
