@@ -6,6 +6,8 @@ void Copter::userhook_init()
     // put your initialisation code here
     // this will be called once at start-up
     useruartfwd.init();
+    SRV_Channels::set_range(SRV_Channel::k_yaw_out_left, 100);
+    SRV_Channels::set_range(SRV_Channel::k_yaw_out_right, 100);
 }
 #endif
 
@@ -21,6 +23,16 @@ void Copter::userhook_50Hz()
 {
     // put your 50Hz code here
     useruartfwd.update();
+    float temp_yaw_out_left = -100.0f;
+    float temp_yaw_out_right = -100.0f;
+    if (motors->armed()) {
+        float temp_yaw_out = motors->get_yaw() + motors->get_yaw_ff();
+        temp_yaw_out_left  = constrain_float(-temp_yaw_out*0.5f + 0.5f, 0.4f, 1.f)*100.f;
+        temp_yaw_out_right = constrain_float( temp_yaw_out*0.5f + 0.5f, 0.4f, 1.f)*100.f;
+    }
+        // temp_yaw_out_left  = constrain_float(.0f, -1.0f, 1.0f)*100.f;
+    SRV_Channels::set_output_scaled(SRV_Channel::k_yaw_out_left, temp_yaw_out_left);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_yaw_out_right, temp_yaw_out_right);
 }
 #endif
 
