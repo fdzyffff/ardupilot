@@ -15,6 +15,15 @@ void Copter::userhook_init()
 void Copter::userhook_FastLoop()
 {
     // put your 100Hz code here
+    float temp_yaw_out_left  = 0.0f;
+    float temp_yaw_out_right = 0.0f;
+    if (motors->armed()) {
+        float temp_yaw = motors->get_yaw() + motors->get_yaw_ff();
+        temp_yaw_out_left  = constrain_float(-temp_yaw, 0.0f, 1.0f)*100.f;
+        temp_yaw_out_right = constrain_float( temp_yaw, 0.0f, 1.0f)*100.f;
+    }
+    SRV_Channels::set_output_scaled(SRV_Channel::k_yaw_out_left, temp_yaw_out_left);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_yaw_out_right, temp_yaw_out_right);
 }
 #endif
 
