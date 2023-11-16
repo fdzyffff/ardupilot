@@ -268,7 +268,7 @@ bool AP_Arming_Plane::disarm(const AP_Arming::Method method, bool do_disarm_chec
     
     gcs().send_text(MAV_SEVERITY_INFO, "Throttle disarmed");
 
-    plane.ep4_ctrl.stop();
+    plane.uengine.stop();
     return true;
 }
 

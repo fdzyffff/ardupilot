@@ -351,6 +351,9 @@ public:
         k_param_gcs5,          // stream rates
         k_param_gcs6,          // stream rates
         k_param_fence,         // vehicle fence
+
+        // user define parameter
+        k_param_uengine = 262,
     };
 
     AP_Int16 format_version;
@@ -564,7 +567,6 @@ public:
     AC_PID guidedHeading{5000.0,  0.0,   0.0, 0 ,  10.0,   5.0,  5.0 ,  5.0  , 0.2};
 #endif
 
-
     AP_Float        fs_ekf_thresh;
 
     // min initial climb in RTL
@@ -575,10 +577,8 @@ public:
     AP_Int8         man_expo_rudder;
 
     AP_Int32        oneshot_mask;
-    AP_Float        ep4_throttle_min;
 
     AP_Int8         ts_ahrs_send;
-    AP_Int8         engine_type;
 };
 
 extern const AP_Param::Info var_info[];

@@ -533,8 +533,8 @@ void AP_SerialManager::init()
                     // Note init is handled by AP_MSP
                     break;
 #endif
-                case SerialProtocol_EP4:
-                case SerialProtocol_EP4_OUT:
+                case SerialProtocol_Engine:
+                case SerialProtocol_Engine_OUT:
                 case SerialProtocol_TS:
                 case SerialProtocol_MISSION:
                     uart->begin(map_baudrate(state[i].baud), 

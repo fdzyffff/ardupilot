@@ -335,7 +335,7 @@ case AUX_FUNC::ARSPD_CALIBRATE:
     case AUX_FUNC::EP4_START:
             switch (ch_flag) {
             case AuxSwitchPos::HIGH:
-                plane.ep4_ctrl.start();
+                plane.uengine.start();
                 break;
             case AuxSwitchPos::MIDDLE:
                 break;
@@ -347,7 +347,7 @@ case AUX_FUNC::ARSPD_CALIBRATE:
     case AUX_FUNC::EP4_STOP:
             switch (ch_flag) {
             case AuxSwitchPos::HIGH:
-                plane.ep4_ctrl.stop();
+                plane.uengine.stop();
                 break;
             case AuxSwitchPos::MIDDLE:
                 break;

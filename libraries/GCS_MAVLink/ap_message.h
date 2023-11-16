@@ -78,6 +78,6 @@ enum ap_message : uint8_t {
     MSG_GENERATOR_STATUS,
     MSG_WINCH_STATUS,
     MSG_WATER_DEPTH,
-    MSG_EP4_ECU,
+    MSG_ENGINE_ECU,
     MSG_LAST // MSG_LAST must be the last entry in this enum
 };

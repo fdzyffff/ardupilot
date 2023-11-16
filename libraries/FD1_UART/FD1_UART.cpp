@@ -30,6 +30,7 @@ void FD1_UART::read(void)
     if (_port->available() > 0) {
         uint8_t temp = _port->read();
         if (_msg_ep4_in.enable())   {_msg_ep4_in.parse(temp);}
+        if (_msg_lutan_in.enable())   {_msg_lutan_in.parse(temp);}
         if (_msg_ts_in.enable())    {_msg_ts_in.parse(temp);}
     }
 }
@@ -59,6 +60,26 @@ void FD1_UART::write(void)
         //_msg_ep4_out._msg_1.updated = false;
         _msg_ep4_out._msg_1.need_send = false;
         _msg_ep4_out.swap_message();
+    }
+    if (_msg_lutan_in._msg_1.need_send)
+    {
+        _msg_lutan_in.swap_message();
+        for(i = 0;i < _msg_lutan_in._msg_1.length ; i ++) {
+            _port->write(_msg_lutan_in._msg_1.content.data[i]);
+        }
+        //_msg_lutan_in._msg_1.updated = false;
+        _msg_lutan_in._msg_1.need_send = false;
+        _msg_lutan_in.swap_message();
+    }
+    if (_msg_lutan_out._msg_1.need_send)
+    {
+        _msg_lutan_out.swap_message();
+        for(i = 0;i < _msg_lutan_out._msg_1.length ; i ++) {
+            _port->write(_msg_lutan_out._msg_1.content.data[i]);
+        }
+        //_msg_lutan_out._msg_1.updated = false;
+        _msg_lutan_out._msg_1.need_send = false;
+        _msg_lutan_out.swap_message();
     }
     if (_msg_ts_in._msg_1.need_send)
     {

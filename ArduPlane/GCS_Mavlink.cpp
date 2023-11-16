@@ -385,9 +385,9 @@ bool GCS_MAVLINK_Plane::try_send_message(enum ap_message id)
     case MSG_LANDING:
         plane.landing.send_landing_message(chan);
         break;
-    case MSG_EP4_ECU:
+    case MSG_ENGINE_ECU:
         CHECK_PAYLOAD_SIZE(EP4_ECU);
-        plane.send_ep4_ecu(chan);
+        plane.send_engine_ecu(chan);
         break;
     case MSG_ESC_TELEMETRY:
         plane.send_esc_telemetry_mavlink_fake(chan);
@@ -568,7 +568,7 @@ static const ap_message STREAM_PARAMS_msgs[] = {
 };
 static const ap_message STREAM_ADSB_msgs[] = {
     MSG_ADSB_VEHICLE,
-    MSG_EP4_ECU,
+    MSG_ENGINE_ECU,
 };
 
 const struct GCS_MAVLINK::stream_entries GCS_MAVLINK::all_stream_entries[] = {
@@ -1076,7 +1076,7 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_long_packet(const mavlink_command_l
         return MAV_RESULT_ACCEPTED;
 
     case MAV_CMD_USER_1: {
-        plane.ep4_ctrl.test_EP4_uart((uint8_t)packet.param1, (uint8_t)packet.param2);
+        plane.uengine.test_uart((uint8_t)packet.param1, (uint8_t)packet.param2);
         return MAV_RESULT_ACCEPTED;
     }
 

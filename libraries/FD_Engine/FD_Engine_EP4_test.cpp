@@ -1,6 +1,6 @@
-#include "Plane.h"
+#include "FD_Engine_EP4.h"
 
-void EP4_ctrl_t::test_EP4_uart(uint8_t msg_id, uint8_t option)
+void FD_Engine_EP4::test_uart(uint8_t msg_id, uint8_t option)
 {
     switch (msg_id) {
         case 1:
@@ -14,7 +14,7 @@ void EP4_ctrl_t::test_EP4_uart(uint8_t msg_id, uint8_t option)
     }
 }
 
-void EP4_ctrl_t::test_EP4_in(uint8_t option) {
+void FD_Engine_EP4::test_EP4_in(uint8_t option) {
     static uint8_t n_count = 0;
     FD1_msg_ep4_in &tmp_msg = uart_msg_ep4.get_msg_ep4_in();
     tmp_msg._msg_1.content.msg.ecu_status      = 1 ;     
@@ -50,7 +50,7 @@ void EP4_ctrl_t::test_EP4_in(uint8_t option) {
     n_count++;
 }
 
-void EP4_ctrl_t::test_EP4_out(uint8_t option) {
+void FD_Engine_EP4::test_EP4_out(uint8_t option) {
     static uint8_t n_count = 0;
 
     FD1_msg_ep4_out &tmp_msg = uart_msg_ep4.get_msg_ep4_out();

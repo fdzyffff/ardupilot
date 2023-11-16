@@ -123,8 +123,8 @@
 #include <SITL/SITL.h>
 #endif
 
-#include "FD_ep4.h"
-#include "FD_TS.h"
+#include <FD_Engine/FD_Engine.h>
+#include "User_TS.h"
 
 /*
   main APM:Plane class
@@ -171,7 +171,7 @@ public:
     friend class ModeThermal;
     friend class ModeGimbalFollow;
 
-    friend class EP4_ctrl_t;
+    friend class FD_Engine;
     friend class TS_ctrl_t;
 
     Plane(void);
@@ -1158,11 +1158,16 @@ private:
     float pitch_in_expo(bool use_dz) const;
     float rudder_in_expo(bool use_dz) const;
 
-    // User customization for ep4
-    EP4_ctrl_t ep4_ctrl;
+    // User uart
     void FD1_uart_init();
     void FD1_uart_update();
-    void send_ep4_ecu(mavlink_channel_t chan);
+
+    // User customization for ep4
+    FD_Engine uengine;
+    void engine_init();
+    void engine_update();
+    void engine_quad_state_update();
+    void send_engine_ecu(mavlink_channel_t chan);
     void send_esc_telemetry_mavlink_fake(mavlink_channel_t chan);
 
     // User costomization for TS cam

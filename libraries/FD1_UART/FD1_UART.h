@@ -5,6 +5,8 @@
 
 #include "FD1_msg_ep4_in.h"
 #include "FD1_msg_ep4_out.h"
+#include "FD1_msg_lutan_in.h"
+#include "FD1_msg_lutan_out.h"
 #include "FD1_msg_ts.h"
 
 class FD1_UART {
@@ -32,6 +34,9 @@ public:
     FD1_msg_ep4_in& get_msg_ep4_in()   { return _msg_ep4_in; }
     FD1_msg_ep4_out& get_msg_ep4_out() { return _msg_ep4_out; }
 
+    FD1_msg_lutan_in& get_msg_lutan_in()   { return _msg_lutan_in; }
+    FD1_msg_lutan_out& get_msg_lutan_out() { return _msg_lutan_out; }
+
     FD1_msg_ts& get_msg_ts_in()    { return _msg_ts_in; }
     FD1_msg_ts& get_msg_ts_out()   { return _msg_ts_out; }
     FD1_msg_ts& get_msg_ts_route() { return _msg_ts_route; }
@@ -44,6 +49,8 @@ private:
 
     FD1_msg_ep4_in _msg_ep4_in;
     FD1_msg_ep4_out _msg_ep4_out;
+    FD1_msg_lutan_in _msg_lutan_in;
+    FD1_msg_lutan_out _msg_lutan_out;
     FD1_msg_ts _msg_ts_in;
     FD1_msg_ts _msg_ts_out;
     FD1_msg_ts _msg_ts_route;

@@ -107,6 +107,7 @@ COMMON_VEHICLE_DEPENDENT_LIBRARIES = [
     'AP_ExternalAHRS',
     'AP_VideoTX',
     'FD1_UART',
+    'FD_Engine',
 ]
 
 def get_legacy_defines(sketch_name):

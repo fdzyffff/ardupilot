@@ -1,11 +1,11 @@
 #include "Plane.h"
 
 void Plane::FD1_uart_init() {
-    ep4_ctrl.init();
+    engine_init();
     ts_ctrl.init();
 }
 
 void Plane::FD1_uart_update() {
-    ep4_ctrl.update();
+    engine_update();
     ts_ctrl.update();
 }
