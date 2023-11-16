@@ -17,7 +17,7 @@ public:
     bool _active;
     uint32_t _last_active_ms;
     uint16_t data_idx;
-    uint8_t _data[500];
+    uint8_t _data[400];
     uint8_t _id;
 };
 
