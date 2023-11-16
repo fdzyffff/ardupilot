@@ -72,8 +72,8 @@ void UserUartFWD::send_mav()
                     data_buffer_instance[i].set_active();
                     mavlink_my_uart_forward_t my_uart_forward;
                     my_uart_forward.data_len = data_buffer_instance[i].get_data(my_uart_forward.data);
-                    if (my_uart_forward.data_len > 0) {
                     gcs().send_text(MAV_SEVERITY_INFO, "[%d]data_len %d", i, my_uart_forward.data_len );
+                    if (my_uart_forward.data_len > 0) {
                         mavlink_msg_my_uart_forward_send(
                             channel,
                             my_uart_forward.data_len,
@@ -131,7 +131,7 @@ void User_data_buffer::push(uint8_t c)
 {
     if (!_active) {return;}
     static uint32_t _last_log_ms = 0;
-    if (data_idx < (400-1)) {
+    if (data_idx < (500-1)) {
         _data[data_idx] = c;
         data_idx++;
     } else {
