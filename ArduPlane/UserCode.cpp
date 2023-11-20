@@ -46,7 +46,7 @@ void Plane::sim_init()
 void Plane::sim_update()
 {
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-    
+
     FD2_uart_msg_ue4.read();
 
     SITL::SIM* _sitl = AP::sitl();
@@ -81,7 +81,7 @@ void Plane::sim_update()
         float target_x = degrees(tmp_msg._msg_1.content.msg.yaw);
         float target_y = degrees(tmp_msg._msg_1.content.msg.pitch);
         if (plane.uattack._cam_port_type == 1) {
-            plane.uattack._UCam_ptr->handle_info(target_x, target_y);
+            plane.uattack._UCam_ptr->handle_info_test(target_x, target_y);
         }
         tmp_msg._msg_1.updated = false;   
     }

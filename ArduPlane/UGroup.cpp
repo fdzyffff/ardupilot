@@ -30,25 +30,25 @@ Vector3f my_group_1_t::get_pos(int16_t id_in, float dist) {
             return Vector3f(0.0f            ,  0.0f          , 0.0f);
             break;
         case 2:
-            return Vector3f(-1.0f*0.71f*dist, 1.0f*0.71f*dist, 0.0f);
+            return Vector3f(-1.0f*0.71f*dist, 1.0f*0.71f*dist, 10.0f);
             break;
         case 3:
-            return Vector3f(-2.0f*0.71f*dist, 2.0f*0.71f*dist, 0.0f);
+            return Vector3f(-2.0f*0.71f*dist, 2.0f*0.71f*dist, 20.0f);
             break;
         case 4:
-            return Vector3f(-3.0f*0.71f*dist, 3.0f*0.71f*dist, 0.0f);
+            return Vector3f(-3.0f*0.71f*dist, 3.0f*0.71f*dist, 30.0f);
             break;
         case 5:
-            return Vector3f(-4.0f*0.71f*dist, 4.0f*0.71f*dist, 0.0f);
+            return Vector3f(-4.0f*0.71f*dist, 4.0f*0.71f*dist, 40.0f);
             break;
         case 6:
-            return Vector3f(-5.0f*0.71f*dist, 5.0f*0.71f*dist, 0.0f);
+            return Vector3f(-5.0f*0.71f*dist, 5.0f*0.71f*dist, 50.0f);
             break;
         case 7:
-            return Vector3f(-6.0f*0.71f*dist, 6.0f*0.71f*dist, 0.0f);
+            return Vector3f(-6.0f*0.71f*dist, 6.0f*0.71f*dist, 60.0f);
             break;
         case 8:
-            return Vector3f(-7.0f*0.71f*dist, 7.0f*0.71f*dist, 0.0f);
+            return Vector3f(-7.0f*0.71f*dist, 7.0f*0.71f*dist, 70.0f);
             break;
     }
 }
@@ -73,25 +73,25 @@ Vector3f my_group_2_t::get_pos(int16_t id_in, float dist) {
             return Vector3f(0.0f            ,  0.0f          , 0.0f);
             break;
         case 2:
-            return Vector3f(-1.0f*0.71f*dist, -1.0f*0.71f*dist, 0.0f);
+            return Vector3f(-1.0f*0.71f*dist, -1.0f*0.71f*dist, 10.0f);
             break;
         case 3:
-            return Vector3f(-1.0f*0.71f*dist,  1.0f*0.71f*dist, 0.0f);
+            return Vector3f(-1.0f*0.71f*dist,  1.0f*0.71f*dist, 20.0f);
             break;
         case 4:
-            return Vector3f(-2.0f*0.71f*dist, -2.0f*0.71f*dist, 0.0f);
+            return Vector3f(-2.0f*0.71f*dist, -2.0f*0.71f*dist, 30.0f);
             break;
         case 5:
-            return Vector3f(-2.0f*0.71f*dist,  2.0f*0.71f*dist, 0.0f);
+            return Vector3f(-2.0f*0.71f*dist,  2.0f*0.71f*dist, 40.0f);
             break;
         case 6:
-            return Vector3f(-3.0f*0.71f*dist, -1.0f*0.71f*dist, 0.0f);
+            return Vector3f(-3.0f*0.71f*dist, -1.0f*0.71f*dist, 50.0f);
             break;
         case 7:
-            return Vector3f(-3.0f*0.71f*dist,  1.0f*0.71f*dist, 0.0f);
+            return Vector3f(-3.0f*0.71f*dist,  1.0f*0.71f*dist, 60.0f);
             break;
         case 8:
-            return Vector3f(-4.0f*0.71f*dist,  0.0f*0.71f*dist, 0.0f);
+            return Vector3f(-4.0f*0.71f*dist,  0.0f*0.71f*dist, 70.0f);
             break;
     }
 }

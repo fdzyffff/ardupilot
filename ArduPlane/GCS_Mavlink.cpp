@@ -1177,6 +1177,13 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_long_packet(const mavlink_command_l
         }
         return MAV_RESULT_FAILED;
 #endif
+    case MAV_CMD_USER_5:
+        // param1: sysid of target to follow
+        if (packet.param1 > 0) {
+            plane.uattack._UCam_ptr->handle_info_test(packet.param2, packet.param3);
+            return MAV_RESULT_ACCEPTED;
+        }
+        return MAV_RESULT_FAILED;
     default:
         return GCS_MAVLINK::handle_command_long_packet(packet);
     }

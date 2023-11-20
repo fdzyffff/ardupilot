@@ -17,20 +17,28 @@ UCam_DYT::UCam_DYT(UAttack &frotend_in, AP_HAL::UARTDriver* port_in):
 
 void UCam_DYT::update() {
     static uint32_t last_update_ms = millis();
-    uint32_t tnow = millis();
     _yaw_rate_filter.apply(degrees(plane.ahrs.get_yaw_rate_earth()));
 
     FD1_uart_ptr->read();
     FD1_msg_DYTTELEM &tmp_msg = FD1_uart_ptr->get_msg_DYTTELEM();
     if (tmp_msg._msg_1.updated) {
         // DYT -> APM
-        float p1 = (float)(tmp_msg._msg_1.content.msg.target_x) * 0.005f; // x-axis
-        float p2 = (float)(tmp_msg._msg_1.content.msg.target_y) * 0.005f; // y-axis
-        handle_info(p1, p2);
+        if (tmp_msg._msg_1.content.msg.target_x == 0 && tmp_msg._msg_1.content.msg.target_y == 0) {
+            // unhealthy massage
+            ;
+        } else {
+            float p1 = (float)(tmp_msg._msg_1.content.msg.target_x) * 0.005f; // x-axis
+            float p2 = (float)(tmp_msg._msg_1.content.msg.target_y) * 0.005f; // y-axis
+            handle_info(p1, p2);
+        }
         tmp_msg._msg_1.updated = false;
     }
 
+    uint32_t tnow = millis(); // 只能放这里，handle_info会更新_last_ms的值，如果tnow赋值在其之前，则会小于_last_ms。SITL仿不出来，它周期是50Hz太低了
     if (tnow - _last_ms > 2000) {
+        // if (_valid) {
+        //     gcs().send_text(MAV_SEVERITY_INFO, "valid %ld|%ld", tnow, _last_ms);
+        // }
         _valid = false;
         _pitch_filter.reset();
         _yaw_filter.reset();
@@ -80,7 +88,7 @@ void UCam_DYT::fill_state_msg()
     temp_asp = plane.airspeed.get_airspeed();
     tmp_msg._msg_1.content.msg.roll = (int16_t)(wrap_180_cd(plane.ahrs.pitch_sensor));
     tmp_msg._msg_1.content.msg.pitch = (int16_t)(wrap_180_cd(plane.ahrs.roll_sensor));
-    tmp_msg._msg_1.content.msg.yaw = (int16_t)(wrap_180_cd(plane.ahrs.yaw_sensor));
+    tmp_msg._msg_1.content.msg.yaw = (int16_t)(wrap_360_cd(plane.ahrs.yaw_sensor));
     tmp_msg._msg_1.content.msg.lat = plane.gps.location().lat;
     tmp_msg._msg_1.content.msg.lng = plane.gps.location().lng;
     tmp_msg._msg_1.content.msg.alt_abs = (int16_t)(plane.gps.location().alt/20);
@@ -113,6 +121,9 @@ bool UCam_DYT::is_valid() {
 }
 
 void UCam_DYT::handle_info(float p1, float p2) {
+        // if (!_valid) {
+        //     gcs().send_text(MAV_SEVERITY_INFO, "IIvalid %ld|%ld", millis(), _last_ms);
+        // }
     _valid = true;
     _last_ms = millis();
 
@@ -368,4 +379,11 @@ void Plane::get_Time(uint8_t &year_out, uint8_t &month_out, uint8_t &day_out, ui
     minute_out = minute;
     second_out = second;
     second_10ms_out = (gps.time_week_ms() % 1000) / 10;;
+}
+
+void UCam_DYT::handle_info_test(float p1, float p2) {
+    FD1_msg_DYTTELEM &tmp_msg = FD1_uart_ptr->get_msg_DYTTELEM();
+    tmp_msg._msg_1.updated = true;
+    tmp_msg._msg_1.content.msg.target_x = (int16_t)(p1/0.005f);
+    tmp_msg._msg_1.content.msg.target_y = (int16_t)(p2/0.005f);
 }

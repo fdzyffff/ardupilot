@@ -67,6 +67,7 @@ public:
     virtual void do_cmd() = 0;
     virtual void handle_info(float p1, float p2) = 0;
     virtual void handle_msg(const mavlink_message_t &msg) = 0;
+    virtual void handle_info_test(float p1, float p2) = 0;
     UAttack &_frotend;
     bool _valid;
 };
@@ -81,6 +82,7 @@ public:
     void do_cmd() override;
     void handle_info(float p1, float p2) override;
     void handle_msg(const mavlink_message_t &msg) override;
+    void handle_info_test(float p1, float p2) override;
 
     void fill_state_msg();
     void foward_DYT_mavlink();

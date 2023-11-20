@@ -77,6 +77,8 @@ void FD1_msg_DYTTELEM::process_message(void)
 
 void FD1_msg_DYTTELEM::swap_message(void)
 {
+    // swap_message_sub(_msg_1.content.data[7-1] , _msg_1.content.data[8-1] );
+    // swap_message_sub(_msg_1.content.data[9-1] , _msg_1.content.data[10-1] );
     // swap_message_sub(_msg_1.content.data[4-1] , _msg_1.content.data[5-1] , _msg_1.content.data[6-1] , _msg_1.content.data[7-1]);
     // swap_message_sub(_msg_1.content.data[8-1] , _msg_1.content.data[9-1] , _msg_1.content.data[10-1], _msg_1.content.data[11-1]);
     // swap_message_sub(_msg_1.content.data[12-1], _msg_1.content.data[13-1], _msg_1.content.data[14-1], _msg_1.content.data[15-1]);
