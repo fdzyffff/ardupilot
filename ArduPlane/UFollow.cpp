@@ -2,12 +2,16 @@
 
 UFollow::UFollow()
 {
-    init();
+    _active = false;
 }
 
 void UFollow::init()
 {
-    _active = false;
+    if (!plane.g2.follow.enabled()) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Set FOLL_ENABLE and reboot");
+        gcs().send_text(MAV_SEVERITY_INFO, "Set FOLL_ENABLE and reboot");
+        gcs().send_text(MAV_SEVERITY_INFO, "Set FOLL_ENABLE and reboot");
+    }
 }
 
 void UFollow::handle_my_follow_msg(const mavlink_message_t &msg)

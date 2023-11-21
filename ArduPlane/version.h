@@ -6,7 +6,7 @@
 
 #include "ap_version.h"
 
-#define THISFIRMWARE "Plane-LanDun-0.0.2"
+#define THISFIRMWARE "Plane-LanDun-0.0.2-t001"
 // ArduPlane-4.3.5
 // the following line is parsed by the autotest scripts
 #define FIRMWARE_VERSION 4,3,5,FIRMWARE_VERSION_TYPE_OFFICIAL

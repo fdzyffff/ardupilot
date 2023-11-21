@@ -34,7 +34,7 @@ void UMission::handle_msg(const mavlink_message_t &msg) {
                         plane.g2.group_distance.set(packet.param4);
                         plane.g2.user_group_id.set(group_state.type);
                         do_group();
-                        gcs().send_text(MAV_SEVERITY_INFO, "G[%d,%d,%d]", (int16_t)packet.param2, (int16_t)packet.param3, (int16_t)packet.param4);
+                        gcs().send_text(MAV_SEVERITY_INFO, "G[%d, %d, %d]", (int16_t)packet.param2, (int16_t)packet.param3, (int16_t)packet.param4);
                         break;
                     case 3:
                         if (_role == Mission_Role::Leader) {
