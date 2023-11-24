@@ -90,6 +90,6 @@ void ModeGuided::update_follow()
     }
     float delta_dist = (plane.next_WP_loc.get_distance(plane.current_loc) - vel_length);
     float spd_kp = plane.g2.follow_speed_ratio.get();
-    float target_spd = plane.ufollow.get_target_vel()*100.f + constrain_float(delta_dist*spd_kp*100.f, -plane.g2.follow_speed_range*100.f, plane.g2.follow_speed_range*100.f);
+    float target_spd = _target_speed + constrain_float(delta_dist*spd_kp*100.f, -plane.g2.follow_speed_range*100.f, plane.g2.follow_speed_range*100.f);
     plane.aparm.airspeed_cruise_cm.set(target_spd);
 }

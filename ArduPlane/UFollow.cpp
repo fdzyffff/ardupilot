@@ -72,7 +72,7 @@ void UFollow::get_target_pos(Location &loc)
 
     loc = _raw_target_loc;
     loc.offset(offset_position.x, offset_position.y);
-    loc.alt += (int32_t)offset_position.z;
+    loc.alt += (int32_t)(offset_position.z*100.f);
     // float delta_t = 0.01f*(float)(millis() - _last_update_ms);
     // float dist_offset = _target_vel * delta_t;
     // loc.offset_bearing(_target_bearing, dist_offset);

@@ -33,7 +33,7 @@ void UMission::handle_msg(const mavlink_message_t &msg) {
                         group_state.type = (int16_t)packet.param3;
                         plane.g2.group_distance.set(packet.param4);
                         plane.g2.user_group_id.set(group_state.type);
-                        do_group();
+                        do_group_init();
                         gcs().send_text(MAV_SEVERITY_INFO, "G[%d, %d, %d]", (int16_t)packet.param2, (int16_t)packet.param3, (int16_t)packet.param4);
                         break;
                     case 3:
@@ -128,7 +128,28 @@ void UMission::do_offboard_control(float p2) {
 
 }
 
-void UMission::do_group() {
+void UMission::do_group_init() {
+    if (group_state.in_group) {
+        if (_role == Mission_Role::Leader) {
+            set_mode(plane.mode_auto);
+            plane.gcs().send_text(MAV_SEVERITY_INFO, "In group, Leader");
+        }
+        if (_role == Mission_Role::Follower) {
+            if (!plane.ufollow.is_active()) {
+                set_mode(plane.mode_auto);
+            } else {
+                set_mode(plane.mode_guided);
+            }
+            plane.gcs().send_text(MAV_SEVERITY_INFO, "In group, Follower");
+        }
+    } else {
+        set_mode(plane.mode_auto);
+        plane.gcs().send_text(MAV_SEVERITY_INFO, "Exit group");
+    }
+}
+
+
+void UMission::keep_group() {
     if (group_state.in_group) {
         if (_role == Mission_Role::Leader) {
             set_mode(plane.mode_auto);
@@ -146,7 +167,7 @@ void UMission::do_group() {
 void UMission::do_set_leader(float p2) {
     _leader_id = (int16_t)p2;
     update_leader();
-    do_group();
+    keep_group();
 }
 
 void UMission::update_leader() {
@@ -173,7 +194,7 @@ void UMission::update_group() {
     }
 
     if (group_state.in_group) {
-        do_group();
+        keep_group();
     }
 }
 
