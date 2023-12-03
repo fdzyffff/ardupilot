@@ -94,6 +94,9 @@ Mode *Plane::mode_from_mode_num(const enum Mode::Number num)
         break;
 #endif  // HAL_QUADPLANE_ENABLED
 
+    case Mode::Number::WATER_SLIDE:
+        ret = &mode_wsld;
+        break;
     }
     return ret;
 }

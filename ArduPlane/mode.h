@@ -52,6 +52,7 @@ public:
         THERMAL       = 24,
 #if HAL_QUADPLANE_ENABLED
         LOITER_ALT_QLAND = 25,
+        WATER_SLIDE   = 30,
 #endif
     };
 
@@ -786,3 +787,20 @@ protected:
 };
 
 #endif
+
+class ModeWSLD : public Mode
+{
+public:
+
+    Number mode_number() const override { return Number::WATER_SLIDE; }
+    const char *name() const override { return "WATER_SLIDE"; }
+    const char *name4() const override { return "WSLD"; }
+
+    // methods that affect movement of the vehicle in this mode
+    void update() override;
+
+    bool _enter() override;
+
+    bool does_auto_throttle() const override { return true; }
+};
+

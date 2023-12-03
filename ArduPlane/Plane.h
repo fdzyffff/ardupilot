@@ -84,6 +84,8 @@
 #include <AP_LandingGear/AP_LandingGear.h>     // Landing Gear library
 #include <AP_Follow/AP_Follow.h>
 
+#include <FD_WaterSlide/FD_WaterSlide.h>
+
 #include "GCS_Mavlink.h"
 #include "GCS_Plane.h"
 #include "quadplane.h"
@@ -159,6 +161,7 @@ public:
     friend class ModeTakeoff;
     friend class ModeThermal;
     friend class ModeLoiterAltQLand;
+    friend class ModeWSLD;
 
     Plane(void);
 
@@ -199,6 +202,7 @@ private:
 
     AP_TECS TECS_controller{ahrs, aparm, landing, MASK_LOG_TECS};
     AP_L1_Control L1_controller{ahrs, &TECS_controller};
+    FD_WaterSlide WaterSlide_controller{ahrs, aparm, MASK_LOG_TECS};
 
     // Attitude to servo controllers
     AP_RollController rollController{aparm};
@@ -284,6 +288,7 @@ private:
 #if HAL_SOARING_ENABLED
     ModeThermal mode_thermal;
 #endif
+    ModeWSLD mode_wsld;
 
     // This is the state of the flight control system
     // There are multiple states defined such as MANUAL, FBW-A, AUTO

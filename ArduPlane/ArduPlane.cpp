@@ -214,6 +214,7 @@ void Plane::update_speed_height(void)
 	    // throttle suppressed, as this needs to be running for
 	    // takeoff detection
         TECS_controller.update_50hz();
+        WaterSlide_controller.update_50hz();
     }
 
 #if HAL_QUADPLANE_ENABLED
@@ -580,6 +581,8 @@ void Plane::update_alt()
                                                  get_takeoff_pitch_min_cd(),
                                                  throttle_nudge,
                                                  tecs_hgt_afe(),
+                                                 aerodynamic_load_factor);
+        WaterSlide_controller.update_pitch_throttle(throttle_nudge,
                                                  aerodynamic_load_factor);
     }
 }

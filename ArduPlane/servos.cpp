@@ -870,6 +870,12 @@ void Plane::set_servos(void)
     SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, steering_control.rudder);
     SRV_Channels::set_output_scaled(SRV_Channel::k_steering, steering_control.steering);
 
+    if (control_mode == &mode_wsld) {
+        if (!WaterSlide_controller.allow_steering_flag()) {
+            SRV_Channels::set_output_scaled(SRV_Channel::k_steering, 0.0f);
+        }
+    }
+
     if (control_mode == &mode_manual) {
         set_servos_manual_passthrough();
     } else {

@@ -250,7 +250,8 @@ void Plane::stabilize_stick_mixing_fbw()
         control_mode == &mode_qautotune ||
 #endif
 #endif  // HAL_QUADPLANE_ENABLED
-        control_mode == &mode_training) {
+        control_mode == &mode_training ||
+        control_mode == &mode_wsld) {
         return;
     }
     // do FBW style stick mixing. We don't treat it linearly
@@ -444,6 +445,11 @@ void Plane::stabilize()
 
 void Plane::calc_throttle()
 {
+    if (control_mode == &mode_wsld) {
+        float commanded_throttle = WaterSlide_controller.get_throttle_demand();
+        SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, commanded_throttle);
+        return;
+    }
     if (aparm.throttle_cruise <= 1) {
         // user has asked for zero throttle - this may be done by a
         // mission which wants to turn off the engine for a parachute
