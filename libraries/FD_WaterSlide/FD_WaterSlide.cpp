@@ -5,6 +5,7 @@
 #include <AP_Logger/AP_Logger.h>
 #include <AP_Landing/AP_Landing.h>
 #include <GCS_MAVLink/GCS.h>
+#include <AP_GPS/AP_GPS.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -143,33 +144,33 @@ void FD_WaterSlide::_update_speed(float DT)
         _vel_dot_lpf = _vel_dot_lpf * (1.0f - alpha) + _vel_dot * alpha;
     }
 
-    bool use_airspeed = _ahrs.airspeed_sensor_enabled();
+    bool gps_ok = AP::gps().status() >= AP_GPS::GPS_OK_FIX_2D;
 
     // Convert equivalent airspeeds to true airspeeds and harmonise limits
 
-    float EAS2TAS = _ahrs.get_EAS2TAS();
+    float EAS2TAS = 1.0f;//_ahrs.get_EAS2TAS();
     _TAS_dem = _EAS_dem * EAS2TAS;
-    if (_flags.reset || !use_airspeed) {
-        _TASmax = aparm.airspeed_max * EAS2TAS;
+    if (_flags.reset || !gps_ok) {
+        _TASmax = _airspeed_max * EAS2TAS;
     } else if (_thr_clip_status == clipStatus::MAX) {
         // wind down airspeed upper limit  to prevent a situation where the aircraft can't climb
         // at the maximum speed
-        const float velRateMin = 0.5f * _STEdot_min / MAX(_TAS_state, aparm.airspeed_min * EAS2TAS);
+        const float velRateMin = 0.5f * _STEdot_min / MAX(_TAS_state, _airspeed_min * EAS2TAS);
         _TASmax += _DT * velRateMin;
-        _TASmax = MAX(_TASmax, 0.01f * (float)aparm.airspeed_cruise_cm * EAS2TAS);
+        _TASmax = MAX(_TASmax, 0.01f * (_EAS_target.get() * 100.f) * EAS2TAS);
     } else {
         // wind airspeed upper limit back to parameter defined value
-        const float velRateMax = 0.5f * _STEdot_max / MAX(_TAS_state, aparm.airspeed_min * EAS2TAS);
+        const float velRateMax = 0.5f * _STEdot_max / MAX(_TAS_state, _airspeed_min * EAS2TAS);
         _TASmax += _DT * velRateMax;
     }
-    _TASmax   = MIN(_TASmax, aparm.airspeed_max * EAS2TAS);
-    _TASmin   = aparm.airspeed_min * EAS2TAS;
+    _TASmax   = MIN(_TASmax, _airspeed_max * EAS2TAS);
+    _TASmin   = _airspeed_min * EAS2TAS;
 
-    if (aparm.stall_prevention) {
-        // when stall prevention is active we raise the minimum
-        // airspeed based on aerodynamic load factor
-        _TASmin *= _load_factor;
-    }
+    // if (aparm.stall_prevention) {
+    //     // when stall prevention is active we raise the minimum
+    //     // airspeed based on aerodynamic load factor
+    //     _TASmin *= _load_factor;
+    // }
 
     if (_TASmax < _TASmin) {
         _TASmax = _TASmin;
@@ -177,13 +178,15 @@ void FD_WaterSlide::_update_speed(float DT)
 
     // Get measured airspeed or default to trim speed and constrain to range between min and max if
     // airspeed sensor data cannot be used
-    if (!use_airspeed || !_ahrs.airspeed_estimate(_EAS)) {
-        // If no airspeed available use average of min and max
-        _EAS = constrain_float(0.01f * (float)aparm.airspeed_cruise_cm.get(), (float)aparm.airspeed_min.get(), (float)aparm.airspeed_max.get());
+    Vector3f vel;
+    if (_ahrs.get_velocity_NED(vel) && AP::gps().status() >= AP_GPS::GPS_OK_FIX_2D){
+        _EAS = vel.xy().length();
+    } else {
+        _EAS = _EAS_target;
     }
 
     // limit the airspeed to a minimum of 3 m/s
-    const float min_airspeed = 3.0;
+    const float min_airspeed = 0.5f;
 
     // Reset states of time since last update is too large
     if (_flags.reset) {
@@ -326,7 +329,7 @@ void FD_WaterSlide::_update_throttle_with_airspeed(void)
         const float K_STE2Thr = 1 / (timeConstant() * (_STEdot_max - _STEdot_min) / (_THRmaxf - _THRminf));
 
         // Calculate feed-forward throttle
-        const float nomThr = aparm.throttle_cruise * 0.01f;
+        const float nomThr = aparm.throttle_cruise * 0.01f * (_EAS_target)/(0.01f * (float)aparm.airspeed_cruise_cm.get());
         const Matrix3f &rotMat = _ahrs.get_rotation_body_to_ned();
         // Use the demanded rate of change of total energy as the feed-forward demand, but add
         // additional component which scales with (1/cos(bank angle) - 1) to compensate for induced
@@ -334,11 +337,15 @@ void FD_WaterSlide::_update_throttle_with_airspeed(void)
         const float cosPhi = sqrtf((rotMat.a.y*rotMat.a.y) + (rotMat.b.y*rotMat.b.y));
         STEdot_dem = STEdot_dem + _rollComp * (1.0f/constrain_float(cosPhi * cosPhi, 0.1f, 1.0f) - 1.0f);
         const float ff_throttle = nomThr + STEdot_dem / (_STEdot_max - _STEdot_min) * (_THRmaxf - _THRminf);
+        // const float ff_throttle = STEdot_dem / (_STEdot_max - _STEdot_min) * (_THRmaxf - _THRminf);
 
         // Calculate PD + FF throttle
         float throttle_damp = _thrDamp;
 
         _throttle_dem = (_STE_error + STEdot_error * throttle_damp) * K_STE2Thr + ff_throttle;
+
+// float p1 = _throttle_dem;
+// float p2 = ff_throttle;
 
         float THRminf_clipped_to_zero = constrain_float(_THRminf, 0, _THRmaxf);
 
@@ -353,6 +360,7 @@ void FD_WaterSlide::_update_throttle_with_airspeed(void)
         // Set integrator to a max throttle value during climbout
         _integTHR_state = _integTHR_state + (_STE_error * _get_i_gain()) * _DT * K_STE2Thr;
         _integTHR_state = constrain_float(_integTHR_state, integ_min, integ_max);
+// float p3 = _integTHR_state;
  
         // Rate limit PD + FF throttle
         // Calculate the throttle increment from the specified slew time
@@ -369,6 +377,14 @@ void FD_WaterSlide::_update_throttle_with_airspeed(void)
 
         // Sum the components.
         _throttle_dem = _throttle_dem + _integTHR_state;
+
+
+// static uint32_t _last_ms = AP_HAL::millis();
+// if (AP_HAL::millis() - _last_ms > 1000) {
+//     gcs().send_text(MAV_SEVERITY_INFO, "Thr %0.4f:%0.4f:%0.4f:%0.4f", _throttle_dem, p1, p2, p3);
+//     _last_ms = AP_HAL::millis();
+// }
+
 
         // if (AP::logger().should_log(_log_bitmask)){
         //     AP::logger().WriteStreaming("TEC3","TimeUS,KED,PED,KEDD,PEDD,TEE,TEDE,FFT,Imin,Imax,I,Emin,Emax",
@@ -389,15 +405,15 @@ void FD_WaterSlide::_update_throttle_with_airspeed(void)
         // }
 
     // Constrain throttle demand and record clipping
-    if (_throttle_dem > _THRmaxf) {
-        _thr_clip_status = clipStatus::MAX;
-        _throttle_dem = _THRmaxf;
-    } else if (_throttle_dem < _THRminf) {
-        _thr_clip_status = clipStatus::MIN;
-        _throttle_dem = _THRminf;
-    } else {
+    // if (_throttle_dem > _THRmaxf) {
+    //     _thr_clip_status = clipStatus::MAX;
+    //     _throttle_dem = _THRmaxf;
+    // } else if (_throttle_dem < _THRminf) {
+    //     _thr_clip_status = clipStatus::MIN;
+    //     _throttle_dem = _THRminf;
+    // } else {
         _thr_clip_status = clipStatus::NONE;
-    }
+    // }
 }
 
 float FD_WaterSlide::_get_i_gain(void)
@@ -458,6 +474,9 @@ void FD_WaterSlide::_initialise_states()
 
     // reset takeoff speed flag when not in takeoff
     _flags.reached_speed_takeoff = false;
+
+    _airspeed_min = 1.0f;
+    _airspeed_max = _EAS_target*1.0f + 3.0f;
 }
 
 void FD_WaterSlide::_update_STE_rate_lim(void)
@@ -522,7 +541,7 @@ void FD_WaterSlide::update_pitch_throttle(int16_t throttle_nudge, float load_fac
     // Note that caller can demand the use of
     // synthetic airspeed for one loop if needed. This is required
     // during QuadPlane transition when pitch is constrained
-    if (_ahrs.airspeed_sensor_enabled()) {
+    if (AP::gps().status() >= AP_GPS::GPS_OK_FIX_2D) {
         _update_throttle_with_airspeed();
         _using_airspeed_for_throttle = true;
     } else {
@@ -534,46 +553,38 @@ void FD_WaterSlide::update_pitch_throttle(int16_t throttle_nudge, float load_fac
     _detect_bad_descent();
 
 
-    // if (AP::logger().should_log(_log_bitmask)){
-    //     // log to AP_Logger
-    //     // @LoggerMessage: TECS
-    //     // @Vehicles: Plane
-    //     // @Description: Information about the Total Energy Control System
-    //     // @URL: http://ardupilot.org/plane/docs/tecs-total-energy-control-system-for-speed-height-tuning-guide.html
-    //     // @Field: TimeUS: Time since system startup
-    //     // @Field: h: height estimate (UP) currently in use by TECS
-    //     // @Field: dh: current climb rate ("delta-height")
-    //     // @Field: hin: height demand received by TECS
-    //     // @Field: hdem: height demand after rate limiting and filtering that TECS is currently trying to achieve
-    //     // @Field: dhdem: climb rate TECS is currently trying to achieve
-    //     // @Field: spdem: True AirSpeed TECS is currently trying to achieve
-    //     // @Field: sp: current estimated True AirSpeed
-    //     // @Field: dsp: x-axis acceleration estimate ("delta-speed")
-    //     // @Field: th: throttle output
-    //     // @Field: ph: pitch output
-    //     // @Field: pmin: pitch lower limit
-    //     // @Field: pmax: pitch upper limit
-    //     // @Field: dspdem: demanded acceleration output ("delta-speed demand")
-    //     // @Field: f: flags
-    //     // @FieldBits: f: Underspeed,UnachievableDescent,AutoLanding,ReachedTakeoffSpd
-    //     AP::logger().WriteStreaming("TECS", "TimeUS,h,dh,hin,hdem,dhdem,spdem,sp,dsp,th,ph,pmin,pmax,dspdem,f",
-    //                                 "smnmmnnnn------",
-    //                                 "F00000000------",
-    //                                 "QfffffffffffffB",
-    //                                 now,
-    //                                 (double)_height,
-    //                                 (double)_climb_rate,
-    //                                 (double)_hgt_dem_in_raw,
-    //                                 (double)_hgt_dem,
-    //                                 (double)_hgt_rate_dem,
-    //                                 (double)_TAS_dem_adj,
-    //                                 (double)_TAS_state,
-    //                                 (double)_vel_dot,
-    //                                 (double)_throttle_dem,
-    //                                 (double)_pitch_dem,
-    //                                 (double)_PITCHminf,
-    //                                 (double)_PITCHmaxf,
-    //                                 (double)_TAS_rate_dem,
-    //                                 _flags_byte);
-    // }
+    if (AP::logger().should_log(_log_bitmask)){
+        // log to AP_Logger
+        // @LoggerMessage: TECS
+        // @Vehicles: Plane
+        // @Description: Information about the Total Energy Control System
+        // @URL: http://ardupilot.org/plane/docs/tecs-total-energy-control-system-for-speed-height-tuning-guide.html
+        // @Field: TimeUS: Time since system startup
+        // @Field: h: height estimate (UP) currently in use by TECS
+        // @Field: dh: current climb rate ("delta-height")
+        // @Field: hin: height demand received by TECS
+        // @Field: hdem: height demand after rate limiting and filtering that TECS is currently trying to achieve
+        // @Field: dhdem: climb rate TECS is currently trying to achieve
+        // @Field: spdem: True AirSpeed TECS is currently trying to achieve
+        // @Field: sp: current estimated True AirSpeed
+        // @Field: dsp: x-axis acceleration estimate ("delta-speed")
+        // @Field: th: throttle output
+        // @Field: ph: pitch output
+        // @Field: pmin: pitch lower limit
+        // @Field: pmax: pitch upper limit
+        // @Field: dspdem: demanded acceleration output ("delta-speed demand")
+        // @Field: f: flags
+        // @FieldBits: f: Underspeed,UnachievableDescent,AutoLanding,ReachedTakeoffSpd
+        AP::logger().WriteStreaming("WLSD", "TimeUS,spdem,sp,dsp,th,dspdem,f",
+                                    "snnn---",
+                                    "F000---",
+                                    "QfffffB",
+                                    now,
+                                    (double)_TAS_dem_adj,
+                                    (double)_TAS_state,
+                                    (double)_vel_dot,
+                                    (double)_throttle_dem,
+                                    (double)_TAS_rate_dem,
+                                    _flags_byte);
+    }
 }

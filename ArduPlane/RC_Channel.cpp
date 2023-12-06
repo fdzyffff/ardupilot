@@ -184,6 +184,8 @@ void RC_Channel_Plane::init_aux_function(const RC_Channel::aux_func_t ch_option,
 #endif
     case AUX_FUNC::TER_DISABLE:
     case AUX_FUNC::CROW_SELECT:
+
+    case AUX_FUNC::USER_FUNC1:
         run_aux_function(ch_option, ch_flag, AuxFuncTriggerSource::INIT);
         break;
 
@@ -427,6 +429,20 @@ bool RC_Channel_Plane::do_aux_function(const aux_func_t ch_option, const AuxSwit
            plane.autotune_enable(false); 
         }
         break;
+
+    case AUX_FUNC::USER_FUNC1:
+        switch (ch_flag) {
+        case AuxSwitchPos::HIGH:
+            plane.WaterSlide_controller.set_yaw_mix_flag(false);
+            break;
+        case AuxSwitchPos::MIDDLE:
+            break;
+        case AuxSwitchPos::LOW:
+            plane.WaterSlide_controller.set_yaw_mix_flag(true);
+            break;
+        }
+        break;
+
 
     default:
         return RC_Channel::do_aux_function(ch_option, ch_flag);

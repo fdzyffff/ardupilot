@@ -30,6 +30,9 @@ public:
         , _log_bitmask(log_bitmask)
     {
         AP_Param::setup_object_defaults(this, var_info);
+        _airspeed_min = 1.f;
+        _airspeed_max = 10.f;
+        _flags.enable_yaw_mix = true;
     }
 
     /* Do not allow copies */
@@ -79,6 +82,13 @@ public:
         return _flags.allow_steering;
     }
 
+    bool get_yaw_mix_flag() {
+        return _flags.enable_yaw_mix;
+    }
+
+    void set_yaw_mix_flag(bool v) {
+        _flags.enable_yaw_mix = v;
+    }
     // this supports the TECS_* user settable parameters
     static const struct AP_Param::GroupInfo var_info[];
 
@@ -110,6 +120,9 @@ private:
     AP_Float _rollComp;
     AP_Float _EAS_target;
     AP_Float _steer_speed;
+
+    float _airspeed_min;
+    float _airspeed_max;
 
 
     // throttle demand in the range from -1.0 to 1.0, usually positive unless reverse thrust is enabled via _THRminf < 0
@@ -171,20 +184,12 @@ private:
 
         // true if the soaring feature has requested gliding flight
         bool gliding_requested:1;
-
-        // true when we are in gliding flight, in one of three situations;
-        //   - THR_MAX=0
-        //   - gliding has been requested e.g. by soaring feature
-        //   - engine failure detected (detection not implemented currently)
-        bool is_gliding:1;
-
-        // true if a propulsion failure is detected.
-        bool propulsion_failed:1;
-
         // true when a reset of airspeed and height states to current is performed on this frame
         bool reset:1;
 
         bool allow_steering:1;
+
+        bool enable_yaw_mix:1;
     };
     union {
         struct flags _flags;

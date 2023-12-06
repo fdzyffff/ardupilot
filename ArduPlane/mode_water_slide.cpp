@@ -35,12 +35,5 @@ void ModeWSLD::update()
     // }
 
     // get scaled throttle input
-    float throttle_in = plane.channel_throttle->get_control_in();
-    // normalize to [0,1]
-    throttle_in /= plane.channel_throttle->get_range();
-    if (throttle_in > 0.3f) {
-        plane.throttle_suppressed = false;
-    } else {
-        plane.throttle_suppressed = true;
-    }
+
 }
