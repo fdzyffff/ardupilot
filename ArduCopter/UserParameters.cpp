@@ -61,5 +61,7 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     AP_GROUPINFO("_TSIM_X"          , 43, UserParameters, target_sim_x, 0.0f),
     AP_GROUPINFO("_TSIM_Y"          , 44, UserParameters, target_sim_y, 0.0f),
     AP_GROUPINFO("_TSIM_Z"          , 45, UserParameters, target_sim_z, 0.0f),
+
+    AP_SUBGROUPINFO(Thr_pid, "_Thr_", 46, UserParameters, AC_PID),
     AP_GROUPEND
 };

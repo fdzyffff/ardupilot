@@ -1952,7 +1952,6 @@ private:
     uint32_t _start_ms;
     float _theta_cd;
     float _thr;
-
 };
 
 class ModeTakeoff : public Mode {

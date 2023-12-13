@@ -9,7 +9,8 @@ class UserParameters {
 public:
     UserParameters() :
         Ucam_pid(1.0f, 0.0f, 0.0f, 0.0f, 0.2f, 3.0f, 3.0f, 3.0f, 0.02f),
-        Roll_pid(1.0f, 0.0f, 0.0f, 0.0f, 0.2f, 3.0f, 3.0f, 3.0f, 0.05f)
+        Roll_pid(1.0f, 0.0f, 0.0f, 0.0f, 0.2f, 3.0f, 3.0f, 3.0f, 0.05f),
+        Thr_pid(1.0f, 0.0f, 0.0f, 0.0f, 0.2f, 3.0f, 3.0f, 3.0f, 0.0025f)
         {}
     static const struct AP_Param::GroupInfo var_info[];
     
@@ -70,4 +71,6 @@ public:
     AP_Float target_sim_x;
     AP_Float target_sim_y;
     AP_Float target_sim_z;
+
+    AC_PID   Thr_pid;
 };
