@@ -9,7 +9,7 @@
  */
 
 #include <SITL/SIM_Multicopter.h>
-#include <SITL/SIM_Plane.h>
+#include <SITL/SIM_QuadPlane.h>
 
 #include <AP_Baro/AP_Baro.h>
 
@@ -27,7 +27,7 @@ void SIMState::update()
 #if APM_BUILD_TYPE(APM_BUILD_ArduCopter)
         sitl_model = SITL::MultiCopter::create("+");
 #elif APM_BUILD_TYPE(APM_BUILD_ArduPlane)
-        sitl_model = SITL::Plane::create("plane");
+        sitl_model = SITL::QuadPlane::create("quadplane");
 #endif
     }
 
