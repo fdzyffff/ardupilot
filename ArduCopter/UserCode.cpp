@@ -5,6 +5,9 @@ void Copter::userhook_init()
 {
     // put your initialisation code here
     // this will be called once at start-up
+
+    float test = 1.0;
+    test += 1.0;
 }
 #endif
 

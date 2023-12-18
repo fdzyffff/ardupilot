@@ -99,8 +99,12 @@ void AP_MotorsBi::output_to_motors()
     switch (_spool_state) {
         case SpoolState::SHUT_DOWN:
             // sends minimum values out to the motors
-            rc_write(AP_MOTORS_MOT_1, output_to_pwm(0));
-            rc_write(AP_MOTORS_MOT_2, output_to_pwm(0));
+            set_actuator_with_slew(_actuator[1], actuator_spin_up_to_ground_idle());
+            set_actuator_with_slew(_actuator[2], actuator_spin_up_to_ground_idle());
+            rc_write(AP_MOTORS_MOT_1, output_to_pwm(_actuator[1]));
+            rc_write(AP_MOTORS_MOT_2, output_to_pwm(_actuator[2]));
+            // rc_write(AP_MOTORS_MOT_1, output_to_pwm(0));
+            // rc_write(AP_MOTORS_MOT_2, output_to_pwm(0));
             rc_write_angle(AP_MOTORS_CH_BI_1, 0);
             rc_write_angle(AP_MOTORS_CH_BI_2, 0);
             break;
@@ -189,6 +193,10 @@ void AP_MotorsBi::output_armed_stabilizing()
 
     _servo_angle_right = _pivot_pitch + _pivot_yaw;
     _servo_angle_left = _pivot_pitch - _pivot_yaw;
+
+    float thrust_boost = 1.0f/constrain_float(throttle_thrust / 0.5f, 0.7f, 1.3f);
+    _servo_angle_right *= thrust_boost;
+    _servo_angle_left *= thrust_boost;
 
     // float pivot_thrust_max = cosf(_pivot_angle);
     float thrust_max = 1.0f;
