@@ -696,7 +696,7 @@ private:
     void set_accel_throttle_I_from_pilot_throttle();
     void rotate_body_frame_to_NE(float &x, float &y);
     uint16_t get_pilot_speed_dn() const;
-    void run_rate_controller() { attitude_control->rate_controller_run(); }
+    void run_rate_controller() { user_update_bi_angle(); attitude_control->rate_controller_run();}
 
 #if AC_CUSTOMCONTROL_MULTI_ENABLED == ENABLED
     void run_custom_controller() { custom_control.update(); }
@@ -938,6 +938,8 @@ private:
     void userhook_auxSwitch1(const RC_Channel::AuxSwitchPos ch_flag);
     void userhook_auxSwitch2(const RC_Channel::AuxSwitchPos ch_flag);
     void userhook_auxSwitch3(const RC_Channel::AuxSwitchPos ch_flag);
+
+    void user_update_bi_angle();
 
 #if MODE_ACRO_ENABLED == ENABLED
 #if FRAME_CONFIG == HELI_FRAME

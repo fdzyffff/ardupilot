@@ -99,8 +99,12 @@ void AP_MotorsBi::output_to_motors()
     switch (_spool_state) {
         case SpoolState::SHUT_DOWN:
             // sends minimum values out to the motors
-            rc_write(AP_MOTORS_MOT_1, output_to_pwm(0));
-            rc_write(AP_MOTORS_MOT_2, output_to_pwm(0));
+            set_actuator_with_slew(_actuator[1], actuator_spin_up_to_ground_idle());
+            set_actuator_with_slew(_actuator[2], actuator_spin_up_to_ground_idle());
+            rc_write(AP_MOTORS_MOT_1, output_to_pwm(_actuator[1]));
+            rc_write(AP_MOTORS_MOT_2, output_to_pwm(_actuator[2]));
+            // rc_write(AP_MOTORS_MOT_1, output_to_pwm(0));
+            // rc_write(AP_MOTORS_MOT_2, output_to_pwm(0));
             rc_write_angle(AP_MOTORS_CH_BI_1, 0);
             rc_write_angle(AP_MOTORS_CH_BI_2, 0);
             break;
@@ -164,12 +168,12 @@ void AP_MotorsBi::output_armed_stabilizing()
     SRV_Channels::set_angle(SRV_Channels::get_motor_function(AP_MOTORS_CH_BI_2), _yaw_servo_angle_max_deg*100);
 
     float yaw_max_angle = 10.0f;
-    float pitch_max_angle = _yaw_servo_angle_max_deg - 10.0f;
+    // float pitch_max_angle = _yaw_servo_angle_max_deg - 10.0f;
 
     // apply voltage and air pressure compensation
     const float compensation_gain = get_compensation_gain();
     roll_thrust = (_roll_in + _roll_in_ff) * compensation_gain;
-    pitch_thrust = (_pitch_in + _pitch_in_ff) * compensation_gain * sinf(radians(pitch_max_angle));
+    pitch_thrust = (_pitch_in + _pitch_in_ff);
     yaw_thrust = (_yaw_in + _yaw_in_ff) * compensation_gain * sinf(radians(yaw_max_angle)); // we scale this so a thrust request of 1.0f will ask for full servo deflection at full rear throttle
     throttle_thrust = get_throttle() * compensation_gain;
     throttle_avg_max = _throttle_avg_max * compensation_gain;
@@ -180,7 +184,7 @@ void AP_MotorsBi::output_armed_stabilizing()
     }
 
     // calculate angle of yaw pivot
-    float _pivot_pitch = safe_asin(pitch_thrust);
+    float _pivot_pitch = pitch_thrust;
     float _pivot_yaw = safe_asin(yaw_thrust);
     if (fabsf(_pivot_yaw) > radians(yaw_max_angle)) {
         limit.yaw = true;
@@ -189,6 +193,10 @@ void AP_MotorsBi::output_armed_stabilizing()
 
     _servo_angle_right = _pivot_pitch + _pivot_yaw;
     _servo_angle_left = _pivot_pitch - _pivot_yaw;
+
+    float thrust_boost = 1.0f/constrain_float(throttle_thrust / 0.5f, 0.7f, 1.3f);
+    _servo_angle_right *= thrust_boost;
+    _servo_angle_left *= thrust_boost;
 
     // float pivot_thrust_max = cosf(_pivot_angle);
     float thrust_max = 1.0f;
