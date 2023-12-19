@@ -8,6 +8,7 @@ void Copter::userhook_init()
 
     float test = 1.0;
     test += 1.0;
+    g_pitch_out = 0.0f;
 }
 #endif
 
@@ -75,7 +76,9 @@ void Copter::user_update_bi_angle()
     float _thrust_angle, _thrust_error_angle;
     attitude_control->thrust_heading_rotation_angles(attitude_target, attitude_body, attitude_error, _thrust_angle, _thrust_error_angle);
     float pitch_range = constrain_float(g2.user_parameters.user_pitch_range.get(), 1500.f, 5500.f);
+    float pitch_rate = constrain_float(g2.user_parameters.user_pitch_rate.get(), 0.0f, 5.0f);
     float pitch_out = degrees(attitude_error.y)*100.f/pitch_range;
     pitch_out = constrain_float(pitch_out, -1.0f, 1.0f);
-    attitude_control->actuator_pitch_sysid(pitch_out);
+    g_pitch_out = constrain_float(pitch_out, g_pitch_out-pitch_rate*G_Dt, g_pitch_out+pitch_rate*G_Dt);
+    attitude_control->actuator_pitch_sysid(g_pitch_out);
 }

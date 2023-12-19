@@ -10,4 +10,5 @@ public:
 
     // Put your parameter variable definitions here
     AP_Float user_pitch_range;
+    AP_Float user_pitch_rate;
 };

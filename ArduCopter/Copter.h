@@ -1023,6 +1023,8 @@ private:
     Mode *mode_from_mode_num(const Mode::Number mode);
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);
 
+    float g_pitch_out;
+
 public:
     void failsafe_check();      // failsafe.cpp
 };
