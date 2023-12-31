@@ -49,6 +49,7 @@ public:
 
     // set which target to follow
     void set_target_sysid(uint8_t sysid) { _sysid.set(sysid); }
+    void set_target_offset(Vector3f offset) { _offset.set(offset); }
 
     // restore offsets to zero if necessary, should be called when vehicle exits follow mode
     void clear_offsets_if_required();

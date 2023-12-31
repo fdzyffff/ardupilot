@@ -39,6 +39,7 @@ public:
         AUTOROTATE =   26,  // Autonomous autorotation
         AUTO_RTL =     27,  // Auto RTL, this is not a true mode, AUTO will report as this mode if entered to perform a DO_LAND_START Landing sequence
         TURTLE =       28,  // Flip over after crash
+        MYFOLLOW =     30,
 
         // Mode number 127 reserved for the "drone show mode" in the Skybrush
         // fork at https://github.com/skybrush-io/ardupilot
@@ -127,10 +128,11 @@ public:
     virtual bool allows_weathervaning() const { return false; }
 #endif
 
+    // helper functions
+    bool is_disarmed_or_landed() const;
 protected:
 
     // helper functions
-    bool is_disarmed_or_landed() const;
     void zero_throttle_and_relax_ac(bool spool_up = false);
     void zero_throttle_and_hold_attitude();
     void make_safe_ground_handling(bool force_throttle_unlimited = false);
@@ -961,6 +963,7 @@ private:
 class ModeGuided : public Mode {
 
 public:
+    friend class ModeMYFOLLOW;
     // inherit constructor
     using Mode::Mode;
     Number mode_number() const override { return Number::GUIDED; }
@@ -1725,6 +1728,7 @@ private:
 class ModeFollow : public ModeGuided {
 
 public:
+    friend class ModeMYFOLLOW;
 
     // inherit constructor
     using ModeGuided::Mode;
@@ -1919,3 +1923,54 @@ private:
 
 };
 #endif
+
+
+class ModeMYFOLLOW : public Mode {
+
+public:
+
+    // inherit constructor
+    using Mode::Mode;
+    Number mode_number() const override { return Number::MYFOLLOW; }
+
+    // Auto modes
+    enum class SubMode : uint8_t {
+        TAKEOFF,
+        STANDBY,
+        LOITER,
+        FOLLOW
+    };
+
+    bool init(bool ignore_checks) override;
+    void exit() override;
+    void run() override;
+
+    bool requires_GPS() const override { return true; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(AP_Arming::Method method) const override;
+    bool is_autopilot() const override { return true; }
+    bool has_user_takeoff(bool must_navigate) const override { return true; }
+    bool in_guided_mode() const override { return true; }
+
+    bool is_taking_off() const override;
+
+    bool do_user_takeoff_start(float takeoff_alt_cm) override;
+    void standby_start();
+    void loiter_start();
+    void follow_start();
+    void takeoff_run();
+
+    SubMode myfollow_mode;
+    bool takeoff_complete;      // true once takeoff has completed (used to trigger retracting of landing gear)
+
+protected:
+
+    const char *name() const override { return "GROUP"; }
+    const char *name4() const override { return "GRUP"; }
+
+    // for reporting to GCS
+    bool get_wp(Location &loc) const override;
+    uint32_t wp_distance() const override;
+    int32_t wp_bearing() const override;
+    float crosstrack_error() const override;
+};

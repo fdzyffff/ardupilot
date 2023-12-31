@@ -55,6 +55,10 @@ bool RC_Channels_Copter::arming_check_throttle() const {
         // Copter already checks this case in its own arming checks
         return false;
     }
+    if (copter.flightmode == &copter.mode_myfollow) {
+        // don't check throttle in myfollow mode because we use auto-center throttle stick
+        return false;
+    }
     return RC_Channels::arming_check_throttle();
 }
 
@@ -103,6 +107,9 @@ void RC_Channel_Copter::init_aux_function(const aux_func_t ch_option, const AuxS
     case AUX_FUNC::SIMPLE_HEADING_RESET:
     case AUX_FUNC::ARMDISARM_AIRMODE:
     case AUX_FUNC::TURBINE_START:
+    case AUX_FUNC::MY_ROLE:
+    case AUX_FUNC::MY_ARM:
+    case AUX_FUNC::MY_DIST:
         break;
     case AUX_FUNC::ACRO_TRAINER:
     case AUX_FUNC::ATTCON_ACCEL_LIM:
@@ -634,6 +641,17 @@ bool RC_Channel_Copter::do_aux_function(const aux_func_t ch_option, const AuxSwi
         break;
     }
 #endif
+
+
+    case AUX_FUNC::MY_ROLE:
+        copter.ufollow.auxSwitch_leader(ch_flag);
+        break;
+    case AUX_FUNC::MY_ARM:
+        copter.ufollow.auxSwitch_armtkoff(ch_flag);
+        break;
+    case AUX_FUNC::MY_DIST:
+        copter.ufollow.auxSwitch_distance(ch_flag);
+        break;
 
     default:
         return RC_Channel::do_aux_function(ch_option, ch_flag);

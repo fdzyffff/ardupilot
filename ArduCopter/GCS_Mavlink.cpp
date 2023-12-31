@@ -49,6 +49,7 @@ MAV_MODE GCS_MAVLINK_Copter::base_mode() const
     case Mode::Number::POSHOLD:
     case Mode::Number::BRAKE:
     case Mode::Number::SMART_RTL:
+    case Mode::Number::MYFOLLOW:
         _base_mode |= MAV_MODE_FLAG_GUIDED_ENABLED;
         // note that MAV_MODE_FLAG_AUTO_ENABLED does not match what
         // APM does in any mode, as that is defined as "system finds its own goal
@@ -382,6 +383,11 @@ bool GCS_MAVLINK_Copter::try_send_message(enum ap_message id)
         break;
     }
 
+    case MSG_GROUP_MYFOLLOW:
+        CHECK_PAYLOAD_SIZE(MY_FOLLOW);
+        copter.ufollow.send_myfollow(chan);
+        break;
+
     default:
         return GCS_MAVLINK::try_send_message(id);
     }
@@ -516,7 +522,8 @@ static const ap_message STREAM_EXTENDED_STATUS_msgs[] = {
 };
 static const ap_message STREAM_POSITION_msgs[] = {
     MSG_LOCATION,
-    MSG_LOCAL_POSITION
+    MSG_LOCAL_POSITION,
+    MSG_GROUP_MYFOLLOW
 };
 static const ap_message STREAM_RC_CHANNELS_msgs[] = {
     MSG_SERVO_OUTPUT_RAW,
@@ -598,6 +605,7 @@ void GCS_MAVLINK_Copter::packetReceived(const mavlink_status_t &status,
         copter.avoidance_adsb.handle_msg(msg);
     }
 #endif
+    copter.ufollow.handle_msg(msg);
 #if MODE_FOLLOW_ENABLED == ENABLED
     // pass message to follow library
     copter.g2.follow.handle_msg(msg);

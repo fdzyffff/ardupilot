@@ -218,7 +218,7 @@ bool AP_Follow::get_target_dist_and_vel_ned(Vector3f &dist_ned, Vector3f &dist_w
     }
 
     // initialise offsets from distance vector if required
-    init_offsets_if_required(dist_vec);
+    // init_offsets_if_required(dist_vec);
 
     // get offsets
     Vector3f offsets;
@@ -275,13 +275,14 @@ void AP_Follow::handle_msg(const mavlink_message_t &msg)
     }
 
     // skip message if not from our target
-    if (_sysid != 0 && msg.sysid != _sysid) {
-        if (_automatic_sysid) {
-            // maybe timeout who we were following...
-            if ((_last_location_update_ms == 0) || (AP_HAL::millis() - _last_location_update_ms > AP_FOLLOW_SYSID_TIMEOUT_MS)) {
-                _sysid.set(0);
-            }
-        }
+    if (msg.sysid != _sysid) {
+    // if (_sysid != 0 && msg.sysid != _sysid) {
+        // if (_automatic_sysid) {
+        //     // maybe timeout who we were following...
+        //     if ((_last_location_update_ms == 0) || (AP_HAL::millis() - _last_location_update_ms > AP_FOLLOW_SYSID_TIMEOUT_MS)) {
+        //         _sysid.set(0);
+        //     }
+        // }
         return;
     }
 
@@ -322,10 +323,10 @@ void AP_Follow::handle_msg(const mavlink_message_t &msg)
             _last_heading_update_ms = _last_location_update_ms;
         }
         // initialise _sysid if zero to sender's id
-        if (_sysid == 0) {
-            _sysid.set(msg.sysid);
-            _automatic_sysid = true;
-        }
+        // if (_sysid == 0) {
+        //     _sysid.set(msg.sysid);
+        //     _automatic_sysid = true;
+        // }
         updated = true;
         break;
     }
@@ -376,10 +377,10 @@ void AP_Follow::handle_msg(const mavlink_message_t &msg)
         }
 
         // initialise _sysid if zero to sender's id
-        if (_sysid == 0) {
-            _sysid.set(msg.sysid);
-            _automatic_sysid = true;
-        }
+        // if (_sysid == 0) {
+        //     _sysid.set(msg.sysid);
+        //     _automatic_sysid = true;
+        // }
         updated = true;
         break;
     }
