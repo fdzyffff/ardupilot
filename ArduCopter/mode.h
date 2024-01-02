@@ -74,6 +74,7 @@ public:
     // return a string for this flightmode
     virtual const char *name() const = 0;
     virtual const char *name4() const = 0;
+    virtual const char *substr4() const {return "----";}
 
     bool do_user_takeoff(float takeoff_alt_cm, bool must_navigate);
     virtual bool is_taking_off() const;
@@ -1634,6 +1635,9 @@ public:
         RUNNING = 1,
     };
 
+    bool allow_exit;
+    bool allow_switch;
+
 protected:
 
     const char *name() const override { return "THROW"; }
@@ -1936,6 +1940,7 @@ public:
     // Auto modes
     enum class SubMode : uint8_t {
         TAKEOFF,
+        THROW,
         STANDBY,
         LOITER,
         FOLLOW
@@ -1955,6 +1960,7 @@ public:
     bool is_taking_off() const override;
 
     bool do_user_takeoff_start(float takeoff_alt_cm) override;
+    void throw_start();
     void standby_start();
     void loiter_start();
     void follow_start();
@@ -1967,6 +1973,7 @@ protected:
 
     const char *name() const override { return "GROUP"; }
     const char *name4() const override { return "GRUP"; }
+    const char *substr4() const override;
 
     // for reporting to GCS
     bool get_wp(Location &loc) const override;

@@ -107,7 +107,11 @@ void Ufollow::auxSwitch_armtkoff(const RC_Channel::AuxSwitchPos ch_flag)
             set_cmd(1);
         }
         if (copter.mode_myfollow.is_disarmed_or_landed() && copter.arming.arm(AP_Arming::Method::MAVLINK)) {
-            copter.mode_myfollow.do_user_takeoff_start(300.0f);
+            if (copter.mode_myfollow.myfollow_mode == ModeMYFOLLOW::SubMode::THROW) {
+                ;
+            } else {
+                copter.mode_myfollow.do_user_takeoff_start(300.0f);
+            }
         }
         break;
     case RC_Channel::AuxSwitchPos::MIDDLE:
@@ -138,6 +142,27 @@ void Ufollow::auxSwitch_distance(const RC_Channel::AuxSwitchPos ch_flag)
     }
 }
 
+void Ufollow::auxSwitch_throw(const RC_Channel::AuxSwitchPos ch_flag)
+{
+    // myfollow aux switch handler (CHx_OPT = 223)
+    switch (ch_flag) {
+    case RC_Channel::AuxSwitchPos::HIGH:
+        if (!copter.set_mode(Mode::Number::MYFOLLOW, ModeReason::GCS_COMMAND)) {
+            return;
+        }
+        if (copter.mode_myfollow.is_disarmed_or_landed()) {
+            copter.mode_myfollow.throw_start();
+        }
+        break;
+    case RC_Channel::AuxSwitchPos::MIDDLE:
+        // nothing
+        break;
+    case RC_Channel::AuxSwitchPos::LOW:
+        // nothing
+        break;
+    }
+}
+
 void Ufollow::handle_msg(const mavlink_message_t &msg) {
     // if (copter.flightmode != &copter.mode_myfollow) {
     //     return;
@@ -161,9 +186,7 @@ void Ufollow::handle_msg(const mavlink_message_t &msg) {
                         return;
                     }
                     if (get_cmd() == 0) {
-                        if (copter.mode_myfollow.is_disarmed_or_landed() && copter.arming.arm(AP_Arming::Method::MAVLINK)) {
-                            copter.mode_myfollow.do_user_takeoff_start(300.0f);
-                        }
+                        auxSwitch_armtkoff(RC_Channel::AuxSwitchPos::HIGH);
                         set_cmd(1);
                     }
                 }

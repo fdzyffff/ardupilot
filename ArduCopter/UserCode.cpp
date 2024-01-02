@@ -35,6 +35,7 @@ void Copter::userhook_MediumLoop()
 void Copter::userhook_SlowLoop()
 {
     // put your 3.3Hz code here
+    notify_flight_mode_substr();
 }
 #endif
 
@@ -61,3 +62,10 @@ void Copter::userhook_auxSwitch3(const RC_Channel::AuxSwitchPos ch_flag)
     // put your aux switch #3 handler here (CHx_OPT = 49)
 }
 #endif
+
+void Copter::notify_flight_mode_substr() {
+    notify.set_flight_mode_substr(flightmode->substr4());
+    AP_Notify::flags.is_leader = (ufollow.get_role() == 1);
+    AP_Notify::flags.id = (uint8_t)g.sysid_this_mav;
+    // gcs().send_text(MAV_SEVERITY_INFO, "%d", AP_Notify::flags.id);
+}

@@ -856,6 +856,7 @@ private:
     uint8_t get_mode() const override { return (uint8_t)flightmode->mode_number(); }
     void update_flight_mode();
     void notify_flight_mode();
+    void notify_flight_mode_substr();
 
     // mode_land.cpp
     void set_mode_land_with_pause(ModeReason reason);

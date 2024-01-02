@@ -27,6 +27,8 @@ bool ModeThrow::init(bool ignore_checks)
     pos_control->set_max_speed_accel_z(BRAKE_MODE_SPEED_Z, BRAKE_MODE_SPEED_Z, BRAKE_MODE_DECEL_RATE);
     pos_control->set_correction_speed_accel_z(BRAKE_MODE_SPEED_Z, BRAKE_MODE_SPEED_Z, BRAKE_MODE_DECEL_RATE);
 
+    allow_exit = false; // signal flag for myfollow mode
+    allow_switch = true; // allow switch to pre-set mode as usual in throw mode
     return true;
 }
 
@@ -90,7 +92,7 @@ void ModeThrow::run()
         // Set the auto_arm status to true to avoid a possible automatic disarm caused by selection of an auto mode with throttle at minimum
         copter.set_auto_armed(true);
     } else if (stage == Throw_PosHold && throw_position_good()) {
-        if (!nextmode_attempted) {
+        if (!nextmode_attempted && allow_switch) {
             switch ((Mode::Number)g2.throw_nextmode.get()) {
                 case Mode::Number::AUTO:
                 case Mode::Number::GUIDED:
@@ -105,6 +107,9 @@ void ModeThrow::run()
                     break;
             }
             nextmode_attempted = true;
+            allow_switch = false;
+        } else {
+            allow_exit = true;
         }
     }
 

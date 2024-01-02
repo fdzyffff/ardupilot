@@ -33,6 +33,7 @@ private:
     void update_mode(uint8_t r);
     void update_text(uint8_t r);
     void update_text_empty(uint8_t r);
+    void update_leader(uint8_t r);
 
     Display_Backend *_driver;
 

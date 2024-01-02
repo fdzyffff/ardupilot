@@ -509,6 +509,13 @@ void AP_Notify::set_flight_mode_str(const char *str)
     _flight_mode_str[sizeof(_flight_mode_str)-1] = 0;
 }
 
+// set flight mode sub string, default is ""
+void AP_Notify::set_flight_mode_substr(const char *str)
+{
+    strncpy(_flight_mode_substr, str, sizeof(_flight_mode_substr));
+    _flight_mode_substr[sizeof(_flight_mode_substr)-1] = 0;
+}
+
 void AP_Notify::send_text(const char *str)
 {
     strncpy(_send_text, str, sizeof(_send_text));

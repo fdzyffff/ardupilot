@@ -381,8 +381,15 @@ void Display::update()
     if (AP_Notify::flags.armed) {
         if (_screenpage != 1) {
             _driver->clear_screen();
-            update_arm(3);
             _screenpage = 1;
+        }
+        if (!AP_Notify::flags.flying) {
+            update_mode(1);
+            // update_battery(2);
+            // update_gps(3);
+            update_arm(3);
+            // update_ekf(5);
+            update_leader(5);
             _driver->hw_update(); //update hw once , do not transmition to display in fly
         }
         return;
@@ -406,7 +413,8 @@ void Display::update_all()
     update_gps(3);
     //update_gps_sats(4);
     update_prearm(4);
-    update_ekf(5);
+    // update_ekf(5);
+    update_leader(5);
 }
 
 void Display::draw_text(uint16_t x, uint16_t y, const char* c)
@@ -539,7 +547,7 @@ void Display::update_mode(uint8_t r)
 {
     char msg [DISPLAY_MESSAGE_SIZE];
     if (pNotify->get_flight_mode_str()) {
-        snprintf(msg, DISPLAY_MESSAGE_SIZE, "Mode: %s", pNotify->get_flight_mode_str()) ;
+        snprintf(msg, DISPLAY_MESSAGE_SIZE, "Mode: %s [%s]", pNotify->get_flight_mode_str(), pNotify->get_flight_mode_substr()) ;
         draw_text(COLUMN(0), ROW(r), msg);
     }
 }
@@ -586,4 +594,19 @@ void Display::update_text(uint8_t r)
     }
 
     draw_text(COLUMN(0), ROW(0), msg);
- }
+}
+
+void Display::update_leader(uint8_t r)
+{
+    if (AP_Notify::flags.is_leader) {
+        draw_text(COLUMN(0), ROW(r), " - Leader  ");
+        draw_char(COLUMN(12), ROW(r), (AP_Notify::flags.id / 10) + 16);
+        draw_char(COLUMN(13), ROW(r), (AP_Notify::flags.id % 10) + 16);
+        draw_text(COLUMN(14), ROW(r), "/--");
+    } else {
+        draw_text(COLUMN(0), ROW(r), " - Follower");
+        draw_char(COLUMN(12), ROW(r), (AP_Notify::flags.id / 10) + 16);
+        draw_char(COLUMN(13), ROW(r), (AP_Notify::flags.id % 10) + 16);
+        draw_text(COLUMN(14), ROW(r), "/--");
+    }
+}

@@ -110,6 +110,7 @@ void RC_Channel_Copter::init_aux_function(const aux_func_t ch_option, const AuxS
     case AUX_FUNC::MY_ROLE:
     case AUX_FUNC::MY_ARM:
     case AUX_FUNC::MY_DIST:
+    case AUX_FUNC::MY_THROW:
         break;
     case AUX_FUNC::ACRO_TRAINER:
     case AUX_FUNC::ATTCON_ACCEL_LIM:
@@ -651,6 +652,9 @@ bool RC_Channel_Copter::do_aux_function(const aux_func_t ch_option, const AuxSwi
         break;
     case AUX_FUNC::MY_DIST:
         copter.ufollow.auxSwitch_distance(ch_flag);
+        break;
+    case AUX_FUNC::MY_THROW:
+        copter.ufollow.auxSwitch_throw(ch_flag);
         break;
 
     default:

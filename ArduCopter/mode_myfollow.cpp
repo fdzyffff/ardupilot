@@ -45,6 +45,17 @@ void ModeMYFOLLOW::run()
         }
         break;
 
+    case SubMode::THROW:
+        copter.mode_throw.run();
+        if (copter.mode_throw.allow_exit) {
+            if (copter.ufollow.get_role() == 0) {
+                standby_start();
+            } else {
+                loiter_start();
+            } 
+        }
+        break;
+
     case SubMode::STANDBY:
         // run position controller
         if (!is_disarmed_or_landed() && g2.follow.have_target()) {
@@ -125,6 +136,20 @@ bool ModeMYFOLLOW::do_user_takeoff_start(float takeoff_alt_cm)
     gcs().send_text(MAV_SEVERITY_INFO, "[MODE Takeoff]");
     return true;
 }
+
+
+void ModeMYFOLLOW::throw_start()
+{
+    if (copter.mode_throw.init(false)) {
+        myfollow_mode = SubMode::THROW;
+        gcs().send_text(MAV_SEVERITY_INFO, "[MODE Throw]");
+        copter.mode_throw.allow_switch = false; // disable auto switch out throw mode
+    } else {
+        gcs().send_text(MAV_SEVERITY_INFO, "[MODE Throw Failed]");
+    }
+    g2.follow.clear_offsets_if_required();
+}
+
 
 void ModeMYFOLLOW::standby_start()
 {
@@ -244,4 +269,28 @@ bool ModeMYFOLLOW::get_wp(Location &loc) const
     return false;
 }
 
+const char * ModeMYFOLLOW::substr4() const
+{
+    switch (myfollow_mode) {
+    case SubMode::TAKEOFF:
+        return "TKOF";
+        break;
+    case SubMode::THROW:
+        return "THRO";
+        break;
+    case SubMode::STANDBY:
+        return "WAIT";
+        break;
+    case SubMode::LOITER:
+        return "LOIT";
+        break;
+    case SubMode::FOLLOW:
+        return "FOLL";
+        break;
+    default:
+        return "eeee";
+    }
+    // compiler guarantees we don't get here
+    return "eeee";
+}
 #endif

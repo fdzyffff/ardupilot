@@ -131,6 +131,8 @@ public:
         bool powering_off;        // true when the vehicle is powering off
         bool video_recording;     // true when the vehicle is recording video
         bool temp_cal_running;    // true if a temperature calibration is running
+        bool is_leader;           // true if this vehicle is in leader role
+        uint8_t id;
     };
 
     /// notify_events_type - bitmask of active events.
@@ -195,6 +197,8 @@ public:
     // set flight mode string
     void set_flight_mode_str(const char *str);
     const char* get_flight_mode_str() const { return _flight_mode_str; }
+    void set_flight_mode_substr(const char *str);
+    const char* get_flight_mode_substr() const { return _flight_mode_substr; }
 
     // send text to display
     void send_text(const char *str);
@@ -236,6 +240,7 @@ private:
     char _send_text[NOTIFY_TEXT_BUFFER_SIZE];
     uint32_t _send_text_updated_millis; // last time text changed
     char _flight_mode_str[5];
+    char _flight_mode_substr[5];
 
     static NotifyDevice* _devices[];
     static uint8_t _num_devices;

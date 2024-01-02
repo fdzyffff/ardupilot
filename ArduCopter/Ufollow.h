@@ -13,6 +13,7 @@ public:
     void auxSwitch_leader(const RC_Channel::AuxSwitchPos ch_flag);
     void auxSwitch_armtkoff(const RC_Channel::AuxSwitchPos ch_flag);
     void auxSwitch_distance(const RC_Channel::AuxSwitchPos ch_flag);
+    void auxSwitch_throw(const RC_Channel::AuxSwitchPos ch_flag);
     void handle_msg(const mavlink_message_t &msg);
     void update_offset(int16_t leader_id, float group_distance);
 
