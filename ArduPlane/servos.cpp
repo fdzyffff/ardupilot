@@ -587,7 +587,7 @@ void Plane::set_servos_controlled(void)
         // if (!rc().has_valid_input()) {
         //     SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, 0.0);
         // } else {
-            SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, g2.user_attack_throttle.get());
+            SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, mode_attack.get_cmd_throttle());
         // }
 
     } else if (control_mode->is_guided_mode() &&

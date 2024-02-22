@@ -35,7 +35,7 @@ void UCam_DYT::update() {
     }
 
     uint32_t tnow = millis(); // 只能放这里，handle_info会更新_last_ms的值，如果tnow赋值在其之前，则会小于_last_ms。SITL仿不出来，它周期是50Hz太低了
-    if (tnow - _last_ms > 2000) {
+    if ((plane.g2.user_attack_timeout > 0) && (tnow - _last_ms > (uint32_t)plane.g2.user_attack_timeout)) {
         // if (_valid) {
         //     gcs().send_text(MAV_SEVERITY_INFO, "valid %ld|%ld", tnow, _last_ms);
         // }

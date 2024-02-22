@@ -1237,9 +1237,11 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("UATK_K", 36, ParametersG2, user_attack_k, 2.0f),
     AP_GROUPINFO("UATK_K2", 37, ParametersG2, user_attack_k2, 2.0f),
     AP_GROUPINFO("UATK_THR", 38, ParametersG2, user_attack_throttle, 75.0f),
-    AP_GROUPINFO("UPRINT", 39, ParametersG2, user_print, 0),
-    AP_GROUPINFO("UGRP_ID", 40, ParametersG2, user_group_id, 1),
-    AP_GROUPINFO("UGRP_DIST", 41, ParametersG2, group_distance, 100.f),
+    AP_GROUPINFO("UATK_TRATE", 39, ParametersG2, user_attack_throttle_rate, 1.0f),
+    AP_GROUPINFO("UATK_OUTMS", 40, ParametersG2, user_attack_timeout, 2000),
+    AP_GROUPINFO("UPRINT", 41, ParametersG2, user_print, 0),
+    AP_GROUPINFO("UGRP_ID", 42, ParametersG2, user_group_id, 1),
+    AP_GROUPINFO("UGRP_DIST", 43, ParametersG2, group_distance, 100.f),
 
     AP_GROUPEND
 };

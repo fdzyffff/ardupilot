@@ -791,9 +791,11 @@ public:
     // methods that affect movement of the vehicle in this mode
     void update() override;
 
+    float get_cmd_throttle();
 protected:
 
     bool _enter() override;
+    float _cmd_throttle;
 };
 
 class ModeQTakeoff : public Mode
