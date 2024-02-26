@@ -650,7 +650,7 @@ void Aircraft::update_dynamics(const Vector3f &rot_accel)
     airspeed = velocity_air_ef.length();
 
     // airspeed as seen by a fwd pitot tube (limited to 120m/s)
-    airspeed_pitot = constrain_float(velocity_air_bf * Vector3f(1.0f, 0.0f, 0.0f), 0.0f, 120.0f);
+    airspeed_pitot = constrain_float(velocity_air_bf * Vector3f(1.0f, 0.0f, 0.0f), 0.0f, 500.0f);
 
     // constrain height to the ground
     if (on_ground()) {
