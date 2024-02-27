@@ -50,7 +50,7 @@ protected:
         // thanks to Georacer!
         float Ixx = 147.0;//x方向转动惯量kgm2 500
         float Iyy = 142.0;//y方向转动惯量 250
-        float Izz = 264.0;//z方向转动惯量 300
+        float Izz = 64.0;//z方向转动惯量 300
         float s = 56.5;//20
         float b = 13.03;//20
         float c = 0.34;//1

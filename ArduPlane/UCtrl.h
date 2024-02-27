@@ -19,6 +19,7 @@ public:
     void update_valid();
     void set_valid(bool v_in);
     bool valid() {return _valid;} 
+    void update_brake();
     void set_target_loc(Location& loc_in); 
     Location get_target_loc() {return _target_loc;}
 
@@ -28,6 +29,11 @@ public:
     void do_cruise();
     void do_cruise_alt(float targe_alt_m);
     void do_cruise_speed(float target_speed_ms);
+
+    void do_launch();
+    void reset_launch();
+    void do_brake();
+    void release_brake();
 
     FD1_UART uart_msg_ctrl{AP_SerialManager::SerialProtocol_UCtrl};
     FD1_UART uart_msg_ctrl_send{AP_SerialManager::SerialProtocol_UCtrl_Send};

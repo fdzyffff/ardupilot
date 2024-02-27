@@ -567,6 +567,8 @@ public:
 
     AP_Float follow_speed_ratio;
     AP_Float follow_speed_range;
+
+    AP_Int8 user_sys_type;
 };
 
 extern const AP_Param::Info var_info[];

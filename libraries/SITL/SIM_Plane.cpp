@@ -91,6 +91,10 @@ Plane::Plane(const char *frame_str) :
         mass = 2.0;
         coefficient.c_drag_p = 0.05;
     }
+
+    have_launcher = true;
+    launch_accel = 25;
+    launch_time = 5;
 }
 
 /*
@@ -276,6 +280,7 @@ void Plane::calculate_forces(const struct sitl_input &input, Vector3f &rot_accel
     float elevator = filtered_servo_angle(input, 1);
     float rudder   = filtered_servo_angle(input, 3);
     bool launch_triggered = input.servos[6] > 1700;
+    bool brake_triggered = input.servos[7] > 1700;
     float throttle;
     if (reverse_elevator_rudder) {
         elevator = -elevator;
@@ -354,7 +359,7 @@ void Plane::calculate_forces(const struct sitl_input &input, Vector3f &rot_accel
             }
             if (now - launch_start_ms < launch_time*1000) {
                 force.x += mass * launch_accel;
-                force.z += mass * launch_accel/3;
+                // force.z += mass * launch_accel/3;
             }
         } else {
             // allow reset of catapult
@@ -380,7 +385,12 @@ void Plane::calculate_forces(const struct sitl_input &input, Vector3f &rot_accel
     if (on_ground() && !tailsitter) {
         // add some ground friction
         Vector3f vel_body = dcm.transposed() * velocity_ef;
-        accel_body.x -= vel_body.x * 0.1f;
+        if (brake_triggered) {
+            accel_body.x -= vel_body.x * 1.0f;
+        } else {
+            accel_body.x -= vel_body.x * 0.1f;
+        }
+
     }
 }
     

@@ -35,6 +35,8 @@ void UCtrl::update() {
     uart_msg_ctrl_send.write();
 
     update_valid();
+
+    update_brake();
 }
 
 void UCtrl::msg_handle_init() {
@@ -119,9 +121,11 @@ void UCtrl::msg_handle_control() {
             break;
         case 0x30: //刹车
             do_print = true;
+            do_brake();
             break;
         case 0x31: //松刹车
             do_print = true;
+            release_brake();
             break;
         case 0x32: //收起落架
             do_print = true;
@@ -147,6 +151,7 @@ void UCtrl::msg_handle_control() {
             break;
         case 0x3E: //弹射
             do_print = true;
+            do_launch();
             break;
 
         default:
@@ -391,7 +396,7 @@ void UCtrl::ctrl_send() {
         tmp_msg._msg_1.content.msg.device_id = FD1_msg_info::FRAMETYPE;
         tmp_msg._msg_1.content.msg.frame_id = FD1_msg_info::FRAMEID;
         tmp_msg._msg_1.content.msg.device_class = 0;
-        tmp_msg._msg_1.content.msg.device_type = 0x01;
+        tmp_msg._msg_1.content.msg.device_type = plane.g2.user_sys_type;
         tmp_msg._msg_1.content.msg.device_id = plane.g.sysid_this_mav;
         tmp_msg._msg_1.content.msg.gcs_class = 0x01;
         tmp_msg._msg_1.content.msg.gcs_id = 0x01;
@@ -461,6 +466,13 @@ void UCtrl::set_valid(bool v_in)
     }
 }
 
+void UCtrl::update_brake()
+{
+    if (plane.arming.is_armed() && plane.is_flying() && plane.flight_stage == AP_Vehicle::FixedWing::FLIGHT_NORMAL) {
+        do_brake();
+    }
+}
+
 void UCtrl::set_target_loc(Location& loc_in) 
 {
     Vector3f temp_pos;
@@ -509,9 +521,33 @@ void UCtrl::do_cruise_speed(float target_speed_ms)
     do_cruise();
     float speed_ms = target_speed_ms;
     if (speed_ms >= plane.aparm.airspeed_min.get() && speed_ms <= plane.aparm.airspeed_max.get())  {
-        // airspeed_cruise_cm.set(speed_ms * 100f);
+        plane.aparm.airspeed_cruise_cm.set(speed_ms * 100.f);
         gcs().send_text(MAV_SEVERITY_INFO, "Set airspeed %f m/s", speed_ms);
     }
 }
 
+void UCtrl::do_launch()
+{
+    if (plane.arming.is_armed()) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Launch!");
+        plane.set_mode(plane.mode_takeoff, ModeReason::GCS_COMMAND);
+        SRV_Channels::set_output_scaled(SRV_Channel::k_launch, 100.0);
+    } else {
+        gcs().send_text(MAV_SEVERITY_INFO, "Arm for lanuch");
+    }
+}
 
+void UCtrl::reset_launch()
+{
+    SRV_Channels::set_output_scaled(SRV_Channel::k_launch, 0.0);
+}
+
+void UCtrl::do_brake()
+{
+    SRV_Channels::set_output_scaled(SRV_Channel::k_braker, 100.0);
+}
+
+void UCtrl::release_brake()
+{
+    SRV_Channels::set_output_scaled(SRV_Channel::k_braker, 0.0);
+}
