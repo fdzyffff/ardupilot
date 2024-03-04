@@ -127,11 +127,20 @@ void UCam_DYT::handle_info(float p1, float p2) {
     _valid = true;
     _last_ms = millis();
 
+    float _roll = plane.ahrs.roll;
+    float _pitch = plane.ahrs.pitch;
+    float _yaw = plane.ahrs.yaw;
+    if (!plane.udelay.get_idx(24-1, _roll, _pitch, _yaw)) {
+        _roll = plane.ahrs.roll;
+        _pitch = plane.ahrs.pitch;
+        _yaw = plane.ahrs.yaw;
+    }
+
     _frotend.bf_info.x = p1; // yaw degree
     _frotend.bf_info.y = p2; // pitch degree
 
     Matrix3f tmp_m;
-    tmp_m.from_euler(plane.ahrs.roll, plane.ahrs.pitch, 0.0f);
+    tmp_m.from_euler(_roll, _pitch, 0.0f);
 
     float dist_z = -tanf(radians(p2));
     float dist_y = tanf(radians(p1));
@@ -142,7 +151,7 @@ void UCam_DYT::handle_info(float p1, float p2) {
     float angle_pitch = wrap_180(degrees(atan2f(-tmp_output.z, tmp_output.x)));
     float angle_yaw = wrap_180(degrees(atan2f(tmp_output.y, tmp_output.x)));
 
-    _frotend.ef_info.x = wrap_360(angle_yaw + degrees(plane.ahrs.yaw));
+    _frotend.ef_info.x = wrap_360(angle_yaw + degrees(_yaw));
     _frotend.ef_info.y = angle_pitch;
 
     _yaw_filter.update(angle_yaw, millis());

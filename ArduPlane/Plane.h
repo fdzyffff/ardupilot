@@ -117,6 +117,7 @@
 #include "UAttack.h"
 #include "UMission.h"
 #include "UGroup.h"
+#include "UDelay.h"
 
 /*
   main APM:Plane class
@@ -174,6 +175,7 @@ public:
     friend class UCam_DYT;
     friend class UMission;
     friend class UGroup;
+    friend class UDelay;
     Plane(void);
 
 private:
@@ -1238,6 +1240,7 @@ private:
     UFollow ufollow;
     UAttack uattack;
     UMission umission;
+    UDelay udelay;
 
     void sim_init();
     void sim_update();

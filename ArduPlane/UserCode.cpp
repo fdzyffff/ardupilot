@@ -5,6 +5,7 @@ void Plane::userhook_init()
     uattack.init();
     ufollow.init();
     umission.init();
+    udelay.init();
     sim_init();
 }
 
@@ -13,6 +14,7 @@ void Plane::userhook_100Hz()
     uattack.update();
     ufollow.update();
     umission.update();
+    udelay.push();
     sim_update();
 }
 
