@@ -22,7 +22,8 @@ public:
     void update_group();
     void set_mode(Mode& new_mode);
     uint8_t get_leader_id() {return _leader_id;}
-
+    void set_target_loc(Location& loc_in);
+    void update_base();
 
     struct group_state_t {
         bool in_group;
@@ -33,4 +34,10 @@ public:
     uint8_t _leader_id;
     group_state_t group_state;
     Mission_Role _role;
+
+    LowPassFilterVector3f _base_target_pos{1.0};
+    Location _base_target_loc;
+    uint32_t _base_target_ms;
+    bool _base_target_valid;
+    bool in_base_target_guided_mode;
 };

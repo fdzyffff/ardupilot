@@ -60,8 +60,15 @@ bool ModeGuided::handle_guided_request(Location target_loc)
     }
 
     plane.set_guided_WP(target_loc);
+    plane.umission.in_base_target_guided_mode = false;
 
     return true;
+}
+
+void ModeGuided::set_base_target_loc(Location target_loc)
+{
+    plane.next_WP_loc = target_loc;
+    plane.auto_state.crosstrack = false;
 }
 
 void ModeGuided::update_follow()

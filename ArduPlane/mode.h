@@ -229,6 +229,7 @@ public:
 
     void update_follow();
 
+    void set_base_target_loc(Location target_loc);
 protected:
 
     bool _enter() override;
