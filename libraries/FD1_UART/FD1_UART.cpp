@@ -66,6 +66,14 @@ void FD1_UART::write(void)
         _msg_ID2._msg_1.need_send = false;
         _msg_ID2.swap_message();
     }
+    if (_msg_ID5._msg_1.need_send) {
+        _msg_ID5.swap_message();
+        for(i = 0;i < _msg_ID5._msg_1.length ; i ++) {
+            _port->write(_msg_ID5._msg_1.content.data[i]);
+        }
+        _msg_ID5._msg_1.need_send = false;
+        _msg_ID5.swap_message();
+    }
     if (_msg_ID6._msg_1.need_send) {
         _msg_ID6.swap_message();
         for(i = 0;i < _msg_ID6._msg_1.length ; i ++) {

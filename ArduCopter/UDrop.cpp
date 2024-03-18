@@ -5,6 +5,7 @@ void UDrop::init()
     uart_msg_drop.init();
     uart_msg_drop.get_msg_ID1().set_enable();
     uart_msg_drop.get_msg_ID2().set_enable();
+    uart_msg_drop.get_msg_ID5().set_enable();
     uart_msg_drop.get_msg_ID6().set_enable();
 
     set_state(UDropState::Idle);
@@ -14,9 +15,9 @@ void UDrop::init()
 void UDrop::update()
 {
     if (!uart_msg_drop.initialized()) {
-        if (!is_state(UDropState::Error)) {
+        if (!is_state(UDropState::Error_1)) {
             gcs().send_text(MAV_SEVERITY_INFO, "Err! Fail to initialize");
-            set_state(UDropState::Error);
+            set_state(UDropState::Error_1);
         }
         return;
     }
@@ -38,6 +39,12 @@ void UDrop::read_uart()
         do_set_waypoint(temp_loc);
         uart_msg_drop.get_msg_ID2()._msg_1.updated = false;
     }
+    if (uart_msg_drop.get_msg_ID5()._msg_1.updated) {
+        if (uart_msg_drop.get_msg_ID5()._msg_1.content.msg.arm == 1) {
+            do_arm();
+        }
+        uart_msg_drop.get_msg_ID5()._msg_1.updated = false;
+    }
     if (uart_msg_drop.get_msg_ID6()._msg_1.updated) {
         if (uart_msg_drop.get_msg_ID6()._msg_1.content.msg.launch == 1) {
             do_launch();
@@ -57,17 +64,34 @@ void UDrop::write_uart()
     FD1_msg_ID1 &temp_msg = uart_msg_drop.get_msg_ID1();
     switch (_state) {
         case UDropState::Idle: 
-            temp_msg._msg_1.content.msg.status = 0x01;
+            temp_msg._msg_1.content.msg.status = (uint8_t)_state;
             break;
         case UDropState::Ready: 
-        case UDropState::Launching: 
-            temp_msg._msg_1.content.msg.status = 0x03;
+            temp_msg._msg_1.content.msg.status = (uint8_t)_state;
+            break;
+        case UDropState::Error_1: 
+            temp_msg._msg_1.content.msg.status = (uint8_t)_state;
+            break;
+        case UDropState::Arming: 
+            temp_msg._msg_1.content.msg.status = (uint8_t)_state;
+            break;
+        case UDropState::Armed: 
+            temp_msg._msg_1.content.msg.status = (uint8_t)_state;
+            break;
+        case UDropState::Error_2: 
+            temp_msg._msg_1.content.msg.status = (uint8_t)_state;
             break;
         case UDropState::Done: 
-            temp_msg._msg_1.content.msg.status = 0x05;
+            temp_msg._msg_1.content.msg.status = (uint8_t)_state;
             break;
-        case UDropState::Error: 
-            temp_msg._msg_1.content.msg.status = 0x09;
+        case UDropState::Error_3: 
+            temp_msg._msg_1.content.msg.status = (uint8_t)_state;
+            break;
+        case UDropState::Cleared: 
+            temp_msg._msg_1.content.msg.status = (uint8_t)_state;
+            break;
+        case UDropState::Error_4: 
+            temp_msg._msg_1.content.msg.status = (uint8_t)_state;
             break;
         default:
             temp_msg._msg_1.content.msg.status = 0x00;
@@ -91,14 +115,29 @@ void UDrop::set_state(UDrop::UDropState in_state)
         case UDropState::Ready: 
             gcs().send_text(MAV_SEVERITY_INFO, "State Ready");
             break;
-        case UDropState::Launching: 
-            gcs().send_text(MAV_SEVERITY_INFO, "State Launching");
+        case UDropState::Error_1: 
+            gcs().send_text(MAV_SEVERITY_INFO, "State Error_1");
+            break;
+        case UDropState::Arming: 
+            gcs().send_text(MAV_SEVERITY_INFO, "State Arming");
+            break;
+        case UDropState::Armed: 
+            gcs().send_text(MAV_SEVERITY_INFO, "State Armed");
+            break;
+        case UDropState::Error_2: 
+            gcs().send_text(MAV_SEVERITY_INFO, "State Error_2");
             break;
         case UDropState::Done: 
             gcs().send_text(MAV_SEVERITY_INFO, "State Done");
             break;
-        case UDropState::Error: 
-            gcs().send_text(MAV_SEVERITY_INFO, "State Error");
+        case UDropState::Error_3: 
+            gcs().send_text(MAV_SEVERITY_INFO, "State Error_3");
+            break;
+        case UDropState::Cleared: 
+            gcs().send_text(MAV_SEVERITY_INFO, "State Cleared");
+            break;
+        case UDropState::Error_4: 
+            gcs().send_text(MAV_SEVERITY_INFO, "State Error_4");
             break;
         default:
             break;
@@ -114,12 +153,12 @@ void UDrop::update_state()
 {
     uint32_t tnow = millis();
     switch (_state) {
-        case UDropState::Launching: 
+        case UDropState::Arming: 
             if (tnow - _last_state_ms > 10000) {
                 gcs().send_text(MAV_SEVERITY_INFO, "Err! Fail to Drop");
-                set_state(UDropState::Error);
+                set_state(UDropState::Error_2);
             }
-            verify_launch();  
+            verify_arm();  
             break;
         default:
             break;
@@ -151,20 +190,31 @@ void UDrop::do_set_waypoint(Location& loc)
         // gcs().send_text(MAV_SEVERITY_INFO, "N: %d", copter.mode_auto.mission.num_commands());
     } else {
         gcs().send_text(MAV_SEVERITY_INFO, "Err! Fail to write WP");
+        set_state(UDropState::Error_1);
+    }
+}
+
+void UDrop::do_arm()
+{
+    if (is_state(UDropState::Ready)) {
+        set_state(UDropState::Arming);
+    } else {
+        gcs().send_text(MAV_SEVERITY_INFO, "No target position!");
+        set_state(UDropState::Arming);
     }
 }
 
 void UDrop::do_launch()
 {
-    if (is_state(UDropState::Ready)) {
-        set_state(UDropState::Launching);
+    if (is_state(UDropState::Armed)) {
+        set_state(UDropState::Done);
     } else {
-        gcs().send_text(MAV_SEVERITY_INFO, "No target position!");
-        set_state(UDropState::Launching);
+        gcs().send_text(MAV_SEVERITY_INFO, "Not ready!");
+        set_state(UDropState::Error_3);
     }
 }
 
-void UDrop::verify_launch()
+void UDrop::verify_arm()
 {
     static uint32_t _last_update_ms = 0;
     if (millis() - _last_update_ms < 500) {
@@ -185,7 +235,7 @@ void UDrop::verify_launch()
     }
     gcs().send_text(MAV_SEVERITY_INFO, "Arm:%d,Mode:%d",arm_ok, mode_ok);
     if (mode_ok && arm_ok) {
-        set_state(UDropState::Done);
+        set_state(UDropState::Armed);
     }
 }
 

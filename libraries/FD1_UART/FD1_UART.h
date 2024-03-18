@@ -6,6 +6,7 @@
 #include "FD1_msg_ue4_ahrs.h"
 #include "FD1_msg_ID1.h"
 #include "FD1_msg_ID2.h"
+#include "FD1_msg_ID5.h"
 #include "FD1_msg_ID6.h"
 
 class FD1_UART {
@@ -33,6 +34,7 @@ public:
     FD1_msg_ue4_ahrs& get_msg_ue4_ahrs()   { return _msg_ue4_ahrs; }
     FD1_msg_ID1& get_msg_ID1()   { return _msg_ID1; }
     FD1_msg_ID2& get_msg_ID2()   { return _msg_ID2; }
+    FD1_msg_ID5& get_msg_ID5()   { return _msg_ID5; }
     FD1_msg_ID6& get_msg_ID6()   { return _msg_ID6; }
 
 private:
@@ -44,5 +46,6 @@ private:
     FD1_msg_ue4_ahrs _msg_ue4_ahrs;
     FD1_msg_ID1 _msg_ID1;
     FD1_msg_ID2 _msg_ID2;
+    FD1_msg_ID5 _msg_ID5;
     FD1_msg_ID6 _msg_ID6;
 };
