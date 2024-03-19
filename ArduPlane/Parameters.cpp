@@ -1242,6 +1242,9 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("UPRINT", 41, ParametersG2, user_print, 0),
     AP_GROUPINFO("UGRP_ID", 42, ParametersG2, user_group_id, 1),
     AP_GROUPINFO("UGRP_DIST", 43, ParametersG2, group_distance, 100.f),
+    AP_GROUPINFO("UATK_PL", 44, ParametersG2, user_pitch_limit, 30.f),
+    AP_GROUPINFO("UATK_PRL", 45, ParametersG2, user_pitch_rate_limit, 30.f),
+
 
     AP_GROUPEND
 };

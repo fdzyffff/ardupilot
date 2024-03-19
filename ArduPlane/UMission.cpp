@@ -76,14 +76,16 @@ void UMission::handle_msg(const mavlink_message_t &msg) {
         mavlink_msg_command_int_decode(&msg, &packet_int);
         switch (packet_int.command) {
             case MAV_CMD_USER_1:
-                _base_target_loc.lat = packet_int.x; // 1e7 degree
-                _base_target_loc.lng = packet_int.y; // 1e7 degree
-                _base_target_loc.set_alt_cm((int32_t)packet_int.z, Location::AltFrame::ABSOLUTE); // cm
-                if (plane.set_mode(plane.mode_guided, ModeReason::GCS_COMMAND))
-                {
-                    in_base_target_guided_mode = true;
-                    set_target_loc(_base_target_loc);
-                    plane.mode_guided.set_base_target_loc(_base_target_loc);
+                _base_target_loc_raw.lat = packet_int.x; // 1e7 degree
+                _base_target_loc_raw.lng = packet_int.y; // 1e7 degree
+                _base_target_loc_raw.set_alt_cm((int32_t)(packet_int.z*100.f), Location::AltFrame::ABSOLUTE); // cm
+                if (plane.control_mode == &plane.mode_auto) {
+                    if (plane.set_mode(plane.mode_guided, ModeReason::GCS_COMMAND)) {
+                        plane.gcs().send_text(MAV_SEVERITY_INFO, "To base target Loc");
+                        plane.gcs().send_text(MAV_SEVERITY_INFO, "%f, %f, %f",1.0e-7f*(float)(double)_base_target_loc_raw.lat, 1.0e-7f*(float)(double)_base_target_loc_raw.lng, (float)(double)_base_target_loc_raw.alt);
+                        in_base_target_guided_mode = true;
+                        set_target_loc(_base_target_loc_raw);
+                    }
                 }
                 break;
             default:
@@ -232,32 +234,28 @@ void UMission::set_mode(Mode& new_mode) {
     // gcs().send_text(MAV_SEVERITY_INFO, "mode num %d %d",(&new_mode)->mode_number(), plane.control_mode->mode_number());
 }
 
-void UMission::set_target_loc(Location& loc_in) 
-{
-    static uint32_t _last_loc_update_ms = 0;
-    Vector3f temp_pos;
-    Vector3f target_pos;
-    if (loc_in.get_vector_from_origin_NEU(temp_pos)) {
-        if (millis() - _last_loc_update_ms > 10000) {
-            _base_target_pos.reset();
-        }
-        _base_target_pos.apply(temp_pos);
-        _base_target_loc = Location(_base_target_pos.get(), Location::AltFrame::ABOVE_ORIGIN);
-        _last_loc_update_ms = millis();
-        _base_target_valid = true;
-        _base_target_ms = millis();
+void UMission::set_target_loc(Location& loc_in) {
+    float r = plane.get_wp_radius();
+    if (r<0.0f) {
+        r = MIN(-60.f, r);
+    } else {
+        r = MAX(60.f, r);
     }
+    Location ret;
+    ret = loc_in;
+    ret.offset_bearing(0.0f, r);
+    plane.mode_guided.set_base_target_loc(ret);
 }
 
 void UMission::update_base()
 {
-    uint32_t tnow = millis();
-    if (tnow - _base_target_ms > 10000) {
-        _base_target_valid = false;
-    }
-    bool in_guided_mode = (plane.control_mode == &plane.mode_guided);
-    if (!_base_target_valid && in_base_target_guided_mode && in_guided_mode) {
-        gcs().send_text(MAV_SEVERITY_INFO, "No base target, Back to AUTO");
-        plane.set_mode(plane.mode_auto, ModeReason::GCS_COMMAND);
-    }
+    // uint32_t tnow = millis();
+    // if (tnow - _base_target_ms > 10000) {
+    //     _base_target_valid = false;
+    // }
+    // bool in_guided_mode = (plane.control_mode == &plane.mode_guided);
+    // if (!_base_target_valid && in_base_target_guided_mode && in_guided_mode) {
+    //     gcs().send_text(MAV_SEVERITY_INFO, "No base target, Back to AUTO");
+    //     plane.set_mode(plane.mode_auto, ModeReason::GCS_COMMAND);
+    // }
 }

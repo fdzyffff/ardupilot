@@ -576,6 +576,8 @@ public:
     AP_Int16 user_print;
     AP_Int8 user_group_id;
     AP_Float group_distance;
+    AP_Float user_pitch_limit;
+    AP_Float user_pitch_rate_limit;
 };
 
 extern const AP_Param::Info var_info[];
