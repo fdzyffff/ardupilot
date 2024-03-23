@@ -68,7 +68,6 @@ bool ModeGuided::handle_guided_request(Location target_loc)
 void ModeGuided::set_base_target_loc(Location target_loc)
 {
     plane.next_WP_loc = target_loc;
-    gcs().send_text(MAV_SEVERITY_INFO, "z : %d", target_loc.alt);
     plane.auto_state.crosstrack = true;
 }
 
