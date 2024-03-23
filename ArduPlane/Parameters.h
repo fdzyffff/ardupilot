@@ -573,6 +573,8 @@ public:
     AP_Float user_attack_throttle;
     AP_Float user_attack_throttle_rate;
     AP_Int16 user_attack_timeout;
+    AP_Float user_pitch_limit;
+    AP_Float user_pitch_rate_limit;
     AP_Int16 user_print;
     AP_Int8 user_group_id;
     AP_Float group_distance;

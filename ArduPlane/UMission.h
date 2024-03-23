@@ -37,6 +37,7 @@ public:
     Mission_Role _role;
 
     LowPassFilterVector3f _base_target_pos{1.0};
+    Location _base_target_loc_raw;
     Location _base_target_loc;
     uint32_t _base_target_ms;
     bool _base_target_valid;

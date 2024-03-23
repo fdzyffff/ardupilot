@@ -1239,11 +1239,14 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("UATK_THR", 38, ParametersG2, user_attack_throttle, 75.0f),
     AP_GROUPINFO("UATK_TRATE", 39, ParametersG2, user_attack_throttle_rate, 1.0f),
     AP_GROUPINFO("UATK_OUTMS", 40, ParametersG2, user_attack_timeout, 2000),
-    AP_GROUPINFO("UPRINT", 41, ParametersG2, user_print, 0),
-    AP_GROUPINFO("UGRP_ID", 42, ParametersG2, user_group_id, 1),
-    AP_GROUPINFO("UGRP_DIST", 43, ParametersG2, group_distance, 100.f),
-    AP_GROUPINFO("UGUID_H", 44, ParametersG2, user_guided_height_offset, 0.f),
-    AP_GROUPINFO("UGUID_L", 45, ParametersG2, user_guided_length_offset, 10.f),
+    AP_GROUPINFO("UATK_PL", 41, ParametersG2, user_pitch_limit, 30.f),
+    AP_GROUPINFO("UATK_PRL", 42, ParametersG2, user_pitch_rate_limit, 30.f),
+    AP_GROUPINFO("UPRINT", 43, ParametersG2, user_print, 0),
+    AP_GROUPINFO("UGRP_ID", 44, ParametersG2, user_group_id, 1),
+    AP_GROUPINFO("UGRP_DIST", 45, ParametersG2, group_distance, 100.f),
+    AP_GROUPINFO("UGUID_H", 46, ParametersG2, user_guided_height_offset, 0.f),
+    AP_GROUPINFO("UGUID_L", 47, ParametersG2, user_guided_length_offset, 10.f),
+
 
     AP_GROUPEND
 };

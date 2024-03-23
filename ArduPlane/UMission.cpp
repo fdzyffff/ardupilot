@@ -261,13 +261,13 @@ Location UMission::get_guided_target_loc() {
 
 void UMission::update_base()
 {
-    uint32_t tnow = millis();
-    if (tnow - _base_target_ms > 10000) {
-        _base_target_valid = false;
-    }
-    bool in_guided_mode = (plane.control_mode == &plane.mode_guided);
-    if (!_base_target_valid && in_base_target_guided_mode && in_guided_mode) {
-        gcs().send_text(MAV_SEVERITY_INFO, "No base target, Back to AUTO");
-        plane.set_mode(plane.mode_auto, ModeReason::GCS_COMMAND);
-    }
+    // uint32_t tnow = millis();
+    // if (tnow - _base_target_ms > 10000) {
+    //     _base_target_valid = false;
+    // }
+    // bool in_guided_mode = (plane.control_mode == &plane.mode_guided);
+    // if (!_base_target_valid && in_base_target_guided_mode && in_guided_mode) {
+    //     gcs().send_text(MAV_SEVERITY_INFO, "No base target, Back to AUTO");
+    //     plane.set_mode(plane.mode_auto, ModeReason::GCS_COMMAND);
+    // }
 }
