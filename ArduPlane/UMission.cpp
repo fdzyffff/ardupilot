@@ -78,8 +78,9 @@ void UMission::handle_msg(const mavlink_message_t &msg) {
             case MAV_CMD_USER_1:
                 _base_target_loc.lat = packet_int.x; // 1e7 degree
                 _base_target_loc.lng = packet_int.y; // 1e7 degree
-                _base_target_loc.set_alt_cm((int32_t)packet_int.z, Location::AltFrame::ABSOLUTE); // cm
-                if (plane.set_mode(plane.mode_guided, ModeReason::GCS_COMMAND))
+                _base_target_loc.set_alt_cm((int32_t)packet_int.z*100, Location::AltFrame::ABSOLUTE); // cm
+                gcs().send_text(MAV_SEVERITY_INFO, "BTgt: %f, %f, %f", 1e-7*(float)_base_target_loc.lat, 1e-7*(float)_base_target_loc.lng, 1e-2*(float)_base_target_loc.alt);
+                if (plane.control_mode == &plane.mode_auto && plane.set_mode(plane.mode_guided, ModeReason::GCS_COMMAND))
                 {
                     in_base_target_guided_mode = true;
                     set_target_loc(_base_target_loc);
@@ -241,6 +242,8 @@ void UMission::set_target_loc(Location& loc_in)
         if (millis() - _last_loc_update_ms > 10000) {
             _base_target_pos.reset();
         }
+        temp_pos.z += plane.g2.user_guided_height_offset*100.f;
+        gcs().send_text(MAV_SEVERITY_INFO, "%f", temp_pos.z);
         _base_target_pos.apply(temp_pos);
         _last_loc_update_ms = millis();
         _base_target_valid = true;
@@ -249,13 +252,16 @@ void UMission::set_target_loc(Location& loc_in)
 }
 
 Location UMission::get_guided_target_loc() {
-    _base_target_pos.z = _base_target_pos.z + plane.g2.user_guided_height_offset*100.f;
     Location ret = Location(_base_target_pos.get(), Location::AltFrame::ABOVE_ORIGIN);
-    float dist = MAX(fabsf(plane.get_wp_radius()), 100.f);
-    float bearing = plane.current_loc.get_bearing_to(ret);
-    float eas2tas = plane.ahrs.get_EAS2TAS() + plane.g2.user_guided_length_offset;
-
-    ret.offset_bearing(bearing, dist*eas2tas);
+    ret.change_alt_frame(Location::AltFrame::ABSOLUTE);
+    float dist = (float)((abs(plane.aparm.loiter_radius) <= 1) ? LOITER_RADIUS_DEFAULT : abs(plane.aparm.loiter_radius));
+    float bearing = 1e-2*(float)plane.current_loc.get_bearing_to(ret);
+    float eas2tas_sq = sq(plane.ahrs.get_EAS2TAS());
+    dist *= eas2tas_sq;
+    dist += plane.g2.user_guided_length_offset;
+    ret.offset_bearing(bearing, dist);
+    gcs().send_text(MAV_SEVERITY_INFO, "bering: %f ,dofset: %f |%f", bearing, dist, eas2tas_sq);
+    gcs().send_text(MAV_SEVERITY_INFO, "LPos: %f, %f, %f", 1e-7*(float)ret.lat, 1e-7*(float)ret.lng, 1e-2*(float)ret.alt);
     return ret;
 }
 
