@@ -576,6 +576,8 @@ public:
     AP_Int16 user_print;
     AP_Int8 user_group_id;
     AP_Float group_distance;
+    AP_Float user_guided_height_offset;
+    AP_Float user_guided_length_offset;
 };
 
 extern const AP_Param::Info var_info[];

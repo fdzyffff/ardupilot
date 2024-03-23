@@ -23,6 +23,7 @@ public:
     void set_mode(Mode& new_mode);
     uint8_t get_leader_id() {return _leader_id;}
     void set_target_loc(Location& loc_in);
+    Location get_guided_target_loc();
     void update_base();
 
     struct group_state_t {

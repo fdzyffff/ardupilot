@@ -3662,7 +3662,7 @@ void GCS_MAVLINK::handle_common_message(const mavlink_message_t &msg)
         break;
 
     case MAVLINK_MSG_ID_SET_GPS_GLOBAL_ORIGIN:
-        handle_set_gps_global_origin(msg);
+        // handle_set_gps_global_origin(msg);
         break;
 
     case MAVLINK_MSG_ID_DEVICE_OP_READ:

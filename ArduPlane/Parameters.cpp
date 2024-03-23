@@ -1242,6 +1242,8 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("UPRINT", 41, ParametersG2, user_print, 0),
     AP_GROUPINFO("UGRP_ID", 42, ParametersG2, user_group_id, 1),
     AP_GROUPINFO("UGRP_DIST", 43, ParametersG2, group_distance, 100.f),
+    AP_GROUPINFO("UGUID_H", 44, ParametersG2, user_guided_height_offset, 0.f),
+    AP_GROUPINFO("UGUID_L", 45, ParametersG2, user_guided_length_offset, 10.f),
 
     AP_GROUPEND
 };

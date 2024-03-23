@@ -83,7 +83,7 @@ void UMission::handle_msg(const mavlink_message_t &msg) {
                 {
                     in_base_target_guided_mode = true;
                     set_target_loc(_base_target_loc);
-                    plane.mode_guided.set_base_target_loc(_base_target_loc);
+                    plane.mode_guided.set_base_target_loc(get_guided_target_loc());
                 }
                 break;
             default:
@@ -242,11 +242,21 @@ void UMission::set_target_loc(Location& loc_in)
             _base_target_pos.reset();
         }
         _base_target_pos.apply(temp_pos);
-        _base_target_loc = Location(_base_target_pos.get(), Location::AltFrame::ABOVE_ORIGIN);
         _last_loc_update_ms = millis();
         _base_target_valid = true;
         _base_target_ms = millis();
     }
+}
+
+Location UMission::get_guided_target_loc() {
+    _base_target_pos.z = _base_target_pos.z + plane.g2.user_guided_height_offset*100.f;
+    Location ret = Location(_base_target_pos.get(), Location::AltFrame::ABOVE_ORIGIN);
+    float dist = MAX(fabsf(plane.get_wp_radius()), 100.f);
+    float bearing = plane.current_loc.get_bearing_to(ret);
+    float eas2tas = plane.ahrs.get_EAS2TAS() + plane.g2.user_guided_length_offset;
+
+    ret.offset_bearing(bearing, dist*eas2tas);
+    return ret;
 }
 
 void UMission::update_base()

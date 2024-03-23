@@ -68,7 +68,7 @@ bool ModeGuided::handle_guided_request(Location target_loc)
 void ModeGuided::set_base_target_loc(Location target_loc)
 {
     plane.next_WP_loc = target_loc;
-    plane.auto_state.crosstrack = false;
+    plane.auto_state.crosstrack = true;
 }
 
 void ModeGuided::update_follow()
