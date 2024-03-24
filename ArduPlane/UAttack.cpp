@@ -156,7 +156,7 @@ void UAttack::update_target_pitch_rate() {
 
 // degree
 void UAttack::update_target_roll_angle() {
-    _target_roll_angle = constrain_int16(0.1f * get_target_yaw_rate(), -10.f, 10.f);
+    _target_roll_angle = constrain_float(0.1f * get_target_yaw_rate(), -10.f, 10.f);
 }
 
 // degree/second

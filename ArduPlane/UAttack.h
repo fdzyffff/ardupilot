@@ -41,7 +41,7 @@ public:
     bool _active;
     AP_HAL::UARTDriver* _cam_port;
     float _target_pitch_rate;
-    int32_t _target_roll_angle;
+    float _target_roll_angle;
     float _target_yaw_rate;
 
     UCam_base* _UCam_ptr;
