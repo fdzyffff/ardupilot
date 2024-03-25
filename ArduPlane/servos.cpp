@@ -384,6 +384,7 @@ void Plane::set_servos_idle(void)
     SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, servo_value);
     SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, servo_value);
     SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, servo_value);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_rudder_benchmark, servo_value);
     SRV_Channels::set_output_to_trim(SRV_Channel::k_throttle);
 
     SRV_Channels::output_ch_all();
@@ -397,6 +398,7 @@ void Plane::set_servos_manual_passthrough(void)
     SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, roll_in_expo(false));
     SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, pitch_in_expo(false));
     SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, rudder_in_expo(false));
+    SRV_Channels::set_output_scaled(SRV_Channel::k_rudder_benchmark, rudder_in_expo(false));
     float throttle = get_throttle_input(true);
     SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, throttle);
 
@@ -737,7 +739,7 @@ void Plane::servos_twin_engine_mix(void)
     if (!plane.WaterSlide_controller.get_yaw_mix_flag()) {
         rud_gain = 0.0f;
     }
-    rudder_dt = rud_gain * SRV_Channels::get_output_scaled(SRV_Channel::k_rudder) / SERVO_MAX;
+    rudder_dt = rud_gain * SRV_Channels::get_output_scaled(SRV_Channel::k_rudder_benchmark) / SERVO_MAX;
 
 #if AP_ADVANCEDFAILSAFE_ENABLED
     if (afs.should_crash_vehicle()) {
@@ -758,6 +760,12 @@ void Plane::servos_twin_engine_mix(void)
         // doing forward thrust
         throttle_left  = constrain_float(throttle + 50 * rudder_dt, 0, 100);
         throttle_right = constrain_float(throttle - 50 * rudder_dt, 0, 100);
+        if (control_mode == &mode_wsld && curve_enable()) {
+            float float_max = fabsf(get_T_curve());// 0~+1
+            float rudder_dt_lim = constrain_float(rudder_dt, -float_max, float_max);
+            throttle_left  = constrain_float(throttle + 50 * rudder_dt_lim, 0, 100);
+            throttle_right = constrain_float(throttle - 50 * rudder_dt_lim, 0, 100);
+        }
     }
     if (!arming.is_armed_and_safety_off()) {
         if (arming.arming_required() == AP_Arming::Required::YES_ZERO_PWM) {
@@ -885,12 +893,24 @@ void Plane::set_servos(void)
     
     SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, steering_control.rudder);
     SRV_Channels::set_output_scaled(SRV_Channel::k_steering, steering_control.steering);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_rudder_benchmark, steering_control.rudder);
 
-    if (control_mode == &mode_wsld) {
-        if (!WaterSlide_controller.allow_steering_flag()) {
-            SRV_Channels::set_output_scaled(SRV_Channel::k_steering, 0.0f);
-        }
+
+    if (control_mode == &mode_wsld && curve_enable()) {
+        int16_t int_max = 4500;
+
+        int_max = (int16_t)(4500.f*get_Y_curve());
+        SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, constrain_int16(steering_control.rudder, -int_max, int_max));
+
+        int_max = (int16_t)(4500.f*get_R_curve());
+        SRV_Channels::set_output_scaled(SRV_Channel::k_steering, constrain_int16(steering_control.steering, -int_max, int_max));
     }
+
+    // if (control_mode == &mode_wsld) {
+    //     if (!WaterSlide_controller.allow_steering_flag()) {
+    //         SRV_Channels::set_output_scaled(SRV_Channel::k_steering, 0.0f);
+    //     }
+    // }
 
     if (control_mode == &mode_manual) {
         set_servos_manual_passthrough();
@@ -1004,7 +1024,7 @@ void Plane::servos_output(void)
 
     // run vtail and elevon mixers
     channel_function_mixer(SRV_Channel::k_aileron, SRV_Channel::k_elevator, SRV_Channel::k_elevon_left, SRV_Channel::k_elevon_right);
-    channel_function_mixer(SRV_Channel::k_rudder,  SRV_Channel::k_elevator, SRV_Channel::k_vtail_right, SRV_Channel::k_vtail_left);
+    channel_function_mixer(SRV_Channel::k_rudder_benchmark,  SRV_Channel::k_elevator, SRV_Channel::k_vtail_right, SRV_Channel::k_vtail_left);
 
 #if HAL_QUADPLANE_ENABLED
     // cope with tailsitters and bicopters

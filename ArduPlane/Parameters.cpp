@@ -1254,8 +1254,32 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("AUTOTUNE_AXES", 34, ParametersG2, axis_bitmask, 7),
 
+    AP_GROUPINFO("USR_Y_S1", 35, ParametersG2, curve_y_s1, 8.0f),
+    AP_GROUPINFO("USR_Y_F1", 36, ParametersG2, curve_y_f1, 1.0f),
+    AP_GROUPINFO("USR_Y_S2", 37, ParametersG2, curve_y_s2, 12.0f),
+    AP_GROUPINFO("USR_Y_F2", 38, ParametersG2, curve_y_f2, 0.3f),
 
+    AP_GROUPINFO("USR_R_S1", 39, ParametersG2, curve_r_s1, 5.0f),
+    AP_GROUPINFO("USR_R_F1", 40, ParametersG2, curve_r_f1, 1.0f),
+    AP_GROUPINFO("USR_R_S2", 41, ParametersG2, curve_r_s2, 9.0f),
+    AP_GROUPINFO("USR_R_F2", 42, ParametersG2, curve_r_f2, 0.0f),
+
+    AP_GROUPINFO("USR_A_S1", 43, ParametersG2, curve_a_s1, 9.0f),
+    AP_GROUPINFO("USR_A_F1", 44, ParametersG2, curve_a_f1, 1.0f),
+    AP_GROUPINFO("USR_A_S2", 45, ParametersG2, curve_a_s2, 12.0f),
+    AP_GROUPINFO("USR_A_F2", 46, ParametersG2, curve_a_f2, 0.3f),
+
+    AP_GROUPINFO("USR_P_S1", 47, ParametersG2, curve_p_s1, 9.0f),
+    AP_GROUPINFO("USR_P_F1", 48, ParametersG2, curve_p_f1, -1.0f),
+    AP_GROUPINFO("USR_P_S2", 49, ParametersG2, curve_p_s2, 12.0f),
+    AP_GROUPINFO("USR_P_F2", 50, ParametersG2, curve_p_f2, -0.4f),
+
+    AP_GROUPINFO("USR_T_S1", 51, ParametersG2, curve_t_s1, 8.0f),
+    AP_GROUPINFO("USR_T_F1", 52, ParametersG2, curve_t_f1, 1.0f),
+    AP_GROUPINFO("USR_T_S2", 53, ParametersG2, curve_t_s2, 12.0f),
+    AP_GROUPINFO("USR_T_F2", 54, ParametersG2, curve_t_f2, 0.3f),
     
+    AP_GROUPINFO("USR_CURVE", 55, ParametersG2, curve_enable, 1),
     AP_GROUPEND
 };
 

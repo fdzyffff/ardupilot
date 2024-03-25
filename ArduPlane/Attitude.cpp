@@ -122,6 +122,12 @@ void Plane::stabilize_roll()
 
     const float roll_out = stabilize_roll_get_roll_out();
     SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, roll_out);
+
+    if (control_mode == &mode_wsld && curve_enable()) {
+        float f_max = 4500.f;
+        f_max = 4500.f*get_A_curve();
+        SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, constrain_int16(roll_out, -f_max, f_max));
+    }
 }
 
 float Plane::stabilize_roll_get_roll_out()
@@ -165,6 +171,11 @@ void Plane::stabilize_pitch()
 
     const float pitch_out = stabilize_pitch_get_pitch_out();
     SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, pitch_out);
+    if (control_mode == &mode_wsld && curve_enable()) {
+        float f_out = 4500.f*(get_P_curve()+channel_pitch->norm_input_dz()*1.5f);
+        f_out = constrain_float(f_out, -4500.f, 4500.f);
+        SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, f_out);
+    }
 }
 
 float Plane::stabilize_pitch_get_pitch_out()
@@ -499,6 +510,9 @@ void Plane::calc_nav_yaw_coordinated()
         const float coordination_yaw_rate = degrees(GRAVITY_MSS * tanf(radians(nav_roll_cd*0.01f))/MAX(aparm.airspeed_min,smoothed_airspeed));
         commanded_rudder = yawController.get_rate_out(yaw_rate+coordination_yaw_rate,  speed_scaler, false);
         using_rate_controller = true;
+    } else if (control_mode == &mode_wsld) {
+        commanded_rudder = yawController.get_servo_out(speed_scaler, disable_integrator);
+        commanded_rudder += rudder_in;
     } else {
         if (control_mode == &mode_stabilize && rudder_in != 0) {
             disable_integrator = true;

@@ -569,6 +569,29 @@ public:
     
     AP_Int8         axis_bitmask; // axes to be autotuned
 
+    AP_Float curve_y_s1;
+    AP_Float curve_y_f1;
+    AP_Float curve_y_s2;
+    AP_Float curve_y_f2;
+    AP_Float curve_r_s1;
+    AP_Float curve_r_f1;
+    AP_Float curve_r_s2;
+    AP_Float curve_r_f2;
+    AP_Float curve_a_s1;
+    AP_Float curve_a_f1;
+    AP_Float curve_a_s2;
+    AP_Float curve_a_f2;
+    AP_Float curve_p_s1;
+    AP_Float curve_p_f1;
+    AP_Float curve_p_s2;
+    AP_Float curve_p_f2;
+    AP_Float curve_t_s1;
+    AP_Float curve_t_f1;
+    AP_Float curve_t_s2;
+    AP_Float curve_t_f2;
+    AP_Int8 curve_enable;
+
+
     // just to make compilation easier when all things are compiled out...
     uint8_t unused_integer;
 };

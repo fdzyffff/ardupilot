@@ -1229,6 +1229,15 @@ private:
     // last target alt we passed to tecs
     int32_t tecs_target_alt_cm;
 
+    bool curve_enable();
+    float get_curve_speed();
+    float get_Y_curve();
+    float get_R_curve();
+    float get_A_curve();
+    float get_P_curve();
+    float get_T_curve();
+    float get_curve(float s1_in, float f1_in, float s2_in, float f2_in);
+
 public:
     void failsafe_check(void);
 #if AP_SCRIPTING_ENABLED
