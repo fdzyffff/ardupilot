@@ -74,6 +74,9 @@ void UMission::handle_msg(const mavlink_message_t &msg) {
         // decode packet_int
         mavlink_command_int_t packet_int;
         mavlink_msg_command_int_decode(&msg, &packet_int);
+        if (packet_int.target_system != plane.g.sysid_this_mav) {
+            return;
+        }
         switch (packet_int.command) {
             case MAV_CMD_USER_1:
                 _base_target_loc.lat = packet_int.x; // 1e7 degree
