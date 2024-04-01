@@ -62,7 +62,7 @@ void UCam_DYT::fill_state_msg()
     }
     static uint32_t _last_send_ms = 0;
     uint32_t tnow = millis();
-    if (tnow - _last_send_ms < 20) {
+    if (tnow - _last_send_ms < 200) {
         return;
     }
 
