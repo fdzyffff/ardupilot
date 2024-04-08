@@ -429,6 +429,11 @@ void Copter::allocate_motors(void)
             motors_var_info = AP_MotorsHeli_Quad::var_info;
             AP_Param::set_frame_type_flags(AP_PARAM_FRAME_HELI);
             break;
+        case AP_Motors::MOTOR_FRAME_4X4:
+            motors = new AP_Motors4X4(copter.scheduler.get_loop_rate_hz());
+            motors_var_info = AP_Motors4X4::var_info;
+            AP_Param::set_frame_type_flags(AP_PARAM_FRAME_4X4);
+            break;
             
         case AP_Motors::MOTOR_FRAME_HELI:
         default:
