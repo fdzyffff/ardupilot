@@ -83,7 +83,7 @@ void UMission::handle_msg(const mavlink_message_t &msg) {
                 _base_target_loc.lng = packet_int.y; // 1e7 degree
                 _base_target_loc.set_alt_cm((int32_t)packet_int.z*100, Location::AltFrame::ABSOLUTE); // cm
                 gcs().send_text(MAV_SEVERITY_INFO, "BTgt: %f, %f, %f", 1e-7*(float)_base_target_loc.lat, 1e-7*(float)_base_target_loc.lng, 1e-2*(float)_base_target_loc.alt);
-                if (plane.control_mode == &plane.mode_auto && plane.set_mode(plane.mode_guided, ModeReason::GCS_COMMAND))
+                if (in_base_target_guided_mode || (plane.control_mode == &plane.mode_auto && plane.set_mode(plane.mode_guided, ModeReason::GCS_COMMAND)))
                 {
                     in_base_target_guided_mode = true;
                     set_target_loc(_base_target_loc);
