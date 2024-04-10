@@ -24,18 +24,6 @@ void HB1_apm2power::swap_message(void)
     // }
 }
 
-void HB1_apm2power::set_rocket_on()
-{
-    _msg_1.content.msg.c[0] = 0x55;
-    _msg_1.content.msg.c[1] = 0x55;
-    _msg_1.content.msg.c[2] = 0x55;
-    _msg_1.content.msg.c[3] = 0x55;
-    _msg_1.content.msg.c[4] = 0x00;
-    _msg_1.content.msg.c[5] = 0x00;
-    _msg_1.content.msg.c[6] = 0x00;
-    _msg_1.content.msg.c[7] = 0x00;
-}
-
 void HB1_apm2power::set_engine_start()
 {
     _msg_1.content.msg.c[0] = 0x48;

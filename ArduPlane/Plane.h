@@ -1258,7 +1258,6 @@ private:
     void HB1_Power_update();
     void HB1_Power_pwm_update();
     void HB1_Power_status_update();
-    void HB1_Power_request();
     void HB1_Power_throttle_update();
     void HB1_Power_on_send();
     bool HB1_Power_running();

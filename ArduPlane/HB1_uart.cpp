@@ -86,15 +86,19 @@ void Plane::HB1_uart_power_send()
 {
     if (HB1_Power.send_counter > 0) {
         HB1_Power.send_counter--;
-        HB1_uart_mission.write();
-        HB1_uart_mission.get_msg_apm2power()._msg_1.need_send = true;
-    } else if (millis() - HB1_Power.status_ms > 200) {
+        if (HB1_uart_mission.get_msg_apm2rocket()._msg_1.need_send) {
+            HB1_uart_mission.write();
+            HB1_uart_mission.get_msg_apm2rocket()._msg_1.need_send = true;
+        }
+        if (HB1_uart_power.get_msg_apm2power()._msg_1.need_send) {
+            HB1_uart_power.write();
+            HB1_uart_power.get_msg_apm2power()._msg_1.need_send = true;
+        }
+    }
+    if (millis() - HB1_Power.status_ms > 200) {
         HB1_Power.status_ms = millis();
-        HB1_Power_request();
-        HB1_uart_mission.write();
-    } else {
         HB1_Power_throttle_update();
-        HB1_uart_mission.write();
+        HB1_uart_power.write();
     }
 }
 
