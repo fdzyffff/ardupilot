@@ -19,10 +19,9 @@ void Plane::HB1_status_init() {
 
     HB1_Power.HB1_engine_rpm.reset(0.0f);
     HB1_Power.HB1_engine_rpm.set_cutoff_frequency(50.f, 5.f);
-    HB1_Power.HB1_engine_pump_rpm.reset(0.0f);
-    HB1_Power.HB1_engine_pump_rpm.set_cutoff_frequency(50.f, 5.f);
     HB1_Power.HB1_engine_temp = 0.0f;
     HB1_Power.HB1_engine_fuel = 0.0f;
+    HB1_Power.HB1_engine_status = 0;
     HB1_Power.HB1_engine_startcount = 0;
     HB1_Power.send_counter = 0;
 

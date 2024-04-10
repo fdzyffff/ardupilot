@@ -1110,9 +1110,9 @@ private:
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     HB1_UART HB1_uart_mission{AP_SerialManager::SerialProtocol_HB1_MISSION};
-    HB1_UART HB1_uart_cam{AP_SerialManager::SerialProtocol_HB1_CAM};
+    // HB1_UART HB1_uart_cam{AP_SerialManager::SerialProtocol_HB1_CAM};
     HB1_UART HB1_uart_power{AP_SerialManager::SerialProtocol_HB1_POWER};
-    FD1_MAV FD1_mav{AP_SerialManager::SerialProtocol_FD1_MAV};
+    // FD1_MAV FD1_mav{AP_SerialManager::SerialProtocol_FD1_MAV};
 
     enum HB1_Power_Action_t {
         HB1_PowerAction_None            = 0,
@@ -1176,7 +1176,7 @@ private:
         uint32_t timer;
         HB1_Power_Action_t state;
         LowPassFilterFloat HB1_engine_rpm;
-        LowPassFilterFloat HB1_engine_pump_rpm;
+        uint8_t HB1_engine_status;
         float HB1_engine_temp;
         float HB1_engine_fuel;
         uint32_t last_update_ms;
@@ -1196,6 +1196,7 @@ private:
     void HB1_uart_update_10Hz();
     void HB1_msg_apm2cam_send();
     void HB1_msg_apm2power_set();
+    void HB1_msg_apm2power_set_rocket_on();
     void HB1_msg_apm2mission_send();
     void HB1_msg_power2apm_handle();
     void HB1_uart_power_send();

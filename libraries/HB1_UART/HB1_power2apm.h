@@ -65,11 +65,13 @@ public:
             //HB1UART_INDEX,
             HB1UART_DATA,
             HB1UART_SUM,
+            HB1UART_XOR,
         } msg_state;
 
         uint16_t length;
         uint16_t read;
         uint8_t sum_check;
+        uint8_t sum_xor;
         HB1_2apm_header header;
         uint8_t data[14];;
     } _msg;

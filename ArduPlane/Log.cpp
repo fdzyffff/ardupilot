@@ -224,8 +224,8 @@ struct PACKED log_AETR {
     int16_t flap;
     int16_t temp;
     float rpm;
-    int16_t state;
-    int16_t pump_rpm;
+    uint8_t state;
+    uint8_t status;
 };
 
 void Plane::Log_Write_AETR()
@@ -240,8 +240,8 @@ void Plane::Log_Write_AETR()
         ,flap     : SRV_Channels::get_output_scaled(SRV_Channel::k_flap_auto)
         ,temp     : (int16_t)(HB1_Power.HB1_engine_temp)
         ,rpm      : HB1_Power.HB1_engine_rpm.get()
-        ,state    : (int16_t)HB1_status_get_HB_Mission_Action()
-        ,pump_rpm : (int16_t)HB1_Power.HB1_engine_pump_rpm.get()
+        ,state    : HB1_status_get_HB_Mission_Action()
+        ,status   : HB1_Power.HB1_engine_status
         };
 
     logger.WriteBlock(&pkt, sizeof(pkt));
@@ -287,7 +287,7 @@ const struct LogStructure Plane::log_structure[] = {
     { LOG_PIQA_MSG, sizeof(log_PID), \
       "PIQA", PID_FMT,  PID_LABELS, PID_UNITS, PID_MULTS }, \
     { LOG_AETR_MSG, sizeof(log_AETR), \
-      "AETR", "Qhhhhhhfhh",  "TimeUS,Ail,Elev,Thr,Rudd,Flap,Temp,Rpm,STAT,PRpm", "s---------", "F---------" },  \
+      "AETR", "QhhhhhhfBB",  "TimeUS,Ail,Elev,Thr,Rudd,Flap,Temp,Rpm,STAT,Status", "s---------", "F---------" },  \
 };
 
 void Plane::Log_Write_Vehicle_Startup_Messages()

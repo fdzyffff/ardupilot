@@ -52,9 +52,10 @@ void Plane::test_HB1_uart_msg1(uint8_t option){
         tmp_msg._msg_1.content.data[i] = 0;
     }
     
-    tmp_msg._msg_1.content.msg.rpm = 10000;
-    tmp_msg._msg_1.content.msg.temperature = 300;
-    tmp_msg._msg_1.content.msg.crc8_itu = tmp_msg.crc8_itu(tmp_msg._msg_1.content.data, tmp_msg._msg_1.length-1);
+    tmp_msg._msg_1.content.msg.rpm_h = 10;
+    tmp_msg._msg_1.content.msg.rpm_l = 10;
+    tmp_msg._msg_1.content.msg.temp_h = 0;
+    tmp_msg._msg_1.content.msg.temp_l = 90;
 }
 
 void Plane::test_HB1_uart_msg2(uint8_t option){
@@ -81,7 +82,7 @@ void Plane::test_HB1_uart_msg2(uint8_t option){
 
 void Plane::test_HB1_uart_msg3(uint8_t option){
     // done in test_HB1_follwo.cpp test_HB1_mission_update_msg()
-/*    gcs().send_text(MAV_SEVERITY_INFO, "SIM mission2apm :");
+    gcs().send_text(MAV_SEVERITY_INFO, "SIM mission2apm :");
     HB1_mission2apm &tmp_msg = HB1_uart_mission.get_msg_mission2apm();
     tmp_msg._msg_1.updated = true;
     tmp_msg._msg_1.need_send = true;
@@ -154,29 +155,29 @@ void Plane::test_HB1_uart_msg3(uint8_t option){
     tmp_msg._msg_1.content.msg.leader_lat = (int32_t)(10.33333f * tmp_msg.SF_LL);
     tmp_msg._msg_1.content.msg.leader_alt = (int16_t)(100.f * tmp_msg.SF_ALT);
 
-    tmp_msg._msg_1.content.msg.leader_dir = (int16_t)((float)wrap_180_cd(ahrs.yaw_sensor/100) * tmp_msg.SF_ANG);*/
+    tmp_msg._msg_1.content.msg.leader_dir = (int16_t)((float)wrap_180_cd(ahrs.yaw_sensor/100) * tmp_msg.SF_ANG);
 
 }
 
 void Plane::test_HB1_uart_msg4(uint8_t option){
-    gcs().send_text(MAV_SEVERITY_INFO, "SIM cam2mission :");
-    HB1_cam2mission &tmp_msg = HB1_uart_cam.get_msg_cam2mission();
-    tmp_msg._msg_1.updated = true;
-    tmp_msg._msg_1.need_send = true;
-    tmp_msg._msg_1.print = true;
-    tmp_msg._msg_1.content.msg.header.head_1 = HB1_cam2mission::PREAMBLE1;
-    tmp_msg._msg_1.content.msg.header.head_2 = HB1_cam2mission::PREAMBLE2;
-    tmp_msg._msg_1.content.msg.header.index = HB1_cam2mission::INDEX1;
-    tmp_msg._msg_1.content.msg.length = tmp_msg._msg_1.length-4;
-    tmp_msg._msg_1.content.msg.sum_check = 0;
+    // gcs().send_text(MAV_SEVERITY_INFO, "SIM cam2mission :");
+    // HB1_cam2mission &tmp_msg = HB1_uart_cam.get_msg_cam2mission();
+    // tmp_msg._msg_1.updated = true;
+    // tmp_msg._msg_1.need_send = true;
+    // tmp_msg._msg_1.print = true;
+    // tmp_msg._msg_1.content.msg.header.head_1 = HB1_cam2mission::PREAMBLE1;
+    // tmp_msg._msg_1.content.msg.header.head_2 = HB1_cam2mission::PREAMBLE2;
+    // tmp_msg._msg_1.content.msg.header.index = HB1_cam2mission::INDEX1;
+    // tmp_msg._msg_1.content.msg.length = tmp_msg._msg_1.length-4;
+    // tmp_msg._msg_1.content.msg.sum_check = 0;
 
-    for (int8_t i = 4; i < tmp_msg._msg_1.length - 1; i++) {
-        tmp_msg._msg_1.content.data[i] = 0;
-    }
+    // for (int8_t i = 4; i < tmp_msg._msg_1.length - 1; i++) {
+    //     tmp_msg._msg_1.content.data[i] = 0;
+    // }
     
-    for (int8_t i = 2; i < tmp_msg._msg_1.length - 1; i++) {
-        tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
-    }
+    // for (int8_t i = 2; i < tmp_msg._msg_1.length - 1; i++) {
+    //     tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
+    // }
 }
 
 void Plane::test_HB1_uart_msg5(uint8_t option){
@@ -185,16 +186,10 @@ void Plane::test_HB1_uart_msg5(uint8_t option){
     tmp_msg._msg_1.updated = true;
     tmp_msg._msg_1.need_send = true;
     tmp_msg._msg_1.print = true;
-    tmp_msg._msg_1.content.msg.header.head_1 = HB1_apm2power::PREAMBLE1;
-    tmp_msg._msg_1.content.msg.header.head_2 = HB1_apm2power::PREAMBLE2;
-    tmp_msg._msg_1.content.msg.sum_check = 0;
 
-    tmp_msg._msg_1.content.msg.c[0] = option;
-    tmp_msg._msg_1.content.msg.c[1] = option;
-    
-    for (int8_t i = 0; i < tmp_msg._msg_1.length - 1; i++) {
-        tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
-    }
+    tmp_msg.set_throttle(50);
+    tmp_msg.make_sum();
+
 }
 
 void Plane::test_HB1_uart_msg6(uint8_t option){
@@ -236,24 +231,24 @@ void Plane::test_HB1_uart_msg6(uint8_t option){
 }
 
 void Plane::test_HB1_uart_msg7(uint8_t option){
-    gcs().send_text(MAV_SEVERITY_INFO, "SIM apm2cam :");
-    HB1_apm2cam &tmp_msg = HB1_uart_cam.get_msg_apm2cam();
-    tmp_msg._msg_1.updated = true;
-    tmp_msg._msg_1.need_send = true;
-    tmp_msg._msg_1.print = true;
-    tmp_msg._msg_1.content.msg.header.head_1 = HB1_apm2cam::PREAMBLE1;
-    tmp_msg._msg_1.content.msg.header.head_2 = HB1_apm2cam::PREAMBLE2;
-    tmp_msg._msg_1.content.msg.header.index = HB1_apm2cam::INDEX1;
-    tmp_msg._msg_1.content.msg.length = tmp_msg._msg_1.length-4;
-    tmp_msg._msg_1.content.msg.sum_check = 0;
+//     gcs().send_text(MAV_SEVERITY_INFO, "SIM apm2cam :");
+//     HB1_apm2cam &tmp_msg = HB1_uart_cam.get_msg_apm2cam();
+//     tmp_msg._msg_1.updated = true;
+//     tmp_msg._msg_1.need_send = true;
+//     tmp_msg._msg_1.print = true;
+//     tmp_msg._msg_1.content.msg.header.head_1 = HB1_apm2cam::PREAMBLE1;
+//     tmp_msg._msg_1.content.msg.header.head_2 = HB1_apm2cam::PREAMBLE2;
+//     tmp_msg._msg_1.content.msg.header.index = HB1_apm2cam::INDEX1;
+//     tmp_msg._msg_1.content.msg.length = tmp_msg._msg_1.length-4;
+//     tmp_msg._msg_1.content.msg.sum_check = 0;
 
-    for (int8_t i = 4; i < tmp_msg._msg_1.length - 1; i++) {
-        tmp_msg._msg_1.content.data[i] = 0;
-    }
+//     for (int8_t i = 4; i < tmp_msg._msg_1.length - 1; i++) {
+//         tmp_msg._msg_1.content.data[i] = 0;
+//     }
     
-    for (int8_t i = 2; i < tmp_msg._msg_1.length - 1; i++) {
-        tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
-    }
+//     for (int8_t i = 2; i < tmp_msg._msg_1.length - 1; i++) {
+//         tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
+//     }
 }
 
 

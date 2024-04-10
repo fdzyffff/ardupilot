@@ -16,10 +16,13 @@ void HB1_power2apm::parse(uint8_t temp)
         case HB1UART_msg_parser::HB1UART_PREAMBLE1:
             _msg.read = 0;
             _msg.sum_check = 0;
+            _msg.sum_xor = 0;
             if (temp == PREAMBLE1) {
                 _msg.msg_state = HB1UART_msg_parser::HB1UART_PREAMBLE2;
                 _msg.data[_msg.read] = temp;
                 _msg.read++;
+                _msg.sum_check += temp;
+                _msg.sum_xor = _msg.sum_xor ^ temp;
             }
             break;
         case HB1UART_msg_parser::HB1UART_PREAMBLE2:
@@ -31,6 +34,8 @@ void HB1_power2apm::parse(uint8_t temp)
                 _msg.data[_msg.read] = temp;
                 _msg.read++;
                 _msg.msg_state = HB1UART_msg_parser::HB1UART_DATA;
+                _msg.sum_check += temp;
+                _msg.sum_xor = _msg.sum_xor ^ temp;
             }
             else
             {
@@ -38,27 +43,34 @@ void HB1_power2apm::parse(uint8_t temp)
             }
             break;
         case HB1UART_msg_parser::HB1UART_DATA:
-            if (_msg.read >= sizeof(_msg.data)) {
+            if (_msg.read >= sizeof(_msg.data)-1) {
                 _msg.msg_state = HB1UART_msg_parser::HB1UART_PREAMBLE1;
                 break;
             }
             _msg.data[_msg.read] = temp;
-
             _msg.read++;
-            if (_msg.read >= (_msg.length - 1))
+            _msg.sum_check += temp;
+            _msg.sum_xor = _msg.sum_xor ^ temp;
+            if (_msg.read >= (_msg.length - 2))
             {
                 _msg.msg_state = HB1UART_msg_parser::HB1UART_SUM;
             }
             break;
         case HB1UART_msg_parser::HB1UART_SUM:
             _msg.data[_msg.read] = temp;
-            _msg.msg_state = HB1UART_msg_parser::HB1UART_PREAMBLE1;
-            _msg.sum_check = crc8_itu(_msg.data, _msg.read);
-
+            _msg.read++;
+            _msg.sum_xor = _msg.sum_xor ^ temp;
             if (_msg.sum_check == temp)
             {
-                process_message();
+                _msg.msg_state = HB1UART_msg_parser::HB1UART_XOR;
+            } else {
+                _msg.msg_state = HB1UART_msg_parser::HB1UART_PREAMBLE1;
             }
+            break;
+        case HB1UART_msg_parser::HB1UART_XOR:
+            _msg.data[_msg.read] = temp;
+            process_message();
+            _msg.msg_state = HB1UART_msg_parser::HB1UART_PREAMBLE1;
             break;
     }
 }
@@ -87,24 +99,4 @@ void HB1_power2apm::swap_message(void)
     // swap_message_sub(_msg_1.content.data[20], _msg_1.content.data[21]);
     // swap_message_sub(_msg_1.content.data[22], _msg_1.content.data[23]);
     ;
-}
-
-uint8_t HB1_power2apm::crc8_itu(uint8_t *data, uint8_t len)
-{
-    uint8_t crca = data[0];
-    uint8_t crcb = 0;
-    for(int i = 0; i < len; i++)
-    {
-        if(i == 0)
-        {
-            crca = crc8_itu_table[(data[i] ^ 0x00)];
-            crcb = crca;
-        }
-        else
-        {
-            crca = crc8_itu_table[(data[i] ^ crcb)];
-            crcb = crca;
-        }
-    }
-    return (crcb ^ 0x55);
 }

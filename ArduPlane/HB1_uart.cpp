@@ -3,29 +3,29 @@
 void Plane::HB1_uart_init() {
     HB1_uart_mission.init();
     HB1_uart_mission.get_msg_mission2apm().set_enable();
-    HB1_uart_mission.get_msg_mission2cam().set_enable();
-    HB1_uart_mission.get_msg_power2apm().set_enable();
+    // HB1_uart_mission.get_msg_mission2cam().set_enable();
+    // HB1_uart_mission.get_msg_power2apm().set_enable();
 
     // HB1_uart_cam.init();
     // HB1_uart_cam.get_msg_cam2mission().set_enable();
 
-    // HB1_uart_power.init();
-    // HB1_uart_power.get_msg_power2apm().set_enable();
+    HB1_uart_power.init();
+    HB1_uart_power.get_msg_power2apm().set_enable();
 
     FD1_mav_init();
 }
 
 void Plane::HB1_uart_update_50Hz()
 {
+    HB1_Power_update();
+
     if (HB1_uart_mission.initialized()) {
         HB1_uart_mission.read();
     }
-    // if (HB1_uart_cam.initialized()) {
-    //     HB1_uart_cam.read();
-    // }
-    // if (HB1_uart_power.initialized()) {
-    //     HB1_uart_power.read();
-    // }
+
+    if (HB1_uart_power.initialized()) {
+        HB1_uart_power.read();
+    }
 
     // uart mission
     if (HB1_uart_mission.get_msg_mission2apm()._msg_1.updated) {
@@ -33,52 +33,15 @@ void Plane::HB1_uart_update_50Hz()
         HB1_uart_mission.get_msg_mission2apm()._msg_1.updated = false;
     }
 
-    // if (HB1_uart_mission.get_msg_mission2cam()._msg_1.updated) {
-    //     //if (HB1_uart_mission.get_msg_mission2cam()._msg_1.content.msg.uav_id == g.sysid_this_mav) {
-    //         memcpy(HB1_uart_cam.get_msg_mission2cam()._msg_1.content.data, 
-    //             HB1_uart_mission.get_msg_mission2cam()._msg_1.content.data, 
-    //             HB1_uart_mission.get_msg_mission2cam()._msg_1.length*sizeof(uint8_t));
-    //         HB1_uart_cam.get_msg_mission2cam()._msg_1.need_send = true;
-    //     HB1_uart_mission.get_msg_mission2cam()._msg_1.updated = false;
-    // }
-
-    // // uart cam
-    // if (HB1_uart_cam.get_msg_cam2mission()._msg_1.updated) {
-    //     memcpy(HB1_uart_mission.get_msg_cam2mission()._msg_1.content.data, 
-    //             HB1_uart_cam.get_msg_cam2mission()._msg_1.content.data, 
-    //             HB1_uart_cam.get_msg_cam2mission()._msg_1.length*sizeof(uint8_t));
-    //     HB1_uart_mission.get_msg_cam2mission()._msg_1.need_send = true;
-    //     HB1_uart_cam.get_msg_cam2mission()._msg_1.updated = false;
-    // }
-
     // uart power
     if (HB1_uart_mission.get_msg_power2apm()._msg_1.updated) {
         HB1_msg_power2apm_handle();
-        // memcpy(HB1_uart_mission.get_msg_power2apm()._msg_1.content.data, 
-        //         HB1_uart_power.get_msg_power2apm()._msg_1.content.data, 
-        //         HB1_uart_power.get_msg_power2apm()._msg_1.length*sizeof(uint8_t));
-        // HB1_uart_mission.get_msg_power2apm()._msg_1.need_send = true;
         HB1_uart_mission.get_msg_power2apm()._msg_1.updated = false;
     }
 
     HB1_uart_power_send();
-    // for test
-    // if (HB1_test.status != 0) {
-        // test_HB1_mission_send_msg();
-        //gcs().send_text(MAV_SEVERITY_INFO, "SIM out running");
-    // }
-
-    // HB1_uart_mission.write();
-    // int16_t _cam_count_trig = 50/constrain_int16(g2.hb1_cam_rate.get(), 1, 50);
-    // static int16_t _cam_count = 0;
-    // if (_cam_count >= _cam_count_trig) {
-    //     HB1_uart_cam.write();
-    //     _cam_count = 0;
-    // }
-    // _cam_count += 1;
-
-    //FD1_mav_read();
-    FD1_mav_send();
+    // FD1_mav_read();
+    // FD1_mav_send();
 
 }
 
@@ -105,7 +68,7 @@ void Plane::HB1_uart_power_send()
 void Plane::HB1_uart_update_10Hz()
 {
     HB1_msg_apm2mission_send();
-    HB1_msg_apm2cam_send();
+    // HB1_msg_apm2cam_send();
     HB1_uart_print();
 }
 
@@ -199,11 +162,14 @@ void Plane::HB1_msg_mission2apm_handle() {
 }
 
 void Plane::HB1_msg_power2apm_handle() {
-    HB1_power2apm &tmp_msg = HB1_uart_mission.get_msg_power2apm();
-    HB1_Power.HB1_engine_fuel = (float)tmp_msg._msg_1.content.msg.consumption;
-    HB1_Power.HB1_engine_rpm.apply((float)tmp_msg._msg_1.content.msg.rpm);
-    HB1_Power.HB1_engine_temp = (float)tmp_msg._msg_1.content.msg.temperature;
-    HB1_Power.HB1_engine_pump_rpm.apply((float)tmp_msg._msg_1.content.msg.pump_rpm);
+    HB1_power2apm &tmp_msg = HB1_uart_power.get_msg_power2apm();
+    uint16_t rpm = ((uint16_t)tmp_msg._msg_1.content.msg.rpm_h << 8 | tmp_msg._msg_1.content.msg.rpm_l);
+    uint16_t temp = ((uint16_t)tmp_msg._msg_1.content.msg.temp_h << 8 | tmp_msg._msg_1.content.msg.temp_l);
+
+    HB1_Power.HB1_engine_rpm.apply((float)rpm);
+    HB1_Power.HB1_engine_fuel = (float)tmp_msg._msg_1.content.msg.main_pwm;
+    HB1_Power.HB1_engine_temp = (float)temp;
+    HB1_Power.HB1_engine_status = tmp_msg._msg_1.content.msg.status;
     HB1_Power.last_update_ms = millis();
 }
 
@@ -259,46 +225,46 @@ void Plane::HB1_msg_apm2mission_send() {
 }
 
 void Plane::HB1_msg_apm2cam_send() {
-    HB1_apm2cam &tmp_msg = HB1_uart_cam.get_msg_apm2cam();
-    tmp_msg._msg_1.need_send = true;
-    tmp_msg._msg_1.content.msg.header.head_1 = HB1_apm2cam::PREAMBLE1;
-    tmp_msg._msg_1.content.msg.header.head_2 = HB1_apm2cam::PREAMBLE2;
-    tmp_msg._msg_1.content.msg.header.index = HB1_apm2cam::INDEX1;
-    tmp_msg._msg_1.content.msg.length = tmp_msg._msg_1.length-4;
-    if (gps.status() < AP_GPS::GPS_OK_FIX_3D) {
-        tmp_msg._msg_1.content.msg.position_status = 0;
-    } else {
-        tmp_msg._msg_1.content.msg.position_status = 4;
-    }
-        uint8_t gps_year, gps_month, gps_day, gps_hour, gps_minute, gps_second; uint16_t gps_millis;
-        gps.get_BeijingTime(gps_year, gps_month, gps_day, gps_hour, gps_minute, gps_second, gps_millis);
-    tmp_msg._msg_1.content.msg.gps_month = gps_month;
-    tmp_msg._msg_1.content.msg.gps_day = gps_day;
-    tmp_msg._msg_1.content.msg.gps_hour = gps_hour;
-    tmp_msg._msg_1.content.msg.gps_minute = gps_minute;
-    tmp_msg._msg_1.content.msg.gps_second = gps_second;
-    tmp_msg._msg_1.content.msg.gps_millis = gps_millis;
-    tmp_msg._msg_1.content.msg.gps_millis = gps_millis;
-    tmp_msg._msg_1.content.msg.longitude = current_loc.lng;
-    tmp_msg._msg_1.content.msg.latitude = current_loc.lat;
-    tmp_msg._msg_1.content.msg.gps_alt = (int16_t)(relative_ground_altitude(false) / 20);
-    tmp_msg._msg_1.content.msg.ground_spd = (int16_t)(ahrs.groundspeed_vector().length() / 20.0f);
-    tmp_msg._msg_1.content.msg.ptich_cd = (int16_t)ahrs.pitch_sensor;
-    tmp_msg._msg_1.content.msg.roll_cd = (int16_t)ahrs.roll_sensor;
-    tmp_msg._msg_1.content.msg.yaw_cd = (int16_t)ahrs.yaw_sensor;
-        float airspeed_measured = 0;
-        if (!ahrs.airspeed_estimate(&airspeed_measured)) {airspeed_measured = 0.0f;}
-    tmp_msg._msg_1.content.msg.air_speed = (int16_t)airspeed_measured * 2;
-    tmp_msg._msg_1.content.msg.baro_alt = barometer.get_altitude() / 20;
-    tmp_msg._msg_1.content.msg.gps_yaw = (uint16_t)gps.ground_course_cd();
-    tmp_msg._msg_1.content.msg.gps_nstats = gps.num_sats();
-    tmp_msg._msg_1.content.msg.sum_check = 0;
+    // HB1_apm2cam &tmp_msg = HB1_uart_cam.get_msg_apm2cam();
+    // tmp_msg._msg_1.need_send = true;
+    // tmp_msg._msg_1.content.msg.header.head_1 = HB1_apm2cam::PREAMBLE1;
+    // tmp_msg._msg_1.content.msg.header.head_2 = HB1_apm2cam::PREAMBLE2;
+    // tmp_msg._msg_1.content.msg.header.index = HB1_apm2cam::INDEX1;
+    // tmp_msg._msg_1.content.msg.length = tmp_msg._msg_1.length-4;
+    // if (gps.status() < AP_GPS::GPS_OK_FIX_3D) {
+    //     tmp_msg._msg_1.content.msg.position_status = 0;
+    // } else {
+    //     tmp_msg._msg_1.content.msg.position_status = 4;
+    // }
+    //     uint8_t gps_year, gps_month, gps_day, gps_hour, gps_minute, gps_second; uint16_t gps_millis;
+    //     gps.get_BeijingTime(gps_year, gps_month, gps_day, gps_hour, gps_minute, gps_second, gps_millis);
+    // tmp_msg._msg_1.content.msg.gps_month = gps_month;
+    // tmp_msg._msg_1.content.msg.gps_day = gps_day;
+    // tmp_msg._msg_1.content.msg.gps_hour = gps_hour;
+    // tmp_msg._msg_1.content.msg.gps_minute = gps_minute;
+    // tmp_msg._msg_1.content.msg.gps_second = gps_second;
+    // tmp_msg._msg_1.content.msg.gps_millis = gps_millis;
+    // tmp_msg._msg_1.content.msg.gps_millis = gps_millis;
+    // tmp_msg._msg_1.content.msg.longitude = current_loc.lng;
+    // tmp_msg._msg_1.content.msg.latitude = current_loc.lat;
+    // tmp_msg._msg_1.content.msg.gps_alt = (int16_t)(relative_ground_altitude(false) / 20);
+    // tmp_msg._msg_1.content.msg.ground_spd = (int16_t)(ahrs.groundspeed_vector().length() / 20.0f);
+    // tmp_msg._msg_1.content.msg.ptich_cd = (int16_t)ahrs.pitch_sensor;
+    // tmp_msg._msg_1.content.msg.roll_cd = (int16_t)ahrs.roll_sensor;
+    // tmp_msg._msg_1.content.msg.yaw_cd = (int16_t)ahrs.yaw_sensor;
+    //     float airspeed_measured = 0;
+    //     if (!ahrs.airspeed_estimate(&airspeed_measured)) {airspeed_measured = 0.0f;}
+    // tmp_msg._msg_1.content.msg.air_speed = (int16_t)airspeed_measured * 2;
+    // tmp_msg._msg_1.content.msg.baro_alt = barometer.get_altitude() / 20;
+    // tmp_msg._msg_1.content.msg.gps_yaw = (uint16_t)gps.ground_course_cd();
+    // tmp_msg._msg_1.content.msg.gps_nstats = gps.num_sats();
+    // tmp_msg._msg_1.content.msg.sum_check = 0;
     
-    for (int8_t i = 2; i < tmp_msg._msg_1.length - 1; i++) {
-        tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
-    };
+    // for (int8_t i = 2; i < tmp_msg._msg_1.length - 1; i++) {
+    //     tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
+    // };
 
-    tmp_msg._msg_1.print = true;
+    // tmp_msg._msg_1.print = true;
 }
 
 void Plane::HB1_uart_print(){
@@ -323,17 +289,17 @@ void Plane::HB1_uart_print(){
         HB1_uart_mission.get_msg_power2apm()._msg_1.print = false;
     }
 
-    if (HB1_uart_mission.get_msg_mission2cam()._msg_1.print) {
-        if (g2.hb1_msg_print.get() & (1<<1)) {
-            HB1_uart_mission.get_msg_mission2cam().swap_message();
-            gcs().send_text(MAV_SEVERITY_INFO, "mission2cam :");
-            for (int8_t i = 0; i < HB1_uart_mission.get_msg_mission2cam()._msg_1.length; i++) {
-                gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i+1 , HB1_uart_mission.get_msg_mission2cam()._msg_1.content.data[i]);
-            }
-            HB1_uart_mission.get_msg_mission2cam().swap_message();
-        }
-        HB1_uart_mission.get_msg_mission2cam()._msg_1.print = false;
-    }
+    // if (HB1_uart_mission.get_msg_mission2cam()._msg_1.print) {
+    //     if (g2.hb1_msg_print.get() & (1<<1)) {
+    //         HB1_uart_mission.get_msg_mission2cam().swap_message();
+    //         gcs().send_text(MAV_SEVERITY_INFO, "mission2cam :");
+    //         for (int8_t i = 0; i < HB1_uart_mission.get_msg_mission2cam()._msg_1.length; i++) {
+    //             gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i+1 , HB1_uart_mission.get_msg_mission2cam()._msg_1.content.data[i]);
+    //         }
+    //         HB1_uart_mission.get_msg_mission2cam().swap_message();
+    //     }
+    //     HB1_uart_mission.get_msg_mission2cam()._msg_1.print = false;
+    // }
 
     if (HB1_uart_mission.get_msg_mission2apm()._msg_1.print) {
         if (g2.hb1_msg_print.get() & (1<<2)) {
@@ -355,17 +321,17 @@ void Plane::HB1_uart_print(){
 
     }
 
-    if (HB1_uart_cam.get_msg_cam2mission()._msg_1.print) {
-        if (g2.hb1_msg_print.get() & (1<<3)) {
-            HB1_uart_cam.get_msg_cam2mission().swap_message();
-            gcs().send_text(MAV_SEVERITY_INFO, "cam2mission :");
-            for (int8_t i = 0; i < HB1_uart_cam.get_msg_cam2mission()._msg_1.length; i++) {
-                gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i+1 , HB1_uart_cam.get_msg_cam2mission()._msg_1.content.data[i]);
-            }
-            HB1_uart_cam.get_msg_cam2mission().swap_message();
-        }
-        HB1_uart_cam.get_msg_cam2mission()._msg_1.print = false;
-    }
+    // if (HB1_uart_cam.get_msg_cam2mission()._msg_1.print) {
+    //     if (g2.hb1_msg_print.get() & (1<<3)) {
+    //         HB1_uart_cam.get_msg_cam2mission().swap_message();
+    //         gcs().send_text(MAV_SEVERITY_INFO, "cam2mission :");
+    //         for (int8_t i = 0; i < HB1_uart_cam.get_msg_cam2mission()._msg_1.length; i++) {
+    //             gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i+1 , HB1_uart_cam.get_msg_cam2mission()._msg_1.content.data[i]);
+    //         }
+    //         HB1_uart_cam.get_msg_cam2mission().swap_message();
+    //     }
+    //     HB1_uart_cam.get_msg_cam2mission()._msg_1.print = false;
+    // }
 
     if (HB1_uart_mission.get_msg_apm2power()._msg_1.print) {
         if (g2.hb1_msg_print.get() & (1<<4)) {
@@ -391,16 +357,16 @@ void Plane::HB1_uart_print(){
         HB1_uart_mission.get_msg_apm2mission()._msg_1.print = false;
     }
 
-    if (HB1_uart_cam.get_msg_apm2cam()._msg_1.print) {
-        if (g2.hb1_msg_print.get() & (1<<6)) {
-            HB1_uart_cam.get_msg_apm2cam().swap_message();
-            gcs().send_text(MAV_SEVERITY_INFO, "apm2cam :");
-            for (int8_t i = 0; i < HB1_uart_cam.get_msg_apm2cam()._msg_1.length; i++) {
-                gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i+1 , HB1_uart_cam.get_msg_apm2cam()._msg_1.content.data[i]);
-            }
-            HB1_uart_cam.get_msg_apm2cam().swap_message();
-        }
-        HB1_uart_cam.get_msg_apm2cam()._msg_1.print = false;
-    }
+    // if (HB1_uart_cam.get_msg_apm2cam()._msg_1.print) {
+    //     if (g2.hb1_msg_print.get() & (1<<6)) {
+    //         HB1_uart_cam.get_msg_apm2cam().swap_message();
+    //         gcs().send_text(MAV_SEVERITY_INFO, "apm2cam :");
+    //         for (int8_t i = 0; i < HB1_uart_cam.get_msg_apm2cam()._msg_1.length; i++) {
+    //             gcs().send_text(MAV_SEVERITY_INFO, "  B%d : %X", i+1 , HB1_uart_cam.get_msg_apm2cam()._msg_1.content.data[i]);
+    //         }
+    //         HB1_uart_cam.get_msg_apm2cam().swap_message();
+    //     }
+    //     HB1_uart_cam.get_msg_apm2cam()._msg_1.print = false;
+    // }
 
 }

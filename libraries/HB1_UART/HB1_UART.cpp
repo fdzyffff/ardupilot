@@ -25,14 +25,8 @@ void HB1_UART::read(void)
     }
     while (_port->available() > 0) {
         uint8_t temp = _port->read();
-        //if (_msg_mission2apm_v1.enable())   {_msg_mission2apm_v1.parse(temp);}
         if (_msg_mission2apm.enable())   {_msg_mission2apm.parse(temp);}
-        if (_msg_mission2cam.enable())      {_msg_mission2cam.parse(temp);}
-        if (_msg_cam2mission.enable())      {_msg_cam2mission.parse(temp);}
-        if (_msg_power2apm.enable())        {_msg_power2apm.parse(temp);}
-        //if (_msg_apm2mission.enable())      {_msg_apm2mission.parse(temp);}
-        //if (_msg_apm2cam.enable())          {_msg_apm2cam.parse(temp);}
-        //if (_msg_apm2power.enable())        {_msg_apm2power.parse(temp);}
+        if (_msg_power2apm.enable())     {_msg_power2apm.parse(temp);}
     }
 }
 
@@ -110,5 +104,15 @@ void HB1_UART::write(void)
         }
         _msg_apm2power._msg_1.updated = false;
         _msg_apm2power._msg_1.need_send = false;
+    }
+
+    if (_msg_apm2rocket._msg_1.need_send)
+    {
+        _msg_apm2rocket.swap_message();
+        for(i = 0;i < _msg_apm2rocket._msg_1.length ; i ++) {
+            _port->write(_msg_apm2rocket._msg_1.content.data[i]);
+        }
+        _msg_apm2rocket._msg_1.updated = false;
+        _msg_apm2rocket._msg_1.need_send = false;
     }
 }

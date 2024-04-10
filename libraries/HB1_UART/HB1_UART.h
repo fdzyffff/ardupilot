@@ -9,6 +9,7 @@
 #include "HB1_apm2mission.h"
 #include "HB1_apm2cam.h"
 #include "HB1_apm2power.h"
+#include "HB1_apm2rocket.h"
 
 class HB1_UART {
 public:
@@ -38,6 +39,7 @@ public:
     HB1_apm2mission& get_msg_apm2mission() { return _msg_apm2mission; }
     HB1_apm2cam& get_msg_apm2cam() { return _msg_apm2cam; }
     HB1_apm2power& get_msg_apm2power() { return _msg_apm2power; }
+    HB1_apm2rocket& get_msg_apm2rocket() { return _msg_apm2rocket; }
 
 private:
 
@@ -53,4 +55,5 @@ private:
     HB1_apm2mission _msg_apm2mission;
     HB1_apm2cam _msg_apm2cam;
     HB1_apm2power _msg_apm2power;
+    HB1_apm2rocket _msg_apm2rocket;
 };

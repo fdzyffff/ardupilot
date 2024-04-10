@@ -305,6 +305,7 @@ void Plane::HB1_msg_apm2power_set() {
         case HB1_PowerAction_RocketON:
         case HB1_PowerAction_GROUND_RocketON:
             HB1_msg_apm2power_set_rocket_on();
+            HB1_Power.send_counter = 2;
             return;
         default:
             break;
@@ -349,13 +350,12 @@ void Plane::HB1_msg_apm2power_set() {
 }
 
 void Plane::HB1_msg_apm2power_set_rocket_on() {
-    HB1_apm2power &tmp_msg = HB1_uart_mission.get_msg_apm2rocket();
+    HB1_apm2rocket &tmp_msg = HB1_uart_mission.get_msg_apm2rocket();
     tmp_msg._msg_1.need_send = false;
     tmp_msg.set_rocket_on();
     tmp_msg.make_sum();
     tmp_msg._msg_1.print = true;
     tmp_msg._msg_1.need_send = true;
-    HB1_Power.send_counter = 1;
     return;
 }
 
