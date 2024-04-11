@@ -319,6 +319,9 @@ void Plane::HB1_msg_apm2power_set() {
             tmp_msg._msg_1.need_send = true;
             break;
         case HB1_PowerAction_GROUND_EngineSTART_PRE:
+            tmp_msg.set_engine_stop();
+            tmp_msg._msg_1.need_send = true;
+            break;
         case HB1_PowerAction_EnginePullUP:
             tmp_msg._msg_1.need_send = false;
             break;
@@ -333,10 +336,10 @@ void Plane::HB1_msg_apm2power_set() {
             break;
     }
     if (!tmp_msg._msg_1.need_send) {
-        HB1_Power.send_counter = 0;
+        HB1_Power.send_start_counter = 0;
         return;
     }
-    HB1_Power.send_counter = 1;
+    HB1_Power.send_start_counter = 1;
 
     // tmp_msg._msg_1.content.msg.header.head_1 = HB1_apm2power::PREAMBLE1;
     // tmp_msg._msg_1.content.msg.header.head_2 = HB1_apm2power::PREAMBLE2;
@@ -360,6 +363,27 @@ void Plane::HB1_msg_apm2power_set_rocket_on() {
 }
 
 void Plane::HB1_Power_throttle_update() {
+    bool dont_send_throttle = false;
+    switch (HB1_Power.state) {
+        case HB1_PowerAction_GROUND_EngineSTART_PRE:
+            dont_send_throttle = true;
+            break;
+        case HB1_PowerAction_None:
+        case HB1_PowerAction_RocketON:
+        case HB1_PowerAction_EnginePullUP:
+        case HB1_PowerAction_EngineON:
+        case HB1_PowerAction_EngineOFF:
+        case HB1_PowerAction_ParachuteON:
+        case HB1_PowerAction_GROUND_RocketON:
+        case HB1_PowerAction_GROUND_EngineSTART:
+        case HB1_PowerAction_GROUND_EngineON:
+        case HB1_PowerAction_GROUND_EngineOFF:
+        case HB1_PowerAction_GROUND_EngineFULL:
+        case HB1_PowerAction_GROUND_EngineMID:
+        default:
+            break;
+    }
+    if (dont_send_throttle) {return;}
     float throttle_out = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle_HB1);
     HB1_apm2power &tmp_msg = HB1_uart_power.get_msg_apm2power();
     tmp_msg._msg_1.need_send = true;

@@ -73,6 +73,7 @@ public:
 
     void set_engine_start();
     void set_engine_stop();
+    void set_engine_reset();
     void set_throttle(uint8_t rpm_in);
     void make_sum();
 

@@ -1182,6 +1182,7 @@ private:
         uint32_t last_update_ms;
         uint32_t status_ms;
         int8_t send_counter;
+        int8_t send_start_counter;
         int16_t HB1_engine_startcount;
     } HB1_Power;
 

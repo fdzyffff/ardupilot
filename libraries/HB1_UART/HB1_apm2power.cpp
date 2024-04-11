@@ -60,6 +60,24 @@ void HB1_apm2power::set_engine_stop()
     _msg_1.content.msg.xorsum = 0;
 }
 
+void HB1_apm2power::set_engine_reset()
+{
+    _msg_1.content.msg.header.head_1 = HB1_apm2power::PREAMBLE1;
+    _msg_1.content.msg.header.head_2 = HB1_apm2power::PREAMBLE2;
+    _msg_1.content.msg.COMM1 = 0xF4;
+    _msg_1.content.msg.COMM2 = 0xF4;
+    _msg_1.content.msg.rpm_h = 0;
+    _msg_1.content.msg.rpm_l = 0;
+    _msg_1.content.msg.rel_alt = 0;
+    _msg_1.content.msg.temp = 0;
+    _msg_1.content.msg.setting_flag = 0;
+    _msg_1.content.msg.airspeed = 0;
+    _msg_1.content.msg.byte_11 = 0;
+    _msg_1.content.msg.byte_22 = 0;
+    _msg_1.content.msg.sum = 0;
+    _msg_1.content.msg.xorsum = 0;
+}
+
 void HB1_apm2power::set_throttle(uint8_t rpm_in)
 {
     _msg_1.content.msg.header.head_1 = HB1_apm2power::PREAMBLE1;
@@ -87,7 +105,7 @@ void HB1_apm2power::make_sum()
     for (int8_t i = 0; i < _msg_1.length - 2; i++) {
         _msg_1.content.msg.sum += _msg_1.content.data[i];
     }
-    for (int8_t i = 0; i < _msg_1.length - 1; i++) {
+    for (int8_t i = 0; i < _msg_1.length - 2; i++) {
         _msg_1.content.msg.xorsum = (_msg_1.content.msg.xorsum ^ _msg_1.content.data[i]);
     }
 }
