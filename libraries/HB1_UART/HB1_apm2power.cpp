@@ -1,4 +1,5 @@
 #include "HB1_apm2power.h"
+#include <GCS_MAVLink/GCS.h>
 
 HB1_apm2power::HB1_apm2power(void)
 {
@@ -78,14 +79,14 @@ void HB1_apm2power::set_engine_reset()
     _msg_1.content.msg.xorsum = 0;
 }
 
-void HB1_apm2power::set_throttle(uint8_t rpm_in)
+void HB1_apm2power::set_throttle(uint8_t thr_in)
 {
     _msg_1.content.msg.header.head_1 = HB1_apm2power::PREAMBLE1;
     _msg_1.content.msg.header.head_2 = HB1_apm2power::PREAMBLE2;
     _msg_1.content.msg.COMM1 = 0xE3;
     _msg_1.content.msg.COMM2 = 0xE3;
     _msg_1.content.msg.rpm_h = 0;
-    _msg_1.content.msg.rpm_l = rpm_in;
+    _msg_1.content.msg.rpm_l = thr_in;
     _msg_1.content.msg.rel_alt = 0;
     _msg_1.content.msg.temp = 0;
     _msg_1.content.msg.setting_flag = 0;
@@ -94,6 +95,27 @@ void HB1_apm2power::set_throttle(uint8_t rpm_in)
     _msg_1.content.msg.byte_22 = 0;
     _msg_1.content.msg.sum = 0;
     _msg_1.content.msg.xorsum = 0;
+}
+
+void HB1_apm2power::set_rpm_half(uint16_t rpm_in)
+{
+    uint8_t rpm_h = ((rpm_in)>>8);
+    uint8_t rpm_l = ((rpm_in)|(0xFF<<8));
+    _msg_1.content.msg.header.head_1 = HB1_apm2power::PREAMBLE1;
+    _msg_1.content.msg.header.head_2 = HB1_apm2power::PREAMBLE2;
+    _msg_1.content.msg.COMM1 = 0xF3;
+    _msg_1.content.msg.COMM2 = 0xF3;
+    _msg_1.content.msg.rpm_h = rpm_h;
+    _msg_1.content.msg.rpm_l = rpm_l;
+    _msg_1.content.msg.rel_alt = 0;
+    _msg_1.content.msg.temp = 0;
+    _msg_1.content.msg.setting_flag = 0;
+    _msg_1.content.msg.airspeed = 0;
+    _msg_1.content.msg.byte_11 = 0;
+    _msg_1.content.msg.byte_22 = 0;
+    _msg_1.content.msg.sum = 0;
+    _msg_1.content.msg.xorsum = 0;
+    // gcs().send_text(MAV_SEVERITY_INFO, "%d, %d", rpm_h, rpm_l);
 }
 
 void HB1_apm2power::make_sum()

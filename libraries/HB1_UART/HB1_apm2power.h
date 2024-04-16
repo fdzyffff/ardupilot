@@ -74,7 +74,8 @@ public:
     void set_engine_start();
     void set_engine_stop();
     void set_engine_reset();
-    void set_throttle(uint8_t rpm_in);
+    void set_throttle(uint8_t thr_in);
+    void set_rpm_half(uint16_t rpm_in);
     void make_sum();
 
     HB1UART_MSG_1 _msg_1;
