@@ -31,6 +31,7 @@ public:
     void read_uart() ;
     void send_mav();
     void set_target_sysid(uint16_t id_in);
+    void push_byte(uint8_t temp);
 
     AP_HAL::UARTDriver *_port;                  // UART used to send data to FrSky receiver
     AP_SerialManager::SerialProtocol _protocol; // protocol used - detected using SerialManager's SERIAL#_PROTOCOL parameter

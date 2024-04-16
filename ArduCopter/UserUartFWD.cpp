@@ -47,15 +47,22 @@ void UserUartFWD::read_uart()
 {
     while(_port->available() > 0) {
         uint8_t temp = _port->read();
-        for (uint8_t i=0; i<gcs().num_gcs(); i++) {
-            data_buffer_instance[i].push(temp);
-        }
+        push_byte(temp);
+        copter.ugimbal.read_byte(temp);
+    }
+}
+
+void UserUartFWD::push_byte(uint8_t temp) 
+{
+    for (uint8_t i=0; i<gcs().num_gcs(); i++) {
+        data_buffer_instance[i].push(temp);
     }
 
     for (uint8_t i=0; i<NUM_MY_DATA; i++) {
         data_buffer_instance[i]._id = i;
         data_buffer_instance[i].update();
     }
+
 }
 
 void UserUartFWD::send_mav()
