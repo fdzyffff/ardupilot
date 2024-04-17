@@ -26,6 +26,9 @@ void UserUartFWD::handle_msg(const mavlink_message_t &msg)
         // decode packet
         mavlink_my_uart_forward_t my_uart_forward;
         mavlink_msg_my_uart_forward_decode(&msg, &my_uart_forward);
+        for (uint16_t i=0; i<my_uart_forward.data_len; i++) {
+            copter.ugimbal.read_gcs2gimbal_byte(my_uart_forward.data[i]);
+        }
         _port->write(my_uart_forward.data, my_uart_forward.data_len);
     }
 }
@@ -45,10 +48,23 @@ void UserUartFWD::update()
 
 void UserUartFWD::read_uart() 
 {
+    if (!_initialized) {return;}
     while(_port->available() > 0) {
         uint8_t temp = _port->read();
         push_byte(temp);
         copter.ugimbal.read_byte(temp);
+    }
+}
+
+void UserUartFWD::send_uart()
+{
+    if (!_initialized) {return;}
+    temp_msg = copter.ugimbal.get_msg_apm2gimbal();
+    if (temp_msg._msg_1.need_send) {
+        temp_msg.swap_message();
+         _port->write(temp_msg._msg_1.content.data, temp_msg._msg_1.length);
+        temp_msg._msg_1.updated = false;
+        temp_msg._msg_1.need_send = false;
     }
 }
 

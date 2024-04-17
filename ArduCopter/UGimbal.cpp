@@ -16,7 +16,7 @@
 
 UGimbal::UGimbal()
 {
-    uart_msg_gimbal.set_enable();//没用，主要是仪式感
+    uart_msg_gimbal2gcs.set_enable();//没用，主要是仪式感
 }
 
 // initialise
@@ -88,9 +88,9 @@ float UGimbal::get_target_dist()
 
 void UGimbal::read_byte(uint8_t temp)
 {
-    uart_msg_gimbal.parse(temp);
-    if (uart_msg_gimbal._msg_1.updated) {
-        uart_msg_gimbal._msg_1.updated = false;
+    uart_msg_gimbal2gcs.parse(temp);
+    if (uart_msg_gimbal2gcs._msg_1.updated) {
+        uart_msg_gimbal2gcs._msg_1.updated = false;
         float pitch = 0;
         float roll = 0;
         float yaw = 0;
@@ -99,10 +99,22 @@ void UGimbal::read_byte(uint8_t temp)
     }
 }
 
+void pack_msg()
+{
+    if (uart_msg_gcs2gimbal._msg_1.updated) {
+        uart_msg_gcs2gimbal._msg_1.updated = false;
+        // copy to apm2gimbal
+    }
+    // add apm info to apm2gimbal
+    uart_msg_apm2gimbal.make_sum();
+    uart_msg_apm2gimbal._msg_1.need_send = true;
+}
+
 // update 
 void UGimbal::update()
 {
     update_valid();
+    pack_msg();
 }
 
 void UGimbal::update_valid()

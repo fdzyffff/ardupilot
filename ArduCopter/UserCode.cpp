@@ -22,6 +22,11 @@ void Copter::userhook_50Hz()
 {
     // put your 50Hz code here
 }
+void Copter::userhook_25Hz()
+{
+    // put your 25Hz code here
+    ugimbal.update();
+}
 #endif
 
 #ifdef USERHOOK_MEDIUMLOOP

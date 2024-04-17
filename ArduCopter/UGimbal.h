@@ -1,6 +1,7 @@
 #pragma once
 
-#include <FD1_UART/FD1_msg_gimbal.h>
+#include <FD1_UART/FD1_msg_gimbal2gcs.h>
+#include <FD1_UART/FD1_msg_gcs2gimbal.h>
 
 class UGimbal {
 
@@ -26,9 +27,14 @@ public:
     float get_target_dist();
     float get_target_yaw_cd() {return _target_yaw_cd;}
 
-    void read_byte(uint8_t temp);
+    void read_status_byte(uint8_t temp);
+    void read_command_byte(uint8_t temp);
     void update();
     void update_valid();
+
+    FD1_msg_gimbal2gcs& get_msg_gimbal2gcs() { return uart_msg_gimbal2gcs; }
+    FD1_msg_gcs2gimbal& get_msg_gcs2gimbal() { return uart_msg_gcs2gimbal; }
+    FD1_msg_gcs2gimbal& get_msg_apm2gimbal() { return uart_msg_apm2gimbal; }
 
     struct {
         float p1;
@@ -54,5 +60,7 @@ private:
     bool _valid;
     bool _new_data;
 
-    FD1_msg_gimbal uart_msg_gimbal;
+    FD1_msg_gimbal2gcs uart_msg_gimbal2gcs;
+    FD1_msg_gcs2gimbal uart_msg_gcs2gimbal; //read gcs msg
+    FD1_msg_gcs2gimbal uart_msg_apm2gimbal; //copy gcs2gimbal, then add apm info, finally send to gimbal
 };
