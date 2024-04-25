@@ -137,6 +137,12 @@ void ModeTakeoff::update()
         plane.next_WP_loc.alt += alt*100.0;
 
         plane.set_flight_stage(AP_FixedWing::FlightStage::NORMAL);
+        if (plane.umission.status_noGPS_check()) {
+            plane.umission.status_set_Action(Plane::Mission_Action_t::FsNoGPS);
+        } else {
+            plane.umission.status_set_Action(Plane::Mission_Action_t::WP);
+            plane.mission.set_current_cmd(1);
+        }
 
 #if AP_FENCE_ENABLED
         plane.fence.auto_enable_fence_after_takeoff();

@@ -322,6 +322,14 @@ void GCS_MAVLINK_Plane::send_wind() const
         wind.z);
 }
 
+void GCS_MAVLINK_Plane::send_rpm() const
+{
+    mavlink_msg_rpm_send(
+        chan,
+        plane.upower.engine_rpm.get(),
+        plane.upower.engine_temp);
+}
+
 // sends a single pid info over the provided channel
 void GCS_MAVLINK_Plane::send_pid_info(const AP_PIDInfo *pid_info,
                           const uint8_t axis, const float achieved)

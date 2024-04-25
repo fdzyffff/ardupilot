@@ -82,6 +82,10 @@ public:
         SerialProtocol_IMUOUT = 46,
         // Reserving Serial Protocol 47 for SerialProtocol_IQ
         SerialProtocol_PPP = 48,
+        SerialProtocol_HB1_MISSION = 50,
+        SerialProtocol_HB1_POWER = 51,
+        SerialProtocol_HB1_CAM = 52,
+        SerialProtocol_FD1_MAV = 53,
         SerialProtocol_NumProtocols                    // must be the last value
     };
 

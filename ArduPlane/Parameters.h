@@ -589,6 +589,39 @@ public:
     
     AP_Int8         axis_bitmask; // axes to be autotuned
 
+
+    AP_Int8 hb1_pilot_type;
+    AP_Int8 hb1_msg_print;
+
+    AP_Float hb1_follow_speed;
+    AP_Float hb1_follow_speed_range;
+    AP_Float hb1_follow_speed_ratio;
+    AP_Int32 hb1_follow_fs_time;
+    AP_Int32 hb1_follow_nogps_time;
+    AP_Int32 hb1_follow_hover_wp_time;
+    AP_Int32 hb1_follow_hover_attack_time;
+    AP_Int16 hb1_acc_radius;
+    AP_Int16 hb1_acc_radius_preattack;
+    AP_Int32 hb1_fsauto_time;
+    AP_Int16 hb1_power_type;
+    AP_Float hb1_gg_sec;
+    AP_Float hb1_gg_tecs_time_const;
+    AP_Float hb1_gg_tecs_spdweight;
+    AP_Float hb1_gg_tecs_pitch_damp;
+    AP_Float hb1_gg_spd;
+
+    AP_Int8 hb1_test_mode;
+    AP_Int8 hb1_rpm_used;
+    AP_Int16 hb1_num_wp;
+    AP_Int16 hb1_num_interim;
+    AP_Int16 hb1_num_land;
+    AP_Int16 hb1_cam_rate;
+    AP_Float hb1_engine_min;
+    AP_Float hb1_engine_takeoff;
+    AP_Int32 hb1_rocket_timer_ms;
+
+    AP_Int8 hil_test;
+
     // just to make compilation easier when all things are compiled out...
     uint8_t unused_integer;
 };

@@ -587,7 +587,16 @@ void AP_SerialManager::init()
                                          AP_SERIALMANAGER_PPP_BUFSIZE_TX);
                     break;
 #endif
-                    
+
+                case SerialProtocol_HB1_MISSION:
+                case SerialProtocol_HB1_POWER:
+                case SerialProtocol_HB1_CAM:
+                case SerialProtocol_FD1_MAV:
+                    uart->begin(state[i].baudrate(),
+                                         128,
+                                         128);
+                    break;   
+
                 default:
                     uart->begin(state[i].baudrate());
             }

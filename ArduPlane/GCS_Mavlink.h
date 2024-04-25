@@ -34,6 +34,7 @@ protected:
     void send_attitude() const override;
     void send_attitude_target() override;
     void send_wind() const;
+    void send_rpm() const override;
 
     bool persist_streamrates() const override { return true; }
 

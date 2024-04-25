@@ -1266,6 +1266,53 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_SUBGROUPINFO(precland, "PLND_", 35, ParametersG2, AC_PrecLand),
 #endif
 
+    // @Param: HB1_TYPE
+    // @DisplayName: 飞控类型
+    // @Description:  攻击型:0 开伞型：1
+    // @Range: 0 1
+    // @Units: int
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("HB1_TYPE", 36, ParametersG2, hb1_pilot_type, 0),
+    // @Param: HB1_TYPE
+    // @DisplayName: 飞控类型
+    // @Description:  bit8: all 
+    //                bit7: apm2cam
+    //                bit6: apm2mission
+    //                bit5: apm2power
+    //                bit4: cam2mission
+    //                bit3: mission2apm
+    //                bit2: mission2cam
+    //                bit1: power2apm 
+    // @Range: 0 1
+    // @Units: int
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("HB1_PRINT", 37, ParametersG2, hb1_msg_print, 0),
+    AP_GROUPINFO("HB1_FSPD", 38, ParametersG2, hb1_follow_speed, 20.0f),
+    AP_GROUPINFO("HB1_FSPDE", 39, ParametersG2, hb1_follow_speed_range, 10.0f),
+    AP_GROUPINFO("HB1_FSPDP", 40, ParametersG2, hb1_follow_speed_ratio, 0.1f),
+    AP_GROUPINFO("HB1_FST_GPS", 41, ParametersG2, hb1_follow_fs_time, 2000),
+    AP_GROUPINFO("HB1_NOGPST", 42, ParametersG2, hb1_follow_nogps_time, 60000),
+    AP_GROUPINFO("HB1_WPT", 43, ParametersG2, hb1_follow_hover_wp_time, 20000),
+    AP_GROUPINFO("HB1_ATTACKT", 44, ParametersG2, hb1_follow_hover_attack_time, 60000),
+    AP_GROUPINFO("HB1_TEST", 45, ParametersG2, hb1_test_mode, 0),
+    AP_GROUPINFO("HB1_ACCRAD", 46, ParametersG2, hb1_acc_radius, 0),
+    AP_GROUPINFO("HB1_ATKRAD", 47, ParametersG2, hb1_acc_radius_preattack, 0),
+    AP_GROUPINFO("HB1_FST_AUTO", 48, ParametersG2, hb1_fsauto_time, 0),
+    AP_GROUPINFO("HB1_POW_TYPE", 49, ParametersG2, hb1_power_type, 0),
+    AP_GROUPINFO("HB1_RPM_USED", 50, ParametersG2, hb1_rpm_used, 0),
+    AP_GROUPINFO("HB1_GG_SEC", 51, ParametersG2, hb1_gg_sec, 0.5f),
+    AP_GROUPINFO("MIS_N_WP", 52, ParametersG2, hb1_num_wp, 0),
+    AP_GROUPINFO("MIS_N_INTERIM", 53, ParametersG2, hb1_num_interim, 0),
+    AP_GROUPINFO("MIS_N_ATTACK", 54, ParametersG2, hb1_num_land, 0),
+    AP_GROUPINFO("HIL_TEST", 55, ParametersG2, hil_test, 0),
+    AP_GROUPINFO("HB1_GG_SPD", 56, ParametersG2, hb1_gg_spd, 50.f),
+    AP_GROUPINFO("HB1_CAM_RATE", 57, ParametersG2, hb1_cam_rate, 20),
+    AP_GROUPINFO("HB1_THR_MIN", 58, ParametersG2, hb1_engine_min, 6.f),
+    AP_GROUPINFO("HB1_THR_TKF", 59, ParametersG2, hb1_engine_takeoff, 50.f),
+    AP_GROUPINFO("HB1_RKT_MS", 60, ParametersG2, hb1_rocket_timer_ms, 2000),
+
     AP_GROUPEND
 };
 
