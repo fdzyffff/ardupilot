@@ -180,6 +180,7 @@
 #include "mode.h"
 
 #include "UserUartFWD.h"
+#include "UGimbal.h"
 
 class Copter : public AP_Vehicle {
 public:
@@ -227,8 +228,10 @@ public:
     friend class ModeZigZag;
     friend class ModeAutorotate;
     friend class ModeTurtle;
+    friend class ModeAttack;
 
     friend class UserUartFWD;
+    friend class UGimbal;
     Copter(void);
 
 private:
@@ -941,6 +944,7 @@ private:
     // UserCode.cpp
     void userhook_init();
     void userhook_FastLoop();
+    void userhook_25Hz();
     void userhook_50Hz();
     void userhook_MediumLoop();
     void userhook_SlowLoop();
@@ -1027,11 +1031,13 @@ private:
     ModeTurtle mode_turtle;
 #endif
 
+    ModeAttack mode_attack;
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);
 
     UserUartFWD useruartfwd{AP_SerialManager::SerialProtocol_Uart_Forward};
+    UGimbal ugimbal;
 
 public:
     void failsafe_check();      // failsafe.cpp
