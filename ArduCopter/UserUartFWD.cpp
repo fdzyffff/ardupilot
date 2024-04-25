@@ -21,7 +21,7 @@ void UserUartFWD::handle_msg(const mavlink_message_t &msg)
 {
     if (!_initialized) {return;}
         // gcs().send_text(MAV_SEVERITY_INFO, "%d -> %d" , msg.sysid, msg.msgid);
-    if (_target_sys_id != 0 && _target_sys_id != msg.sysid) {return;}
+    // if (_target_sys_id != 0 && _target_sys_id != msg.sysid) {return;}
     if (msg.msgid == MAVLINK_MSG_ID_MY_UART_FORWARD) {
         // decode packet
         mavlink_my_uart_forward_t my_uart_forward;

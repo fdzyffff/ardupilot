@@ -2,7 +2,7 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_SerialManager/AP_SerialManager.h>
 
-#define NUM_MY_DATA 5
+#define NUM_MY_DATA 3
 
 class UserUartFWD;
 
