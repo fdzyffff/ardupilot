@@ -40,6 +40,11 @@ void Copter::userhook_SlowLoop()
 void Copter::userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
+    hal.uartB->write("UARTB");
+    hal.uartC->write("UARTC");
+    hal.uartD->write("UARTD");
+    hal.uartE->write("UARTE");
+    hal.uartF->write("UARTF");
 }
 #endif
 
