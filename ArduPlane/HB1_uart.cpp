@@ -42,6 +42,7 @@ void Plane::HB1_uart_update_50Hz()
     HB1_uart_power_send();
     // FD1_mav_read();
     // FD1_mav_send();
+    HB1_uart_mission.write();
 
 }
 
