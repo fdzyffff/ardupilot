@@ -91,30 +91,42 @@ void UGimbal::read_status_byte(uint8_t temp)
     uart_msg_gimbal2gcs.parse(temp);
     if (uart_msg_gimbal2gcs._msg_1.updated) {
         uart_msg_gimbal2gcs._msg_1.updated = false;
-        float pitch = 0;
-        float roll = 0;
-        float yaw = 0;
+        float pitch = uart_msg_gimbal2gcs._msg_1.content.msg.angle_pitch/100;
+        float roll = uart_msg_gimbal2gcs._msg_1.content.msg.angle_roll/100;
+        float yaw = uart_msg_gimbal2gcs._msg_1.content.msg.angle_yaw/100;
         _last_ms = millis();
         handle_info(pitch, roll, yaw);
     }
 }
 
-// void pack_msg()
-// {
-//     if (uart_msg_gcs2gimbal._msg_1.updated) {
-//         uart_msg_gcs2gimbal._msg_1.updated = false;
-//         // copy to apm2gimbal
-//     }
-//     // add apm info to apm2gimbal
-//     uart_msg_apm2gimbal.make_sum();
-//     uart_msg_apm2gimbal._msg_1.need_send = true;
-// }
+void UGimbal::read_command_byte(uint8_t temp)
+{
+    uart_msg_gcs2gimbal.parse(temp);
+    pack_msg();
+}
+
+void UGimbal::pack_msg()
+{
+    if (uart_msg_gcs2gimbal._msg_1.updated) {
+        uart_msg_gcs2gimbal._msg_1.updated = false;
+        // copy to apm2gimbal
+        memcpy(uart_msg_apm2gimbal._msg_1.content.data, 
+            uart_msg_gcs2gimbal._msg_1.content.data, 
+            uart_msg_gcs2gimbal._msg_1.length*sizeof(uint8_t));
+    }
+    // add apm info to apm2gimbal
+    uart_msg_gcs2gimbal._msg_1.content.msg.msg_apm.angle_pitch = wrap_180_cd(copter.ahrs.pitch_sensor);
+    uart_msg_gcs2gimbal._msg_1.content.msg.msg_apm.angle_roll = wrap_180_cd(copter.ahrs.roll_sensor);
+    uart_msg_gcs2gimbal._msg_1.content.msg.msg_apm.angle_yaw = wrap_360_cd(copter.ahrs.yaw_sensor);
+    // make sum and set flag to send
+    uart_msg_apm2gimbal.make_sum();
+    uart_msg_apm2gimbal._msg_1.need_send = true;
+}
 
 // update 
 void UGimbal::update()
 {
     update_valid();
-    // pack_msg();
 }
 
 void UGimbal::update_valid()

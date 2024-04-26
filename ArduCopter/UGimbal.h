@@ -29,6 +29,7 @@ public:
 
     void read_status_byte(uint8_t temp);
     void read_command_byte(uint8_t temp);
+    void pack_msg();
     void update();
     void update_valid();
 

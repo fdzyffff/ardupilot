@@ -12,6 +12,8 @@ public:
     
     // Put accessors to your parameter variables here
     // UserCode usage example: g2.user_parameters.get_int8Param()
+    AP_Int8 forward_type;
+    AP_Int8 forward_print;
     AP_Int16 cam_time_out;
     AC_PID   Ucam_pid;
     AP_Int8  cam_print;

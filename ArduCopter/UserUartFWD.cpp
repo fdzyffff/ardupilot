@@ -13,7 +13,10 @@ void UserUartFWD::init()
 
     // check for protocol configured for a serial port - only the first serial port with one of these protocols will then run (cannot have FrSky on multiple serial ports)
     if ((_port = serial_manager.find_serial(_protocol, 0))) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Gimbal FWD Init, type %d", copter.g2.user_parameters.forward_type.get());
         _initialized = true;
+    } else {
+        gcs().send_text(MAV_SEVERITY_INFO, "Gimbal FWD Init Failed");
     }
 }
 
@@ -26,11 +29,21 @@ void UserUartFWD::handle_msg(const mavlink_message_t &msg)
         // decode packet
         mavlink_my_uart_forward_t my_uart_forward;
         mavlink_msg_my_uart_forward_decode(&msg, &my_uart_forward);
-        gcs().send_text(MAV_SEVERITY_INFO, "data_len receive %d", my_uart_forward.data_len );
-        // for (uint16_t i=0; i<my_uart_forward.data_len; i++) {
-        //     copter.ugimbal.read_gcs2gimbal_byte(my_uart_forward.data[i]);
-        // }
-        _port->write(my_uart_forward.data, my_uart_forward.data_len);
+        if (copter.g2.user_parameters.forward_print.get() == 1) {
+            gcs().send_text(MAV_SEVERITY_INFO, "data_len receive %d", my_uart_forward.data_len);
+        }
+        if (copter.g2.user_parameters.forward_type.get() == 0) {
+            _port->write(my_uart_forward.data, my_uart_forward.data_len);
+        } else if (copter.g2.user_parameters.forward_type.get() == 1) {            
+            for (uint16_t i=0; i<my_uart_forward.data_len; i++) {
+                copter.ugimbal.read_command_byte(my_uart_forward.data[i]);
+                FD1_msg_gcs2gimbal &apm2gimbal = copter.ugimbal.get_msg_apm2gimbal();
+                if (apm2gimbal._msg_1.need_send) {
+                    apm2gimbal._msg_1.need_send = false;
+                    _port->write(apm2gimbal._msg_1.content.data, apm2gimbal._msg_1.length);
+                }
+            }
+        }
     }
 }
 
@@ -55,6 +68,9 @@ void UserUartFWD::read_uart()
         push_byte(temp);
         copter.ugimbal.read_status_byte(temp);
     }
+    // _port->write(0xF1);
+    // _port->write(0xF2);
+    // _port->write(0xF3);
 }
 
 // void UserUartFWD::send_uart()
@@ -96,7 +112,7 @@ void UserUartFWD::send_mav()
                     data_buffer_instance[i].set_active();
                     mavlink_my_uart_forward_t my_uart_forward;
                     my_uart_forward.data_len = data_buffer_instance[i].get_data(my_uart_forward.data);
-                    if (my_uart_forward.data_len > 0) {
+                    if (my_uart_forward.data_len > 0 && (copter.g2.user_parameters.forward_print.get() == 1)) {
                         gcs().send_text(MAV_SEVERITY_INFO, "data_len send %d", my_uart_forward.data_len );
                     }
                     if (my_uart_forward.data_len > 0) {
