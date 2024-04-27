@@ -18,17 +18,15 @@ public:
     void set_new_data(bool value) {_new_data = value;}
 
     void handle_info(float pitch_in, float roll_in, float yaw_in);
-    void handle_info(int16_t tracking_status);
 
-    const Vector3f& get_target_pos() {return _target_pos;}
-    const Vector3f& get_current_pos() {return _current_pos;}
-    Vector3f get_target_velocity() {return _target_vel;}
-
-    float get_target_dist();
+    float get_target_pitch_cd() {return _target_pitch_cd;}
+    float get_target_roll_cd() {return _target_roll_cd;}
     float get_target_yaw_cd() {return _target_yaw_cd;}
+    float get_target_climb_rate() {return _target_climb_rate;}
 
     void read_status_byte(uint8_t temp);
     void read_command_byte(uint8_t temp);
+    void pack_msg();
     void update();
     void update_valid();
 
@@ -52,10 +50,10 @@ private:
 
     LowPassFilterFloat _filter_yaw_in;
 
-    Vector3f _target_vel;
-    Vector3f _target_pos;
-    Vector3f _current_pos;
+    float _target_pitch_cd;
+    float _target_roll_cd;
     float _target_yaw_cd;
+    float _target_climb_rate;//cm/s
     uint32_t _last_ms;
     bool _valid;
     bool _new_data;

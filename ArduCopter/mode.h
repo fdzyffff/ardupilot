@@ -1924,29 +1924,27 @@ private:
 class ModeAttack : public ModeGuided {
 
 public:
-
     // inherit constructor
-    using ModeGuided::Mode;
+    using Mode::Mode;
     Number mode_number() const override { return Number::ATTACK; }
 
     bool init(bool ignore_checks) override;
-    void exit() override;
     void run() override;
 
-    bool requires_GPS() const override { return true; }
+    bool requires_GPS() const override { return false; }
     bool has_manual_throttle() const override { return false; }
-    bool allows_arming(AP_Arming::Method method) const override { return false; }
-    bool is_autopilot() const override { return true; }
+    bool allows_arming(AP_Arming::Method method) const override { return false; };
+    bool is_autopilot() const override { return false; }
+    bool has_user_takeoff(bool must_navigate) const override {
+        return !must_navigate;
+    }
+    bool allows_autotune() const override { return false; }
+    bool allows_flip() const override { return false; }
 
 protected:
 
     const char *name() const override { return "ATTACK"; }
     const char *name4() const override { return "ATCK"; }
 
-    // for reporting to GCS
-    bool get_wp(Location &loc) const override;
-    uint32_t wp_distance() const override;
-    int32_t wp_bearing() const override;
-
-    uint32_t last_log_ms;   // system time of last time desired velocity was logging
+private:
 };

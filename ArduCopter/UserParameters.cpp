@@ -5,10 +5,12 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
 
     // Put your parameters definition here
     // Note the maximum length of parameter name is 13 chars
-    AP_GROUPINFO("_TIMEOUT", 0, UserParameters, cam_time_out, 2000),
-    AP_SUBGROUPINFO(Ucam_pid, "_PITCH_", 1, UserParameters, AC_PID),
-    AP_GROUPINFO("_PRINT", 2, UserParameters, cam_print, 0),
-    AP_GROUPINFO("_ANGLE", 3, UserParameters, cam_angle, 60.0f),
+    AP_GROUPINFO("_FWDTYPE", 0, UserParameters, forward_type, 0),
+    AP_GROUPINFO("_FWDPRINT", 1, UserParameters, forward_print, 0),
+    AP_GROUPINFO("_TIMEOUT", 10, UserParameters, cam_time_out, 2000),
+    AP_SUBGROUPINFO(Ucam_pid, "_PITCH_", 11, UserParameters, AC_PID),
+    AP_GROUPINFO("_PRINT", 12, UserParameters, cam_print, 0),
+    AP_GROUPINFO("_ANGLE", 13, UserParameters, cam_angle, 60.0f),
 
     AP_GROUPEND
 };
