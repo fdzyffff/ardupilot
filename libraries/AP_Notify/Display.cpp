@@ -381,10 +381,12 @@ void Display::update()
     if (AP_Notify::flags.armed) {
         if (_screenpage != 1) {
             _driver->clear_screen();
-            update_arm(3);
             _screenpage = 1;
-            _driver->hw_update(); //update hw once , do not transmition to display in fly
         }
+        update_gps(1);
+        update_arm(3);
+        update_battery(5);
+        _driver->hw_update(); //update hw once , do not transmition to display in fly
         return;
     }
 
@@ -526,12 +528,13 @@ void Display::update_battery(uint8_t r)
 {
     char msg [DISPLAY_MESSAGE_SIZE];
     AP_BattMonitor &battery = AP::battery();
-    uint8_t pct;
-    if (battery.capacity_remaining_pct(pct)) {
-        snprintf(msg, DISPLAY_MESSAGE_SIZE, "BAT:%4.2fV %2d%% ", (double)battery.voltage(), pct) ;
-    } else {
-        snprintf(msg, DISPLAY_MESSAGE_SIZE, "BAT:%4.2fV --%% ", (double)battery.voltage()) ;
-    }
+    // uint8_t pct;
+    // if (battery.capacity_remaining_pct(pct)) {
+    //     snprintf(msg, DISPLAY_MESSAGE_SIZE, "BAT:%4.2fV %2d%% ", (double)battery.voltage(), pct) ;
+    // } else {
+    //     snprintf(msg, DISPLAY_MESSAGE_SIZE, "BAT:%4.2fV --%% ", (double)battery.voltage()) ;
+    // }
+    snprintf(msg, DISPLAY_MESSAGE_SIZE, "BAT:%4.2fV |YJZN|", (double)battery.voltage()) ;
     draw_text(COLUMN(0), ROW(r), msg);
  }
 
