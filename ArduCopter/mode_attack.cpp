@@ -44,7 +44,7 @@ void ModeAttack::run()
     target_roll += copter.ugimbal.get_target_roll_cd();
     target_pitch += copter.ugimbal.get_target_pitch_cd();
     target_yaw = copter.ugimbal.get_target_yaw_cd();
-    target_climb_rate += copter.ugimbal.get_target_climb_rate;
+    target_climb_rate += copter.ugimbal.get_target_climb_rate();
 
 
     // Alt Hold State Machine

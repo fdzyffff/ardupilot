@@ -10,13 +10,14 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     AP_GROUPINFO("_TIMEOUT", 10, UserParameters, cam_time_out, 2000),
     AP_SUBGROUPINFO(Ucam_pid, "_PITCH_", 11, UserParameters, AC_PID),
     AP_GROUPINFO("_PRINT", 12, UserParameters, cam_print, 0),
-    AP_GROUPINFO("_ANGLE", 13, UserParameters, cam_angle, 60.0f),
+    AP_GROUPINFO("_ATK_PITCH", 13, UserParameters, attack_pitch, -1000.0f),
+    AP_GROUPINFO("_ATK_ROLLF", 14, UserParameters, attack_roll_factor, 1.0f),
 
     AP_GROUPEND
 };
 
 UserParameters::UserParameters():
-    Ucam_pid(0.1f, 0.0f, 0.0f, 0.0f, 0.2f, 3.0f, 3.0f, 3.0f, 0.02f)
+    Ucam_pid(0.75f, 0.0f, 0.0f, 0.0f, 0.2f, 0.0f, 0.0f, 0.0f, 0.02f)
 {
     AP_Param::setup_object_defaults(this, var_info);
 }

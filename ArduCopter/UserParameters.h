@@ -17,7 +17,8 @@ public:
     AP_Int16 cam_time_out;
     AC_PID   Ucam_pid;
     AP_Int8  cam_print;
-    AP_Float cam_angle;
+    AP_Float attack_pitch;
+    AP_Float attack_roll_factor;
 
 private:
     // Put your parameter variable definitions here

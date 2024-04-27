@@ -1921,7 +1921,7 @@ private:
 };
 #endif
 
-class ModeAttack : public ModeGuided {
+class ModeAttack : public Mode {
 
 public:
     // inherit constructor

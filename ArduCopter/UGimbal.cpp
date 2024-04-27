@@ -23,7 +23,10 @@ UGimbal::UGimbal()
 void UGimbal::init()
 {
 
+    _target_pitch_cd = 0.0f;
+    _target_roll_cd = 0.0f;
     _target_yaw_cd = 0.0f;
+    _target_climb_rate = 0.0f;//cm/s
     _last_ms = 0;
     _valid = false;
     _new_data = false;
@@ -54,12 +57,14 @@ void UGimbal::handle_info(float pitch_in, float roll_in, float yaw_in) // degree
     float delta_z_m = 2.0f * tan_pitch;
     _target_climb_rate = copter.g2.user_parameters.Ucam_pid.update_all(0.0f, -delta_z_m, false)*100.f;
 
+    // gcs().send_text(MAV_SEVERITY_WARNING, "%f, %f, %f", tan_pitch, delta_z_m, _target_climb_rate);
+
     float t_yaw_out = wrap_360(degrees(copter.ahrs_view->yaw) + yaw_in);
     _filter_yaw_in.apply(t_yaw_out);
     float yaw_out = _filter_yaw_in.get();
     _target_yaw_cd = yaw_out*100.f;
 
-    _target_pitch_cd = copter.g2.user_parameters.attack_pitch.get()
+    _target_pitch_cd = copter.g2.user_parameters.attack_pitch.get();
     _target_roll_cd = constrain_float(yaw_in * copter.g2.user_parameters.attack_roll_factor.get(), -30.f, 30.f)*100.f;
 
     _new_data = true;
@@ -122,7 +127,11 @@ void UGimbal::update_valid()
         }
         _valid = false;
         //gcs().send_text(MAV_SEVERITY_WARNING, "----_target_vel.zero()----");
-        _target_vel.zero();
+        _target_pitch_cd = 0.0f;
+        _target_roll_cd = 0.0f;
+        _target_yaw_cd = 0.0f;
+        _target_climb_rate = 0.0f;//cm/s
+        copter.g2.user_parameters.Ucam_pid.reset_I();
     } else {
         if (!_valid) {
             gcs().send_text(MAV_SEVERITY_WARNING, "Target aquire");
