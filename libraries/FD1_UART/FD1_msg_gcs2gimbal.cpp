@@ -58,8 +58,9 @@ void FD1_msg_gcs2gimbal::parse(uint8_t temp)
             if (_msg.xorsum == temp)
             {
                 _msg.msg_state = FD1UART_msg_parser::FD1UART_END;
+            } else {
+                _msg.msg_state = FD1UART_msg_parser::FD1UART_PREAMBLE1;
             }
-            _msg.msg_state = FD1UART_msg_parser::FD1UART_PREAMBLE1;
             break;
         case FD1UART_msg_parser::FD1UART_END:
             _msg.data[_msg.read] = temp;

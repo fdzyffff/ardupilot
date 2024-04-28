@@ -30,7 +30,7 @@ void UGimbal::init()
     _last_ms = 0;
     _valid = false;
     _new_data = false;
-    _filter_yaw_in.set_cutoff_frequency(20.0f, 1.f);
+    _filter_yaw_in.set_cutoff_frequency(30.0f, 20.f);
     display_info.p1 = 0.0f;
     display_info.p2 = 0.0f;
     display_info.p3 = 0.0f;
@@ -59,7 +59,7 @@ void UGimbal::handle_info(float pitch_in, float roll_in, float yaw_in) // degree
 
     // gcs().send_text(MAV_SEVERITY_WARNING, "%f, %f, %f", tan_pitch, delta_z_m, _target_climb_rate);
 
-    float t_yaw_out = wrap_360(degrees(copter.ahrs_view->yaw) + yaw_in);
+    float t_yaw_out = wrap_360(degrees(copter.ahrs_view->yaw) + yaw_in - 6.0f);
     _filter_yaw_in.apply(t_yaw_out);
     float yaw_out = _filter_yaw_in.get();
     _target_yaw_cd = yaw_out*100.f;

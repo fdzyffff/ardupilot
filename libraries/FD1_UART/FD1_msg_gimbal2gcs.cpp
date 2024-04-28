@@ -10,6 +10,7 @@ FD1_msg_gimbal2gcs::FD1_msg_gimbal2gcs(void)
 
 void FD1_msg_gimbal2gcs::parse(uint8_t temp)
 {
+    // gcs().send_text(MAV_SEVERITY_INFO, "State: %d, Byte: %d",_msg.msg_state, temp);
     switch (_msg.msg_state)
     {
         default:
@@ -58,16 +59,18 @@ void FD1_msg_gimbal2gcs::parse(uint8_t temp)
             if (_msg.xorsum == temp)
             {
                 _msg.msg_state = FD1UART_msg_parser::FD1UART_END;
+            } else {
+                _msg.msg_state = FD1UART_msg_parser::FD1UART_PREAMBLE1;
             }
-            _msg.msg_state = FD1UART_msg_parser::FD1UART_PREAMBLE1;
             break;
         case FD1UART_msg_parser::FD1UART_END:
             _msg.data[_msg.read] = temp;
 
-            // gcs().send_text(MAV_SEVERITY_INFO, "sum: %d, sum_in: %d",_msg.xorsum, temp);
+            // gcs().send_text(MAV_SEVERITY_INFO, "post: %d, sum_in: %d",POSTAMBLE1, temp);
 
             if (temp == POSTAMBLE1)
             {
+                // gcs().send_text(MAV_SEVERITY_INFO, "end");
                 process_message();
             }
             _msg.msg_state = FD1UART_msg_parser::FD1UART_PREAMBLE1;
