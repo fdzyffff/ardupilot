@@ -47,7 +47,7 @@ void UserUartFWD::read_uart()
 {
     while(_port->available() > 0) {
         uint8_t temp = _port->read();
-        for (uint8_t i=0; i<gcs().num_gcs(); i++) {
+        for (uint8_t i=0; i<gcs().num_gcs() && i<NUM_MY_DATA; i++) {
             data_buffer_instance[i].push(temp);
         }
     }
@@ -63,17 +63,17 @@ void UserUartFWD::send_mav()
     static uint32_t _last_send_ms = 0;
     uint32_t tnow = millis();
     // uint16_t mask = GCS_MAVLINK::active_channel_mask() | GCS_MAVLINK::streaming_channel_mask();
-    if (tnow - _last_send_ms > 100) {
+    if (tnow - _last_send_ms > 50) {
         _last_send_ms = tnow;
-        for (uint8_t i=0; i<gcs().num_gcs(); i++) {
+        for (uint8_t i=0; i<gcs().num_gcs() && i<NUM_MY_DATA; i++) {
             mavlink_channel_t channel = (mavlink_channel_t)(MAVLINK_COMM_0 + i);
             // if (mask & (1U<<i)) {
                 if (comm_get_txspace(channel) >= GCS_MAVLINK::packet_overhead_chan(channel) + 255) {
                     data_buffer_instance[i].set_active();
                     mavlink_my_uart_forward_t my_uart_forward;
                     my_uart_forward.data_len = data_buffer_instance[i].get_data(my_uart_forward.data);
-                    gcs().send_text(MAV_SEVERITY_INFO, "[%d]data_len %d", i, my_uart_forward.data_len );
                     if (my_uart_forward.data_len > 0) {
+                        // gcs().send_text(MAV_SEVERITY_INFO, "[%d]data_len %d", i, my_uart_forward.data_len );
                         mavlink_msg_my_uart_forward_send(
                             channel,
                             my_uart_forward.data_len,
@@ -86,8 +86,8 @@ void UserUartFWD::send_mav()
     //     0,
     //     gcs().custom_mode(),
     //     0);
-                }
-            // }
+                // }
+            }
         }
     }
 }
@@ -131,7 +131,7 @@ void User_data_buffer::push(uint8_t c)
 {
     if (!_active) {return;}
     static uint32_t _last_log_ms = 0;
-    if (data_idx < (500-1)) {
+    if (data_idx < (NUM_MY_DATALEN-1)) {
         _data[data_idx] = c;
         data_idx++;
     } else {
