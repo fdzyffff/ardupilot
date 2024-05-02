@@ -20,12 +20,18 @@ void UserUartFWD::init()
 void UserUartFWD::handle_msg(const mavlink_message_t &msg)
 {
     if (!_initialized) {return;}
-        // gcs().send_text(MAV_SEVERITY_INFO, "%d -> %d" , msg.sysid, msg.msgid);
-    if (_target_sys_id != 0 && _target_sys_id != msg.sysid) {return;}
+    // if (_target_sys_id != 0 && _target_sys_id != msg.sysid) {return;}
+
     if (msg.msgid == MAVLINK_MSG_ID_MY_UART_FORWARD) {
+        if (copter.g2.user_parameters._print.get() == 1) {
+            gcs().send_text(MAV_SEVERITY_INFO, "%d -> %d" , msg.sysid, msg.msgid);
+        }
         // decode packet
         mavlink_my_uart_forward_t my_uart_forward;
         mavlink_msg_my_uart_forward_decode(&msg, &my_uart_forward);
+        if (copter.g2.user_parameters._print.get() == 1) {
+            gcs().send_text(MAV_SEVERITY_INFO, "write len %d" , my_uart_forward.data_len);
+        }
         _port->write(my_uart_forward.data, my_uart_forward.data_len);
     }
 }
@@ -72,8 +78,10 @@ void UserUartFWD::send_mav()
                     data_buffer_instance[i].set_active();
                     mavlink_my_uart_forward_t my_uart_forward;
                     my_uart_forward.data_len = data_buffer_instance[i].get_data(my_uart_forward.data);
-                    // gcs().send_text(MAV_SEVERITY_INFO, "data_len %d", my_uart_forward.data_len );
                     if (my_uart_forward.data_len > 0) {
+                        if (copter.g2.user_parameters._print.get() == 1) {
+                            gcs().send_text(MAV_SEVERITY_INFO, "%d -> len %d", copter.g.sysid_this_mav.get(), my_uart_forward.data_len);
+                        }
                         mavlink_msg_my_uart_forward_send(
                             channel,
                             my_uart_forward.data_len,
@@ -131,7 +139,7 @@ void User_data_buffer::push(uint8_t c)
 {
     if (!_active) {return;}
     static uint32_t _last_log_ms = 0;
-    if (data_idx < 500-1) {
+    if (data_idx < NUM_MY_DATALEN-1) {
         _data[data_idx] = c;
         data_idx++;
     } else {
