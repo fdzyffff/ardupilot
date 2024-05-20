@@ -373,7 +373,7 @@ void Plane::calculate_forces(const struct sitl_input &input, Vector3f &rot_accel
         accel_body.x -= vel_body.x * 0.3f;
     }
 }
-    
+
 /*
   update the plane simulation by one time step
  */
@@ -381,15 +381,23 @@ void Plane::update(const struct sitl_input &input)
 {
     Vector3f rot_accel;
 
-    update_wind(input);
-    
-    calculate_forces(input, rot_accel);
-    
+    if (flag_stop_on_ground) {
+        accel_body.zero();
+        rot_accel.zero();
+        velocity_ef.zero();
+        gyro.zero();
+    } else {
+        update_wind(input);
+        
+        calculate_forces(input, rot_accel);
+    }
     update_dynamics(rot_accel);
+    
     update_external_payload(input);
 
     // update lat/lon/altitude
     update_position();
+
     time_advance();
 
     // update magnetic field
