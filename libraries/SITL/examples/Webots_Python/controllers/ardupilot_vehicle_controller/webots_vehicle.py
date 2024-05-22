@@ -195,8 +195,10 @@ class WebotsArduVehicle():
                 if not data or len(data) < self.controls_struct_size:
                     continue
 
+                # print (data)
                 # parse a single struct
                 command = struct.unpack(self.controls_struct_format, data[:self.controls_struct_size])
+                print (command)
                 self._handle_controls(command)
 
                 # wait until the next Webots time step as no new sensor data will be available until then
@@ -249,6 +251,7 @@ class WebotsArduVehicle():
 
         # get only the number of motors we have
         command_motors = command[:len(self._motors)]
+        command_servos = command[len(self._motors):len(self._motors)+len(self._servos)]
         if -1 in command_motors:
             print(f"Warning: SITL provided {command.index(-1)} motors "
                   f"but model specifies {len(self._motors)} (I{self._instance})")
@@ -273,8 +276,8 @@ class WebotsArduVehicle():
             m.setVelocity(linearized_motor_commands[i] * min(m.getMaxVelocity(), self.motor_velocity_cap))
 
         # set velocities of the servos in Webots
-        # for i, s in enumerate(self._servos):
-        #     s.setVelocity(linearized_motor_commands[i] * min(s.getMaxVelocity(), self.motor_velocity_cap))
+        for i, s in enumerate(self._servos):
+            s.setVelocity(linearized_motor_commands[i] * min(s.getMaxVelocity(), self.motor_velocity_cap))
 
     def _handle_image_stream(self, camera: Union[Camera, RangeFinder], port: int):
         """Stream grayscale images over TCP

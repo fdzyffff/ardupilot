@@ -46,7 +46,7 @@ public:
 
     // return the roll factor of any motor, this is used for tilt rotors and tail sitters
     // using copter motors for forward flight
-    float               get_roll_factor(uint8_t i) override;
+    // float               get_roll_factor(uint8_t i) override;
 
 protected:
     // output - sends commands to the motors

@@ -179,10 +179,10 @@ void AP_Motors4X4::output_armed_stabilizing()
     _m2_out = safe_sqrt(t2_y_out*t2_y_out + t2_x_out*t2_x_out)/(2.0f*MASS*9.8f);;//0~1
     _m3_out = safe_sqrt(t3_y_out*t3_y_out + t3_x_out*t3_x_out)/(2.0f*MASS*9.8f);;//0~1
     _m4_out = safe_sqrt(t4_y_out*t4_y_out + t4_x_out*t4_x_out)/(2.0f*MASS*9.8f);;//0~1
-    _s1_out = atan2f(t1_y_out, t1_y_out);//0~1
-    _s2_out = atan2f(t2_y_out, t2_y_out);//0~1
-    _s3_out = atan2f(t3_y_out, t3_y_out);//0~1
-    _s4_out = atan2f(t4_y_out, t4_y_out);//0~1
+    _s1_out = atan2f(t1_y_out, t1_x_out);//0~1
+    _s2_out = atan2f(t2_y_out, t2_x_out);//0~1
+    _s3_out = atan2f(t3_y_out, t3_x_out);//0~1
+    _s4_out = atan2f(t4_y_out, t4_x_out);//0~1
 }
 
 // output_test_seq - spin a motor at the pwm value specified
