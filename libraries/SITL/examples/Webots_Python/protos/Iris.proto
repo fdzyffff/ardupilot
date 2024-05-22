@@ -29,113 +29,541 @@ PROTO Iris [
       }
       DEF IRIS_MESH Shape {
         appearance PBRAppearance {
-          baseColor 0.05 0.05 0.05
+          baseColor 0.8 0.8 0.8
           roughness 1.000000
           metalness 0.2
         }
         geometry Mesh {
-          url "meshes/iris.dae"
+          url "meshes/body.dae"
         }
         castShadows FALSE
       }
-      Propeller {
-        shaftAxis 0 0 1
-        centerOfThrust 0.130000 -0.220000 0.023000
-        thrustConstants 0.0012 0
-        torqueConstants 5.0e-04 0
-        device RotationalMotor {
-          name "m1_motor"
-          maxVelocity 100
-          maxTorque 30
-          multiplier 1
-        }
-        slowHelix Solid {
-          translation 0.130000 -0.220000 0.023000
-          children [
-            Shape {
-              appearance DEF PROP_BLUE PBRAppearance {
-                baseColor 0 0 0.75
-                metalness 0.3
-              }
-              geometry DEF CCW_PROP Mesh {
-                url [
-                  "meshes/iris_prop_ccw.dae"
+      Pose {
+        translation 0.0 0.0 0.0
+        rotation 0.0 0.0 1.0 0.0
+        children [
+          Pose {
+            translation 0.0 0.0 0.0
+            rotation 0.71 0.71 0 1.5708
+            children [
+              HingeJoint {
+                jointParameters HingeJointParameters {
+                  position 1.5708
+                  axis 0 0 1
+                  dampingConstant 1
+                }
+                device [
+                  RotationalMotor {
+                    name "m1_servo"
+                    consumptionFactor 100
+                    maxVelocity 12
+                    maxTorque 20
+                  }
                 ]
+                endPoint Solid {
+                  physics Physics {
+                    density -1
+                    mass 0.1
+                    centerOfMass [ 0.000000 0.000000 0.000000 ]
+                    inertiaMatrix [
+                      2.912500e-04 2.912500e-04 5.522500e-04
+                      0.000000e+00 0.000000e+00 0.000000e+00
+                    ]
+                  }
+                  name "arm RF"
+                  children [
+                    Pose {
+                      translation 0.0 0.0 0.0
+                      rotation -0.71 -0.71 0 1.5708
+                      children [
+    #                    Shape {
+    #                      appearance PBRAppearance {
+    #                        baseColor 0.8 0.8 0.8
+    #                        roughness 1
+    #                        metalness 0
+    #                      }
+    #                      geometry Cylinder {
+    #                        height 0.5
+    #                        radius 0.015
+    #                      }
+    #                    }
+                        Pose {
+                          translation 0.0 0.0 0.0
+                          rotation 1.0 0.0 0.0 3.1416
+                          children [
+                            Shape {
+                              appearance PBRAppearance {
+                                baseColor 0.2 0.2 0.2
+                                metalness 0.3
+                              }
+                              geometry Mesh {
+                                url [
+                                  "meshes/arm.dae"
+                                ]
+                              }
+    #                          geometry Cylinder {
+    #                            height 0.4
+    #                            radius 0.005
+    #                          }
+                            }
+                            Pose {
+                              rotation 0.0 0.0 0.0 0.0
+                              translation 0.137 0.137 0.01
+                              children [
+                                Shape {
+                                  appearance PBRAppearance {
+                                    baseColor 0.8 0.8 0.8
+                                    roughness 1
+                                    metalness 0
+                                  }
+                                  geometry Cylinder {
+                                    height 0.025
+                                    radius 0.012
+                                  }
+                                }
+                                Pose {
+                                  rotation 1.0 0.0 0.0 3.1415926
+                                  translation 0.0 0.0 0.0
+                                  children [
+                                    Propeller {
+                                      shaftAxis 0 0 1
+                                      centerOfThrust 0.001 0.001 0.023000
+                                      thrustConstants 0.0012 0
+                                      torqueConstants 5.0e-04 0
+                                      device RotationalMotor {
+                                        name "m1_motor"
+                                        maxVelocity 100
+                                        maxTorque 30
+                                        multiplier 1
+                                      }
+                                      slowHelix Solid {
+                                        translation 0.0 0.0 0.005
+                                        children [
+                                          Shape {
+                                            appearance DEF PROP_BLUE PBRAppearance {
+                                              baseColor 0 0 0.75
+                                              metalness 0.3
+                                            }
+                                            geometry Mesh {
+                                              url [
+                                                "meshes/iris_prop_ccw.dae"
+                                              ]
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
               }
-            }
-          ]
-        }
+            ]
+          }
+        ]
       }
-      Propeller {
-        shaftAxis 0 0 1
-        centerOfThrust -0.130000 0.200000 0.023000
-        thrustConstants 0.0012 0
-        torqueConstants 5.0e-04 0
-        device RotationalMotor {
-          name "m2_motor"
-          maxVelocity 100
-          maxTorque 30
-          multiplier 1
-        }
-        slowHelix Solid {
-          translation -0.130000 0.200000 0.023000
-          children [
-            Shape {
-              appearance DEF PROP_BLACK PBRAppearance {
-                baseColor 0 0 0
-                metalness 0.3
-              }
-              geometry USE CCW_PROP
-            }
-          ]
-        }
-      }
-      Propeller {
-        shaftAxis 0 0 1
-        centerOfThrust 00.130000 0.220000 0.023000
-        thrustConstants -0.0012 0
-        torqueConstants 5.0e-04 0
-        device RotationalMotor {
-          name "m3_motor"
-          maxVelocity 100
-          maxTorque 30
-          multiplier -1
-        }
-        slowHelix Solid {
-          translation 0.130000 0.220000 0.023000
-          children [
-            Shape {
-              appearance USE PROP_BLUE
-              geometry DEF CW_PROP Mesh {
-                url [
-                  "meshes/iris_prop_cw.dae"
+
+      Pose {
+        translation 0.0 0.0 0.0
+        rotation 0.0 0.0 1.0 3.1416
+        children [
+          Pose {
+            translation 0.0 0.0 0.0
+            rotation 0.71 0.71 0 1.5708
+            children [
+              HingeJoint {
+                jointParameters HingeJointParameters {
+                  position 1.5708
+                  axis 0 0 1
+                  dampingConstant 1
+                }
+                device [
+                  RotationalMotor {
+                    name "m2_servo"
+                    consumptionFactor 100
+                    maxVelocity 12
+                    maxTorque 20
+                  }
                 ]
+                endPoint Solid {
+                  physics Physics {
+                    density -1
+                    mass 0.1
+                    centerOfMass [ 0.000000 0.000000 0.000000 ]
+                    inertiaMatrix [
+                      2.912500e-04 2.912500e-04 5.522500e-04
+                      0.000000e+00 0.000000e+00 0.000000e+00
+                    ]
+                  }
+                  name "arm LB"
+                  children [
+                    Pose {
+                      translation 0.0 0.0 0.0
+                      rotation -0.71 -0.71 0 1.5708
+                      children [
+    #                    Shape {
+    #                      appearance PBRAppearance {
+    #                        baseColor 0.8 0.8 0.8
+    #                        roughness 1
+    #                        metalness 0
+    #                      }
+    #                      geometry Cylinder {
+    #                        height 0.5
+    #                        radius 0.015
+    #                      }
+    #                    }
+                        Pose {
+                          translation 0.0 0.0 0.0
+                          rotation 1.0 0.0 0.0 3.1416
+                          children [
+                            Shape {
+                              appearance PBRAppearance {
+                                baseColor 0.2 0.2 0.2
+                                metalness 0.3
+                              }
+                              geometry Mesh {
+                                url [
+                                  "meshes/arm.dae"
+                                ]
+                              }
+    #                          geometry Cylinder {
+    #                            height 0.4
+    #                            radius 0.005
+    #                          }
+                            }
+                            Pose {
+                              rotation 0.0 0.0 0.0 0.0
+                              translation 0.137 0.137 0.01
+                              children [
+                                Shape {
+                                  appearance PBRAppearance {
+                                    baseColor 0.8 0.8 0.8
+                                    roughness 1
+                                    metalness 0
+                                  }
+                                  geometry Cylinder {
+                                    height 0.025
+                                    radius 0.012
+                                  }
+                                }
+                                Pose {
+                                  rotation 1.0 0.0 0.0 3.1415926
+                                  translation 0.0 0.0 0.0
+                                  children [
+                                    Propeller {
+                                      shaftAxis 0 0 1
+                                      centerOfThrust 0.001 0.001 0.023000
+                                      thrustConstants 0.0012 0
+                                      torqueConstants 5.0e-04 0
+                                      device RotationalMotor {
+                                        name "m2_motor"
+                                        maxVelocity 100
+                                        maxTorque 30
+                                        multiplier 1
+                                      }
+                                      slowHelix Solid {
+                                        translation 0.0 0.0 0.005
+                                        children [
+                                          Shape {
+                                            appearance DEF PROP_BLUE PBRAppearance {
+                                              baseColor 0 0 0.75
+                                              metalness 0.3
+                                            }
+                                            geometry Mesh {
+                                              url [
+                                                "meshes/iris_prop_ccw.dae"
+                                              ]
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
               }
-            }
-          ]
-        }
+            ]
+          }
+        ]
       }
-      Propeller {
-        shaftAxis 0 0 1
-        centerOfThrust -0.130000 -0.200000 0.023000
-        thrustConstants -0.0012 0
-        torqueConstants 5.0e-04 0
-        device RotationalMotor {
-          name "m4_motor"
-          maxVelocity 100
-          maxTorque 30
-          multiplier -1
-        }
-        slowHelix Solid {
-          translation -0.130000 -0.200000 0.023000
-          children [
-            Shape {
-              appearance USE PROP_BLACK
-              geometry USE CW_PROP
-            }
-          ]
-        }
+
+
+      Pose {
+        translation 0.0 0.0 0.0
+        rotation 0.0 0.0 1.0 1.5708
+        children [
+          Pose {
+            translation 0.0 0.0 0.0
+            rotation 0.71 0.71 0 1.5708
+            children [
+              HingeJoint {
+                jointParameters HingeJointParameters {
+                  position 1.5708
+                  axis 0 0 1
+                  dampingConstant 1
+                }
+                device [
+                  RotationalMotor {
+                    name "m3_servo"
+                    consumptionFactor 100
+                    maxVelocity 12
+                    maxTorque 20
+                  }
+                ]
+                endPoint Solid {
+                  physics Physics {
+                    density -1
+                    mass 0.1
+                    centerOfMass [ 0.000000 0.000000 0.000000 ]
+                    inertiaMatrix [
+                      2.912500e-04 2.912500e-04 5.522500e-04
+                      0.000000e+00 0.000000e+00 0.000000e+00
+                    ]
+                  }
+                  name "arm LF"
+                  children [
+                    Pose {
+                      translation 0.0 0.0 0.0
+                      rotation -0.71 -0.71 0 1.5708
+                      children [
+    #                    Shape {
+    #                      appearance PBRAppearance {
+    #                        baseColor 0.8 0.8 0.8
+    #                        roughness 1
+    #                        metalness 0
+    #                      }
+    #                      geometry Cylinder {
+    #                        height 0.5
+    #                        radius 0.015
+    #                      }
+    #                    }
+                        Pose {
+                          translation 0.0 0.0 0.0
+                          rotation 1.0 0.0 0.0 3.1416
+                          children [
+                            Shape {
+                              appearance PBRAppearance {
+                                baseColor 0.2 0.2 0.2
+                                metalness 0.3
+                              }
+                              geometry Mesh {
+                                url [
+                                  "meshes/arm.dae"
+                                ]
+                              }
+    #                          geometry Cylinder {
+    #                            height 0.4
+    #                            radius 0.005
+    #                          }
+                            }
+                            Pose {
+                              rotation 0.0 0.0 0.0 0.0
+                              translation 0.137 0.137 0.01
+                              children [
+                                Shape {
+                                  appearance PBRAppearance {
+                                    baseColor 0.8 0.8 0.8
+                                    roughness 1
+                                    metalness 0
+                                  }
+                                  geometry Cylinder {
+                                    height 0.025
+                                    radius 0.012
+                                  }
+                                }
+                                Pose {
+                                  rotation 1.0 0.0 0.0 3.1415926
+                                  translation 0.0 0.0 0.0
+                                  children [
+                                    Propeller {
+                                      shaftAxis 0 0 1
+                                      centerOfThrust 0.001 0.001 0.023000
+                                      thrustConstants -0.0012 0
+                                      torqueConstants 5.0e-04 0
+                                      device RotationalMotor {
+                                        name "m3_motor"
+                                        maxVelocity 100
+                                        maxTorque 30
+                                        multiplier -1
+                                      }
+                                      slowHelix Solid {
+                                        translation 0.0 0.0 0.005
+                                        children [
+                                          Shape {
+                                            appearance DEF PROP_BLUE PBRAppearance {
+                                              baseColor 0 0 0
+                                              metalness 0.3
+                                            }
+                                            geometry Mesh {
+                                              url [
+                                                "meshes/iris_prop_cw.dae"
+                                              ]
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
       }
+
+
+      Pose {
+        translation 0.0 0.0 0.0
+        rotation 0.0 0.0 -1.0 1.5708
+        children [
+          Pose {
+            translation 0.0 0.0 0.0
+            rotation 0.71 0.71 0 1.5708
+            children [
+              HingeJoint {
+                jointParameters HingeJointParameters {
+                  position 1.5708
+                  axis 0 0 1
+                  dampingConstant 1
+                }
+                device [
+                  RotationalMotor {
+                    name "m4_servo"
+                    consumptionFactor 100
+                    maxVelocity 12
+                    maxTorque 20
+                  }
+                ]
+                endPoint Solid {
+                  physics Physics {
+                    density -1
+                    mass 0.1
+                    centerOfMass [ 0.000000 0.000000 0.000000 ]
+                    inertiaMatrix [
+                      2.912500e-04 2.912500e-04 5.522500e-04
+                      0.000000e+00 0.000000e+00 0.000000e+00
+                    ]
+                  }
+                  name "arm RB"
+                  children [
+                    Pose {
+                      translation 0.0 0.0 0.0
+                      rotation -0.71 -0.71 0 1.5708
+                      children [
+    #                    Shape {
+    #                      appearance PBRAppearance {
+    #                        baseColor 0.8 0.8 0.8
+    #                        roughness 1
+    #                        metalness 0
+    #                      }
+    #                      geometry Cylinder {
+    #                        height 0.5
+    #                        radius 0.015
+    #                      }
+    #                    }
+                        Pose {
+                          translation 0.0 0.0 0.0
+                          rotation 1.0 0.0 0.0 3.1416
+                          children [
+                            Shape {
+                              appearance PBRAppearance {
+                                baseColor 0.2 0.2 0.2
+                                metalness 0.3
+                              }
+                              geometry Mesh {
+                                url [
+                                  "meshes/arm.dae"
+                                ]
+                              }
+    #                          geometry Cylinder {
+    #                            height 0.4
+    #                            radius 0.005
+    #                          }
+                            }
+                            Pose {
+                              rotation 0.0 0.0 0.0 0.0
+                              translation 0.137 0.137 0.01
+                              children [
+                                Shape {
+                                  appearance PBRAppearance {
+                                    baseColor 0.8 0.8 0.8
+                                    roughness 1
+                                    metalness 0
+                                  }
+                                  geometry Cylinder {
+                                    height 0.025
+                                    radius 0.012
+                                  }
+                                }
+                                Pose {
+                                  rotation 1.0 0.0 0.0 3.1415926
+                                  translation 0.0 0.0 0.0
+                                  children [
+                                    Propeller {
+                                      shaftAxis 0 0 1
+                                      centerOfThrust 0.001 0.001 0.023000
+                                      thrustConstants -0.0012 0
+                                      torqueConstants 5.0e-04 0
+                                      device RotationalMotor {
+                                        name "m4_motor"
+                                        maxVelocity 100
+                                        maxTorque 30
+                                        multiplier -1
+                                      }
+                                      slowHelix Solid {
+                                        translation 0.0 0.0 0.005
+                                        children [
+                                          Shape {
+                                            appearance DEF PROP_BLUE PBRAppearance {
+                                              baseColor 0 0 0
+                                              metalness 0.3
+                                            }
+                                            geometry Mesh {
+                                              url [
+                                                "meshes/iris_prop_cw.dae"
+                                              ]
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+
       Accelerometer {
       }
       GPS {

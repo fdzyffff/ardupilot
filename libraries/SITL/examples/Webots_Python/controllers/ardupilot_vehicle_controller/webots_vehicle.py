@@ -142,7 +142,11 @@ class WebotsArduVehicle():
 
         # init motors (and setup velocity control)
         self._motors = [self.robot.getDevice(n) for n in motor_names]
+        self._servos = [self.robot.getDevice(n) for n in ["m1_servo","m2_servo","m3_servo","m4_servo"]]
         for m in self._motors:
+            m.setPosition(float('inf'))
+            m.setVelocity(0)
+        for m in self._servos:
             m.setPosition(float('inf'))
             m.setVelocity(0)
 
@@ -267,6 +271,10 @@ class WebotsArduVehicle():
         # set velocities of the motors in Webots
         for i, m in enumerate(self._motors):
             m.setVelocity(linearized_motor_commands[i] * min(m.getMaxVelocity(), self.motor_velocity_cap))
+
+        # set velocities of the servos in Webots
+        # for i, s in enumerate(self._servos):
+        #     s.setVelocity(linearized_motor_commands[i] * min(s.getMaxVelocity(), self.motor_velocity_cap))
 
     def _handle_image_stream(self, camera: Union[Camera, RangeFinder], port: int):
         """Stream grayscale images over TCP
