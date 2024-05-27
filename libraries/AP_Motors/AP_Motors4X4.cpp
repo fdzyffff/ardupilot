@@ -152,8 +152,9 @@ void AP_Motors4X4::output_armed_stabilizing()
 {
     
     float SQ2 = 1.414f;
-    float Length = 0.2f;
+    float Length = 1.0f;
     float MASS = 1.0f;
+    float denominator = safe_sqrt(5.0f + 5.0f/Length/Length);
     const float compensation_gain = get_compensation_gain();
 
 
@@ -175,10 +176,10 @@ void AP_Motors4X4::output_armed_stabilizing()
     float t3_x_out = 0.25f*( 0.0f + 0.0f - fz_in - SQ2/Length*mx_in - SQ2/Length*my_in + 0.0f);
     float t4_x_out = 0.25f*( 0.0f + 0.0f - fz_in + SQ2/Length*mx_in + SQ2/Length*my_in + 0.0f);
 
-    _m1_out = safe_sqrt(t1_y_out*t1_y_out + t1_x_out*t1_x_out)/(2.0f*MASS*9.8f);//0~1
-    _m2_out = safe_sqrt(t2_y_out*t2_y_out + t2_x_out*t2_x_out)/(2.0f*MASS*9.8f);;//0~1
-    _m3_out = safe_sqrt(t3_y_out*t3_y_out + t3_x_out*t3_x_out)/(2.0f*MASS*9.8f);;//0~1
-    _m4_out = safe_sqrt(t4_y_out*t4_y_out + t4_x_out*t4_x_out)/(2.0f*MASS*9.8f);;//0~1
+    _m1_out = safe_sqrt(t1_y_out*t1_y_out + t1_x_out*t1_x_out)/(denominator);//0~1
+    _m2_out = safe_sqrt(t2_y_out*t2_y_out + t2_x_out*t2_x_out)/(denominator);//0~1
+    _m3_out = safe_sqrt(t3_y_out*t3_y_out + t3_x_out*t3_x_out)/(denominator);//0~1
+    _m4_out = safe_sqrt(t4_y_out*t4_y_out + t4_x_out*t4_x_out)/(denominator);//0~1
     _s1_out = atan2f(t1_y_out, t1_x_out);//0~1
     _s2_out = atan2f(t2_y_out, t2_x_out);//0~1
     _s3_out = atan2f(t3_y_out, t3_x_out);//0~1
