@@ -146,9 +146,9 @@ class WebotsArduVehicle():
         for m in self._motors:
             m.setPosition(float('inf'))
             m.setVelocity(0)
-        for m in self._servos:
-            m.setPosition(float('inf'))
-            m.setVelocity(0)
+        # for m in self._servos:
+        #     m.setPosition(float('inf'))
+        #     m.setVelocity(0)
 
         # start ArduPilot SITL communication thread
         self._sitl_thread = Thread(daemon=True, target=self._handle_sitl, args=[sitl_address, 9002+10*instance])
@@ -198,7 +198,7 @@ class WebotsArduVehicle():
                 # print (data)
                 # parse a single struct
                 command = struct.unpack(self.controls_struct_format, data[:self.controls_struct_size])
-                print (command)
+                # print (command)
                 self._handle_controls(command)
 
                 # wait until the next Webots time step as no new sensor data will be available until then
@@ -249,6 +249,8 @@ class WebotsArduVehicle():
             command (tuple): tuple of motor speeds 0.0-1.0 where -1.0 is unused
         """
 
+        # print (command)
+
         # get only the number of motors we have
         command_motors = command[:len(self._motors)]
         command_servos = command[len(self._motors):len(self._motors)+len(self._servos)]
@@ -275,9 +277,16 @@ class WebotsArduVehicle():
         for i, m in enumerate(self._motors):
             m.setVelocity(linearized_motor_commands[i] * min(m.getMaxVelocity(), self.motor_velocity_cap))
 
+        angle_servors = []
+        for i_s in command_servos:
+            angle_servors.append((i_s-0.5)*2*np.pi/4 + np.pi/2)
+        # print (angle_servors)
+
+        print ("%0.2f, %0.2f, %0.2f, %0.2f || %0.2f, %0.2f, %0.2f, %0.2f"%(command_motors[0],command_motors[1],command_motors[2],command_motors[3],command_servos[0]-0.5,command_servos[1]-0.5,command_servos[2]-0.5,command_servos[3]-0.5))
+
         # set velocities of the servos in Webots
         for i, s in enumerate(self._servos):
-            s.setVelocity(linearized_motor_commands[i] * min(s.getMaxVelocity(), self.motor_velocity_cap))
+            s.setPosition(angle_servors[i])
 
     def _handle_image_stream(self, camera: Union[Camera, RangeFinder], port: int):
         """Stream grayscale images over TCP

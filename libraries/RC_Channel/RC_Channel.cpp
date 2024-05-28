@@ -561,6 +561,9 @@ void RC_Channel::init_aux_function(const aux_func_t ch_option, const AuxSwitchPo
     case AUX_FUNC::CAMERA_AUTO_FOCUS:
         run_aux_function(ch_option, ch_flag, AuxFuncTriggerSource::INIT);
         break;
+    case AUX_FUNC::ROLL_4X4:
+    case AUX_FUNC::PITCH_4X4:
+        break;
     default:
         gcs().send_text(MAV_SEVERITY_WARNING, "Failed to init: RC%u_OPTION: %u\n",
                         (unsigned)(this->ch_in+1), (unsigned)ch_option);
@@ -1473,6 +1476,11 @@ bool RC_Channel::do_aux_function(const aux_func_t ch_option, const AuxSwitchPos 
         // monitored by the library itself
         break;
 
+    case AUX_FUNC::ROLL_4X4:
+    case AUX_FUNC::PITCH_4X4:
+        break;
+
+        // monitored by myself
     default:
         gcs().send_text(MAV_SEVERITY_INFO, "Invalid channel option (%u)", (unsigned int)ch_option);
         return false;

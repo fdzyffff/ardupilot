@@ -279,8 +279,10 @@ public:
         SCRIPTING_7 =        306,
         SCRIPTING_8 =        307,
 
+        ROLL_4X4 =           401, // roll input
+        PITCH_4X4 =          402, // pitch input
         // this must be higher than any aux function above
-        AUX_FUNCTION_MAX =   308,
+        AUX_FUNCTION_MAX =   404,
     };
     typedef enum AUX_FUNC aux_func_t;
 

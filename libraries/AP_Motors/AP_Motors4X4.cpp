@@ -48,10 +48,10 @@ void AP_Motors4X4::init(motor_frame_class frame_class, motor_frame_type frame_ty
     add_motor_num(AP_SERVO_3);
     add_motor_num(AP_SERVO_4);
 
-    SRV_Channels::set_angle(SRV_Channels::get_motor_function(AP_SERVO_1), 4500);//k_motor 5
-    SRV_Channels::set_angle(SRV_Channels::get_motor_function(AP_SERVO_2), 4500);//k_motor 6
-    SRV_Channels::set_angle(SRV_Channels::get_motor_function(AP_SERVO_3), 4500);//k_motor 7
-    SRV_Channels::set_angle(SRV_Channels::get_motor_function(AP_SERVO_4), 4500);//k_motor 8
+    SRV_Channels::set_angle(SRV_Channels::get_motor_function(AP_SERVO_1), 18000);//k_motor 5
+    SRV_Channels::set_angle(SRV_Channels::get_motor_function(AP_SERVO_2), 18000);//k_motor 6
+    SRV_Channels::set_angle(SRV_Channels::get_motor_function(AP_SERVO_3), 18000);//k_motor 7
+    SRV_Channels::set_angle(SRV_Channels::get_motor_function(AP_SERVO_4), 18000);//k_motor 8
 
     _mav_type = MAV_TYPE_QUADROTOR;
 
@@ -152,9 +152,9 @@ void AP_Motors4X4::output_armed_stabilizing()
 {
     
     float SQ2 = 1.414f;
-    float Length = 1.0f;
-    float MASS = 1.0f;
-    float denominator = safe_sqrt(5.0f + 5.0f/Length/Length);
+    float Length = 10.0f;
+    // float MASS = 1.0f;
+    float denominator = 0.25f;//*safe_sqrt(5.0f + 5.0f/Length/Length);
     const float compensation_gain = get_compensation_gain();
 
 
@@ -166,15 +166,22 @@ void AP_Motors4X4::output_armed_stabilizing()
     float mx_in = (_roll_in + _roll_in_ff) * compensation_gain;
     float my_in = (_pitch_in + _pitch_in_ff) * compensation_gain;
     float mz_in = (_yaw_in + _yaw_in_ff) * compensation_gain;
+
+    // fx_in = 0.0f;
+    // fy_in = 0.0f;
+    // fz_in = 0.0f;
+    // mx_in = 0.0f;
+    // my_in = 0.0f;
+    // mz_in = 0.0f;
     
-    float t1_y_out = 0.25f*(-SQ2*fx_in + SQ2*fy_in + 0.0f + 0.0f + 0.0f + 1.0f/Length*mz_in);
-    float t2_y_out = 0.25f*(-SQ2*fx_in - SQ2*fy_in + 0.0f + 0.0f + 0.0f + 1.0f/Length*mz_in);
-    float t3_y_out = 0.25f*( SQ2*fx_in - SQ2*fy_in + 0.0f + 0.0f + 0.0f + 1.0f/Length*mz_in);
-    float t4_y_out = 0.25f*( SQ2*fx_in + SQ2*fy_in + 0.0f + 0.0f + 0.0f + 1.0f/Length*mz_in);
-    float t1_x_out = 0.25f*( 0.0f + 0.0f - fz_in - SQ2/Length*mx_in + SQ2/Length*my_in + 0.0f);
-    float t2_x_out = 0.25f*( 0.0f + 0.0f - fz_in - SQ2/Length*mx_in - SQ2/Length*my_in + 0.0f);
-    float t3_x_out = 0.25f*( 0.0f + 0.0f - fz_in - SQ2/Length*mx_in - SQ2/Length*my_in + 0.0f);
-    float t4_x_out = 0.25f*( 0.0f + 0.0f - fz_in + SQ2/Length*mx_in + SQ2/Length*my_in + 0.0f);
+    float t1_y_out = 0.25f*(-SQ2*fx_in + SQ2*fy_in + 0.0f  + 0.0f             + 0.0f             + 1.0f/Length*mz_in);
+    float t4_y_out = 0.25f*(-SQ2*fx_in - SQ2*fy_in + 0.0f  + 0.0f             + 0.0f             + 1.0f/Length*mz_in);
+    float t2_y_out = 0.25f*( SQ2*fx_in - SQ2*fy_in + 0.0f  + 0.0f             + 0.0f             + 1.0f/Length*mz_in);
+    float t3_y_out = 0.25f*( SQ2*fx_in + SQ2*fy_in + 0.0f  + 0.0f             + 0.0f             + 1.0f/Length*mz_in);
+    float t1_x_out = 0.25f*( 0.0f      + 0.0f      + fz_in - SQ2/Length*mx_in + SQ2/Length*my_in + 0.0f);
+    float t4_x_out = 0.25f*( 0.0f      + 0.0f      + fz_in - SQ2/Length*mx_in - SQ2/Length*my_in + 0.0f);
+    float t2_x_out = 0.25f*( 0.0f      + 0.0f      + fz_in + SQ2/Length*mx_in - SQ2/Length*my_in + 0.0f);
+    float t3_x_out = 0.25f*( 0.0f      + 0.0f      + fz_in + SQ2/Length*mx_in + SQ2/Length*my_in + 0.0f);
 
     _m1_out = safe_sqrt(t1_y_out*t1_y_out + t1_x_out*t1_x_out)/(denominator);//0~1
     _m2_out = safe_sqrt(t2_y_out*t2_y_out + t2_x_out*t2_x_out)/(denominator);//0~1
