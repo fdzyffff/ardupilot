@@ -978,6 +978,8 @@ private:
     void userhook_auxSwitch2(const RC_Channel::AuxSwitchPos ch_flag);
     void userhook_auxSwitch3(const RC_Channel::AuxSwitchPos ch_flag);
 
+    void FD_handle_message();
+    void FD_send_raw_imu();
 #if MODE_ACRO_ENABLED == ENABLED
 #if FRAME_CONFIG == HELI_FRAME
     ModeAcro_Heli mode_acro;
@@ -1059,6 +1061,14 @@ private:
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);
+
+    struct {
+        // socket to telem2 on aircraft
+        bool connected;
+        mavlink_message_t rxmsg;
+        mavlink_status_t status;
+        uint8_t seq;
+    } mavlink;
 
     FD_UART FD_uart_msg{AP_SerialManager::SerialProtocol_IMU};
 

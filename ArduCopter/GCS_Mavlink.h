@@ -14,6 +14,7 @@ public:
 
     using GCS_MAVLINK::GCS_MAVLINK;
 
+    void handle_message_fd(const mavlink_message_t &msg) {handle_message(msg);}
 protected:
 
     uint32_t telem_delay() const override;

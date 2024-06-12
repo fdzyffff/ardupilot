@@ -16,22 +16,44 @@ bool FD_UART::init()
     return _initialized;
 }
 
-uint32_t FD_UART::port_avaliable(void) {
+uint32_t FD_UART::port_avaliable(void) 
+{
     if(!initialized()) {
         return false;
     }
     return _port->available();
 }
-void FD_UART::read(void)
+
+uint8_t FD_UART::read(void)
 {    
+    if(!initialized()) {
+        return 0;
+    }
+    if (_port->available() > 0) {
+        return _port->read();
+    }
+    return 0;
+}
+
+void FD_UART::read_and_parse()
+{
+    if(!initialized()) {
+        return;
+    }
+    while (port_avaliable()) 
+    {
+        parse(read());
+    }
+
+}
+
+void FD_UART::parse(uint8_t byte_in) 
+{
     if(!initialized()) {
         return ;
     }
-    while (_port->available() > 0) {
-        // uint8_t temp = _port->read();
-        // if (_msg_ue4_ahrs.enable())   {_msg_ue4_ahrs.parse(temp);}
-        // if (_msg2apm_ue4_gimbal.enable())   {_msg2apm_ue4_gimbal.parse(temp);}
-    }
+    // if (_msg_ue4_ahrs.enable())   {_msg_ue4_ahrs.parse(byte_in);}
+    // if (_msg2apm_ue4_gimbal.enable())   {_msg2apm_ue4_gimbal.parse(byte_in);}
 }
 
 void FD_UART::write(void)

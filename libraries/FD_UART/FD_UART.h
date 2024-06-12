@@ -20,7 +20,9 @@ public:
     // init - perform required initialisation
     bool init();
     bool initialized() {return _initialized;}
-    void read();
+    void read_and_parse();
+    uint8_t read();
+    void parse(uint8_t byte_in);
     void write();
     AP_HAL::UARTDriver* get_port() {return _port;}
 
