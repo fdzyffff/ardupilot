@@ -172,11 +172,12 @@
 #include "avoidance_adsb.h"
 #endif
 // Local modules
-#include "Parameters.h"
 #if USER_PARAMS_ENABLED
 #include "UserParameters.h"
 #endif
+#include "Parameters.h"
 #include "mode.h"
+#include "FD_UART/FD_UART.h"
 
 class Copter : public AP_Vehicle {
 public:
@@ -967,6 +968,7 @@ private:
 
     // UserCode.cpp
     void userhook_init();
+    void userhook_SuperLoop();
     void userhook_FastLoop();
     void userhook_50Hz();
     void userhook_MediumLoop();
@@ -1057,6 +1059,8 @@ private:
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);
+
+    FD_UART FD_uart_msg{AP_SerialManager::SerialProtocol_IMU};
 
 public:
     void failsafe_check();      // failsafe.cpp

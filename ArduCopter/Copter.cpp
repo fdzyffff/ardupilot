@@ -139,6 +139,9 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     FAST_TASK(update_land_and_crash_detectors),
     // surface tracking update
     FAST_TASK(update_rangefinder_terrain_offset),
+#ifdef USERHOOK_FASTLOOP
+    FAST_TASK(userhook_SuperLoop),
+#endif
 #if HAL_MOUNT_ENABLED
     // camera mount's fast update
     FAST_TASK_CLASS(AP_Mount, &copter.camera_mount, update_fast),
