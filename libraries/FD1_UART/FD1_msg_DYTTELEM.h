@@ -26,8 +26,8 @@ public:
         int16_t  pitch_rate;
         int16_t  yaw_rate;
         int16_t  distance;
-        int16_t  check;
-        int16_t  reserved[2];
+        uint8_t  check;
+        int16_t  reserved;
         uint8_t  sum_check;        //byte 3 to 41
     };
 
