@@ -114,6 +114,7 @@ COMMON_VEHICLE_DEPENDENT_LIBRARIES = [
     'AP_CheckFirmware',
     'FD1_UART',
     'FD2_UART',
+    'FD_DYT_NEW',
 ]
 
 def get_legacy_defines(sketch_name, bld):

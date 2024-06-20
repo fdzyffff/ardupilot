@@ -14,7 +14,7 @@ public:
         int32_t  lat;
         int32_t  lng;
         int16_t  alt_abs;
-        int16_t  alt_rel
+        int16_t  alt_rel;
         uint8_t  year;
         uint8_t  month;
         uint8_t  day;

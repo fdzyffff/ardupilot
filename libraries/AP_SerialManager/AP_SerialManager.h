@@ -171,6 +171,7 @@ public:
         SerialProtocol_MAVLinkHL = 43,
         SerialProtocol_Tramp = 44,
         SerialProtocol_CamDYT = 50,
+        SerialProtocol_CamDYT_NEW = 51,
         SerialProtocol_UE4 = 100,
         SerialProtocol_NumProtocols                    // must be the last value
     };

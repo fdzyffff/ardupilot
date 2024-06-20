@@ -111,7 +111,6 @@
 #include "avoidance_adsb.h"
 #endif
 #include "AP_Arming.h"
-#include <FD1_UART/FD1_UART.h>
 #include <FD2_UART/FD2_UART.h>
 #include "UFollow.h"
 #include "UAttack.h"
@@ -173,6 +172,7 @@ public:
     friend class UFollow;
     friend class UAttack;
     friend class UCam_DYT;
+    friend class UCam_DYT_NEW;
     friend class UMission;
     friend class UGroup;
     friend class UDelay;

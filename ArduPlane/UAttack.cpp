@@ -69,6 +69,14 @@ void UAttack::init_cam_port()
         return;
     }
 
+    _cam_port = serial_manager.find_serial(AP_SerialManager::SerialProtocol_CamDYT_NEW, 0);
+    if (_cam_port != nullptr) {
+        gcs().send_text(MAV_SEVERITY_WARNING, "CAM DYT NEW init");
+        _UCam_ptr = new UCam_DYT_NEW(*this, _cam_port);
+        _cam_port_type = 2;
+        return;
+    }
+
     _cam_port_type = 0;
     gcs().send_text(MAV_SEVERITY_WARNING, "CAM init FAILED");
 }

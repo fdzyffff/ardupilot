@@ -46,6 +46,15 @@ void FD1_UART::read(uint8_t temp)
     if (_msg_APM2DYTTELEM.enable())   {_msg_APM2DYTTELEM.parse(temp);}
 }
 
+void FD1_UART::write(uint8_t temp)
+{
+    if(!initialized()) {
+        return ;
+    }
+    _port->write(temp);
+
+}
+
 void FD1_UART::write(void)
 {
     if(!initialized()) {

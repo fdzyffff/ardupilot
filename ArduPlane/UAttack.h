@@ -2,6 +2,7 @@
 
 #include <AP_HAL/AP_HAL.h>
 #include "FD1_UART/FD1_UART.h"
+#include <FD_DYT_NEW/FD_DYT_NEW.h>
 class UCam_base;
 
 class UAttack {
@@ -94,3 +95,27 @@ private:
     DerivativeFilterFloat_Size7 _yaw_filter;
     LowPassFilterFloat _yaw_rate_filter;
 };
+
+class UCam_DYT_NEW: public UCam_base {
+public:
+    friend class UAttack;
+
+    UCam_DYT_NEW(UAttack &frotend_in, AP_HAL::UARTDriver* port_in);
+    bool is_valid() override;
+    void update() override;
+    void do_cmd() override;
+    void handle_info(float p1, float p2) override;
+    void handle_msg(const mavlink_message_t &msg) override;
+    void handle_info_test(float p1, float p2) override;
+
+    void fill_state_msg();
+    void foward_DYT_mavlink();
+private:
+    FD_DYT_NEW* FD1_uart_ptr;
+    uint32_t _last_ms;
+
+    DerivativeFilterFloat_Size7 _pitch_filter;
+    DerivativeFilterFloat_Size7 _yaw_filter;
+    LowPassFilterFloat _yaw_rate_filter;
+};
+

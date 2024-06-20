@@ -35,6 +35,7 @@ public:
     void read();
     void read(uint8_t temp);
     void write();
+    void write(uint8_t temp);
 
     uint32_t port_avaliable();
 
