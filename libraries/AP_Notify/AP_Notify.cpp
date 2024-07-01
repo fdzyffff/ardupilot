@@ -41,6 +41,7 @@
 #include "ProfiLED.h"
 #include "ScriptingLED.h"
 #include "DShotLED.h"
+#include "Buzzer_uart.h"
 
 extern const AP_HAL::HAL& hal;
 
@@ -425,6 +426,7 @@ void AP_Notify::add_backends(void)
 // ChibiOS noise makers
 #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
     ADD_BACKEND(new Buzzer());
+    ADD_BACKEND(new Buzzer_uart());
 #if AP_NOTIFY_TONEALARM_ENABLED
     ADD_BACKEND(new AP_ToneAlarm());
 #endif
@@ -445,6 +447,7 @@ void AP_Notify::add_backends(void)
         CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_POCKET || \
         CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_OBAL_V1
     ADD_BACKEND(new Buzzer());
+    ADD_BACKEND(new Buzzer_uart());
 
   #else // other linux
     ADD_BACKEND(new AP_ToneAlarm());
@@ -453,6 +456,7 @@ void AP_Notify::add_backends(void)
 #elif CONFIG_HAL_BOARD == HAL_BOARD_SITL
     ADD_BACKEND(new AP_ToneAlarm());
     ADD_BACKEND(new Buzzer());
+    ADD_BACKEND(new Buzzer_uart());
 #ifdef WITH_SITL_RGBLED
     ADD_BACKEND(new SITL_SFML_LED());
 #endif
