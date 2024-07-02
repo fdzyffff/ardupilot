@@ -51,7 +51,9 @@ void UGimbal::handle_info(float pitch_in, float roll_in, float yaw_in) // degree
     display_info.p4 = 0;
     display_info.count++;
 
-    pitch_in = constrain_float(pitch_in, -80.0f, 80.0f);
+    float yaw_offset = copter.g2.user_parameters.attack_yaw_offset.get();
+    float pitch_offset = copter.g2.user_parameters.attack_pitch_offset.get();
+    pitch_in = constrain_float(pitch_in-pitch_offset, -80.0f, 80.0f);
 
     float tan_pitch = sinf(radians(pitch_in)) / cosf(radians(pitch_in));
     float delta_z_m = 2.0f * tan_pitch;
@@ -59,7 +61,7 @@ void UGimbal::handle_info(float pitch_in, float roll_in, float yaw_in) // degree
 
     // gcs().send_text(MAV_SEVERITY_WARNING, "%f, %f, %f", tan_pitch, delta_z_m, _target_climb_rate);
 
-    float t_yaw_out = wrap_360(degrees(copter.ahrs_view->yaw) + yaw_in - 6.0f);
+    float t_yaw_out = wrap_360(degrees(copter.ahrs_view->yaw) + yaw_in - yaw_offset);
     _filter_yaw_in.apply(t_yaw_out);
     float yaw_out = _filter_yaw_in.get();
     _target_yaw_cd = yaw_out*100.f;

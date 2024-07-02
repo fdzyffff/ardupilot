@@ -19,6 +19,8 @@ public:
     AP_Int8  cam_print;
     AP_Float attack_pitch;
     AP_Float attack_roll_factor;
+    AP_Float attack_yaw_offset;
+    AP_Float attack_pitch_offset;
 
 private:
     // Put your parameter variable definitions here
