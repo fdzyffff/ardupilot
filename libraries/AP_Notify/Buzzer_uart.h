@@ -76,6 +76,8 @@ private:
 
     AP_HAL::UARTDriver *_port;
 
+    uint8_t _cmd_data[8];
+
     void update_playing_music();
     void update_music_to_play();
 

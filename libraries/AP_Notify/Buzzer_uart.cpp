@@ -40,6 +40,7 @@ bool Buzzer_uart::init()
     // warning in plane and rover on every boot
     _flags.armed = AP_Notify::flags.armed;
     _flags.failsafe_battery = AP_Notify::flags.failsafe_battery;
+
     return true;
 }
 
@@ -186,7 +187,6 @@ void Buzzer_uart::add_music(const uint8_t music, bool force_priority)
     }
 }
 
-
 /// play_music - plays the defined buzzer music
 void Buzzer_uart::play_music(const uint8_t music)
 {
@@ -195,6 +195,14 @@ void Buzzer_uart::play_music(const uint8_t music)
     // switch (_music) {
     //     case 1:
     // } 
-    _port->write(0x7E);
-    _port->write(_music);
+
+    _cmd_data[0] = 0x7E;
+    _cmd_data[1] = 0xFF;
+    _cmd_data[2] = 0x06;
+    _cmd_data[3] = 0x03;
+    _cmd_data[4] = 0x00;
+    _cmd_data[5] = 0x00;
+    _cmd_data[6] = _music;
+    _cmd_data[7] = 0xEF;
+    _port->write(_cmd_data, sizeof(_cmd_data));
 }
