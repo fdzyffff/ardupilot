@@ -1,6 +1,6 @@
 #include "FD_DYT_NEW_message.h"
 
-#define FD_DYT_NEW_MSG_DYTTELEM_LEN 32
+#define FD_DYT_NEW_MSG_DYTTELEM_LEN 16
 class FD_DYT_NEW_msg_DYTTELEM : public FD_DYT_NEW_message{
 public:
     struct PACKED FD_DYT_NEW_msg_header {
@@ -17,17 +17,11 @@ public:
         uint8_t  state3;
         int16_t  target_x;
         int16_t  target_y;
-        int16_t  frame_roll;
-        int16_t  frame_pitch;
-        int16_t  frame_yaw;
-        int16_t  reserved1[2];
-        int16_t  roll_rate;
-        int16_t  pitch_rate;
-        int16_t  yaw_rate;
-        int16_t  distance;
+        uint8_t  pixel_h;
+        uint8_t  pixel_v;
         uint8_t  check;
         uint8_t  reserved2[2];
-        uint8_t  sum_check;        //byte 3 to 41
+        uint8_t  sum_check;
     };
 
     union PACKED Content_1 {

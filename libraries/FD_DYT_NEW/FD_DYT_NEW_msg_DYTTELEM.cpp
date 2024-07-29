@@ -1,4 +1,6 @@
 #include "FD_DYT_NEW_msg_DYTTELEM.h"
+// #include <GCS_MAVLink/GCS_MAVLink.h>
+// #include <GCS_MAVLink/GCS.h>
 
 FD_DYT_NEW_msg_DYTTELEM::FD_DYT_NEW_msg_DYTTELEM(void)
 {
@@ -73,6 +75,8 @@ void FD_DYT_NEW_msg_DYTTELEM::process_message(void)
     _msg_1.updated = true;
     _msg_1.need_send = false;
     _msg_1.print = true;
+            // GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "DYT NEW %d %d",
+            //           _msg_1.content.msg.target_x, _msg_1.content.msg.target_y);
 }
 
 void FD_DYT_NEW_msg_DYTTELEM::swap_message(void)
