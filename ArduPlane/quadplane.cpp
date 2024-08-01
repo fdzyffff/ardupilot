@@ -1283,7 +1283,12 @@ float QuadPlane::get_desired_yaw_rate_cds(bool should_weathervane)
         // add in weathervaning
         yaw_cds += get_weathervane_yaw_rate_cds();
     }
-    
+
+    if (plane.control_mode == &plane.mode_attack) {
+        if (plane.uattack.is_active()) {
+            yaw_cds += uattack.get_target_yaw_rate()*100.f;
+        }
+    }
     return yaw_cds;
 }
 
