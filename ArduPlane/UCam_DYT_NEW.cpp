@@ -27,8 +27,8 @@ void UCam_DYT_NEW::update() {
             // unhealthy massage
             ;
         } else {
-            float p1 = (float)(tmp_msg._msg_1.content.msg.target_x) * 0.005f; // x-axis
-            float p2 = (float)(tmp_msg._msg_1.content.msg.target_y) * 0.005f; // y-axis
+            float p1 = (float)(tmp_msg._msg_1.content.msg.target_x) * 0.05f; // x-axis
+            float p2 = (float)(tmp_msg._msg_1.content.msg.target_y) * 0.05f; // y-axis
             handle_info(p1, p2);
         }
         tmp_msg._msg_1.updated = false;
@@ -181,6 +181,7 @@ void UCam_DYT_NEW::handle_msg(const mavlink_message_t &msg)
 {
     if (msg.msgid == MAVLINK_MSG_ID_MY_OPTIC_DATA) {
         // decode packet
+        gcs().send_text(MAV_SEVERITY_WARNING, "UCam_DYT_NEW mavpkg");
         mavlink_my_optic_data_t my_optic_data;
         mavlink_msg_my_optic_data_decode(&msg, &my_optic_data);
         uint8_t i = 0;

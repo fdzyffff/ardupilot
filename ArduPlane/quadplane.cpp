@@ -1284,11 +1284,6 @@ float QuadPlane::get_desired_yaw_rate_cds(bool should_weathervane)
         yaw_cds += get_weathervane_yaw_rate_cds();
     }
 
-    if (plane.control_mode == &plane.mode_attack) {
-        if (plane.uattack.is_active()) {
-            yaw_cds += uattack.get_target_yaw_rate()*100.f;
-        }
-    }
     return yaw_cds;
 }
 
@@ -1377,6 +1372,13 @@ float QuadPlane::desired_auto_yaw_rate_cds(void) const
         aspeed = 1;
     }
     float yaw_rate = degrees(GRAVITY_MSS * tanf(radians(plane.nav_roll_cd*0.01f))/aspeed) * 100;
+    if (plane.control_mode == &plane.mode_attack) {
+        if (plane.uattack.is_active()) {
+            yaw_rate = plane.uattack.get_target_yaw_rate() * 100.f;
+        } else {
+            yaw_rate = 0.0f;
+        }
+    }
     return yaw_rate;
 }
 

@@ -180,6 +180,7 @@ void UCam_DYT::handle_info(float p1, float p2) {
 void UCam_DYT::handle_msg(const mavlink_message_t &msg)
 {
     if (msg.msgid == MAVLINK_MSG_ID_MY_OPTIC_DATA) {
+        gcs().send_text(MAV_SEVERITY_WARNING, "UCam_DYT mavpkg");
         // decode packet
         mavlink_my_optic_data_t my_optic_data;
         mavlink_msg_my_optic_data_decode(&msg, &my_optic_data);
