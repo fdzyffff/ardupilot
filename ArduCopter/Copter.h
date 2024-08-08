@@ -229,6 +229,7 @@ public:
     friend class ModeAutorotate;
     friend class ModeTurtle;
     friend class ModeAttack;
+    friend class ModeAttackVel;
 
     friend class UserUartFWD;
     friend class UGimbal;
@@ -1032,6 +1033,7 @@ private:
 #endif
 
     ModeAttack mode_attack;
+    ModeAttackVel mode_attackvel;
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);

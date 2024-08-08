@@ -21,6 +21,9 @@ public:
     AP_Float attack_roll_factor;
     AP_Float attack_yaw_offset;
     AP_Float attack_pitch_offset;
+    AP_Float attack_vel;
+    AP_Float max_vel_xy;
+    AP_Float max_vel_z;
 
 private:
     // Put your parameter variable definitions here

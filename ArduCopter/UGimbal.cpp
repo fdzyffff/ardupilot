@@ -66,8 +66,8 @@ void UGimbal::handle_info(float pitch_in, float roll_in, float yaw_in) // degree
     float yaw_out = _filter_yaw_in.get();
     _target_yaw_cd = yaw_out*100.f;
 
-    _target_pitch_cd = copter.g2.user_parameters.attack_pitch.get();
-    _target_roll_cd = constrain_float(yaw_in * copter.g2.user_parameters.attack_roll_factor.get(), -30.f, 30.f)*100.f;
+    _target_pitch_cd = pitch_in*100.f;
+    _target_roll_cd = constrain_float(yaw_in * copter.g2.user_parameters.attack_roll_factor.get(), -15.f, 15.f)*100.f;
 
     _new_data = true;
 

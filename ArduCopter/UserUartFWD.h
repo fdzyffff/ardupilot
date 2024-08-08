@@ -3,6 +3,7 @@
 #include <AP_SerialManager/AP_SerialManager.h>
 
 #define NUM_MY_DATA 3
+#define NUM_MY_DATALEN 400
 
 class UserUartFWD;
 
@@ -17,7 +18,7 @@ public:
     bool _active;
     uint32_t _last_active_ms;
     uint16_t data_idx;
-    uint8_t _data[500];
+    uint8_t _data[NUM_MY_DATALEN];
     uint8_t _id;
 };
 

@@ -56,6 +56,7 @@ void Copter::userhook_SuperSlowLoop()
         }
         ugimbal.display_info.count = 0;
     }
+    // gcs().send_text(MAV_SEVERITY_INFO, "hal.util->available_memory:%ld",hal.util->available_memory());
 }
 #endif
 

@@ -208,18 +208,29 @@ void ModeGuided::wp_control_run()
 // initialise position controller
 void ModeGuided::pva_control_start()
 {
-    // initialise horizontal speed, acceleration
-    pos_control->set_max_speed_accel_xy(wp_nav->get_default_speed_xy(), wp_nav->get_wp_acceleration());
-    pos_control->set_correction_speed_accel_xy(wp_nav->get_default_speed_xy(), wp_nav->get_wp_acceleration());
+    // // initialise horizontal speed, acceleration
+    // pos_control->set_max_speed_accel_xy(wp_nav->get_default_speed_xy(), wp_nav->get_wp_acceleration());
+    // pos_control->set_correction_speed_accel_xy(wp_nav->get_default_speed_xy(), wp_nav->get_wp_acceleration());
+
+    // // initialize vertical speeds and acceleration
+    // pos_control->set_max_speed_accel_z(wp_nav->get_default_speed_down(), wp_nav->get_default_speed_up(), wp_nav->get_accel_z());
+    // pos_control->set_correction_speed_accel_z(wp_nav->get_default_speed_down(), wp_nav->get_default_speed_up(), wp_nav->get_accel_z());
+
+    // // initialise velocity controller
+    // pos_control->init_z_controller();
+    // pos_control->init_xy_controller();
+
+    pos_control->set_max_speed_accel_xy(copter.g2.user_parameters.max_vel_xy.get(), wp_nav->get_wp_acceleration());
+    pos_control->set_correction_speed_accel_xy(copter.g2.user_parameters.max_vel_xy.get(), wp_nav->get_wp_acceleration());
 
     // initialize vertical speeds and acceleration
-    pos_control->set_max_speed_accel_z(wp_nav->get_default_speed_down(), wp_nav->get_default_speed_up(), wp_nav->get_accel_z());
-    pos_control->set_correction_speed_accel_z(wp_nav->get_default_speed_down(), wp_nav->get_default_speed_up(), wp_nav->get_accel_z());
+    pos_control->set_max_speed_accel_z(copter.g2.user_parameters.max_vel_z.get(), copter.g2.user_parameters.max_vel_z.get(), wp_nav->get_accel_z());
+    pos_control->set_correction_speed_accel_z(copter.g2.user_parameters.max_vel_z.get(), copter.g2.user_parameters.max_vel_z.get(), wp_nav->get_accel_z());
 
     // initialise velocity controller
     pos_control->init_z_controller();
     pos_control->init_xy_controller();
-
+    
     // initialise yaw
     auto_yaw.set_mode_to_default(false);
 

@@ -14,6 +14,9 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     AP_GROUPINFO("_ATK_ROLLF", 14, UserParameters, attack_roll_factor, 1.0f),
     AP_GROUPINFO("_OFFYAW", 15, UserParameters, attack_yaw_offset, 1.0f),
     AP_GROUPINFO("_OFFPTH", 16, UserParameters, attack_pitch_offset, 1.0f),
+    AP_GROUPINFO("_ATK_VEL", 17, UserParameters, attack_vel, 500.0f),
+    AP_GROUPINFO("_MAX_VEL_XY", 18, UserParameters, max_vel_xy, 600.0f),
+    AP_GROUPINFO("_MAX_VEL_Z", 19, UserParameters, max_vel_z, 300.0f),
 
     AP_GROUPEND
 };
