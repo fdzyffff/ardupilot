@@ -95,3 +95,15 @@ void ModeLoiter::navigate()
     plane.update_loiter(0);
 }
 
+
+void ModeLoiter::do_circle_cw() {
+    gcs().send_text(MAV_SEVERITY_INFO, "Loiter CW");
+    plane.aparm.loiter_radius.set(abs(plane.aparm.loiter_radius));
+    plane.do_loiter_at_location();
+}
+
+void ModeLoiter::do_circle_ccw() {
+    gcs().send_text(MAV_SEVERITY_INFO, "Loiter CCW");
+    plane.aparm.loiter_radius.set(-abs(plane.aparm.loiter_radius));
+    plane.do_loiter_at_location();
+}

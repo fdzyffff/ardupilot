@@ -276,6 +276,8 @@ public:
     
     bool allows_terrain_disable() const override { return true; }
 
+    void do_circle_cw();
+    void do_circle_ccw();
 protected:
 
     bool _enter() override;
@@ -445,6 +447,48 @@ public:
     bool get_target_heading_cd(int32_t &target_heading) const;
 
     bool does_auto_throttle() const override { return true; }
+    bool get_target_heading_cd(int32_t &target_heading);
+
+    enum class ControlState_1 {
+        P0 = 0,
+        P1 = 1,
+        P2 = 2,
+        P3 = 3,
+        P4 = 4,
+        P5 = 5,
+    };
+
+    enum class ControlState_2 {
+        P0 = 0,
+        P1 = 1,
+        P2 = 2,
+        P3 = 3,
+        P4 = 4,
+        P5 = 5,
+        P6 = 6,
+        P7 = 7,
+    };
+
+    enum class CruiseState {
+        MANUAL = 0,
+        OFFBOARD = 1,
+    };
+
+    bool change_target_heading_cd(int32_t delta_cd);
+    bool change_target_altitude_cm(int32_t delta_cm);
+    void update_1();
+    void update_2();
+    void set_state_1(ControlState_1 state_in);
+    void set_state_2(ControlState_2 state_in);
+    void do_cmd_1();
+    void do_cmd_2();
+    CruiseState _control_state;
+    ControlState_1 cmd_state_1;
+    ControlState_2 cmd_state_2;
+
+    bool reach_heading;
+    uint32_t _last_ms_state_1;
+    uint32_t _last_ms_state_2;
 
 protected:
 
