@@ -59,7 +59,7 @@ void UCtrl::msg_handle_control() {
             return;
         }
         if (millis() - _last_print_ms > 3000) {
-        gcs().send_text(MAV_SEVERITY_INFO, "INFO: control");
+            gcs().send_text(MAV_SEVERITY_INFO, "INFO: control");
             _last_print_ms = millis();
         }
         tmp_msg._msg_1.updated = false;

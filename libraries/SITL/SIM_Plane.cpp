@@ -28,25 +28,24 @@ using namespace SITL;
 Plane::Plane(const char *frame_str) :
     Aircraft(frame_str)
 {
-    mass = 15000.0f;//2.0f;6000
+    mass = 2.0f;
 
     /*
        scaling from motor power to Newtons. Allows the plane to hold
        vertically against gravity when the motor is at hover_throttle
     */
-    // thrust_scale = (80 * GRAVITY_MSS) / hover_throttle;//地面推力/悬停油门，thrust现在单独计算
-    thrust_scale = (mass * GRAVITY_MSS) / hover_throttle;// 重力/悬停油门
-    frame_height = 1.0f;//0.1f;机体高度
+    thrust_scale = (mass * GRAVITY_MSS) / hover_throttle;
+    frame_height = 0.1f;
 
     ground_behavior = GROUND_BEHAVIOR_FWD_ONLY;
     lock_step_scheduled = true;
 
     if (strstr(frame_str, "-heavy")) {
-        mass = 128;
+        mass = 8;
     }
     if (strstr(frame_str, "-jet")) {
         // a 22kg "jet", level top speed is 102m/s
-        mass = 392;
+        mass = 22;
         thrust_scale = (mass * GRAVITY_MSS) / hover_throttle;
     }
     if (strstr(frame_str, "-revthrust")) {
@@ -91,10 +90,6 @@ Plane::Plane(const char *frame_str) :
         mass = 2.0;
         coefficient.c_drag_p = 0.05;
     }
-
-    have_launcher = true;
-    launch_accel = 25;
-    launch_time = 5;
 }
 
 /*
@@ -160,11 +155,6 @@ Vector3f Plane::getTorque(float inputAileron, float inputElevator, float inputRu
     const float s = coefficient.s;
     const float c = coefficient.c;
     const float b = coefficient.b;
-
-    const float Ixx = coefficient.Ixx;//增加转动惯量的影响
-    const float Iyy = coefficient.Iyy;
-    const float Izz = coefficient.Izz;
-
     const float c_l_0 = coefficient.c_l_0;
     const float c_l_b = coefficient.c_l_b;
     const float c_l_p = coefficient.c_l_p;
@@ -190,7 +180,7 @@ Vector3f Plane::getTorque(float inputAileron, float inputElevator, float inputRu
     double q = gyro.y;
     double r = gyro.z;
 
-    double qbar = 1.0/2.0*rho*pow(effective_airspeed,2)*s; //Calculate dynamic pressure，计算飞机当前的动压
+    double qbar = 1.0/2.0*rho*pow(effective_airspeed,2)*s; //Calculate dynamic pressure
     double la, na, ma;
     if (is_zero(effective_airspeed))
     {
@@ -200,9 +190,9 @@ Vector3f Plane::getTorque(float inputAileron, float inputElevator, float inputRu
     }
     else
     {
-        la = qbar*b*(c_l_0 + c_l_b*beta + c_l_p*b*p/(2*effective_airspeed) + c_l_r*b*r/(2*effective_airspeed) + c_l_deltaa*inputAileron + c_l_deltar*inputRudder);//计算滚转力矩
-        ma = qbar*c*(c_m_0 + c_m_a*alpha + c_m_q*c*q/(2*effective_airspeed) + c_m_deltae*inputElevator);//计算俯仰力矩
-        na = qbar*b*(c_n_0 + c_n_b*beta + c_n_p*b*p/(2*effective_airspeed) + c_n_r*b*r/(2*effective_airspeed) + c_n_deltaa*inputAileron + c_n_deltar*inputRudder);//计算偏航力矩
+        la = qbar*b*(c_l_0 + c_l_b*beta + c_l_p*b*p/(2*effective_airspeed) + c_l_r*b*r/(2*effective_airspeed) + c_l_deltaa*inputAileron + c_l_deltar*inputRudder);
+        ma = qbar*c*(c_m_0 + c_m_a*alpha + c_m_q*c*q/(2*effective_airspeed) + c_m_deltae*inputElevator);
+        na = qbar*b*(c_n_0 + c_n_b*beta + c_n_p*b*p/(2*effective_airspeed) + c_n_r*b*r/(2*effective_airspeed) + c_n_deltaa*inputAileron + c_n_deltar*inputRudder);
     }
 
 
@@ -211,10 +201,6 @@ Vector3f Plane::getTorque(float inputAileron, float inputElevator, float inputRu
     la +=  CGOffset.y * force.z - CGOffset.z * force.y;
     ma += -CGOffset.x * force.z + CGOffset.z * force.x;
     na += -CGOffset.y * force.x + CGOffset.x * force.y;
-
-    la /= Ixx;
-    ma /= Iyy;
-    na /= Izz;
 
     return Vector3f(la, ma, na);
 }
@@ -280,7 +266,6 @@ void Plane::calculate_forces(const struct sitl_input &input, Vector3f &rot_accel
     float elevator = filtered_servo_angle(input, 1);
     float rudder   = filtered_servo_angle(input, 3);
     bool launch_triggered = input.servos[6] > 1700;
-    bool brake_triggered = input.servos[7] > 1700;
     float throttle;
     if (reverse_elevator_rudder) {
         elevator = -elevator;
@@ -359,7 +344,7 @@ void Plane::calculate_forces(const struct sitl_input &input, Vector3f &rot_accel
             }
             if (now - launch_start_ms < launch_time*1000) {
                 force.x += mass * launch_accel;
-                // force.z += mass * launch_accel/3;
+                force.z += mass * launch_accel/3;
             }
         } else {
             // allow reset of catapult
@@ -385,12 +370,7 @@ void Plane::calculate_forces(const struct sitl_input &input, Vector3f &rot_accel
     if (on_ground() && !tailsitter) {
         // add some ground friction
         Vector3f vel_body = dcm.transposed() * velocity_ef;
-        if (brake_triggered) {
-            accel_body.x -= vel_body.x * 1.0f;
-        } else {
-            accel_body.x -= vel_body.x * 0.1f;
-        }
-
+        accel_body.x -= vel_body.x * 0.3f;
     }
 }
     
