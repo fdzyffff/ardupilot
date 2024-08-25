@@ -52,6 +52,7 @@ void GCS_Plane::update_vehicle_sensor_status_flags(void)
 #endif
 #endif  // HAL_QUADPLANE_ENABLED
     case Mode::Number::FLY_BY_WIRE_B:
+    case Mode::Number::FBWB_FS:
     case Mode::Number::CRUISE:
     case Mode::Number::QTAKEOFF:
         rate_controlled = true;

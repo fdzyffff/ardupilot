@@ -26,6 +26,8 @@ public:
     float get_target_roll_angle() {return _target_roll_angle;}
     float get_target_yaw_rate() {return _target_yaw_rate;}
 
+    void handle_attack_msg(const mavlink_message_t &msg);
+
     AP_HAL::UARTDriver* get_port(void) {return _cam_port;}
 
     bool display_info_new;

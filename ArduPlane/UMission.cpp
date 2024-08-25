@@ -10,8 +10,11 @@ void UMission::init() {
 }
 
 void UMission::update() {
-    update_leader();
-    update_group();
+    update_gps_check();
+    if (!gps_state.gps_lost_fs) {
+        update_leader();
+        update_group();
+    }
     update_base();
 }
 
@@ -158,7 +161,7 @@ void UMission::do_group_init() {
     if (group_state.in_group) {
         if (_role == Mission_Role::Leader) {
             set_mode(plane.mode_auto);
-            plane.gcs().send_text(MAV_SEVERITY_INFO, "In group, Leader");
+            plane.gcs().send_text(MAV_SEVERITY_INFO, "In group, Leader[%c->%d]", plane.g.sysid_this_mav.get(), _leader_id);
         }
         if (_role == Mission_Role::Follower) {
             if (!plane.ufollow.is_active()) {
@@ -166,7 +169,7 @@ void UMission::do_group_init() {
             } else {
                 set_mode(plane.mode_guided);
             }
-            plane.gcs().send_text(MAV_SEVERITY_INFO, "In group, Follower");
+            plane.gcs().send_text(MAV_SEVERITY_INFO, "In group, Follower[%d->%d]", plane.g.sysid_this_mav.get(), _leader_id);
         }
     } else {
         set_mode(plane.mode_auto);
@@ -192,6 +195,7 @@ void UMission::keep_group() {
 
 void UMission::do_set_leader(float p2) {
     _leader_id = (int16_t)p2;
+    plane.g2.follow.set_target_sysid(_leader_id);
     update_leader();
     keep_group();
 }
@@ -279,4 +283,53 @@ void UMission::update_base()
     //     gcs().send_text(MAV_SEVERITY_INFO, "No base target, Back to AUTO");
     //     plane.set_mode(plane.mode_auto, ModeReason::GCS_COMMAND);
     // }
+}
+
+void UMission::update_gps_check()
+{
+    bool gps_ok = ekf_has_absolute_position();
+    if (gps_ok) {
+        if (gps_state.gps_lost_fs) {
+            if (plane.control_mode == &plane.mode_fbwb_fs) {
+                if (plane.set_mode(*gps_state.gps_ok_mode, ModeReason::GCS_COMMAND)) {
+                    gps_state.gps_lost_fs = false;
+                    gcs().send_text(MAV_SEVERITY_INFO, "Pos back");
+                }
+            } else {
+                gps_state.gps_lost_fs = false;
+                gcs().send_text(MAV_SEVERITY_INFO, "Pos back-conti");
+            }
+        }
+    }
+    else {
+        if (!gps_state.gps_lost_fs) {
+            gps_state.gps_ok_mode = plane.control_mode;
+            gps_state.gps_lost_fs = true;
+            gcs().send_text(MAV_SEVERITY_INFO, "Pos lost");
+            if (!plane.set_mode(plane.mode_fbwb_fs, ModeReason::GCS_COMMAND)) {
+                if (!plane.set_mode(plane.mode_circle, ModeReason::GCS_COMMAND)) {
+                    if (!plane.set_mode(plane.mode_qland, ModeReason::GCS_COMMAND)) {
+                        ;
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+// ekf_has_absolute_position - returns true if the EKF can provide an absolute WGS-84 position estimate
+bool UMission::ekf_has_absolute_position() 
+{
+    if (!plane.ahrs.have_inertial_nav()) {
+        // do not allow navigation with dcm position
+        return false;
+    }
+
+    // with EKF use filter status and ekf check
+    nav_filter_status filt_status;
+    plane.ahrs.get_filter_status(filt_status);
+
+    // we require a good absolute position and EKF must not be in const_pos_mode
+    return (filt_status.flags.horiz_pos_abs && !filt_status.flags.const_pos_mode);
 }

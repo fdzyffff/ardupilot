@@ -580,6 +580,7 @@ public:
     AP_Float group_distance;
     AP_Float user_guided_height_offset;
     AP_Float user_guided_length_offset;
+    AP_Int8 user_uart_forward_type;
 };
 
 extern const AP_Param::Info var_info[];

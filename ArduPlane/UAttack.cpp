@@ -175,3 +175,17 @@ void UAttack::update_target_yaw_rate() {
     float angle_comp = constrain_float(bf_info.x, -15.0f, 15.0f);
     _target_yaw_rate = k * 1.5f * ef_rate_info.x + k2 * angle_comp;
 }
+
+void UAttack::handle_attack_msg(const mavlink_message_t &msg) {
+    if (msg.msgid == MAVLINK_MSG_ID_MY_OPTIC_DATA) {
+        // decode packet
+        gcs().send_text(MAV_SEVERITY_WARNING, "atk mavpkg");
+    }
+    if (msg.msgid == MAVLINK_MSG_ID_MY_UART_FORWARD) {
+        // decode packet
+        gcs().send_text(MAV_SEVERITY_WARNING, "atk mavpkg2");
+    }
+    if (_cam_port_type == 1 || _cam_port_type == 2) {
+        _UCam_ptr->handle_msg(msg);
+    }
+}

@@ -12,7 +12,6 @@ void Plane::userhook_init()
 void Plane::userhook_100Hz()
 {
     uattack.update();
-    ufollow.update();
     umission.update();
     udelay.push();
     sim_update();
@@ -20,6 +19,8 @@ void Plane::userhook_100Hz()
 
 void Plane::userhook_1Hz()
 {
+    ufollow.update();
+
     if ((g2.user_print.get() & (1<<0)) && uattack.display_info_new) { // 1
         gcs().send_text(MAV_SEVERITY_WARNING, "[%d] %0.0f,%0.0f,%0.0f,%0.0f", uattack.display_info_count_log, uattack.display_info_p1, uattack.display_info_p2, uattack.display_info_p3, uattack.display_info_p4);
         uattack.display_info_new = false;

@@ -40,6 +40,7 @@ MAV_MODE GCS_MAVLINK_Plane::base_mode() const
     case Mode::Number::FLY_BY_WIRE_A:
     case Mode::Number::AUTOTUNE:
     case Mode::Number::FLY_BY_WIRE_B:
+    case Mode::Number::FBWB_FS:
 #if HAL_QUADPLANE_ENABLED
     case Mode::Number::QSTABILIZE:
     case Mode::Number::QHOVER:
@@ -721,9 +722,7 @@ void GCS_MAVLINK_Plane::packetReceived(const mavlink_status_t &status,
     // plane.g2.follow.handle_msg(msg);
 #endif
     plane.ufollow.handle_my_follow_msg(msg);
-    if (plane.uattack._cam_port_type == 1 || plane.uattack._cam_port_type == 2) {
-        plane.uattack._UCam_ptr->handle_msg(msg);
-    }
+    plane.uattack.handle_attack_msg(msg);
     plane.umission.handle_msg(msg);
     GCS_MAVLINK::packetReceived(status, msg);
 }

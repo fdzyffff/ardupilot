@@ -1246,6 +1246,7 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("UGRP_DIST", 45, ParametersG2, group_distance, 100.f),
     AP_GROUPINFO("UGUID_H", 46, ParametersG2, user_guided_height_offset, 0.f),
     AP_GROUPINFO("UGUID_L", 47, ParametersG2, user_guided_length_offset, 10.f),
+    AP_GROUPINFO("UFWD_TYPE", 48, ParametersG2, user_uart_forward_type, 1),
 
 
     AP_GROUPEND

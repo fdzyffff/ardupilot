@@ -1,7 +1,7 @@
 #include "mode.h"
 #include "Plane.h"
 
-bool ModeFBWB::_enter()
+bool ModeFBWBFS::_enter()
 {
 #if HAL_SOARING_ENABLED
     // for ArduSoar soaring_controller
@@ -13,12 +13,15 @@ bool ModeFBWB::_enter()
     return true;
 }
 
-void ModeFBWB::update()
+void ModeFBWBFS::update()
 {
     // Thanks to Yury MonZon for the altitude limit code!
-    plane.nav_roll_cd = plane.channel_roll->norm_input() * plane.roll_limit_cd;
+    plane.nav_roll_cd = 0;
     plane.update_load_factor();
-    plane.update_fbwb_speed_height();
 
+    plane.altitude_error_cm = plane.calc_altitude_error_cm();
+
+    plane.calc_throttle();
+    plane.calc_nav_pitch();
 }
 

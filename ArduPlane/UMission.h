@@ -25,6 +25,8 @@ public:
     void set_target_loc(Location& loc_in);
     Location get_guided_target_loc();
     void update_base();
+    void update_gps_check();
+    bool ekf_has_absolute_position();
 
     struct group_state_t {
         bool in_group;
@@ -42,4 +44,12 @@ public:
     uint32_t _base_target_ms;
     bool _base_target_valid;
     bool in_base_target_guided_mode;
+
+
+    struct gps_state_t {
+        bool gps_lost_fs;
+        Mode *gps_ok_mode;
+    };
+
+    gps_state_t gps_state;
 };

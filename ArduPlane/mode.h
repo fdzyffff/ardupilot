@@ -54,6 +54,7 @@ public:
         LOITER_ALT_QLAND = 25,
 #endif
         QTAKEOFF      = 26,
+        FBWB_FS       = 30,
         ATTACK        = 40,
     };
 
@@ -821,3 +822,26 @@ protected:
     bool _enter() override;
     void _exit() override;
 };
+
+class ModeFBWBFS : public Mode
+{
+public:
+
+    Number mode_number() const override { return Number::FBWB_FS; }
+    const char *name() const override { return "FBWBFS"; }
+    const char *name4() const override { return "FBFS"; }
+
+    bool allows_terrain_disable() const override { return true; }
+
+    bool does_automatic_thermal_switch() const override { return true; }
+
+    // methods that affect movement of the vehicle in this mode
+    void update() override;
+
+    bool does_auto_throttle() const override { return true; }
+
+protected:
+
+    bool _enter() override;
+};
+

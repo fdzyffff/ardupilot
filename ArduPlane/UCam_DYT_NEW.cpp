@@ -190,6 +190,19 @@ void UCam_DYT_NEW::handle_msg(const mavlink_message_t &msg)
             FD1_uart_ptr->write(my_optic_data.data[i]);
         }
     }
+    if (msg.msgid == MAVLINK_MSG_ID_MY_UART_FORWARD) {
+        // decode packet
+        // gcs().send_text(MAV_SEVERITY_WARNING, "UCam_DYT_NEW mavpkg2");
+        mavlink_my_uart_forward_t my_uart_forward;
+        mavlink_msg_my_uart_forward_decode(&msg, &my_uart_forward);
+        gcs().send_text(MAV_SEVERITY_INFO, "UCam_DYT_NEW receive %d", my_uart_forward.data_len);
+        uint8_t i = 0;
+        for (i = 0; i < my_uart_forward.data_len; i++) {
+            FD1_uart_ptr->read(my_uart_forward.data[i]);
+            FD1_uart_ptr->write(my_uart_forward.data[i]);
+        }
+    }
+
     if (FD1_uart_ptr->get_msg_APM2DYTCONTROL()._msg_1.updated) {
         FD1_uart_ptr->get_msg_APM2DYTCONTROL()._msg_1.need_send = true;
         FD1_uart_ptr->get_msg_APM2DYTCONTROL()._msg_1.updated = false;
@@ -209,34 +222,65 @@ void UCam_DYT_NEW::foward_DYT_mavlink()
         if (_order % 2 == 0) {
             _order = 1;
         }
-        if (_order % 2 == 0) {
-            for (uint8_t i=0; i<gcs().num_gcs(); i++) {
-                mavlink_channel_t channel = (mavlink_channel_t)(MAVLINK_COMM_0 + i);
-                if (comm_get_txspace(channel) >= GCS_MAVLINK::packet_overhead_chan(channel) + 50) {
-                    mavlink_my_optic_data_t my_optic_data;
-                    memcpy(my_optic_data.data, FD1_uart_ptr->get_msg_DYTTARGET()._msg_1.content.data, sizeof(FD1_uart_ptr->get_msg_DYTTARGET()._msg_1.content.data));
-                    mavlink_msg_my_optic_data_send(
-                        channel,
-                        0,
-                        my_optic_data.data);
+        if (plane.g2.user_uart_forward_type.get() == 1) {
+            if (_order % 2 == 0) {
+                for (uint8_t i=0; i<gcs().num_gcs(); i++) {
+                    mavlink_channel_t channel = (mavlink_channel_t)(MAVLINK_COMM_0 + i);
+                    if (comm_get_txspace(channel) >= GCS_MAVLINK::packet_overhead_chan(channel) + 50) {
+                        mavlink_my_optic_data_t my_optic_data;
+                        memcpy(my_optic_data.data, FD1_uart_ptr->get_msg_DYTTARGET()._msg_1.content.data, sizeof(FD1_uart_ptr->get_msg_DYTTARGET()._msg_1.content.data));
+                        mavlink_msg_my_optic_data_send(
+                            channel,
+                            0,
+                            my_optic_data.data);
+                    }
                 }
-            }
-        } else {
-            for (uint8_t i=0; i<gcs().num_gcs(); i++) {
-                mavlink_channel_t channel = (mavlink_channel_t)(MAVLINK_COMM_0 + i);
-                if (comm_get_txspace(channel) >= GCS_MAVLINK::packet_overhead_chan(channel) + 50) {
-                    mavlink_my_optic_data_t my_optic_data;
-                    memcpy(my_optic_data.data, FD1_uart_ptr->get_msg_DYTTELEM()._msg_1.content.data, sizeof(FD1_uart_ptr->get_msg_DYTTELEM()._msg_1.content.data));
-                    mavlink_msg_my_optic_data_send(
-                        channel,
-                        0,
-                        my_optic_data.data);
+            } else {
+                for (uint8_t i=0; i<gcs().num_gcs(); i++) {
+                    mavlink_channel_t channel = (mavlink_channel_t)(MAVLINK_COMM_0 + i);
+                    if (comm_get_txspace(channel) >= GCS_MAVLINK::packet_overhead_chan(channel) + 50) {
+                        mavlink_my_optic_data_t my_optic_data;
+                        memcpy(my_optic_data.data, FD1_uart_ptr->get_msg_DYTTELEM()._msg_1.content.data, sizeof(FD1_uart_ptr->get_msg_DYTTELEM()._msg_1.content.data));
+                        mavlink_msg_my_optic_data_send(
+                            channel,
+                            0,
+                            my_optic_data.data);
+                    }
                 }
-            }
+            }            
         }
+        if (plane.g2.user_uart_forward_type.get() == 0) {
+            if (_order % 2 == 0) {
+                for (uint8_t i=0; i<gcs().num_gcs(); i++) {
+                    mavlink_channel_t channel = (mavlink_channel_t)(MAVLINK_COMM_0 + i);
+                    if (comm_get_txspace(channel) >= GCS_MAVLINK::packet_overhead_chan(channel) + 220) {
+                        mavlink_my_uart_forward_t my_uart_forward;
+                        memcpy(my_uart_forward.data, FD1_uart_ptr->get_msg_DYTTARGET()._msg_1.content.data, sizeof(FD1_uart_ptr->get_msg_DYTTARGET()._msg_1.content.data));
+                        my_uart_forward.data_len = sizeof(FD1_uart_ptr->get_msg_DYTTARGET()._msg_1.content.data);
+                        mavlink_msg_my_uart_forward_send(
+                            channel,
+                            my_uart_forward.data_len,
+                            my_uart_forward.data);
+                    }
+                }
+            } else {
+                for (uint8_t i=0; i<gcs().num_gcs(); i++) {
+                    mavlink_channel_t channel = (mavlink_channel_t)(MAVLINK_COMM_0 + i);
+                    if (comm_get_txspace(channel) >= GCS_MAVLINK::packet_overhead_chan(channel) + 220) {
+                        mavlink_my_uart_forward_t my_uart_forward;
+                        memcpy(my_uart_forward.data, FD1_uart_ptr->get_msg_DYTTELEM()._msg_1.content.data, sizeof(FD1_uart_ptr->get_msg_DYTTELEM()._msg_1.content.data));
+                        my_uart_forward.data_len = sizeof(FD1_uart_ptr->get_msg_DYTTELEM()._msg_1.content.data);
+                        mavlink_msg_my_uart_forward_send(
+                            channel,
+                            my_uart_forward.data_len,
+                            my_uart_forward.data);
+                    }
+                }
+            }            
+        }
+
     }
 }
-
 
 void UCam_DYT_NEW::handle_info_test(float p1, float p2) {
     FD_DYT_NEW_msg_DYTTELEM &tmp_msg = FD1_uart_ptr->get_msg_DYTTELEM();

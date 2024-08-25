@@ -219,6 +219,7 @@ void Plane::stabilize_stick_mixing_direct()
         control_mode == &mode_fbwa ||
         control_mode == &mode_autotune ||
         control_mode == &mode_fbwb ||
+        control_mode == &mode_fbwb_fs ||
         control_mode == &mode_cruise ||
 #if HAL_QUADPLANE_ENABLED
         control_mode == &mode_qstabilize ||
@@ -261,6 +262,7 @@ void Plane::stabilize_stick_mixing_fbw()
         control_mode == &mode_fbwa ||
         control_mode == &mode_autotune ||
         control_mode == &mode_fbwb ||
+        control_mode == &mode_fbwb_fs ||
         control_mode == &mode_cruise ||
 #if HAL_QUADPLANE_ENABLED
         control_mode == &mode_qstabilize ||
@@ -556,6 +558,10 @@ void Plane::stabilize()
     } else if (control_mode == &mode_attack) {
         stabilize_attack(speed_scaler);
 #if HAL_QUADPLANE_ENABLED
+    } else if (control_mode == &mode_fbwb_fs){
+        stabilize_roll(speed_scaler);
+        stabilize_pitch(speed_scaler);
+        stabilize_yaw(speed_scaler);
     } else if (control_mode->is_vtol_mode() && !quadplane.tailsitter.in_vtol_transition(now)) {
         // run controlers specific to this mode
         plane.control_mode->run();
@@ -635,6 +641,9 @@ void Plane::calc_nav_yaw_coordinated(float speed_scaler)
 {
     bool disable_integrator = false;
     int16_t rudder_in = rudder_input();
+    if (control_mode == &mode_fbwb_fs) {
+        rudder_in = 0;
+    }
 
     int16_t commanded_rudder;
     bool using_rate_controller = false;
