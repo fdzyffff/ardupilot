@@ -1041,6 +1041,8 @@ private:
     UserUartFWD useruartfwd{AP_SerialManager::SerialProtocol_Uart_Forward};
     UGimbal ugimbal;
 
+    void print_target_msg(const mavlink_message_t &msg);
+
 public:
     void failsafe_check();      // failsafe.cpp
 };

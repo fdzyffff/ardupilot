@@ -64,6 +64,7 @@ void Copter::userhook_SuperSlowLoop()
 void Copter::userhook_auxSwitch1(const RC_Channel::AuxSwitchPos ch_flag)
 {
     // put your aux switch #1 handler here (CHx_OPT = 47)
+    // ufollow.set_target_loc();
 }
 
 void Copter::userhook_auxSwitch2(const RC_Channel::AuxSwitchPos ch_flag)
@@ -76,3 +77,14 @@ void Copter::userhook_auxSwitch3(const RC_Channel::AuxSwitchPos ch_flag)
     // put your aux switch #3 handler here (CHx_OPT = 49)
 }
 #endif
+
+void Copter::print_target_msg(const mavlink_message_t &msg)
+{
+    if (msg.msgid == MAVLINK_MSG_ID_POD_MEAS) {
+        // decode packet
+        mavlink_pod_meas_t pod_meas;
+        mavlink_msg_pod_meas_decode(&msg, &pod_meas);
+        gcs().send_text(MAV_SEVERITY_INFO, "pod_meast %f | %f", (float)pod_meas.tgt_lat, (float)pod_meas.tgt_lon);
+        gcs().send_text(MAV_SEVERITY_INFO, "pod_measm %f | %f", (float)pod_meas.mother_lat, (float)pod_meas.mother_lon);
+    }
+}
