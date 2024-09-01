@@ -25,7 +25,7 @@
 
 extern const AP_HAL::HAL& hal;
 
-#define AP_FOLLOW_TIMEOUT_MS    3000    // position estimate timeout after 1 second
+#define AP_FOLLOW_TIMEOUT_MS    5000    // position estimate timeout after 1 second
 #define AP_FOLLOW_SYSID_TIMEOUT_MS 10000 // forget sysid we are following if we haave not heard from them in 10 seconds
 
 #define AP_FOLLOW_OFFSET_TYPE_NED       0   // offsets are in north-east-down frame
@@ -218,7 +218,7 @@ bool AP_Follow::get_target_dist_and_vel_ned(Vector3f &dist_ned, Vector3f &dist_w
     }
 
     // initialise offsets from distance vector if required
-    init_offsets_if_required(dist_vec);
+    //init_offsets_if_required(dist_vec);
 
     // get offsets
     Vector3f offsets;
@@ -381,6 +381,46 @@ void AP_Follow::handle_msg(const mavlink_message_t &msg)
             _automatic_sysid = true;
         }
         updated = true;
+        break;
+    }
+    case MAVLINK_MSG_ID_POD_MEAS: {
+        // decode message
+        mavlink_pod_meas_t packet;
+        mavlink_msg_pod_meas_decode(&msg, &packet);
+
+        // ignore message if lat and lon are (exactly) zero
+        if ((packet.tgt_lat == 0 && packet.tgt_lon == 0)) {
+            return;
+        }
+
+        Location new_loc = _target_location;
+        new_loc.lat = packet.tgt_lat;
+        new_loc.lng = packet.tgt_lon;
+        new_loc.set_alt_cm(packet.tgt_alt*10+100, Location::AltFrame::ABSOLUTE);
+
+        // FOLLOW_TARGET is always AMSL, change the provided alt to
+        // above home if we are configured for relative alt
+        if (_alt_type == AP_FOLLOW_ALTITUDE_TYPE_RELATIVE &&
+            !new_loc.change_alt_frame(Location::AltFrame::ABOVE_HOME)) {
+            return;
+        }
+        _target_location = new_loc;
+
+        _target_velocity_ned.zero();
+        _target_accel_ned.zero();
+
+        // get a local timestamp with correction for transport jitter
+        _last_location_update_ms = AP_HAL::millis();
+
+        // initialise _sysid if zero to sender's id
+        if (_sysid == 0) {
+            _sysid.set(msg.sysid);
+            _automatic_sysid = true;
+        }
+        updated = true;
+        
+        // gcs().send_text(MAV_SEVERITY_INFO, "pod_meast %f | %f", (float)packet.tgt_lat, (float)packet.tgt_lon);
+        // gcs().send_text(MAV_SEVERITY_INFO, "_target_location %f | %f", (float)_target_location.lat, (float)_target_location.lng);
         break;
     }
     }

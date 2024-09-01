@@ -57,6 +57,22 @@ void Copter::userhook_SuperSlowLoop()
         ugimbal.display_info.count = 0;
     }
     // gcs().send_text(MAV_SEVERITY_INFO, "hal.util->available_memory:%ld",hal.util->available_memory());
+
+
+
+    // Vector3f dist_vec;  // vector to lead vehicle
+    // Vector3f dist_vec_offs;  // vector to lead vehicle + offset
+    // Vector3f vel_of_target;  // velocity of lead vehicle
+    // if (g2.follow.get_target_dist_and_vel_ned(dist_vec, dist_vec_offs, vel_of_target)) {
+    //     gcs().send_text(MAV_SEVERITY_INFO, "dist_vec.x | y : %f | %f", dist_vec.x, dist_vec.y);
+    //     gcs().send_text(MAV_SEVERITY_INFO, "dist_vec_offs.x | y : %f | %f", dist_vec_offs.x, dist_vec_offs.y);
+    //     gcs().send_text(MAV_SEVERITY_INFO, "vel_of_target.x | y : %f | %f", vel_of_target.x, vel_of_target.y);
+    // }
+    // else {
+    //     gcs().send_text(MAV_SEVERITY_INFO, "False");
+    // }
+    // gcs().send_text(MAV_SEVERITY_INFO, "%f", pos_control->get_max_speed_xy_cms());
+
 }
 #endif
 

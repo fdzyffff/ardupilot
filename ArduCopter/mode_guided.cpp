@@ -794,11 +794,11 @@ void ModeGuided::velaccel_control_run()
     }
 
     bool do_avoid = false;
-#if AC_AVOID_ENABLED
-    // limit the velocity for obstacle/fence avoidance
-    copter.avoid.adjust_velocity(guided_vel_target_cms, pos_control->get_pos_xy_p().kP(), pos_control->get_max_accel_xy_cmss(), pos_control->get_pos_z_p().kP(), pos_control->get_max_accel_z_cmss(), G_Dt);
-    do_avoid = copter.avoid.limits_active();
-#endif
+// #if AC_AVOID_ENABLED
+//     // limit the velocity for obstacle/fence avoidance
+//     copter.avoid.adjust_velocity(guided_vel_target_cms, pos_control->get_pos_xy_p().kP(), pos_control->get_max_accel_xy_cmss(), pos_control->get_pos_z_p().kP(), pos_control->get_max_accel_z_cmss(), G_Dt);
+//     do_avoid = copter.avoid.limits_active();
+// #endif
 
     // update position controller with new target
 
@@ -807,6 +807,7 @@ void ModeGuided::velaccel_control_run()
         guided_vel_target_cms.x = pos_control->get_vel_desired_cms().x;
         guided_vel_target_cms.y = pos_control->get_vel_desired_cms().y;
     }
+
     pos_control->input_vel_accel_xy(guided_vel_target_cms.xy(), guided_accel_target_cmss.xy(), false);
     if (!stabilizing_vel_xy() && !do_avoid) {
         // set position and velocity errors to zero
