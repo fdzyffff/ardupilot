@@ -575,6 +575,7 @@ void AP_SerialManager::init()
 #endif
                 case SerialProtocol_CamDYT:
                 case SerialProtocol_CamDYT_NEW:
+                case SerialProtocol_CamDYT_NET:
                 case SerialProtocol_UE4:
                     uart->begin(state[i].baudrate(),
                                          128,

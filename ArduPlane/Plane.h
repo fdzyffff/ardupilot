@@ -174,6 +174,7 @@ public:
     friend class UAttack;
     friend class UCam_DYT;
     friend class UCam_DYT_NEW;
+    friend class UCam_DYT_NET;
     friend class UMission;
     friend class UGroup;
     friend class UDelay;

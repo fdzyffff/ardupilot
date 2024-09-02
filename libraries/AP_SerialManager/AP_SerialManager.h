@@ -172,6 +172,7 @@ public:
         SerialProtocol_Tramp = 44,
         SerialProtocol_CamDYT = 50,
         SerialProtocol_CamDYT_NEW = 51,
+        SerialProtocol_CamDYT_NET = 52,
         SerialProtocol_UE4 = 100,
         SerialProtocol_NumProtocols                    // must be the last value
     };
