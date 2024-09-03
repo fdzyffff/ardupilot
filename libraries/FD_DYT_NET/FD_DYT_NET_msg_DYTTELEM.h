@@ -1,6 +1,6 @@
 #include "FD_DYT_NET_message.h"
 
-#define FD_DYT_NET_MSG_DYTTELEM_LEN 64
+#define FD_DYT_NET_MSG_DYTTELEM_LEN 32
 class FD_DYT_NET_msg_DYTTELEM : public FD_DYT_NET_message{
 public:
     struct PACKED FD_DYT_NET_msg_header {
@@ -14,7 +14,7 @@ public:
         uint8_t  state1;
         uint8_t  state2;
         uint8_t  zoom;
-        uint8_t  error;
+        uint8_t  state3;
         int16_t  target_x;
         int16_t  target_y;
         int16_t  frame_roll;
@@ -24,27 +24,8 @@ public:
         int16_t  roll_rate;
         int16_t  pitch_rate;
         int16_t  yaw_rate;
-        int16_t  distance;
+        uint16_t distance;
         uint8_t  check;
-        uint8_t  empty2[2];
-        int16_t  plane_roll;
-        int16_t  plane_pitch;
-        int16_t  plane_yaw;
-        int32_t  lat;
-        int32_t  lng;
-        int16_t  alt_abs;
-        int16_t  alt_rel;
-        uint8_t  year;
-        uint8_t  month;
-        uint8_t  day;
-        uint8_t  hour;
-        uint8_t  minute;
-        uint8_t  second;
-        uint8_t  second_10ms;
-        uint16_t airspeed;
-        uint16_t gpsspeed;
-        uint8_t  count;
-        uint8_t  empty3[2];
         uint8_t  sum_check;   
     };
 
