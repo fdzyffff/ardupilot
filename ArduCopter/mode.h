@@ -1969,6 +1969,7 @@ public:
 
 protected:
 
+    uint32_t last_log_ms;
     const char *name() const override { return "ATTACKVEL"; }
     const char *name4() const override { return "ATKV"; }
 

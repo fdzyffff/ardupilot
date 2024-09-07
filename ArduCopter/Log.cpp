@@ -358,6 +358,19 @@ struct PACKED log_Guided_Attitude_Target {
     float climb_rate;
 };
 
+// user gimbal and attack msg logging
+struct PACKED log_Uatk {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    uint8_t type;
+    float roll;
+    float pitch;
+    float yaw;
+    float target_roll;
+    float target_pitch;
+    float target_yaw;
+};
+
 // Write a Guided mode position target
 // pos_target is lat, lon, alt OR offset from ekf origin in cm
 // terrain should be 0 if pos_target.z is alt-above-ekf-origin, 1 if alt-above-terrain
@@ -401,6 +414,22 @@ void Copter::Log_Write_Guided_Attitude_Target(ModeGuided::SubMode target_type, f
         yaw_rate        : degrees(ang_vel.z),  // rad/s to deg/s
         thrust          : thrust,
         climb_rate      : climb_rate
+    };
+    logger.WriteBlock(&pkt, sizeof(pkt));
+}
+
+void Copter::Log_Write_Uatk()
+{
+    const log_Uatk pkt {
+        LOG_PACKET_HEADER_INIT(LOG_UATK_MSG),
+        time_us         : AP_HAL::micros64(),
+        type            : (uint8_t)ugimbal.is_valid(),
+        roll            : ugimbal.display_info.p1,
+        pitch           : ugimbal.display_info.p2,
+        yaw             : ugimbal.display_info.p3,
+        target_roll     : ugimbal.display_info.p11*0.01f,
+        target_pitch    : ugimbal.display_info.p12*0.01f,
+        target_yaw      : ugimbal.display_info.p13*0.01f
     };
     logger.WriteBlock(&pkt, sizeof(pkt));
 }
@@ -558,6 +587,10 @@ const struct LogStructure Copter::log_structure[] = {
 
     { LOG_GUIDED_ATTITUDE_TARGET_MSG, sizeof(log_Guided_Attitude_Target),
       "GUIA",  "QBffffffff",    "TimeUS,Type,Roll,Pitch,Yaw,RollRt,PitchRt,YawRt,Thrust,ClimbRt", "s-dddkkk-n", "F-000000-0" , true },
+
+
+    { LOG_UATK_MSG, sizeof(log_Uatk),
+      "UATK",  "QBffffff",    "TimeUS,Valid,Roll,Pitch,Yaw,TR,TP,TY", "s-------", "F-------" , true },
 };
 
 void Copter::Log_Write_Vehicle_Startup_Messages()

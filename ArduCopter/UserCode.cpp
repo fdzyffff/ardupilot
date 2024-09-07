@@ -33,6 +33,11 @@ void Copter::userhook_MediumLoop()
 {
     // put your 10Hz code here
     ugimbal.update();
+#if LOGGING_ENABLED == ENABLED
+    if (logger.logging_started()) {
+        Log_Write_Uatk();
+    }
+#endif
 }
 #endif
 

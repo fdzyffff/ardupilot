@@ -65,7 +65,16 @@ void ModeAttackVel::run()
 
         // posvel control, vel ff is zero
         // Vector3f tmp_output = Vector3f(copter.ugimbal.get_target_vel().x*vel_yaw_factor, copter.ugimbal.get_target_vel().y*vel_yaw_factor,copter.ugimbal.get_target_vel().z*vel_yaw_factor);
-        copter.mode_guided.set_velaccel(vel_output, Vector3f(0.0f, 0.0f, 0.0f), use_yaw, yaw_cd, use_yaw_rate, yaw_rate_cds, relative_yaw);
+    
+        // log output at 10hz
+        uint32_t now = AP_HAL::millis();
+        bool log_request = false;
+        if ((now - last_log_ms >= 100) || (last_log_ms == 0)) {
+            log_request = true;
+            last_log_ms = now;
+        }
+
+        copter.mode_guided.set_velaccel(vel_output, Vector3f(0.0f, 0.0f, 0.0f), use_yaw, yaw_cd, use_yaw_rate, yaw_rate_cds, relative_yaw, log_request);
 
         _last_ms = millis();
     }
