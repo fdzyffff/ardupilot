@@ -128,6 +128,9 @@ void Plane::test_HB1_uart_msg3(uint8_t option){
         case 17: // ServoTest
             tmp_msg._msg_1.content.msg.remote_index = 0x99;
             break;
+        case 18: // ParachuteON
+            tmp_msg._msg_1.content.msg.remote_index = 0xB9;
+            break;
         case 21:
             SRV_Channels::set_output_scaled(SRV_Channel::k_launcher_HB1, 100);
             tmp_msg._msg_1.updated = false;

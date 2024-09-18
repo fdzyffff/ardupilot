@@ -74,7 +74,7 @@ void Plane::HB1_Power_pwm_update() {
                 break;
             case HB1_PowerAction_EnginePullUP:
                 {   
-                    float timer_delay = MAX(timer - 0.0f, 0.0f);
+                    float timer_delay = MAX(timer - 1000.0f, 0.0f);
                     if (timer_delay < 800.f) {
                         HB1_throttle = constrain_float(35.f*timer_delay/800.f, thr_min, 35.f);
                     } else if (timer_delay < 1500.f) {
@@ -120,10 +120,10 @@ void Plane::HB1_Power_status_update() {
                 float gspd = ahrs.groundspeed_vector().length();
                 bool speed_reached = (airspeed_measured > 10.0f || gspd > 5.0f) || (g2.hb1_test_mode != 0);
                 if (speed_reached) {
-//                    if (timer > 4000 || (ins.get_accel().x < 10.0f)) {
+                   if (timer > 3000 || (ins.get_accel().x < 10.0f)) {
                         gcs().send_text(MAV_SEVERITY_INFO, "timer: %d ax %0.2f", (int32_t)timer, ins.get_accel().x);
                         HB1_status_set_HB_Power_Action(HB1_PowerAction_EnginePullUP);
-//                    }
+                   }
                 } else {
                     set_mode(plane.mode_fbwa, MODE_REASON_UNAVAILABLE);
                     gcs().send_text(MAV_SEVERITY_INFO, "WARNING, low spd %0.2f, %0.2f", airspeed_measured, gspd);
