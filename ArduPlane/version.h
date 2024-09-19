@@ -6,7 +6,7 @@
 
 #include "ap_version.h"
 
-#define THISFIRMWARE "ArduPlane V4.0.3-v1.0-L"
+#define THISFIRMWARE "ArduPlane V4.0.3-v1.1-LD"
 
 // the following line is parsed by the autotest scripts
 #define FIRMWARE_VERSION 4,0,3,FIRMWARE_VERSION_TYPE_OFFICIAL
