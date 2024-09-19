@@ -74,7 +74,7 @@ void Plane::HB1_Power_pwm_update() {
                 break;
             case HB1_PowerAction_EnginePullUP:
                 {   
-                    float timer_delay = MAX(timer - 1000.0f, 0.0f);
+                    float timer_delay = MAX(timer - 0.0f, 0.0f);
                     if (timer_delay < 800.f) {
                         HB1_throttle = constrain_float(35.f*timer_delay/800.f, thr_min, 35.f);
                     } else if (timer_delay < 1500.f) {
