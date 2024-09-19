@@ -28,7 +28,7 @@ using namespace SITL;
 Plane::Plane(const char *frame_str) :
     Aircraft(frame_str)
 {
-    mass = 2.0f;
+    mass = 6.0f;
 
     /*
        scaling from motor power to Newtons. Allows the plane to hold

@@ -128,7 +128,7 @@
 // AIRSPEED_CRUISE
 //
 #ifndef AIRSPEED_CRUISE
- # define AIRSPEED_CRUISE                12 // 12 m/s
+ # define AIRSPEED_CRUISE                45 // 12 m/s
 #endif
 #define AIRSPEED_CRUISE_CM AIRSPEED_CRUISE*100
 
@@ -146,10 +146,10 @@
 // FLY_BY_WIRE_B airspeed control
 //
 #ifndef AIRSPEED_FBW_MIN
- # define AIRSPEED_FBW_MIN               9
+ # define AIRSPEED_FBW_MIN               30
 #endif
 #ifndef AIRSPEED_FBW_MAX
- # define AIRSPEED_FBW_MAX               22
+ # define AIRSPEED_FBW_MAX               55
 #endif
 
 #ifndef ALT_HOLD_FBW
@@ -165,7 +165,7 @@
  # define THROTTLE_MIN                   0 // percent
 #endif
 #ifndef THROTTLE_CRUISE
- # define THROTTLE_CRUISE                45
+ # define THROTTLE_CRUISE                55
 #endif
 #ifndef THROTTLE_MAX
  # define THROTTLE_MAX                   100
@@ -178,10 +178,10 @@
  # define HEAD_MAX                               45
 #endif
 #ifndef PITCH_MAX
- # define PITCH_MAX                              20
+ # define PITCH_MAX                              30
 #endif
 #ifndef PITCH_MIN
- # define PITCH_MIN                              -25
+ # define PITCH_MIN                              -35
 #endif
 #define HEAD_MAX_CENTIDEGREE HEAD_MAX * 100
 #define PITCH_MAX_CENTIDEGREE PITCH_MAX * 100
@@ -230,7 +230,7 @@
 //
 
 #ifndef SCALING_SPEED
- # define SCALING_SPEED          15.0
+ # define SCALING_SPEED          45.0
 #endif
 
 // a digital pin to set high when the geo-fence triggers. Defaults
