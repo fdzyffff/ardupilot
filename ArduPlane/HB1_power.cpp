@@ -21,6 +21,7 @@ void Plane::HB1_Power_pwm_update() {
             case HB1_PowerAction_EnginePullUP:
             case HB1_PowerAction_EngineON:
             case HB1_PowerAction_EngineOFF:
+            case HB1_PowerAction_ParachuteON_PRE:
             case HB1_PowerAction_ParachuteON:
             case HB1_PowerAction_GROUND_RocketON:
                 HB1_throttle = 0.0f;
@@ -88,6 +89,7 @@ void Plane::HB1_Power_pwm_update() {
             case HB1_PowerAction_GROUND_EngineOFF:
             case HB1_PowerAction_EngineOFF:
             case HB1_PowerAction_ParachuteON:
+            case HB1_PowerAction_ParachuteON_PRE:
                 HB1_throttle = 0.0f;
                 break;
             case HB1_PowerAction_GROUND_RocketON:
@@ -173,6 +175,10 @@ void Plane::HB1_Power_status_update() {
                 }
             }
             break;
+        case HB1_PowerAction_ParachuteON_PRE:
+            if (timer > 5000) {
+                HB1_status_set_HB_Power_Action(HB1_PowerAction_ParachuteON);
+            }
         case HB1_PowerAction_ParachuteON:
             if (timer > 10000) {
                 if (!arming.is_armed()) {
@@ -286,6 +292,9 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force
             relay.on(2);
             relay.off(3);
             break;
+        case HB1_PowerAction_ParachuteON_PRE:
+            gcs().send_text(MAV_SEVERITY_INFO, "Parachute PRE");
+            break;
         case HB1_PowerAction_ParachuteON:
             gcs().send_text(MAV_SEVERITY_INFO, "Parachute ON");
             relay.off(0);
@@ -327,6 +336,7 @@ void Plane::HB1_msg_apm2power_set() {
             break;
         case HB1_PowerAction_EngineOFF:
         case HB1_PowerAction_GROUND_EngineOFF:
+        case HB1_PowerAction_ParachuteON_PRE:
         case HB1_PowerAction_ParachuteON:
             tmp_msg.set_engine_stop();
             tmp_msg._msg_1.need_send = true;
