@@ -324,7 +324,7 @@ void Plane::HB1_msg_mission2apm_EngineOFF_handle() {
 }
 
 void Plane::HB1_msg_mission2apm_ParachuteON_handle() {
-    plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_ParachuteON);
+    plane.HB1_status_set_HB_Power_Action(plane.HB1_PowerAction_ParachuteON_PRE);
 }
 
 void Plane::HB1_msg_mission2apm_EngineFULL_handle() {
