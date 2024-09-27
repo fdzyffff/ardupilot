@@ -7,10 +7,10 @@
 #include "AP_MotorsMulticopter.h"
 
 // tilt servos 1~4
-#define AP_SERVO_1 CH_5
-#define AP_SERVO_2 CH_6
-#define AP_SERVO_3 CH_7
-#define AP_SERVO_4 CH_8
+#define AP_SERVO_1 CH_9
+#define AP_SERVO_2 CH_10
+#define AP_SERVO_3 CH_11
+#define AP_SERVO_4 CH_12
 
 /// @class      AP_Motors4X4
 class AP_Motors4X4 : public AP_MotorsMulticopter {
@@ -68,6 +68,10 @@ protected:
     float           _m2_out;
     float           _m3_out;
     float           _m4_out;
+    float           _m5_out;
+    float           _m6_out;
+    float           _m7_out;
+    float           _m8_out;
     float           _s1_out;
     float           _s2_out;
     float           _s3_out;

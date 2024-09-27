@@ -31,6 +31,10 @@ void AP_Motors4X4::init(motor_frame_class frame_class, motor_frame_type frame_ty
     add_motor_num(AP_MOTORS_MOT_2);
     add_motor_num(AP_MOTORS_MOT_3);
     add_motor_num(AP_MOTORS_MOT_4);
+    add_motor_num(AP_MOTORS_MOT_5);
+    add_motor_num(AP_MOTORS_MOT_6);
+    add_motor_num(AP_MOTORS_MOT_7);
+    add_motor_num(AP_MOTORS_MOT_8);
 
     // set update rate for the 3 motors (but not the servo on channel 7)
     set_update_rate(_speed_hz);
@@ -40,6 +44,10 @@ void AP_Motors4X4::init(motor_frame_class frame_class, motor_frame_type frame_ty
     motor_enabled[AP_MOTORS_MOT_2] = true;
     motor_enabled[AP_MOTORS_MOT_3] = true;
     motor_enabled[AP_MOTORS_MOT_4] = true;
+    motor_enabled[AP_MOTORS_MOT_5] = true;
+    motor_enabled[AP_MOTORS_MOT_6] = true;
+    motor_enabled[AP_MOTORS_MOT_7] = true;
+    motor_enabled[AP_MOTORS_MOT_8] = true;
 
 
     // allow mapping of servo 1~4
@@ -48,10 +56,10 @@ void AP_Motors4X4::init(motor_frame_class frame_class, motor_frame_type frame_ty
     add_motor_num(AP_SERVO_3);
     add_motor_num(AP_SERVO_4);
 
-    SRV_Channels::set_angle(SRV_Channels::get_motor_function(AP_SERVO_1), 18000);//k_motor 5
-    SRV_Channels::set_angle(SRV_Channels::get_motor_function(AP_SERVO_2), 18000);//k_motor 6
-    SRV_Channels::set_angle(SRV_Channels::get_motor_function(AP_SERVO_3), 18000);//k_motor 7
-    SRV_Channels::set_angle(SRV_Channels::get_motor_function(AP_SERVO_4), 18000);//k_motor 8
+    SRV_Channels::set_angle(SRV_Channels::get_motor_function(AP_SERVO_1), 4500);//k_motor 5
+    SRV_Channels::set_angle(SRV_Channels::get_motor_function(AP_SERVO_2), 4500);//k_motor 6
+    SRV_Channels::set_angle(SRV_Channels::get_motor_function(AP_SERVO_3), 4500);//k_motor 7
+    SRV_Channels::set_angle(SRV_Channels::get_motor_function(AP_SERVO_4), 4500);//k_motor 8
 
     _mav_type = MAV_TYPE_QUADROTOR;
 
@@ -76,7 +84,11 @@ void AP_Motors4X4::set_update_rate(uint16_t speed_hz)
 	    1U << AP_MOTORS_MOT_1 |
 	    1U << AP_MOTORS_MOT_2 |
         1U << AP_MOTORS_MOT_3 |
-	    1U << AP_MOTORS_MOT_4;
+	    1U << AP_MOTORS_MOT_4 |
+        1U << AP_MOTORS_MOT_5 |
+        1U << AP_MOTORS_MOT_6 |
+        1U << AP_MOTORS_MOT_7 |
+        1U << AP_MOTORS_MOT_8;
     rc_set_freq(mask, _speed_hz);
 }
 
@@ -89,6 +101,10 @@ void AP_Motors4X4::output_to_motors()
             rc_write(AP_MOTORS_MOT_2, output_to_pwm(0));
             rc_write(AP_MOTORS_MOT_3, output_to_pwm(0));
             rc_write(AP_MOTORS_MOT_4, output_to_pwm(0));
+            rc_write(AP_MOTORS_MOT_5, output_to_pwm(0));
+            rc_write(AP_MOTORS_MOT_6, output_to_pwm(0));
+            rc_write(AP_MOTORS_MOT_7, output_to_pwm(0));
+            rc_write(AP_MOTORS_MOT_8, output_to_pwm(0));
             rc_write_angle(AP_SERVO_1, 0);
             rc_write_angle(AP_SERVO_2, 0);
             rc_write_angle(AP_SERVO_3, 0);
@@ -100,10 +116,18 @@ void AP_Motors4X4::output_to_motors()
             set_actuator_with_slew(_actuator[2], actuator_spin_up_to_ground_idle());
             set_actuator_with_slew(_actuator[3], actuator_spin_up_to_ground_idle());
             set_actuator_with_slew(_actuator[4], actuator_spin_up_to_ground_idle());
+            set_actuator_with_slew(_actuator[5], actuator_spin_up_to_ground_idle());
+            set_actuator_with_slew(_actuator[6], actuator_spin_up_to_ground_idle());
+            set_actuator_with_slew(_actuator[7], actuator_spin_up_to_ground_idle());
+            set_actuator_with_slew(_actuator[8], actuator_spin_up_to_ground_idle());
             rc_write(AP_MOTORS_MOT_1, output_to_pwm(_actuator[1]));
             rc_write(AP_MOTORS_MOT_2, output_to_pwm(_actuator[2]));
             rc_write(AP_MOTORS_MOT_3, output_to_pwm(_actuator[3]));
             rc_write(AP_MOTORS_MOT_4, output_to_pwm(_actuator[4]));
+            rc_write(AP_MOTORS_MOT_5, output_to_pwm(_actuator[5]));
+            rc_write(AP_MOTORS_MOT_6, output_to_pwm(_actuator[6]));
+            rc_write(AP_MOTORS_MOT_7, output_to_pwm(_actuator[7]));
+            rc_write(AP_MOTORS_MOT_8, output_to_pwm(_actuator[8]));
             rc_write_angle(AP_SERVO_1, 0);
             rc_write_angle(AP_SERVO_2, 0);
             rc_write_angle(AP_SERVO_3, 0);
@@ -117,10 +141,18 @@ void AP_Motors4X4::output_to_motors()
             set_actuator_with_slew(_actuator[2], thrust_to_actuator(_m2_out));
             set_actuator_with_slew(_actuator[3], thrust_to_actuator(_m3_out));
             set_actuator_with_slew(_actuator[4], thrust_to_actuator(_m4_out));
+            set_actuator_with_slew(_actuator[5], thrust_to_actuator(_m5_out));
+            set_actuator_with_slew(_actuator[6], thrust_to_actuator(_m6_out));
+            set_actuator_with_slew(_actuator[7], thrust_to_actuator(_m7_out));
+            set_actuator_with_slew(_actuator[8], thrust_to_actuator(_m8_out));
             rc_write(AP_MOTORS_MOT_1, output_to_pwm(_m1_out));
             rc_write(AP_MOTORS_MOT_2, output_to_pwm(_m2_out));
             rc_write(AP_MOTORS_MOT_3, output_to_pwm(_m3_out));
             rc_write(AP_MOTORS_MOT_4, output_to_pwm(_m4_out));
+            rc_write(AP_MOTORS_MOT_5, output_to_pwm(_m5_out));
+            rc_write(AP_MOTORS_MOT_6, output_to_pwm(_m6_out));
+            rc_write(AP_MOTORS_MOT_7, output_to_pwm(_m7_out));
+            rc_write(AP_MOTORS_MOT_8, output_to_pwm(_m8_out));
             rc_write_angle(AP_SERVO_1, degrees(_s1_out)*100);
             rc_write_angle(AP_SERVO_2, degrees(_s2_out)*100);
             rc_write_angle(AP_SERVO_3, degrees(_s3_out)*100);
@@ -137,7 +169,11 @@ uint32_t AP_Motors4X4::get_motor_mask()
     uint32_t motor_mask = (1U << AP_MOTORS_MOT_1) |
                           (1U << AP_MOTORS_MOT_2) |
                           (1U << AP_MOTORS_MOT_3) |
-                          (1U << AP_MOTORS_MOT_4);
+                          (1U << AP_MOTORS_MOT_4) |
+                          (1U << AP_MOTORS_MOT_5) |
+                          (1U << AP_MOTORS_MOT_6) |
+                          (1U << AP_MOTORS_MOT_7) |
+                          (1U << AP_MOTORS_MOT_8);
     uint32_t mask = motor_mask_to_srv_channel_mask(motor_mask);
 
     // add parent's mask
@@ -187,6 +223,10 @@ void AP_Motors4X4::output_armed_stabilizing()
     _m2_out = safe_sqrt(t2_y_out*t2_y_out + t2_x_out*t2_x_out)/(denominator);//0~1
     _m3_out = safe_sqrt(t3_y_out*t3_y_out + t3_x_out*t3_x_out)/(denominator);//0~1
     _m4_out = safe_sqrt(t4_y_out*t4_y_out + t4_x_out*t4_x_out)/(denominator);//0~1
+    _m5_out = safe_sqrt(t1_y_out*t1_y_out + t1_x_out*t1_x_out)/(denominator);//0~1
+    _m6_out = safe_sqrt(t2_y_out*t2_y_out + t2_x_out*t2_x_out)/(denominator);//0~1
+    _m7_out = safe_sqrt(t3_y_out*t3_y_out + t3_x_out*t3_x_out)/(denominator);//0~1
+    _m8_out = safe_sqrt(t4_y_out*t4_y_out + t4_x_out*t4_x_out)/(denominator);//0~1
     _s1_out = atan2f(t1_y_out, t1_x_out);//0~1
     _s2_out = atan2f(t2_y_out, t2_x_out);//0~1
     _s3_out = atan2f(t3_y_out, t3_x_out);//0~1
@@ -217,18 +257,34 @@ void AP_Motors4X4::_output_test_seq(uint8_t motor_seq, int16_t pwm)
             rc_write(AP_MOTORS_MOT_4, pwm);
             break;
         case 5:
+            // front right motor
+            rc_write(AP_MOTORS_MOT_5, pwm);
+            break;
+        case 6:
+            // back right motor
+            rc_write(AP_MOTORS_MOT_6, pwm);
+            break;
+        case 7:
+            // back left motor
+            rc_write(AP_MOTORS_MOT_7, pwm);
+            break;
+        case 8:
+            // front left motor
+            rc_write(AP_MOTORS_MOT_8, pwm);
+            break;
+        case 9:
             // front right servo
             rc_write(AP_SERVO_1, pwm);
             break;
-        case 6:
+        case 10:
             // back right servo
             rc_write(AP_SERVO_2, pwm);
             break;
-        case 7:
+        case 11:
             // back left servo
             rc_write(AP_SERVO_3, pwm);
             break;
-        case 8:
+        case 12:
             // front left servo
             rc_write(AP_SERVO_4, pwm);
             break;
