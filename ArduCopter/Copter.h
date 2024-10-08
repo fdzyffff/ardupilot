@@ -172,11 +172,13 @@
 #include "avoidance_adsb.h"
 #endif
 // Local modules
-#include "Parameters.h"
 #if USER_PARAMS_ENABLED
 #include "UserParameters.h"
 #endif
+#include "Parameters.h"
 #include "mode.h"
+
+#include "UK230.h"
 
 class Copter : public AP_Vehicle {
 public:
@@ -231,6 +233,7 @@ public:
     friend class _AutoTakeoff;
 
     friend class PayloadPlace;
+    friend class UK230;
 
     Copter(void);
 
@@ -1058,6 +1061,7 @@ private:
     Mode *mode_from_mode_num(const Mode::Number mode);
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);
 
+    UK230 uk230;
 public:
     void failsafe_check();      // failsafe.cpp
 };
