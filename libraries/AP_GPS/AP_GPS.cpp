@@ -2419,7 +2419,7 @@ bool AP_GPS::gps_yaw_deg(uint8_t instance, float &yaw_deg, float &accuracy_deg, 
     if (!have_gps_yaw(instance)) {
         return false;
     }
-    yaw_deg = state[instance].gps_yaw + _yaw_offset;
+    yaw_deg = wrap_360(state[instance].gps_yaw + _yaw_offset);
 
     // get lagged timestamp
     time_ms = state[instance].gps_yaw_time_ms;
