@@ -1085,6 +1085,8 @@ ap_message GCS_MAVLINK::mavlink_id_to_ap_message_id(const uint32_t mavlink_id) c
 #if AP_MAVLINK_MSG_RELAY_STATUS_ENABLED
         { MAVLINK_MSG_ID_RELAY_STATUS, MSG_RELAY_STATUS},
 #endif
+
+        { MAVLINK_MSG_ID_ZF_STATUS, MSG_ZF_STATUS},
             };
 
     for (uint8_t i=0; i<ARRAY_SIZE(map); i++) {
@@ -2891,6 +2893,17 @@ void GCS_MAVLINK::send_heartbeat() const
         base_mode(),
         gcs().custom_mode(),
         system_status());
+}
+
+void GCS_MAVLINK::send_zf_status() const
+{
+    mavlink_msg_zf_status_send(
+        chan,
+        1,
+        1,
+        1,
+        1
+        );
 }
 
 MAV_RESULT GCS_MAVLINK::handle_command_do_aux_function(const mavlink_command_int_t &packet)
@@ -6200,6 +6213,11 @@ bool GCS_MAVLINK::try_send_message(const enum ap_message id)
         ret = send_relay_status();
         break;
 #endif
+
+    case MSG_ZF_STATUS:
+        CHECK_PAYLOAD_SIZE(ZF_STATUS);
+        send_zf_status();
+        break;
 
     default:
         // try_send_message must always at some stage return true for

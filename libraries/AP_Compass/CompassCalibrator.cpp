@@ -1014,15 +1014,17 @@ bool CompassCalibrator::calculate_orientation(void)
         GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Mag(%u) new orientation: %u was %u %.1f", _compass_idx, besti, _orientation, (double)_orientation_confidence);
     }
 
-    if (!pass) {
-        set_status(Status::BAD_ORIENTATION);
-        return false;
-    }
+    // skip
+    // if (!pass) {
+    //     set_status(Status::BAD_ORIENTATION);
+    //     return false;
+    // }
 
-    if (_orientation == besti) {
-        // no orientation change
-        return true;
-    }
+    // if (_orientation == besti) {
+    //     // no orientation change
+    //     return true;
+    // }
+    return true;
 
     if (!_is_external || !_fix_orientation) {
         // we won't change the orientation, but we set _orientation
