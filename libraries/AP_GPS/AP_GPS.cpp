@@ -433,6 +433,8 @@ const AP_Param::GroupInfo AP_GPS::var_info[] = {
 #endif // GPS_MAX_RECEIVERS > 1
 #endif // HAL_ENABLE_DRONECAN_DRIVERS
 
+    AP_GROUPINFO("_YAW_OFFSET", 32, AP_GPS, _yaw_offset, 0),
+
     AP_GROUPEND
 };
 
@@ -2417,7 +2419,7 @@ bool AP_GPS::gps_yaw_deg(uint8_t instance, float &yaw_deg, float &accuracy_deg, 
     if (!have_gps_yaw(instance)) {
         return false;
     }
-    yaw_deg = state[instance].gps_yaw;
+    yaw_deg = state[instance].gps_yaw + _yaw_offset;
 
     // get lagged timestamp
     time_ms = state[instance].gps_yaw_time_ms;
