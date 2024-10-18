@@ -1934,107 +1934,107 @@ AP_AHRS::EKFType AP_AHRS::_active_EKF_type(void) const
 #endif
     }
 
-#if AP_AHRS_DCM_ENABLED
-    // Handle fallback for fixed wing planes (including VTOL's) and ground vehicles.
-    if (_vehicle_class == VehicleClass::FIXED_WING ||
-        _vehicle_class == VehicleClass::GROUND) {
-        bool should_use_gps = true;
-        nav_filter_status filt_state {};
-        switch (ret) {
-        case EKFType::DCM:
-            // already using DCM
-            break;
-#if HAL_NAVEKF2_AVAILABLE
-        case EKFType::TWO:
-            EKF2.getFilterStatus(filt_state);
-            should_use_gps = EKF2.configuredToUseGPSForPosXY();
-            break;
-#endif
-#if HAL_NAVEKF3_AVAILABLE
-        case EKFType::THREE:
-            EKF3.getFilterStatus(filt_state);
-            should_use_gps = EKF3.configuredToUseGPSForPosXY();
-            break;
-#endif
-#if AP_AHRS_SIM_ENABLED
-        case EKFType::SIM:
-            get_filter_status(filt_state);
-            break;
-#endif
-#if AP_AHRS_EXTERNAL_ENABLED
-        case EKFType::EXTERNAL:
-            get_filter_status(filt_state);
-            should_use_gps = true;
-            break;
-#endif
-        }
+// #if AP_AHRS_DCM_ENABLED
+//     // Handle fallback for fixed wing planes (including VTOL's) and ground vehicles.
+//     if (_vehicle_class == VehicleClass::FIXED_WING ||
+//         _vehicle_class == VehicleClass::GROUND) {
+//         bool should_use_gps = true;
+//         nav_filter_status filt_state {};
+//         switch (ret) {
+//         case EKFType::DCM:
+//             // already using DCM
+//             break;
+// #if HAL_NAVEKF2_AVAILABLE
+//         case EKFType::TWO:
+//             EKF2.getFilterStatus(filt_state);
+//             should_use_gps = EKF2.configuredToUseGPSForPosXY();
+//             break;
+// #endif
+// #if HAL_NAVEKF3_AVAILABLE
+//         case EKFType::THREE:
+//             EKF3.getFilterStatus(filt_state);
+//             should_use_gps = EKF3.configuredToUseGPSForPosXY();
+//             break;
+// #endif
+// #if AP_AHRS_SIM_ENABLED
+//         case EKFType::SIM:
+//             get_filter_status(filt_state);
+//             break;
+// #endif
+// #if AP_AHRS_EXTERNAL_ENABLED
+//         case EKFType::EXTERNAL:
+//             get_filter_status(filt_state);
+//             should_use_gps = true;
+//             break;
+// #endif
+//         }
 
-        // Handle fallback for the case where the DCM or EKF is unable to provide attitude or height data.
-        const bool can_use_dcm = dcm.yaw_source_available() || fly_forward;
-        const bool can_use_ekf = filt_state.flags.attitude && filt_state.flags.vert_vel && filt_state.flags.vert_pos;
-        if (!can_use_dcm && can_use_ekf) {
-            // no choice - continue to use EKF
-            return ret;
-        } else if (!can_use_ekf) {
-            // No choice - we have to use DCM
-            return EKFType::DCM;
-        }
+//         // Handle fallback for the case where the DCM or EKF is unable to provide attitude or height data.
+//         const bool can_use_dcm = dcm.yaw_source_available() || fly_forward;
+//         const bool can_use_ekf = filt_state.flags.attitude && filt_state.flags.vert_vel && filt_state.flags.vert_pos;
+//         if (!can_use_dcm && can_use_ekf) {
+//             // no choice - continue to use EKF
+//             return ret;
+//         } else if (!can_use_ekf) {
+//             // No choice - we have to use DCM
+//             return EKFType::DCM;
+//         }
 
-        const bool disable_dcm_fallback = fly_forward?
-            option_set(Options::DISABLE_DCM_FALLBACK_FW) : option_set(Options::DISABLE_DCM_FALLBACK_VTOL);
-        if (disable_dcm_fallback) {
-            // don't fallback
-            return ret;
-        }
+//         const bool disable_dcm_fallback = fly_forward?
+//             option_set(Options::DISABLE_DCM_FALLBACK_FW) : option_set(Options::DISABLE_DCM_FALLBACK_VTOL);
+//         if (disable_dcm_fallback) {
+//             // don't fallback
+//             return ret;
+//         }
         
-        // Handle loss of global position when we still have a GPS fix
-        if (hal.util->get_soft_armed() &&
-            (_gps_use != GPSUse::Disable) &&
-            should_use_gps &&
-            AP::gps().status() >= AP_GPS::GPS_OK_FIX_3D &&
-            (!filt_state.flags.using_gps || !filt_state.flags.horiz_pos_abs)) {
-            /*
-               If the EKF is not fusing GPS or doesn't have a 2D fix and we have a 3D GPS lock,
-               then plane and rover would prefer to use the GPS position from DCM unless the
-               fallback has been inhibited by the user.
-               Note: The aircraft could be dead reckoning with acceptable accuracy and rejecting a bad GPS
-               Note: This is a last resort fallback and makes the navigation highly vulnerable to GPS noise.
-               Note: When operating in a VTOL flight mode that actively controls height such as QHOVER,
-               the EKF gives better vertical velocity and position estimates and height control characteristics.
-            */
-            return EKFType::DCM;
-        }
+//         // Handle loss of global position when we still have a GPS fix
+//         if (hal.util->get_soft_armed() &&
+//             (_gps_use != GPSUse::Disable) &&
+//             should_use_gps &&
+//             AP::gps().status() >= AP_GPS::GPS_OK_FIX_3D &&
+//             (!filt_state.flags.using_gps || !filt_state.flags.horiz_pos_abs)) {
+//             /*
+//                If the EKF is not fusing GPS or doesn't have a 2D fix and we have a 3D GPS lock,
+//                then plane and rover would prefer to use the GPS position from DCM unless the
+//                fallback has been inhibited by the user.
+//                Note: The aircraft could be dead reckoning with acceptable accuracy and rejecting a bad GPS
+//                Note: This is a last resort fallback and makes the navigation highly vulnerable to GPS noise.
+//                Note: When operating in a VTOL flight mode that actively controls height such as QHOVER,
+//                the EKF gives better vertical velocity and position estimates and height control characteristics.
+//             */
+//             return EKFType::DCM;
+//         }
 
-        // Handle complete loss of navigation
-        if (hal.util->get_soft_armed() && filt_state.flags.const_pos_mode) {
-            /*
-               Provided the EKF has been configured to use GPS, ie should_use_gps is true, then the
-               key difference to the case handled above is only the absence of a GPS fix which means
-               that DCM will not be able to navigate either so we are primarily concerned with
-               providing an attitude, vertical position and vertical velocity estimate.
-            */
-            return EKFType::DCM;
-        }
+//         // Handle complete loss of navigation
+//         if (hal.util->get_soft_armed() && filt_state.flags.const_pos_mode) {
+//             /*
+//                Provided the EKF has been configured to use GPS, ie should_use_gps is true, then the
+//                key difference to the case handled above is only the absence of a GPS fix which means
+//                that DCM will not be able to navigate either so we are primarily concerned with
+//                providing an attitude, vertical position and vertical velocity estimate.
+//             */
+//             return EKFType::DCM;
+//         }
 
-        if (!filt_state.flags.horiz_vel ||
-            (!filt_state.flags.horiz_pos_abs && !filt_state.flags.horiz_pos_rel)) {
-            if ((!AP::compass().use_for_yaw()) &&
-                AP::gps().status() >= AP_GPS::GPS_OK_FIX_3D &&
-                AP::gps().ground_speed() < 2) {
-                /*
-                  special handling for non-compass mode when sitting
-                  still. The EKF may not yet have aligned its yaw. We
-                  accept EKF as healthy to allow arming. Once we reach
-                  speed the EKF should get yaw alignment
-                */
-                if (filt_state.flags.gps_quality_good) {
-                    return ret;
-                }
-            }
-            return EKFType::DCM;
-        }
-    }
-#endif
+//         if (!filt_state.flags.horiz_vel ||
+//             (!filt_state.flags.horiz_pos_abs && !filt_state.flags.horiz_pos_rel)) {
+//             if ((!AP::compass().use_for_yaw()) &&
+//                 AP::gps().status() >= AP_GPS::GPS_OK_FIX_3D &&
+//                 AP::gps().ground_speed() < 2) {
+//                 /*
+//                   special handling for non-compass mode when sitting
+//                   still. The EKF may not yet have aligned its yaw. We
+//                   accept EKF as healthy to allow arming. Once we reach
+//                   speed the EKF should get yaw alignment
+//                 */
+//                 if (filt_state.flags.gps_quality_good) {
+//                     return ret;
+//                 }
+//             }
+//             return EKFType::DCM;
+//         }
+//     }
+// #endif
 
     return ret;
 }
