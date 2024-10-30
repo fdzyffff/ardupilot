@@ -363,11 +363,11 @@ struct PACKED log_Uatk {
     LOG_PACKET_HEADER;
     uint64_t time_us;
     uint8_t type;
-    float roll;
     float pitch;
+    float roll;
     float yaw;
-    float target_roll;
     float target_pitch;
+    float target_roll;
     float target_yaw;
 };
 
@@ -424,11 +424,11 @@ void Copter::Log_Write_Uatk()
         LOG_PACKET_HEADER_INIT(LOG_UATK_MSG),
         time_us         : AP_HAL::micros64(),
         type            : (uint8_t)ugimbal.is_valid(),
-        roll            : ugimbal.display_info.p1,
-        pitch           : ugimbal.display_info.p2,
+        pitch           : ugimbal.display_info.p1,
+        roll            : ugimbal.display_info.p2,
         yaw             : ugimbal.display_info.p3,
-        target_roll     : ugimbal.display_info.p11*0.01f,
-        target_pitch    : ugimbal.display_info.p12*0.01f,
+        target_pitch    : ugimbal.display_info.p11*0.01f,
+        target_roll     : ugimbal.display_info.p12*0.01f,
         target_yaw      : ugimbal.display_info.p13*0.01f
     };
     logger.WriteBlock(&pkt, sizeof(pkt));
@@ -590,7 +590,7 @@ const struct LogStructure Copter::log_structure[] = {
 
 
     { LOG_UATK_MSG, sizeof(log_Uatk),
-      "UATK",  "QBffffff",    "TimeUS,Valid,Roll,Pitch,Yaw,TR,TP,TY", "s-------", "F-------" , true },
+      "UATK",  "QBffffff",    "TimeUS,Valid,Pitch,Roll,Yaw,TP,TR,TY", "s-------", "F-------" , true },
 };
 
 void Copter::Log_Write_Vehicle_Startup_Messages()
