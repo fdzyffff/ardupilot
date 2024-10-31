@@ -1,39 +1,25 @@
 #include "FD_message.h"
 
-#define FD_CAM_CMD_LEN 44
-class FD_CAM_CMD : public FD1_message{
+#define FD_CAM_CMD_LEN 16
+class FD_CAM_CMD : public FD_message{
 public:
     struct PACKED FD1_msg_header {
         uint8_t head_1;
         uint8_t head_2;
     };
-    
-    struct PACKED MSG_APM {
-        int16_t angle_pitch;// centi-degree
-        int16_t angle_roll;
-        uint16_t angle_yaw;//0~36000
-        uint8_t gps_year;
-        uint8_t gps_month;
-        uint8_t gps_day;
-        uint8_t gps_hour;
-        uint8_t gps_minute;
-        uint8_t gps_second;
-        uint8_t gps_second_10ms;
-        float gps_lng;
-        float gps_lag;
-        uint8_t gps_count;
-        float gps_alt;
-        uint16_t airspeed; //0.5m/s
-        uint16_t relative_alt; //0.1m/s
-    };
 
     struct PACKED MSG_Collection {
         FD1_msg_header header;
-        uint8_t empty_1[5];
-        MSG_APM msg_apm;
-        uint8_t empty_2[5];
-        uint8_t xorsum;
-        uint8_t end;
+        uint8_t length;
+        uint8_t frametype;
+        uint8_t on;
+        uint16_t target_x;
+        uint16_t target_y;
+        uint8_t type;
+        uint8_t size;
+        uint16_t target_w;
+        uint16_t target_h;
+        uint8_t sum_check;
     };
 
     // message structure
@@ -61,14 +47,13 @@ public:
             FD1UART_PREAMBLE2,
             FD1UART_INFO,
             FD1UART_DATA,
-            FD1UART_SUM,
-            FD1UART_END,
+            FD1UART_SUM
         } msg_state;
 
         uint16_t read;
         uint8_t length;
         uint8_t count;
-        uint8_t xorsum;
+        uint8_t sum_check;
         uint8_t data[FD_CAM_CMD_LEN];
     } _msg;
 
@@ -78,9 +63,8 @@ public:
     FD_CAM_CMD(const FD_CAM_CMD &other) = delete;
     FD_CAM_CMD &operator=(const FD_CAM_CMD&) = delete;
 
-    static const uint8_t PREAMBLE1 = 0xFB;
-    static const uint8_t PREAMBLE2 = 0x2C;
-    static const uint8_t POSTAMBLE1 = 0xF0;
+    static const uint8_t PREAMBLE1 = 0x90;
+    static const uint8_t PREAMBLE2 = 0xEB;
 
     void process_message(void) override;
     void parse(uint8_t temp) override;

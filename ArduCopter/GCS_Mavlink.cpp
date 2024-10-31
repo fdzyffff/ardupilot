@@ -602,7 +602,6 @@ void GCS_MAVLINK_Copter::packetReceived(const mavlink_status_t &status,
     // pass message to follow library
     copter.g2.follow.handle_msg(msg);
 #endif
-    copter.useruartfwd.handle_msg(msg);
     // copter.print_target_msg(msg);
     GCS_MAVLINK::packetReceived(status, msg);
 }
@@ -1034,7 +1033,7 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     case MAV_CMD_USER_1: {
         // copter.gcs().send_text(MAV_SEVERITY_WARNING, "USER1");
-        copter.ugimbal.handle_info(packet.param1, packet.param2, packet.param3);
+        copter.uattack.handle_info_test(packet.param1, packet.param2);
         return MAV_RESULT_ACCEPTED;
     }
 

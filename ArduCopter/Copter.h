@@ -179,8 +179,8 @@
 
 #include "mode.h"
 
-#include "UserUartFWD.h"
-#include "UGimbal.h"
+#include "UAttack.h"
+#include "UDelay.h"
 
 class Copter : public AP_Vehicle {
 public:
@@ -231,8 +231,10 @@ public:
     friend class ModeAttack;
     friend class ModeAttackVel;
 
-    friend class UserUartFWD;
-    friend class UGimbal;
+    friend class UAttack;
+    friend class UDelay;
+    friend class UCam;
+    friend class UCam_base;
     Copter(void);
 
 private:
@@ -1039,8 +1041,8 @@ private:
     Mode *mode_from_mode_num(const Mode::Number mode);
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);
 
-    UserUartFWD useruartfwd{AP_SerialManager::SerialProtocol_Uart_Forward};
-    UGimbal ugimbal;
+    UAttack uattack;
+    UDelay udelay;
 
     void print_target_msg(const mavlink_message_t &msg);
 

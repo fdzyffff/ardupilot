@@ -1,7 +1,7 @@
 #include "FD_message.h"
 
-#define FD_CAM_TARGET_LEN 13
-class FD_CAM_TARGET : public FD_message{
+#define FD_CAM_STATUS_LEN 13
+class FD_CAM_STATUS : public FD_message{
 public:
     struct PACKED FD1_msg_header {
         uint8_t head_1;
@@ -22,7 +22,7 @@ public:
     // message structure
     union PACKED Content_1 {
         MSG_Collection msg;
-        uint8_t data[FD_CAM_TARGET_LEN];
+        uint8_t data[FD_CAM_STATUS_LEN];
     };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -51,14 +51,14 @@ public:
         uint8_t length;
         uint8_t count;
         uint8_t sum_check;
-        uint8_t data[FD_CAM_TARGET_LEN];
+        uint8_t data[FD_CAM_STATUS_LEN];
     } _msg;
 
-    FD_CAM_TARGET();
+    FD_CAM_STATUS();
     
     /* Do not allow copies */
-    FD_CAM_TARGET(const FD_CAM_TARGET &other) = delete;
-    FD_CAM_TARGET &operator=(const FD_CAM_TARGET&) = delete;
+    FD_CAM_STATUS(const FD_CAM_STATUS &other) = delete;
+    FD_CAM_STATUS &operator=(const FD_CAM_STATUS&) = delete;
 
     static const uint8_t PREAMBLE1 = 0x91;
     static const uint8_t PREAMBLE2 = 0x0D;

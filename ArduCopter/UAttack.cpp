@@ -61,7 +61,7 @@ void UAttack::init_cam_port()
     const AP_SerialManager &serial_manager = AP::serialmanager();
 
     // check for protocol configured for a serial port - only the first serial port with one of these protocols will then run (cannot have FrSky on multiple serial ports)
-    _cam_port = serial_manager.find_serial(AP_SerialManager::SerialProtocol_Cam, 0);
+    _cam_port = serial_manager.find_serial(AP_SerialManager::SerialProtocol_CAM, 0);
     if (_cam_port != nullptr) {
         gcs().send_text(MAV_SEVERITY_WARNING, "CAM init");
         _UCam_ptr = new UCam(*this, _cam_port);
@@ -133,19 +133,19 @@ void UAttack::time_out_check() {
 
 // degree/second
 void UAttack::update_target_pitch_rate() {
-    float k = plane.g2.user_attack_k.get();
-    float k2 = plane.g2.user_attack_k2.get();
+    float k = copter.g2.user_parameters.attack_k.get();
+    float k2 = copter.g2.user_parameters.attack_k2.get();
     // float boost_factor = constrain_float(fabsf(bf_info.y)/15.0f, 0.0f, 1.0f) * 2.0f;
     float angle_comp = constrain_float(bf_info.y, -15.0f, 15.0f);
     _target_pitch_rate = k * ef_rate_info.y + k2 * angle_comp; // degrees/s
 
     //Limit pitch rate
-    float limit_pitch_rate = plane.g2.user_pitch_rate_limit;
+    float limit_pitch_rate = copter.g2.user_parameters.pitch_rate_limit;
     _target_pitch_rate = constrain_float(_target_pitch_rate, -limit_pitch_rate, limit_pitch_rate);
 
     //Limit pitch
-    float current_pitch = degrees(plane.ahrs.pitch);
-    float limit_pitch = constrain_float(plane.g2.user_pitch_limit, -10.f, 10.f);
+    float current_pitch = degrees(copter.ahrs.pitch);
+    float limit_pitch = constrain_float(copter.g2.user_parameters.pitch_limit, -10.f, 10.f);
     if (current_pitch > limit_pitch) {
         _target_pitch_rate = MAX(_target_pitch_rate, 0.0f);
     } else if (current_pitch < -limit_pitch) {
@@ -161,23 +161,15 @@ void UAttack::update_target_roll_angle() {
 
 // degree/second
 void UAttack::update_target_yaw_rate() {
-    float k = plane.g2.user_attack_k.get();
-    float k2 = plane.g2.user_attack_k2.get();
+    float k = copter.g2.user_parameters.attack_k.get();
+    float k2 = copter.g2.user_parameters.attack_k2.get();
     // float boost_factor = constrain_float(fabsf(bf_info.x)/15.0f, 0.0f, 1.0f) * 2.0f;
     float angle_comp = constrain_float(bf_info.x, -15.0f, 15.0f);
     _target_yaw_rate = k * 1.5f * ef_rate_info.x + k2 * angle_comp;
 }
 
-void UAttack::handle_attack_msg(const mavlink_message_t &msg) {
-    // if (msg.msgid == MAVLINK_MSG_ID_MY_OPTIC_DATA) {
-    //     // decode packet
-    //     gcs().send_text(MAV_SEVERITY_WARNING, "atk mavpkg");
-    // }
-    // if (msg.msgid == MAVLINK_MSG_ID_MY_UART_FORWARD) {
-    //     // decode packet
-    //     gcs().send_text(MAV_SEVERITY_WARNING, "atk mavpkg2");
-    // }
+void UAttack::handle_info_test(float p1, float p2) {
     if (_cam_port_type == 1 || _cam_port_type == 2) {
-        _UCam_ptr->handle_msg(msg);
+        _UCam_ptr->handle_info_test(p1, p2);
     }
 }

@@ -6,35 +6,35 @@
 UCam::UCam(UAttack &frotend_in, AP_HAL::UARTDriver* port_in):
     UCam_base(frotend_in)
 {
-    FD1_uart_ptr = new FD_CAM(port_in);
-    FD1_uart_ptr->get_msg_STATUS().set_enable();
-    FD1_uart_ptr->get_msg_TARGET().set_enable();
-    FD1_uart_ptr->get_msg_CONTROL().set_enable();
+    FD_CAM_ptr = new FD_CAM(port_in);
+    FD_CAM_ptr->get_msg_cam_cmd().set_enable();
+    FD_CAM_ptr->get_msg_cam_status().set_enable();
+    FD_CAM_ptr->get_msg_cam_target().set_enable();
     _yaw_rate_filter.set_cutoff_frequency(10.f, 25.f);
     return;
 }
 
 void UCam::update() {
     static uint32_t last_update_ms = millis();
-    _yaw_rate_filter.apply(degrees(copter.ahrs.get_yaw_rate_earth()));
+    _yaw_rate_filter.apply(degrees(AP::ahrs().get_yaw_rate_earth()));
 
-    FD1_uart_ptr->read();
-    FD_CAM_msg_DYTTELEM &tmp_msg = FD1_uart_ptr->get_msg_TARGET();
+    FD_CAM_ptr->read();
+    FD_CAM_TARGET &tmp_msg = FD_CAM_ptr->get_msg_cam_target();
     if (tmp_msg._msg_1.updated) {
         // DYT -> APM
-        if (tmp_msg._msg_1.content.msg.target_x == 0 && tmp_msg._msg_1.content.msg.target_y == 0) {
-            // unhealthy massage
-            ;
-        } else {
-            float p1 = (float)(tmp_msg._msg_1.content.msg.target_x) * 0.05f; // x-axis
-            float p2 = (float)(tmp_msg._msg_1.content.msg.target_y) * 0.05f; // y-axis
+        if (tmp_msg._msg_1.content.msg.on == 1) {
+            float p1 =  cal_frame_angle(copter.g2.user_parameters.cam_width.get(), copter.g2.user_parameters.cam_angle_x.get(), tmp_msg._msg_1.content.msg.target_x); // x-axis, degree
+            float p2 = -cal_frame_angle(copter.g2.user_parameters.cam_height.get(), copter.g2.user_parameters.cam_angle_y.get(), tmp_msg._msg_1.content.msg.target_y); // y-axis, degree
+            p2 += copter.g2.user_parameters.cam_pitch_offset.get(); // add offset between cam and uav
             handle_info(p1, p2);
+        } else {
+            // unhealthy massage
         }
         tmp_msg._msg_1.updated = false;
     }
 
     uint32_t tnow = millis(); // 只能放这里，handle_info会更新_last_ms的值，如果tnow赋值在其之前，则会小于_last_ms。SITL仿不出来，它周期是50Hz太低了
-    if ((copter.g2.user_attack_timeout > 0) && (tnow - _last_ms > (uint32_t)copter.g2.user_attack_timeout)) {
+    if ((copter.g2.user_parameters.attack_timeout > 0) && (tnow - _last_ms > (uint32_t)copter.g2.user_parameters.attack_timeout)) {
         // if (_valid) {
         //     gcs().send_text(MAV_SEVERITY_INFO, "valid %ld|%ld", tnow, _last_ms);
         // }
@@ -50,6 +50,18 @@ void UCam::update() {
     }
 }
 
+float UCam::cal_frame_angle(float pixel, float angle, float x_in)
+{
+    // pixel, eg: 1080
+    // angle, eg: 54°
+    // x_in, eg: 540
+    // ret, eg: 0°
+    pixel = constrain_float(pixel, 100.0f, 8000.f);
+    angle = constrain_float(angle, radians(10.0f), radians(150.0f));
+    x_in = constrain_float(x_in, 0.f, pixel);
+    float ret = atanf(2.0f*(x_in-pixel*0.5f)/pixel*tanf(angle*0.5f));
+    return degrees(ret);
+}
 
 void UCam::do_cmd() {
     ;
@@ -66,13 +78,13 @@ void UCam::handle_info(float p1, float p2) {
     _valid = true;
     _last_ms = millis();
 
-    float _roll = copter.ahrs.roll;
-    float _pitch = copter.ahrs.pitch;
-    float _yaw = copter.ahrs.yaw;
-    if (!copter.udelay.get_idx(24-1, _roll, _pitch, _yaw)) {
-        _roll = copter.ahrs.roll;
-        _pitch = copter.ahrs.pitch;
-        _yaw = copter.ahrs.yaw;
+    float _roll = copter.ahrs_view->roll;
+    float _pitch = copter.ahrs_view->pitch;
+    float _yaw = copter.ahrs_view->yaw;
+    if (!copter.udelay.get_idx(10-1, _roll, _pitch, _yaw)) {
+        _roll = copter.ahrs_view->roll;
+        _pitch = copter.ahrs_view->pitch;
+        _yaw = copter.ahrs_view->yaw;
     }
 
     _frotend.bf_info.x = p1; // yaw degree
@@ -115,9 +127,8 @@ void UCam::handle_info(float p1, float p2) {
     _frotend.display_info_count++;
 }
 
-
 void UCam::handle_info_test(float p1, float p2) {
-    FD_CAM_msg_DYTTELEM &tmp_msg = FD1_uart_ptr->get_msg_DYTTELEM();
+    FD_CAM_TARGET &tmp_msg = FD_CAM_ptr->get_msg_cam_target();
     tmp_msg._msg_1.updated = true;
     tmp_msg._msg_1.content.msg.target_x = (int16_t)(p1/0.005f);
     tmp_msg._msg_1.content.msg.target_y = (int16_t)(p2/0.005f);

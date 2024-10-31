@@ -1,4 +1,4 @@
-#include "Plane.h"
+#include "Copter.h"
 
 UDelay::UDelay()
 {
@@ -22,9 +22,9 @@ void UDelay::push()
     if (_idx >= UDELAY_BUFFER) {
         _idx = 0;
     }
-    _buffer[_idx].roll = plane.ahrs.roll;
-    _buffer[_idx].pitch = plane.ahrs.pitch;
-    _buffer[_idx].yaw = plane.ahrs.yaw;
+    _buffer[_idx].roll = copter.ahrs_view->roll;
+    _buffer[_idx].pitch = copter.ahrs_view->pitch;
+    _buffer[_idx].yaw = copter.ahrs_view->yaw;
     _buffer[_idx].time_ms = millis();
 }
 

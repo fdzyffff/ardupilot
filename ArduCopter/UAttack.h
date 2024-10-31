@@ -25,7 +25,7 @@ public:
     float get_target_roll_angle() {return _target_roll_angle;}
     float get_target_yaw_rate() {return _target_yaw_rate;}
 
-    void handle_attack_msg(const mavlink_message_t &msg);
+    void handle_info_test(float p1, float p2);
 
     AP_HAL::UARTDriver* get_port(void) {return _cam_port;}
 
@@ -48,7 +48,6 @@ public:
 
     UCam_base* _UCam_ptr;
     uint8_t _cam_port_type;
-
 
 private:
     void cam_update();
@@ -86,9 +85,9 @@ public:
     void handle_msg(const mavlink_message_t &msg) override {return;};
     void handle_info_test(float p1, float p2) override;
 
-    void fill_state_msg();
+    float cal_frame_angle(float pixel, float angle, float x_in);
 private:
-    FD_CAM* FD1_uart_ptr;
+    FD_CAM* FD_CAM_ptr;
     uint32_t _last_ms;
 
     DerivativeFilterFloat_Size7 _pitch_filter;

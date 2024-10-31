@@ -5,7 +5,8 @@ void Copter::userhook_init()
 {
     // put your initialisation code here
     // this will be called once at start-up
-    useruartfwd.init();
+    uattack.init();
+    udelay.init();
 }
 #endif
 
@@ -13,7 +14,8 @@ void Copter::userhook_init()
 void Copter::userhook_FastLoop()
 {
     // put your 100Hz code here
-    useruartfwd.update();
+    uattack.update();
+    udelay.push();
 }
 #endif
 
@@ -32,7 +34,6 @@ void Copter::userhook_25Hz()
 void Copter::userhook_MediumLoop()
 {
     // put your 10Hz code here
-    ugimbal.update();
 #if LOGGING_ENABLED == ENABLED
     if (logger.logging_started()) {
         Log_Write_Uatk();
@@ -52,31 +53,16 @@ void Copter::userhook_SlowLoop()
 void Copter::userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
-    if (ugimbal.display_info.count > 0) {
-        if ((g2.user_parameters.cam_print.get() & (1<<0)) ) { // 1
-            gcs().send_text(MAV_SEVERITY_WARNING, "1[%d] %0.0f,%0.0f,%0.0f,%0.0f", ugimbal.display_info.count, ugimbal.display_info.p1, ugimbal.display_info.p2, ugimbal.display_info.p3, ugimbal.display_info.p4);
-        }
-        if ((g2.user_parameters.cam_print.get() & (1<<1)) ) { // 2
-            gcs().send_text(MAV_SEVERITY_WARNING, "2[%d] %0.0f,%0.0f,%0.0f,%0.0f", ugimbal.display_info.count, ugimbal.display_info.p11, ugimbal.display_info.p12, ugimbal.display_info.p13, ugimbal.display_info.p14);
-        }
-        ugimbal.display_info.count = 0;
+    if ((g2.user_parameters.print.get() & (1<<0)) && uattack.display_info_new) { // 1
+        gcs().send_text(MAV_SEVERITY_WARNING, "[%d] %0.0f,%0.0f,%0.0f,%0.0f", uattack.display_info_count_log, uattack.display_info_p1, uattack.display_info_p2, uattack.display_info_p3, uattack.display_info_p4);
+        uattack.display_info_new = false;
     }
-    // gcs().send_text(MAV_SEVERITY_INFO, "hal.util->available_memory:%ld",hal.util->available_memory());
-
-
-
-    // Vector3f dist_vec;  // vector to lead vehicle
-    // Vector3f dist_vec_offs;  // vector to lead vehicle + offset
-    // Vector3f vel_of_target;  // velocity of lead vehicle
-    // if (g2.follow.get_target_dist_and_vel_ned(dist_vec, dist_vec_offs, vel_of_target)) {
-    //     gcs().send_text(MAV_SEVERITY_INFO, "dist_vec.x | y : %f | %f", dist_vec.x, dist_vec.y);
-    //     gcs().send_text(MAV_SEVERITY_INFO, "dist_vec_offs.x | y : %f | %f", dist_vec_offs.x, dist_vec_offs.y);
-    //     gcs().send_text(MAV_SEVERITY_INFO, "vel_of_target.x | y : %f | %f", vel_of_target.x, vel_of_target.y);
-    // }
-    // else {
-    //     gcs().send_text(MAV_SEVERITY_INFO, "False");
-    // }
-    // gcs().send_text(MAV_SEVERITY_INFO, "%f", pos_control->get_max_speed_xy_cms());
+    if (g2.user_parameters.print.get() & (1<<1)) { // 2
+        gcs().send_text(MAV_SEVERITY_WARNING, "Corr (%0.0f,%0.0f) on:%d", uattack.get_ef_rate_info().x,uattack.get_ef_rate_info().y, uattack.is_active());
+    }
+    if (g2.user_parameters.print.get() & (1<<2)) { // 4
+        gcs().send_text(MAV_SEVERITY_WARNING, "rpy (%0.1f,%0.1f,%0.1f)", uattack.get_target_roll_angle(), uattack.get_target_pitch_rate(), uattack.get_target_yaw_rate());
+    }
 
 }
 #endif

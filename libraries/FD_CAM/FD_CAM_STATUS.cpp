@@ -1,14 +1,14 @@
-#include "FD_CAM_TARGET.h"
+#include "FD_CAM_STATUS.h"
 // #include <GCS_MAVLink/GCS.h>
 
-FD_CAM_TARGET::FD_CAM_TARGET(void)
+FD_CAM_STATUS::FD_CAM_STATUS(void)
 {
     _enable = false;
     _msg_1.need_send = false;
     _msg_1.updated = false;
 }
 
-void FD_CAM_TARGET::parse(uint8_t temp)
+void FD_CAM_STATUS::parse(uint8_t temp)
 {
     // gcs().send_text(MAV_SEVERITY_INFO, "State: %d, Byte: %d",_msg.msg_state, temp);
     switch (_msg.msg_state)
@@ -28,7 +28,7 @@ void FD_CAM_TARGET::parse(uint8_t temp)
             {
                 _msg.data[_msg.read] = temp;// 1
                 _msg.read++;
-                _msg.length = FD_CAM_TARGET_LEN;
+                _msg.length = FD_CAM_STATUS_LEN;
                 _msg.msg_state = FD1UART_msg_parser::FD1UART_DATA;
             }
             else
@@ -65,7 +65,7 @@ void FD_CAM_TARGET::parse(uint8_t temp)
     }
 }
 
-void FD_CAM_TARGET::process_message(void)
+void FD_CAM_STATUS::process_message(void)
 {
     int16_t i = 0;
 
@@ -79,18 +79,18 @@ void FD_CAM_TARGET::process_message(void)
     _msg_1.print = true;
 }
 
-void FD_CAM_TARGET::make_sum()
+void FD_CAM_STATUS::make_sum()
 {
-    _msg_1.content.msg.header.head_1 = FD_CAM_TARGET::PREAMBLE1;
-    _msg_1.content.msg.header.head_2 = FD_CAM_TARGET::PREAMBLE2;
-    _msg_1.length = FD_CAM_TARGET_LEN;
+    _msg_1.content.msg.header.head_1 = FD_CAM_STATUS::PREAMBLE1;
+    _msg_1.content.msg.header.head_2 = FD_CAM_STATUS::PREAMBLE2;
+    _msg_1.length = FD_CAM_STATUS_LEN;
     _msg_1.content.msg.sum_check = 0;
     for (int8_t i = 0; i < _msg_1.length - 1; i++) {
         _msg_1.content.msg.sum_check += _msg_1.content.data[i];
     }
 }
 
-void FD_CAM_TARGET::swap_message(void)
+void FD_CAM_STATUS::swap_message(void)
 {
     ;
 }

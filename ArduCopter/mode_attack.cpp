@@ -3,7 +3,7 @@
 // initialise follow mode
 bool ModeAttack::init(const bool ignore_checks)
 {
-    if (!copter.ugimbal.is_valid()) {
+    if (!copter.uattack.is_active()) {
         gcs().send_text(MAV_SEVERITY_WARNING, "No target");
     }
 
@@ -41,11 +41,10 @@ void ModeAttack::run()
     // Alt Hold State Machine Determination
     AltHoldModeState althold_state = get_alt_hold_state(target_climb_rate);
 
-    target_roll += copter.ugimbal.get_target_roll_cd();
-    target_pitch += copter.g2.user_parameters.attack_pitch.get();
-    target_yaw = copter.ugimbal.get_target_yaw_cd();
-    target_climb_rate += copter.ugimbal.get_target_climb_rate();
-
+    target_roll += copter.uattack.get_target_roll_angle();
+    // target_pitch = 0;
+    target_yaw = 0;
+    // target_climb_rate = 0;
 
     // Alt Hold State Machine
     switch (althold_state) {

@@ -12,18 +12,21 @@ public:
     
     // Put accessors to your parameter variables here
     // UserCode usage example: g2.user_parameters.get_int8Param()
-    AP_Int8 forward_type;
-    AP_Int8 forward_print;
-    AP_Int16 cam_time_out;
-    AC_PID   Ucam_pid;
-    AP_Int8  cam_print;
-    AP_Float attack_pitch;
-    AP_Float attack_roll_factor;
-    AP_Float attack_yaw_offset;
-    AP_Float attack_pitch_offset;
-    AP_Float attack_vel;
-    AP_Float max_vel_xy;
-    AP_Float max_vel_z;
+    AP_Float attack_k;
+    AP_Float attack_k2;
+    AP_Float attack_throttle;
+    AP_Float attack_throttle_rate;
+    AP_Int16 attack_timeout;
+    AP_Float pitch_limit;
+    AP_Float pitch_rate_limit;
+    AP_Int16 print;
+    AC_PID   attack_throttle_pid;
+    AP_Float cam_width;
+    AP_Float cam_height;
+    AP_Float cam_angle_x;
+    AP_Float cam_angle_y;
+    AP_Float cam_pitch_offset;
+
 
 private:
     // Put your parameter variable definitions here
