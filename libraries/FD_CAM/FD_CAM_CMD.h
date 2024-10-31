@@ -1,7 +1,7 @@
-#include "FD1_message.h"
+#include "FD_message.h"
 
-#define FD1_MSG_GCS2GIMBAL_LEN 44
-class FD1_msg_gcs2gimbal : public FD1_message{
+#define FD_CAM_CMD_LEN 44
+class FD_CAM_CMD : public FD1_message{
 public:
     struct PACKED FD1_msg_header {
         uint8_t head_1;
@@ -39,7 +39,7 @@ public:
     // message structure
     union PACKED Content_1 {
         MSG_Collection msg;
-        uint8_t data[FD1_MSG_GCS2GIMBAL_LEN];
+        uint8_t data[FD_CAM_CMD_LEN];
     };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -69,14 +69,14 @@ public:
         uint8_t length;
         uint8_t count;
         uint8_t xorsum;
-        uint8_t data[FD1_MSG_GCS2GIMBAL_LEN];
+        uint8_t data[FD_CAM_CMD_LEN];
     } _msg;
 
-    FD1_msg_gcs2gimbal();
+    FD_CAM_CMD();
     
     /* Do not allow copies */
-    FD1_msg_gcs2gimbal(const FD1_msg_gcs2gimbal &other) = delete;
-    FD1_msg_gcs2gimbal &operator=(const FD1_msg_gcs2gimbal&) = delete;
+    FD_CAM_CMD(const FD_CAM_CMD &other) = delete;
+    FD_CAM_CMD &operator=(const FD_CAM_CMD&) = delete;
 
     static const uint8_t PREAMBLE1 = 0xFB;
     static const uint8_t PREAMBLE2 = 0x2C;
