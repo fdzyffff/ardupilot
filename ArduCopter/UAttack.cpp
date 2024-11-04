@@ -91,11 +91,11 @@ void UAttack::cam_update()
 }
 
 
-void UAttack::do_cmd(float p1, float p2, float p3, float p4)
+void UAttack::do_cmd_on(bool on)
 {
     if (get_port() == NULL) {return;}
     if (_UCam_ptr == nullptr) {return;}
-    _UCam_ptr->do_cmd();
+    _UCam_ptr->do_cmd_on(on);
 }
 
 

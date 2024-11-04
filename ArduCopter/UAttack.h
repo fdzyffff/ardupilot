@@ -16,7 +16,7 @@ public:
     void udpate_control_value();
     void init_cam_port();
     void update();
-    void do_cmd(float p1, float p2, float p3, float p4);
+    void do_cmd_on(bool on);
     const Vector2f& get_bf_info();
     const Vector2f& get_ef_info();
     const Vector2f& get_ef_rate_info();
@@ -65,7 +65,7 @@ public:
     UCam_base(UAttack &frotend_in): _frotend(frotend_in) {};
     virtual bool is_valid() = 0;
     virtual void update() = 0;
-    virtual void do_cmd() = 0;
+    virtual void do_cmd_on(bool on) = 0;
     virtual void handle_info(float p1, float p2) = 0;
     virtual void handle_msg(const mavlink_message_t &msg) = 0;
     virtual void handle_info_test(float p1, float p2) = 0;
@@ -80,7 +80,7 @@ public:
     UCam(UAttack &frotend_in, AP_HAL::UARTDriver* port_in);
     bool is_valid() override;
     void update() override;
-    void do_cmd() override;
+    void do_cmd_on(bool on) override;
     void handle_info(float p1, float p2) override;
     void handle_msg(const mavlink_message_t &msg) override {return;};
     void handle_info_test(float p1, float p2) override;

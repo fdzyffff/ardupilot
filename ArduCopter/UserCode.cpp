@@ -70,8 +70,15 @@ void Copter::userhook_SuperSlowLoop()
 #ifdef USERHOOK_AUXSWITCH
 void Copter::userhook_auxSwitch1(const RC_Channel::AuxSwitchPos ch_flag)
 {
-    // put your aux switch #1 handler here (CHx_OPT = 47)
-    // ufollow.set_target_loc();
+    // put your aux switch #1 handler here (CHx_OPT = 47)    
+    switch(ch_flag) {
+    case RC_Channel::AuxSwitchPos::HIGH: {
+        uattack.do_cmd_on(1);
+        break;
+    }
+    default:
+        uattack.do_cmd_on(0);
+    }
 }
 
 void Copter::userhook_auxSwitch2(const RC_Channel::AuxSwitchPos ch_flag)

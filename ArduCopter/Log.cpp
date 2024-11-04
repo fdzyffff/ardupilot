@@ -596,7 +596,7 @@ const struct LogStructure Copter::log_structure[] = {
 
 
     { LOG_UATK_MSG, sizeof(log_Uatk),
-      "UATK",  "QBfffffffff",    "TimeUS,Valid,bfx,bfy,efx,efy,efrx,efry,TP,TR,TY", "s-------", "F-------" , true },
+      "UATK",  "QBfffffffff",    "TimeUS,Valid,bfx,bfy,efx,efy,efrx,efry,TP,TR,TY", "s----------", "F----------" , true },
 };
 
 void Copter::Log_Write_Vehicle_Startup_Messages()

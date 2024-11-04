@@ -63,8 +63,25 @@ float UCam::cal_frame_angle(float pixel, float angle, float x_in)
     return degrees(ret);
 }
 
-void UCam::do_cmd() {
-    ;
+void UCam::do_cmd_on(bool on) {
+    if (on) {
+        gcs().send_text(MAV_SEVERITY_WARNING, "Lock ON");
+    } else {
+        gcs().send_text(MAV_SEVERITY_WARNING, "Lock OFF");
+    }
+
+    FD_CAM_CMD &tmp_msg = FD_CAM_ptr->get_msg_cam_cmd();
+
+    tmp_msg._msg_1.content.msg.header.head_1 = FD_CAM_CMD::PREAMBLE1;
+    tmp_msg._msg_1.content.msg.header.head_2 = FD_CAM_CMD::PREAMBLE2;
+    tmp_msg._msg_1.content.msg.on = (uint8_t)on;
+    tmp_msg._msg_1.content.msg.type = 0x01;
+    tmp_msg._msg_1.content.msg.size = 0x02;
+
+    tmp_msg.make_sum();
+    tmp_msg._msg_1.need_send = true;
+
+    FD_CAM_ptr->write();
 }
 
 bool UCam::is_valid() {
