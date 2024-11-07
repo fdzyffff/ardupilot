@@ -10,21 +10,22 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     AP_GROUPINFO("_UATK_THR",   2, UserParameters, attack_throttle,        75.0f),
     AP_GROUPINFO("_UATK_TRATE", 3, UserParameters, attack_throttle_rate,    1.0f),
     AP_GROUPINFO("_UATK_OUTMS", 4, UserParameters, attack_timeout,       2000),
-    AP_GROUPINFO("_UATK_PL",    5, UserParameters, pitch_limit,            30.f),
-    AP_GROUPINFO("_UATK_PRL",   6, UserParameters, pitch_rate_limit,       30.f),
-    AP_GROUPINFO("_UPRINT",     7, UserParameters, print,                   0),
-    AP_SUBGROUPINFO(attack_throttle_pid, "_ATKTHR_", 8, UserParameters, AC_PID),
-    AP_GROUPINFO("_CAM_W",      9, UserParameters, cam_width,             720),
-    AP_GROUPINFO("_CAM_H",     10, UserParameters, cam_height,            720),
-    AP_GROUPINFO("_CAM_ANG_X", 11, UserParameters, cam_angle_x,           45.0f),
-    AP_GROUPINFO("_CAM_ANG_Y", 12, UserParameters, cam_angle_y,           45.0f),
-    AP_GROUPINFO("_CAM_P_OFF", 13, UserParameters, cam_pitch_offset,      25.0f),
+    AP_GROUPINFO("_UATK_ANGLE" ,5, UserParameters, attack_angle,           30.f),
+    AP_GROUPINFO("_UATK_PL",    6, UserParameters, pitch_limit,            30.f),
+    AP_GROUPINFO("_UATK_PRL",   7, UserParameters, pitch_rate_limit,       30.f),
+    AP_GROUPINFO("_UPRINT",     8, UserParameters, print,                   0),
+    AP_SUBGROUPINFO(attack_throttle_pid, "_ATKTHR_", 9, UserParameters, AC_PID),
+    AP_GROUPINFO("_CAM_W",     10, UserParameters, cam_width,             720),
+    AP_GROUPINFO("_CAM_H",     11, UserParameters, cam_height,            720),
+    AP_GROUPINFO("_CAM_ANG_X", 12, UserParameters, cam_angle_x,            45.0f),
+    AP_GROUPINFO("_CAM_ANG_Y", 13, UserParameters, cam_angle_y,            45.0f),
+    AP_GROUPINFO("_CAM_P_OFF", 14, UserParameters, cam_pitch_offset,       25.0f),
 
     AP_GROUPEND
 };
 
 UserParameters::UserParameters():
-    attack_throttle_pid(0.75f, 0.0f, 0.0f, 0.0f, 0.2f, 0.0f, 0.0f, 0.0f, 0.02f)
+    attack_throttle_pid(0.15f, 0.25f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.02f)
 {
     AP_Param::setup_object_defaults(this, var_info);
 }

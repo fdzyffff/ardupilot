@@ -17,6 +17,7 @@ public:
     AP_Float attack_throttle;
     AP_Float attack_throttle_rate;
     AP_Int16 attack_timeout;
+    AP_Float attack_angle; // degree
     AP_Float pitch_limit;
     AP_Float pitch_rate_limit;
     AP_Int16 print;

@@ -10,7 +10,7 @@ FD_CAM_TARGET::FD_CAM_TARGET(void)
 
 void FD_CAM_TARGET::parse(uint8_t temp)
 {
-    // gcs().send_text(MAV_SEVERITY_INFO, "State: %d, Byte: %d",_msg.msg_state, temp);
+    // gcs().send_text(MAV_SEVERITY_INFO, "State: %d, Byte: %x",_msg.msg_state, temp);
     switch (_msg.msg_state)
     {
         default:
@@ -20,6 +20,7 @@ void FD_CAM_TARGET::parse(uint8_t temp)
             _msg.data[_msg.read] = temp;// 0
             if (temp == PREAMBLE1) {
                 _msg.read++;
+                _msg.sum_check += temp;
                 _msg.msg_state = FD1UART_msg_parser::FD1UART_PREAMBLE2;
             }
             break;
@@ -28,6 +29,7 @@ void FD_CAM_TARGET::parse(uint8_t temp)
             {
                 _msg.data[_msg.read] = temp;// 1
                 _msg.read++;
+                _msg.sum_check += temp;
                 _msg.length = FD_CAM_TARGET_LEN;
                 _msg.msg_state = FD1UART_msg_parser::FD1UART_DATA;
             }
@@ -54,7 +56,7 @@ void FD_CAM_TARGET::parse(uint8_t temp)
             _msg.data[_msg.read] = temp;
             _msg.read++;
 
-            // gcs().send_text(MAV_SEVERITY_INFO, "sum: %d, sum_in: %d",_msg.sum_check, temp);
+            // gcs().send_text(MAV_SEVERITY_INFO, "sum: %x, sum_in: %x",_msg.sum_check, temp);
 
             if (_msg.sum_check == temp)
             {
