@@ -20,6 +20,9 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     AP_GROUPINFO("_CAM_ANG_X", 12, UserParameters, cam_angle_x,            45.0f),
     AP_GROUPINFO("_CAM_ANG_Y", 13, UserParameters, cam_angle_y,            45.0f),
     AP_GROUPINFO("_CAM_P_OFF", 14, UserParameters, cam_pitch_offset,       25.0f),
+    AP_GROUPINFO("_LOCK_X",    15, UserParameters, lock_x,                500),
+    AP_GROUPINFO("_LOCK_Y",    16, UserParameters, lock_y,                250),
+    AP_GROUPINFO("_LOCK_SIZE", 17, UserParameters, lock_size,               2),
 
     AP_GROUPEND
 };

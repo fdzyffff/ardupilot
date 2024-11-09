@@ -13,8 +13,8 @@ public:
         uint8_t length;
         uint8_t frametype;
         uint8_t on;
-        uint16_t target_x;
-        uint16_t target_y;
+        int16_t target_x;
+        int16_t target_y;
         uint8_t type;
         uint8_t size;
         uint16_t target_w;

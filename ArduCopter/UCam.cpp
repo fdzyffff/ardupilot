@@ -77,10 +77,10 @@ void UCam::do_cmd_on(bool on) {
     tmp_msg._msg_1.content.msg.length = 0x10;
     tmp_msg._msg_1.content.msg.frametype = 0x69;
     tmp_msg._msg_1.content.msg.on = (uint8_t)on;
-    tmp_msg._msg_1.content.msg.target_x = 1000;
-    tmp_msg._msg_1.content.msg.target_y = 500;
+    tmp_msg._msg_1.content.msg.target_x = (int16_t)copter.g2.user_parameters.lock_x;
+    tmp_msg._msg_1.content.msg.target_y = (int16_t)copter.g2.user_parameters.lock_y;
     tmp_msg._msg_1.content.msg.type = 0x01;
-    tmp_msg._msg_1.content.msg.size = 0x03;
+    tmp_msg._msg_1.content.msg.size = (uint8_t)copter.g2.user_parameters.lock_size;
 
     tmp_msg.make_sum();
     tmp_msg._msg_1.need_send = true;

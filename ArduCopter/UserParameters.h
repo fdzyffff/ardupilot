@@ -27,6 +27,9 @@ public:
     AP_Float cam_angle_x;
     AP_Float cam_angle_y;
     AP_Float cam_pitch_offset;
+    AP_Int16 lock_x;
+    AP_Int16 lock_y;
+    AP_Int8  lock_size;
 
 
 private:
