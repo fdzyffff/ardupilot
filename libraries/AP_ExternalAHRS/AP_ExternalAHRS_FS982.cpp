@@ -216,6 +216,16 @@ void AP_ExternalAHRS_FS982::parse_msg()
         gps_data.ned_vel_east = nav_msg.nav.velocity_east_m_s;
         gps_data.ned_vel_down = nav_msg.nav.velocity_down_m_s;
 
+        if (GNSS_has_fixed_once) // 本次上电后如果已经定位过，则后面即使GNSS失锁，也按照已经定位处理
+        {
+            if (gps_data.fix_type < 3)
+            {
+                gps_data.fix_type = 3;
+                gps_data.satellites_in_view = 99; // 强行设置为99颗星
+                gps_data.hdop = 0.1f;
+            }
+        }
+
         uint8_t instance;
         if (AP::gps().get_first_external_instance(instance))
         {
@@ -232,6 +242,8 @@ void AP_ExternalAHRS_FS982::parse_msg()
                     gps_data.msl_altitude,
                     Location::AltFrame::ABSOLUTE};
                 state.have_origin = true;
+
+                GNSS_has_fixed_once = true;
             }
         }
 
@@ -406,6 +418,8 @@ void AP_ExternalAHRS_FS982::get_filter_status(nav_filter_status &status) const
             status.flags.pred_horiz_pos_rel = true;
             status.flags.pred_horiz_pos_abs = true;
             status.flags.using_gps = true;
+            status.flags.gps_glitching = false;
+            status.flags.gps_quality_good = true;
         }
     }
 }

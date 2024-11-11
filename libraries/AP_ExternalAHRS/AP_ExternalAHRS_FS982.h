@@ -97,6 +97,8 @@ private:
     uint32_t crc_crc32(uint32_t crc, const uint8_t *buf, uint32_t size);
 
     uint32_t last_nav_msg_ms = 0;
+
+    bool GNSS_has_fixed_once = false;  // 本次上电后GNSS已经定过一次（用于GNSS失锁后惯导控制逻辑）
 };
 
 #endif  // AP_EXTERNAL_AHRS_FS982_ENABLED
