@@ -73,6 +73,7 @@ Aircraft::Aircraft(const char *frame_str) :
     for (uint8_t i = 0; i < RANGEFINDER_MAX_INSTANCES; i++){
         rangefinder_m[i] = -1.0f;
     }
+    flag_stop_on_ground = false;   
 }
 
 void Aircraft::set_start_location(const Location &start_loc, const float start_yaw)
@@ -656,6 +657,7 @@ void Aircraft::update_dynamics(const Vector3f &rot_accel)
     if (on_ground()) {
         if (!was_on_ground && AP_HAL::millis() - last_ground_contact_ms > 1000) {
             GCS_SEND_TEXT(MAV_SEVERITY_INFO, "SIM Hit ground at %f m/s", velocity_ef.z);
+            flag_stop_on_ground = true;
             last_ground_contact_ms = AP_HAL::millis();
         }
         position.z = -(ground_level + frame_height - home.alt * 0.01f + ground_height_difference());

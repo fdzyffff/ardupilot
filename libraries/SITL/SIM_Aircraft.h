@@ -146,6 +146,8 @@ public:
 
     float get_battery_voltage() const { return battery_voltage; }
 
+    bool flag_stop_on_ground;
+
 protected:
     SIM *sitl;
     // origin of position vector

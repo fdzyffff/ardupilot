@@ -53,6 +53,7 @@ public:
 #if HAL_QUADPLANE_ENABLED
         LOITER_ALT_QLAND = 25,
 #endif
+        FLY_RS        = 30,
     };
 
     // Constructor
@@ -726,3 +727,17 @@ protected:
 };
 
 #endif
+
+class ModeRS : public Mode
+{
+public:
+
+    Number mode_number() const override { return Number::FLY_RS; }
+    const char *name() const override { return "FBRS"; }
+    const char *name4() const override { return "FBRS"; }
+
+    // methods that affect movement of the vehicle in this mode
+    void update() override;
+
+    float cmd_throttle;
+};
