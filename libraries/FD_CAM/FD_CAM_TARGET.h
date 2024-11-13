@@ -12,10 +12,10 @@ public:
         FD1_msg_header header;
         uint8_t on;
         uint8_t status;
-        uint16_t target_x;
-        uint16_t target_y;
-        uint16_t target_w;
-        uint16_t target_h;
+        int16_t target_x;
+        int16_t target_y;
+        int16_t target_w;
+        int16_t target_h;
         uint8_t sum_check;
     };
 

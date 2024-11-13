@@ -30,6 +30,8 @@ public:
     AP_Int16 lock_x;
     AP_Int16 lock_y;
     AP_Int8  lock_size;
+    AP_Int16 cam_x_offset;
+    AP_Int16 cam_y_offset;
 
 
 private:

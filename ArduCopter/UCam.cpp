@@ -23,8 +23,14 @@ void UCam::update() {
     if (tmp_msg._msg_1.updated) {
         // DYT -> APM
         if (tmp_msg._msg_1.content.msg.status == 1) {
-            float p1 =  cal_frame_angle(copter.g2.user_parameters.cam_width.get(), copter.g2.user_parameters.cam_angle_x.get(), tmp_msg._msg_1.content.msg.target_x); // x-axis, degree
-            float p2 = -cal_frame_angle(copter.g2.user_parameters.cam_height.get(), copter.g2.user_parameters.cam_angle_y.get(), tmp_msg._msg_1.content.msg.target_y); // y-axis, degree
+            float p1 =  cal_frame_angle(copter.g2.user_parameters.cam_width.get(), copter.g2.user_parameters.cam_angle_x.get(), (tmp_msg._msg_1.content.msg.target_x + tmp_msg._msg_1.content.msg.target_w/2 - copter.g2.user_parameters.cam_x_offset.get()) ); // x-axis, degree
+            float p2 = -cal_frame_angle(copter.g2.user_parameters.cam_height.get(), copter.g2.user_parameters.cam_angle_y.get(), (tmp_msg._msg_1.content.msg.target_y + tmp_msg._msg_1.content.msg.target_h/2- copter.g2.user_parameters.cam_y_offset.get()) ); // y-axis, degree
+            
+            _frotend.display_info_p1 = tmp_msg._msg_1.content.msg.target_x;
+            _frotend.display_info_p2 = tmp_msg._msg_1.content.msg.target_y;
+            _frotend.display_info_p3 = p1;
+            _frotend.display_info_p4 = p2;
+
             // p2 += copter.g2.user_parameters.cam_pitch_offset.get(); // add offset between cam and uav
             handle_info(p1, p2);
         } else {
@@ -76,11 +82,29 @@ void UCam::do_cmd_on(bool on) {
     tmp_msg._msg_1.content.msg.header.head_2 = FD_CAM_CMD::PREAMBLE2;
     tmp_msg._msg_1.content.msg.length = 0x10;
     tmp_msg._msg_1.content.msg.frametype = 0x69;
-    tmp_msg._msg_1.content.msg.on = (uint8_t)on;
-    tmp_msg._msg_1.content.msg.target_x = (int16_t)copter.g2.user_parameters.lock_x;
-    tmp_msg._msg_1.content.msg.target_y = (int16_t)copter.g2.user_parameters.lock_y;
+    tmp_msg._msg_1.content.msg.on = on?0x01:0x02;
     tmp_msg._msg_1.content.msg.type = 0x01;
     tmp_msg._msg_1.content.msg.size = (uint8_t)copter.g2.user_parameters.lock_size;
+    int16_t lock_x_offset = 0;
+    int16_t lock_y_offset = 0;
+    if (copter.g2.user_parameters.lock_size.get() == 1) {
+        lock_x_offset = 8;
+        lock_y_offset = 8;
+    }
+    if (copter.g2.user_parameters.lock_size.get() == 2) {
+        lock_x_offset = 16;
+        lock_y_offset = 16;
+    }
+    if (copter.g2.user_parameters.lock_size.get() == 3) {
+        lock_x_offset = 32;
+        lock_y_offset = 32;
+    }
+    if (copter.g2.user_parameters.lock_size.get() == 4) {
+        lock_x_offset = 64;
+        lock_y_offset = 64;
+    }
+    tmp_msg._msg_1.content.msg.target_x = (int16_t)copter.g2.user_parameters.lock_x - lock_x_offset;
+    tmp_msg._msg_1.content.msg.target_y = (int16_t)copter.g2.user_parameters.lock_y - lock_y_offset;
 
     tmp_msg.make_sum();
     tmp_msg._msg_1.need_send = true;
@@ -140,10 +164,10 @@ void UCam::handle_info(float p1, float p2) {
     // _frotend.display_info_p3 = _frotend.ef_info.x;
     // _frotend.display_info_p4 = _frotend.ef_info.y;
 
-    _frotend.display_info_p1 = _frotend.bf_info.x;
-    _frotend.display_info_p2 = _frotend.bf_info.y;
-    _frotend.display_info_p3 = _frotend.ef_info.x;
-    _frotend.display_info_p4 = _frotend.ef_info.y;
+    // _frotend.display_info_p1 = _frotend.bf_info.x;
+    // _frotend.display_info_p2 = _frotend.bf_info.y;
+    // _frotend.display_info_p3 = _frotend.ef_info.x;
+    // _frotend.display_info_p4 = _frotend.ef_info.y;
     _frotend.display_info_new = true;
     _frotend.display_info_count++;
 }
