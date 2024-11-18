@@ -79,6 +79,7 @@ void GCS_Copter::update_vehicle_sensor_status_flags(void)
     case Mode::Number::SPORT:
     case Mode::Number::AUTOTUNE:
     case Mode::Number::FLOWHOLD:
+    case Mode::Number::LUDENGM:
         control_sensors_enabled |= MAV_SYS_STATUS_SENSOR_Z_ALTITUDE_CONTROL;
         control_sensors_health |= MAV_SYS_STATUS_SENSOR_Z_ALTITUDE_CONTROL;
         break;

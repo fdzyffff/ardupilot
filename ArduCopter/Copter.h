@@ -229,6 +229,7 @@ public:
     friend class ModeZigZag;
     friend class ModeAutorotate;
     friend class ModeTurtle;
+    friend class ModeLudeng_manual;
 
     friend class _AutoTakeoff;
 
@@ -1056,6 +1057,7 @@ private:
 #if MODE_TURTLE_ENABLED == ENABLED
     ModeTurtle mode_turtle;
 #endif
+    ModeLudeng_manual mode_ludeng_manual;
 
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);

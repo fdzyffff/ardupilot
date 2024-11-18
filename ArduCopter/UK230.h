@@ -13,14 +13,20 @@ public:
     void init();
 
     bool is_valid() const { return _valid; }
-    bool new_data() {return _new_data;}
+    bool new_data() {return display_info.new_data;}
 
     void read_uart();
-    void get_target(int8_t tag_num, float x_in, float y_in, float z_in);
+    float cal_frame_angle(float pixel, float angle, float x_in);
+    void handle_info(float p1, float p2, float p3);
 
-    float get_target_x_cm() {return _raw_target_cm.x;}
-    float get_target_y_cm() {return _raw_target_cm.y;}
-    float get_target_z_cm() {return _raw_target_cm.z;}
+    void update_target_pitch_rate();
+    void update_target_roll_rate();
+    void update_target_yaw_rate();
+
+    float get_target_pitch_rate() {return _target_pitch_rate;}
+    float get_target_roll_rate() {return _target_roll_rate;}
+    float get_target_yaw_rate() {return _target_yaw_rate;}
+    float get_target_dist_cm() {return _target_dist_cm;}
 
     void update();
     void update_valid();
@@ -33,18 +39,27 @@ public:
         float p11;
         float p12;
         float p13;
-        float p14;
+        float p21;
+        float p22;
+        float p23;
         uint16_t count;
+        bool new_data;
     } display_info;
 
     FD1_UART FD1_uart_K230{AP_SerialManager::SerialProtocol_K230};
 private:
 
-    LowPassFilterVector3f _filter_target_cm;
+    // LowPassFilterVector3f _filter_target_cm;
 
-    Vector3f _raw_target_cm;
+    // Vector3f _raw_target_cm;
+
+    Vector3f bf_info;
+    float _target_pitch_rate;
+    float _target_roll_rate;
+    float _target_yaw_rate;
+    float _target_dist_cm;
+
     uint32_t _last_ms;
     bool _valid;
-    bool _new_data;
 
 };
