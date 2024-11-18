@@ -1062,6 +1062,14 @@ private:
     Mode *mode_from_mode_num(const Mode::Number mode);
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);
 
+    void UserMAV_handle_selfcheck(const mavlink_message_t &msg);
+    void UserMAV_send_selfcheck();
+    void UserMAV_send_status();
+    void UserMAV_handle_target(const mavlink_message_t &msg);
+    void UserMAV_send_target();
+    void UserMAV_handle_mission(const mavlink_message_t &msg);
+    void UserMAV_send_mission();
+
     struct {
         // socket to telem2 on aircraft
         bool connected;
