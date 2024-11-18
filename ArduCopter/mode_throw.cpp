@@ -81,14 +81,34 @@ void ModeThrow::run()
         copter.set_auto_armed(true);
 
     } else if (stage == Throw_HgtStabilise && throw_height_good()) {
-        gcs().send_text(MAV_SEVERITY_INFO,"height achieved - controlling position");
-        stage = Throw_PosHold;
+        Mode::Number mode = (Mode::Number)g2.throw_nextmode.get();
+        Mode *new_flightmode = copter.mode_from_mode_num(mode);
+        if (new_flightmode == nullptr) {
+            copter.notify_no_such_mode((uint8_t)mode);
+            gcs().send_text(MAV_SEVERITY_INFO,"Err! Wrong Mode");
+            return;
+        }
+        if (new_flightmode->requires_GPS() && copter.position_ok())  {
+            gcs().send_text(MAV_SEVERITY_INFO,"height achieved - controlling position");
+            stage = Throw_PosHold;
 
-        // initialise position controller
-        pos_control->init_xy_controller();
+            // initialise position controller
+            pos_control->init_xy_controller();
 
-        // Set the auto_arm status to true to avoid a possible automatic disarm caused by selection of an auto mode with throttle at minimum
-        copter.set_auto_armed(true);
+            // Set the auto_arm status to true to avoid a possible automatic disarm caused by selection of an auto mode with throttle at minimum
+            copter.set_auto_armed(true);
+        }
+        if (!new_flightmode->requires_GPS()) {
+            switch ((Mode::Number)g2.throw_nextmode.get()) {
+                case Mode::Number::ALT_HOLD:
+                    set_mode((Mode::Number)g2.throw_nextmode.get(), ModeReason::THROW_COMPLETE);
+                    break;
+                default:
+                    // do nothing
+                    break;
+            }
+            nextmode_attempted = true;
+        }
     } else if (stage == Throw_PosHold && throw_position_good()) {
         if (!nextmode_attempted) {
             switch ((Mode::Number)g2.throw_nextmode.get()) {
