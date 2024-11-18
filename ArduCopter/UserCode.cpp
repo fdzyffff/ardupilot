@@ -50,6 +50,7 @@ void Copter::userhook_SlowLoop()
 void Copter::userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
+    umav.send_status();
 }
 #endif
 

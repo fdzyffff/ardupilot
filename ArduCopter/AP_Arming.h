@@ -7,6 +7,7 @@ class AP_Arming_Copter : public AP_Arming
 public:
     friend class Copter;
     friend class ToyMode;
+    friend class UMav;
 
     AP_Arming_Copter() : AP_Arming()
     {

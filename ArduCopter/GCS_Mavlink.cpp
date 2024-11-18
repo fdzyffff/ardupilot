@@ -382,6 +382,23 @@ bool GCS_MAVLINK_Copter::try_send_message(enum ap_message id)
         break;
     }
 
+    case MSG_WXBS_STATUS:
+        // CHECK_PAYLOAD_SIZE(MSG_WXBS_STATUS);
+        // copter.UserMAV_send_status(chan);
+        break;
+    case MSG_WXBS_SELFCHECK_RESULT:
+        // CHECK_PAYLOAD_SIZE(MSG_WXBS_SELFCHECK_RESULT);
+        // copter.UserMAV_send_selfcheck(chan);
+        break;
+    case MSG_WXBS_TARGET_RESULT:
+        // CHECK_PAYLOAD_SIZE(MSG_WXBS_TARGET_RESULT);
+        // copter.UserMAV_send_target(chan);
+        break;
+    case MSG_WXBS_MISSION_RESULT:
+        // CHECK_PAYLOAD_SIZE(MSG_WXBS_MISSION_RESULT);
+        // copter.UserMAV_send_mission(chan);
+        break;
+
     default:
         return GCS_MAVLINK::try_send_message(id);
     }
@@ -636,6 +653,7 @@ void GCS_MAVLINK_Copter::packetReceived(const mavlink_status_t &status,
     // pass message to follow library
     copter.g2.follow.handle_msg(msg);
 #endif
+    copter.umav.handle_msg(msg);
     GCS_MAVLINK::packetReceived(status, msg);
 }
 
@@ -849,6 +867,12 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_int_packet(const mavlink_command_i
         }
         return MAV_RESULT_FAILED;
 #endif
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    case MAV_CMD_USER_1: {
+        copter.umav.handle_info_test(packet.param1);
+        return MAV_RESULT_ACCEPTED;
+    }
 
     default:
         return GCS_MAVLINK::handle_command_int_packet(packet, msg);

@@ -1085,6 +1085,10 @@ ap_message GCS_MAVLINK::mavlink_id_to_ap_message_id(const uint32_t mavlink_id) c
 #if AP_MAVLINK_MSG_RELAY_STATUS_ENABLED
         { MAVLINK_MSG_ID_RELAY_STATUS, MSG_RELAY_STATUS},
 #endif
+        { MAVLINK_MSG_ID_WXBS_STATUS,           MSG_WXBS_STATUS},
+        { MAVLINK_MSG_ID_WXBS_SELFCHECK_RESULT, MSG_WXBS_SELFCHECK_RESULT},
+        { MAVLINK_MSG_ID_WXBS_TARGET_RESULT,    MSG_WXBS_TARGET_RESULT},
+        { MAVLINK_MSG_ID_WXBS_MISSION_RESULT,   MSG_WXBS_MISSION_RESULT},
             };
 
     for (uint8_t i=0; i<ARRAY_SIZE(map); i++) {
