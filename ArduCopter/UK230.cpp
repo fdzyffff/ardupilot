@@ -16,8 +16,7 @@
 
 UK230::UK230()
 {
-    FD1_uart_K230.init();
-    FD1_uart_K230.get_msg_K230().set_enable();
+    ;
 }
 
 // initialise
@@ -41,6 +40,9 @@ void UK230::init()
     _target_pitch_rate = 0.0f;
     _target_roll_rate = 0.0f;
     _target_yaw_rate = 0.0f;
+    FD1_uart_K230.init();
+    FD1_uart_K230.get_msg_K230().set_enable();
+    // gcs().send_text(MAV_SEVERITY_INFO, "FD1_uart_K230.init()");
 }
 
 void UK230::read_uart()
@@ -88,9 +90,14 @@ void UK230::handle_info(float p1, float p2, float p3) {
     _valid = true;
     _last_ms = millis();
 
-    bf_info.x = p1; // roll degree
-    bf_info.y = p2; // pitch degree
-    bf_info.z = p3; // yaw degree
+    Vector3f tmp_input = Vector3f(radians(p1), radians(p2), radians(p3));
+    Matrix3f tmp_m;
+    tmp_m.from_euler(0.0f, 0.0f, radians(270.0f));
+    Vector3f tmp_output = tmp_m*tmp_input;
+
+    bf_info.x = degrees(tmp_output.x); // roll degree
+    bf_info.y = degrees(tmp_output.y); // pitch degree
+    bf_info.z = wrap_180(degrees(tmp_output.z) + 270.f);; // yaw degree
     display_info.p11 = bf_info.x;
     display_info.p12 = bf_info.y;
     display_info.p13 = bf_info.z;
@@ -136,6 +143,26 @@ void UK230::update_valid()
 }
 
 // degree/second
+void UK230::update_target_roll_rate() {
+    float k = copter.g2.user_parameters.attack_k.get();
+    float angle_comp = constrain_float(bf_info.x, -15.0f, 15.0f);
+    _target_roll_rate = k * angle_comp; // degrees/s
+
+    //Limit roll rate
+    float limit_roll_rate = copter.g2.user_parameters.rate_limit.get();
+    _target_roll_rate = constrain_float(_target_roll_rate, -limit_roll_rate, limit_roll_rate);
+
+    //Limit roll
+    float current_roll = degrees(copter.ahrs_view->roll);
+    float limit_roll = MAX(copter.g2.user_parameters.angle_limit.get(), 0.f);
+    if (current_roll > limit_roll) {
+        _target_roll_rate = MAX(_target_roll_rate, 0.0f);
+    } else if (current_roll < -limit_roll) {
+        _target_roll_rate = MIN(_target_roll_rate, 0.0f);
+    }
+}
+
+// degree/second
 void UK230::update_target_pitch_rate() {
     float k = copter.g2.user_parameters.attack_k.get();
     float angle_comp = constrain_float(bf_info.y, -15.0f, 15.0f);
@@ -154,26 +181,6 @@ void UK230::update_target_pitch_rate() {
         _target_pitch_rate = MIN(_target_pitch_rate, 0.0f);
     }
     // gcs().send_text(MAV_SEVERITY_INFO, "%f", _target_pitch_rate_cds);
-}
-
-// degree/second
-void UK230::update_target_roll_rate() {
-    float k = copter.g2.user_parameters.attack_k.get();
-    float angle_comp = constrain_float(bf_info.y, -15.0f, 15.0f);
-    _target_roll_rate = k * angle_comp; // degrees/s
-
-    //Limit roll rate
-    float limit_roll_rate = copter.g2.user_parameters.rate_limit.get();
-    _target_roll_rate = constrain_float(_target_roll_rate, -limit_roll_rate, limit_roll_rate);
-
-    //Limit roll
-    float current_roll = degrees(copter.ahrs_view->roll);
-    float limit_roll = MAX(copter.g2.user_parameters.angle_limit.get(), 0.f);
-    if (current_roll > limit_roll) {
-        _target_roll_rate = MAX(_target_roll_rate, 0.0f);
-    } else if (current_roll < -limit_roll) {
-        _target_roll_rate = MIN(_target_roll_rate, 0.0f);
-    }
 }
 
 // degree/second

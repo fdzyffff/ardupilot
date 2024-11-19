@@ -1,4 +1,5 @@
 #include "FD1_msg_K230.h"
+#include <GCS_MAVLink/GCS.h>
 
 FD1_msg_K230::FD1_msg_K230(void)
 {
@@ -9,6 +10,7 @@ FD1_msg_K230::FD1_msg_K230(void)
 
 void FD1_msg_K230::parse(uint8_t temp)
 {
+    // gcs().send_text(MAV_SEVERITY_INFO, "State: %d, Byte: %d",_msg.msg_state, temp);
     switch (_msg.msg_state)
     {
         default:
