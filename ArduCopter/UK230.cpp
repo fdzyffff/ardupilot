@@ -89,25 +89,36 @@ void UK230::handle_info(float p1, float p2, float p3) {
         // }
     _valid = true;
     _last_ms = millis();
+    display_info.count++;
 
-    Vector3f tmp_input = Vector3f(radians(p1), radians(p2), radians(p3));
-    Matrix3f tmp_m;
-    tmp_m.from_euler(0.0f, 0.0f, radians(270.0f));
-    Vector3f tmp_output = tmp_m*tmp_input;
+    Vector3f tmp_cam_input = Vector3f(radians(p1), radians(p2), radians(p3));
+    Matrix3f tmp_cam_m;
+    tmp_cam_m.from_euler(0.0f, 0.0f, radians(270.0f));
+    Vector3f tmp_cam_output = tmp_cam_m*tmp_cam_input;
 
-    bf_info.x = degrees(tmp_output.x); // roll degree
-    bf_info.y = degrees(tmp_output.y); // pitch degree
-    bf_info.z = wrap_180(degrees(tmp_output.z) + 270.f);; // yaw degree
+    bf_info.x = degrees(tmp_cam_output.x); // roll degree
+    bf_info.y = degrees(tmp_cam_output.y); // pitch degree
+    bf_info.z = wrap_180(degrees(tmp_cam_output.z) + 270.f);; // yaw degree
+
+
     display_info.p11 = bf_info.x;
     display_info.p12 = bf_info.y;
     display_info.p13 = bf_info.z;
-    display_info.count++;
-    update_target_pitch_rate();
+
     update_target_roll_rate();
+    update_target_pitch_rate();
     update_target_yaw_rate();
-    display_info.p21 = get_target_pitch_rate();
-    display_info.p22 = get_target_roll_rate();
+    display_info.p21 = get_target_roll_rate();
+    display_info.p22 = get_target_pitch_rate();
     display_info.p23 = get_target_yaw_rate();
+
+    Matrix3f tmp_body_m;
+    tmp_body_m.from_euler(copter.ahrs_view->roll, copter.ahrs_view->pitch, 0.0f);
+    efb_info = tmp_body_m*bf_info;
+    update_target_bf_vel_x_ms();
+    update_target_bf_vel_y_ms();
+    // display_info.p31 = get_target_vel_x_ms();
+    // display_info.p32 = get_target_vel_y_ms();
 }
 
 // update 
@@ -133,6 +144,8 @@ void UK230::update_valid()
         _target_pitch_rate = 0.0f;
         _target_roll_rate = 0.0f;
         _target_yaw_rate = 0.0f;
+        _target_bf_vel_x = 0.0f;
+        _target_bf_vel_y = 0.0f;
     } else {
         if (!_valid) {
             gcs().send_text(MAV_SEVERITY_WARNING, "Target aquire");
@@ -188,4 +201,20 @@ void UK230::update_target_yaw_rate() {
     float k2 = copter.g2.user_parameters.attack_k2.get();
     float angle_comp = constrain_float(bf_info.z, -15.0f, 15.0f);
     _target_yaw_rate = k2 * angle_comp; // degrees/s
+}
+
+// m/s
+void UK230::update_target_bf_vel_x_ms() {
+    float k = copter.g2.user_parameters.attack_k.get();
+    float dist_r = _target_dist_cm*0.01f;
+    float dist = dist_r*tanf(radians(constrain_float(-efb_info.y, -15.0f, 15.0f)));
+    _target_bf_vel_x = k * dist; // degrees/s
+}
+
+// m/s
+void UK230::update_target_bf_vel_y_ms() {
+    float k = copter.g2.user_parameters.attack_k.get();
+    float dist_r = _target_dist_cm*0.01f;
+    float dist = dist_r*tanf(radians(constrain_float(efb_info.x, -15.0f, 15.0f)));
+    _target_bf_vel_y = k * dist; // degrees/s
 }

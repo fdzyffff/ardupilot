@@ -230,6 +230,7 @@ public:
     friend class ModeAutorotate;
     friend class ModeTurtle;
     friend class ModeLudeng_manual;
+    friend class ModeLudeng_guided;
 
     friend class _AutoTakeoff;
 
@@ -1058,6 +1059,7 @@ private:
     ModeTurtle mode_turtle;
 #endif
     ModeLudeng_manual mode_ludeng_manual;
+    ModeLudeng_guided mode_ludeng_guided;
 
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);

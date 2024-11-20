@@ -54,6 +54,9 @@ void Copter::userhook_SuperSlowLoop()
     if (g2.user_parameters.cam_print.get() & (1<<2)) { // 4
         gcs().send_text(MAV_SEVERITY_WARNING, "rpy (%0.1f,%0.1f,%0.1f)", uk230.get_target_roll_rate(), uk230.get_target_pitch_rate(), uk230.get_target_yaw_rate());
     }
+    if (g2.user_parameters.cam_print.get() & (1<<3)) { // 8
+        gcs().send_text(MAV_SEVERITY_WARNING, "xyd (%0.1f,%0.1f,%0.1f)", uk230.get_target_bf_vel_x(), uk230.get_target_bf_vel_y(), uk230.get_target_dist_cm());
+    }
 }
 #endif
 
