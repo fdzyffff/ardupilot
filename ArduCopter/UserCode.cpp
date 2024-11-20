@@ -26,6 +26,46 @@ void Copter::userhook_50Hz()
 void Copter::userhook_MediumLoop()
 {
     // put your 10Hz code here
+    static bool pos_last_good = true;
+    static bool pos_good = true;
+    static bool need_run = false;
+    static Mode *new_mode;
+    static Mode *last_mode;
+    if (motors->armed()) {
+        pos_good = copter.position_ok();
+        if (pos_last_good) {
+            if (pos_good) {
+                last_mode = flightmode;
+                new_mode = nullptr;
+            } else {
+                if (last_mode->requires_GPS()) {
+                    gcs().send_text(MAV_SEVERITY_INFO, "POS bad, record %s", last_mode->name());
+                    need_run = true;
+                } else {
+                    gcs().send_text(MAV_SEVERITY_INFO, "POS bad, continue");
+                    need_run = false;
+                }
+            }
+        } else if (need_run) {
+            if ((new_mode == nullptr) && (last_mode != flightmode)) {
+                new_mode = flightmode;
+                gcs().send_text(MAV_SEVERITY_INFO, "Now in %s", new_mode->name());
+            }
+            if (pos_good) {
+                if (new_mode == flightmode) { // 丢GPS期间模式没变化
+                    gcs().send_text(MAV_SEVERITY_INFO, "POS good, recover %s", last_mode->name());
+                    set_mode(last_mode->mode_number(), ModeReason::GCS_COMMAND);
+                } else {
+                    gcs().send_text(MAV_SEVERITY_INFO, "POS good, continue %s", flightmode->name());
+                }
+                new_mode = nullptr;
+                need_run = false;
+            }
+        }
+        pos_last_good = pos_good;
+    } else {
+        last_mode = flightmode;
+    }
 }
 #endif
 
