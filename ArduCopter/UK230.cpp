@@ -112,9 +112,16 @@ void UK230::handle_info(float p1, float p2, float p3) {
     display_info.p22 = get_target_pitch_rate();
     display_info.p23 = get_target_yaw_rate();
 
+    Matrix3f tmp_bf_m;
+    tmp_bf_m.from_euler(radians(bf_info.x), radians(bf_info.y), 0.0f);
     Matrix3f tmp_body_m;
     tmp_body_m.from_euler(copter.ahrs_view->roll, copter.ahrs_view->pitch, 0.0f);
-    efb_info = tmp_body_m*bf_info;
+    Matrix3f tmp_efbf_m = tmp_body_m*tmp_bf_m;
+    tmp_efbf_m.to_euler(&efb_info.x, &efb_info.y, &efb_info.z);
+    efb_info.x = degrees(efb_info.x);
+    efb_info.y = degrees(efb_info.y);
+    efb_info.z = bf_info.z;
+    // efb_info = tmp_body_m*bf_info;
     update_target_bf_vel_x_ms();
     update_target_bf_vel_y_ms();
     // display_info.p31 = get_target_vel_x_ms();
