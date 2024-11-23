@@ -173,21 +173,11 @@ void UAttack::update_target_yaw_rate() {
     _target_yaw_rate = k * 1.5f * ef_rate_info.x + k2 * angle_comp;
 }
 
-// // from 0 to 1, according to ef_info.y, the pitch angle of body-target in earth frame
-// void UAttack::update_target_throttle() {
-//     float p = copter.g2.user_parameters.attack_angle_kp.get();
-//     _attack_angle_target = copter.g2.user_parameters.attack_angle.get();
-//     _attack_angle_measure = -ef_info.y;
-//     _attack_angle_rate_target = (_attack_angle_target - _attack_angle_measure) /45.0f * p;
-//     _attack_angle_rate_measure = -ef_rate_info.y;
-//     _attack_throttle = copter.g2.user_parameters.attack_throttle_pid.update_all(_attack_angle_rate_target, _attack_angle_rate_measure, false);
-// }
-
 // from 0 to 1, according to ef_info.y, the pitch angle of body-target in earth frame
 void UAttack::update_target_throttle() {
     float p = copter.g2.user_parameters.attack_angle_kp.get();
     _attack_angle_target = copter.g2.user_parameters.attack_angle.get();
-    _attack_angle_measure = -degrees(copter.ahrs_view->pitch);
+    _attack_angle_measure = -ef_info.y;
     _attack_angle_rate_target = (_attack_angle_target - _attack_angle_measure) /45.0f * p;
     _attack_angle_rate_measure = -ef_rate_info.y;
 
@@ -201,6 +191,25 @@ void UAttack::update_target_throttle() {
     _attack_throttle_d = copter.g2.user_parameters.attack_throttle_pid.get_d();
     _attack_throttle_pid = _attack_throttle_p + _attack_throttle_i + _attack_throttle_d;
 }
+
+// // from 0 to 1, according to ef_info.y, the pitch angle of body-target in earth frame
+// void UAttack::update_target_throttle() {
+//     float p = copter.g2.user_parameters.attack_angle_kp.get();
+//     _attack_angle_target = copter.g2.user_parameters.attack_angle.get();
+//     _attack_angle_measure = -degrees(copter.ahrs_view->pitch);
+//     _attack_angle_rate_target = (_attack_angle_target - _attack_angle_measure) /45.0f * p;
+//     _attack_angle_rate_measure = -ef_rate_info.y;
+
+//     float dt = (millis() - _last_ms);
+//     dt = dt * 0.001f;
+//     if (dt > 0.2f) {dt = 0.2f;}
+//     _attack_throttle = copter.g2.user_parameters.attack_throttle_pid.update_all(_attack_angle_rate_target, _attack_angle_rate_measure, dt);
+
+//     _attack_throttle_p = copter.g2.user_parameters.attack_throttle_pid.get_p();
+//     _attack_throttle_i = copter.g2.user_parameters.attack_throttle_pid.get_i();
+//     _attack_throttle_d = copter.g2.user_parameters.attack_throttle_pid.get_d();
+//     _attack_throttle_pid = _attack_throttle_p + _attack_throttle_i + _attack_throttle_d;
+// }
 
 void UAttack::handle_info_test(float p1, float p2) {
     if (_cam_port_type == 1 || _cam_port_type == 2) {

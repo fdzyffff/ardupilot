@@ -156,8 +156,8 @@ void UCam::handle_info(float p1, float p2) {
     _frotend.ef_info.y = tmp_pitch;
 
     _yaw_filter.update(tmp_yaw, millis());
-    // _pitch_filter.update(tmp_pitch, millis());
-    _pitch_filter.update(degrees(copter.ahrs_view->pitch), millis());
+    _pitch_filter.update(tmp_pitch, millis());
+    // _pitch_filter.update(degrees(copter.ahrs_view->pitch), millis());
 
     // _frotend.ef_rate_info.x = _yaw_rate_filter.get() + _yaw_filter.slope()*1000.f;
     _frotend.ef_rate_info.x = _yaw_filter.slope()*1000.f;
