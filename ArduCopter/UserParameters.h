@@ -32,6 +32,7 @@ public:
     AP_Int8  lock_size;
     AP_Int16 cam_x_offset;
     AP_Int16 cam_y_offset;
+    AP_Float attack_angle_kp;
 
 
 private:

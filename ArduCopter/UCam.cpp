@@ -28,8 +28,6 @@ void UCam::update() {
             
             _frotend.display_info_p1 = tmp_msg._msg_1.content.msg.target_x;
             _frotend.display_info_p2 = tmp_msg._msg_1.content.msg.target_y;
-            _frotend.display_info_p3 = p1;
-            _frotend.display_info_p4 = p2;
 
             // p2 += copter.g2.user_parameters.cam_pitch_offset.get(); // add offset between cam and uav
             handle_info(p1, p2);
@@ -123,10 +121,13 @@ void UCam::handle_info(float p1, float p2) {
     _valid = true;
     _last_ms = millis();
 
+    _frotend.display_info_p3 = p1;
+    _frotend.display_info_p4 = p2;
+
     float _roll = copter.ahrs_view->roll;
     float _pitch = copter.ahrs_view->pitch;
     float _yaw = copter.ahrs_view->yaw;
-    if (!copter.udelay.get_idx(10-1, _roll, _pitch, _yaw)) {
+    if (!copter.udelay.get_idx(5-1, _roll, _pitch, _yaw)) {
         _roll = copter.ahrs_view->roll;
         _pitch = copter.ahrs_view->pitch;
         _yaw = copter.ahrs_view->yaw;
@@ -135,26 +136,31 @@ void UCam::handle_info(float p1, float p2) {
     _frotend.bf_info.x = p1; // yaw degree
     _frotend.bf_info.y = p2; // pitch degree
 
-    Matrix3f tmp_m;
-    tmp_m.from_euler(_roll, _pitch, 0.0f);
+    Matrix3f tmp_cam_m;
+    tmp_cam_m.from_euler(0.0f, radians(p2), radians(p1));
 
-    float dist_z = -tanf(radians(p2));
-    float dist_y = tanf(radians(p1));
+    Matrix3f tmp_bf_m;
+    tmp_bf_m.from_euler(_roll, _pitch, _yaw);
 
-    Vector3f tmp_input = Vector3f(1.0f,dist_y,dist_z);
-    Vector3f tmp_output = tmp_m*tmp_input;
+    Matrix3f tmp_efbf_m = tmp_bf_m*tmp_cam_m;
+    float tmp_roll;
+    float tmp_pitch;
+    float tmp_yaw;
+    tmp_efbf_m.to_euler(&tmp_roll, &tmp_pitch, &tmp_yaw);
 
-    float angle_pitch = wrap_180(degrees(atan2f(-tmp_output.z, tmp_output.x)));
-    float angle_yaw = wrap_180(degrees(atan2f(tmp_output.y, tmp_output.x)));
+    tmp_roll = degrees(tmp_roll);
+    tmp_pitch = degrees(tmp_pitch);
+    tmp_yaw = degrees(tmp_yaw);
 
-    _frotend.ef_info.x = wrap_360(angle_yaw + degrees(_yaw));
-    _frotend.ef_info.y = angle_pitch;
+    _frotend.ef_info.x = tmp_yaw;
+    _frotend.ef_info.y = tmp_pitch;
 
-    _yaw_filter.update(angle_yaw, millis());
-    _pitch_filter.update(angle_pitch, millis());
+    _yaw_filter.update(tmp_yaw, millis());
+    // _pitch_filter.update(tmp_pitch, millis());
+    _pitch_filter.update(degrees(copter.ahrs_view->pitch), millis());
 
-    _frotend.ef_rate_info.x = _yaw_rate_filter.get() + _yaw_filter.slope()*1000.f;
-    // _frotend.ef_rate_info.x = _yaw_filter.slope()*1000.f;
+    // _frotend.ef_rate_info.x = _yaw_rate_filter.get() + _yaw_filter.slope()*1000.f;
+    _frotend.ef_rate_info.x = _yaw_filter.slope()*1000.f;
     _frotend.ef_rate_info.y = _pitch_filter.slope()*1000.f;
 
     _frotend.udpate_control_value();
@@ -173,9 +179,10 @@ void UCam::handle_info(float p1, float p2) {
 }
 
 void UCam::handle_info_test(float p1, float p2) {
-    FD_CAM_TARGET &tmp_msg = FD_CAM_ptr->get_msg_cam_target();
-    tmp_msg._msg_1.updated = true;
-    tmp_msg._msg_1.content.msg.target_x = (int16_t)(p1);
-    tmp_msg._msg_1.content.msg.target_y = (int16_t)(p2);
-    tmp_msg._msg_1.content.msg.status = 1;
+    handle_info(p1, p2);
+    // FD_CAM_TARGET &tmp_msg = FD_CAM_ptr->get_msg_cam_target();
+    // tmp_msg._msg_1.updated = true;
+    // tmp_msg._msg_1.content.msg.target_x = (int16_t)(p1);
+    // tmp_msg._msg_1.content.msg.target_y = (int16_t)(p2);
+    // tmp_msg._msg_1.content.msg.status = 1;
 }

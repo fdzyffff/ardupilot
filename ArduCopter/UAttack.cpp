@@ -28,6 +28,7 @@ void UAttack::init()
     _target_roll_angle = 0.0f;
     _cam_port_type = 0;
     _UCam_ptr = nullptr;
+    _last_ms = millis();
     init_cam_port();
 }
 
@@ -37,6 +38,9 @@ void UAttack::udpate_control_value(){
     update_target_pitch_rate();
     update_target_yaw_rate();
     update_target_roll_angle();
+    update_target_throttle();
+
+    _last_ms = millis();
 }
 
 const Vector2f& UAttack::get_bf_info() {
@@ -118,6 +122,7 @@ void UAttack::time_out_check() {
         _target_pitch_rate = 0.0f;
         _target_roll_angle = 0.0f;
         _target_yaw_rate = 0.0f;
+        _attack_throttle = copter.motors->get_throttle_hover();
         if (_active) {
             gcs().send_text(MAV_SEVERITY_INFO, "Lost CAM");
         }
@@ -143,20 +148,20 @@ void UAttack::update_target_pitch_rate() {
     float limit_pitch_rate = copter.g2.user_parameters.pitch_rate_limit;
     _target_pitch_rate = constrain_float(_target_pitch_rate, -limit_pitch_rate, limit_pitch_rate);
 
-    //Limit pitch
-    float current_pitch = degrees(copter.ahrs.pitch);
-    float limit_pitch = constrain_float(copter.g2.user_parameters.pitch_limit, -10.f, 10.f);
-    if (current_pitch > limit_pitch) {
-        _target_pitch_rate = MAX(_target_pitch_rate, 0.0f);
-    } else if (current_pitch < -limit_pitch) {
-        _target_pitch_rate = MIN(_target_pitch_rate, 0.0f);
-    }
+    // //Limit pitch
+    // float current_pitch = degrees(copter.ahrs.pitch);
+    // float limit_pitch = constrain_float(copter.g2.user_parameters.pitch_limit, -60.f, 60.f);
+    // if (current_pitch > limit_pitch) {
+    //     _target_pitch_rate = MAX(_target_pitch_rate, 0.0f);
+    // } else if (current_pitch < -limit_pitch) {
+    //     _target_pitch_rate = MIN(_target_pitch_rate, 0.0f);
+    // }
     // gcs().send_text(MAV_SEVERITY_INFO, "%f", _target_pitch_rate_cds);
 }
 
 // degree
 void UAttack::update_target_roll_angle() {
-    _target_roll_angle = constrain_float(0.1f * get_target_yaw_rate(), -10.f, 10.f);
+    _target_roll_angle = constrain_float(0.1f * get_target_yaw_rate(), -15.f, 15.f);
 }
 
 // degree/second
@@ -166,6 +171,35 @@ void UAttack::update_target_yaw_rate() {
     // float boost_factor = constrain_float(fabsf(bf_info.x)/15.0f, 0.0f, 1.0f) * 2.0f;
     float angle_comp = constrain_float(bf_info.x, -15.0f, 15.0f);
     _target_yaw_rate = k * 1.5f * ef_rate_info.x + k2 * angle_comp;
+}
+
+// // from 0 to 1, according to ef_info.y, the pitch angle of body-target in earth frame
+// void UAttack::update_target_throttle() {
+//     float p = copter.g2.user_parameters.attack_angle_kp.get();
+//     _attack_angle_target = copter.g2.user_parameters.attack_angle.get();
+//     _attack_angle_measure = -ef_info.y;
+//     _attack_angle_rate_target = (_attack_angle_target - _attack_angle_measure) /45.0f * p;
+//     _attack_angle_rate_measure = -ef_rate_info.y;
+//     _attack_throttle = copter.g2.user_parameters.attack_throttle_pid.update_all(_attack_angle_rate_target, _attack_angle_rate_measure, false);
+// }
+
+// from 0 to 1, according to ef_info.y, the pitch angle of body-target in earth frame
+void UAttack::update_target_throttle() {
+    float p = copter.g2.user_parameters.attack_angle_kp.get();
+    _attack_angle_target = copter.g2.user_parameters.attack_angle.get();
+    _attack_angle_measure = -degrees(copter.ahrs_view->pitch);
+    _attack_angle_rate_target = (_attack_angle_target - _attack_angle_measure) /45.0f * p;
+    _attack_angle_rate_measure = -ef_rate_info.y;
+
+    float dt = (millis() - _last_ms);
+    dt = dt * 0.001f;
+    if (dt > 0.2f) {dt = 0.2f;}
+    _attack_throttle = copter.g2.user_parameters.attack_throttle_pid.update_all(_attack_angle_rate_target, _attack_angle_rate_measure, dt);
+
+    _attack_throttle_p = copter.g2.user_parameters.attack_throttle_pid.get_p();
+    _attack_throttle_i = copter.g2.user_parameters.attack_throttle_pid.get_i();
+    _attack_throttle_d = copter.g2.user_parameters.attack_throttle_pid.get_d();
+    _attack_throttle_pid = _attack_throttle_p + _attack_throttle_i + _attack_throttle_d;
 }
 
 void UAttack::handle_info_test(float p1, float p2) {

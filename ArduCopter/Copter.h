@@ -181,6 +181,7 @@
 
 #include "UAttack.h"
 #include "UDelay.h"
+#include <FD2_UART/FD2_UART.h>
 
 class Copter : public AP_Vehicle {
 public:
@@ -1045,6 +1046,10 @@ private:
     UDelay udelay;
 
     void print_target_msg(const mavlink_message_t &msg);
+
+    void sim_init();
+    void sim_update();
+    FD2_UART FD2_uart_msg_ue4{AP_SerialManager::SerialProtocol_UE4};
 
 public:
     void failsafe_check();      // failsafe.cpp

@@ -45,6 +45,16 @@ public:
     float _target_pitch_rate;
     float _target_roll_angle;
     float _target_yaw_rate;
+    float _attack_angle_target;
+    float _attack_angle_measure;
+    float _attack_angle_rate_target;
+    float _attack_angle_rate_measure;
+    float _attack_throttle;
+
+    float _attack_throttle_pid;
+    float _attack_throttle_p;
+    float _attack_throttle_i;
+    float _attack_throttle_d;
 
     UCam_base* _UCam_ptr;
     uint8_t _cam_port_type;
@@ -55,6 +65,9 @@ private:
     void update_target_pitch_rate();
     void update_target_roll_angle();
     void update_target_yaw_rate();
+    void update_target_throttle();
+
+    uint32_t _last_ms;
 };
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
