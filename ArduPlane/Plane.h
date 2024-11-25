@@ -1252,6 +1252,10 @@ private:
     // last target alt we passed to tecs
     int32_t tecs_target_alt_cm;
 
+    void userhook_init();
+    void userhook_100Hz();
+    void userhook_1Hz();
+
 public:
     void failsafe_check(void);
     bool is_landing() const override;
