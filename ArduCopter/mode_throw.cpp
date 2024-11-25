@@ -272,10 +272,10 @@ void ModeThrow::run()
 bool ModeThrow::throw_detected()
 {
     // Check that we have a valid navigation solution
-    nav_filter_status filt_status = inertial_nav.get_filter_status();
-    if (!filt_status.flags.attitude || !filt_status.flags.horiz_pos_abs || !filt_status.flags.vert_pos) {
-        return false;
-    }
+    // nav_filter_status filt_status = inertial_nav.get_filter_status();
+    // if (!filt_status.flags.attitude || !filt_status.flags.horiz_pos_abs || !filt_status.flags.vert_pos) {
+    //     return false;
+    // }
 
     // Check for high speed (>500 cm/s)
     bool high_speed = inertial_nav.get_velocity_neu_cms().length_squared() > (THROW_HIGH_SPEED * THROW_HIGH_SPEED);
