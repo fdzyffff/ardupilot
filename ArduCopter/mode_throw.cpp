@@ -72,7 +72,7 @@ void ModeThrow::run()
         // initialise the demanded height to 3m above the throw height
         // we want to rapidly clear surrounding obstacles
         if (g2.throw_type == ThrowType::Drop) {
-            pos_control->set_pos_target_z_cm(inertial_nav.get_position_z_up_cm() - 100);
+            pos_control->set_pos_target_z_cm(inertial_nav.get_position_z_up_cm() + 50);
         } else {
             pos_control->set_pos_target_z_cm(inertial_nav.get_position_z_up_cm() + 300);
         }
@@ -316,11 +316,17 @@ bool ModeThrow::throw_detected()
         free_fall_start_velz = inertial_nav.get_velocity_z_up_cms();
     }
 
-    // Once a possible throw condition has been detected, we check for 2.5 m/s of downwards velocity change in less than 0.5 seconds to confirm
-    bool throw_condition_confirmed = ((AP_HAL::millis() - free_fall_start_ms < 500) && ((inertial_nav.get_velocity_z_up_cms() - free_fall_start_velz) < -250.0f));
-
-    // start motors and enter the control mode if we are in continuous freefall
-    return throw_condition_confirmed;
+    if (g2.throw_type == ThrowType::Drop) {
+        bool throw_condition_confirmed = ((AP_HAL::millis() - free_fall_start_ms > 150) && (AP_HAL::millis() - free_fall_start_ms < 500));
+        // start motors and enter the control mode if we are in continuous freefall
+        return throw_condition_confirmed;
+    }
+    else {
+        // Once a possible throw condition has been detected, we check for 2.5 m/s of downwards velocity change in less than 0.5 seconds to confirm
+        bool throw_condition_confirmed = ((AP_HAL::millis() - free_fall_start_ms < 500) && ((inertial_nav.get_velocity_z_up_cms() - free_fall_start_velz) < -150.0f));
+        // start motors and enter the control mode if we are in continuous freefall
+        return throw_condition_confirmed;
+    }
 }
 
 bool ModeThrow::throw_attitude_good() const
