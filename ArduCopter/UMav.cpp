@@ -38,7 +38,8 @@ void UMav::send_status()
                 mavlink_msg_wxbs_status_send(
                     channel,
                     3,
-                    _all_status);
+                    _all_status,
+                    0);
             }
         }
     }
