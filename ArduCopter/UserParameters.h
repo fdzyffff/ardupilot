@@ -33,6 +33,7 @@ public:
     AP_Int16 cam_x_offset;
     AP_Int16 cam_y_offset;
     AP_Float attack_angle_kp;
+    AP_Float attack_roll_factor;
 
 
 private:

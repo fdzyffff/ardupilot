@@ -32,14 +32,12 @@ void UAttack::init()
     init_cam_port();
 }
 
-
-
 void UAttack::udpate_control_value(){
     update_target_pitch_rate();
     update_target_yaw_rate();
     update_target_roll_angle();
     update_target_throttle();
-
+    update_target_bf_to_ef();
     _last_ms = millis();
 }
 
@@ -161,7 +159,7 @@ void UAttack::update_target_pitch_rate() {
 
 // degree
 void UAttack::update_target_roll_angle() {
-    _target_roll_angle = constrain_float(0.1f * get_target_yaw_rate(), -15.f, 15.f);
+    _target_roll_angle = constrain_float(copter.g2.user_parameters.attack_roll_factor.get() * ef_rate_info.x, -15.f, 15.f);
 }
 
 // degree/second
@@ -170,7 +168,7 @@ void UAttack::update_target_yaw_rate() {
     float k2 = copter.g2.user_parameters.attack_k2.get();
     // float boost_factor = constrain_float(fabsf(bf_info.x)/15.0f, 0.0f, 1.0f) * 2.0f;
     float angle_comp = constrain_float(bf_info.x, -15.0f, 15.0f);
-    _target_yaw_rate = k * 1.5f * ef_rate_info.x + k2 * angle_comp;
+    _target_yaw_rate = k * ef_rate_info.x + k2 * angle_comp;
 }
 
 // from 0 to 1, according to ef_info.y, the pitch angle of body-target in earth frame
@@ -210,6 +208,22 @@ void UAttack::update_target_throttle() {
 //     _attack_throttle_d = copter.g2.user_parameters.attack_throttle_pid.get_d();
 //     _attack_throttle_pid = _attack_throttle_p + _attack_throttle_i + _attack_throttle_d;
 // }
+
+void UAttack::update_target_bf_to_ef() {
+    Matrix3f tmp_bf_m;
+    tmp_bf_m.from_euler(0.0f, _target_pitch_rate, _target_yaw_rate);
+    Matrix3f tmp_roll_m;
+    tmp_roll_m.from_euler(copter.ahrs_view->roll, 0.0f, 0.0f);
+    Matrix3f tmp_ef_m = tmp_roll_m*tmp_bf_m;
+
+    float tmp_roll_rate;
+    float tmp_pitch_rate;
+    float tmp_yaw_rate;
+    tmp_ef_m.to_euler(&tmp_roll_rate, &tmp_pitch_rate, &tmp_yaw_rate);
+
+    _target_pitch_rate = tmp_pitch_rate;
+    _target_yaw_rate = tmp_yaw_rate;
+}
 
 void UAttack::handle_info_test(float p1, float p2) {
     if (_cam_port_type == 1 || _cam_port_type == 2) {

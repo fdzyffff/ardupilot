@@ -66,6 +66,7 @@ private:
     void update_target_roll_angle();
     void update_target_yaw_rate();
     void update_target_throttle();
+    void update_target_bf_to_ef();
 
     uint32_t _last_ms;
 };
