@@ -24,6 +24,9 @@ bool ModeLudeng_guided::init(bool ignore_checks)
         pos_control->init_z_controller();
     }
 
+
+    set_stage(Stage::STANDBY);
+
     return true;
 }
 
@@ -38,6 +41,7 @@ void ModeLudeng_guided::run()
         return;
     }
 
+    update_stage();
     // get pilot's desired yaw rate
     // float target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->norm_input_dz());
     // get pilot desired climb rate
@@ -74,7 +78,7 @@ void ModeLudeng_guided::run()
             break;
         case Stage::DONE:
             _vel_target_cms.zero();
-            target_climb_rate = 0.0f;
+            target_climb_rate = -10.0f;
             target_yaw_rate = 0.0f;
             break;
         default:
