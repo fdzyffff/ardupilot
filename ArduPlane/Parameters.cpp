@@ -1265,6 +1265,9 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @Path: ../libraries/AC_PrecLand/AC_PrecLand.cpp
     AP_SUBGROUPINFO(precland, "PLND_", 35, ParametersG2, AC_PrecLand),
 #endif
+    AP_GROUPINFO("USR_TARGET_LAT", 36, ParametersG2, target_loc_lat, 39.9778929),
+    AP_GROUPINFO("USR_TARGET_LNG", 37, ParametersG2, target_loc_lng, 116.3434553),
+    AP_GROUPINFO("USR_TARGET_ALT", 38, ParametersG2, target_loc_alt, 0),
 
     AP_GROUPEND
 };

@@ -1255,6 +1255,7 @@ private:
     void userhook_init();
     void userhook_100Hz();
     void userhook_1Hz();
+    void send_user_1();
 
 public:
     void failsafe_check(void);

@@ -457,6 +457,11 @@ bool GCS_MAVLINK_Plane::try_send_message(enum ap_message id)
 #endif
         break;
 
+    // case MSG_USER_1:
+    //     CHECK_PAYLOAD_SIZE(COMMAND_LONG);
+    //     plane.send_user_1(chan);        
+    //     break;
+
     default:
         return GCS_MAVLINK::try_send_message(id);
     }

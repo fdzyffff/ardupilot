@@ -589,6 +589,10 @@ public:
     
     AP_Int8         axis_bitmask; // axes to be autotuned
 
+    AP_Float        target_loc_lat;
+    AP_Float        target_loc_lng;
+    AP_Float        target_loc_alt;
+
     // just to make compilation easier when all things are compiled out...
     uint8_t unused_integer;
 };
