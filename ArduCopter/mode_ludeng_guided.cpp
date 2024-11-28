@@ -39,16 +39,50 @@ void ModeLudeng_guided::run()
     }
 
     // get pilot's desired yaw rate
-    float target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->norm_input_dz());
+    // float target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->norm_input_dz());
     // get pilot desired climb rate
-    float target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
-    target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
+    // float target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
+    // target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
 
     Matrix3f tmp_body_m;
     Vector3f tmp_vel_input = Vector3f(copter.uk230.get_target_bf_vel_x()*100.f, copter.uk230.get_target_bf_vel_y()*100.f, 0.0f);
     tmp_body_m.from_euler(0.0f, 0.0f, copter.ahrs_view->yaw);
     _vel_target_cms = tmp_body_m*tmp_vel_input;
     _accel_target_cmss.zero();
+
+    float target_yaw_rate = 0.0f;
+    float target_climb_rate = 0.0f;
+
+    switch (_stage) {
+        case Stage::STANDBY:
+            _vel_target_cms.zero();
+            target_climb_rate = 10.0f;
+            break;
+        case Stage::UP:
+            target_climb_rate = 15.0f;
+            target_yaw_rate = copter.uk230.get_target_yaw_rate()*100.0f;
+            break;
+        case Stage::LOCK:
+            _vel_target_cms.zero();
+            target_climb_rate = 5.0f;
+            target_yaw_rate = -1000.f;
+            break;
+        case Stage::DOWN:
+            _vel_target_cms.zero();
+            target_climb_rate = -20.0f;
+            target_yaw_rate = 0.0f;
+            break;
+        case Stage::DONE:
+            _vel_target_cms.zero();
+            target_climb_rate = 0.0f;
+            target_yaw_rate = 0.0f;
+            break;
+        default:
+            _vel_target_cms.zero();
+            target_climb_rate = 0.0f;
+            target_yaw_rate = 0.0f;
+            break;
+    }
 
     // set motors to full range
     motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
@@ -64,4 +98,97 @@ void ModeLudeng_guided::run()
 
     // call attitude controller with auto yaw
     attitude_control->input_thrust_vector_rate_heading(pos_control->get_thrust_vector(), target_yaw_rate);
+}
+
+void ModeLudeng_guided::update_stage()
+{
+    uint32_t dt = millis() - _stage_time;
+    switch (_stage) {
+        case Stage::STANDBY:
+            if (copter.uk230.is_valid()) {
+                set_stage(Stage::UP);
+            }
+            break;
+        case Stage::UP:
+            if (check_touch()) {
+                set_stage(Stage::LOCK);
+            }
+            break;
+        case Stage::LOCK:
+            if (dt > 2000) {
+                set_stage(Stage::DOWN);
+            }
+            break;
+        case Stage::DOWN:
+            if (check_done()) {
+                set_stage(Stage::DONE);
+            } else {
+                if (dt > 4000) {
+                    set_stage(Stage::STANDBY);
+                }
+            }
+            break;
+        case Stage::DONE:
+            break;
+        default:
+            set_stage(Stage::STANDBY);
+            break;
+    }
+}
+
+bool ModeLudeng_guided::check_touch() 
+{
+    bool ret = false;
+    static uint32_t time_ms = millis();
+    bool rngfnd_ok = (!copter.rangefinder_alt_ok() || (copter.rangefinder_alt_ok() && copter.rangefinder_state.alt_cm_filt.get() > 120.f));
+    bool vel_up_ok = copter.inertial_nav.get_velocity_z_up_cms() < 10.f;
+    if (vel_up_ok && rngfnd_ok) {
+        if (millis() - time_ms > 2000 ) {
+            ret = true;
+        }
+    } else {
+        time_ms = millis();
+    }
+    return ret;
+}
+
+bool ModeLudeng_guided::check_done() 
+{
+    bool ret = false;
+    static uint32_t time_ms = millis();
+    bool rngfnd_ok = (!copter.rangefinder_alt_ok() || (copter.rangefinder_alt_ok() && copter.rangefinder_state.alt_cm_filt.get() > 120.f));
+    bool vel_down_ok = copter.inertial_nav.get_velocity_z_up_cms() > -10.f;
+    if (vel_down_ok && rngfnd_ok) {
+        if (millis() - time_ms > 3000 ) {
+            ret = true;
+        }
+    } else {
+        time_ms = millis();
+    }
+    return ret;
+}
+
+void ModeLudeng_guided::set_stage(Stage stage_in) {
+    _stage = stage_in;
+    _stage_time = millis();
+    switch (_stage) {
+        case Stage::STANDBY:
+            gcs().send_text(MAV_SEVERITY_INFO, "Stage STANDBY");
+            break;
+        case Stage::UP:
+            gcs().send_text(MAV_SEVERITY_INFO, "Stage UP");
+            break;
+        case Stage::LOCK:
+            gcs().send_text(MAV_SEVERITY_INFO, "Stage LOCK");
+            break;
+        case Stage::DOWN:
+            gcs().send_text(MAV_SEVERITY_INFO, "Stage DOWN");
+            break;
+        case Stage::DONE:
+            gcs().send_text(MAV_SEVERITY_INFO, "Stage DONE");
+            break;
+        default:
+            gcs().send_text(MAV_SEVERITY_INFO, "Stage UNKNOWN");
+            break;
+    }
 }

@@ -2024,6 +2024,21 @@ public:
     bool has_user_takeoff(bool must_navigate) const override { return false; }
     bool allows_autotune() const override { return false; }
 
+    enum class Stage {
+        STANDBY = 0,
+        UP = 1,
+        LOCK = 2,
+        DOWN = 3,
+        DONE = 4
+    };
+
+    bool check_touch();
+    bool check_done();
+    void set_stage(Stage stage_in);
+    void update_stage();
+
+    Stage _stage;
+    uint32_t _stage_time;
 protected:
 
     const char *name() const override { return "LUDENGG"; }
