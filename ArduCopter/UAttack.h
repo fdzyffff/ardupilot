@@ -95,6 +95,7 @@ public:
     bool is_valid() override;
     void update() override;
     void do_cmd_on(bool on) override;
+    void do_cmd_pre_lock();
     void handle_info(float p1, float p2) override;
     void handle_msg(const mavlink_message_t &msg) override {return;};
     void handle_info_test(float p1, float p2) override;

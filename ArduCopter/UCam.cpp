@@ -51,6 +51,7 @@ void UCam::update() {
     if (tnow - last_update_ms > 1000) {
         //gcs().send_text(MAV_SEVERITY_INFO, "raw: %d, att: %d, arspd: %d", pk0_count, pk1_count, pk2_count);
         last_update_ms = tnow;
+        do_cmd_pre_lock();
     }
 }
 
@@ -83,26 +84,101 @@ void UCam::do_cmd_on(bool on) {
     tmp_msg._msg_1.content.msg.on = on?0x01:0x02;
     tmp_msg._msg_1.content.msg.type = 0x01;
     tmp_msg._msg_1.content.msg.size = (uint8_t)copter.g2.user_parameters.lock_size;
-    int16_t lock_x_offset = 0;
+    int16_t lock_x_center_corr = 0;
+    int16_t lock_y_center_corr = 0;
+    switch (copter.g2.user_parameters.lock_size.get()) {
+        case 1:
+            lock_x_center_corr = 8;
+            lock_y_center_corr = 8;
+            break;
+        case 2:
+            lock_x_center_corr = 16;
+            lock_y_center_corr = 16;
+            break;
+        case 3:
+            lock_x_center_corr = 32;
+            lock_y_center_corr = 32;
+            break;
+        case 4:
+            lock_x_center_corr = 64;
+            lock_y_center_corr = 64;
+            break;
+    }
+
     int16_t lock_y_offset = 0;
-    if (copter.g2.user_parameters.lock_size.get() == 1) {
-        lock_x_offset = 8;
-        lock_y_offset = 8;
+    switch (copter.g2.user_parameters.lock_y_down.get()) {
+        case 1:
+            lock_y_offset = 8;
+            break;
+        case 2:
+            lock_y_offset = 16;
+            break;
+        case 3:
+            lock_y_offset = 32;
+            break;
+        case 4:
+            lock_y_offset = 64;
+            break;
     }
-    if (copter.g2.user_parameters.lock_size.get() == 2) {
-        lock_x_offset = 16;
-        lock_y_offset = 16;
+
+    tmp_msg._msg_1.content.msg.target_x = (int16_t)copter.g2.user_parameters.lock_x - lock_x_center_corr;
+    tmp_msg._msg_1.content.msg.target_y = (int16_t)copter.g2.user_parameters.lock_y - lock_y_center_corr + lock_y_offset;
+
+    tmp_msg.make_sum();
+    tmp_msg._msg_1.need_send = true;
+
+    FD_CAM_ptr->write();
+}
+
+void UCam::do_cmd_pre_lock() {
+    FD_CAM_CMD &tmp_msg = FD_CAM_ptr->get_msg_cam_cmd();
+
+    tmp_msg._msg_1.content.msg.header.head_1 = FD_CAM_CMD::PREAMBLE1;
+    tmp_msg._msg_1.content.msg.header.head_2 = FD_CAM_CMD::PREAMBLE2;
+    tmp_msg._msg_1.content.msg.length = 0x10;
+    tmp_msg._msg_1.content.msg.frametype = 0x69;
+    tmp_msg._msg_1.content.msg.on = 0x00;
+    tmp_msg._msg_1.content.msg.type = 0x01;
+    tmp_msg._msg_1.content.msg.size = (uint8_t)copter.g2.user_parameters.lock_size;
+    int16_t lock_x_center_corr = 0;
+    int16_t lock_y_center_corr = 0;
+    switch (copter.g2.user_parameters.lock_size.get()) {
+        case 1:
+            lock_x_center_corr = 8;
+            lock_y_center_corr = 8;
+            break;
+        case 2:
+            lock_x_center_corr = 16;
+            lock_y_center_corr = 16;
+            break;
+        case 3:
+            lock_x_center_corr = 32;
+            lock_y_center_corr = 32;
+            break;
+        case 4:
+            lock_x_center_corr = 64;
+            lock_y_center_corr = 64;
+            break;
     }
-    if (copter.g2.user_parameters.lock_size.get() == 3) {
-        lock_x_offset = 32;
-        lock_y_offset = 32;
+
+    int16_t lock_y_offset = 0;
+    switch (copter.g2.user_parameters.lock_y_down.get()) {
+        case 1:
+            lock_y_offset = 8;
+            break;
+        case 2:
+            lock_y_offset = 16;
+            break;
+        case 3:
+            lock_y_offset = 32;
+            break;
+        case 4:
+            lock_y_offset = 64;
+            break;
     }
-    if (copter.g2.user_parameters.lock_size.get() == 4) {
-        lock_x_offset = 64;
-        lock_y_offset = 64;
-    }
-    tmp_msg._msg_1.content.msg.target_x = (int16_t)copter.g2.user_parameters.lock_x - lock_x_offset;
-    tmp_msg._msg_1.content.msg.target_y = (int16_t)copter.g2.user_parameters.lock_y - lock_y_offset;
+
+    tmp_msg._msg_1.content.msg.target_x = (int16_t)copter.g2.user_parameters.lock_x - lock_x_center_corr;
+    tmp_msg._msg_1.content.msg.target_y = (int16_t)copter.g2.user_parameters.lock_y - lock_y_center_corr + lock_y_offset;
 
     tmp_msg.make_sum();
     tmp_msg._msg_1.need_send = true;
