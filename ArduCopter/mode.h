@@ -96,7 +96,8 @@ public:
         AUTO_RTL =     27,  // Auto RTL, this is not a true mode, AUTO will report as this mode if entered to perform a DO_LAND_START Landing sequence
         TURTLE =       28,  // Flip over after crash
         LUDENGM =      30,
-        LUDENGG =      31,
+        LDHOOK  =      31,
+        LDUNHOOK  =    32,
 
         // Mode number 127 reserved for the "drone show mode" in the Skybrush
         // fork at https://github.com/skybrush-io/ardupilot
@@ -1009,6 +1010,8 @@ public:
     friend class AP_ExternalControl_Copter;
 #endif
 
+    friend class ModeLudeng_hook;
+    friend class ModeLudeng_unhook;
     // inherit constructor
     using Mode::Mode;
     Number mode_number() const override { return Number::GUIDED; }
@@ -2007,12 +2010,59 @@ private:
 };
 
 
-class ModeLudeng_guided : public Mode {
+class ModeLudeng_hook : public Mode {
 
 public:
     // inherit constructor
     using Mode::Mode;
-    Number mode_number() const override { return Number::LUDENGG; }
+    Number mode_number() const override { return Number::LDHOOK ; }
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    bool requires_GPS() const override { return true; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(AP_Arming::Method method) const override { return false; };
+    bool is_autopilot() const override { return false; }
+    bool has_user_takeoff(bool must_navigate) const override { return false; }
+    bool allows_autotune() const override { return false; }
+    bool is_taking_off() const override;
+    enum class Stage {
+        TKOFF = 0,
+        COME = 1,
+        STANDBY = 2,
+        AIM = 3,
+        UP = 4,
+        LOCK = 5,
+        DOWN = 6,
+        DONE = 7
+    };
+
+    void hook_run();
+    bool check_touch();
+    bool check_done();
+    bool come_init();
+    void set_stage(Stage stage_in);
+    void update_stage();
+
+    Stage _stage;
+    uint32_t _stage_time;
+protected:
+
+    const char *name() const override { return "LDHOOK "; }
+    const char *name4() const override { return "HOOK"; }
+
+    Vector3f _vel_target_cms;
+    Vector3f _accel_target_cmss;
+};
+
+
+class ModeLudeng_unhook : public Mode {
+
+public:
+    // inherit constructor
+    using Mode::Mode;
+    Number mode_number() const override { return Number::LDUNHOOK ; }
 
     bool init(bool ignore_checks) override;
     void run() override;
@@ -2025,15 +2075,16 @@ public:
     bool allows_autotune() const override { return false; }
 
     enum class Stage {
-        STANDBY = 0,
-        UP = 1,
-        LOCK = 2,
-        DOWN = 3,
-        DONE = 4
+        UP = 0,
+        UNLOCK = 1,
+        DOWN = 2,
+        AWAY = 3,
+        LAND = 4,
     };
 
-    bool check_touch();
-    bool check_done();
+    void unhook_run();
+    bool check_down();
+    bool away_init();
     void set_stage(Stage stage_in);
     void update_stage();
 
@@ -2041,8 +2092,8 @@ public:
     uint32_t _stage_time;
 protected:
 
-    const char *name() const override { return "LUDENGG"; }
-    const char *name4() const override { return "LDG-"; }
+    const char *name() const override { return "LDUNHOOK "; }
+    const char *name4() const override { return "UNHK"; }
 
     Vector3f _vel_target_cms;
     Vector3f _accel_target_cmss;

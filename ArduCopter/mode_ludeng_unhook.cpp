@@ -6,7 +6,7 @@
  */
 
 // althold_init - initialise althold controller
-bool ModeLudeng_guided::init(bool ignore_checks)
+bool ModeLudeng_unhook::init(bool ignore_checks)
 {
     // initialise horizontal speed, acceleration
     pos_control->set_max_speed_accel_xy(wp_nav->get_default_speed_xy(), wp_nav->get_wp_acceleration());
@@ -24,15 +24,24 @@ bool ModeLudeng_guided::init(bool ignore_checks)
         pos_control->init_z_controller();
     }
 
-
-    set_stage(Stage::STANDBY);
+    set_stage(Stage::UP);
 
     return true;
 }
 
 // althold_run - runs the althold controller
 // should be called at 100hz or more
-void ModeLudeng_guided::run()
+void ModeLudeng_unhook::run()
+{
+    update_stage();
+    if (_stage == Stage::AWAY) {
+        copter.mode_guided.run();
+    } else {
+        unhook_run();
+    }
+}
+
+void ModeLudeng_unhook::unhook_run() 
 {
     // if not armed set throttle to zero and exit immediately
     if (is_disarmed_or_landed()) {
@@ -41,45 +50,46 @@ void ModeLudeng_guided::run()
         return;
     }
 
-    update_stage();
     // get pilot's desired yaw rate
     // float target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->norm_input_dz());
     // get pilot desired climb rate
     // float target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
     // target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
 
-    Matrix3f tmp_body_m;
-    Vector3f tmp_vel_input = Vector3f(copter.uk230.get_target_bf_vel_x()*100.f, copter.uk230.get_target_bf_vel_y()*100.f, 0.0f);
-    tmp_body_m.from_euler(0.0f, 0.0f, copter.ahrs_view->yaw);
-    _vel_target_cms = tmp_body_m*tmp_vel_input;
+    _vel_target_cms.zero();
     _accel_target_cmss.zero();
 
     float target_yaw_rate = 0.0f;
     float target_climb_rate = 0.0f;
 
     switch (_stage) {
-        case Stage::STANDBY:
-            _vel_target_cms.zero();
-            target_climb_rate = 10.0f;
-            break;
         case Stage::UP:
-            target_climb_rate = 15.0f;
-            target_yaw_rate = copter.uk230.get_target_yaw_rate()*100.0f;
-            break;
-        case Stage::LOCK:
             _vel_target_cms.zero();
-            target_climb_rate = 5.0f;
-            target_yaw_rate = -1000.f;
+            target_yaw_rate = 0.f;
+            target_climb_rate = 10.0f;
+            // target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
+            // target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
+            break;
+        case Stage::UNLOCK:
+            _vel_target_cms.zero();
+            target_yaw_rate = 2500.f;
+            target_climb_rate = 0.0f;
+            // target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
+            // target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
             break;
         case Stage::DOWN:
             _vel_target_cms.zero();
-            target_climb_rate = -20.0f;
-            target_yaw_rate = 0.0f;
+            target_yaw_rate = 0.f;
+            target_climb_rate = -25.0f;
+            // target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
+            // target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
             break;
-        case Stage::DONE:
+        case Stage::LAND:
             _vel_target_cms.zero();
-            target_climb_rate = -10.0f;
-            target_yaw_rate = 0.0f;
+            target_yaw_rate = 0.f;
+            target_climb_rate = -25.0f;
+            // target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
+            // target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
             break;
         default:
             _vel_target_cms.zero();
@@ -104,50 +114,50 @@ void ModeLudeng_guided::run()
     attitude_control->input_thrust_vector_rate_heading(pos_control->get_thrust_vector(), target_yaw_rate);
 }
 
-void ModeLudeng_guided::update_stage()
+void ModeLudeng_unhook::update_stage()
 {
     uint32_t dt = millis() - _stage_time;
     switch (_stage) {
-        case Stage::STANDBY:
-            if (copter.uk230.is_valid()) {
-                set_stage(Stage::UP);
-            }
-            break;
         case Stage::UP:
-            if (check_touch()) {
-                set_stage(Stage::LOCK);
+            if (dt > 3000) {
+                set_stage(Stage::UNLOCK);
             }
             break;
-        case Stage::LOCK:
-            if (dt > 2000) {
+        case Stage::UNLOCK:
+            if (dt > 3000) {
                 set_stage(Stage::DOWN);
             }
             break;
         case Stage::DOWN:
-            if (check_done()) {
-                set_stage(Stage::DONE);
-            } else {
-                if (dt > 4000) {
-                    set_stage(Stage::STANDBY);
-                }
+            if (check_down()) {
+                set_stage(Stage::AWAY);
+            }
+            if (dt > 4000) {
+                set_stage(Stage::UP);
             }
             break;
-        case Stage::DONE:
+        case Stage::AWAY:
+            if (copter.mode_guided.wp_distance() < 100) {
+                set_stage(Stage::LAND);
+            }
+            break;
+        case Stage::LAND:
             break;
         default:
-            set_stage(Stage::STANDBY);
+            set_stage(Stage::UP);
             break;
     }
 }
 
-bool ModeLudeng_guided::check_touch() 
+bool ModeLudeng_unhook::check_down() 
 {
     bool ret = false;
     static uint32_t time_ms = millis();
-    bool rngfnd_ok = (!copter.rangefinder_alt_ok() || (copter.rangefinder_alt_ok() && copter.rangefinder_state.alt_cm_filt.get() > 120.f));
-    bool vel_up_ok = copter.inertial_nav.get_velocity_z_up_cms() < 10.f;
+    uint32_t dt = millis() - _stage_time;
+    bool rngfnd_ok = (!copter.rangefinder_alt_ok() || (copter.rangefinder_alt_ok() && copter.rangefinder_state.alt_cm_filt.get() < 80.f));
+    bool vel_up_ok = copter.inertial_nav.get_velocity_z_up_cms() < -15.f;
     if (vel_up_ok && rngfnd_ok) {
-        if (millis() - time_ms > 2000 ) {
+        if ((millis() - time_ms > 2000 ) && (dt > 2000)) {
             ret = true;
         }
     } else {
@@ -156,40 +166,51 @@ bool ModeLudeng_guided::check_touch()
     return ret;
 }
 
-bool ModeLudeng_guided::check_done() 
+bool ModeLudeng_unhook::away_init()
 {
-    bool ret = false;
-    static uint32_t time_ms = millis();
-    bool rngfnd_ok = (!copter.rangefinder_alt_ok() || (copter.rangefinder_alt_ok() && copter.rangefinder_state.alt_cm_filt.get() > 120.f));
-    bool vel_down_ok = copter.inertial_nav.get_velocity_z_up_cms() > -10.f;
-    if (vel_down_ok && rngfnd_ok) {
-        if (millis() - time_ms > 3000 ) {
-            ret = true;
-        }
-    } else {
-        time_ms = millis();
+    // bool loc_A_OK = (lat_A != 0 && lng_A !=0);
+    int32_t lat_A = copter.g2.user_parameters.loc_A_lat.get();
+    int32_t lng_A = copter.g2.user_parameters.loc_A_lng.get();
+    int32_t alt_A = copter.g2.user_parameters.loc_A_alt.get();
+    bool loc_A_OK = (lat_A != 0 && lng_A !=0);
+    if (!loc_A_OK) {
+        return false;
     }
-    return ret;
+    Location loc = Location(lat_A, lng_A, alt_A, Location::AltFrame::ABOVE_HOME);
+    bool use_yaw = true;
+    float yaw_cd = copter.g2.user_parameters.loc_A_yaw.get()*100.f;
+    bool use_yaw_rate = false;
+    float yaw_rate_cds = 0.0;
+    if (copter.mode_guided.set_destination(loc, use_yaw, yaw_cd, use_yaw_rate, yaw_rate_cds)) {
+        return true;
+    }
+    return false;
 }
 
-void ModeLudeng_guided::set_stage(Stage stage_in) {
+void ModeLudeng_unhook::set_stage(Stage stage_in) {
     _stage = stage_in;
     _stage_time = millis();
     switch (_stage) {
-        case Stage::STANDBY:
-            gcs().send_text(MAV_SEVERITY_INFO, "Stage STANDBY");
-            break;
         case Stage::UP:
             gcs().send_text(MAV_SEVERITY_INFO, "Stage UP");
+            copter.set_auto_armed(true);
             break;
-        case Stage::LOCK:
-            gcs().send_text(MAV_SEVERITY_INFO, "Stage LOCK");
+        case Stage::UNLOCK:
+            gcs().send_text(MAV_SEVERITY_INFO, "Stage UNLOCK");
             break;
         case Stage::DOWN:
             gcs().send_text(MAV_SEVERITY_INFO, "Stage DOWN");
             break;
-        case Stage::DONE:
-            gcs().send_text(MAV_SEVERITY_INFO, "Stage DONE");
+        case Stage::AWAY:
+            if (away_init()) {
+                gcs().send_text(MAV_SEVERITY_INFO, "Stage AWAY");
+            } else {
+                gcs().send_text(MAV_SEVERITY_INFO, "NO LOC!");
+                set_stage(Stage::LAND);
+            }
+            break;
+        case Stage::LAND:
+            gcs().send_text(MAV_SEVERITY_INFO, "Stage LAND");
             break;
         default:
             gcs().send_text(MAV_SEVERITY_INFO, "Stage UNKNOWN");

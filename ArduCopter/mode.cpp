@@ -182,8 +182,12 @@ Mode *Copter::mode_from_mode_num(const Mode::Number mode)
             ret = &mode_ludeng_manual;
             break;
 
-        case Mode::Number::LUDENGG:
-            ret = &mode_ludeng_guided;
+        case Mode::Number::LDHOOK:
+            ret = &mode_ludeng_hook;
+            break;
+
+        case Mode::Number::LDUNHOOK:
+            ret = &mode_ludeng_unhook;
             break;
 
         default:
