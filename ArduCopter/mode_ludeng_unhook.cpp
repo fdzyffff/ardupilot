@@ -119,7 +119,7 @@ void ModeLudeng_unhook::update_stage()
     uint32_t dt = millis() - _stage_time;
     switch (_stage) {
         case Stage::UP:
-            if (dt > 3000) {
+            if ((dt > 8000) || motors->get_throttle() > 0.7f) {
                 set_stage(Stage::UNLOCK);
             }
             break;
@@ -169,8 +169,8 @@ bool ModeLudeng_unhook::check_down()
 bool ModeLudeng_unhook::away_init()
 {
     // bool loc_A_OK = (lat_A != 0 && lng_A !=0);
-    int32_t lat_A = copter.g2.user_parameters.loc_A_lat.get();
-    int32_t lng_A = copter.g2.user_parameters.loc_A_lng.get();
+    int32_t lat_A = copter.g2.user_parameters.loc_A_lat.get()*1e7;
+    int32_t lng_A = copter.g2.user_parameters.loc_A_lng.get()*1e7;
     int32_t alt_A = copter.g2.user_parameters.loc_A_alt.get();
     bool loc_A_OK = (lat_A != 0 && lng_A !=0);
     if (!loc_A_OK) {
@@ -194,6 +194,7 @@ void ModeLudeng_unhook::set_stage(Stage stage_in) {
         case Stage::UP:
             gcs().send_text(MAV_SEVERITY_INFO, "Stage UP");
             copter.set_auto_armed(true);
+            set_land_complete(false);
             break;
         case Stage::UNLOCK:
             gcs().send_text(MAV_SEVERITY_INFO, "Stage UNLOCK");

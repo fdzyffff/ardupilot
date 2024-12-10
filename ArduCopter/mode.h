@@ -477,6 +477,7 @@ private:
 class ModeAuto : public Mode {
 
 public:
+    friend class ModeLudeng_hook;
     friend class PayloadPlace;  // in case wp_run is accidentally required
 
     // inherit constructor
@@ -2028,20 +2029,19 @@ public:
     bool allows_autotune() const override { return false; }
     bool is_taking_off() const override;
     enum class Stage {
-        TKOFF = 0,
-        COME = 1,
-        STANDBY = 2,
-        AIM = 3,
-        UP = 4,
-        LOCK = 5,
-        DOWN = 6,
-        DONE = 7
+        AUTO = 0,
+        STANDBY = 1,
+        AIM = 2,
+        UP = 3,
+        LOCK = 4,
+        DOWN = 5,
+        DONE = 6
     };
 
     void hook_run();
     bool check_touch();
     bool check_done();
-    bool come_init();
+    bool auto_init();
     void set_stage(Stage stage_in);
     void update_stage();
 

@@ -18,12 +18,12 @@ public:
     AP_Float cam_angle_y;
     AP_Float angle_limit;
     AP_Float rate_limit;
-    AP_Int32 loc_A_lat;
-    AP_Int32 loc_A_lng;
-    AP_Int32 loc_A_alt;
+    AP_Float loc_A_lat;
+    AP_Float loc_A_lng;
+    AP_Float loc_A_alt;
     AP_Float loc_A_yaw;
-    AP_Int32 loc_B_lat;
-    AP_Int32 loc_B_lng;
-    AP_Int32 loc_B_alt;
+    AP_Float loc_B_lat;
+    AP_Float loc_B_lng;
+    AP_Float loc_B_alt;
     AP_Float loc_B_yaw;
 };

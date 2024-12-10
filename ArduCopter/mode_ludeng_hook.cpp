@@ -24,7 +24,7 @@ bool ModeLudeng_hook::init(bool ignore_checks)
         pos_control->init_z_controller();
     }
 
-    set_stage(Stage::TKOFF);
+    set_stage(Stage::AUTO);
 
     return true;
 }
@@ -34,8 +34,8 @@ bool ModeLudeng_hook::init(bool ignore_checks)
 void ModeLudeng_hook::run()
 {
     update_stage();
-    if (_stage == Stage::TKOFF || _stage == Stage::COME) {
-        copter.mode_guided.run();
+    if (_stage == Stage::AUTO) {
+        copter.mode_auto.run();
     } else {
         hook_run();
     }
@@ -128,14 +128,7 @@ void ModeLudeng_hook::update_stage()
 {
     uint32_t dt = millis() - _stage_time;
     switch (_stage) {
-        case Stage::TKOFF:
-            {
-                if (copter.mode_guided.takeoff_complete) {
-                    set_stage(Stage::COME);
-                }
-            }
-            break;
-        case Stage::COME:
+        case Stage::AUTO:
             {
                 if (copter.uk230.is_valid()) {
                     set_stage(Stage::STANDBY);
@@ -222,48 +215,24 @@ bool ModeLudeng_hook::check_done()
 
 bool ModeLudeng_hook::is_taking_off() const
 {
-    return ((_stage == Stage::TKOFF) && !copter.mode_guided.takeoff_complete);
+    return ((_stage == Stage::AUTO) && copter.mode_auto.is_taking_off());
 }
 
-bool ModeLudeng_hook::come_init()
+bool ModeLudeng_hook::auto_init()
 {
-    // bool loc_A_OK = (lat_A != 0 && lng_A !=0);
-    int32_t lat_B = copter.g2.user_parameters.loc_B_lat.get();
-    int32_t lng_B = copter.g2.user_parameters.loc_B_lng.get();
-    int32_t alt_B = copter.g2.user_parameters.loc_B_alt.get();
-    bool loc_B_OK = (lat_B != 0 && lng_B !=0);
-    if (!loc_B_OK) {
-        return false;
-    }
-    Location loc = Location(lat_B, lng_B, alt_B, Location::AltFrame::ABOVE_HOME);
-    bool use_yaw = true;
-    float yaw_cd = copter.g2.user_parameters.loc_B_yaw.get()*100.f;
-    bool use_yaw_rate = false;
-    float yaw_rate_cds = 0.0;
-    if (copter.mode_guided.set_destination(loc, use_yaw, yaw_cd, use_yaw_rate, yaw_rate_cds)) {
-        return true;
-    }
-    return false;
+    return copter.mode_auto.init(false);
 }
 
 void ModeLudeng_hook::set_stage(Stage stage_in) {
     _stage = stage_in;
     _stage_time = millis();
     switch (_stage) {
-        case Stage::TKOFF:
-            if (is_disarmed_or_landed() && copter.mode_guided.do_user_takeoff_start(100.0f)) {
-                copter.set_auto_armed(true);
-                gcs().send_text(MAV_SEVERITY_INFO, "Stage TKOFF");
+        case Stage::AUTO:
+            if (auto_init() && !copter.uk230.is_valid()) {
+                copter.mode_auto.mission.reset();
+                gcs().send_text(MAV_SEVERITY_INFO, "Stage AUTO");
             } else {
-                gcs().send_text(MAV_SEVERITY_INFO, "SKIP TKOFF!");
-                set_stage(Stage::COME);
-            }
-            break;
-        case Stage::COME:
-            if (come_init()) {
-                gcs().send_text(MAV_SEVERITY_INFO, "Stage COME");
-            } else {
-                gcs().send_text(MAV_SEVERITY_INFO, "NO LOC!");
+                gcs().send_text(MAV_SEVERITY_INFO, "NO AUTO!");
                 set_stage(Stage::STANDBY);
             }
             break;
