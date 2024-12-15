@@ -90,18 +90,22 @@ void Buzzer_uart::update_music_to_play()
 
     if (_flags.gps_status != AP_Notify::flags.gps_status) {
         _flags.gps_status = AP_Notify::flags.gps_status;
-        if (_flags.gps_status == 3) {
+        if (_flags.gps_status == 3 || _flags.gps_status == 4) {
             add_music(GPS_FIX_BUZZ);
         }
-        if (_flags.gps_status == 5) {
+        if (_flags.gps_status == 5 || _flags.gps_status == 6) {
             add_music(RTK_FIX_BUZZ);
         }
     }
 
     // check if prearm check are good
     if (AP_Notify::flags.pre_arm_check && !_flags.pre_arm_check) {
-        _flags.pre_arm_check = true;
-        add_music(PRE_ARM_GOOD_BUZZ);
+        if (millis() - _pre_arm_check_time > 2000) {
+            _flags.pre_arm_check = true;
+            add_music(PRE_ARM_GOOD_BUZZ);
+        }
+    } else {
+        _pre_arm_check_time = millis();
     }
 
     // check if armed status has changed

@@ -73,6 +73,7 @@ private:
     uint8_t _music;
     uint8_t _next_music;
     uint32_t _music_start_time;
+    uint32_t _pre_arm_check_time;
 
     AP_HAL::UARTDriver *_port;
 
