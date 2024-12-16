@@ -49,6 +49,7 @@ MAV_MODE GCS_MAVLINK_Copter::base_mode() const
     case Mode::Number::POSHOLD:
     case Mode::Number::BRAKE:
     case Mode::Number::SMART_RTL:
+    case Mode::Number::MLAND:
         _base_mode |= MAV_MODE_FLAG_GUIDED_ENABLED;
         // note that MAV_MODE_FLAG_AUTO_ENABLED does not match what
         // APM does in any mode, as that is defined as "system finds its own goal
@@ -635,6 +636,7 @@ void GCS_MAVLINK_Copter::packetReceived(const mavlink_status_t &status,
 #if MODE_FOLLOW_ENABLED == ENABLED
     // pass message to follow library
     copter.g2.follow.handle_msg(msg);
+    copter.useruartfwd.handle_msg(msg);
 #endif
     GCS_MAVLINK::packetReceived(status, msg);
 }

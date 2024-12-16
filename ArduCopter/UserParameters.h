@@ -8,15 +8,23 @@ public:
     UserParameters();
     static const struct AP_Param::GroupInfo var_info[];
 
-    // Put accessors to your parameter variables here
-    // UserCode usage example: g2.user_parameters.get_int8Param()
-    AP_Int8 get_int8Param() const { return _int8; }
-    AP_Int16 get_int16Param() const { return _int16; }
-    AP_Float get_floatParam() const { return _float; }
-
-private:
-    // Put your parameter variable definitions here
-    AP_Int8 _int8;
-    AP_Int16 _int16;
-    AP_Float _float;
+    AP_Int16 cam_time_out;
+    AP_Int8  cam_print;
+    AP_Float attack_k;
+    AP_Float attack_k2;
+    AP_Float cam_width;
+    AP_Float cam_height;
+    AP_Float cam_angle_x;
+    AP_Float cam_angle_y;
+    AP_Float angle_limit;
+    AP_Float rate_limit;
+    AP_Float loc_A_lat;
+    AP_Float loc_A_lng;
+    AP_Float loc_A_alt;
+    AP_Float loc_A_yaw;
+    AP_Float loc_B_lat;
+    AP_Float loc_B_lng;
+    AP_Float loc_B_alt;
+    AP_Float loc_B_yaw;
+    AP_Int8  fwd_print;
 };

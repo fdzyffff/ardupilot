@@ -118,6 +118,11 @@ static const char* SERIAL_PROTOCOL_VALUES[] = {
     "NMEA", "WNDVNE", "SLCAN", "RCIN", "MGSQRT", "LTM", "RUNCAM", "HOT_TLM", "SCRIPT", "CRSF",
     "GEN", "WNCH", "MSP", "DJI", "AIRSPD", "ADSB", "AHRS", "AUDIO", "FETTEC", "TORQ",
     "AIS", "CD_ESC", "MSP_DP", "MAV_HL", "TRAMP", "DDS", "IMUOUT", "IQ", "PPP",
+    "E49", "E50","E51","E52","E53","E54","E55","E56","E57","E58","E59","E60",
+    "E61", "E62","E63","E64","E65","E66","E67","E68","E69","E70",
+    "E71", "E72","E73","E74","E75","E76","E77","E78","E79","E80",
+    "E81", "E82","E83","E84","E85","E86","E87","E88","E89","E90",
+    "E91", "E92","E93","E94","E95","E96","E97","E98","E99","FWD",
 };
 static_assert(AP_SerialManager::SerialProtocol_NumProtocols == ARRAY_SIZE(SERIAL_PROTOCOL_VALUES), "Wrong size SerialProtocol_NumProtocols");
 

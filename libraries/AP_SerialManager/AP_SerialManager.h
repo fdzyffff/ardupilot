@@ -82,6 +82,8 @@ public:
         SerialProtocol_IMUOUT = 46,
         // Reserving Serial Protocol 47 for SerialProtocol_IQ
         SerialProtocol_PPP = 48,
+        SerialProtocol_K230 = 50,
+        SerialProtocol_Uart_Forward = 100,
         SerialProtocol_NumProtocols                    // must be the last value
     };
 

@@ -588,6 +588,12 @@ void AP_SerialManager::init()
                     break;
 #endif
                     
+                case SerialProtocol_Uart_Forward:
+                case SerialProtocol_K230:
+                    uart->begin(state[i].baudrate(),
+                                         256,
+                                         256);
+                    break;
                 default:
                     uart->begin(state[i].baudrate());
             }
