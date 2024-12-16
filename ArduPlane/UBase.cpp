@@ -118,7 +118,7 @@ void UBase::update_throttle_pos()
 float UBase:: get_land_airspeed()
 {
     if (plane.TECS_controller.get_land_airspeed() < 0.0f ) {
-        return plane.aparm.airspeed_cruise_cm * 0.01f;
+        return plane.aparm.airspeed_cruise;
     }
     return plane.TECS_controller.get_land_airspeed();
 }
@@ -269,6 +269,10 @@ void UBase::update_target()
         }
         mlstate.have_target = true;
         plane.g2.follow.get_target_location_and_velocity_ofs(mlstate.target_pos, mlstate.target_velocity);
+        if (plane.uk230.is_valid()) {
+            mlstate.target_velocity.x = mlstate.target_velocity.x + plane.uk230.get_target_ef_vel_x();
+            mlstate.target_velocity.y = mlstate.target_velocity.y + plane.uk230.get_target_ef_vel_y();
+        }
         int32_t t_alt = mlstate.target_pos.alt;
         mlstate.target_pos.change_alt_frame(Location::AltFrame::ABSOLUTE);
         mlstate.target_pos.alt = t_alt;
@@ -283,7 +287,7 @@ float UBase::get_target_alt()
 {
     float base_alt = mlstate.target_pos.alt * 0.01f;
     if (mlstate.landing_stage == land_stage::HOLDOFF) {
-        return base_alt + plane.g.RTL_altitude_cm.get() * 0.01f;
+        return base_alt + plane.g.RTL_altitude.get();
     }
     return base_alt + plane.quadplane.qrtl_alt.get();
 }

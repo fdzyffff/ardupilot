@@ -1266,6 +1266,28 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_SUBGROUPINFO(precland, "PLND_", 35, ParametersG2, AC_PrecLand),
 #endif
 
+    AP_GROUPINFO("USR_PRINT",     36, ParametersG2, ubase_print,               0),
+    AP_GROUPINFO("USR_ENABLE",    37, ParametersG2, ubase_land_enable,         0),
+    AP_GROUPINFO("USR_ANGLE",     38, ParametersG2, ubase_land_angle,          0.0f),
+    AP_GROUPINFO("USR_AUTO_OFS",  39, ParametersG2, ubase_land_auto_offset,    0),
+    AP_GROUPINFO("USR_PRINT",     40, ParametersG2, user_cam_print,            0),
+    AP_GROUPINFO("USR_TIMEOUT",   41, ParametersG2, user_cam_time_out,      2000),
+    AP_GROUPINFO("USR_AIM_K",     42, ParametersG2, user_attack_k,             2.0f),
+    AP_GROUPINFO("USR_AIM_K2",    43, ParametersG2, user_attack_k2,            2.0f),
+    AP_GROUPINFO("USR_CAM_W",     44, ParametersG2, user_cam_width,          720),
+    AP_GROUPINFO("USR_CAM_H",     45, ParametersG2, user_cam_height,         720),
+    AP_GROUPINFO("USR_CAM_ANG_X", 46, ParametersG2, user_cam_angle_x,         45.0f),
+    AP_GROUPINFO("USR_CAM_ANG_Y", 47, ParametersG2, user_cam_angle_y,         45.0f),
+    AP_GROUPINFO("USR_LIM_ANGLE" ,48, ParametersG2, user_angle_limit,         30.f),
+    AP_GROUPINFO("USR_LIM_RATE",  49, ParametersG2, user_rate_limit,          20.f),
+    AP_GROUPINFO("USR_LOCA_LAT",  50, ParametersG2, user_loc_A_lat,           0),
+    AP_GROUPINFO("USR_LOCA_LNG",  51, ParametersG2, user_loc_A_lng,           0),
+    AP_GROUPINFO("USR_LOCA_ALT",  52, ParametersG2, user_loc_A_alt,           0),
+    AP_GROUPINFO("USR_LOCA_YAW",  53, ParametersG2, user_loc_A_yaw,           0.f),
+    AP_GROUPINFO("USR_LOCB_LAT",  54, ParametersG2, user_loc_B_lat,           0),
+    AP_GROUPINFO("USR_LOCB_LNG",  55, ParametersG2, user_loc_B_lng,           0),
+    AP_GROUPINFO("USR_LOCB_ALT",  56, ParametersG2, user_loc_B_alt,           0),
+    AP_GROUPINFO("USR_LOCB_YAW",  57, ParametersG2, user_loc_B_yaw,           0.f),
     AP_GROUPEND
 };
 

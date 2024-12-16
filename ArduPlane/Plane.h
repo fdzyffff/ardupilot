@@ -123,6 +123,7 @@
 #endif
 #include "AP_Arming.h"
 
+#include "UK230.h"
 #include "UBase.h"
 #include "UserUartFWD.h"
 
@@ -179,6 +180,7 @@ public:
     friend class AP_ExternalControl_Plane;
 #endif
 
+    friend class UK230;
     friend class UBase;
     friend class UserUartFWD;
 
@@ -1258,11 +1260,20 @@ private:
     // last target alt we passed to tecs
     int32_t tecs_target_alt_cm;
 
+    UK230 uk230;
+    // User info
+    bool position_ok();
+    bool ekf_has_absolute_position();
+    bool ekf_has_relative_position();
+
     UBase ubase;
+    void user_init();
     void user_1Hz();
     void user_50Hz();
+    void user_100Hz();
 
     UserUartFWD useruartfwd{AP_SerialManager::SerialProtocol_Uart_Forward};
+    bool allow_to_land();
 
 public:
     void failsafe_check(void);

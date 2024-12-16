@@ -589,6 +589,28 @@ public:
     
     AP_Int8         axis_bitmask; // axes to be autotuned
 
+    AP_Int8  ubase_print;
+    AP_Int8  ubase_land_enable;
+    AP_Float ubase_land_angle;
+    AP_Int8  ubase_land_auto_offset;
+    AP_Int16 user_cam_time_out;
+    AP_Int8  user_cam_print;
+    AP_Float user_attack_k;
+    AP_Float user_attack_k2;
+    AP_Float user_cam_width;
+    AP_Float user_cam_height;
+    AP_Float user_cam_angle_x;
+    AP_Float user_cam_angle_y;
+    AP_Float user_angle_limit;
+    AP_Float user_rate_limit;
+    AP_Float user_loc_A_lat;
+    AP_Float user_loc_A_lng;
+    AP_Float user_loc_A_alt;
+    AP_Float user_loc_A_yaw;
+    AP_Float user_loc_B_lat;
+    AP_Float user_loc_B_lng;
+    AP_Float user_loc_B_alt;
+    AP_Float user_loc_B_yaw;
     // just to make compilation easier when all things are compiled out...
     uint8_t unused_integer;
 };

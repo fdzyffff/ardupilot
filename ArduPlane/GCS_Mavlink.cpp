@@ -776,6 +776,7 @@ void GCS_MAVLINK_Plane::packetReceived(const mavlink_status_t &status,
 #if AP_SCRIPTING_ENABLED && AP_FOLLOW_ENABLED
     // pass message to follow library
     plane.g2.follow.handle_msg(msg);
+    plane.useruartfwd.handle_msg(msg);
 #endif
     GCS_MAVLINK::packetReceived(status, msg);
 }

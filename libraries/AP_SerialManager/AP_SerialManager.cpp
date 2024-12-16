@@ -589,6 +589,7 @@ void AP_SerialManager::init()
 #endif
                     
                 case SerialProtocol_Uart_Forward:
+                case SerialProtocol_K230:
                     uart->begin(state[i].baudrate(),
                                          256,
                                          256);
