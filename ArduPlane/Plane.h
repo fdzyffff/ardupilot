@@ -123,6 +123,9 @@
 #endif
 #include "AP_Arming.h"
 
+#include "UBase.h"
+#include "UserUartFWD.h"
+
 /*
   main APM:Plane class
  */
@@ -175,6 +178,9 @@ public:
 #if AP_EXTERNAL_CONTROL_ENABLED
     friend class AP_ExternalControl_Plane;
 #endif
+
+    friend class UBase;
+    friend class UserUartFWD;
 
     Plane(void);
 
@@ -1251,6 +1257,12 @@ private:
 
     // last target alt we passed to tecs
     int32_t tecs_target_alt_cm;
+
+    UBase ubase;
+    void user_1Hz();
+    void user_50Hz();
+
+    UserUartFWD useruartfwd{AP_SerialManager::SerialProtocol_Uart_Forward};
 
 public:
     void failsafe_check(void);
