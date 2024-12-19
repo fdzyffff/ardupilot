@@ -29,6 +29,10 @@ void Copter::userhook_50Hz()
 void Copter::userhook_25Hz()
 {
     // put your 25Hz code here
+#if OSD_ENABLED == ENABLED
+    osd.set_atk_angle(copter.g2.user_parameters.attack_angle.get());
+#endif
+
 }
 #endif
 
@@ -80,7 +84,67 @@ void Copter::userhook_SuperSlowLoop()
 #ifdef USERHOOK_AUXSWITCH
 void Copter::userhook_auxSwitch1(const RC_Channel::AuxSwitchPos ch_flag)
 {
-    // put your aux switch #1 handler here (CHx_OPT = 47)    
+    // put your aux switch #1 handler here (CHx_OPT = 47)
+    int16_t lock_size = copter.g2.user_parameters.lock_size.get();
+    switch(ch_flag) {
+    case RC_Channel::AuxSwitchPos::HIGH: {
+        lock_size += 1;
+        break;
+    }
+    case RC_Channel::AuxSwitchPos::LOW: {
+        lock_size -= 1;
+        break;
+    }
+    default:
+        break;
+    }
+    lock_size = constrain_int16(lock_size, 1, 4);
+    copter.g2.user_parameters.lock_size.set_and_save(lock_size);
+}
+
+void Copter::userhook_auxSwitch2(const RC_Channel::AuxSwitchPos ch_flag)
+{
+    // put your aux switch #2 handler here (CHx_OPT = 48)
+    int16_t lock_y_down = copter.g2.user_parameters.lock_y_down.get();
+    switch(ch_flag) {
+    case RC_Channel::AuxSwitchPos::HIGH: {
+        lock_y_down += 1;
+        break;
+    }
+    case RC_Channel::AuxSwitchPos::LOW: {
+        lock_y_down -= 1;
+        break;
+    }
+    default:
+        break;
+    }
+    lock_y_down = constrain_int16(lock_y_down, 1, 4);
+    copter.g2.user_parameters.lock_y_down.set_and_save(lock_y_down);
+}
+
+void Copter::userhook_auxSwitch3(const RC_Channel::AuxSwitchPos ch_flag)
+{
+    // put your aux switch #3 handler here (CHx_OPT = 49)
+    float attack_angle = copter.g2.user_parameters.attack_angle.get();
+    switch(ch_flag) {
+    case RC_Channel::AuxSwitchPos::HIGH: {
+        attack_angle += 1;
+        break;
+    }
+    case RC_Channel::AuxSwitchPos::LOW: {
+        attack_angle -= 1;
+        break;
+    }
+    default:
+        break;
+    }
+    attack_angle = constrain_int16(attack_angle, 1.0f, 60.0f);
+    copter.g2.user_parameters.attack_angle.set_and_save(attack_angle);
+}
+
+void Copter::userhook_auxSwitch4(const RC_Channel::AuxSwitchPos ch_flag)
+{
+    // put your aux switch #4 handler here (CHx_OPT = 199)
     switch(ch_flag) {
     case RC_Channel::AuxSwitchPos::HIGH: {
         uattack.do_cmd_on(1);
@@ -89,16 +153,6 @@ void Copter::userhook_auxSwitch1(const RC_Channel::AuxSwitchPos ch_flag)
     default:
         uattack.do_cmd_on(0);
     }
-}
-
-void Copter::userhook_auxSwitch2(const RC_Channel::AuxSwitchPos ch_flag)
-{
-    // put your aux switch #2 handler here (CHx_OPT = 48)
-}
-
-void Copter::userhook_auxSwitch3(const RC_Channel::AuxSwitchPos ch_flag)
-{
-    // put your aux switch #3 handler here (CHx_OPT = 49)
 }
 #endif
 

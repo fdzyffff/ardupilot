@@ -1017,6 +1017,7 @@ const AP_Param::GroupInfo AP_OSD_Screen::var_info[] = {
     // @Range: 0 15
     AP_SUBGROUPINFO(avgcellrestvolt, "ACRVOLT", 61, AP_OSD_Screen, AP_OSD_Setting),
 
+    AP_SUBGROUPINFO(atkangle, "ATKANGLE", 62, AP_OSD_Screen, AP_OSD_Setting),
     AP_GROUPEND
 };
 
@@ -1462,6 +1463,12 @@ void AP_OSD_Screen::draw_batused(uint8_t instance, uint8_t x, uint8_t y)
 void AP_OSD_Screen::draw_batused(uint8_t x, uint8_t y)
 {
     draw_batused(0, x, y);
+}
+
+void AP_OSD_Screen::draw_atkangle(uint8_t x, uint8_t y)
+{
+    float atk_angle = osd->_usr_atk_angle;
+    backend->write(x,y, false, "%0.0f", atk_angle);
 }
 
 //Autoscroll message is the same as in minimosd-extra.
@@ -2292,6 +2299,7 @@ void AP_OSD_Screen::draw(void)
     DRAW_SETTING(eff);
     DRAW_SETTING(callsign);
     DRAW_SETTING(current2);
+    DRAW_SETTING(atkangle);
 }
 #endif
 #endif // OSD_ENABLED

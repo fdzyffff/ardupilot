@@ -230,6 +230,8 @@ private:
     AP_OSD_Setting batt_bar{true, 1, 1};
     AP_OSD_Setting arming{true, 1, 1};
 
+    AP_OSD_Setting atkangle{true, 12, 12};
+
 #ifdef HAL_WITH_MSP_DISPLAYPORT
     // Per screen HD resolution options (currently supported only by DisplayPort)
     AP_Int8 txt_resolution;
@@ -305,6 +307,8 @@ private:
     void draw_fence(uint8_t x, uint8_t y);
 #endif
     void draw_rngf(uint8_t x, uint8_t y);
+
+    void draw_atkangle(uint8_t x, uint8_t y);
 
     struct {
         bool load_attempted;
@@ -617,6 +621,10 @@ public:
     HAL_Semaphore &get_semaphore(void) {
         return _sem;
     }
+
+    void set_atk_angle(float atk_angle) {_usr_atk_angle = atk_angle;}
+
+    float _usr_atk_angle;
 
 private:
     void osd_thread();
