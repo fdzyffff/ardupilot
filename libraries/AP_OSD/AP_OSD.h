@@ -230,7 +230,7 @@ private:
     AP_OSD_Setting batt_bar{true, 1, 1};
     AP_OSD_Setting arming{true, 1, 1};
 
-    AP_OSD_Setting atkangle{true, 12, 12};
+    AP_OSD_Setting atkangle{true, 10, 11};
 
 #ifdef HAL_WITH_MSP_DISPLAYPORT
     // Per screen HD resolution options (currently supported only by DisplayPort)
@@ -622,7 +622,7 @@ public:
         return _sem;
     }
 
-    void set_atk_angle(float atk_angle) {_usr_atk_angle = atk_angle;}
+    void set_atk_angle(float atk_angle);
 
     float _usr_atk_angle;
 

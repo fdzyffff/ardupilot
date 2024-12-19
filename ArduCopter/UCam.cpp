@@ -51,7 +51,9 @@ void UCam::update() {
     if (tnow - last_update_ms > 1000) {
         //gcs().send_text(MAV_SEVERITY_INFO, "raw: %d, att: %d, arspd: %d", pk0_count, pk1_count, pk2_count);
         last_update_ms = tnow;
-        do_cmd_pre_lock();
+        if (!is_valid()) {
+            do_cmd_pre_lock();
+        }
     }
 }
 
@@ -108,16 +110,16 @@ void UCam::do_cmd_on(bool on) {
     int16_t lock_y_offset = 0;
     switch (copter.g2.user_parameters.lock_y_down.get()) {
         case 1:
-            lock_y_offset = 8;
-            break;
-        case 2:
             lock_y_offset = 16;
             break;
-        case 3:
+        case 2:
             lock_y_offset = 32;
             break;
-        case 4:
+        case 3:
             lock_y_offset = 64;
+            break;
+        case 4:
+            lock_y_offset = 128;
             break;
     }
 
@@ -164,16 +166,16 @@ void UCam::do_cmd_pre_lock() {
     int16_t lock_y_offset = 0;
     switch (copter.g2.user_parameters.lock_y_down.get()) {
         case 1:
-            lock_y_offset = 8;
-            break;
-        case 2:
             lock_y_offset = 16;
             break;
-        case 3:
+        case 2:
             lock_y_offset = 32;
             break;
-        case 4:
+        case 3:
             lock_y_offset = 64;
+            break;
+        case 4:
+            lock_y_offset = 128;
             break;
     }
 

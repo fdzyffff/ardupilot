@@ -1468,7 +1468,7 @@ void AP_OSD_Screen::draw_batused(uint8_t x, uint8_t y)
 void AP_OSD_Screen::draw_atkangle(uint8_t x, uint8_t y)
 {
     float atk_angle = osd->_usr_atk_angle;
-    backend->write(x,y, false, "%0.0f", atk_angle);
+    backend->write(x,y, false, ">>> %4.1f <<<", atk_angle);
 }
 
 //Autoscroll message is the same as in minimosd-extra.

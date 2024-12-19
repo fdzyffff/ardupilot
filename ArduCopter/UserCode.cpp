@@ -25,13 +25,13 @@ void Copter::userhook_FastLoop()
 void Copter::userhook_50Hz()
 {
     // put your 50Hz code here
+#if OSD_ENABLED == ENABLED
+    osd.set_atk_angle(copter.g2.user_parameters.attack_angle.get());
+#endif
 }
 void Copter::userhook_25Hz()
 {
     // put your 25Hz code here
-#if OSD_ENABLED == ENABLED
-    osd.set_atk_angle(copter.g2.user_parameters.attack_angle.get());
-#endif
 
 }
 #endif

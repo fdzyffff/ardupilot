@@ -595,6 +595,11 @@ void AP_OSD::handle_msg(const mavlink_message_t &msg, const GCS_MAVLINK& link)
 }
 #endif
 
+void AP_OSD::set_atk_angle(float atk_angle) {
+    _usr_atk_angle = atk_angle;
+    // gcs().send_text(MAV_SEVERITY_INFO, "ATK: %4.2f", atk_angle);
+}
+
 AP_OSD *AP::osd() {
     return AP_OSD::get_singleton();
 }
