@@ -1266,10 +1266,10 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_SUBGROUPINFO(precland, "PLND_", 35, ParametersG2, AC_PrecLand),
 #endif
 
-    AP_GROUPINFO("USR_PRINT",     36, ParametersG2, ubase_print,               0),
-    AP_GROUPINFO("USR_ENABLE",    37, ParametersG2, ubase_land_enable,         0),
-    AP_GROUPINFO("USR_ANGLE",     38, ParametersG2, ubase_land_angle,          0.0f),
-    AP_GROUPINFO("USR_AUTO_OFS",  39, ParametersG2, ubase_land_auto_offset,    0),
+    AP_GROUPINFO("UBS_PRINT",     36, ParametersG2, ubase_print,               0),
+    AP_GROUPINFO("UBS_ENABLE",    37, ParametersG2, ubase_land_enable,         0),
+    AP_GROUPINFO("UBS_ANGLE",     38, ParametersG2, ubase_land_angle,          0.0f),
+    AP_GROUPINFO("UBS_AUTO_OFS",  39, ParametersG2, ubase_land_auto_offset,    0),
     AP_GROUPINFO("USR_PRINT",     40, ParametersG2, user_cam_print,            0),
     AP_GROUPINFO("USR_TIMEOUT",   41, ParametersG2, user_cam_time_out,      2000),
     AP_GROUPINFO("USR_AIM_K",     42, ParametersG2, user_attack_k,             2.0f),
