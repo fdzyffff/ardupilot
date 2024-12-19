@@ -54,9 +54,9 @@ void UK230::read_uart()
 
         if (tmp_msg._msg_1.content.msg.tag_ok) {
             _last_ms = millis();
-            float p1 = -cal_frame_angle(copter.g2.user_parameters.cam_width.get(), copter.g2.user_parameters.cam_angle_x.get(), tmp_msg._msg_1.content.msg.tag_x); // x-axis, degree
-            float p2 =  cal_frame_angle(copter.g2.user_parameters.cam_height.get(), copter.g2.user_parameters.cam_angle_y.get(), tmp_msg._msg_1.content.msg.tag_y); // y-axis, degree
-            float p3 = tmp_msg._msg_1.content.msg.tag_heading;
+            float p1 = cal_frame_angle(copter.g2.user_parameters.cam_width.get(), copter.g2.user_parameters.cam_angle_x.get(), tmp_msg._msg_1.content.msg.tag_x); // x-axis, degree
+            float p2 = cal_frame_angle(copter.g2.user_parameters.cam_height.get(), copter.g2.user_parameters.cam_angle_y.get(), tmp_msg._msg_1.content.msg.tag_y); // y-axis, degree
+            float p3 = -tmp_msg._msg_1.content.msg.tag_heading;
             _target_dist_cm = tmp_msg._msg_1.content.msg.tag_d;
 
             display_info.p1 = tmp_msg._msg_1.content.msg.tag_x;
@@ -93,12 +93,12 @@ void UK230::handle_info(float p1, float p2, float p3) {
 
     Vector3f tmp_cam_input = Vector3f(radians(p1), radians(p2), radians(p3));
     Matrix3f tmp_cam_m;
-    tmp_cam_m.from_euler(0.0f, 0.0f, radians(270.0f));
+    tmp_cam_m.from_euler(0.0f, 0.0f, radians(180.0f));
     Vector3f tmp_cam_output = tmp_cam_m*tmp_cam_input;
 
     bf_info.x = degrees(tmp_cam_output.x); // roll degree
     bf_info.y = degrees(tmp_cam_output.y); // pitch degree
-    bf_info.z = wrap_180(degrees(tmp_cam_output.z) + 270.f);; // yaw degree
+    bf_info.z = wrap_180(degrees(tmp_cam_output.z) + 0.f);; // yaw degree
 
 
     display_info.p11 = bf_info.x;
