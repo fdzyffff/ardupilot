@@ -230,7 +230,7 @@ private:
     AP_OSD_Setting batt_bar{true, 1, 1};
     AP_OSD_Setting arming{true, 1, 1};
 
-    AP_OSD_Setting atkangle{true, 10, 11};
+    AP_OSD_Setting atkangle{true, 1, 11};
 
 #ifdef HAL_WITH_MSP_DISPLAYPORT
     // Per screen HD resolution options (currently supported only by DisplayPort)
