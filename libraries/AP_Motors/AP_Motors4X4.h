@@ -62,6 +62,9 @@ protected:
     //  pwm value is an actual pwm value that will be output, normally in the range of 1000 ~ 2000
     virtual void _output_test_seq(uint8_t motor_seq, int16_t pwm) override;
 
+    float slew_servo(float old_s, float raw_s);
+    float slew_motor_with_servo(float new_s, float old_s, float raw_s, float old_m, float raw_m);
+
     // parameters
 
     float           _m1_out;

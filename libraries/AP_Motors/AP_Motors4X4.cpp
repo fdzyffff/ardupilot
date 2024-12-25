@@ -219,18 +219,62 @@ void AP_Motors4X4::output_armed_stabilizing()
     float t2_x_out = 0.25f*( 0.0f      + 0.0f      + fz_in + SQ2/Length*mx_in - SQ2/Length*my_in + 0.0f);
     float t3_x_out = 0.25f*( 0.0f      + 0.0f      + fz_in + SQ2/Length*mx_in + SQ2/Length*my_in + 0.0f);
 
-    _m1_out = safe_sqrt(t1_y_out*t1_y_out + t1_x_out*t1_x_out)/(denominator);//0~1
-    _m2_out = safe_sqrt(t2_y_out*t2_y_out + t2_x_out*t2_x_out)/(denominator);//0~1
-    _m3_out = safe_sqrt(t3_y_out*t3_y_out + t3_x_out*t3_x_out)/(denominator);//0~1
-    _m4_out = safe_sqrt(t4_y_out*t4_y_out + t4_x_out*t4_x_out)/(denominator);//0~1
-    _m5_out = safe_sqrt(t1_y_out*t1_y_out + t1_x_out*t1_x_out)/(denominator);//0~1
-    _m6_out = safe_sqrt(t2_y_out*t2_y_out + t2_x_out*t2_x_out)/(denominator);//0~1
-    _m7_out = safe_sqrt(t3_y_out*t3_y_out + t3_x_out*t3_x_out)/(denominator);//0~1
-    _m8_out = safe_sqrt(t4_y_out*t4_y_out + t4_x_out*t4_x_out)/(denominator);//0~1
-    _s1_out = atan2f(t1_y_out, t1_x_out);//0~1
-    _s2_out = atan2f(t2_y_out, t2_x_out);//0~1
-    _s3_out = atan2f(t3_y_out, t3_x_out);//0~1
-    _s4_out = atan2f(t4_y_out, t4_x_out);//0~1
+    float raw_m1_out = safe_sqrt(t1_y_out*t1_y_out + t1_x_out*t1_x_out)/(denominator);//0~1
+    float raw_m2_out = safe_sqrt(t2_y_out*t2_y_out + t2_x_out*t2_x_out)/(denominator);//0~1
+    float raw_m3_out = safe_sqrt(t3_y_out*t3_y_out + t3_x_out*t3_x_out)/(denominator);//0~1
+    float raw_m4_out = safe_sqrt(t4_y_out*t4_y_out + t4_x_out*t4_x_out)/(denominator);//0~1
+    float raw_m5_out = safe_sqrt(t1_y_out*t1_y_out + t1_x_out*t1_x_out)/(denominator);//0~1
+    float raw_m6_out = safe_sqrt(t2_y_out*t2_y_out + t2_x_out*t2_x_out)/(denominator);//0~1
+    float raw_m7_out = safe_sqrt(t3_y_out*t3_y_out + t3_x_out*t3_x_out)/(denominator);//0~1
+    float raw_m8_out = safe_sqrt(t4_y_out*t4_y_out + t4_x_out*t4_x_out)/(denominator);//0~1
+    float raw_s1_out = atan2f(t1_y_out, t1_x_out);//0~1
+    float raw_s2_out = atan2f(t2_y_out, t2_x_out);//0~1
+    float raw_s3_out = atan2f(t3_y_out, t3_x_out);//0~1
+    float raw_s4_out = atan2f(t4_y_out, t4_x_out);//0~1
+
+    float new_s1_out = slew_servo(_s1_out, raw_s1_out);
+    float new_s2_out = slew_servo(_s2_out, raw_s2_out);
+    float new_s3_out = slew_servo(_s3_out, raw_s3_out);
+    float new_s4_out = slew_servo(_s4_out, raw_s4_out);
+    float new_m1_out = slew_motor_with_servo(new_s1_out, _s1_out, raw_s1_out, _m1_out, raw_m1_out);
+    float new_m2_out = slew_motor_with_servo(new_s2_out, _s2_out, raw_s2_out, _m2_out, raw_m2_out);
+    float new_m3_out = slew_motor_with_servo(new_s3_out, _s3_out, raw_s3_out, _m3_out, raw_m3_out);
+    float new_m4_out = slew_motor_with_servo(new_s4_out, _s4_out, raw_s4_out, _m4_out, raw_m4_out);
+    float new_m5_out = slew_motor_with_servo(new_s1_out, _s1_out, raw_s1_out, _m5_out, raw_m5_out);
+    float new_m6_out = slew_motor_with_servo(new_s2_out, _s2_out, raw_s2_out, _m6_out, raw_m6_out);
+    float new_m7_out = slew_motor_with_servo(new_s3_out, _s3_out, raw_s3_out, _m7_out, raw_m7_out);
+    float new_m8_out = slew_motor_with_servo(new_s4_out, _s4_out, raw_s4_out, _m8_out, raw_m8_out);
+
+    _s1_out = new_s1_out;
+    _s2_out = new_s2_out;
+    _s3_out = new_s3_out;
+    _s4_out = new_s4_out;
+    _m1_out = new_m1_out;
+    _m2_out = new_m2_out;
+    _m3_out = new_m3_out;
+    _m4_out = new_m4_out;
+    _m5_out = new_m5_out;
+    _m6_out = new_m6_out;
+    _m7_out = new_m7_out;
+    _m8_out = new_m8_out;
+}
+
+float AP_Motors4X4::slew_servo(float old_s, float raw_s) {
+    float slew_max_rad = radians(40.f/400.f);
+    float s = old_s + constrain_float(raw_s - old_s, -slew_max_rad, slew_max_rad);
+    return s;
+}
+
+float AP_Motors4X4::slew_motor_with_servo(float new_s, float old_s, float raw_s, float old_m, float raw_m) {
+    float m = raw_m;
+    float delta_s_new = new_s - old_s;
+    float delta_s_raw = raw_s - old_s;
+    if (is_zero(delta_s_new) || is_zero(delta_s_raw) || (delta_s_new > delta_s_raw)) {
+        m = raw_m;
+    } else {
+        m = old_m + delta_s_new/delta_s_raw*(raw_m - old_m);
+    }
+    return m;
 }
 
 // output_test_seq - spin a motor at the pwm value specified
