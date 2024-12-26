@@ -197,7 +197,7 @@ void UBase::check_approach_tangent()
     float distance = mlstate.current_pos.get_distance(mlstate.target_pos);
     float holdoff_dist = get_holdoff_distance();
     if (mlstate.landing_stage == land_stage::HOLDOFF && mlstate.throttle_switch <= throttle_pos::MID && distance < 4.0f*holdoff_dist) {
-        gcs().send_text(MAV_SEVERITY_INFO, "Descending for approach (hd=%.1fm)", holdoff_dist);
+        gcs().send_text(MAV_SEVERITY_INFO, "Descending to %0.2fm for approach (hd=%.1fm)",  get_target_alt(), holdoff_dist);
         mlstate.landing_stage = land_stage::DESCEND;
     }
     if (mlstate.reached_alt && mlstate.landing_stage == land_stage::DESCEND) {
@@ -273,9 +273,9 @@ void UBase::update_target()
             mlstate.target_velocity.x = mlstate.target_velocity.x + plane.uk230.get_target_ef_vel_x();
             mlstate.target_velocity.y = mlstate.target_velocity.y + plane.uk230.get_target_ef_vel_y();
         }
-        int32_t t_alt = mlstate.target_pos.alt;
+        // int32_t t_alt = mlstate.target_pos.alt;
         mlstate.target_pos.change_alt_frame(Location::AltFrame::ABSOLUTE);
-        mlstate.target_pos.alt = t_alt;
+        // mlstate.target_pos.alt = t_alt;
         // zero vertical velocity to reduce impact of ship movement
         plane.g2.follow.get_target_heading_deg(mlstate.target_heading);
         mlstate.target_velocity.z = 0.0f;
@@ -285,11 +285,11 @@ void UBase::update_target()
 // get the alt target for holdoff, AMSL
 float UBase::get_target_alt()
 {
-    float base_alt = mlstate.target_pos.alt * 0.01f;
+    float base_abs_alt = mlstate.target_pos.alt * 0.01f;
     if (mlstate.landing_stage == land_stage::HOLDOFF) {
-        return base_alt + plane.g.RTL_altitude.get();
+        return base_abs_alt + plane.g.RTL_altitude.get();
     }
-    return base_alt + plane.quadplane.qrtl_alt.get();
+    return base_abs_alt + plane.quadplane.qrtl_alt.get();
 }
 
 void UBase::update_alt()
@@ -384,23 +384,23 @@ void UBase::update()
         //     check_approach_abort();
         // }
     }
-    else if (mlstate.vehicle_mode == Mode::Number::AUTO) {
-        uint16_t id = plane.mission.get_current_nav_id();
-        if (id == MAV_CMD_NAV_VTOL_TAKEOFF || id == MAV_CMD_NAV_TAKEOFF) {
-            plane.set_velocity_match(mlstate.target_velocity.xy());
-            Location t_target_pos = mlstate.target_pos;
-            t_target_pos.set_alt_cm(next_WP.alt, next_WP.get_alt_frame());
-            plane.update_target_location(next_WP, t_target_pos);
-        }
-        else if (id == MAV_CMD_NAV_LAND || id == MAV_CMD_NAV_VTOL_LAND) {
-            Location t_target_pos = mlstate.target_pos;
-            t_target_pos.set_alt_cm(next_WP.alt, next_WP.get_alt_frame());
-            plane.update_target_location(next_WP, t_target_pos);
-        }
-    }
-    else if (mlstate.vehicle_mode == Mode::Number::QLOITER) {
-        plane.set_velocity_match(mlstate.target_velocity.xy());
-    }
+    // else if (mlstate.vehicle_mode == Mode::Number::AUTO) {
+    //     uint16_t id = plane.mission.get_current_nav_id();
+    //     if (id == MAV_CMD_NAV_VTOL_TAKEOFF || id == MAV_CMD_NAV_TAKEOFF) {
+    //         plane.set_velocity_match(mlstate.target_velocity.xy());
+    //         Location t_target_pos = mlstate.target_pos;
+    //         t_target_pos.set_alt_cm(next_WP.alt, next_WP.get_alt_frame());
+    //         plane.update_target_location(next_WP, t_target_pos);
+    //     }
+    //     else if (id == MAV_CMD_NAV_LAND || id == MAV_CMD_NAV_VTOL_LAND) {
+    //         Location t_target_pos = mlstate.target_pos;
+    //         t_target_pos.set_alt_cm(next_WP.alt, next_WP.get_alt_frame());
+    //         plane.update_target_location(next_WP, t_target_pos);
+    //     }
+    // }
+    // else if (mlstate.vehicle_mode == Mode::Number::QLOITER) {
+    //     plane.set_velocity_match(mlstate.target_velocity.xy());
+    // }
 }
 
 void UBase::print() {

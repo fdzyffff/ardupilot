@@ -1,0 +1,1 @@
+../build/sitl/bin/ardurover -S --model rover --speedup 1 --slave 0 --serial0=udpclient:127.0.0.1:14550 --serial1=uart:/dev/ttyS60:115200 --defaults ../Tools/autotest/default_params/rover.parm --sim-address=127.0.0.1 -I0 --home 41.072014,100.512472,1000.0,300.0

@@ -1,0 +1,1 @@
+../Tools/autotest/sim_vehicle.py -f quadplane-plane -A "--serial1=uart:/dev/ttyS61:115200 --home 41.082014,100.522472,1000.0,300.0"

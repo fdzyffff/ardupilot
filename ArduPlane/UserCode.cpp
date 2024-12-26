@@ -6,6 +6,7 @@ void Plane::user_init()
     // this will be called once at start-up
 
     uk230.init();
+    ubase.init();
 }
 
 void Plane::user_100Hz() {
