@@ -433,9 +433,9 @@ void Copter::Log_Write_Uatk()
         ef_y            : uattack.get_ef_info().y,
         efr_x           : uattack.get_ef_rate_info().x,
         efr_y           : uattack.get_ef_rate_info().y,
-        target_pitch    : uattack.get_target_pitch_rate()*0.01f,
-        target_roll     : uattack.get_target_roll_angle()*0.01f,
-        target_yaw      : uattack.get_target_yaw_rate()*0.01f
+        target_pitch    : uattack.get_target_pitch_rate(),
+        target_roll     : uattack.get_target_roll_angle(),
+        target_yaw      : uattack.get_target_yaw_rate()
     };
     logger.WriteBlock(&pkt, sizeof(pkt));
 }
