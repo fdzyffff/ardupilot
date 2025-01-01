@@ -276,6 +276,25 @@ bool ModeGuided::set_desired_speed(float speed)
     return false;
 }
 
+
+
+float ModeGuided::get_desired_speed() {
+    switch (_guided_mode) {
+    case SubMode::WP:
+        return g2.wp_nav.get_speed();
+    case SubMode::HeadingAndSpeed:
+    case SubMode::TurnRateAndSpeed:
+        return _desired_speed;
+    case SubMode::Loiter:
+        return rover.mode_loiter.get_desired_speed();
+    case SubMode::SteeringAndThrottle:
+    case SubMode::Stop:
+        // no speed control
+        return 0.0f;
+    }
+    return 0.0f;
+}
+
 // get desired location
 bool ModeGuided::get_desired_location(Location& destination) const
 {

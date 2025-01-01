@@ -73,6 +73,7 @@
 #include "RC_Channel.h"                  // RC Channel Library
 
 #include "mode.h"
+#include "Uart.h"
 
 class Rover : public AP_Vehicle {
 public:
@@ -111,6 +112,8 @@ public:
     friend class RC_Channels_Rover;
 
     friend class Sailboat;
+
+    friend class Uart;
 
     Rover(void);
 
@@ -427,6 +430,7 @@ private:
     static_assert(_failsafe_priorities[ARRAY_SIZE(_failsafe_priorities) - 1] == -1,
                   "_failsafe_priorities is missing the sentinel");
 
+    Uart uart;
 
 public:
     void failsafe_check();

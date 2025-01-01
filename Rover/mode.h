@@ -127,6 +127,8 @@ public:
     // handle tacking request (from auxiliary switch) in sailboats
     virtual void handle_tack_request();
 
+    virtual float get_desired_speed() {return 0.0f;}
+
 protected:
 
     // subclasses override this to perform checks before entering the mode
@@ -269,6 +271,7 @@ public:
 
     // set desired speed in m/s
     bool set_desired_speed(float speed) override;
+    float get_desired_speed() override;
 
     // start RTL (within auto)
     void start_RTL();
@@ -435,6 +438,7 @@ public:
     // return total angle in radians that vehicle has circled
     // fabsf is used so that full rotations in either direction are counted
     float get_angle_total_rad() const { return fabsf(angle_total_rad); }
+    float get_desired_speed() override;
 
     static const struct AP_Param::GroupInfo var_info[];
 
@@ -544,6 +548,7 @@ public:
     void limit_clear();
     void limit_init_time_and_location();
     bool limit_breached() const;
+    float get_desired_speed() override;
 
 protected:
 
@@ -634,6 +639,8 @@ public:
     // return distance (in meters) to destination
     float get_distance_to_destination() const override { return _distance_to_destination; }
 
+    float get_desired_speed() override;
+
 protected:
 
     bool _enter() override;
@@ -691,6 +698,7 @@ public:
 
     // set desired speed in m/s
     bool set_desired_speed(float speed) override;
+    float get_desired_speed() override;
 
 protected:
 
@@ -729,6 +737,7 @@ public:
 
     // save current position for use by the smart_rtl flight mode
     void save_position();
+    float get_desired_speed() override;
 
 protected:
 
@@ -766,10 +775,12 @@ public:
 
     // return desired lateral acceleration
     float get_desired_lat_accel() const override { return _desired_lat_accel; }
+    float get_desired_speed() override;
 
 private:
 
     float _desired_lat_accel;   // desired lateral acceleration calculated from pilot steering input
+    float _desired_speed = 0.0f;
 };
 
 class ModeInitializing : public Mode
@@ -819,6 +830,7 @@ public:
 
     // set desired speed in m/s
     bool set_desired_speed(float speed) override;
+    float get_desired_speed() override;
 
 protected:
 
@@ -845,11 +857,13 @@ public:
         Simple_InitialHeading = 0,
         Simple_CardinalDirections = 1,
     };
+    float get_desired_speed() override;
 
 private:
 
     float _initial_heading_cd;  // vehicle heading (in centi-degrees) at moment vehicle was armed
     float _desired_heading_cd;  // latest desired heading (in centi-degrees) from pilot
+    float _desired_speed = 0.0f;
 };
 
 #if MODE_DOCK_ENABLED == ENABLED
@@ -873,6 +887,7 @@ public:
 
     // return distance (in meters) to destination
     float get_distance_to_destination() const override { return _distance_to_destination; }
+    float get_desired_speed() override;
 
     static const struct AP_Param::GroupInfo var_info[];
 
@@ -901,5 +916,7 @@ protected:
     Vector2f _desired_heading_NE;       // unit vector in desired direction of docking
     bool _docking_complete = false;     // flag to mark docking complete when we are close enough to the dock
     bool _loitering = false; // true if we are loitering after mission completion
+
+    float _desired_speed = 0.0f;
 };
 #endif

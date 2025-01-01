@@ -51,4 +51,9 @@ void ModeSteering::update()
 
     // run speed to throttle controller
     calc_throttle(desired_speed, true);
+    _desired_speed = desired_speed;
+}
+
+float ModeSteering::get_desired_speed() {
+    return _desired_speed;
 }

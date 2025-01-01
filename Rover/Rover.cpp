@@ -143,6 +143,8 @@ const AP_Scheduler::Task Rover::scheduler_tasks[] = {
 #if ADVANCED_FAILSAFE == ENABLED
     SCHED_TASK(afs_fs_check,           10,    200, 129),
 #endif
+
+    SCHED_TASK_CLASS(Uart,         &rover.uart,      update,         50,  200, 132),
 };
 
 

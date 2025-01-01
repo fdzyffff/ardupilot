@@ -82,3 +82,7 @@ bool ModeRTL::set_desired_speed(float speed)
 {
     return g2.wp_nav.set_speed_max(speed);
 }
+
+float ModeRTL::get_desired_speed() {
+    return g2.wp_nav.get_speed();
+}

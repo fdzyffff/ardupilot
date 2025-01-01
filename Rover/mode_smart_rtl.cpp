@@ -135,3 +135,8 @@ void ModeSmartRTL::save_position()
     const bool save_pos = (rover.control_mode != &rover.mode_smartrtl);
     g2.smart_rtl.update(true, save_pos);
 }
+
+float ModeSmartRTL::get_desired_speed() {
+    return g2.wp_nav.get_speed();
+}
+

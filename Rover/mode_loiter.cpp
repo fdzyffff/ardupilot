@@ -78,3 +78,7 @@ bool ModeLoiter::get_desired_location(Location& destination) const
     destination = _destination;
     return true;
 }
+
+float ModeLoiter::get_desired_speed() {
+    return _desired_speed;
+}

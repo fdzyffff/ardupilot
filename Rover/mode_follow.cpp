@@ -96,4 +96,8 @@ bool ModeFollow::set_desired_speed(float speed)
     return true;
 }
 
+float ModeFollow::get_desired_speed() {
+    return _desired_speed;
+}
+
 #endif // MODE_FOLLOW_ENABLED

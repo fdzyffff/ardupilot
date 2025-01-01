@@ -246,6 +246,11 @@ bool ModeCircle::get_desired_location(Location& destination) const
     return true;
 }
 
+float ModeCircle::get_desired_speed()
+{
+    return g2.pos_control.get_desired_speed();
+}
+
 // limit config speed so that lateral acceleration is within limits
 // assumes that config.radius and attitude controller lat accel max have been set
 // outputs warning to user if speed is reduced

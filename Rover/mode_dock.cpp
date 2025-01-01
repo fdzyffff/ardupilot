@@ -166,6 +166,7 @@ void ModeDock::update()
 
     // slow down the vehicle as we approach the dock
     desired_speed = apply_slowdown(desired_speed);
+    _desired_speed = desired_speed;
 
     // run steering and throttle controllers
     calc_steering_from_turn_rate(desired_turn_rate);
@@ -255,4 +256,9 @@ bool ModeDock::calc_dock_pos_rel_vehicle_NE(Vector2f &dock_pos_rel_vehicle) cons
     dock_pos_rel_vehicle = _dock_pos_rel_origin_cm - current_pos_m * 100.0f;
     return true;
 }
+
+float ModeDock::get_desired_speed() {
+    return _desired_speed;
+}
+
 #endif // MODE_DOCK_ENABLED

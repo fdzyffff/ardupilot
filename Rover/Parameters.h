@@ -443,6 +443,8 @@ public:
     // FS GCS timeout trigger time
     AP_Float fs_gcs_timeout;
 
+    AP_Int8     user_uart_print;
+
     class ModeCircle mode_circle;
 };
 

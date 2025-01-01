@@ -204,6 +204,28 @@ float ModeAuto::nav_bearing() const
     return 0.0f;
 }
 
+
+// get desired speed in m/s
+float ModeAuto::get_desired_speed()
+{
+    switch (_submode) {
+    case SubMode::WP:
+    case SubMode::Stop:
+    case SubMode::RTL:
+        return g2.wp_nav.get_speed();
+    case SubMode::HeadingAndSpeed:
+        return _desired_speed;
+    case SubMode::Loiter:
+        return rover.mode_loiter.get_desired_speed();
+    case SubMode::Guided:
+    case SubMode::NavScriptTime:
+        return rover.mode_guided.get_desired_speed();
+    case SubMode::Circle:
+        return rover.g2.mode_circle.get_desired_speed();
+    }
+    return 0.0f;
+}
+
 // return cross track error (i.e. vehicle's distance from the line between waypoints)
 float ModeAuto::crosstrack_error() const
 {

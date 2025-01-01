@@ -29,4 +29,10 @@ void ModeSimple::update()
     // run throttle and steering controllers
     calc_steering_to_heading(desired_heading_cd);
     calc_throttle(desired_speed, true);
+    _desired_speed = desired_speed;
 }
+
+float ModeSimple::get_desired_speed() {
+    return _desired_speed;
+}
+
