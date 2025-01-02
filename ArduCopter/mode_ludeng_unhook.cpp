@@ -62,11 +62,15 @@ void ModeLudeng_unhook::unhook_run()
     float target_yaw_rate = 0.0f;
     float target_climb_rate = 0.0f;
 
+    bool use_posctrl = true;
+    static bool old_use_posctrl = true;
+
     switch (_stage) {
         case Stage::UP:
             _vel_target_cms.zero();
             target_yaw_rate = 0.f;
             target_climb_rate = 10.0f;
+            use_posctrl = false;
             // target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
             // target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
             break;
@@ -74,6 +78,7 @@ void ModeLudeng_unhook::unhook_run()
             _vel_target_cms.zero();
             target_yaw_rate = 2500.f;
             target_climb_rate = 0.0f;
+            use_posctrl = false;
             // target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
             // target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
             break;
@@ -98,20 +103,30 @@ void ModeLudeng_unhook::unhook_run()
             break;
     }
 
+    if (!old_use_posctrl && use_posctrl) {
+        pos_control->init_xy_controller();
+        gcs().send_text(MAV_SEVERITY_INFO, "Init POSCTRL");
+    }
+    old_use_posctrl = use_posctrl;
+
     // set motors to full range
     motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
 
-    pos_control->input_vel_accel_xy(_vel_target_cms.xy(), _accel_target_cmss.xy(), false);
+    if (use_posctrl) {
+        pos_control->input_vel_accel_xy(_vel_target_cms.xy(), _accel_target_cmss.xy(), false);
 
+        pos_control->update_xy_controller();
+
+        // call attitude controller with auto yaw
+        attitude_control->input_thrust_vector_rate_heading(pos_control->get_thrust_vector(), target_yaw_rate);
+    } else {
+        // call attitude controller
+        attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(0.0f, 0.0f, target_yaw_rate);
+    }
     // Send the commanded climb rate to the position controller
     pos_control->set_pos_target_z_from_climb_rate_cm(target_climb_rate);
-
-    // call velocity controller which includes z axis controller
-    pos_control->update_xy_controller();
+    // run the vertical position controller and set output throttle
     pos_control->update_z_controller();
-
-    // call attitude controller with auto yaw
-    attitude_control->input_thrust_vector_rate_heading(pos_control->get_thrust_vector(), target_yaw_rate);
 }
 
 void ModeLudeng_unhook::update_stage()

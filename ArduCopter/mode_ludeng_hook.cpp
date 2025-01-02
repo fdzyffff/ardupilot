@@ -65,6 +65,9 @@ void ModeLudeng_hook::hook_run()
     float target_yaw_rate = 0.0f;
     float target_climb_rate = 0.0f;
 
+    bool use_posctrl = true;
+    static bool old_use_posctrl = true;
+
     switch (_stage) {
         case Stage::STANDBY:
             _vel_target_cms.zero();
@@ -86,8 +89,9 @@ void ModeLudeng_hook::hook_run()
             break;
         case Stage::LOCK:
             _vel_target_cms.zero();
-            target_climb_rate = 5.0f;
+            target_climb_rate = 10.0f;
             target_yaw_rate = -2500.f;
+            use_posctrl = false;
             // target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
             // target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
             break;
@@ -111,17 +115,26 @@ void ModeLudeng_hook::hook_run()
     // set motors to full range
     motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
 
-    pos_control->input_vel_accel_xy(_vel_target_cms.xy(), _accel_target_cmss.xy(), false);
+    if (!old_use_posctrl && use_posctrl) {
+        pos_control->init_xy_controller();
+        gcs().send_text(MAV_SEVERITY_INFO, "Init POSCTRL");
+    }
+    old_use_posctrl = use_posctrl;
+    if (use_posctrl) {
+        pos_control->input_vel_accel_xy(_vel_target_cms.xy(), _accel_target_cmss.xy(), false);
 
+        pos_control->update_xy_controller();
+
+        // call attitude controller with auto yaw
+        attitude_control->input_thrust_vector_rate_heading(pos_control->get_thrust_vector(), target_yaw_rate);
+    } else {
+        // call attitude controller
+        attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(0.0f, 0.0f, target_yaw_rate);
+    }
     // Send the commanded climb rate to the position controller
     pos_control->set_pos_target_z_from_climb_rate_cm(target_climb_rate);
-
-    // call velocity controller which includes z axis controller
-    pos_control->update_xy_controller();
+    // run the vertical position controller and set output throttle
     pos_control->update_z_controller();
-
-    // call attitude controller with auto yaw
-    attitude_control->input_thrust_vector_rate_heading(pos_control->get_thrust_vector(), target_yaw_rate);
 }
 
 void ModeLudeng_hook::update_stage()
@@ -185,7 +198,8 @@ bool ModeLudeng_hook::check_touch()
     uint32_t dt = millis() - _stage_time;
     bool rngfnd_ok = (!copter.rangefinder_alt_ok() || (copter.rangefinder_alt_ok() && copter.rangefinder_state.alt_cm_filt.get() > 120.f));
     bool vel_up_ok = copter.inertial_nav.get_velocity_z_up_cms() < 10.f;
-    if (vel_up_ok && rngfnd_ok) {
+    bool thr_ok = (motors->get_throttle() > MIN(motors->get_throttle_hover()*1.5f, motors->get_throttle_hover()+0.15f));
+    if ((vel_up_ok||thr_ok) && rngfnd_ok) {
         if ((millis() - time_ms > 2000 ) && (dt > 2000)) {
             ret = true;
         }
