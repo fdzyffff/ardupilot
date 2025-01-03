@@ -102,7 +102,7 @@ void ModeLudeng_hook::hook_run()
             break;
         case Stage::DONE:
             _vel_target_cms.zero();
-            target_climb_rate = -10.0f;
+            target_climb_rate = -20.0f;
             target_yaw_rate = 0.0f;
             break;
         default:
@@ -199,8 +199,8 @@ bool ModeLudeng_hook::check_touch()
     bool rngfnd_ok = (!copter.rangefinder_alt_ok() || (copter.rangefinder_alt_ok() && copter.rangefinder_state.alt_cm_filt.get() > 120.f));
     bool vel_up_ok = copter.inertial_nav.get_velocity_z_up_cms() < 10.f;
     bool thr_ok = (motors->get_throttle() > MIN(motors->get_throttle_hover()*1.5f, motors->get_throttle_hover()+0.15f));
-    if ((vel_up_ok||thr_ok) && rngfnd_ok) {
-        if ((millis() - time_ms > 2000 ) && (dt > 2000)) {
+    if ((vel_up_ok||thr_ok) && rngfnd_ok && (dt > 100)) {
+        if ((millis() - time_ms > 1500 ) && (dt > 2000)) {
             ret = true;
         }
     } else {
@@ -216,7 +216,7 @@ bool ModeLudeng_hook::check_done()
     uint32_t dt = millis() - _stage_time;
     bool rngfnd_ok = (!copter.rangefinder_alt_ok() || (copter.rangefinder_alt_ok() && copter.rangefinder_state.alt_cm_filt.get() > 120.f));
     bool vel_down_ok = copter.inertial_nav.get_velocity_z_up_cms() > -10.f;
-    if (vel_down_ok && rngfnd_ok) {
+    if (vel_down_ok && rngfnd_ok && (dt > 100)) {
         if ((millis() - time_ms > 3000 ) && (dt > 3000)) {
             ret = true;
         }

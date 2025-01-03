@@ -77,7 +77,7 @@ void ModeLudeng_unhook::unhook_run()
         case Stage::UNLOCK:
             _vel_target_cms.zero();
             target_yaw_rate = 2500.f;
-            target_climb_rate = 0.0f;
+            target_climb_rate = 10.0f;
             use_posctrl = false;
             // target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
             // target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
@@ -134,7 +134,7 @@ void ModeLudeng_unhook::update_stage()
     uint32_t dt = millis() - _stage_time;
     switch (_stage) {
         case Stage::UP:
-            if ((dt > 8000) || motors->get_throttle() > 0.7f) {
+            if ((dt > 5000) || ((motors->get_throttle() > MIN(motors->get_throttle_hover()*1.5f, motors->get_throttle_hover()+0.15f)))) {
                 set_stage(Stage::UNLOCK);
             }
             break;
@@ -170,9 +170,9 @@ bool ModeLudeng_unhook::check_down()
     static uint32_t time_ms = millis();
     uint32_t dt = millis() - _stage_time;
     bool rngfnd_ok = (!copter.rangefinder_alt_ok() || (copter.rangefinder_alt_ok() && copter.rangefinder_state.alt_cm_filt.get() < 80.f));
-    bool vel_up_ok = copter.inertial_nav.get_velocity_z_up_cms() < -15.f;
-    if (vel_up_ok && rngfnd_ok) {
-        if ((millis() - time_ms > 2000 ) && (dt > 2000)) {
+    bool vel_dn_ok = copter.inertial_nav.get_velocity_z_up_cms() < -15.f;
+    if (vel_dn_ok && rngfnd_ok && (dt > 100)) {
+        if ((millis() - time_ms > 1500 ) && (dt > 2000)) {
             ret = true;
         }
     } else {
