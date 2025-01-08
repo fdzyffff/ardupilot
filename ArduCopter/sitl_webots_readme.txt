@@ -1,0 +1,1 @@
+../Tools/autotest/sim_vehicle.py --model webots-python -A "--serial2=uart:/dev/ttyS5"

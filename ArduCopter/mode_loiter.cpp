@@ -193,18 +193,19 @@ void ModeLoiter::run()
 #endif
 
         Vector3f thrust_vec = loiter_nav->get_thrust_vector();
-        target_forward = thrust_vec.x*0.001f;
-        target_lateral = thrust_vec.y*0.001f;
+        target_forward = thrust_vec.x*0.0001f;
+        target_lateral = thrust_vec.y*0.0001f;
+
+        // target_lateral = thrust_vec.y*0.0001f;
+
+        // float target_forward = -target_pitch/9000.f;
+        // float target_lateral = target_roll/9000.f;
         target_roll = 0.0f;
         target_pitch = 0.0f;
-        RC_Channel *roll_4x4_ch = rc().find_channel_for_option(RC_Channel::aux_func_t::ROLL_4X4);
-        RC_Channel *pitch_4x4_ch = rc().find_channel_for_option(RC_Channel::aux_func_t::PITCH_4X4);
-        if ((roll_4x4_ch != nullptr) && (roll_4x4_ch->get_radio_in() > 0)) {
-            target_roll = roll_4x4_ch->norm_input_dz()*4500.f;
-        }
-        if ((pitch_4x4_ch != nullptr) && (pitch_4x4_ch->get_radio_in() > 0)) {
-            target_pitch = pitch_4x4_ch->norm_input_dz()*4500.f;
-        }
+
+        target_roll = copter.ubase.get_target_roll();
+        target_pitch = copter.ubase.get_target_pitch();
+
         // call attitude controller
         attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_roll, target_pitch, target_yaw_rate);
         // attitude_control->input_thrust_vector_rate_heading(loiter_nav->get_thrust_vector(), target_yaw_rate, false);
@@ -225,7 +226,7 @@ void ModeLoiter::run()
 
     float target_down = motors->get_throttle_in();
     Matrix3f tmp_m;
-    tmp_m.from_euler(copter.ahrs_view->roll, copter.ahrs_view->pitch, 0.0f);
+    tmp_m.from_euler(copter.ahrs_view->roll, copter.ahrs_view->pitch, copter.ahrs_view->yaw);
     Vector3f tmp_input = Vector3f(target_forward, target_lateral, target_down);
     Vector3f tmp_output = tmp_m * tmp_input;
     // target_forward = 0.0f;
@@ -236,8 +237,14 @@ void ModeLoiter::run()
     // }
     motors->set_forward(tmp_output.x);
     motors->set_lateral(tmp_output.y);
-    attitude_control->set_throttle_out(tmp_output.z, true, g.throttle_filt);
+    attitude_control->set_throttle_out(tmp_output.z, false, g.throttle_filt);
 
+        // static uint32_t last_print_ms = millis();
+        // uint32_t tnow_ms = millis();
+        // if (tnow_ms - last_print_ms > 1000) {
+        //     gcs().send_text(MAV_SEVERITY_INFO, "tmp_output.x %f", tmp_output.x);
+        //     last_print_ms = tnow_ms;
+        // }
 }
 
 uint32_t ModeLoiter::wp_distance() const

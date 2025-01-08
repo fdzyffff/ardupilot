@@ -51,6 +51,6 @@ private:
     float _base_yaw;
     uint32_t _last_ms;
     bool _valid;
-    uint8_t _mode;
+    // uint8_t _mode;
 
 };

@@ -44,7 +44,7 @@ void UBase::init()
     _base_roll = 0.0f;
     _base_pitch = 0.0f;
     _base_yaw = 0.0f;
-    _mode = 0;
+    // _mode = 0;
     _initialized = true;
 
     // gcs().send_text(MAV_SEVERITY_INFO, "FD1_uart_K230.init()");
@@ -94,7 +94,7 @@ void UBase::update()
     update_valid();
     update_target_angle();
 
-    display_info.p1 = _mode;
+    display_info.p1 = copter.g2.user_parameters.angle_mode.get();
     display_info.p2 = _target_roll;
     display_info.p3 = _target_pitch;
     display_info.p4 = _target_yaw;
@@ -128,7 +128,8 @@ void UBase::update_valid()
 // degree/second
 void UBase::update_target_angle()
 {
-    if (_mode == 0) {
+
+    if (copter.g2.user_parameters.angle_mode.get() == 0) {
         RC_Channel *roll_4x4_ch = rc().find_channel_for_option(RC_Channel::aux_func_t::ROLL_4X4);
         RC_Channel *pitch_4x4_ch = rc().find_channel_for_option(RC_Channel::aux_func_t::PITCH_4X4);
         if ((roll_4x4_ch != nullptr) && (roll_4x4_ch->get_radio_in() > 0)) {
@@ -145,8 +146,8 @@ void UBase::update_target_angle()
 
 void UBase::set_mode(uint8_t mode_in)
 {
-    _mode = mode_in;
-    if (_mode == 0) {
+    copter.g2.user_parameters.angle_mode.set(mode_in);
+    if (copter.g2.user_parameters.angle_mode.get() == 0) {
         gcs().send_text(MAV_SEVERITY_INFO, "Manual FOLLOW");
     } else {
         gcs().send_text(MAV_SEVERITY_INFO, "Auto FOLLOW");

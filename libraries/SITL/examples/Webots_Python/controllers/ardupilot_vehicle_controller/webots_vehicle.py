@@ -277,12 +277,15 @@ class WebotsArduVehicle():
         for i, m in enumerate(self._motors):
             m.setVelocity(linearized_motor_commands[i] * min(m.getMaxVelocity(), self.motor_velocity_cap))
 
+        # for i, m in enumerate(self._motors):
+        #     m.setVelocity(0)
+
         angle_servors = []
         for i_s in command_servos:
             angle_servors.append((i_s-0.5)*2*np.pi/4 + np.pi/2)
         # print (angle_servors)
 
-        print ("%0.2f, %0.2f, %0.2f, %0.2f || %0.2f, %0.2f, %0.2f, %0.2f"%(command_motors[0],command_motors[1],command_motors[2],command_motors[3],command_servos[0]-0.5,command_servos[1]-0.5,command_servos[2]-0.5,command_servos[3]-0.5))
+        # print ("%0.2f, %0.2f, %0.2f, %0.2f || %0.2f, %0.2f, %0.2f, %0.2f"%(command_motors[0],command_motors[1],command_motors[2],command_motors[3],command_servos[0]-0.5,command_servos[1]-0.5,command_servos[2]-0.5,command_servos[3]-0.5))
 
         # set velocities of the servos in Webots
         for i, s in enumerate(self._servos):

@@ -8,7 +8,6 @@ public:
     UserParameters();
     static const struct AP_Param::GroupInfo var_info[];
 
-    // Put accessors to your parameter variables here
-    // UserCode usage example: g2.user_parameters.get_int8Param()
-    AP_Int16 print;
+    AP_Int8 print;
+    AP_Int8 angle_mode;
 };

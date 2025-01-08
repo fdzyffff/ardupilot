@@ -129,7 +129,7 @@ PROTO Iris [
                                       shaftAxis 0 0 1
                                       centerOfThrust 0.001 0.001 0.023000
                                       thrustConstants 0.0012 0
-                                      torqueConstants 1.0e-09 0
+                                      torqueConstants 0 0
                                       device RotationalMotor {
                                         name "m1_motor"
                                         maxVelocity 100
@@ -260,7 +260,7 @@ PROTO Iris [
                                       shaftAxis 0 0 1
                                       centerOfThrust 0.001 0.001 0.023000
                                       thrustConstants 0.0012 0
-                                      torqueConstants 1.0e-09 0
+                                      torqueConstants 0 0
                                       device RotationalMotor {
                                         name "m2_motor"
                                         maxVelocity 100
@@ -392,7 +392,7 @@ PROTO Iris [
                                       shaftAxis 0 0 1
                                       centerOfThrust 0.001 0.001 0.023000
                                       thrustConstants -0.0012 0
-                                      torqueConstants 1.0e-09 0
+                                      torqueConstants 0 0
                                       device RotationalMotor {
                                         name "m3_motor"
                                         maxVelocity 100
@@ -524,7 +524,7 @@ PROTO Iris [
                                       shaftAxis 0 0 1
                                       centerOfThrust 0.001 0.001 0.023000
                                       thrustConstants -0.0012 0
-                                      torqueConstants 1.0e-09 0
+                                      torqueConstants 0 0
                                       device RotationalMotor {
                                         name "m4_motor"
                                         maxVelocity 100

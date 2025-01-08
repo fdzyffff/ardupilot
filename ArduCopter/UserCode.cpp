@@ -43,7 +43,7 @@ void Copter::userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
     if ((g2.user_parameters.print.get() & (1<<0))) { // 1
-        gcs().send_text(MAV_SEVERITY_WARNING, "[%d %0.0f] %0.0f , %0.0f , %0.0f", ubase.display_info_count_log, ubase.display_info_p1, ubase.display_info_p2, ubase.display_info_p3, ubase.display_info_p4);
+        gcs().send_text(MAV_SEVERITY_WARNING, "[%d %0.0f] %0.0f , %0.0f , %0.0f", ubase.display_info.count_log, ubase.display_info.p1, ubase.display_info.p2, ubase.display_info.p3, ubase.display_info.p4);
     }
 }
 #endif

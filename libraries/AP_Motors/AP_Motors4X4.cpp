@@ -145,14 +145,14 @@ void AP_Motors4X4::output_to_motors()
             set_actuator_with_slew(_actuator[6], thrust_to_actuator(_m6_out));
             set_actuator_with_slew(_actuator[7], thrust_to_actuator(_m7_out));
             set_actuator_with_slew(_actuator[8], thrust_to_actuator(_m8_out));
-            rc_write(AP_MOTORS_MOT_1, output_to_pwm(_m1_out));
-            rc_write(AP_MOTORS_MOT_2, output_to_pwm(_m2_out));
-            rc_write(AP_MOTORS_MOT_3, output_to_pwm(_m3_out));
-            rc_write(AP_MOTORS_MOT_4, output_to_pwm(_m4_out));
-            rc_write(AP_MOTORS_MOT_5, output_to_pwm(_m5_out));
-            rc_write(AP_MOTORS_MOT_6, output_to_pwm(_m6_out));
-            rc_write(AP_MOTORS_MOT_7, output_to_pwm(_m7_out));
-            rc_write(AP_MOTORS_MOT_8, output_to_pwm(_m8_out));
+            rc_write(AP_MOTORS_MOT_1, output_to_pwm(_actuator[1]));
+            rc_write(AP_MOTORS_MOT_2, output_to_pwm(_actuator[2]));
+            rc_write(AP_MOTORS_MOT_3, output_to_pwm(_actuator[3]));
+            rc_write(AP_MOTORS_MOT_4, output_to_pwm(_actuator[4]));
+            rc_write(AP_MOTORS_MOT_5, output_to_pwm(_actuator[5]));
+            rc_write(AP_MOTORS_MOT_6, output_to_pwm(_actuator[6]));
+            rc_write(AP_MOTORS_MOT_7, output_to_pwm(_actuator[7]));
+            rc_write(AP_MOTORS_MOT_8, output_to_pwm(_actuator[8]));
             rc_write_angle(AP_SERVO_1, degrees(_s1_out)*100);
             rc_write_angle(AP_SERVO_2, degrees(_s2_out)*100);
             rc_write_angle(AP_SERVO_3, degrees(_s3_out)*100);
@@ -211,13 +211,13 @@ void AP_Motors4X4::output_armed_stabilizing()
     // mz_in = 0.0f;
     
     float t1_y_out = 0.25f*(-SQ2*fx_in + SQ2*fy_in + 0.0f  + 0.0f             + 0.0f             + 1.0f/Length*mz_in);
-    float t4_y_out = 0.25f*(-SQ2*fx_in - SQ2*fy_in + 0.0f  + 0.0f             + 0.0f             + 1.0f/Length*mz_in);
-    float t2_y_out = 0.25f*( SQ2*fx_in - SQ2*fy_in + 0.0f  + 0.0f             + 0.0f             + 1.0f/Length*mz_in);
-    float t3_y_out = 0.25f*( SQ2*fx_in + SQ2*fy_in + 0.0f  + 0.0f             + 0.0f             + 1.0f/Length*mz_in);
+    float t2_y_out = 0.25f*(-SQ2*fx_in - SQ2*fy_in + 0.0f  + 0.0f             + 0.0f             + 1.0f/Length*mz_in);
+    float t3_y_out = 0.25f*( SQ2*fx_in - SQ2*fy_in + 0.0f  + 0.0f             + 0.0f             + 1.0f/Length*mz_in);
+    float t4_y_out = 0.25f*( SQ2*fx_in + SQ2*fy_in + 0.0f  + 0.0f             + 0.0f             + 1.0f/Length*mz_in);
     float t1_x_out = 0.25f*( 0.0f      + 0.0f      + fz_in - SQ2/Length*mx_in + SQ2/Length*my_in + 0.0f);
-    float t4_x_out = 0.25f*( 0.0f      + 0.0f      + fz_in - SQ2/Length*mx_in - SQ2/Length*my_in + 0.0f);
-    float t2_x_out = 0.25f*( 0.0f      + 0.0f      + fz_in + SQ2/Length*mx_in - SQ2/Length*my_in + 0.0f);
-    float t3_x_out = 0.25f*( 0.0f      + 0.0f      + fz_in + SQ2/Length*mx_in + SQ2/Length*my_in + 0.0f);
+    float t2_x_out = 0.25f*( 0.0f      + 0.0f      + fz_in - SQ2/Length*mx_in - SQ2/Length*my_in + 0.0f);
+    float t3_x_out = 0.25f*( 0.0f      + 0.0f      + fz_in + SQ2/Length*mx_in - SQ2/Length*my_in + 0.0f);
+    float t4_x_out = 0.25f*( 0.0f      + 0.0f      + fz_in + SQ2/Length*mx_in + SQ2/Length*my_in + 0.0f);
 
     float raw_m1_out = safe_sqrt(t1_y_out*t1_y_out + t1_x_out*t1_x_out)/(denominator);//0~1
     float raw_m2_out = safe_sqrt(t2_y_out*t2_y_out + t2_x_out*t2_x_out)/(denominator);//0~1
@@ -231,6 +231,13 @@ void AP_Motors4X4::output_armed_stabilizing()
     float raw_s2_out = atan2f(t2_y_out, t2_x_out);//0~1
     float raw_s3_out = atan2f(t3_y_out, t3_x_out);//0~1
     float raw_s4_out = atan2f(t4_y_out, t4_x_out);//0~1
+
+    if (fz_in < 0.01f) {
+        raw_s1_out = 0.0f;
+        raw_s2_out = 0.0f;
+        raw_s3_out = 0.0f;
+        raw_s4_out = 0.0f;
+    }
 
     float new_s1_out = slew_servo(_s1_out, raw_s1_out);
     float new_s2_out = slew_servo(_s2_out, raw_s2_out);
@@ -257,10 +264,24 @@ void AP_Motors4X4::output_armed_stabilizing()
     _m6_out = new_m6_out;
     _m7_out = new_m7_out;
     _m8_out = new_m8_out;
+
+
+    _s1_out = raw_s1_out;
+    _s2_out = raw_s2_out;
+    _s3_out = raw_s3_out;
+    _s4_out = raw_s4_out;
+    _m1_out = raw_m1_out;
+    _m2_out = raw_m2_out;
+    _m3_out = raw_m3_out;
+    _m4_out = raw_m4_out;
+    _m5_out = raw_m5_out;
+    _m6_out = raw_m6_out;
+    _m7_out = raw_m7_out;
+    _m8_out = raw_m8_out;
 }
 
 float AP_Motors4X4::slew_servo(float old_s, float raw_s) {
-    float slew_max_rad = radians(40.f/400.f);
+    float slew_max_rad = radians(200.f/400.f);
     float s = old_s + constrain_float(raw_s - old_s, -slew_max_rad, slew_max_rad);
     return s;
 }
