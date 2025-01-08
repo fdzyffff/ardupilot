@@ -13,6 +13,7 @@ import socket
 import select
 import struct
 import numpy as np
+import math
 from threading import Thread
 from typing import List, Union
 
@@ -282,10 +283,12 @@ class WebotsArduVehicle():
 
         angle_servors = []
         for i_s in command_servos:
-            angle_servors.append((i_s-0.5)*2*np.pi/4 + np.pi/2)
+            # angle_servors.append(i_s*math.radians(45))
+            angle_range = 90
+            angle_servors.append(i_s*math.radians(angle_range) + math.radians(90) - math.radians(angle_range)/2)
         # print (angle_servors)
 
-        # print ("%0.2f, %0.2f, %0.2f, %0.2f || %0.2f, %0.2f, %0.2f, %0.2f"%(command_motors[0],command_motors[1],command_motors[2],command_motors[3],command_servos[0]-0.5,command_servos[1]-0.5,command_servos[2]-0.5,command_servos[3]-0.5))
+        # print ("%0.2f, %0.2f, %0.2f, %0.2f || %0.2f, %0.2f, %0.2f, %0.2f"%(command_motors[0],command_motors[1],command_motors[2],command_motors[3],command_servos[0],command_servos[1],command_servos[2],command_servos[3]))
 
         # set velocities of the servos in Webots
         for i, s in enumerate(self._servos):

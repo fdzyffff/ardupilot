@@ -193,8 +193,8 @@ void ModeLoiter::run()
 #endif
 
         Vector3f thrust_vec = loiter_nav->get_thrust_vector();
-        target_forward = thrust_vec.x*0.0001f;
-        target_lateral = thrust_vec.y*0.0001f;
+        target_forward = thrust_vec.x*0.0002f;
+        target_lateral = thrust_vec.y*0.0002f;
 
         // target_lateral = thrust_vec.y*0.0001f;
 

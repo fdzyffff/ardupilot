@@ -65,14 +65,24 @@ void UBase::handle_msg(const mavlink_message_t &msg)
         mavlink_msg_attitude_decode(&msg, &attitude);
 
 
-        Matrix3f tmp_gimbal_m;
-        tmp_gimbal_m.from_euler(attitude.roll, attitude.pitch, attitude.yaw);
+        Vector3f tmp_in = Vector3f(attitude.roll, attitude.pitch, 0.0f);
         Matrix3f tmp_bf_m;
         tmp_bf_m.from_euler(0.0f, 0.0f, attitude.yaw);
-        Matrix3f tmp_efbf_m = tmp_bf_m*tmp_gimbal_m;
+        Vector3f tmp_out = tmp_bf_m*tmp_in;
+        _base_roll = tmp_out.x;
+        _base_pitch = tmp_out.y;
 
-        tmp_efbf_m.to_euler(&_base_roll, &_base_pitch, &_base_yaw);
 
+        // Matrix3f tmp_gimbal_m;
+        // tmp_gimbal_m.from_euler(attitude.roll, attitude.pitch, 0.0f);
+        // Matrix3f tmp_bf_m;
+        // tmp_bf_m.from_euler(0.0f, 0.0f, attitude.yaw);
+        // Matrix3f tmp_efbf_m = tmp_bf_m*tmp_gimbal_m;
+
+        // tmp_efbf_m.to_euler(&_base_roll, &_base_pitch, &_base_yaw);
+
+        display_info.p1 = degrees(attitude.yaw)*100.f;
+        display_info.p2 = degrees(attitude.yaw)*100.f;
         // _base_roll = attitude.roll;
         // _base_pitch = attitude.pitch;
         // _base_yaw = attitude.yaw;
@@ -94,10 +104,8 @@ void UBase::update()
     update_valid();
     update_target_angle();
 
-    display_info.p1 = copter.g2.user_parameters.angle_mode.get();
-    display_info.p2 = _target_roll;
-    display_info.p3 = _target_pitch;
-    display_info.p4 = _target_yaw;
+    display_info.p3 = _target_roll;
+    display_info.p4 = _target_pitch;
 }
 
 void UBase::update_valid()
@@ -128,7 +136,6 @@ void UBase::update_valid()
 // degree/second
 void UBase::update_target_angle()
 {
-
     if (copter.g2.user_parameters.angle_mode.get() == 0) {
         RC_Channel *roll_4x4_ch = rc().find_channel_for_option(RC_Channel::aux_func_t::ROLL_4X4);
         RC_Channel *pitch_4x4_ch = rc().find_channel_for_option(RC_Channel::aux_func_t::PITCH_4X4);
@@ -142,6 +149,8 @@ void UBase::update_target_angle()
         _target_roll = degrees(_base_roll)*100.f;
         _target_pitch = degrees(_base_pitch)*100.f;
     }
+    _target_roll = constrain_float(_target_roll, -1500.0f, 1500.f);
+    _target_pitch = constrain_float(_target_pitch, -1500.0f, 1500.f);
 }
 
 void UBase::set_mode(uint8_t mode_in)
