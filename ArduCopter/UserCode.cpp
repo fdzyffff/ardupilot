@@ -40,7 +40,8 @@ void Copter::userhook_SlowLoop()
 void Copter::userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
-    gcs().send_message(MSG_ZF_STATUS);
+    gcs().send_message(MSG_ZF8888_STATUS); //电子桩, F4
+    gcs().send_message(MSG_ZF6666_STATUS); //飞控, H7
 }
 #endif
 

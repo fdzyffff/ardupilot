@@ -329,7 +329,8 @@ public:
 
     // common send functions
     void send_heartbeat(void) const;
-    void send_zf_status(void) const;
+    void send_zf6666_status(void) const;
+    void send_zf8888_status(void) const;
     void send_meminfo(void);
     void send_fence_status() const;
     void send_power_status(void);
