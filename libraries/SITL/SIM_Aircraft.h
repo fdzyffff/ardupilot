@@ -162,6 +162,9 @@ public:
     float get_battery_voltage() const { return battery_voltage; }
     float get_battery_temperature() const { return battery.get_temperature(); }
 
+    void set_ground_level(float input_height) {ground_level = input_height; }
+    float get_ground_level() {return ground_level; }
+
     ADSB *adsb;
 
 protected:

@@ -101,6 +101,7 @@ void ModeThrow::run()
         if (!new_flightmode->requires_GPS()) {
             switch ((Mode::Number)g2.throw_nextmode.get()) {
                 case Mode::Number::ALT_HOLD:
+                case Mode::Number::LAND:
                     set_mode((Mode::Number)g2.throw_nextmode.get(), ModeReason::THROW_COMPLETE);
                     break;
                 default:

@@ -39,6 +39,11 @@ public:
         return new MultiCopter(frame_str);
     }
 
+    bool have_launcher;
+    float launch_accel;
+    float launch_time;
+    uint64_t launch_start_ms;
+
 protected:
     // calculate rotational and linear accelerations
     void calculate_forces(const struct sitl_input &input, Vector3f &rot_accel, Vector3f &body_accel);
