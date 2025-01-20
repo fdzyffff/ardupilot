@@ -21,8 +21,142 @@ void UMav::handle_msg(const mavlink_message_t &msg)
         case MAVLINK_MSG_ID_WXBS_MISSION:
             handle_mission(msg);
             break;
+        case MAVLINK_MSG_ID_WXBS_ATTACK_INFO:
+            handle_attack_info(msg);
+            break;
+        case MAVLINK_MSG_ID_WXBS_ATTACK_CMD:
+            handle_attack_cmd(msg);
+            break;
+        case MAVLINK_MSG_ID_WXBS_NAV_CMD:
+            handle_nav_cmd(msg);
+            break;
         default:
             break;
+    }
+}
+
+void UMav::handle_selfcheck(const mavlink_message_t &msg)
+{
+    //self check cmd 400;
+    if (msg.msgid == MAVLINK_MSG_ID_WXBS_DO_SELFCHECK) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Receive WXBS_DO_SELFCHECK");
+        // decode packet
+        mavlink_wxbs_do_selfcheck_t packet;
+        mavlink_msg_wxbs_do_selfcheck_decode(&msg, &packet);
+        if (packet.do_check == 1) {
+            send_selfcheck_result();
+        }
+    }
+}
+void UMav::handle_target(const mavlink_message_t &msg)
+{
+    //handle target cmd 401;
+    if (msg.msgid == MAVLINK_MSG_ID_WXBS_TARGET) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Receive WXBS_TARGET");
+        // decode packet
+        mavlink_wxbs_target_t packet;
+        mavlink_msg_wxbs_target_decode(&msg, &packet);
+        _target_ok = 1;
+        send_target();
+    }
+}
+
+void UMav::handle_mission(const mavlink_message_t &msg)
+{
+    //handle mission cmd 405;
+    if (msg.msgid == MAVLINK_MSG_ID_WXBS_MISSION) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Receive WXBS_MISSION");
+        // decode packet
+        mavlink_wxbs_mission_t packet;
+        mavlink_msg_wxbs_mission_decode(&msg, &packet);
+        _mission_ok = 1;
+        send_mission();
+    }
+}
+
+void UMav::handle_relay(const mavlink_message_t &msg)
+{
+    //handle relay cmd 407;
+    if (msg.msgid == MAVLINK_MSG_ID_WXBS_MISSION) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Receive WXBS_RELAY_POSITION");
+        // decode packet
+        mavlink_wxbs_relay_position_t packet;
+        mavlink_msg_wxbs_relay_position_decode(&msg, &packet);
+        send_relay_position_result();
+    }
+}
+
+void UMav::handle_attack_info(const mavlink_message_t &msg)
+{
+    //handle attack info 410;
+    if (msg.msgid == MAVLINK_MSG_ID_WXBS_ATTACK_INFO) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Receive WXBS_ATTACK_INFO");
+        // decode packet
+        mavlink_wxbs_attack_info_t packet;
+        mavlink_msg_wxbs_attack_info_decode(&msg, &packet);
+    }
+}
+
+void UMav::handle_attack_cmd(const mavlink_message_t &msg)
+{
+    //handle attack cmd 411;
+    if (msg.msgid == MAVLINK_MSG_ID_WXBS_ATTACK_CMD) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Receive WXBS_ATTACK_CMD");
+        // decode packet
+        mavlink_wxbs_attack_cmd_t packet;
+        mavlink_msg_wxbs_attack_cmd_decode(&msg, &packet);
+    }
+}
+
+void UMav::handle_nav_cmd(const mavlink_message_t &msg)
+{
+    //handle nav cmd 412;
+    if (msg.msgid == MAVLINK_MSG_ID_WXBS_NAV_CMD) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Receive WXBS_NAV_CMD");
+        // decode packet
+        mavlink_wxbs_nav_cmd_t packet;
+        mavlink_msg_wxbs_nav_cmd_decode(&msg, &packet);
+    }
+}
+
+
+void UMav::send_do_selfcheck() 
+{
+    //self check result 400;
+    gcs().send_text(MAV_SEVERITY_INFO, "Send WXBS_DO_SELFCHECK");
+    uint16_t mask = GCS_MAVLINK::active_channel_mask() | GCS_MAVLINK::streaming_channel_mask();
+    for (uint8_t i=0; i<gcs().num_gcs(); i++) {
+        mavlink_channel_t channel = (mavlink_channel_t)(MAVLINK_COMM_0 + i);
+        if (mask & (1U<<i)) {
+            if (comm_get_txspace(channel) >= GCS_MAVLINK::packet_overhead_chan(channel) + 255) {
+                uint8_t controller_ok = copter.arming.pre_arm_checks(true);
+                mavlink_msg_wxbs_do_selfcheck_send(
+                    channel,
+                    controller_ok);
+            }
+        }
+    }
+}
+
+void UMav::send_target() 
+{
+    //send target result 401;
+    gcs().send_text(MAV_SEVERITY_INFO, "Send WXBS_TARGET");
+    uint16_t mask = GCS_MAVLINK::active_channel_mask() | GCS_MAVLINK::streaming_channel_mask();
+    for (uint8_t i=0; i<gcs().num_gcs(); i++) {
+        mavlink_channel_t channel = (mavlink_channel_t)(MAVLINK_COMM_0 + i);
+        if (mask & (1U<<i)) {
+            if (comm_get_txspace(channel) >= GCS_MAVLINK::packet_overhead_chan(channel) + 255) {
+                mavlink_msg_wxbs_target_send(
+                    channel,
+                    123,
+                    234,
+                    345,
+                    567,
+                    678,
+                    789);
+            }
+        }
     }
 }
 
@@ -45,21 +179,7 @@ void UMav::send_status()
     }
 }
 
-void UMav::handle_selfcheck(const mavlink_message_t &msg)
-{
-    //self check cmd 400;
-    if (msg.msgid == MAVLINK_MSG_ID_WXBS_DO_SELFCHECK) {
-        gcs().send_text(MAV_SEVERITY_INFO, "Receive WXBS_DO_SELFCHECK");
-        // decode packet
-        mavlink_wxbs_do_selfcheck_t packet;
-        mavlink_msg_wxbs_do_selfcheck_decode(&msg, &packet);
-        if (packet.do_check == 1) {
-            send_selfcheck();
-        }
-    }
-}
-
-void UMav::send_selfcheck() 
+void UMav::send_selfcheck_result() 
 {
     //self check result 403;
     gcs().send_text(MAV_SEVERITY_INFO, "Send WXBS_SELFCHECK_RESULT");
@@ -78,20 +198,7 @@ void UMav::send_selfcheck()
     }
 }
 
-void UMav::handle_target(const mavlink_message_t &msg)
-{
-    //handle target cmd 401;
-    if (msg.msgid == MAVLINK_MSG_ID_WXBS_TARGET) {
-        gcs().send_text(MAV_SEVERITY_INFO, "Receive WXBS_TARGET");
-        // decode packet
-        mavlink_wxbs_target_t packet;
-        mavlink_msg_wxbs_target_decode(&msg, &packet);
-        _target_ok = 1;
-        send_target();
-    }
-}
-
-void UMav::send_target() 
+void UMav::send_target_result() 
 {
     //send target result 404;
     gcs().send_text(MAV_SEVERITY_INFO, "Send WXBS_TARGET_RESULT");
@@ -108,20 +215,38 @@ void UMav::send_target()
     }
 }
 
-void UMav::handle_mission(const mavlink_message_t &msg)
+void UMav::send_mission() 
 {
-    //handle mission cmd 405;
-    if (msg.msgid == MAVLINK_MSG_ID_WXBS_MISSION) {
-        gcs().send_text(MAV_SEVERITY_INFO, "Receive WXBS_MISSION");
-        // decode packet
-        mavlink_wxbs_mission_t packet;
-        mavlink_msg_wxbs_mission_decode(&msg, &packet);
-        _mission_ok = 1;
-        send_mission();
+    //send mission 405;
+    gcs().send_text(MAV_SEVERITY_INFO, "Send WXBS_MISSION");
+    uint16_t mask = GCS_MAVLINK::active_channel_mask() | GCS_MAVLINK::streaming_channel_mask();
+    for (uint8_t i=0; i<gcs().num_gcs(); i++) {
+        mavlink_channel_t channel = (mavlink_channel_t)(MAVLINK_COMM_0 + i);
+        if (mask & (1U<<i)) {
+            if (comm_get_txspace(channel) >= GCS_MAVLINK::packet_overhead_chan(channel) + 255) {
+                int32_t lat[10];
+                int32_t lng[10];
+                int32_t alt[10];
+                for (uint8_t i_pos = 0; i_pos < 10; i_pos++) {
+                    lat[i_pos] = 1;
+                    lng[i_pos] = 1;
+                    alt[i_pos] = 1;
+                }
+                mavlink_msg_wxbs_mission_send(
+                    channel,
+                    1,
+                    2,
+                    3,
+                    10,
+                    lat,
+                    lng,
+                    alt);
+            }
+        }
     }
 }
 
-void UMav::send_mission() 
+void UMav::send_mission_result() 
 {
     //send mission result 406;
     gcs().send_text(MAV_SEVERITY_INFO, "Send WXBS_MISSION_RESULT");
@@ -138,22 +263,123 @@ void UMav::send_mission()
     }
 }
 
+void UMav::send_relay_position() 
+{
+    //send mission result 407;
+    gcs().send_text(MAV_SEVERITY_INFO, "Send WXBS_RELAY_POSITION");
+    uint16_t mask = GCS_MAVLINK::active_channel_mask() | GCS_MAVLINK::streaming_channel_mask();
+    for (uint8_t i=0; i<gcs().num_gcs(); i++) {
+        mavlink_channel_t channel = (mavlink_channel_t)(MAVLINK_COMM_0 + i);
+        if (mask & (1U<<i)) {
+            if (comm_get_txspace(channel) >= GCS_MAVLINK::packet_overhead_chan(channel) + 255) {
+                int32_t lat[5];
+                int32_t lng[5];
+                int32_t alt[5];
+                for (uint8_t i_pos = 0; i_pos < 5; i_pos++) {
+                    lat[i_pos] = 1;
+                    lng[i_pos] = 1;
+                    alt[i_pos] = 1;
+                }
+                mavlink_msg_wxbs_relay_position_send(
+                    channel,
+                    1,
+                    2,
+                    3,
+                    lat,
+                    lng,
+                    alt);
+            }
+        }
+    }
+}
+
+
+void UMav::send_relay_position_result() 
+{
+    //send relay result 408;
+    gcs().send_text(MAV_SEVERITY_INFO, "Send WXBS_RELAY_POSITION_RESULT");
+    uint16_t mask = GCS_MAVLINK::active_channel_mask() | GCS_MAVLINK::streaming_channel_mask();
+    for (uint8_t i=0; i<gcs().num_gcs(); i++) {
+        mavlink_channel_t channel = (mavlink_channel_t)(MAVLINK_COMM_0 + i);
+        if (mask & (1U<<i)) {
+            if (comm_get_txspace(channel) >= GCS_MAVLINK::packet_overhead_chan(channel) + 255) {
+                mavlink_msg_wxbs_relay_position_result_send(
+                    channel,
+                    1);
+            }
+        }
+    }
+}
+
+void UMav::send_apm_status()
+{
+    //send apm status 413;
+    gcs().send_text(MAV_SEVERITY_INFO, "Send WXBS_APM_STATUS");
+    uint16_t mask = GCS_MAVLINK::active_channel_mask() | GCS_MAVLINK::streaming_channel_mask();
+    for (uint8_t i=0; i<gcs().num_gcs(); i++) {
+        mavlink_channel_t channel = (mavlink_channel_t)(MAVLINK_COMM_0 + i);
+        if (mask & (1U<<i)) {
+            if (comm_get_txspace(channel) >= GCS_MAVLINK::packet_overhead_chan(channel) + 255) {
+                mavlink_msg_wxbs_apm_status_send(
+                    channel,
+                    1,
+                    1,
+                    1);
+            }
+        }
+    }
+}
+
+void UMav::send_all()
+{
+    send_do_selfcheck();
+    send_target();
+    send_mission();
+    send_relay_position();
+    send_apm_status();
+}
+
+
 void UMav::handle_info_test(int16_t p1)
 {
+    if (p1 == 400) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Try send 400");
+        send_do_selfcheck();
+    }
+    if (p1 == 401) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Try send 401");
+        send_target();
+    }
     if (p1 == 402) {
         gcs().send_text(MAV_SEVERITY_INFO, "Try send 402");
         send_status();
     }
     if (p1 == 403) {
         gcs().send_text(MAV_SEVERITY_INFO, "Try send 403");
-        send_selfcheck();
+        send_selfcheck_result();
     }
     if (p1 == 404) {
         gcs().send_text(MAV_SEVERITY_INFO, "Try send 404");
-        send_target();
+        send_target_result();
+    }
+    if (p1 == 405) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Try send 405");
+        send_mission();
     }
     if (p1 == 406) {
         gcs().send_text(MAV_SEVERITY_INFO, "Try send 406");
-        send_mission();
+        send_mission_result();
+    }
+    if (p1 == 407) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Try send 407");
+        send_relay_position();
+    }
+    if (p1 == 408) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Try send 408");
+        send_relay_position_result();
+    }
+    if (p1 == 413) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Try send 413");
+        send_apm_status();
     }
 }
