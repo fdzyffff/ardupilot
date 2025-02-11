@@ -136,11 +136,11 @@ void UAttack::time_out_check() {
 
 // degree/second
 void UAttack::update_target_pitch_rate() {
-    float k = copter.g2.user_parameters.attack_k.get();
-    float k2 = copter.g2.user_parameters.attack_k2.get();
+    float k1_pitch = copter.g2.user_parameters.attack_k1_pitch.get();
+    float k2_pitch = copter.g2.user_parameters.attack_k2_pitch.get();
     // float boost_factor = constrain_float(fabsf(bf_info.y)/15.0f, 0.0f, 1.0f) * 2.0f;
-    float angle_comp = constrain_float(bf_info.y, -15.0f, 15.0f);
-    _target_pitch_rate = k * ef_rate_info.y + k2 * angle_comp; // degrees/s
+    float angle_err = constrain_float(bf_info.y, -30.0f, 30.0f);
+    _target_pitch_rate = k1_pitch * ef_rate_info.y + k2_pitch * angle_err; // degrees/s
 
     //Limit pitch rate
     float limit_pitch_rate = copter.g2.user_parameters.pitch_rate_limit;
@@ -164,16 +164,16 @@ void UAttack::update_target_roll_angle() {
 
 // degree/second
 void UAttack::update_target_yaw_rate() {
-    float k = copter.g2.user_parameters.attack_k.get();
-    float k2 = copter.g2.user_parameters.attack_k2.get();
+    float k1_yaw = copter.g2.user_parameters.attack_k1_yaw.get();
+    float k2_yaw = copter.g2.user_parameters.attack_k2_yaw.get();
     // float boost_factor = constrain_float(fabsf(bf_info.x)/15.0f, 0.0f, 1.0f) * 2.0f;
-    float angle_comp = constrain_float(bf_info.x, -15.0f, 15.0f);
-    _target_yaw_rate = k * ef_rate_info.x + k2 * angle_comp;
+    float angle_err = constrain_float(bf_info.x, -30.0f, 30.0f);
+    _target_yaw_rate = k1_yaw * ef_rate_info.x + k2_yaw * angle_err;
 }
 
 // from 0 to 1, according to ef_info.y, the pitch angle of body-target in earth frame
 void UAttack::update_target_throttle() {
-    float p = copter.g2.user_parameters.attack_angle_kp.get();
+    float p = copter.g2.user_parameters.attack_k_angle.get();
     _attack_angle_target = copter.g2.user_parameters.attack_angle.get();
     _attack_angle_measure = -ef_info.y;
     _attack_angle_rate_target = (_attack_angle_target - _attack_angle_measure) /45.0f * p;

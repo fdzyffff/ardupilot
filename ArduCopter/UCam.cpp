@@ -214,32 +214,61 @@ void UCam::handle_info(float p1, float p2) {
     _frotend.bf_info.x = p1; // yaw degree
     _frotend.bf_info.y = p2; // pitch degree
 
-    Matrix3f tmp_cam_m;
-    tmp_cam_m.from_euler(0.0f, radians(p2), radians(p1));
+    float bf_dist = 1.0f;
+    float bf_z    = bf_dist*sin(radians(p2));
+    float bf_xy   = bf_dist*cos(radians(p2));
+    float bf_x    = bf_xy*sin(radians(p1));
+    float bf_y    = bf_xy*cos(radians(p1));
+    Vector3f bf_unit = Vector3f(bf_x, bf_y, bf_z);
+    bf_unit.normalized();
 
-    Matrix3f tmp_bf_m;
-    tmp_bf_m.from_euler(_roll, _pitch, 0.0f);
+    Matrix3f tmp_body_m;
+    tmp_body_m.from_euler(_roll, _pitch, _yaw);
+    Vector3f ef_unit = tmp_body_m*bf_unit;
 
-    Matrix3f tmp_efbf_m = tmp_bf_m*tmp_cam_m;
-    float tmp_roll;
-    float tmp_pitch;
-    float tmp_yaw;
-    tmp_efbf_m.to_euler(&tmp_roll, &tmp_pitch, &tmp_yaw);
+    float angle_pitch = wrap_180(degrees(atan2f(ef_unit.z, ef_unit.xy().length())));
+    float angle_yaw =   wrap_180(degrees(atan2f(ef_unit.y, ef_unit.x)));
 
-    tmp_roll = degrees(tmp_roll);
-    tmp_pitch = degrees(tmp_pitch);
-    tmp_yaw = degrees(tmp_yaw);
+    _frotend.ef_info.x = angle_yaw;
+    _frotend.ef_info.y = angle_pitch;
 
-    _frotend.ef_info.x = wrap_360(tmp_yaw + degrees(_yaw));
-    _frotend.ef_info.y = tmp_pitch;
-
-    _yaw_filter.update(tmp_yaw, millis());
-    _pitch_filter.update(tmp_pitch, millis());
-    // _pitch_filter.update(degrees(copter.ahrs_view->pitch), millis());
+    Matrix3f tmp_body_m1;
+    tmp_body_m1.from_euler(_roll, _pitch, 0.0f);
+    Vector3f ef1_unit = tmp_body_m1*bf_unit;
+    float yaw_bf = degrees(wrap_180(atan2f(ef1_unit.y, ef1_unit.x)));
+    _yaw_filter.update(yaw_bf, millis());
+    _pitch_filter.update(angle_pitch, millis());
 
     _frotend.ef_rate_info.x = _yaw_rate_filter.get() + _yaw_filter.slope()*1000.f;
-    // _frotend.ef_rate_info.x = _yaw_filter.slope()*1000.f;
     _frotend.ef_rate_info.y = _pitch_filter.slope()*1000.f;
+
+
+    // Matrix3f tmp_cam_m;
+    // tmp_cam_m.from_euler(0.0f, radians(p2), radians(p1));
+
+    // Matrix3f tmp_bf_m;
+    // tmp_bf_m.from_euler(_roll, _pitch, 0.0f);
+
+    // Matrix3f tmp_efbf_m = tmp_bf_m*tmp_cam_m;
+    // float tmp_roll;
+    // float tmp_pitch;
+    // float tmp_yaw;
+    // tmp_efbf_m.to_euler(&tmp_roll, &tmp_pitch, &tmp_yaw);
+
+    // tmp_roll = degrees(tmp_roll);
+    // tmp_pitch = degrees(tmp_pitch);
+    // tmp_yaw = degrees(tmp_yaw);
+
+    // _frotend.ef_info.x = wrap_360(tmp_yaw + degrees(_yaw));
+    // _frotend.ef_info.y = tmp_pitch;
+
+    // _yaw_filter.update(tmp_yaw, millis());
+    // _pitch_filter.update(tmp_pitch, millis());
+    // // _pitch_filter.update(degrees(copter.ahrs_view->pitch), millis());
+
+    // _frotend.ef_rate_info.x = _yaw_rate_filter.get() + _yaw_filter.slope()*1000.f;
+    // // _frotend.ef_rate_info.x = _yaw_filter.slope()*1000.f;
+    // _frotend.ef_rate_info.y = _pitch_filter.slope()*1000.f;
 
     _frotend.udpate_control_value();
 

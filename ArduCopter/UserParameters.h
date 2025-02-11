@@ -12,8 +12,12 @@ public:
     
     // Put accessors to your parameter variables here
     // UserCode usage example: g2.user_parameters.get_int8Param()
-    AP_Float attack_k;
-    AP_Float attack_k2;
+    AP_Float attack_k1_pitch;
+    AP_Float attack_k2_pitch;
+    AP_Float attack_k1_yaw;
+    AP_Float attack_k2_yaw;
+    AP_Float attack_k_angle;
+    AP_Float attack_roll_factor;
     AP_Float attack_throttle;
     AP_Float attack_throttle_rate;
     AP_Int16 attack_timeout;
@@ -32,8 +36,6 @@ public:
     AP_Int8  lock_size;
     AP_Int16 cam_x_offset;
     AP_Int16 cam_y_offset;
-    AP_Float attack_angle_kp;
-    AP_Float attack_roll_factor;
     AP_Int16 lock_y_down;
 
 
