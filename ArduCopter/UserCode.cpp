@@ -78,6 +78,9 @@ void Copter::userhook_SuperSlowLoop()
     if (g2.user_parameters.print.get() & (1<<5)) { // 32
         gcs().send_text(MAV_SEVERITY_WARNING, "apid (%0.1f , %0.1f , %0.1f , %0.2f)", uattack._attack_throttle_pid, uattack._attack_throttle_p, uattack._attack_throttle_i, uattack._attack_throttle_d);
     }
+    if (g2.user_parameters.print.get() & (1<<6)) { // 364
+        gcs().send_text(MAV_SEVERITY_WARNING, "%0.0f , %0.0f , %0.0f , %0.0f", uattack.display_info_p11, uattack.display_info_p12, uattack.display_info_p13, uattack.display_info_p14);
+    }
 }
 #endif
 

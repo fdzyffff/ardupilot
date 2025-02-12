@@ -10,13 +10,15 @@ UCam::UCam(UAttack &frotend_in, AP_HAL::UARTDriver* port_in):
     FD_CAM_ptr->get_msg_cam_cmd().set_enable();
     FD_CAM_ptr->get_msg_cam_status().set_enable();
     FD_CAM_ptr->get_msg_cam_target().set_enable();
-    _yaw_rate_filter.set_cutoff_frequency(10.f, 25.f);
+    _yaw_earth_rate_filter.set_cutoff_frequency(30.f, 10.f);
+    _yaw_rate_filter.set_cutoff_frequency(30.f, 10.f);
+    _pitch_rate_filter.set_cutoff_frequency(30.f, 10.f);
     return;
 }
 
 void UCam::update() {
     static uint32_t last_update_ms = millis();
-    _yaw_rate_filter.apply(degrees(AP::ahrs().get_yaw_rate_earth()));
+    _yaw_earth_rate_filter.apply(degrees(AP::ahrs().get_yaw_rate_earth()));
 
     FD_CAM_ptr->read();
     FD_CAM_TARGET &tmp_msg = FD_CAM_ptr->get_msg_cam_target();
@@ -205,20 +207,20 @@ void UCam::handle_info(float p1, float p2) {
     float _roll = copter.ahrs_view->roll;
     float _pitch = copter.ahrs_view->pitch;
     float _yaw = copter.ahrs_view->yaw;
-    if (!copter.udelay.get_idx(5-1, _roll, _pitch, _yaw)) {
-        _roll = copter.ahrs_view->roll;
-        _pitch = copter.ahrs_view->pitch;
-        _yaw = copter.ahrs_view->yaw;
-    }
+    // if (!copter.udelay.get_idx(5-1, _roll, _pitch, _yaw)) {
+    //     _roll = copter.ahrs_view->roll;
+    //     _pitch = copter.ahrs_view->pitch;
+    //     _yaw = copter.ahrs_view->yaw;
+    // }
 
     _frotend.bf_info.x = p1; // yaw degree
     _frotend.bf_info.y = p2; // pitch degree
 
-    float bf_dist = 1.0f;
-    float bf_z    = bf_dist*sin(radians(p2));
-    float bf_xy   = bf_dist*cos(radians(p2));
-    float bf_x    = bf_xy*sin(radians(p1));
-    float bf_y    = bf_xy*cos(radians(p1));
+    float bf_dist = 100.0f;
+    float bf_z    = -bf_dist*sin(radians(p2));
+    float bf_xy   =  bf_dist*cos(radians(p2));
+    float bf_y    =  bf_xy*sin(radians(p1));
+    float bf_x    =  bf_xy*cos(radians(p1));
     Vector3f bf_unit = Vector3f(bf_x, bf_y, bf_z);
     bf_unit.normalized();
 
@@ -226,8 +228,8 @@ void UCam::handle_info(float p1, float p2) {
     tmp_body_m.from_euler(_roll, _pitch, _yaw);
     Vector3f ef_unit = tmp_body_m*bf_unit;
 
-    float angle_pitch = wrap_180(degrees(atan2f(ef_unit.z, ef_unit.xy().length())));
-    float angle_yaw =   wrap_180(degrees(atan2f(ef_unit.y, ef_unit.x)));
+    float angle_pitch = wrap_180(degrees(atan2f(-ef_unit.z, ef_unit.xy().length())));
+    float angle_yaw =   wrap_180(degrees(atan2f( ef_unit.y, ef_unit.x)));
 
     _frotend.ef_info.x = angle_yaw;
     _frotend.ef_info.y = angle_pitch;
@@ -239,8 +241,12 @@ void UCam::handle_info(float p1, float p2) {
     _yaw_filter.update(yaw_bf, millis());
     _pitch_filter.update(angle_pitch, millis());
 
-    _frotend.ef_rate_info.x = _yaw_rate_filter.get() + _yaw_filter.slope()*1000.f;
-    _frotend.ef_rate_info.y = _pitch_filter.slope()*1000.f;
+    _yaw_rate_filter.apply(_yaw_earth_rate_filter.get() + _yaw_filter.slope()*1000.f);
+    _pitch_rate_filter.apply(_pitch_filter.slope()*1000.f);
+
+
+    _frotend.ef_rate_info.x = _yaw_rate_filter.get();
+    _frotend.ef_rate_info.y = _pitch_rate_filter.get();
 
 
     // Matrix3f tmp_cam_m;

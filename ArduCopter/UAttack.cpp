@@ -1,4 +1,5 @@
 #include "Copter.h"
+// #include <AP_Logger/AP_Logger.h>
 //#include "UCam.h"
 
 UAttack::UAttack()
@@ -37,8 +38,43 @@ void UAttack::udpate_control_value(){
     update_target_yaw_rate();
     update_target_roll_angle();
     update_target_throttle();
-    update_target_bf_to_ef();
+    // update_target_bf_to_ef();
     _last_ms = millis();
+
+    update_log();
+}
+
+void UAttack::update_log() {
+    AP::logger().WriteStreaming("UATK",
+                                "TimeUS,bfx,bfy,efx,efy,efrx,efry,tpth,trll,tyaw",
+                                "s---------",
+                                "F---------",
+                                "Qfffffffff",
+                                AP_HAL::micros64(),
+                                (float)bf_info.x,
+                                (float)bf_info.y,
+                                (float)ef_info.x,
+                                (float)ef_info.y,
+                                (float)ef_rate_info.x,
+                                (float)ef_rate_info.y,
+                                (float)_target_pitch_rate,
+                                (float)_target_roll_angle,
+                                (float)_target_yaw_rate);
+
+    AP::logger().WriteStreaming("UAT2",
+                                "TimeUS,angt,angm,agrt,agrm,thrp,thri,thrd,thra",
+                                "s--------",
+                                "F--------",
+                                "Qffffffff",
+                                AP_HAL::micros64(),
+                                (float)_attack_angle_target,
+                                (float)_attack_angle_measure,
+                                (float)_attack_angle_rate_target,
+                                (float)_attack_angle_rate_measure,
+                                (float)_attack_throttle_p,
+                                (float)_attack_throttle_i,
+                                (float)_attack_throttle_d,
+                                (float)_attack_throttle_pid);
 }
 
 const Vector2f& UAttack::get_bf_info() {
@@ -138,8 +174,9 @@ void UAttack::time_out_check() {
 void UAttack::update_target_pitch_rate() {
     float k1_pitch = copter.g2.user_parameters.attack_k1_pitch.get();
     float k2_pitch = copter.g2.user_parameters.attack_k2_pitch.get();
+    float pitch_off = copter.g2.user_parameters.attack_pitch_off.get();
     // float boost_factor = constrain_float(fabsf(bf_info.y)/15.0f, 0.0f, 1.0f) * 2.0f;
-    float angle_err = constrain_float(bf_info.y, -30.0f, 30.0f);
+    float angle_err = constrain_float(bf_info.y + pitch_off, -30.0f, 30.0f);
     _target_pitch_rate = k1_pitch * ef_rate_info.y + k2_pitch * angle_err; // degrees/s
 
     //Limit pitch rate
@@ -169,6 +206,10 @@ void UAttack::update_target_yaw_rate() {
     // float boost_factor = constrain_float(fabsf(bf_info.x)/15.0f, 0.0f, 1.0f) * 2.0f;
     float angle_err = constrain_float(bf_info.x, -30.0f, 30.0f);
     _target_yaw_rate = k1_yaw * ef_rate_info.x + k2_yaw * angle_err;
+    display_info_p11 = angle_err;
+    display_info_p12 = k2_yaw;
+    display_info_p13 = _target_yaw_rate;
+    display_info_p14 = copter.uattack.get_target_yaw_rate();
 }
 
 // from 0 to 1, according to ef_info.y, the pitch angle of body-target in earth frame
@@ -176,8 +217,10 @@ void UAttack::update_target_throttle() {
     float p = copter.g2.user_parameters.attack_k_angle.get();
     _attack_angle_target = copter.g2.user_parameters.attack_angle.get();
     _attack_angle_measure = -ef_info.y;
-    _attack_angle_rate_target = (_attack_angle_target - _attack_angle_measure) /45.0f * p;
+    _attack_angle_rate_target = (_attack_angle_target - _attack_angle_measure) * p;
     _attack_angle_rate_measure = -ef_rate_info.y;
+    _attack_angle_rate_target = _attack_angle_rate_target/45.0f;
+    _attack_angle_rate_measure = _attack_angle_rate_measure/45.0f;
 
     float dt = (millis() - _last_ms);
     dt = dt * 0.001f;

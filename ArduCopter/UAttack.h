@@ -29,11 +29,17 @@ public:
 
     AP_HAL::UARTDriver* get_port(void) {return _cam_port;}
 
+    void update_log();
+
     bool display_info_new;
     float display_info_p1;
     float display_info_p2;
     float display_info_p3;
     float display_info_p4;
+    float display_info_p11;
+    float display_info_p12;
+    float display_info_p13;
+    float display_info_p14;
     uint8_t display_info_count;
     uint8_t display_info_count_log;
 
@@ -107,7 +113,9 @@ private:
 
     DerivativeFilterFloat_Size7 _pitch_filter;
     DerivativeFilterFloat_Size7 _yaw_filter;
+    LowPassFilterFloat _yaw_earth_rate_filter;
     LowPassFilterFloat _yaw_rate_filter;
+    LowPassFilterFloat _pitch_rate_filter;
 };
 
 

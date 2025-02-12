@@ -37,6 +37,7 @@ public:
     AP_Int16 cam_x_offset;
     AP_Int16 cam_y_offset;
     AP_Int16 lock_y_down;
+    AP_Float attack_pitch_off;
 
 
 private:
