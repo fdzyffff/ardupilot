@@ -10,15 +10,15 @@ UCam::UCam(UAttack &frotend_in, AP_HAL::UARTDriver* port_in):
     FD_CAM_ptr->get_msg_cam_cmd().set_enable();
     FD_CAM_ptr->get_msg_cam_status().set_enable();
     FD_CAM_ptr->get_msg_cam_target().set_enable();
-    _yaw_earth_rate_filter.set_cutoff_frequency(30.f, 10.f);
-    _yaw_rate_filter.set_cutoff_frequency(30.f, 10.f);
-    _pitch_rate_filter.set_cutoff_frequency(30.f, 10.f);
+    _yaw_rate_filter.set_cutoff_frequency(30.f, 5.f);
+    _pitch_rate_filter.set_cutoff_frequency(30.f, 5.f);
+    _last_yaw = 0.0f;
+    _last_yaw_sample = 0.0f;
     return;
 }
 
 void UCam::update() {
     static uint32_t last_update_ms = millis();
-    _yaw_earth_rate_filter.apply(degrees(AP::ahrs().get_yaw_rate_earth()));
 
     FD_CAM_ptr->read();
     FD_CAM_TARGET &tmp_msg = FD_CAM_ptr->get_msg_cam_target();
@@ -241,9 +241,16 @@ void UCam::handle_info(float p1, float p2) {
     _yaw_filter.update(yaw_bf, millis());
     _pitch_filter.update(angle_pitch, millis());
 
-    _yaw_rate_filter.apply(_yaw_earth_rate_filter.get() + _yaw_filter.slope()*1000.f);
-    _pitch_rate_filter.apply(_pitch_filter.slope()*1000.f);
+    // if (is_zero(_last_yaw)) {
+    //     _last_yaw = angle_yaw;
+    // }
+    float delta_yaw = wrap_180(wrap_360(angle_yaw) - wrap_360(_last_yaw));
+    _last_yaw = angle_yaw;
+    _last_yaw_sample += delta_yaw;
+    _yaw_filter.update(_last_yaw_sample, millis());
 
+    _yaw_rate_filter.apply(_yaw_filter.slope()*1000.f);
+    _pitch_rate_filter.apply(_pitch_filter.slope()*1000.f);
 
     _frotend.ef_rate_info.x = _yaw_rate_filter.get();
     _frotend.ef_rate_info.y = _pitch_rate_filter.get();

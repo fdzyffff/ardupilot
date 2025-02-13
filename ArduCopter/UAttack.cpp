@@ -62,19 +62,46 @@ void UAttack::update_log() {
                                 (float)_target_yaw_rate);
 
     AP::logger().WriteStreaming("UAT2",
-                                "TimeUS,angt,angm,agrt,agrm,thrp,thri,thrd,thra",
-                                "s--------",
-                                "F--------",
-                                "Qffffffff",
+                                "TimeUS,angt,angm,agrt,agrm",
+                                "s----",
+                                "F----",
+                                "Qffff",
                                 AP_HAL::micros64(),
                                 (float)_attack_angle_target,
                                 (float)_attack_angle_measure,
                                 (float)_attack_angle_rate_target,
-                                (float)_attack_angle_rate_measure,
-                                (float)_attack_throttle_p,
-                                (float)_attack_throttle_i,
-                                (float)_attack_throttle_d,
-                                (float)_attack_throttle_pid);
+                                (float)_attack_angle_rate_measure);
+
+    AP::logger().WriteStreaming("UATH",
+                                "TimeUS,target,actual,ff,P,I,D,srate,dmod",
+                                "s--------",
+                                "F--------",
+                                "Qffffffff",
+                                AP_HAL::micros64(),
+                                (float)copter.g2.user_parameters.attack_throttle_pid.get_pid_info().target,
+                                (float)copter.g2.user_parameters.attack_throttle_pid.get_pid_info().actual,
+                                (float)copter.g2.user_parameters.attack_throttle_pid.get_pid_info().FF,
+                                (float)copter.g2.user_parameters.attack_throttle_pid.get_pid_info().P,
+                                (float)copter.g2.user_parameters.attack_throttle_pid.get_pid_info().I,
+                                (float)copter.g2.user_parameters.attack_throttle_pid.get_pid_info().D,
+                                (float)copter.g2.user_parameters.attack_throttle_pid.get_pid_info().slew_rate,
+                                (float)copter.g2.user_parameters.attack_throttle_pid.get_pid_info().Dmod);
+
+    AP::logger().WriteStreaming("UARL",
+                                "TimeUS,target,actual,ff,P,I,D,srate,dmod",
+                                "s--------",
+                                "F--------",
+                                "Qffffffff",
+                                AP_HAL::micros64(),
+                                (float)copter.g2.user_parameters.attack_roll_pid.get_pid_info().target,
+                                (float)copter.g2.user_parameters.attack_roll_pid.get_pid_info().actual,
+                                (float)copter.g2.user_parameters.attack_roll_pid.get_pid_info().FF,
+                                (float)copter.g2.user_parameters.attack_roll_pid.get_pid_info().P,
+                                (float)copter.g2.user_parameters.attack_roll_pid.get_pid_info().I,
+                                (float)copter.g2.user_parameters.attack_roll_pid.get_pid_info().D,
+                                (float)copter.g2.user_parameters.attack_roll_pid.get_pid_info().slew_rate,
+                                (float)copter.g2.user_parameters.attack_roll_pid.get_pid_info().Dmod);
+
 }
 
 const Vector2f& UAttack::get_bf_info() {
@@ -196,7 +223,12 @@ void UAttack::update_target_pitch_rate() {
 
 // degree
 void UAttack::update_target_roll_angle() {
-    _target_roll_angle = constrain_float(copter.g2.user_parameters.attack_roll_factor.get() * ef_rate_info.x, -15.f, 15.f);
+    // _target_roll_angle = constrain_float(copter.g2.user_parameters.attack_roll_factor.get() * ef_rate_info.x, -15.f, 15.f);
+    
+    float dt = (millis() - _last_ms);
+    dt = dt * 0.001f;
+    if (dt > 0.2f) {dt = 0.2f;}
+    _target_roll_angle = copter.g2.user_parameters.attack_roll_pid.update_all(0.0f, -ef_rate_info.x, dt);
 }
 
 // degree/second

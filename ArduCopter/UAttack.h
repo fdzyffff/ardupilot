@@ -113,9 +113,10 @@ private:
 
     DerivativeFilterFloat_Size7 _pitch_filter;
     DerivativeFilterFloat_Size7 _yaw_filter;
-    LowPassFilterFloat _yaw_earth_rate_filter;
     LowPassFilterFloat _yaw_rate_filter;
     LowPassFilterFloat _pitch_rate_filter;
+    float _last_yaw;
+    float _last_yaw_sample;
 };
 
 
