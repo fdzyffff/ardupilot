@@ -72,7 +72,7 @@ void ModeAttack::run()
     attitude_control->input_euler_angle_roll_euler_rate_pitch_yaw(target_roll, target_pitch_rate, target_yaw_rate);
 
     float target_throttle = copter.uattack._attack_throttle;
-    target_throttle = constrain_float(target_throttle, 0.01f, 1.0f);
+    target_throttle = constrain_float(target_throttle, 0.05f, 1.0f);
 
     // output pilot's throttle
     attitude_control->set_throttle_out(target_throttle, false, g.throttle_filt);
