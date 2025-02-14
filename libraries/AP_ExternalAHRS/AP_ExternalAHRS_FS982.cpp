@@ -64,7 +64,7 @@ bool AP_ExternalAHRS_FS982::check_uart()
 
     uint8_t new_byte;
 
-    for (int i = 0; i < n; i++)
+    for (uint32_t i = 0; i < n; i++)
     {
         if (!uart->read(new_byte))
         { // 依次读取所有字节

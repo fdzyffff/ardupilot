@@ -122,6 +122,10 @@
 #include "avoidance_adsb.h"
 #endif
 #include "AP_Arming.h"
+#include "Uart.h"
+#include "UDelay.h"
+#include "UAttack.h"
+#include "UTarget.h"
 
 /*
   main APM:Plane class
@@ -175,6 +179,16 @@ public:
 #if AP_EXTERNAL_CONTROL_ENABLED
     friend class AP_ExternalControl_Plane;
 #endif
+
+    friend class ModeAttackCam;
+    friend class ModeAttackLoc;
+
+    friend class Uart;
+    // friend class ModeAttack;
+    friend class UDelay;
+    friend class UAttack;
+    friend class UTarget_Cam;
+    friend class UTarget_Loc;
 
     Plane(void);
 
@@ -306,6 +320,8 @@ private:
 #if HAL_SOARING_ENABLED
     ModeThermal mode_thermal;
 #endif
+    ModeAttackCam mode_attack_cam;
+    ModeAttackLoc mode_attack_loc;
 
     // This is the state of the flight control system
     // There are multiple states defined such as MANUAL, FBW-A, AUTO
@@ -892,6 +908,7 @@ private:
     float stabilize_pitch_get_pitch_out();
     void stabilize_stick_mixing_fbw();
     void stabilize_yaw();
+    void stabilize_attack();
     int16_t calc_nav_yaw_coordinated();
     int16_t calc_nav_yaw_course(void);
     int16_t calc_nav_yaw_ground(void);
@@ -1251,6 +1268,14 @@ private:
 
     // last target alt we passed to tecs
     int32_t tecs_target_alt_cm;
+
+    void userhook_init();
+    void userhook_100Hz();
+    void userhook_1Hz();
+ 
+    Uart uart;
+    UAttack uattack;
+    UDelay udelay;
 
 public:
     void failsafe_check(void);

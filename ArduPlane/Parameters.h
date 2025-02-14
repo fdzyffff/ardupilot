@@ -589,6 +589,30 @@ public:
     
     AP_Int8         axis_bitmask; // axes to be autotuned
 
+    AC_PID          attack_roll_pid{0.5f, 0.1f, 0.01f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.5f};
+    AP_Float        attack_k1_pitch;
+    AP_Float        attack_k2_pitch;
+    AP_Float        attack_k1_yaw;
+    AP_Float        attack_k2_yaw;
+    AP_Float        attack_k_angle;
+    AP_Float        attack_throttle;
+    AP_Float        attack_throttle_rate;
+    AP_Int16        attack_timeout;
+    AP_Float        attack_angle;
+    AP_Float        pitch_limit;
+    AP_Float        pitch_rate_limit;
+    AP_Float        attack_pitch_off;
+    AP_Int16        print;
+    AP_Float        user_target_type;
+    AP_Float        cam_width;
+    AP_Float        cam_height;
+    AP_Float        cam_angle_x;
+    AP_Float        cam_angle_y;
+    AP_Float        cam_pitch_offset;
+    AP_Float        cam_x_offset;
+    AP_Float        cam_y_offset;
+
+
     // just to make compilation easier when all things are compiled out...
     uint8_t unused_integer;
 };

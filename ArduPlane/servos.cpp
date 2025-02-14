@@ -614,6 +614,12 @@ void Plane::set_throttle(void)
         }
         SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, fwd_thr);
 #endif  // HAL_QUADPLANE_ENABLED
+    } else if (control_mode == &mode_attack_loc) {
+        if (!mode_attack_loc.does_auto_throttle()) {
+            SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, mode_attack_loc.get_cmd_throttle());
+        }
+    } else if (control_mode == &mode_attack_cam) {
+        SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, mode_attack_cam.get_cmd_throttle());
     }
 
     if (control_mode->use_battery_compensation()) {

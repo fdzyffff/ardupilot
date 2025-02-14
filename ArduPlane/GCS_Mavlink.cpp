@@ -39,6 +39,8 @@ MAV_MODE GCS_MAVLINK_Plane::base_mode() const
     case Mode::Number::FLY_BY_WIRE_A:
     case Mode::Number::AUTOTUNE:
     case Mode::Number::FLY_BY_WIRE_B:
+    case Mode::Number::ATTACK_CAM:
+    case Mode::Number::ATTACK_LOC:
 #if HAL_QUADPLANE_ENABLED
     case Mode::Number::QSTABILIZE:
     case Mode::Number::QHOVER:
@@ -777,6 +779,7 @@ void GCS_MAVLINK_Plane::packetReceived(const mavlink_status_t &status,
     // pass message to follow library
     plane.g2.follow.handle_msg(msg);
 #endif
+    plane.uattack.handle_attack_msg(msg);
     GCS_MAVLINK::packetReceived(status, msg);
 }
 

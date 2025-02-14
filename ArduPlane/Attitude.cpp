@@ -277,7 +277,9 @@ void Plane::stabilize_stick_mixing_fbw()
 #endif
         !quadplane.allow_stick_mixing() ||
 #endif  // HAL_QUADPLANE_ENABLED
-        control_mode == &mode_training) {
+        control_mode == &mode_training ||
+        control_mode == &mode_attack_cam ||
+        control_mode == &mode_attack_loc  ) {
         return;
     }
     // do FBW style stick mixing. We don't treat it linearly
@@ -377,6 +379,34 @@ void Plane::stabilize_yaw()
         SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, rudder_output);
         SRV_Channels::set_output_scaled(SRV_Channel::k_steering, steering_output);
     }
+
+}
+
+/*
+  this is the ATTACK mode function, it does stabilization in roll axes while rate control in pitch and yaw
+ */
+void Plane::stabilize_attack()
+{
+    const float speed_scaler = get_speed_scaler();
+    int32_t roll_angle_cd = 0;
+    float pitch_rate = 0.0f;
+    float yaw_rate = 0.0f;
+    if (uattack.is_active()) {
+        roll_angle_cd = (int32_t)(uattack.get_target_roll_angle() * 100.f);
+        pitch_rate = uattack.get_target_pitch_rate();
+        yaw_rate = uattack.get_target_yaw_rate();
+    }
+    plane.nav_roll_cd = roll_angle_cd;
+    stabilize_roll();
+
+    // SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, rollController.get_servo_out(roll_angle_cd, speed_scaler, false, false));
+    SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, pitchController.get_rate_out(pitch_rate,  speed_scaler));
+
+    int16_t rudder_output = yawController.get_rate_out(yaw_rate,  speed_scaler, false);
+    rudder_output = constrain_int16(rudder_output, -4500, 4500);
+    // Not doing ground steering, output rudder on steering channel
+    SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, rudder_output);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_steering, rudder_output);
 
 }
 
