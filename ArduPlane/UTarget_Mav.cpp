@@ -3,7 +3,7 @@
 // Convenience macros //////////////////////////////////////////////////////////
 //
 
-UTarget_Cam::UTarget_Cam(UAttack &frotend_in):
+UTarget_Mav::UTarget_Mav(UAttack &frotend_in):
     UTarget_Base(frotend_in)
 {
     _yaw_sample_filter.set_cutoff_frequency(30.f, 2.f);
@@ -11,19 +11,11 @@ UTarget_Cam::UTarget_Cam(UAttack &frotend_in):
     return;
 }
 
-bool UTarget_Cam::init() {
-    _port = nullptr;
-    const AP_SerialManager &serial_manager = AP::serialmanager();
-
-    // check for protocol configured for a serial port - only the first serial port with one of these protocols will then run (cannot have FrSky on multiple serial ports)
-    _port = serial_manager.find_serial(AP_SerialManager::SerialProtocol_CAM, 0);
-    if (_port != nullptr) {
-        return true;
-    }
-    return false;
+bool UTarget_Mav::init() {
+    return true;
 }
 
-void UTarget_Cam::update() {
+void UTarget_Mav::update() {
     static uint32_t last_update_ms = millis();
 
     uint32_t tnow = millis(); // 只能放这里，handle_info会更新_last_ms的值，如果tnow赋值在其之前，则会小于_last_ms。SITL仿不出来，它周期是50Hz太低了
@@ -33,20 +25,6 @@ void UTarget_Cam::update() {
         _yaw_filter.reset();
     }
 
-    if (get_port() == nullptr) {return;}
-    while (get_port()->available()>0) {
-        uint8_t temp = get_port()->read();
-        uart_msg_attack.parse(temp);
-
-        if (uart_msg_attack._msg_1.updated) {
-            // gcs().send_text(MAV_SEVERITY_INFO, "-> New Attack <-");
-            float p1 = 0.0f;
-            float p2 = 0.0f;
-            handle_info(p1, p2);
-            uart_msg_attack._msg_1.updated = false;
-        }
-    }
-
     // for print purpose
     if (tnow - last_update_ms > 1000) {
         //gcs().send_text(MAV_SEVERITY_INFO, "raw: %d, att: %d, arspd: %d", pk0_count, pk1_count, pk2_count);
@@ -54,15 +32,15 @@ void UTarget_Cam::update() {
     }
 }
 
-void UTarget_Cam::do_cmd() {
+void UTarget_Mav::do_cmd() {
     ;
 }
 
-bool UTarget_Cam::is_valid() {
+bool UTarget_Mav::is_valid() {
     return _valid;
 }
 
-void UTarget_Cam::handle_info(float p1, float p2) {
+void UTarget_Mav::handle_info(float p1, float p2) {
     _valid = true;
     _last_ms = millis();
 
@@ -118,7 +96,7 @@ void UTarget_Cam::handle_info(float p1, float p2) {
     _frotend.udpate_control_value();
 }
 
-void UTarget_Cam::handle_msg(const mavlink_message_t &msg)
+void UTarget_Mav::handle_msg(const mavlink_message_t &msg)
 {
     if (msg.msgid == MAVLINK_MSG_ID_COMMAND_LONG) {
         // decode packet
@@ -140,7 +118,7 @@ void UTarget_Cam::handle_msg(const mavlink_message_t &msg)
     }
 }
 
-void UTarget_Cam::handle_info_test(float p1, float p2) {
+void UTarget_Mav::handle_info_test(float p1, float p2) {
     // FD_DYT_NEW_msg_DYTTELEM &tmp_msg = FD1_uart_ptr->get_msg_DYTTELEM();
     // tmp_msg._msg_1.updated = true;
     // tmp_msg._msg_1.content.msg.target_x = (int16_t)(p1/0.005f);

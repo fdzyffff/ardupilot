@@ -1,6 +1,7 @@
 #pragma once
 
 #include <AP_HAL/AP_HAL.h>
+#include <FD1_UART/FD1_UART.h>
 #include "Uattack.h"
 
 class UAttack;
@@ -33,20 +34,25 @@ public:
     void update() override;
     void do_cmd() override;
     void handle_info(float p1, float p2) override;
-    void handle_msg(const mavlink_message_t &msg) override {return;};
+    void handle_msg(const mavlink_message_t &msg) override;
     void handle_info_test(float p1, float p2) override;
 
-    void fill_state_msg();
-    void foward_DYT_mavlink();
-    virtual AP_HAL::UARTDriver* get_port(void) {return nullptr;}
+    AP_HAL::UARTDriver* get_port(void) {return _port;}
+    FD1_msg_attack& get_msg_attack() { return uart_msg_attack; }
+
 private:
-    AP_HAL::UARTDriver* _target_port;
+    AP_HAL::UARTDriver* _port;
+    // message structure
+    FD1_msg_attack uart_msg_attack; //通用应答格式  飞控→任务
+
     uint32_t _last_ms;
 
     DerivativeFilterFloat_Size7 _pitch_filter;
     DerivativeFilterFloat_Size7 _yaw_filter;
-    LowPassFilterFloat _yaw_rate_filter;
-    LowPassFilterFloat _pitch_rate_filter;
+    LowPassFilterFloat _yaw_sample_filter;
+    LowPassFilterFloat _pitch_sample_filter;
+    float _last_yaw;
+    float _last_yaw_sample;
 };
 
 class UTarget_Loc: public UTarget_Base {
@@ -63,9 +69,33 @@ public:
     void handle_msg(const mavlink_message_t &msg) override;
     void handle_info_test(float p1, float p2) override;
 
-    void fill_state_msg();
 private:
     bool _have_target;
+    uint32_t _last_ms;
+
+    DerivativeFilterFloat_Size7 _pitch_filter;
+    DerivativeFilterFloat_Size7 _yaw_filter;
+    LowPassFilterFloat _yaw_sample_filter;
+    LowPassFilterFloat _pitch_sample_filter;
+    float _last_yaw;
+    float _last_yaw_sample;
+};
+
+class UTarget_Mav: public UTarget_Base {
+public:
+    friend class UAttack;
+
+    UTarget_Mav(UAttack &frotend_in);
+    ~UTarget_Mav() {};
+    bool init() override;
+    bool is_valid() override;
+    void update() override;
+    void do_cmd() override;
+    void handle_info(float p1, float p2) override;
+    void handle_msg(const mavlink_message_t &msg) override;
+    void handle_info_test(float p1, float p2) override;
+
+private:
     uint32_t _last_ms;
 
     DerivativeFilterFloat_Size7 _pitch_filter;

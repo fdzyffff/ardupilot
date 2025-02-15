@@ -189,6 +189,7 @@ public:
     friend class UAttack;
     friend class UTarget_Cam;
     friend class UTarget_Loc;
+    friend class UTarget_Mav;
 
     Plane(void);
 

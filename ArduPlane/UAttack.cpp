@@ -141,6 +141,17 @@ void UAttack::init_target()
                 gcs().send_text(MAV_SEVERITY_WARNING, "Target Loc Fail");
             }
         }
+
+        if (param_target_type == 3) {
+            _UTarget_ptr = new UTarget_Mav(*this);
+            if (_UTarget_ptr->init()) {
+                _target_type = param_target_type; 
+                gcs().send_text(MAV_SEVERITY_WARNING, "Target Mav init");
+            } else {
+                delete_target();
+                gcs().send_text(MAV_SEVERITY_WARNING, "Target Mav Fail");
+            }
+        }
     }
 }
 
@@ -252,7 +263,7 @@ void UAttack::update_target_yaw_rate() {
 }
 
 void UAttack::handle_attack_msg(const mavlink_message_t &msg) {
-    if (_target_type == 2 && _UTarget_ptr != nullptr) {
+    if ((_target_type == 2 || _target_type == 3) && _UTarget_ptr != nullptr) {
         _UTarget_ptr->handle_msg(msg);
     }
 }
