@@ -79,10 +79,10 @@ void UTarget_Loc::handle_info(float p1, float p2) {
     _frotend.bf_info.y = p2; // pitch degree
 
     float bf_dist = 100.0f;
-    float bf_z    = -bf_dist*sin(radians(p2));
-    float bf_xy   =  bf_dist*cos(radians(p2));
-    float bf_y    =  bf_xy*sin(radians(p1));
-    float bf_x    =  bf_xy*cos(radians(p1));
+    float bf_z    = -bf_dist*sinf(radians(p2));
+    float bf_xy   =  bf_dist*cosf(radians(p2));
+    float bf_y    =  bf_xy*sinf(radians(p1));
+    float bf_x    =  bf_xy*cosf(radians(p1));
     Vector3f bf_unit = Vector3f(bf_x, bf_y, bf_z);
     bf_unit.normalized();
 

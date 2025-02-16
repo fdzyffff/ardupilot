@@ -75,6 +75,6 @@ public:
 
     FD1UART_MSG_1 _msg_1;
 
-    const float SF_LNG = 180.f/(float)(pow(2,31)-1);
-    const float SF_LAT = 90.f/(float)(pow(2,31)-1);
+    const float SF_LNG = 180.f/(float)(powf(2,31)-1);
+    const float SF_LAT = 90.f/(float)(powf(2,31)-1);
 };
