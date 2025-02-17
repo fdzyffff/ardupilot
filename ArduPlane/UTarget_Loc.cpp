@@ -127,8 +127,9 @@ void UTarget_Loc::handle_msg(const mavlink_message_t &msg)
             case MAV_CMD_USER_1:
                 plane.mode_attack_loc.target_loc.lat = packet.x;
                 plane.mode_attack_loc.target_loc.lng = packet.y;
-                plane.mode_attack_loc.target_loc.set_alt_cm(packet.z*100.f, Location::AltFrame::ABOVE_HOME);
-                plane.mode_attack_loc.target_loc.change_alt_frame(Location::AltFrame::ABSOLUTE);
+                // plane.mode_attack_loc.target_loc.set_alt_cm(packet.z*100.f, Location::AltFrame::ABOVE_HOME);
+                // plane.mode_attack_loc.target_loc.change_alt_frame(Location::AltFrame::ABSOLUTE);
+                plane.mode_attack_loc.target_loc.set_alt_cm(packet.z*100.f, Location::AltFrame::ABSOLUTE);
                 _have_target = true;
                 break;
             default:
