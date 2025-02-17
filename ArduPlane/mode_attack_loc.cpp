@@ -78,7 +78,10 @@ void ModeAttackLoc::update()
         case stage_class::APPROACH:
             update_approach();
             if (check_approach()) {
-                set_stage(stage_class::ATTACK);
+                set_stage(stage_class::ATTACK);                
+                plane.g2.attack_roll_pid.reset_I();
+                plane.g2.attack_roll_pid.reset_filter();
+                plane.g2.attack_roll_pid.set_integrator(0);
             }
             break;
         case stage_class::ATTACK:
