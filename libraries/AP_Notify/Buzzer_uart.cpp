@@ -100,12 +100,12 @@ void Buzzer_uart::update_music_to_play()
 
     // check if prearm check are good
     if (AP_Notify::flags.pre_arm_check && !_flags.pre_arm_check) {
-        if (millis() - _pre_arm_check_time > 2000) {
+        if (AP_HAL::millis() - _pre_arm_check_time > 20000) {
             _flags.pre_arm_check = true;
             add_music(PRE_ARM_GOOD_BUZZ);
         }
     } else {
-        _pre_arm_check_time = millis();
+        _pre_arm_check_time = AP_HAL::millis();
     }
 
     // check if armed status has changed
