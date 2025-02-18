@@ -618,6 +618,24 @@ bool RC_Channel_Copter::do_aux_function(const aux_func_t ch_option, const AuxSwi
             }
             break;
 
+        case AUX_FUNC::ARMDISARM:
+            // arm or disarm the vehicle
+            switch (ch_flag) {
+                case AuxSwitchPos::HIGH:
+                    if (copter.user_arm_switch_count()) {
+                        if (!copter.arming.is_armed())
+                        {
+                            AP::arming().arm(AP_Arming::Method::AUXSWITCH, true);
+                        } else {
+                            AP::arming().disarm(AP_Arming::Method::AUXSWITCH);
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+            break;
+
 #if AC_CUSTOMCONTROL_MULTI_ENABLED == ENABLED
         case AUX_FUNC::CUSTOM_CONTROLLER:
             copter.custom_control.set_custom_controller(ch_flag == AuxSwitchPos::HIGH);

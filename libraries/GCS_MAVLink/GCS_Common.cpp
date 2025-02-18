@@ -1086,7 +1086,8 @@ ap_message GCS_MAVLINK::mavlink_id_to_ap_message_id(const uint32_t mavlink_id) c
         { MAVLINK_MSG_ID_RELAY_STATUS, MSG_RELAY_STATUS},
 #endif
 
-        { MAVLINK_MSG_ID_ZF_STATUS, MSG_ZF_STATUS},
+        { MAVLINK_MSG_ID_ZF6666_STATUS, MSG_ZF6666_STATUS},
+        { MAVLINK_MSG_ID_ZF8888_STATUS, MSG_ZF8888_STATUS},
             };
 
     for (uint8_t i=0; i<ARRAY_SIZE(map); i++) {
@@ -2895,9 +2896,20 @@ void GCS_MAVLINK::send_heartbeat() const
         system_status());
 }
 
-void GCS_MAVLINK::send_zf_status() const
+void GCS_MAVLINK::send_zf6666_status() const
 {
-    mavlink_msg_zf_status_send(
+    mavlink_msg_zf6666_status_send(
+        chan,
+        1,
+        1,
+        1,
+        1
+        );
+}
+
+void GCS_MAVLINK::send_zf8888_status() const
+{
+    mavlink_msg_zf8888_status_send(
         chan,
         1,
         1,
@@ -6214,9 +6226,14 @@ bool GCS_MAVLINK::try_send_message(const enum ap_message id)
         break;
 #endif
 
-    case MSG_ZF_STATUS:
-        CHECK_PAYLOAD_SIZE(ZF_STATUS);
-        send_zf_status();
+    case MSG_ZF6666_STATUS:
+        CHECK_PAYLOAD_SIZE(ZF6666_STATUS);
+        send_zf6666_status();
+        break;
+
+    case MSG_ZF8888_STATUS:
+        CHECK_PAYLOAD_SIZE(ZF8888_STATUS);
+        send_zf8888_status();
         break;
 
     default:

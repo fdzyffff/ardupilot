@@ -40,7 +40,8 @@ void Copter::userhook_SlowLoop()
 void Copter::userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
-    gcs().send_message(MSG_ZF_STATUS);
+    // gcs().send_message(MSG_ZF8888_STATUS); //电子桩, F4
+    gcs().send_message(MSG_ZF6666_STATUS); //飞控, H7
 }
 #endif
 
@@ -60,3 +61,22 @@ void Copter::userhook_auxSwitch3(const RC_Channel::AuxSwitchPos ch_flag)
     // put your aux switch #3 handler here (CHx_OPT = 49)
 }
 #endif
+
+bool Copter::user_arm_switch_count() {
+    static uint32_t last_ms = millis();
+    static uint8_t last_count = 0;
+    uint32_t now_ms = millis();
+    if (now_ms - last_ms < 1500) {
+        last_ms = now_ms;
+        last_count++;
+    } else {
+        last_ms = now_ms;
+        last_count = 0;
+        last_count++;
+    }
+    if (last_count >= 3) {
+        last_count = 0;
+        return true;
+    }
+    return false;
+}
