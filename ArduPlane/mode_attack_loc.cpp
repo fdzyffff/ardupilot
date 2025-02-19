@@ -3,8 +3,8 @@
 
 bool ModeAttackLoc::_enter()
 {
-    set_stage(stage_class::APPROACH);
     if (plane.uattack.is_active()) {
+        set_stage(stage_class::APPROACH);
         gcs().send_text(MAV_SEVERITY_INFO, "Attack LOC!");
         build_path();
         _cmd_throttle = MAX(SRV_Channels::get_output_scaled(SRV_Channel::k_throttle), plane.aparm.throttle_cruise);
