@@ -9,8 +9,13 @@ public:
     void handle_msg(const mavlink_message_t &msg);
     void handle_selfcheck(const mavlink_message_t &msg);
     void handle_target(const mavlink_message_t &msg);
+    void handle_target_result(const mavlink_message_t &msg);
+    void handle_selfcheck_result(const mavlink_message_t &msg);
+    void handle_status(const mavlink_message_t &msg);
     void handle_mission(const mavlink_message_t &msg);
-    void handle_relay(const mavlink_message_t &msg);
+    void handle_mission_result(const mavlink_message_t &msg);
+    void handle_relay_position(const mavlink_message_t &msg);
+    void handle_relay_position_result(const mavlink_message_t &msg);
     void handle_attack_info(const mavlink_message_t &msg);
     void handle_attack_cmd(const mavlink_message_t &msg);
     void handle_nav_cmd(const mavlink_message_t &msg);

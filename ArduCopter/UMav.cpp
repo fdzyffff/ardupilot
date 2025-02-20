@@ -18,8 +18,26 @@ void UMav::handle_msg(const mavlink_message_t &msg)
         case MAVLINK_MSG_ID_WXBS_TARGET:
             handle_target(msg);
             break;
+        case MAVLINK_MSG_ID_WXBS_TARGET_RESULT:
+            handle_target_result(msg);
+            break;
+        case MAVLINK_MSG_ID_WXBS_SELFCHECK_RESULT:
+            handle_selfcheck_result(msg);
+            break;
+        case MAVLINK_MSG_ID_WXBS_STATUS:
+            handle_status(msg);
+            break;
+        case MAVLINK_MSG_ID_WXBS_RELAY_POSITION:
+            handle_relay_position(msg);
+            break;
+        case MAVLINK_MSG_ID_WXBS_RELAY_POSITION_RESULT:
+            handle_relay_position_result(msg);
+            break;
         case MAVLINK_MSG_ID_WXBS_MISSION:
             handle_mission(msg);
+            break;
+        case MAVLINK_MSG_ID_WXBS_MISSION_RESULT:
+            handle_mission_result(msg);
             break;
         case MAVLINK_MSG_ID_WXBS_ATTACK_INFO:
             handle_attack_info(msg);
@@ -48,6 +66,7 @@ void UMav::handle_selfcheck(const mavlink_message_t &msg)
         }
     }
 }
+
 void UMav::handle_target(const mavlink_message_t &msg)
 {
     //handle target cmd 401;
@@ -57,9 +76,39 @@ void UMav::handle_target(const mavlink_message_t &msg)
         mavlink_wxbs_target_t packet;
         mavlink_msg_wxbs_target_decode(&msg, &packet);
         _target_ok = 1;
-        send_target();
+        // send_target();
+        send_target_result();
     }
 }
+
+void UMav::handle_target_result(const mavlink_message_t &msg)
+{
+    //handle target cmd 401;
+    if (msg.msgid == MAVLINK_MSG_ID_WXBS_TARGET_RESULT) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Receive WXBS_TARGET_RESULT");
+        // decode packet
+    }
+}
+
+void UMav::handle_selfcheck_result(const mavlink_message_t &msg)
+{
+    //handle target cmd 401;
+    if (msg.msgid == MAVLINK_MSG_ID_WXBS_SELFCHECK_RESULT) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Receive WXBS_SELFCHECK_RESULT");
+        // decode packet
+    }
+}
+
+
+void UMav::handle_status(const mavlink_message_t &msg)
+{
+    //handle target cmd 401;
+    if (msg.msgid == MAVLINK_MSG_ID_WXBS_STATUS) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Receive WXBS_STATUS");
+        // decode packet
+    }
+}
+
 
 void UMav::handle_mission(const mavlink_message_t &msg)
 {
@@ -70,14 +119,23 @@ void UMav::handle_mission(const mavlink_message_t &msg)
         mavlink_wxbs_mission_t packet;
         mavlink_msg_wxbs_mission_decode(&msg, &packet);
         _mission_ok = 1;
-        send_mission();
+        send_mission_result();
     }
 }
 
-void UMav::handle_relay(const mavlink_message_t &msg)
+void UMav::handle_mission_result(const mavlink_message_t &msg)
+{
+    //handle mission cmd 405;
+    if (msg.msgid == MAVLINK_MSG_ID_WXBS_MISSION_RESULT) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Receive WXBS_MISSION_RESULT");
+        // decode packet
+    }
+}
+
+void UMav::handle_relay_position(const mavlink_message_t &msg)
 {
     //handle relay cmd 407;
-    if (msg.msgid == MAVLINK_MSG_ID_WXBS_MISSION) {
+    if (msg.msgid == MAVLINK_MSG_ID_WXBS_RELAY_POSITION) {
         gcs().send_text(MAV_SEVERITY_INFO, "Receive WXBS_RELAY_POSITION");
         // decode packet
         mavlink_wxbs_relay_position_t packet;
@@ -85,6 +143,16 @@ void UMav::handle_relay(const mavlink_message_t &msg)
         send_relay_position_result();
     }
 }
+
+void UMav::handle_relay_position_result(const mavlink_message_t &msg)
+{
+    //handle relay cmd 407;
+    if (msg.msgid == MAVLINK_MSG_ID_WXBS_RELAY_POSITION_RESULT) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Receive WXBS_RELAY_POSITION_RESULT");
+        // decode packet
+    }
+}
+
 
 void UMav::handle_attack_info(const mavlink_message_t &msg)
 {
@@ -118,7 +186,6 @@ void UMav::handle_nav_cmd(const mavlink_message_t &msg)
         mavlink_msg_wxbs_nav_cmd_decode(&msg, &packet);
     }
 }
-
 
 void UMav::send_do_selfcheck() 
 {
@@ -332,11 +399,11 @@ void UMav::send_apm_status()
 
 void UMav::send_all()
 {
-    send_do_selfcheck();
-    send_target();
-    send_mission();
-    send_relay_position();
-    send_apm_status();
+    // send_do_selfcheck();
+    // send_target();
+    // send_mission();
+    // send_relay_position();
+    // send_apm_status();
 }
 
 

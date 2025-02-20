@@ -72,7 +72,7 @@ void ModeThrow::run()
         // initialise the demanded height to 3m above the throw height
         // we want to rapidly clear surrounding obstacles
         if (g2.throw_type == ThrowType::Drop) {
-            pos_control->set_pos_target_z_cm(inertial_nav.get_position_z_up_cm() + 20);
+            pos_control->set_pos_target_z_cm(inertial_nav.get_position_z_up_cm() - 30);
         } else {
             pos_control->set_pos_target_z_cm(inertial_nav.get_position_z_up_cm() + 200);
         }
@@ -340,7 +340,8 @@ bool ModeThrow::throw_attitude_good() const
 bool ModeThrow::throw_height_good() const
 {
     // Check that we are within 0.5m of the demanded height
-    return (pos_control->get_pos_error_z_cm() < 50.0f);
+    // return (pos_control->get_pos_error_z_cm() < 50.0f);
+    return true;
 }
 
 bool ModeThrow::throw_position_good() const
