@@ -177,7 +177,6 @@
 #endif
 #include "Parameters.h"
 #include "mode.h"
-#include "FD_UART/FD_UART.h"
 #include "UMav.h"
 
 class Copter : public AP_Vehicle {
@@ -235,6 +234,11 @@ public:
     friend class PayloadPlace;
 
     friend class UMav;
+    friend class UMav_trans_status;
+    friend class UMav_trans_selfcheck;
+    friend class UMav_trans_target;
+    friend class UMav_trans_mission;
+    friend class UMav_trans_relay_positon;
 
     Copter(void);
 
@@ -1067,15 +1071,8 @@ private:
 
     UMav umav;
 
-    struct {
-        // socket to telem2 on aircraft
-        bool connected;
-        mavlink_message_t rxmsg;
-        mavlink_status_t status;
-        uint8_t seq;
-    } mavlink;
-
-    FD_UART FD_uart_msg{AP_SerialManager::SerialProtocol_IMU};
+    FD_UART FD_uart_imu{AP_SerialManager::SerialProtocol_IMU};
+    FD_UART FD_uart_bsq{AP_SerialManager::SerialProtocol_BSQ};
 
 public:
     void failsafe_check();      // failsafe.cpp

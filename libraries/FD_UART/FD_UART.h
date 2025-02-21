@@ -14,8 +14,8 @@ public:
     }
 
     /* Do not allow copies */
-    FD_UART(const FD_UART &other) = delete;
-    FD_UART &operator=(const FD_UART&) = delete;
+    // FD_UART(const FD_UART &other) = delete;
+    // FD_UART &operator=(const FD_UART&) = delete;
 
     // init - perform required initialisation
     bool init();

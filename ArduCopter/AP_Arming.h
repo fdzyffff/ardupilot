@@ -9,6 +9,12 @@ public:
     friend class ToyMode;
     friend class UMav;
 
+    friend class UMav_trans_status;
+    friend class UMav_trans_selfcheck;
+    friend class UMav_trans_target;
+    friend class UMav_trans_mission;
+    friend class UMav_trans_relay_positon;
+
     AP_Arming_Copter() : AP_Arming()
     {
         // default REQUIRE parameter to 1 (Copter does not have an
