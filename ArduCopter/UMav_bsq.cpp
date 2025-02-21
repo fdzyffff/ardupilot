@@ -62,37 +62,37 @@ void UMav::send_bsq_message(mavlink_message_t *msg)
     ck[1] = (uint8_t)(msg->checksum >> 8);
     // XXX use the right sequence here
 
-        uint8_t header_len;
-        // uint8_t signature_len;
-        
-        if (msg->magic == MAVLINK_STX_MAVLINK1) {
-            header_len = MAVLINK_CORE_HEADER_MAVLINK1_LEN + 1;
-            // signature_len = 0;
-            // we can't send the structure directly as it has extra mavlink2 elements in it
-            uint8_t buf[MAVLINK_CORE_HEADER_MAVLINK1_LEN + 1];
-            buf[0] = msg->magic;
-            buf[1] = msg->len;
-            buf[2] = msg->seq;
-            buf[3] = msg->sysid;
-            buf[4] = msg->compid;
-            buf[5] = msg->msgid & 0xFF;
-            FD_uart_bsq.get_port()->write(buf, header_len);
-        } else {
-            header_len = MAVLINK_CORE_HEADER_LEN + 1;
-            // signature_len = (msg->incompat_flags & MAVLINK_IFLAG_SIGNED)?MAVLINK_SIGNATURE_BLOCK_LEN:0;
-            uint8_t buf[MAVLINK_CORE_HEADER_LEN + 1];
-            buf[0] = msg->magic;
-            buf[1] = msg->len;
-            buf[2] = msg->incompat_flags;
-            buf[3] = msg->compat_flags;
-            buf[4] = msg->seq;
-            buf[5] = msg->sysid;
-            buf[6] = msg->compid;
-            buf[7] = msg->msgid & 0xFF;
-            buf[8] = (msg->msgid >> 8) & 0xFF;
-            buf[9] = (msg->msgid >> 16) & 0xFF;
-            FD_uart_bsq.get_port()->write(buf, header_len);
-        }
+    uint8_t header_len;
+    // uint8_t signature_len;
+    
+    if (msg->magic == MAVLINK_STX_MAVLINK1) {
+        header_len = MAVLINK_CORE_HEADER_MAVLINK1_LEN + 1;
+        // signature_len = 0;
+        // we can't send the structure directly as it has extra mavlink2 elements in it
+        uint8_t buf[MAVLINK_CORE_HEADER_MAVLINK1_LEN + 1];
+        buf[0] = msg->magic;
+        buf[1] = msg->len;
+        buf[2] = msg->seq;
+        buf[3] = msg->sysid;
+        buf[4] = msg->compid;
+        buf[5] = msg->msgid & 0xFF;
+        FD_uart_bsq.get_port()->write(buf, header_len);
+    } else {
+        header_len = MAVLINK_CORE_HEADER_LEN + 1;
+        // signature_len = (msg->incompat_flags & MAVLINK_IFLAG_SIGNED)?MAVLINK_SIGNATURE_BLOCK_LEN:0;
+        uint8_t buf[MAVLINK_CORE_HEADER_LEN + 1];
+        buf[0] = msg->magic;
+        buf[1] = msg->len;
+        buf[2] = msg->incompat_flags;
+        buf[3] = msg->compat_flags;
+        buf[4] = msg->seq;
+        buf[5] = msg->sysid;
+        buf[6] = msg->compid;
+        buf[7] = msg->msgid & 0xFF;
+        buf[8] = (msg->msgid >> 8) & 0xFF;
+        buf[9] = (msg->msgid >> 16) & 0xFF;
+        FD_uart_bsq.get_port()->write(buf, header_len);
+    }
 
     FD_uart_bsq.get_port()->write((uint8_t *)_MAV_PAYLOAD(msg), msg->len);
     FD_uart_bsq.get_port()->write((uint8_t *)ck, 2);
