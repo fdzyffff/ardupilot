@@ -14,7 +14,7 @@ void UMav_trans_status::handle_mission_msg(const mavlink_message_t &msg)
 {
     //handle target cmd 402;
     if (msg.msgid == MAVLINK_MSG_ID_WXBS_STATUS) {
-        // gcs().send_text(MAV_SEVERITY_INFO, "Receive WXBS_STATUS_RESULT");
+        // gcs().send_text(MAV_SEVERITY_INFO, "Receive WXBS_STATUS");
         // decode packet
         mavlink_msg_wxbs_status_decode(&msg, &packet);
     }
@@ -26,16 +26,15 @@ void UMav_trans_status::send_bsq_msg()
     // gcs().send_text(MAV_SEVERITY_INFO, "Send WXBS_SELFCHECK_RESULT");
 
     mavlink_message_t msg;
-    uint16_t len;
 
     packet.throw_status = copter.arming.pre_arm_checks(false);
     packet.battery = 3;
 
-    len = mavlink_msg_wxbs_status_encode(copter.g.sysid_this_mav,
+    UNUSED_RESULT(mavlink_msg_wxbs_status_encode(copter.g.sysid_this_mav,
                                         0,
-                                        &msg, &packet);
+                                        &msg, &packet));
 
-    copter.umav.send_bsq_message(msg, len);
+    copter.umav.send_bsq_message(&msg);
 }
 
 // ~~~~~~~~~~~~~~~~~~ WXBS_DO_SELFCHECK ~~~~~~~~~~~~~~~~~~
@@ -50,7 +49,7 @@ void UMav_trans_selfcheck::update()
         bsq_waiting = false;
     }
 
-    if (tnow_ms - last_send_mission_ms > repeat_time_ms) {
+    if ((tnow_ms - last_send_mission_ms > repeat_time_ms) || (last_send_mission_ms == 0)) {
         send_mission_msg();
         last_send_mission_ms = tnow_ms;
     }
@@ -107,15 +106,14 @@ void UMav_trans_selfcheck::send_bsq_msg()
     gcs().send_text(MAV_SEVERITY_INFO, "Send WXBS_SELFCHECK_RESULT");
 
     mavlink_message_t msg;
-    uint16_t len;
 
     out_packet.controller_ok = copter.arming.pre_arm_checks(false);
 
-    len = mavlink_msg_wxbs_selfcheck_result_encode(copter.g.sysid_this_mav,
+    UNUSED_RESULT(mavlink_msg_wxbs_selfcheck_result_encode(copter.g.sysid_this_mav,
                                         0,
-                                        &msg, &out_packet);
+                                        &msg, &out_packet));
 
-    copter.umav.send_bsq_message(msg, len);
+    copter.umav.send_bsq_message(&msg);
 }
 
 // ~~~~~~~~~~~~~~~~~~ WXBS_TARGET ~~~~~~~~~~~~~~~~~~
@@ -130,7 +128,7 @@ void UMav_trans_target::update()
         bsq_waiting = false;
     }
 
-    if (tnow_ms - last_send_mission_ms > repeat_time_ms) {
+    if ((tnow_ms - last_send_mission_ms > repeat_time_ms) || (last_send_mission_ms == 0)) {
         send_mission_msg();
         last_send_mission_ms = tnow_ms;
     }
@@ -189,13 +187,12 @@ void UMav_trans_target::send_bsq_msg()
     gcs().send_text(MAV_SEVERITY_INFO, "Send WXBS_TARGET_RESULT");
 
     mavlink_message_t msg;
-    uint16_t len;
 
-    len = mavlink_msg_wxbs_target_result_encode(copter.g.sysid_this_mav,
+    UNUSED_RESULT(mavlink_msg_wxbs_target_result_encode(copter.g.sysid_this_mav,
                                         0,
-                                        &msg, &out_packet);
+                                        &msg, &out_packet));
 
-    copter.umav.send_bsq_message(msg, len);
+    copter.umav.send_bsq_message(&msg);
 }
 
 // ~~~~~~~~~~~~~~~~~~ WXBS_MISSION ~~~~~~~~~~~~~~~~~~
@@ -210,7 +207,7 @@ void UMav_trans_mission::update()
         bsq_waiting = false;
     }
 
-    if (tnow_ms - last_send_mission_ms > repeat_time_ms) {
+    if ((tnow_ms - last_send_mission_ms > repeat_time_ms) || (last_send_mission_ms == 0)) {
         send_mission_msg();
         last_send_mission_ms = tnow_ms;
     }
@@ -219,8 +216,8 @@ void UMav_trans_mission::update()
 void UMav_trans_mission::handle_bsq_msg(const mavlink_message_t &msg)
 {
     //handle relay cmd 405;
-    if (msg.msgid == MAVLINK_MSG_ID_WXBS_MISSION_RESULT) {
-        gcs().send_text(MAV_SEVERITY_INFO, "Receive WXBS_MISSION_RESULT");
+    if (msg.msgid == MAVLINK_MSG_ID_WXBS_MISSION) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Receive WXBS_MISSION");
         // decode packet
         mavlink_msg_wxbs_mission_decode(&msg, &in_packet);
         bsq_waiting = true;
@@ -270,13 +267,12 @@ void UMav_trans_mission::send_bsq_msg()
     gcs().send_text(MAV_SEVERITY_INFO, "Send WXBS_MISSION_RESULT");
 
     mavlink_message_t msg;
-    uint16_t len;
 
-    len = mavlink_msg_wxbs_mission_result_encode(copter.g.sysid_this_mav,
+    UNUSED_RESULT(mavlink_msg_wxbs_mission_result_encode(copter.g.sysid_this_mav,
                                         0,
-                                        &msg, &out_packet);
+                                        &msg, &out_packet));
 
-    copter.umav.send_bsq_message(msg, len);
+    copter.umav.send_bsq_message(&msg);
 }
 
 // ~~~~~~~~~~~~~~~~~~ WXBS_RELAY_POSITION ~~~~~~~~~~~~~~~~~~
@@ -291,7 +287,7 @@ void UMav_trans_relay_positon::update()
         bsq_waiting = false;
     }
 
-    if (tnow_ms - last_send_mission_ms > repeat_time_ms) {
+    if ((tnow_ms - last_send_mission_ms > repeat_time_ms) || (last_send_mission_ms == 0)) {
         send_mission_msg();
         last_send_mission_ms = tnow_ms;
     }
@@ -300,8 +296,8 @@ void UMav_trans_relay_positon::update()
 void UMav_trans_relay_positon::handle_bsq_msg(const mavlink_message_t &msg)
 {
     //handle relay cmd 407;
-    if (msg.msgid == MAVLINK_MSG_ID_WXBS_RELAY_POSITION_RESULT) {
-        gcs().send_text(MAV_SEVERITY_INFO, "Receive WXBS_RELAY_POSITION_RESULT");
+    if (msg.msgid == MAVLINK_MSG_ID_WXBS_RELAY_POSITION) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Receive WXBS_RELAY_POSITION");
         // decode packet
         mavlink_msg_wxbs_relay_position_decode(&msg, &in_packet);
         bsq_waiting = true;
@@ -350,12 +346,11 @@ void UMav_trans_relay_positon::send_bsq_msg()
     gcs().send_text(MAV_SEVERITY_INFO, "Send WXBS_RELAY_POSITION_RESULT");
 
     mavlink_message_t msg;
-    uint16_t len;
 
-    len = mavlink_msg_wxbs_relay_position_result_encode(copter.g.sysid_this_mav,
+    UNUSED_RESULT(mavlink_msg_wxbs_relay_position_result_encode(copter.g.sysid_this_mav,
                                         0,
-                                        &msg, &out_packet);
+                                        &msg, &out_packet));
 
-    copter.umav.send_bsq_message(msg, len);
+    copter.umav.send_bsq_message(&msg);
 }
 

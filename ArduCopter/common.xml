@@ -6455,6 +6455,7 @@
       <field type="uint8_t" name="num_ids">number of IDs in filter list</field>
       <field type="uint16_t[16]" name="ids">filter IDs, length num_ids</field>
     </message>
+
     <message id="400" name="WXBS_DO_SELFCHECK">
       <description> </description>
       <field type="uint8_t" name="do_check">0:none, 1:check.</field>

@@ -16,7 +16,7 @@ public:
     void send_raw_imu();
     void read_bsq_message();
     void handle_bsq_msg(const mavlink_message_t &msg);
-    void send_bsq_message(const mavlink_message_t &msg, uint16_t len);
+    void send_bsq_message(mavlink_message_t *msg);
     void send_apm_status();
 
     void handle_mission_msg(const mavlink_message_t &msg);
