@@ -24,6 +24,7 @@
 #include "AP_Airspeed.h"
 
 class AP_Airspeed_Backend {
+    friend class AP_Airspeed;
 public:
     AP_Airspeed_Backend(AP_Airspeed &frontend, uint8_t instance);
     virtual ~AP_Airspeed_Backend();

@@ -52,7 +52,7 @@ void UFollow::update()
 void UFollow::get_target_pos(Location &loc)
 {
     loc = _raw_target_loc;
-    float delta_t = 0.01f*(float)(millis() - _last_update_ms);
+    float delta_t = 0.001f*(float)(millis() - _last_update_ms);
     float dist_offset = _target_vel * delta_t;
     loc.offset_bearing(_target_bearing, dist_offset);
 }

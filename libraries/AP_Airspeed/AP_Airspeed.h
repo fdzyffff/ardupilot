@@ -37,6 +37,8 @@ public:
     // constructor
     AP_Airspeed();
 
+    void print_status();
+
     void init(void);
 
     // indicate which bit in LOG_BITMASK indicates we should log airspeed readings

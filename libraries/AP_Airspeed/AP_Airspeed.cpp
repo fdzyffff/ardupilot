@@ -345,6 +345,26 @@ bool AP_Airspeed::add_backend(AP_Airspeed_Backend *backend)
     return true;
 }
 
+
+void AP_Airspeed::print_status()
+{
+    for (uint8_t i=0; i<AIRSPEED_MAX_SENSORS; i++) {
+        if (enabled(i)) {
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO,"enabled(%d)", i);
+        } else {
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO,"disabled(%d)", i);
+        }
+
+        if (sensor[i] == nullptr) {
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO,"nullptr(%d)", i);
+        }
+
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO,"instance(%d):%d", i, sensor[i]->get_instance());
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO,"get_pressure(%d):%f", i, get_pressure(i));
+    }
+}
+
+
 /*
   macro to add a backend with check for too many sensors
   We don't try to start more than the maximum allowed
@@ -728,7 +748,6 @@ void AP_Airspeed::handle_msp(const MSP::msp_airspeed_data_message_t &pkt)
 // @Field: Id: sensor ID
 // @Field: Humidity: percentage humidity
 // @Field: Temp: temperature in degrees C
-
 void AP_Airspeed::Log_Airspeed()
 {
     const uint64_t now = AP_HAL::micros64();
