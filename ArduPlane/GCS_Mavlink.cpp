@@ -779,6 +779,7 @@ void GCS_MAVLINK_Plane::packetReceived(const mavlink_status_t &status,
     // pass message to follow library
     plane.g2.follow.handle_msg(msg);
 #endif
+    plane.uattack.handle_attack_msg(msg);
     GCS_MAVLINK::packetReceived(status, msg);
 }
 

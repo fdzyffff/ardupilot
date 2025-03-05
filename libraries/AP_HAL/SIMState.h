@@ -82,6 +82,8 @@ private:
     void _fdm_input_step(void);
     void fdm_input_local(void);
 
+    float get_EAS2TAS(float altitude);
+
     void wait_clock(uint64_t wait_time_usec);
 
     uint16_t pwm_input[16];  // was SITL_RC_INPUT_CHANNELS
