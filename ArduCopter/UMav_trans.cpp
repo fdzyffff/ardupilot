@@ -17,6 +17,7 @@ void UMav_trans_status::handle_mission_msg(const mavlink_message_t &msg)
         // gcs().send_text(MAV_SEVERITY_INFO, "Receive WXBS_STATUS");
         // decode packet
         mavlink_msg_wxbs_status_decode(&msg, &packet);
+        // gcs().send_text(MAV_SEVERITY_INFO, "Receive WXBS_STATUS %d", packet);
     }
 }
 
@@ -27,6 +28,7 @@ void UMav_trans_status::send_bsq_msg()
 
     mavlink_message_t msg;
 
+    packet.type = 0;
     packet.throw_status = copter.arming.pre_arm_checks(false);
     packet.battery = 3;
 
