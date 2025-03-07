@@ -1,4 +1,4 @@
-/// @file	AP_Motors4X4.h
+/// @file	AP_Motors2X3.h
 /// @brief	Motor control class for Tricopters
 #pragma once
 
@@ -6,18 +6,17 @@
 #include <AP_Math/AP_Math.h>        // ArduPilot Mega Vector/Matrix math Library
 #include "AP_MotorsMulticopter.h"
 
-// tilt servos 1~4
-#define AP_SERVO_1 CH_9
-#define AP_SERVO_2 CH_10
-#define AP_SERVO_3 CH_11
-#define AP_SERVO_4 CH_12
+// tilt servos 1~3
+#define AP_SERVO_1 CH_4
+#define AP_SERVO_2 CH_5
+#define AP_SERVO_3 CH_6
 
-/// @class      AP_Motors4X4
-class AP_Motors4X4 : public AP_MotorsMulticopter {
+/// @class      AP_Motors2X3
+class AP_Motors2X3 : public AP_MotorsMulticopter {
 public:
 
     /// Constructor
-    AP_Motors4X4(uint16_t speed_hz = AP_MOTORS_SPEED_DEFAULT) :
+    AP_Motors2X3(uint16_t speed_hz = AP_MOTORS_SPEED_DEFAULT) :
         AP_MotorsMulticopter(speed_hz)
     {
     };
@@ -55,7 +54,7 @@ protected:
     // call vehicle supplied thrust compensation if set
     void                thrust_compensation(void) override;
 
-    const char* _get_frame_string() const override { return "4X4"; }
+    const char* _get_frame_string() const override { return "2X3"; }
 
     // output_test_seq - spin a motor at the pwm value specified
     //  motor_seq is the motor's sequence number from 1 to the number of motors on the frame
@@ -69,14 +68,8 @@ protected:
 
     float           _m1_out;
     float           _m2_out;
-    float           _m3_out;
-    float           _m4_out;
-    float           _m5_out;
-    float           _m6_out;
-    float           _m7_out;
-    float           _m8_out;
+
     float           _s1_out;
     float           _s2_out;
     float           _s3_out;
-    float           _s4_out;
 };
