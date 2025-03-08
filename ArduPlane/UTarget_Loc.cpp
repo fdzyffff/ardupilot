@@ -131,6 +131,9 @@ void UTarget_Loc::handle_msg(const mavlink_message_t &msg)
                 // plane.mode_attack_loc.target_loc.change_alt_frame(Location::AltFrame::ABSOLUTE);
                 plane.mode_attack_loc.target_loc.set_alt_cm(packet.z*100.f, Location::AltFrame::ABSOLUTE);
                 _have_target = true;
+                // gcs().send_text(MAV_SEVERITY_INFO,"x %f", (float)packet.x);
+                // gcs().send_text(MAV_SEVERITY_INFO,"y %f", (float)packet.y);
+                // gcs().send_text(MAV_SEVERITY_INFO,"z %f", (float)packet.z);
                 break;
             default:
                 break;
