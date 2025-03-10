@@ -1,4 +1,7 @@
 #include "Copter.h"
+#if HAL_MAX_CAN_PROTOCOL_DRIVERS
+  #include <FD_CAN/FD_CAN.h>
+#endif
 
 #ifdef USERHOOK_INIT
 void Copter::userhook_init()
@@ -40,6 +43,20 @@ void Copter::userhook_SlowLoop()
 void Copter::userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
+    uint8_t can_num_drivers = AP::can().get_num_drivers();
+    for (uint8_t i = 0; i < can_num_drivers; i++) {
+        switch (AP::can().get_driver_type(i)) {
+            case AP_CAN::Protocol::FDCAN: {
+                    FD_CAN *fd_can = FD_CAN::get_can_fd(i);
+                    if (fd_can == nullptr) {
+                        continue;
+                    }
+                break;
+            }
+            default:
+                break;
+        }
+    }
 }
 #endif
 

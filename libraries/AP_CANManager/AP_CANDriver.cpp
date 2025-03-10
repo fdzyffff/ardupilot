@@ -22,6 +22,7 @@
 #include <AP_DroneCAN/AP_DroneCAN.h>
 #include <AP_PiccoloCAN/AP_PiccoloCAN.h>
 #include <AP_KDECAN/AP_KDECAN.h>
+#include <FD_CAN/FD_CAN.h>
 
 
 // table of user settable CAN bus parameters
@@ -59,6 +60,7 @@ const AP_Param::GroupInfo AP_CANManager::CANDriver_Params::var_info[] = {
     // @RebootRequired: True
     AP_GROUPINFO("PROTOCOL2", 6, AP_CANManager::CANDriver_Params, _driver_type_11bit, float(AP_CAN::Protocol::None)),
     
+    AP_SUBGROUPPTR(_fdcan, "FC_", 7, AP_CANManager::CANDriver_Params, FD_CAN),
     AP_GROUPEND
 };
 #endif
