@@ -180,6 +180,7 @@
 #include "mode.h"
 
 #include "UBase.h"
+#include "UAtt.h"
 
 class Copter : public AP_Vehicle {
 public:
@@ -229,6 +230,7 @@ public:
     friend class ModeTurtle;
 
     friend class UBase;
+    friend class UAtt;
 
     Copter(void);
 
@@ -941,6 +943,7 @@ private:
 
     // UserCode.cpp
     void userhook_init();
+    void userhook_SuperLoop();
     void userhook_FastLoop();
     void userhook_50Hz();
     void userhook_MediumLoop();
@@ -1033,6 +1036,8 @@ private:
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);
 
     UBase ubase;
+    UAtt uatt;
+
 
 public:
     void failsafe_check();      // failsafe.cpp

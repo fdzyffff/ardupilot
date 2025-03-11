@@ -74,12 +74,12 @@ void ModeStabilize::run()
     attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_roll, target_pitch, target_yaw_rate);
 
     // output pilot's throttle
-    attitude_control->set_throttle_out(pilot_desired_throttle, true, g.throttle_filt);
+    attitude_control->set_throttle_out(pilot_desired_throttle, false, g.throttle_filt);
 
     float target_down = motors->get_throttle_in();
 
     Matrix3f tmp_m;
-    tmp_m.from_euler(copter.ahrs_view->roll, copter.ahrs_view->pitch, 0.0f);
+    tmp_m.from_euler(copter.uatt.roll, copter.uatt.pitch, 0.0f);
     Vector3f tmp_input = Vector3f(target_forward, target_lateral, target_down);
     Vector3f tmp_output = tmp_m * tmp_input;
     // target_forward = 0.0f;
@@ -90,6 +90,6 @@ void ModeStabilize::run()
     // }
     motors->set_forward(tmp_output.x);
     motors->set_lateral(tmp_output.y);
-    attitude_control->set_throttle_out(tmp_output.z, true, g.throttle_filt);
+    attitude_control->set_throttle_out(tmp_output.z, false, g.throttle_filt);
     // gcs().send_text(MAV_SEVERITY_INFO, "%0.2f, %0.2f, %0.2f",target_down, tmp_output.z, motors->get_throttle());
 }

@@ -6,8 +6,17 @@ void Copter::userhook_init()
     // put your initialisation code here
     // this will be called once at start-up
     ubase.init();
+    uatt.init();
 }
 #endif
+
+void Copter::userhook_SuperLoop()
+{
+#ifdef USERHOOK_FASTLOOP
+    uatt.update();
+#endif
+}
+
 
 #ifdef USERHOOK_FASTLOOP
 void Copter::userhook_FastLoop()

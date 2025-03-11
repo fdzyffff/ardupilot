@@ -44,7 +44,7 @@ void AP_Motors2X3::init(motor_frame_class frame_class, motor_frame_type frame_ty
 
     SRV_Channels::set_angle(SRV_Channels::get_motor_function(AP_SERVO_1), 2000);//k_motor 4
     SRV_Channels::set_angle(SRV_Channels::get_motor_function(AP_SERVO_2), 2000);//k_motor 5
-    SRV_Channels::set_angle(SRV_Channels::get_motor_function(AP_SERVO_3), 6000);//k_motor 6
+    SRV_Channels::set_angle(SRV_Channels::get_motor_function(AP_SERVO_3), 5500);//k_motor 6
 
     _mav_type = MAV_TYPE_QUADROTOR;
 
@@ -66,8 +66,8 @@ void AP_Motors2X3::set_update_rate(uint16_t speed_hz)
 
     // set update rate for the 3 motors (but not the servo on channel 7)
     uint32_t mask = 
-	    1U << AP_MOTORS_MOT_1 |
-	    1U << AP_MOTORS_MOT_2;
+        1U << AP_MOTORS_MOT_1 |
+        1U << AP_MOTORS_MOT_2;
     rc_set_freq(mask, _speed_hz);
 }
 
@@ -80,7 +80,7 @@ void AP_Motors2X3::output_to_motors()
             rc_write(AP_MOTORS_MOT_2, output_to_pwm(0));
             rc_write_angle(AP_SERVO_1,  0);
             rc_write_angle(AP_SERVO_2,  0);
-            rc_write_angle(AP_SERVO_3, -4500);
+            rc_write_angle(AP_SERVO_3, -3500);
             break;
         case SpoolState::GROUND_IDLE:
             // sends output to motors when armed but not flying
@@ -90,7 +90,7 @@ void AP_Motors2X3::output_to_motors()
             rc_write(AP_MOTORS_MOT_2, output_to_pwm(_actuator[2]));
             rc_write_angle(AP_SERVO_1,  0);
             rc_write_angle(AP_SERVO_2,  0);
-            rc_write_angle(AP_SERVO_3, -4500);
+            rc_write_angle(AP_SERVO_3, -3500);
             break;
         case SpoolState::SPOOLING_UP:
         case SpoolState::THROTTLE_UNLIMITED:
@@ -126,9 +126,9 @@ uint32_t AP_Motors2X3::get_motor_mask()
 // includes new scaling stability patch
 void AP_Motors2X3::output_armed_stabilizing()
 {
-    float SQ2 = 1.414f;
-    float L_c = 0.08f;// dist from servo axis to mass center
-    float L_arm = 0.09f;//dist from servo axis to small servo axis
+    float SQ2 = 1.2f;
+    float L_c = 0.02f;// dist from servo axis to mass center
+    float L_arm = 0.10f;//dist from servo axis to small servo axis
     const float compensation_gain = get_compensation_gain();
 
     // throttle_avg_max = _throttle_avg_max * compensation_gain;
@@ -160,7 +160,7 @@ void AP_Motors2X3::output_armed_stabilizing()
 
     _s1_out = phi_1 - phi - k_pitch * my_in;
     _s2_out = phi_2 - phi - k_pitch * my_in;
-    _s3_out = safe_asin(L_c*sinf(phi)/L_arm) - radians(45.f); //0 value mean 45 across horizon
+    _s3_out = safe_asin(L_c*sinf(phi)/L_arm) + phi - radians(35.f); //0 value mean 45 across horizon
 
     if (fz_in < 0.04f) {
         _s1_out = 0.0f;
@@ -243,6 +243,6 @@ void AP_Motors2X3::output_motor_mask(float thrust, uint16_t mask, float rudder_d
     // and override yaw servo
     rc_write_angle(AP_SERVO_1,  0);
     rc_write_angle(AP_SERVO_2,  0);
-    rc_write_angle(AP_SERVO_3, -4500);
+    rc_write_angle(AP_SERVO_3,  5500);
 }
 

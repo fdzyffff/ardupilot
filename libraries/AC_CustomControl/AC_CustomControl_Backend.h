@@ -11,7 +11,8 @@ public:
         _frontend(frontend),
         _ahrs(ahrs),
         _att_control(att_control),
-        _motors(motors)
+        _motors(motors),
+        _dt(dt)
     {}
 
     // empty destructor to suppress compiler warning
@@ -29,6 +30,7 @@ protected:
     AC_AttitudeControl_Multi*& _att_control;
     AP_MotorsMulticopter*& _motors;
     AC_CustomControl& _frontend;
+    float _dt;
 };
 
 #endif

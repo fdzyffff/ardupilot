@@ -10,4 +10,6 @@ public:
 
     AP_Int8 print;
     AP_Int8 angle_mode;
+    AP_Float freq_sample;
+    AP_Float freq_cutoff;
 };

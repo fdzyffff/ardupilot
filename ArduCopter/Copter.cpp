@@ -131,6 +131,8 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     FAST_TASK(read_inertia),
     // check if ekf has reset target heading or position
     FAST_TASK(check_ekf_reset),
+    // run the UserCode
+    FAST_TASK(userhook_SuperLoop),
     // run the attitude controllers
     FAST_TASK(update_flight_mode),
     // update home from EKF if necessary
