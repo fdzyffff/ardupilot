@@ -65,10 +65,10 @@ void ModeStabilize::run()
 
     float target_forward = -target_pitch/9000.f;
     float target_lateral = target_roll/9000.f;
-    target_roll = 0.0f;
+    // target_roll = 0.0f;
     target_pitch = 0.0f;
 
-    target_roll = copter.ubase.get_target_roll();
+    // target_roll = copter.ubase.get_target_roll();
     target_pitch = copter.ubase.get_target_pitch();
     // call attitude controller
     attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(target_roll, target_pitch, target_yaw_rate);

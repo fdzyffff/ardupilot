@@ -78,30 +78,18 @@ void AP_Motors2X3::output_to_motors()
             // sends minimum values out to the motors
             rc_write(AP_MOTORS_MOT_1, output_to_pwm(0));
             rc_write(AP_MOTORS_MOT_2, output_to_pwm(0));
-            rc_write_angle(AP_SERVO_1, -4500);
-            rc_write_angle(AP_SERVO_2, -4500);
+            rc_write_angle(AP_SERVO_1,  0);
+            rc_write_angle(AP_SERVO_2,  0);
             rc_write_angle(AP_SERVO_3, -4500);
             break;
         case SpoolState::GROUND_IDLE:
             // sends output to motors when armed but not flying
             set_actuator_with_slew(_actuator[1], actuator_spin_up_to_ground_idle());
             set_actuator_with_slew(_actuator[2], actuator_spin_up_to_ground_idle());
-            set_actuator_with_slew(_actuator[3], actuator_spin_up_to_ground_idle());
-            set_actuator_with_slew(_actuator[4], actuator_spin_up_to_ground_idle());
-            set_actuator_with_slew(_actuator[5], actuator_spin_up_to_ground_idle());
-            set_actuator_with_slew(_actuator[6], actuator_spin_up_to_ground_idle());
-            set_actuator_with_slew(_actuator[7], actuator_spin_up_to_ground_idle());
-            set_actuator_with_slew(_actuator[8], actuator_spin_up_to_ground_idle());
             rc_write(AP_MOTORS_MOT_1, output_to_pwm(_actuator[1]));
             rc_write(AP_MOTORS_MOT_2, output_to_pwm(_actuator[2]));
-            rc_write(AP_MOTORS_MOT_3, output_to_pwm(_actuator[3]));
-            rc_write(AP_MOTORS_MOT_4, output_to_pwm(_actuator[4]));
-            rc_write(AP_MOTORS_MOT_5, output_to_pwm(_actuator[5]));
-            rc_write(AP_MOTORS_MOT_6, output_to_pwm(_actuator[6]));
-            rc_write(AP_MOTORS_MOT_7, output_to_pwm(_actuator[7]));
-            rc_write(AP_MOTORS_MOT_8, output_to_pwm(_actuator[8]));
-            rc_write_angle(AP_SERVO_1, -4500);
-            rc_write_angle(AP_SERVO_2, -4500);
+            rc_write_angle(AP_SERVO_1,  0);
+            rc_write_angle(AP_SERVO_2,  0);
             rc_write_angle(AP_SERVO_3, -4500);
             break;
         case SpoolState::SPOOLING_UP:
@@ -151,11 +139,11 @@ void AP_Motors2X3::output_armed_stabilizing()
     float my_in = (_pitch_in + _pitch_in_ff) * compensation_gain;
     float mz_in = (_yaw_in + _yaw_in_ff) * compensation_gain;
 
-    float k_forward = 0.85f*SQ2;
-    float k_up = 0.75f*SQ2;
-    float k_roll = 0.25f*SQ2;
-    float k_pitch = 0.4f;
-    float k_yaw = 0.15f*SQ2;
+    float k_forward = 0.85f/SQ2;
+    float k_up = 0.75f/SQ2;
+    float k_roll = 0.25f/SQ2;
+    float k_pitch = 1.0f;
+    float k_yaw = 0.15f/SQ2;
 
     float t1_x = k_forward * fx_in + k_yaw * mz_in;
     float t1_y = k_up * fz_in      + k_roll * mx_in;
@@ -168,18 +156,17 @@ void AP_Motors2X3::output_armed_stabilizing()
     float phi = (phi_1 + phi_2) * 0.5f;
 
     _m1_out = constrain_float(safe_sqrt(t1_x*t1_x + t1_y*t1_y), 0.0f, 1.0f);//0~1
-    _m2_out = constrain_float(safe_sqrt(t2_x*t2_x + t1_y*t1_y), 0.0f, 1.0f);//0~1
+    _m2_out = constrain_float(safe_sqrt(t2_x*t2_x + t2_y*t2_y), 0.0f, 1.0f);//0~1
 
     _s1_out = phi_1 - phi - k_pitch * my_in;
     _s2_out = phi_2 - phi - k_pitch * my_in;
-    _s3_out = safe_asin(L_c*phi_1/L_arm) - radians(45.f); //0 value mean 45 across horizon
+    _s3_out = safe_asin(L_c*sinf(phi)/L_arm) - radians(45.f); //0 value mean 45 across horizon
 
-
-    // if (fz_in < 0.01f) {
-    //     raw_s1_out = 0.0f;
-    //     raw_s2_out = 0.0f;
-    //     raw_s3_out = 0.0f;
-    // }
+    if (fz_in < 0.04f) {
+        _s1_out = 0.0f;
+        _s2_out = 0.0f;
+        _s3_out = 0.0f;
+    }
 }
 
 float AP_Motors2X3::slew_servo(float old_s, float raw_s) {
