@@ -188,7 +188,7 @@ void AP_Motors4X4::output_armed_stabilizing()
 {
     
     float SQ2 = 1.414f;
-    float Length = 10.0f;
+    float Length = constrain_float(_length, 10.0f, 10000.f);
     // float MASS = 1.0f;
     float denominator = 0.25f;//*safe_sqrt(5.0f + 5.0f/Length/Length);
     const float compensation_gain = get_compensation_gain();

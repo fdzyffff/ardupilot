@@ -63,29 +63,24 @@ void UBase::handle_msg(const mavlink_message_t &msg)
         // decode packet
         mavlink_attitude_t attitude;
         mavlink_msg_attitude_decode(&msg, &attitude);
+        
+        _base_roll = attitude.roll;
+        _base_pitch = attitude.pitch;
+        // _base_yaw = attitude.yaw;
 
-
-        Vector3f tmp_in = Vector3f(attitude.roll, attitude.pitch, 0.0f);
-        Matrix3f tmp_bf_m;
-        tmp_bf_m.from_euler(0.0f, 0.0f, attitude.yaw);
-        Vector3f tmp_out = tmp_bf_m*tmp_in;
-        _base_roll = tmp_out.x;
-        _base_pitch = tmp_out.y;
-
-
-        // Matrix3f tmp_gimbal_m;
-        // tmp_gimbal_m.from_euler(attitude.roll, attitude.pitch, 0.0f);
+        // Vector3f tmp_in = Vector3f(attitude.roll, attitude.pitch, 0.0f);
         // Matrix3f tmp_bf_m;
         // tmp_bf_m.from_euler(0.0f, 0.0f, attitude.yaw);
-        // Matrix3f tmp_efbf_m = tmp_bf_m*tmp_gimbal_m;
+        // Vector3f tmp_out = tmp_bf_m*tmp_in;
+        // _base_roll = tmp_out.x;
+        // _base_pitch = tmp_out.y;
 
-        // tmp_efbf_m.to_euler(&_base_roll, &_base_pitch, &_base_yaw);
 
-        display_info.p1 = degrees(attitude.yaw)*100.f;
+        display_info.p1 = degrees(attitude.pitch)*100.f;
         display_info.p2 = degrees(attitude.yaw)*100.f;
-        // _base_roll = attitude.roll;
-        // _base_pitch = attitude.pitch;
-        // _base_yaw = attitude.yaw;
+        display_info.p3 = degrees(_base_roll)*100.f;
+        display_info.p4 = degrees(_base_pitch)*100.f;
+
     }
 }
 
