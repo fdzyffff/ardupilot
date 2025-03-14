@@ -125,6 +125,7 @@
 #include "UDelay.h"
 #include "UAttack.h"
 #include "UTarget.h"
+#include "UAtt.h"
 
 /*
   main APM:Plane class
@@ -182,6 +183,7 @@ public:
 #endif
 
     friend class UDelay;
+    friend class UAtt;
     friend class UAttack;
     friend class UTarget_Cam;
     friend class UTarget_Loc;
@@ -642,6 +644,8 @@ private:
 
     // The instantaneous desired pitch angle.  Hundredths of a degree
     int32_t nav_pitch_cd;
+
+    float nav_forward;
 
     // the aerodynamic load factor. This is calculated from the demanded
     // roll before the roll is clipped, using 1/sqrt(cos(nav_roll))
@@ -1267,11 +1271,13 @@ private:
     int32_t tecs_target_alt_cm;
 
     void userhook_init();
+    void userhook_SuperLoop();
     void userhook_100Hz();
     void userhook_1Hz();
 
     UAttack uattack;
     UDelay udelay;
+    UAtt uatt;
 
 public:
     void failsafe_check(void);

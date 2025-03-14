@@ -1014,6 +1014,7 @@ void Plane::servos_output(void)
     // cope with tailsitters and bicopters
     quadplane.tailsitter.output();
     quadplane.tiltrotor.bicopter_output();
+    quadplane.tiltrotor.copter_2X3_output();
 #endif
 
     // support forced flare option

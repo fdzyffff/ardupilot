@@ -40,6 +40,7 @@ public:
     void binary_update();
     void vectoring();
     void bicopter_output();
+    void copter_2X3_output();
     void tilt_compensate_angle(float *thrust, uint8_t num_motors, float non_tilted_mul, float tilted_mul);
     void tilt_compensate(float *thrust, uint8_t num_motors);
     bool tilt_over_max_angle(void) const;
@@ -91,7 +92,8 @@ public:
     enum {TILT_TYPE_CONTINUOUS    =0,
           TILT_TYPE_BINARY        =1,
           TILT_TYPE_VECTORED_YAW  =2,
-          TILT_TYPE_BICOPTER      =3
+          TILT_TYPE_BICOPTER      =3,
+          TILT_TYPE_2X3           =4
     };
 
     static const struct AP_Param::GroupInfo var_info[];

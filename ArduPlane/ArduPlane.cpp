@@ -59,6 +59,7 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     FAST_TASK(update_control_mode),
     FAST_TASK(stabilize),
     FAST_TASK(set_servos),
+    FAST_TASK(userhook_SuperLoop),
     SCHED_TASK(read_radio,             50,    100,   6),
     SCHED_TASK(check_short_failsafe,   50,    100,   9),
     SCHED_TASK(update_speed_height,    50,    200,  12),

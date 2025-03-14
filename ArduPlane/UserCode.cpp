@@ -4,6 +4,12 @@ void Plane::userhook_init()
 {
     uattack.init();
     udelay.init();
+    uatt.init();
+}
+
+void Plane::userhook_SuperLoop()
+{
+    uatt.update();
 }
 
 void Plane::userhook_100Hz()
@@ -14,7 +20,7 @@ void Plane::userhook_100Hz()
 
 void Plane::userhook_1Hz()
 {
-    gcs().send_message(MSG_ZF6666_STATUS); //飞控, H7
+    // gcs().send_message(MSG_ZF6666_STATUS); //飞控, H7
     // ufollow.update();
 
     // put your 1Hz code here

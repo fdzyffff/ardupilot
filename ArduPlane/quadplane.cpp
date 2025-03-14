@@ -734,6 +734,10 @@ bool QuadPlane::setup(void)
     case AP_Motors::MOTOR_FRAME_SCRIPTING_MATRIX:
     case AP_Motors::MOTOR_FRAME_DYNAMIC_SCRIPTING_MATRIX:
         break;
+    case AP_Motors::MOTOR_FRAME_2X3:
+        setup_default_channels(5);
+        AP_Param::set_frame_type_flags(AP_PARAM_FRAME_COPTER);
+        break;
     default:
         AP_BoardConfig::config_error("Unsupported Q_FRAME_CLASS %u", (unsigned int)(frame_class.get()));
     }
@@ -763,6 +767,10 @@ bool QuadPlane::setup(void)
     default:
         motors = new AP_MotorsMatrix(rc_speed);
         motors_var_info = AP_MotorsMatrix::var_info;
+        break;
+    case AP_Motors::MOTOR_FRAME_2X3:
+        motors = new AP_Motors2X3(rc_speed);
+        motors_var_info = AP_Motors2X3::var_info;
         break;
     }
 
@@ -1012,11 +1020,20 @@ void QuadPlane::hold_stabilize(float throttle_in)
     } else {
         set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
         bool should_boost = true;
+        should_boost = false;
         if (tailsitter.enabled() && assisted_flight) {
             // tailsitters in forward flight should not use angle boost
             should_boost = false;
         }
         attitude_control->set_throttle_out(throttle_in, should_boost, 0);
+
+        Matrix3f tmp_m;
+        tmp_m.from_euler(plane.uatt.roll, plane.uatt.pitch, 0.0f);
+        Vector3f tmp_input = Vector3f(plane.nav_forward, 0.0f, throttle_in);
+        Vector3f tmp_output = tmp_m * tmp_input;
+        motors->set_forward(tmp_output.x);
+        motors->set_lateral(tmp_output.y);
+        attitude_control->set_throttle_out(tmp_output.z, false, 0);
     }
 }
 

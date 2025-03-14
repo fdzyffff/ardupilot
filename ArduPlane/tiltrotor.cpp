@@ -640,6 +640,7 @@ void Tiltrotor::bicopter_output(void)
     if (!quadplane.in_vtol_mode() && fully_fwd()) {
         SRV_Channels::set_output_scaled(SRV_Channel::k_tiltMotorLeft,  -SERVO_MAX);
         SRV_Channels::set_output_scaled(SRV_Channel::k_tiltMotorRight, -SERVO_MAX);
+        // FD TODO: put servo mix here for FW attitude control
         return;
     }
 
@@ -648,6 +649,7 @@ void Tiltrotor::bicopter_output(void)
         quadplane.hold_stabilize(throttle * 0.01f);
         quadplane.motors_output(true);
     } else {
+        // Why we call motors output here, maybe in vtol mode, and control has already been called by Qmode?
         quadplane.motors_output(false);
     }
 
@@ -673,6 +675,38 @@ void Tiltrotor::bicopter_output(void)
 
     SRV_Channels::set_output_scaled(SRV_Channel::k_tiltMotorLeft,  tilt_left);
     SRV_Channels::set_output_scaled(SRV_Channel::k_tiltMotorRight, tilt_right);
+}
+
+/*
+  control 2X3
+ */
+void Tiltrotor::copter_2X3_output(void)
+{
+    if (type != TILT_TYPE_2X3 || quadplane.motor_test.running) {
+        // don't override motor test with motors_output
+        return;
+    }
+
+    if (!quadplane.in_vtol_mode() && fully_fwd()) {
+        SRV_Channels::set_output_scaled(SRV_Channel::k_motor6, 5500.f);//fully forward
+        // FD TODO: put servo mix here for FW attitude control
+        float elevon_left = SRV_Channels::get_output_scaled(SRV_Channel::k_elevon_left) / 4500.f; // -1 ~ 1
+        float elevon_right = SRV_Channels::get_output_scaled(SRV_Channel::k_elevon_right) / 4500.f;
+
+        SRV_Channels::set_output_scaled(SRV_Channel::k_motor4, elevon_right * 1000.f); //elevon_right for left tilt servo
+        SRV_Channels::set_output_scaled(SRV_Channel::k_motor5, elevon_left * 1000.f);
+        return;
+    }
+
+    float throttle = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle);
+    if (quadplane.assisted_flight) {
+        quadplane.hold_stabilize(throttle * 0.01f);
+        plane.nav_forward = 1.0f;
+        quadplane.motors_output(true);
+    } else {
+        quadplane.motors_output(false);
+    }
+
 }
 
 /*
