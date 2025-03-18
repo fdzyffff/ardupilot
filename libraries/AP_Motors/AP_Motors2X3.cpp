@@ -127,50 +127,62 @@ uint32_t AP_Motors2X3::get_motor_mask()
 void AP_Motors2X3::output_armed_stabilizing()
 {
     float SQ2 = 1.2f;
-    float L_c = 0.0f;// dist from servo axis to mass center
-    float L_arm = 0.10f;//dist from servo axis to small servo axis
+    float L_c = 2.0f;// dist from servo axis to mass center
+    float L_arm = 10.0f;//dist from servo axis to small servo axis
     const float compensation_gain = thr_lin.get_compensation_gain();
 
     // throttle_avg_max = _throttle_avg_max * compensation_gain;
 
     float fx_in = _forward_in * compensation_gain;
     float fz_in = get_throttle() * compensation_gain;
+    float fz_safe = constrain_float(fz_in, 0.3f, 1.0f);
     float mx_in = (_roll_in + _roll_in_ff) * compensation_gain;
     float my_in = (_pitch_in + _pitch_in_ff) * compensation_gain;
     float mz_in = (_yaw_in + _yaw_in_ff) * compensation_gain;
 
-    float k_forward = 0.80f/SQ2;
+    float k_forward = 0.75f/SQ2;
     float k_up = 0.75f/SQ2;
     float k_roll = 0.25f/SQ2;
     float k_pitch = 1.0f;
-    float k_yaw = 0.20f/SQ2;
+    float k_yaw = 0.25f/SQ2;
 
     float t1_x = k_forward * fx_in + k_yaw * mz_in;
     float t1_y = k_up * fz_in      + k_roll * mx_in;
+    float t1_y_safe = k_up * fz_safe    + k_roll * mx_in;
 
     float t2_x = k_forward * fx_in - k_yaw * mz_in;
     float t2_y = k_up * fz_in      - k_roll * mx_in;
+    float t2_y_safe = k_up * fz_safe    - k_roll * mx_in;
 
-    float phi_1 = atan2f(t1_x, t1_y);
-    float phi_2 = atan2f(t2_x, t2_y);
+    float phi_1 = atan2f(t1_x, t1_y_safe);
+    float phi_2 = atan2f(t2_x, t2_y_safe);
     float phi = (phi_1 + phi_2) * 0.5f;
+    float new_phi = safe_asin(L_c*sinf(phi)/L_arm) + phi;
 
     _m1_out = constrain_float(safe_sqrt(t1_x*t1_x + t1_y*t1_y), 0.0f, 1.0f);//0~1
     _m2_out = constrain_float(safe_sqrt(t2_x*t2_x + t2_y*t2_y), 0.0f, 1.0f);//0~1
 
-    _s1_out = phi_1 - phi - k_pitch * my_in;
-    _s2_out = phi_2 - phi - k_pitch * my_in;
-    _s3_out = safe_asin(L_c*sinf(phi)/L_arm) + phi - radians(35.f); //0 value mean 45 across horizon
+    float _s1_raw = phi_1 - phi - (new_phi - phi) - k_pitch * my_in;
+    float _s2_raw = phi_2 - phi - (new_phi - phi) - k_pitch * my_in;
+
+    float _s3_raw= new_phi - radians(35.f); //0 value mean 45 across horizon
+
+    // _s1_out = slew_servo(_s1_out, _s1_raw);
+    // _s2_out = slew_servo(_s2_out, _s2_raw);
+    _s1_out = _s1_raw;
+    _s2_out = _s2_raw;
+    _s3_out = slew_servo(_s3_out, _s3_raw);
+
 
     if (fz_in < 0.04f) {
         _s1_out = 0.0f;
         _s2_out = 0.0f;
-        _s3_out = 0.0f;
+        _s3_out = - radians(35.f);
     }
 }
 
 float AP_Motors2X3::slew_servo(float old_s, float raw_s) {
-    float slew_max_rad = radians(200.f/400.f);
+    float slew_max_rad = radians(120.f)/400.f;
     float s = old_s + constrain_float(raw_s - old_s, -slew_max_rad, slew_max_rad);
     return s;
 }
@@ -230,6 +242,25 @@ void AP_Motors2X3::thrust_compensation(void)
     if (_thrust_compensation_callback) {
         ;
     }
+}
+
+
+float AP_Motors2X3::get_roll_factor(uint8_t i)
+{
+    float ret = 0.0f;
+
+    switch (i) {
+        // left motor
+        case AP_MOTORS_MOT_1:
+            ret = 1.0f;
+            break;
+        // right motor
+        case AP_MOTORS_MOT_2:
+            ret = -1.0f;
+            break;
+    }
+
+    return ret;
 }
 
 /*

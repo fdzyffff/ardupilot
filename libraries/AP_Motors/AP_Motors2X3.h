@@ -54,6 +54,8 @@ protected:
     // call vehicle supplied thrust compensation if set
     void                thrust_compensation(void) override;
 
+    float               get_roll_factor(uint8_t i) override;
+
     const char* _get_frame_string() const override { return "2X3"; }
 
     // output_test_seq - spin a motor at the pwm value specified

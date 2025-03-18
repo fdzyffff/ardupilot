@@ -22,7 +22,7 @@ UAtt::UAtt()
 // initialise
 void UAtt::init()
 {
-    _ahrs_filter.set_cutoff_frequency(400.f, 50.f);
+    _ahrs_filter.set_cutoff_frequency(400.f, 200.f);
     roll = 0.0f;
     pitch = 0.0f;
     yaw = 0.0f;

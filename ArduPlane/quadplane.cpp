@@ -1586,6 +1586,7 @@ bool QuadPlane::should_assist(float aspeed, bool have_airspeed)
 void SLT_Transition::update()
 {
     const uint32_t now = millis();
+    // static uint32_t _last_info_ms = millis();
     
     if (!plane.arming.is_armed_and_safety_off()) {
         // reset the failure timer if we are disarmed
@@ -1594,6 +1595,10 @@ void SLT_Transition::update()
 
     float aspeed;
     bool have_airspeed = quadplane.ahrs.airspeed_estimate(aspeed);
+    // if (millis() - _last_info_ms > 1000) {
+    //     _last_info_ms = millis();
+    //     gcs().send_text(MAV_SEVERITY_INFO, "[%d], %f", have_airspeed, aspeed);
+    // }
 
     /*
       see if we should provide some assistance
