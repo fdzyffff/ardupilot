@@ -35,6 +35,9 @@ void UAtt::update()
     roll = _ahrs_filter.get().x;
     pitch = _ahrs_filter.get().y;
     yaw = _ahrs_filter.get().z;
+    // roll = plane.ahrs.get_roll();
+    // pitch = plane.ahrs.get_pitch();
+    // yaw = plane.ahrs.get_yaw();
 }
 
 const Vector3f& UAtt::get_ahrs()

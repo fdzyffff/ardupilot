@@ -127,7 +127,7 @@ uint32_t AP_Motors2X3::get_motor_mask()
 void AP_Motors2X3::output_armed_stabilizing()
 {
     float SQ2 = 1.2f;
-    float L_c = 0.02f;// dist from servo axis to mass center
+    float L_c = 0.0f;// dist from servo axis to mass center
     float L_arm = 0.10f;//dist from servo axis to small servo axis
     const float compensation_gain = thr_lin.get_compensation_gain();
 
@@ -139,11 +139,11 @@ void AP_Motors2X3::output_armed_stabilizing()
     float my_in = (_pitch_in + _pitch_in_ff) * compensation_gain;
     float mz_in = (_yaw_in + _yaw_in_ff) * compensation_gain;
 
-    float k_forward = 0.85f/SQ2;
+    float k_forward = 0.80f/SQ2;
     float k_up = 0.75f/SQ2;
     float k_roll = 0.25f/SQ2;
     float k_pitch = 1.0f;
-    float k_yaw = 0.15f/SQ2;
+    float k_yaw = 0.20f/SQ2;
 
     float t1_x = k_forward * fx_in + k_yaw * mz_in;
     float t1_y = k_up * fz_in      + k_roll * mx_in;

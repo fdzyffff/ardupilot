@@ -21,6 +21,7 @@ void ModeQStabilize::update()
     const float pitch_input = 0.0f;
 
     plane.nav_forward = (float)plane.channel_pitch->get_control_in() / plane.channel_pitch->get_range();
+    plane.nav_forward = constrain_float(-plane.nav_forward*0.7f, -0.3f, 1.0f);
     // plane.nav_lateral = 0.0f;
     // then scale to target angles in centidegrees
     if (plane.quadplane.tailsitter.active()) {

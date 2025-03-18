@@ -693,20 +693,19 @@ void Tiltrotor::copter_2X3_output(void)
         float elevon_left = SRV_Channels::get_output_scaled(SRV_Channel::k_elevon_left) / 4500.f; // -1 ~ 1
         float elevon_right = SRV_Channels::get_output_scaled(SRV_Channel::k_elevon_right) / 4500.f;
 
-        SRV_Channels::set_output_scaled(SRV_Channel::k_motor4, elevon_right * 1000.f); //elevon_right for left tilt servo
-        SRV_Channels::set_output_scaled(SRV_Channel::k_motor5, elevon_left * 1000.f);
+        SRV_Channels::set_output_scaled(SRV_Channel::k_motor4, -elevon_right * 1000.f); //elevon_right for left tilt servo
+        SRV_Channels::set_output_scaled(SRV_Channel::k_motor5, -elevon_left * 1000.f);
         return;
     }
 
     float throttle = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle);
     if (quadplane.assisted_flight) {
-        quadplane.hold_stabilize(throttle * 0.01f);
         plane.nav_forward = 1.0f;
+        quadplane.hold_stabilize(throttle * 0.01f);
         quadplane.motors_output(true);
     } else {
         quadplane.motors_output(false);
     }
-
 }
 
 /*
