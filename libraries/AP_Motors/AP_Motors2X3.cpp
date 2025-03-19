@@ -157,7 +157,7 @@ void AP_Motors2X3::output_armed_stabilizing()
     float phi_1 = atan2f(t1_x, t1_y_safe);
     float phi_2 = atan2f(t2_x, t2_y_safe);
     float phi = (phi_1 + phi_2) * 0.5f;
-    float new_phi = safe_asin(L_c*sinf(phi)/L_arm) + phi;
+    float new_phi = safe_asin(L_c*sinf(phi)/L_arm) + phi + 1.0f * my_in * radians(15.0f);
 
     _m1_out = constrain_float(safe_sqrt(t1_x*t1_x + t1_y*t1_y), 0.0f, 1.0f);//0~1
     _m2_out = constrain_float(safe_sqrt(t2_x*t2_x + t2_y*t2_y), 0.0f, 1.0f);//0~1

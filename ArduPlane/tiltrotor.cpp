@@ -106,7 +106,7 @@ void Tiltrotor::setup()
         return;
     }
 
-    _is_vectored = tilt_mask != 0 && type == TILT_TYPE_VECTORED_YAW;
+    _is_vectored = tilt_mask != 0 && (type == TILT_TYPE_VECTORED_YAW || type == TILT_TYPE_2X3);
 
     // true if a fixed forward motor is configured, either throttle, throttle left  or throttle right.
     // bicopter tiltrotors use throttle left and right as tilting motors, so they don't count in that case.

@@ -1112,6 +1112,15 @@ void QuadPlane::hold_hover(float target_climb_rate_cms)
     set_climb_rate_cms(target_climb_rate_cms);
 
     run_z_controller();
+
+    float throttle_in = motors->get_throttle_in();
+    Matrix3f tmp_m;
+    tmp_m.from_euler(plane.uatt.roll, plane.uatt.pitch, 0.0f);
+    Vector3f tmp_input = Vector3f(plane.nav_forward, 0.0f, throttle_in);
+    Vector3f tmp_output = tmp_m * tmp_input;
+    motors->set_forward(tmp_output.x);
+    motors->set_lateral(tmp_output.y);
+    attitude_control->set_throttle_out(tmp_output.z, false, 0);
 }
 
 float QuadPlane::get_pilot_throttle()
@@ -1660,7 +1669,7 @@ void SLT_Transition::update()
             }
             // if option is set and ground speed> 1/2 AIRSPEED_MIN for non-tiltrotors, then complete transition, otherwise QLAND.
             // tiltrotors will immediately transition
-            const bool tiltrotor_with_ground_speed =true;// quadplane.tiltrotor.enabled() && (plane.ahrs.groundspeed() > plane.aparm.airspeed_min * 0.5);
+            const bool tiltrotor_with_ground_speed = true;// quadplane.tiltrotor.enabled() && (plane.ahrs.groundspeed() > plane.aparm.airspeed_min * 0.5);
             if (quadplane.option_is_set(QuadPlane::OPTION::TRANS_FAIL_TO_FW) && tiltrotor_with_ground_speed) {
                 transition_state = TRANSITION_TIMER;
                 in_forced_transition = true;
