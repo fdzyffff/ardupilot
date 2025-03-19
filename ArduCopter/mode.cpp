@@ -761,6 +761,12 @@ void Mode::land_run_horizontal_control()
     }
 #endif
 
+    // use k230 and QR code for final approach
+    if (!copter.ap.land_repo_active && copter.uk230.is_valid() ) {
+        vel_correction.x = copter.uk230.get_target_ef_vel_x() * 100.f;
+        vel_correction.y = copter.uk230.get_target_ef_vel_y() * 100.f;
+    }
+
     if (!copter.ap.prec_land_active) {
         Vector2f accel;
         pos_control->input_vel_accel_xy(vel_correction, accel);
