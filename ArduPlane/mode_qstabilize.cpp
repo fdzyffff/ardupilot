@@ -17,15 +17,18 @@ void ModeQStabilize::update()
     // radio_in values. This means that the results for norm_input would not necessarily
     // be correct for tailsitters, so get_control_in() must be used instead.
     // normalize control_input to [-1,1]
-    const float roll_input = (float)plane.channel_roll->get_control_in() / plane.channel_roll->get_range();
-    const float pitch_input = 0.0f;
+    float roll_input = (float)plane.channel_roll->get_control_in() / plane.channel_roll->get_range();
+    float pitch_input = 0.0f;
 
     plane.nav_forward = - (float)plane.channel_pitch->get_control_in() / plane.channel_pitch->get_range();
     if (plane.nav_forward > 0) {
-        plane.nav_forward = constrain_float(plane.nav_forward*0.7f, 0.0f, 1.0f);
+        plane.nav_forward = constrain_float(plane.nav_forward*0.8f, 0.0f, 1.0f);
     }
     if (plane.nav_forward < 0) {
-        plane.nav_forward = constrain_float(plane.nav_forward*0.2f, -0.3f, 0.0f);
+        plane.nav_forward = constrain_float(plane.nav_forward*0.5f, -1.0f, 0.0f);
+        if (plane.nav_forward < 0.25f) {
+            pitch_input = -(plane.nav_forward + 0.25f);
+        }
     }
     // plane.nav_lateral = 0.0f;
     // then scale to target angles in centidegrees
@@ -75,7 +78,7 @@ void ModeQStabilize::run()
 }
 
 // set the desired roll and pitch for a tailsitter
-void ModeQStabilize::set_tailsitter_roll_pitch(const float roll_input, const float pitch_input)
+void ModeQStabilize::set_tailsitter_roll_pitch(float roll_input, float pitch_input)
 {
     // separate limit for roll, if set
     if (plane.quadplane.tailsitter.max_roll_angle > 0) {
@@ -92,7 +95,7 @@ void ModeQStabilize::set_tailsitter_roll_pitch(const float roll_input, const flo
 }
 
 // set the desired roll and pitch for normal quadplanes, also limited by forward flight limits
-void ModeQStabilize::set_limited_roll_pitch(const float roll_input, const float pitch_input)
+void ModeQStabilize::set_limited_roll_pitch(float roll_input, float pitch_input)
 {
     plane.nav_roll_cd = roll_input * MIN(plane.roll_limit_cd, plane.quadplane.aparm.angle_max);
     // pitch is further constrained by PTCH_LIM_MIN/MAX which may impose
