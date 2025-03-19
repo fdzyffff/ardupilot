@@ -700,7 +700,7 @@ void Tiltrotor::copter_2X3_output(void)
 
     float throttle = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle);
     if (quadplane.assisted_flight) {
-        plane.nav_forward = 1.0f;
+        plane.nav_forward = 0.8f;
         quadplane.hold_stabilize(throttle * 0.01f);
         quadplane.motors_output(true);
     } else {

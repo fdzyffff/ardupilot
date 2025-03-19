@@ -141,7 +141,7 @@ void AP_Motors2X3::output_armed_stabilizing()
     float mz_in = (_yaw_in + _yaw_in_ff) * compensation_gain;
 
     float k_forward = 0.75f/SQ2;
-    float k_up = 0.75f/SQ2;
+    float k_up = 1.0f/SQ2;
     float k_roll = 0.25f/SQ2;
     float k_pitch = 1.0f;
     float k_yaw = 0.25f/SQ2;
