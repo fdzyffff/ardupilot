@@ -31,7 +31,7 @@ void UTarget_Loc::update() {
         off_bf.normalized();
 
         float p1 = degrees(wrap_180(atan2f( off_bf.y, off_bf.x))); // x-axis, degrees
-        float p2 = degrees(wrap_180(atan2f(-off_bf.z, off_bf.xy().length()))); // y-axis, degrees
+        float p2 = degrees(wrap_180(atan2f(-off_bf.z, off_bf.x))); // y-axis, degrees
 
         handle_info(p1, p2);
     }
@@ -78,11 +78,12 @@ void UTarget_Loc::handle_info(float p1, float p2) {
     _frotend.bf_info.x = p1; // yaw degree
     _frotend.bf_info.y = p2; // pitch degree
 
-    float bf_dist = 100.0f;
-    float bf_z    = -bf_dist*sinf(radians(p2));
-    float bf_xy   =  bf_dist*cosf(radians(p2));
-    float bf_y    =  bf_xy*sinf(radians(p1));
-    float bf_x    =  bf_xy*cosf(radians(p1));
+    p1 = constrain_float(p1, -80.f, 80.f);
+    p2 = constrain_float(p2, -80.f, 80.f);
+
+    float bf_x    = 100.0f;
+    float bf_y    =  bf_x*tanf(radians(p1));
+    float bf_z    = -bf_x*tanf(radians(p2));
     Vector3f bf_unit = Vector3f(bf_x, bf_y, bf_z);
     bf_unit.normalized();
 
@@ -90,7 +91,7 @@ void UTarget_Loc::handle_info(float p1, float p2) {
     tmp_body_m.from_euler(_roll, _pitch, _yaw);
     Vector3f ef_unit = tmp_body_m*bf_unit;
 
-    float angle_pitch = wrap_180(degrees(atan2f(-ef_unit.z, ef_unit.xy().length())));
+    float angle_pitch = wrap_180(degrees(atan2f(-ef_unit.z, ef_unit.x)));
     float angle_yaw =   wrap_180(degrees(atan2f( ef_unit.y, ef_unit.x)));
 
     _frotend.ef_info.x = angle_yaw;
