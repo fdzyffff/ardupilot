@@ -100,4 +100,10 @@ void ModeAltHold::run()
 
     // run the vertical position controller and set output throttle
     pos_control->update_z_controller();
+
+    if (copter.ufence.triggered()) {
+        copter.ufence.set_triggered(false);
+        copter.set_mode(Mode::Number::BRAKE, ModeReason::FENCE_BREACHED);
+        copter.mode_brake.timeout_to_loiter_ms(0);
+    }
 }

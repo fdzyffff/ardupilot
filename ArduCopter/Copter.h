@@ -177,6 +177,7 @@
 #endif
 #include "Parameters.h"
 #include "mode.h"
+#include "UFence.h"
 
 class Copter : public AP_Vehicle {
 public:
@@ -231,6 +232,8 @@ public:
     friend class _AutoTakeoff;
 
     friend class PayloadPlace;
+
+    friend class UFence;
 
     Copter(void);
 
@@ -1058,6 +1061,8 @@ private:
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);
+
+    UFence ufence;
 
 public:
     void failsafe_check();      // failsafe.cpp
