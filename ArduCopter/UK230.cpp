@@ -37,9 +37,6 @@ void UK230::init()
     display_info.p23 = 0.0f;
     display_info.count = 0;
     display_info.new_data = false;
-    _target_pitch_rate = 0.0f;
-    _target_roll_rate = 0.0f;
-    _target_yaw_rate = 0.0f;
     FD1_uart_K230.init();
     FD1_uart_K230.get_msg_K230().set_enable();
     // gcs().send_text(MAV_SEVERITY_INFO, "FD1_uart_K230.init()");
@@ -91,42 +88,43 @@ void UK230::handle_info(float p1, float p2, float p3) {
     _last_ms = millis();
     display_info.count++;
 
-    Vector3f tmp_cam_input = Vector3f(radians(p1), radians(p2), radians(p3));
+    float _roll = copter.ahrs_view->roll;
+    float _pitch = copter.ahrs_view->pitch;
+    // float _yaw = copter.ahrs_view->yaw;
+
+    p1 = constrain_float(p1, -80.f, 80.f);
+    p2 = constrain_float(p2, -80.f, 80.f);
+
+    float bf_x    =  100.0f;
+    float bf_y    =  bf_x*tanf(radians(p1));
+    float bf_z    = -bf_x*tanf(radians(p2));
+    Vector3f cam_unit = Vector3f(bf_x, bf_y, bf_z);
+    cam_unit.normalized();
+
     Matrix3f tmp_cam_m;
-    tmp_cam_m.from_euler(0.0f, 0.0f, radians(180.0f));
-    Vector3f tmp_cam_output = tmp_cam_m*tmp_cam_input;
+    tmp_cam_m.from_euler(0.0f, radians(-90.0f), 0.0f);
+    Vector3f bf_unit = tmp_cam_m*cam_unit;
 
-    bf_info.x = degrees(tmp_cam_output.x); // roll degree
-    bf_info.y = degrees(tmp_cam_output.y); // pitch degree
-    bf_info.z = wrap_180(degrees(tmp_cam_output.z) + 0.f);; // yaw degree
-
-
+    float bf_roll  = wrap_180(degrees(atan2f(-bf_unit.y, bf_unit.z)));
+    float bf_pitch = wrap_180(degrees(atan2f( bf_unit.x, bf_unit.z)));
+    bf_info = Vector3f(bf_roll, bf_pitch, p3);
     display_info.p11 = bf_info.x;
     display_info.p12 = bf_info.y;
-    display_info.p13 = bf_info.z;
+    display_info.p13 = p3;
 
-    update_target_roll_rate();
-    update_target_pitch_rate();
-    update_target_yaw_rate();
-    display_info.p21 = get_target_roll_rate();
-    display_info.p22 = get_target_pitch_rate();
-    display_info.p23 = get_target_yaw_rate();
-
-    Matrix3f tmp_bf_m;
-    tmp_bf_m.from_euler(radians(bf_info.x), radians(bf_info.y), 0.0f);
     Matrix3f tmp_body_m;
-    tmp_body_m.from_euler(copter.ahrs_view->roll, copter.ahrs_view->pitch, 0.0f);
-    Matrix3f tmp_efbf_m = tmp_body_m*tmp_bf_m;
-    tmp_efbf_m.to_euler(&efb_info.x, &efb_info.y, &efb_info.z);
-    efb_info.x = degrees(efb_info.x);
-    efb_info.y = degrees(efb_info.y);
-    efb_info.z = bf_info.z;
-    // efb_info = tmp_body_m*bf_info;
+    tmp_body_m.from_euler(_roll, _pitch, 0.0f);
+    Vector3f ebf_unit = tmp_body_m*bf_unit;
+
+    float ebf_y = wrap_180(degrees(atan2f(ebf_unit.y, ebf_unit.z)));
+    float ebf_x = wrap_180(degrees(atan2f(ebf_unit.x, ebf_unit.z)));
+    ebf_info = Vector3f(ebf_x, ebf_y, p3);
+    display_info.p21 = ebf_info.x;
+    display_info.p22 = ebf_info.y;
+
     update_target_bf_vel_x_ms();
     update_target_bf_vel_y_ms();
     update_target_ef_vel_ms();
-    // display_info.p31 = get_target_vel_x_ms();
-    // display_info.p32 = get_target_vel_y_ms();
 }
 
 // update 
@@ -134,6 +132,11 @@ void UK230::update()
 {
     read_uart();
     update_valid();
+    static uint32_t _last_log_ms = millis();
+    if (millis() - _last_log_ms > 200) {
+        _last_log_ms = millis();
+        update_log();
+    }
 }
 
 void UK230::update_valid()
@@ -149,11 +152,10 @@ void UK230::update_valid()
         // _raw_target_cm.zero();
         // _filter_target_cm.reset();
 
-        _target_pitch_rate = 0.0f;
-        _target_roll_rate = 0.0f;
-        _target_yaw_rate = 0.0f;
         _target_bf_vel_x = 0.0f;
         _target_bf_vel_y = 0.0f;
+        _target_ef_vel_x = 0.0f;
+        _target_ef_vel_y = 0.0f;
     } else {
         if (!_valid) {
             gcs().send_text(MAV_SEVERITY_WARNING, "Target aquire");
@@ -163,59 +165,11 @@ void UK230::update_valid()
     }
 }
 
-// degree/second
-void UK230::update_target_roll_rate() {
-    float k = copter.g2.user_parameters.attack_k.get();
-    float angle_comp = constrain_float(bf_info.x, -15.0f, 15.0f);
-    _target_roll_rate = k * angle_comp; // degrees/s
-
-    //Limit roll rate
-    float limit_roll_rate = copter.g2.user_parameters.rate_limit.get();
-    _target_roll_rate = constrain_float(_target_roll_rate, -limit_roll_rate, limit_roll_rate);
-
-    //Limit roll
-    float current_roll = degrees(copter.ahrs_view->roll);
-    float limit_roll = MAX(copter.g2.user_parameters.angle_limit.get(), 0.f);
-    if (current_roll > limit_roll) {
-        _target_roll_rate = MAX(_target_roll_rate, 0.0f);
-    } else if (current_roll < -limit_roll) {
-        _target_roll_rate = MIN(_target_roll_rate, 0.0f);
-    }
-}
-
-// degree/second
-void UK230::update_target_pitch_rate() {
-    float k = copter.g2.user_parameters.attack_k.get();
-    float angle_comp = constrain_float(bf_info.y, -15.0f, 15.0f);
-    _target_pitch_rate = k * angle_comp; // degrees/s
-
-    //Limit pitch rate
-    float limit_pitch_rate = copter.g2.user_parameters.rate_limit.get();
-    _target_pitch_rate = constrain_float(_target_pitch_rate, -limit_pitch_rate, limit_pitch_rate);
-
-    //Limit pitch
-    float current_pitch = degrees(copter.ahrs_view->pitch);
-    float limit_pitch = MAX(copter.g2.user_parameters.angle_limit.get(), 0.f);
-    if (current_pitch > limit_pitch) {
-        _target_pitch_rate = MAX(_target_pitch_rate, 0.0f);
-    } else if (current_pitch < -limit_pitch) {
-        _target_pitch_rate = MIN(_target_pitch_rate, 0.0f);
-    }
-    // gcs().send_text(MAV_SEVERITY_INFO, "%f", _target_pitch_rate_cds);
-}
-
-// degree/second
-void UK230::update_target_yaw_rate() {
-    float k2 = copter.g2.user_parameters.attack_k2.get();
-    float angle_comp = constrain_float(bf_info.z, -15.0f, 15.0f);
-    _target_yaw_rate = k2 * angle_comp; // degrees/s
-}
-
 // m/s
 void UK230::update_target_bf_vel_x_ms() {
     float k = copter.g2.user_parameters.attack_k.get();
     float dist_r = constrain_float(_target_dist_cm*0.01f, 0.0f, 1.0f);
-    float dist = dist_r*tanf(radians(constrain_float(-efb_info.y, -15.0f, 15.0f)));
+    float dist = dist_r*tanf(radians(constrain_float(ebf_info.y, -15.0f, 15.0f)));
     _target_bf_vel_x = k * dist; // degrees/s
 }
 
@@ -223,7 +177,7 @@ void UK230::update_target_bf_vel_x_ms() {
 void UK230::update_target_bf_vel_y_ms() {
     float k = copter.g2.user_parameters.attack_k.get();
     float dist_r = constrain_float(_target_dist_cm*0.01f, 0.0f, 1.0f);
-    float dist = dist_r*tanf(radians(constrain_float(efb_info.x, -15.0f, 15.0f)));
+    float dist = dist_r*tanf(radians(constrain_float(ebf_info.x, -15.0f, 15.0f)));
     _target_bf_vel_y = k * dist; // degrees/s
 }
 
@@ -232,6 +186,31 @@ void UK230::update_target_ef_vel_ms() {
     Vector3f tmp_vel_input = Vector3f(_target_bf_vel_x, _target_bf_vel_y, 0.0f);
     tmp_body_m.from_euler(0.0f, 0.0f, copter.ahrs_view->yaw);
     Vector3f tmp_vel_output = tmp_body_m*tmp_vel_input; 
-    _target_bf_vel_x = tmp_vel_output.x;
-    _target_bf_vel_y = tmp_vel_output.y;
+    _target_ef_vel_x = tmp_vel_output.x;
+    _target_ef_vel_y = tmp_vel_output.y;
+}
+
+void UK230::update_log() {
+    AP::logger().WriteStreaming("UCAM",
+                                "TimeUS,Ax,Ay,heading,dist,valid",
+                                "s---------",
+                                "F---------",
+                                "Qfffff",
+                                AP_HAL::micros64(),
+                                (float)display_info.p1,
+                                (float)display_info.p2,
+                                (float)display_info.p3,
+                                (float)display_info.p4,
+                                (float)_valid);
+
+    AP::logger().WriteStreaming("UATK",
+                                "TimeUS,tbvx, tbvy, tevx, tevy",
+                                "s---------",
+                                "F---------",
+                                "Qfffffffff",
+                                AP_HAL::micros64(),
+                                (float)_target_bf_vel_x,
+                                (float)_target_bf_vel_y,
+                                (float)_target_ef_vel_x,
+                                (float)_target_ef_vel_y);
 }

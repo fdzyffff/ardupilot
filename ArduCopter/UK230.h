@@ -25,10 +25,8 @@ public:
     void update_target_bf_vel_x_ms();
     void update_target_bf_vel_y_ms();
     void update_target_ef_vel_ms();
+    void update_log();
 
-    float get_target_pitch_rate() {return _target_pitch_rate;}
-    float get_target_roll_rate() {return _target_roll_rate;}
-    float get_target_yaw_rate() {return _target_yaw_rate;}
     float get_target_dist_cm() {return _target_dist_cm;}
     float get_target_bf_vel_x() {return _target_bf_vel_x;}
     float get_target_bf_vel_y() {return _target_bf_vel_y;}
@@ -61,10 +59,7 @@ private:
     // Vector3f _raw_target_cm;
 
     Vector3f bf_info;
-    Vector3f efb_info;
-    float _target_pitch_rate;
-    float _target_roll_rate;
-    float _target_yaw_rate;
+    Vector3f ebf_info;
     float _target_dist_cm;
     float _target_bf_vel_x;
     float _target_bf_vel_y;
