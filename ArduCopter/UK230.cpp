@@ -51,14 +51,19 @@ void UK230::read_uart()
 
         if (tmp_msg._msg_1.content.msg.tag_ok) {
             _last_ms = millis();
-            float p1 = cal_frame_angle(copter.g2.user_parameters.cam_width.get(), copter.g2.user_parameters.cam_angle_x.get(), tmp_msg._msg_1.content.msg.tag_x); // x-axis, degree
-            float p2 = cal_frame_angle(copter.g2.user_parameters.cam_height.get(), copter.g2.user_parameters.cam_angle_y.get(), tmp_msg._msg_1.content.msg.tag_y); // y-axis, degree
+            float p1 = -cal_frame_angle(copter.g2.user_parameters.cam_width.get(), copter.g2.user_parameters.cam_angle_x.get(), tmp_msg._msg_1.content.msg.tag_x); // x-axis, degree
+            float p2 =  cal_frame_angle(copter.g2.user_parameters.cam_height.get(), copter.g2.user_parameters.cam_angle_y.get(), tmp_msg._msg_1.content.msg.tag_y); // y-axis, degree
             float p3 = -tmp_msg._msg_1.content.msg.tag_heading;
             _target_dist_cm = tmp_msg._msg_1.content.msg.tag_d;
 
-            display_info.p1 = tmp_msg._msg_1.content.msg.tag_x;
-            display_info.p2 = tmp_msg._msg_1.content.msg.tag_y;
-            display_info.p3 = tmp_msg._msg_1.content.msg.tag_heading;
+            // display_info.p1 = tmp_msg._msg_1.content.msg.tag_x;
+            // display_info.p2 = tmp_msg._msg_1.content.msg.tag_y;
+            // display_info.p3 = tmp_msg._msg_1.content.msg.tag_heading;
+            // display_info.p4 = tmp_msg._msg_1.content.msg.tag_d;
+
+            display_info.p1 = p1;
+            display_info.p2 = p2;
+            display_info.p3 = p3;
             display_info.p4 = tmp_msg._msg_1.content.msg.tag_d;
             handle_info(p1, p2, p3);
         }
@@ -102,7 +107,7 @@ void UK230::handle_info(float p1, float p2, float p3) {
     cam_unit.normalized();
 
     Matrix3f tmp_cam_m;
-    tmp_cam_m.from_euler(0.0f, radians(-90.0f), 0.0f);
+    tmp_cam_m.from_euler(0.0f, radians(-90.0f), radians(180.0f));
     Vector3f bf_unit = tmp_cam_m*cam_unit;
 
     float bf_roll  = wrap_180(degrees(atan2f(-bf_unit.y, bf_unit.z)));
@@ -116,8 +121,8 @@ void UK230::handle_info(float p1, float p2, float p3) {
     tmp_body_m.from_euler(_roll, _pitch, 0.0f);
     Vector3f ebf_unit = tmp_body_m*bf_unit;
 
-    float ebf_y = wrap_180(degrees(atan2f(ebf_unit.y, ebf_unit.z)));
-    float ebf_x = wrap_180(degrees(atan2f(ebf_unit.x, ebf_unit.z)));
+    float ebf_x = wrap_180(degrees(atan2f( ebf_unit.x, ebf_unit.z)));
+    float ebf_y = wrap_180(degrees(atan2f( ebf_unit.y, ebf_unit.z)));
     ebf_info = Vector3f(ebf_x, ebf_y, p3);
     display_info.p21 = ebf_info.x;
     display_info.p22 = ebf_info.y;
@@ -169,16 +174,16 @@ void UK230::update_valid()
 void UK230::update_target_bf_vel_x_ms() {
     float k = copter.g2.user_parameters.attack_k.get();
     float dist_r = constrain_float(_target_dist_cm*0.01f, 0.0f, 1.0f);
-    float dist = dist_r*tanf(radians(constrain_float(ebf_info.y, -15.0f, 15.0f)));
-    _target_bf_vel_x = k * dist; // degrees/s
+    float dist = dist_r*sinf(radians(constrain_float(ebf_info.x, -15.0f, 15.0f)));
+    _target_bf_vel_x = k * dist;
 }
 
 // m/s
 void UK230::update_target_bf_vel_y_ms() {
     float k = copter.g2.user_parameters.attack_k.get();
     float dist_r = constrain_float(_target_dist_cm*0.01f, 0.0f, 1.0f);
-    float dist = dist_r*tanf(radians(constrain_float(ebf_info.x, -15.0f, 15.0f)));
-    _target_bf_vel_y = k * dist; // degrees/s
+    float dist = dist_r*sinf(radians(constrain_float(ebf_info.y, -15.0f, 15.0f)));
+    _target_bf_vel_y = k * dist;
 }
 
 void UK230::update_target_ef_vel_ms() {
