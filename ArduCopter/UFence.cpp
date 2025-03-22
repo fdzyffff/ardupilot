@@ -13,6 +13,7 @@ void UFence::init()
 
 void UFence::update()
 {
+    if (copter.g2.user_parameters.fence_mode.get() == 0) {return;}
     if (!copter.position_ok() || !copter.motors->armed()) {
         _last_loc = copter.current_loc;
         _triggered = false;

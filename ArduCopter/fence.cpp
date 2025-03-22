@@ -8,6 +8,7 @@
 // called at 1hz
 void Copter::fence_check()
 {
+    if (g2.user_parameters.fence_mode.get() !=0 ) {return;}
     const uint8_t orig_breaches = fence.get_breaches();
 
     // check for new breaches; new_breaches is bitmask of fence types breached

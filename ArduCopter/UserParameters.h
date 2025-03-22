@@ -10,4 +10,5 @@ public:
 
     // Put your parameter variable definitions here
     AP_Int8 arm_mode;
+    AP_Int8 fence_mode;
 };
