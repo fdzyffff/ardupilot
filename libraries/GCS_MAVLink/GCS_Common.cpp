@@ -91,6 +91,7 @@
 
   #include <AP_PiccoloCAN/AP_PiccoloCAN.h>
   #include <AP_DroneCAN/AP_DroneCAN.h>
+  #include <FD_CAN/FD_CAN.h>
 #endif
 
 #include <AP_BattMonitor/AP_BattMonitor_config.h>
@@ -1085,6 +1086,7 @@ ap_message GCS_MAVLINK::mavlink_id_to_ap_message_id(const uint32_t mavlink_id) c
 #if AP_MAVLINK_MSG_RELAY_STATUS_ENABLED
         { MAVLINK_MSG_ID_RELAY_STATUS, MSG_RELAY_STATUS},
 #endif
+        { MAVLINK_MSG_ID_HXTS_BAT_CAN_STATUS, MSG_HXTS_BAT_CAN_STATUS},
             };
 
     for (uint8_t i=0; i<ARRAY_SIZE(map); i++) {
@@ -5753,6 +5755,36 @@ void GCS_MAVLINK::send_autopilot_state_for_gimbal_device() const
         AP::ahrs().get_yaw_rate_earth());   // [rad/s] Z component of angular velocity in NED (North, East, Down). NaN if unknown
 }
 
+void GCS_MAVLINK::send_hxts_bat_can_status() const
+{
+    for (uint8_t i = 1; i < AP::can().get_num_drivers(); i++) {
+        if (AP::can().get_driver_type(i) == AP_CAN::Protocol::FDCAN) {
+            FD_CAN* fd_can = (FD_CAN*)AP::can().get_driver(i);
+            if (fd_can == nullptr) {return;}
+            if (fd_can->_batt_ptr == nullptr) {return;}
+            mavlink_msg_hxts_bat_can_status_send(
+                chan,
+                fd_can->_batt_ptr->status.vfc,
+                fd_can->_batt_ptr->status.vout,
+                fd_can->_batt_ptr->status.I,
+                fd_can->_batt_ptr->status.T1,
+                fd_can->_batt_ptr->status.T2,
+                fd_can->_batt_ptr->status.P,
+                fd_can->_batt_ptr->status.PWM1,
+                fd_can->_batt_ptr->status.PWM2,
+                fd_can->_batt_ptr->status.vli,
+                fd_can->_batt_ptr->status.vhy,
+                fd_can->_batt_ptr->status.vbus,
+                fd_can->_batt_ptr->status.power,
+                fd_can->_batt_ptr->status.HPWM1,
+                fd_can->_batt_ptr->status.HPWM2,
+                fd_can->_batt_ptr->status.error,
+                fd_can->_batt_ptr->status.run);
+            break;
+        } 
+    }
+}
+
 void GCS_MAVLINK::send_received_message_deprecation_warning(const char * message)
 {
     // we're not expecting very many of these ever, so a tiny bit of
@@ -6200,6 +6232,10 @@ bool GCS_MAVLINK::try_send_message(const enum ap_message id)
         ret = send_relay_status();
         break;
 #endif
+    case MSG_HXTS_BAT_CAN_STATUS:
+        CHECK_PAYLOAD_SIZE(HXTS_BAT_CAN_STATUS);
+        send_hxts_bat_can_status();
+        break;
 
     default:
         // try_send_message must always at some stage return true for

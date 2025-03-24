@@ -40,6 +40,8 @@ bool CAN_Multicast::init(uint8_t instance)
     char address[] = MCAST_ADDRESS_BASE;
 
     address[strlen(address)-1] = '0' + instance;
+
+        printf("CANIface: %s\n", address);
     return sock.connect(address, MCAST_PORT);
 }
 

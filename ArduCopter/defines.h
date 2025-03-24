@@ -96,6 +96,7 @@ enum LoggingParameters {
      LOG_SYSIDD_MSG,
      LOG_SYSIDS_MSG,
      LOG_GUIDED_ATTITUDE_TARGET_MSG
+
 };
 
 #define MASK_LOG_ATTITUDE_FAST          (1<<0)

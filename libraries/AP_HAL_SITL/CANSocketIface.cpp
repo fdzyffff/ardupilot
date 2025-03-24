@@ -205,6 +205,7 @@ bool CANIface::init(const uint32_t bitrate, const uint32_t fdbitrate, const Oper
 
 bool CANIface::init(const uint32_t bitrate, const OperatingMode mode)
 {
+    printf("CANIface: 0000\n");
     const auto *_sitl = AP::sitl();
     if (_sitl == nullptr) {
         return false;
@@ -216,19 +217,23 @@ bool CANIface::init(const uint32_t bitrate, const OperatingMode mode)
     switch (can_type) {
     case SITL::SIM::CANTransport::MulticastUDP:
         transport = new CAN_Multicast();
+        printf("CANIface: CAN_Multicast\n");
         break;
     case SITL::SIM::CANTransport::SocketCAN:
 #if HAL_CAN_WITH_SOCKETCAN
         transport = new CAN_SocketCAN();
+        printf("CANIface: CAN_SocketCAN\n");
 #endif
         break;
     }
     if (transport == nullptr) {
+        printf("CANIface: FF00\n");
         return false;
     }
     if (!transport->init(_self_index)) {
         delete transport;
         transport = nullptr;
+        printf("CANIface: FF11\n");
         return false;
     }
     if (sem_handle != nullptr) {

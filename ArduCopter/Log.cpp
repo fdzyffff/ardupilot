@@ -1,4 +1,5 @@
 #include "Copter.h"
+#include "AP_ExternalAHRS/AP_ExternalAHRS_FS982.h"
 
 #if HAL_LOGGING_ENABLED
 
@@ -225,6 +226,46 @@ void Copter::Log_Write_Parameter_Tuning(uint8_t param, float tuning_val, float t
     logger.WriteBlock(&pkt_tune, sizeof(pkt_tune));
 }
 
+
+    struct PACKED log_KYI1 {
+      LOG_PACKET_HEADER;
+        int64_t time_us;
+        int32_t    lat;               // 4
+        int32_t    lon;               // 4
+        int32_t    alt;               // 4
+        float      north;             // 4
+        float      east;              // 4
+        float      down;              // 4
+};
+
+
+
+struct PACKED log_KYI2 {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+        float roll;         // 4    
+        float pitch;        // 4
+        float yaw;          // 4
+        float acc_x;        // 4
+        float acc_y;        // 4
+        float acc_z;        // 4
+        float gyro_x;       // 4
+        float gyro_y;       // 4
+        float gyro_z;       // 4
+        float tem;          // 4
+};
+
+
+
+struct PACKED log_KYI3 {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    uint8_t   fix;       // 1
+    uint8_t   sat;       // 1
+    uint16_t  hdop;      // 2
+    uint16_t  INS;       // 2
+};
+
 void Copter::Log_Video_Stabilisation()
 {
     if (!should_log(MASK_LOG_VIDEO_STABILISATION)) {
@@ -405,6 +446,8 @@ void Copter::Log_Write_Guided_Attitude_Target(ModeGuided::SubMode target_type, f
     logger.WriteBlock(&pkt, sizeof(pkt));
 }
 
+
+
 // type and unit information can be found in
 // libraries/AP_Logger/Logstructure.h; search for "log_Units" for
 // units and "Format characters" for field type information
@@ -558,7 +601,8 @@ const struct LogStructure Copter::log_structure[] = {
 
     { LOG_GUIDED_ATTITUDE_TARGET_MSG, sizeof(log_Guided_Attitude_Target),
       "GUIA",  "QBffffffff",    "TimeUS,Type,Roll,Pitch,Yaw,RollRt,PitchRt,YawRt,Thrust,ClimbRt", "s-dddkkk-n", "F-000000-0" , true },
-};
+     };
+
 
 void Copter::Log_Write_Vehicle_Startup_Messages()
 {
