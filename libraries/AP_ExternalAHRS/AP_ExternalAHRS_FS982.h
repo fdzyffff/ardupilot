@@ -47,7 +47,9 @@ private:
     bool check_uart();
     void parse_msg();
 
-    struct PACKED NAV_t
+    public:
+       struct PACKED NAV_t
+    // struct NAV_t
     {
         uint8_t header1;
         uint8_t header2;
@@ -82,6 +84,7 @@ private:
         uint32_t rsv1;  // 预留
         uint32_t rsv2;
     };
+
 
     union PACKED msgbuffer
     {

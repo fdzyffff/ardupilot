@@ -14,6 +14,7 @@
 #include <AP_Common/Bitmask.h>
 #include <AP_Vehicle/AP_Vehicle_Type.h>
 
+
 extern const AP_HAL::HAL &hal;
 
 // constructor
@@ -24,7 +25,8 @@ AP_ExternalAHRS_FS982::AP_ExternalAHRS_FS982(AP_ExternalAHRS *_frontend,
     uart = sm.find_serial(AP_SerialManager::SerialProtocol_AHRS, 0);
     if (!uart)
     {
-        GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "FS982 ExternalAHRS no UART");
+        GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "KY-2 no UART");
+      //  hal.scheduler->delay(5000);
         return;
     }
     baudrate = sm.find_baudrate(AP_SerialManager::SerialProtocol_AHRS, 0);
@@ -34,11 +36,13 @@ AP_ExternalAHRS_FS982::AP_ExternalAHRS_FS982(AP_ExternalAHRS *_frontend,
     // 默认不提供IMU信息，因为100Hz的更新频率对于大多数载具是不够的
     set_default_sensors(uint16_t(AP_ExternalAHRS::AvailableSensor::GPS));
 
-    if (!hal.scheduler->thread_create(FUNCTOR_BIND_MEMBER(&AP_ExternalAHRS_FS982::update_thread, void), "FS982", 2048, AP_HAL::Scheduler::PRIORITY_SPI, 0))
+    if (!hal.scheduler->thread_create(FUNCTOR_BIND_MEMBER(&AP_ExternalAHRS_FS982::update_thread, void), "KY-2", 2048, AP_HAL::Scheduler::PRIORITY_SPI, 0))
     {
-        AP_HAL::panic("FS982 Failed to start ExternalAHRS update thread");
+        AP_HAL::panic("KY-2 Failed to start ExternalAHRS update thread");
+
     }
-    GCS_SEND_TEXT(MAV_SEVERITY_INFO, "FS982 ExternalAHRS initialised");
+    GCS_SEND_TEXT(MAV_SEVERITY_INFO, "KY-2 initialised");
+
 }
 
 /*
@@ -64,7 +68,7 @@ bool AP_ExternalAHRS_FS982::check_uart()
 
     uint8_t new_byte;
 
-    for (int i = 0; i < n; i++)
+    for (uint32_t i = 0; i < n; i++)
     {
         if (!uart->read(new_byte))
         { // 依次读取所有字节
@@ -155,7 +159,8 @@ bool AP_ExternalAHRS_FS982::check_uart()
             }
             else
             {
-                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "FS982: CRC error");
+                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "KY-2: CRC error");
+              //  hal.scheduler->delay(5000);
                 return false;
             }
             break;
@@ -274,7 +279,59 @@ void AP_ExternalAHRS_FS982::parse_msg()
         AP::ins().handle_external(ins_data);
         state.accel = ins_data.accel;
         state.gyro = ins_data.gyro;
+
+        #if HAL_LOGGING_ENABLED
+        static uint32_t _last_log_ms = AP_HAL::millis();
+        uint32_t tnow_ms = AP_HAL::millis();
+        if (tnow_ms - _last_log_ms > 50) {
+            AP::logger().WriteStreaming("KYI1",
+                                        "TimeUS,lat,lon,alt,north,east,down",
+                                        "s------",
+                                        "FGG----",
+                                        "Qiiifff",
+                                        AP_HAL::micros64(),
+                                        nav_msg.nav.latitude,
+                                        nav_msg.nav.longitude,
+                                        nav_msg.nav.altitude_mm,
+                                        nav_msg.nav.velocity_north_m_s,
+                                        nav_msg.nav.velocity_east_m_s,
+                                        nav_msg.nav.velocity_down_m_s);
+
+            AP::logger().WriteStreaming("KYI2",
+                                        "TimeUS,roll,pitch,yaw,acc_x,acc_y,acc_z,gyro_x,gyro_y,gyro_z,tem",
+                                        "s----------",
+                                        "F----------",
+                                        "Qffffffffff",
+                                        AP_HAL::micros64(),
+                                        nav_msg.nav.roll_deg,
+                                        nav_msg.nav.pitch_deg,
+                                        nav_msg.nav.yaw_deg,
+                                        nav_msg.nav.acc_x_g,
+                                        nav_msg.nav.acc_y_g,
+                                        nav_msg.nav.acc_z_g,
+                                        nav_msg.nav.gyro_x_deg_s,
+                                        nav_msg.nav.gyro_y_deg_s,
+                                        nav_msg.nav.gyro_z_deg_s,
+                                        nav_msg.nav.temperature_dc);
+
+            AP::logger().WriteStreaming("KYI3", 
+                                        "TimeUS,fix,sat,hdop,INS",
+                                        "s----",
+                                        "F----",
+                                        "QBBHH",
+                                        AP_HAL::micros64(),
+                                        nav_msg.nav.fix_type,
+                                        nav_msg.nav.sat_num,
+                                        nav_msg.nav.hdop_cm,
+                                        nav_msg.nav.INS_status);
+
+            _last_log_ms = tnow_ms;
+        }
+#endif
+
     }
+
+
 }
 
 void AP_ExternalAHRS_FS982::update_thread()
@@ -378,19 +435,26 @@ bool AP_ExternalAHRS_FS982::pre_arm_check(char *failure_msg, uint8_t failure_msg
 {
     if (!setup_complete)
     {
-        hal.util->snprintf(failure_msg, failure_msg_len, "FS982 setup failed");
+        hal.util->snprintf(failure_msg, failure_msg_len, "KY-2 setup failed");
+
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "KY-2 setup failed");
+       // hal.scheduler->delay(5000);
         return false;
     }
     if (!healthy())
     {
-        hal.util->snprintf(failure_msg, failure_msg_len, "FS982 unhealthy");
+        hal.util->snprintf(failure_msg, failure_msg_len, "KY-2 unhealthy");
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "KY-2 setup unhealthy");
+       // hal.scheduler->delay(5000);
         return false;
     }
     WITH_SEMAPHORE(state.sem);
     uint32_t now = AP_HAL::millis();
     if (now - last_nav_msg_ms > 20)
     {
-        hal.util->snprintf(failure_msg, failure_msg_len, "FS982 not up to date");
+        hal.util->snprintf(failure_msg, failure_msg_len, "KY-2 not up to date");
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "KY-2 not up to date");
+        //hal.scheduler->delay(5000);
         return false;
     }
     return true;

@@ -28,6 +28,7 @@
 #include <AP_KDECAN/AP_KDECAN.h>
 #include <AP_SerialManager/AP_SerialManager.h>
 #include <AP_PiccoloCAN/AP_PiccoloCAN.h>
+#include <FD_CAN/FD_CAN.h>
 #include <AP_EFI/AP_EFI_NWPMU.h>
 #include <GCS_MAVLink/GCS.h>
 #if CONFIG_HAL_BOARD == HAL_BOARD_LINUX
@@ -125,6 +126,8 @@ void AP_CANManager::init()
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
     if (AP::sitl() == nullptr) {
         AP_HAL::panic("CANManager: SITL not initialised!");
+    } else {
+        // printf("CANManager: SITL %d\n", HAL_NUM_CAN_IFACES);
     }
 #endif
     // We only allocate log buffer only when under debug
@@ -142,6 +145,7 @@ void AP_CANManager::init()
     // loop through interfaces and allocate and initialise Iface,
     // Also allocate Driver objects, and add interfaces to them
     for (uint8_t i = 0; i < HAL_NUM_CAN_IFACES; i++) {
+        printf("CANManager: SITL %d\n", i);
         // Get associated Driver to the interface
         uint8_t drv_num = _interfaces[i]._driver_number;
         if (drv_num == 0 || drv_num > HAL_MAX_CAN_PROTOCOL_DRIVERS) {
@@ -153,10 +157,12 @@ void AP_CANManager::init()
             // So if this interface is not allocated allocate it here,
             // also pass the index of the CANBus
             hal_mutable.can[i] = new HAL_CANIface(i);
+            printf("CANManager: 1111\n");
         }
 
         // Initialise the interface we just allocated
         if (hal_mutable.can[i] == nullptr) {
+            printf("CANManager: 2222\n");
             continue;
         }
         AP_HAL::CANIface* iface = hal_mutable.can[i];
@@ -167,6 +173,7 @@ void AP_CANManager::init()
         // Check if this interface need hooking up to slcan passthrough
         // instead of a driver
 #if AP_CAN_SLCAN_ENABLED
+        printf("define AP_CAN_SLCAN_ENABLED\n");
         if (_slcan_interface.init_passthrough(i)) {
             // we have slcan bridge setup pass that on as can iface
             can_initialised = hal_mutable.can[i]->init(_interfaces[i]._bitrate, _interfaces[i]._fdbitrate*1000000, AP_HAL::CANIface::NormalMode);
@@ -174,14 +181,18 @@ void AP_CANManager::init()
         } else {
 #else
         if (true) {
+            printf("undef AP_CAN_SLCAN_ENABLED\n");
 #endif
             can_initialised = hal_mutable.can[i]->init(_interfaces[i]._bitrate, _interfaces[i]._fdbitrate*1000000, AP_HAL::CANIface::NormalMode);
         }
 
         if (!can_initialised) {
+
+            printf("!can_initialised\n");
             log_text(AP_CANManager::LOG_ERROR, LOG_TAG, "Failed to initialise CAN Interface %d", i+1);
             continue;
         }
+            printf("CAN Interface %d initialized well\n", i + 1);
 
         log_text(AP_CANManager::LOG_INFO, LOG_TAG, "CAN Interface %d initialized well", i + 1);
 
@@ -223,6 +234,17 @@ void AP_CANManager::init()
             AP_Param::load_object_from_eeprom((AP_PiccoloCAN*)_drivers[drv_num], AP_PiccoloCAN::var_info);
         } else
 #endif
+        if (drv_type[drv_num] == AP_CAN::Protocol::FDCAN) {
+            printf("AP_CAN::Protocol::FDCAN\n");
+            _drivers[drv_num] = _drv_param[drv_num]._fdcan = new FD_CAN;
+            if (_drivers[drv_num] == nullptr) {
+                AP_BoardConfig::allocation_error("FD CAN %d", i + 1);
+                continue;
+            }
+
+            AP_Param::load_object_from_eeprom((FD_CAN*)_drivers[drv_num], FD_CAN::var_info);
+        } else
+
         {
             continue;
         }
