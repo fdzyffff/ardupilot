@@ -28,8 +28,8 @@ void UMav_trans_status::send_bsq_msg()
 
     mavlink_message_t msg;
 
-    packet.type = 0;
-    packet.throw_status = copter.arming.pre_arm_checks(false);
+    // packet.type = 0;
+    packet.throw_status = 0;
     packet.battery = 3;
 
     UNUSED_RESULT(mavlink_msg_wxbs_status_encode(copter.g.sysid_this_mav,
@@ -81,10 +81,9 @@ void UMav_trans_selfcheck::send_mission_msg()
         if (mask & (1U<<i)) {
             if (comm_get_txspace(channel) >= GCS_MAVLINK::packet_overhead_chan(channel) + 255) {
                 
-                mavlink_msg_wxbs_selfcheck_result_send(
+                mavlink_msg_wxbs_do_selfcheck_send(
                     channel,
-                    out_packet.controller_ok,
-                    out_packet.controller_ok);
+                    in_packet.do_check);
             }
         }
     }
@@ -109,7 +108,7 @@ void UMav_trans_selfcheck::send_bsq_msg()
 
     mavlink_message_t msg;
 
-    out_packet.controller_ok = copter.arming.pre_arm_checks(false);
+    out_packet.controller_ok = 1;
 
     UNUSED_RESULT(mavlink_msg_wxbs_selfcheck_result_encode(copter.g.sysid_this_mav,
                                         0,
