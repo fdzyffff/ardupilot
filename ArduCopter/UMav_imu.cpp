@@ -12,9 +12,13 @@ void UMav::send_raw_imu()
     mavlink_message_t msg;
     uint16_t len;
 
+
+
 #if AP_INERTIALSENSOR_ENABLED
     const Vector3f &accel = copter.ins.get_accel(0);
     const Vector3f &gyro = copter.ins.get_gyro(0);
+    _imu_acc.apply(accel);
+    _imu_gyro.apply(gyro);
     Vector3f mag;
 #if AP_COMPASS_ENABLED
     if (copter.compass.get_count() >= 1) {
@@ -23,12 +27,12 @@ void UMav::send_raw_imu()
 #endif
     mavlink_raw_imu_t packet;
     packet.time_usec = AP_HAL::micros64();
-    packet.xacc = accel.x * 1000.0f / GRAVITY_MSS;
-    packet.yacc = accel.y * 1000.0f / GRAVITY_MSS;
-    packet.zacc = accel.z * 1000.0f / GRAVITY_MSS;
-    packet.xgyro = gyro.x * 1000.0f;
-    packet.ygyro = gyro.y * 1000.0f;
-    packet.zgyro = gyro.z * 1000.0f;
+    packet.xacc = _imu_acc.get().x * 1000.0f / GRAVITY_MSS;
+    packet.yacc = _imu_acc.get().y * 1000.0f / GRAVITY_MSS;
+    packet.zacc = _imu_acc.get().z * 1000.0f / GRAVITY_MSS;
+    packet.xgyro = _imu_gyro.get().x * 1000.0f;
+    packet.ygyro = _imu_gyro.get().y * 1000.0f;
+    packet.zgyro = _imu_gyro.get().z * 1000.0f;
     packet.xmag = mag.x;
     packet.ymag = mag.y;
     packet.zmag = mag.z;

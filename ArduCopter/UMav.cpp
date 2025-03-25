@@ -9,6 +9,10 @@ void UMav::init()
 {
     FD_uart_imu.init();
     FD_uart_bsq.init();
+
+    _imu_gyro.set_cutoff_frequency(400.f, copter.g2.user_parameters.filt_gyro_hz.get());
+    _imu_acc.set_cutoff_frequency(400.f, copter.g2.user_parameters.filt_acc_hz.get());
+
     gcs().send_text(MAV_SEVERITY_INFO, "UMAV INIT");
 }
 

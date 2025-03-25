@@ -56,6 +56,9 @@ public:
     FD_UART FD_uart_imu{AP_SerialManager::SerialProtocol_IMU};
     FD_UART FD_uart_bsq{AP_SerialManager::SerialProtocol_BSQ};
 
+    LowPassFilterVector3f _imu_gyro;
+    LowPassFilterVector3f _imu_acc;
+
     UMav_trans_status          trans_status;
     UMav_trans_selfcheck       trans_selfcheck;
     UMav_trans_target          trans_target;
