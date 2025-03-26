@@ -124,7 +124,6 @@
 #include "AP_Arming.h"
 #include "UDelay.h"
 #include "UAttack.h"
-#include "UTarget.h"
 
 /*
   main APM:Plane class
@@ -183,9 +182,6 @@ public:
 
     friend class UDelay;
     friend class UAttack;
-    friend class UTarget_Cam;
-    friend class UTarget_Loc;
-    friend class UTarget_Mav;
 
     Plane(void);
 

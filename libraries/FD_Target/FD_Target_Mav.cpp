@@ -1,0 +1,57 @@
+#include "FD_Target.h"
+
+// Convenience macros //////////////////////////////////////////////////////////
+//
+
+FD_Target_Mav::FD_Target_Mav()
+{
+    return;
+}
+
+bool FD_Target_Mav::init() {
+    return true;
+}
+
+void FD_Target_Mav::update() {
+    static uint32_t last_update_ms = millis();
+
+    uint32_t tnow = millis(); // 只能放这里，handle_info会更新_last_ms的值，如果tnow赋值在其之前，则会小于_last_ms。SITL仿不出来，它周期是50Hz太低了
+    if ((target_timeout > 0) && (tnow - _last_ms > (uint32_t)target_timeout)) {
+        _valid = false;
+    }
+
+    // for print purpose
+    if (tnow - last_update_ms > 1000) {
+        //gcs().send_text(MAV_SEVERITY_INFO, "raw: %d, att: %d, arspd: %d", pk0_count, pk1_count, pk2_count);
+        last_update_ms = tnow;
+    }
+}
+
+void FD_Target_Mav::handle_msg(const mavlink_message_t &msg)
+{
+    if (msg.msgid == MAVLINK_MSG_ID_COMMAND_LONG) {
+        // decode packet
+        // gcs().send_text(MAV_SEVERITY_WARNING, "Target mavpkg");
+        // decode packet
+        mavlink_command_long_t packet;
+        mavlink_msg_command_long_decode(&msg, &packet);
+        switch(packet.command) {
+            case MAV_CMD_USER_1:
+                if (is_equal(packet.param7, 1.0f)) {
+                    float p1 = packet.param5;
+                    float p2 = packet.param6;
+                    handle_info(p1, p2);
+                }
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+void FD_Target_Mav::handle_info_test(float p1, float p2) {
+    // FD_DYT_NEW_msg_DYTTELEM &tmp_msg = FD1_uart_ptr->get_msg_DYTTELEM();
+    // tmp_msg._msg_1.updated = true;
+    // tmp_msg._msg_1.content.msg.target_x = (int16_t)(p1/0.005f);
+    // tmp_msg._msg_1.content.msg.target_y = (int16_t)(p2/0.005f);
+}

@@ -845,6 +845,8 @@ public:
     // methods that affect movement of the vehicle in this mode
     void update() override;
 
+    void run() override;
+
     float get_cmd_throttle();
 protected:
 

@@ -1000,6 +1000,8 @@ const AP_Param::Info Plane::var_info[] = {
     // @Path: mode_takeoff.cpp
     GOBJECT(mode_takeoff, "TKOFF_", ModeTakeoff),
 
+    GOBJECT(uattack,      "UATK_", UAttack),
+
     // @Group:
     // @Path: ../libraries/AP_Vehicle/AP_Vehicle.cpp
     PARAM_VEHICLE_INFO,
@@ -1265,28 +1267,6 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @Path: ../libraries/AC_PrecLand/AC_PrecLand.cpp
     AP_SUBGROUPINFO(precland, "PLND_", 35, ParametersG2, AC_PrecLand),
 #endif
-    AP_SUBGROUPINFO(attack_roll_pid    , "USR_ATKRLL_", 36, ParametersG2, AC_PID),
-    AP_GROUPINFO("USR_A_K1_PTH",     37, ParametersG2, attack_k1_pitch,         2.0f),
-    AP_GROUPINFO("USR_A_K2_PTH",     38, ParametersG2, attack_k2_pitch,         2.0f),
-    AP_GROUPINFO("USR_A_K1_YAW",     39, ParametersG2, attack_k1_yaw,           2.0f),
-    AP_GROUPINFO("USR_A_K2_YAW",     40, ParametersG2, attack_k2_yaw,           2.0f),
-    AP_GROUPINFO("USR_A_K_ANGLE",    41, ParametersG2, attack_k_angle,          1.0f),
-    AP_GROUPINFO("USR_A_THR",        42, ParametersG2, attack_throttle,        75.0f),
-    AP_GROUPINFO("USR_A_THR_RATE",   43, ParametersG2, attack_throttle_rate,    1.0f),
-    AP_GROUPINFO("USR_A_OUTMS",      44, ParametersG2, attack_timeout,       2000),
-    AP_GROUPINFO("USR_A_ANGLE",      45, ParametersG2, attack_angle,           30.f),
-    AP_GROUPINFO("USR_A_PTH_LIM",    46, ParametersG2, pitch_limit,            30.f),
-    AP_GROUPINFO("USR_A_PTH_RLIM",   47, ParametersG2, pitch_rate_limit,       30.f),
-    AP_GROUPINFO("USR_A_OFF_PTH",    48, ParametersG2, attack_pitch_off,       -5.0f),
-    AP_GROUPINFO("USR_UPRINT",       49, ParametersG2, print,                   0),
-    AP_GROUPINFO("USR_T_TYPE",       50, ParametersG2, user_target_type,        1),
-    AP_GROUPINFO("USR_CAM_W",        51, ParametersG2, cam_width,             720),
-    AP_GROUPINFO("USR_CAM_H",        52, ParametersG2, cam_height,            720),
-    AP_GROUPINFO("USR_CAM_ANG_X",    53, ParametersG2, cam_angle_x,            45.0f),
-    AP_GROUPINFO("USR_CAM_ANG_Y",    54, ParametersG2, cam_angle_y,            45.0f),
-    AP_GROUPINFO("USR_CAM_P_OFF",    55, ParametersG2, cam_pitch_offset,        0.0f),
-    AP_GROUPINFO("USR_CAM_OFFX",     56, ParametersG2, cam_x_offset,          690),
-    AP_GROUPINFO("USR_CAM_OFFY",     57, ParametersG2, cam_y_offset,          370),
     AP_GROUPEND
 };
 

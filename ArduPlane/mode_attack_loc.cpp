@@ -4,7 +4,7 @@
 bool ModeAttackLoc::_enter()
 {
     set_stage(stage_class::APPROACH);
-    if (plane.uattack.is_active()) {
+    if (plane.uattack.is_active_loc()) {
         gcs().send_text(MAV_SEVERITY_INFO, "Attack LOC!");
         build_path();
         _cmd_throttle = MAX(SRV_Channels::get_output_scaled(SRV_Channel::k_throttle), plane.aparm.throttle_cruise);
@@ -46,6 +46,7 @@ void ModeAttackLoc::build_path()
     // Load the next_WP slot
     // ---------------------
     // gcs().send_text(MAV_SEVERITY_INFO, "BEFORE alt:%d", plane.next_WP_loc.alt);
+    target_loc = plane.uattack._Target_ptr_loc->target_loc;
     plane.next_WP_loc = target_loc;
     plane.next_WP_loc.alt = plane.current_loc.alt;
     // always over target for a distance
@@ -79,9 +80,9 @@ void ModeAttackLoc::update()
             update_approach();
             if (check_approach()) {
                 set_stage(stage_class::ATTACK);                
-                plane.g2.attack_roll_pid.reset_I();
-                plane.g2.attack_roll_pid.reset_filter();
-                plane.g2.attack_roll_pid.set_integrator(0);
+                plane.uattack.attack_roll_pid.reset_I();
+                plane.uattack.attack_roll_pid.reset_filter();
+                plane.uattack.attack_roll_pid.set_integrator(0);
             }
             break;
         case stage_class::ATTACK:
@@ -109,8 +110,8 @@ void ModeAttackLoc::update_attack()
     // plane.nav_roll_cd = 0;//plane.ahrs.roll_sensor;
     plane.nav_pitch_cd = plane.ahrs.pitch_sensor;
 
-    float throtle_rate = plane.g2.attack_throttle_rate*plane.G_Dt;
-    float target_throttle = plane.g2.attack_throttle;
+    float throtle_rate = plane.uattack.attack_throttle_rate*plane.G_Dt;
+    float target_throttle = plane.uattack.attack_throttle;
     _cmd_throttle = _cmd_throttle + constrain_float(target_throttle - _cmd_throttle, -throtle_rate, throtle_rate);
 }
 
