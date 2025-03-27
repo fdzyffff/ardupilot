@@ -7,20 +7,21 @@ const AP_Param::GroupInfo UAttack::var_info[] = {
     AP_GROUPINFO("K2_PTH",      2, UAttack, attack_k2_pitch,         2.0f),
     AP_GROUPINFO("K1_YAW",      3, UAttack, attack_k1_yaw,           2.0f),
     AP_GROUPINFO("K2_YAW",      4, UAttack, attack_k2_yaw,           2.0f),
-    AP_GROUPINFO("K_ANGLE",     5, UAttack, attack_k_angle,          1.0f),
-    AP_GROUPINFO("THR",         6, UAttack, attack_throttle,        75.0f),
-    AP_GROUPINFO("THR_RATE",    7, UAttack, attack_throttle_rate,    1.0f),
-    AP_GROUPINFO("OUTMS",       8, UAttack, attack_timeout,       2000),
-    AP_GROUPINFO("ANGLE",       9, UAttack, attack_angle,           30.f),
-    AP_GROUPINFO("PTH_LIM",    10, UAttack, pitch_limit,            30.f),
-    AP_GROUPINFO("PTH_RLIM",   11, UAttack, pitch_rate_limit,       30.f),
-    AP_GROUPINFO("OFF_PTH",    12, UAttack, attack_pitch_off,       -5.0f),
-    AP_GROUPINFO("UPRINT",     13, UAttack, print,                   0),
-    AP_GROUPINFO("TC_USE",     14, UAttack, use_target_cam,          0),
-    AP_GROUPINFO("TL_USE",     15, UAttack, use_target_loc,          0),
+    AP_GROUPINFO("K2_ROLL",     5, UAttack, attack_k2_roll,          2.0f),
+    AP_GROUPINFO("K_ANGLE",     6, UAttack, attack_k_angle,          1.0f),
+    AP_GROUPINFO("THR",         7, UAttack, attack_throttle,        75.0f),
+    AP_GROUPINFO("THR_RATE",    8, UAttack, attack_throttle_rate,    1.0f),
+    AP_GROUPINFO("OUTMS",       9, UAttack, attack_timeout,       2000),
+    AP_GROUPINFO("ANGLE",      10, UAttack, attack_angle,           30.f),
+    AP_GROUPINFO("PTH_LIM",    11, UAttack, pitch_limit,            30.f),
+    AP_GROUPINFO("PTH_RLIM",   12, UAttack, pitch_rate_limit,       30.f),
+    AP_GROUPINFO("OFF_PTH",    13, UAttack, attack_pitch_off,       -5.0f),
+    AP_GROUPINFO("UPRINT",     14, UAttack, print,                   0),
+    AP_GROUPINFO("TC_USE",     15, UAttack, use_target_cam,          0),
+    AP_GROUPINFO("TL_USE",     16, UAttack, use_target_loc,          0),
 
-    AP_SUBGROUPPTR(_Target_ptr_cam, "TC_",   16, UAttack,  FD_Target_K230),
-    AP_SUBGROUPPTR(_Target_ptr_loc, "TL_",   17, UAttack,  FD_Target_Loc),
+    AP_SUBGROUPPTR(_Target_ptr_cam, "TC_",   17, UAttack,  FD_Target_K230),
+    AP_SUBGROUPPTR(_Target_ptr_loc, "TL_",   18, UAttack,  FD_Target_Loc),
     AP_GROUPEND
 };
 
@@ -136,8 +137,8 @@ const Vector2f& UAttack::get_ef_rate_info() {
 
 void UAttack::init_target()
 {
-    bool use_loc = use_target_loc.get();
     bool use_cam = use_target_cam.get();
+    bool use_loc = use_target_loc.get();
 
     if (use_cam) {
         _Target_ptr_cam = new FD_Target_K230();
@@ -301,10 +302,12 @@ void UAttack::update_target_pitch_rate() {
 void UAttack::update_target_roll_angle() {
     // _target_roll_angle = constrain_float(attack_roll_factor.get() * ef_rate_info.x, -15.f, 15.f);
     
+    float k2_roll = attack_k2_roll.get();
+
     float dt = (millis() - _last_ms);
     dt = dt * 0.001f;
     if (dt > 0.2f) {dt = 0.2f;}
-    _target_roll_angle = attack_roll_pid.update_all(0.0f, -ef_rate_info.x, dt);
+    _target_roll_angle = attack_roll_pid.update_all(0.0f, -ef_rate_info.x, dt) + k2_roll * _target_yaw_rate;
 }
 
 // degree/second
@@ -323,5 +326,8 @@ void UAttack::update_target_yaw_rate() {
 void UAttack::handle_attack_msg(const mavlink_message_t &msg) {
     if (_Target_ptr_loc != nullptr) {
         _Target_ptr_loc->handle_msg(msg);
+    }
+    if (_Target_ptr_cam != nullptr) {
+        _Target_ptr_cam->handle_msg(msg);
     }
 }

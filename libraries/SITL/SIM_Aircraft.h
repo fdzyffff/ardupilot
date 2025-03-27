@@ -163,6 +163,8 @@ public:
     float get_battery_temperature() const { return battery.get_temperature(); }
 
     ADSB *adsb;
+    
+    bool flag_stop_on_ground;
 
 protected:
     SIM *sitl;

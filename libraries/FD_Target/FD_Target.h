@@ -44,8 +44,10 @@ public:
     Location current_loc;
     Location target_loc;
 
-private:
     AP_Int32 target_timeout;
+    AP_Float nav_radius;
+
+private:
     bool _have_target;
 };
 
@@ -58,8 +60,7 @@ public:
 
     bool init() override;
     void update();
-    void do_cmd_on(bool on);
-    void do_cmd_pre_lock();
+    void handle_msg(const mavlink_message_t &msg);
     float cal_frame_angle(float pixel, float angle, float x_in);
     void handle_info_test(float p1, float p2);
 

@@ -3,10 +3,15 @@
 
 bool ModeAttackLoc::_enter()
 {
-    set_stage(stage_class::APPROACH);
     if (plane.uattack.is_active_loc()) {
-        gcs().send_text(MAV_SEVERITY_INFO, "Attack LOC!");
-        build_path();
+        target_loc = plane.uattack._Target_ptr_loc->target_loc;
+        if (check_approach()) {
+            set_stage(stage_class::ATTACK);                
+        } else {
+            set_stage(stage_class::APPROACH);
+            build_path();
+            gcs().send_text(MAV_SEVERITY_INFO, "Attack LOC!");
+        }
         _cmd_throttle = MAX(SRV_Channels::get_output_scaled(SRV_Channel::k_throttle), plane.aparm.throttle_cruise);
         return true;
     } else {
@@ -46,7 +51,6 @@ void ModeAttackLoc::build_path()
     // Load the next_WP slot
     // ---------------------
     // gcs().send_text(MAV_SEVERITY_INFO, "BEFORE alt:%d", plane.next_WP_loc.alt);
-    target_loc = plane.uattack._Target_ptr_loc->target_loc;
     plane.next_WP_loc = target_loc;
     plane.next_WP_loc.alt = plane.current_loc.alt;
     // always over target for a distance
@@ -79,10 +83,7 @@ void ModeAttackLoc::update()
         case stage_class::APPROACH:
             update_approach();
             if (check_approach()) {
-                set_stage(stage_class::ATTACK);                
-                plane.uattack.attack_roll_pid.reset_I();
-                plane.uattack.attack_roll_pid.reset_filter();
-                plane.uattack.attack_roll_pid.set_integrator(0);
+                set_stage(stage_class::ATTACK);
             }
             break;
         case stage_class::ATTACK:
@@ -95,7 +96,7 @@ void ModeAttackLoc::update()
 
 bool ModeAttackLoc::check_approach()
 {
-    return (plane.current_loc.get_distance(target_loc) < 400);
+    return (plane.current_loc.get_distance(target_loc) < plane.uattack._Target_ptr_loc->nav_radius.get());
 }
 
 void ModeAttackLoc::update_approach()
@@ -135,6 +136,9 @@ void ModeAttackLoc::set_stage(ModeAttackLoc::stage_class stage_in)
             break;
         case stage_class::ATTACK:
             gcs().send_text(MAV_SEVERITY_INFO, "In Attack");
+            plane.uattack.attack_roll_pid.reset_I();
+            plane.uattack.attack_roll_pid.reset_filter();
+            plane.uattack.attack_roll_pid.set_integrator(0);
             break;
         default:
             break;

@@ -8,6 +8,10 @@ class UAttack {
 
 public:
 
+    friend class Plane;
+    friend class ModeAttackCam;
+    friend class ModeAttackLoc;
+
     // constructor, destructor
     UAttack();
 
@@ -54,24 +58,6 @@ public:
         uint16_t count_log;
     } display_info;
 
-    AP_Float        attack_k1_pitch;
-    AP_Float        attack_k2_pitch;
-    AP_Float        attack_k1_yaw;
-    AP_Float        attack_k2_yaw;
-    AP_Float        attack_k_angle;
-    AP_Float        attack_throttle;
-    AP_Float        attack_throttle_rate;
-    AP_Int16        attack_timeout;
-    AP_Float        attack_angle;
-    AP_Float        pitch_limit;
-    AP_Float        pitch_rate_limit;
-    AP_Float        attack_pitch_off;
-    AP_Int16        print;
-    AP_Int8         use_target_cam;
-    AP_Int8         use_target_loc;
-
-    AC_PID          attack_roll_pid{0.5f, 0.1f, 0.01f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.5f};
-
     Vector2f bf_info;
     Vector2f ef_info;
     Vector2f ef_rate_info;
@@ -86,10 +72,29 @@ public:
 
     UDelay udelay;
 
+private:
+
+    AP_Float        attack_k1_pitch;
+    AP_Float        attack_k2_pitch;
+    AP_Float        attack_k1_yaw;
+    AP_Float        attack_k2_yaw;
+    AP_Float        attack_k2_roll;
+    AP_Float        attack_k_angle;
+    AP_Float        attack_throttle;
+    AP_Float        attack_throttle_rate;
+    AP_Int16        attack_timeout;
+    AP_Float        attack_angle;
+    AP_Float        pitch_limit;
+    AP_Float        pitch_rate_limit;
+    AP_Float        attack_pitch_off;
+    AP_Int16        print;
+    AP_Int8         use_target_cam;
+    AP_Int8         use_target_loc;
+
+    AC_PID          attack_roll_pid{0.5f, 0.1f, 0.01f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.5f};
+
     FD_Target_K230* _Target_ptr_cam;
     FD_Target_Loc* _Target_ptr_loc;
-
-private:
 
     uint32_t _last_ms;
     int8_t current_idx;

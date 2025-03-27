@@ -81,3 +81,22 @@ void FD_Target_K230::handle_info_test(float p1, float p2) {
     // tmp_msg._msg_1.content.msg.target_y = (int16_t)(p2);
     // tmp_msg._msg_1.content.msg.status = 1;
 }
+
+void FD_Target_K230::handle_msg(const mavlink_message_t &msg)
+{
+    if (msg.msgid == MAVLINK_MSG_ID_COMMAND_LONG) {
+        // decode packet
+        // decode packet
+        mavlink_command_long_t packet;
+        mavlink_msg_command_long_decode(&msg, &packet);
+        switch(packet.command) {
+            case MAV_CMD_USER_1:
+                gcs().send_text(MAV_SEVERITY_WARNING, "Target K230 Test");
+                handle_info_test(packet.param1, packet.param2);
+                break;
+            default:
+                break;
+        }
+    }
+
+}
