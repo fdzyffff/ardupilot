@@ -38,7 +38,7 @@ void FD_Target_Loc::update() {
         off_bf.normalized();
 
         float p1 = degrees(wrap_180(atan2f( off_bf.y, off_bf.x))); // x-axis, degrees
-        float p2 = degrees(wrap_180(atan2f(-off_bf.z, off_bf.x))); // y-axis, degrees
+        float p2 = degrees(wrap_180(atan2f(-off_bf.z, off_bf.xy().length()))); // y-axis, degrees
 
         handle_info(p1, p2);
     }

@@ -15,7 +15,7 @@ const AP_Param::GroupInfo UAttack::var_info[] = {
     AP_GROUPINFO("ANGLE",      10, UAttack, attack_angle,           30.f),
     AP_GROUPINFO("PTH_LIM",    11, UAttack, pitch_limit,            30.f),
     AP_GROUPINFO("PTH_RLIM",   12, UAttack, pitch_rate_limit,       30.f),
-    AP_GROUPINFO("OFF_PTH",    13, UAttack, attack_pitch_off,       -5.0f),
+    AP_GROUPINFO("OFF_PTH",    13, UAttack, attack_pitch_off,        0.0f),
     AP_GROUPINFO("UPRINT",     14, UAttack, print,                   0),
     AP_GROUPINFO("TC_USE",     15, UAttack, use_target_cam,          0),
     AP_GROUPINFO("TL_USE",     16, UAttack, use_target_loc,          0),
@@ -234,21 +234,44 @@ void UAttack::handle_info(float p1, float p2) {
     bf_info.x = p1; // yaw degree
     bf_info.y = p2; // pitch degree
 
-    Vector3f target_unit = Vector3f(1.0f, 0.0f, 0.0f);
+    if (p2 < -90.f) {
+        p2 = -180.0f - p2;
+    } else if (p2 > 90.0f) {
+        p2 = 180.0f - p2;
+    }
+
     Matrix3f tmp_target_cam_m;
     tmp_target_cam_m.from_euler(0.0f, radians(p2), radians(p1));
-    Vector3f cam_unit = tmp_target_cam_m*target_unit;
-
     Matrix3f tmp_cam_body_m;
     tmp_cam_body_m.from_euler(0.0f, radians(0.0f), radians(0.0f));
-    Vector3f bf_unit = tmp_cam_body_m*cam_unit;
-
     Matrix3f tmp_body_earth_m;
     tmp_body_earth_m.from_euler(_roll, _pitch, _yaw);
-    Vector3f ef_unit = tmp_body_earth_m*bf_unit;
+    Matrix3f tmp_target_earth_m = tmp_body_earth_m*tmp_cam_body_m*tmp_target_cam_m;
 
-    float angle_pitch = wrap_180(degrees(atan2f(-ef_unit.z, ef_unit.x)));
-    float angle_yaw =   wrap_180(degrees(atan2f( ef_unit.y, ef_unit.x)));
+    float tmp_roll = 0.0f;
+    float tmp_pitch = 0.0f;
+    float tmp_yaw = 0.0f;
+
+    tmp_target_earth_m.to_euler(&tmp_roll, &tmp_pitch, &tmp_yaw);
+
+    float angle_pitch = wrap_180(degrees(tmp_pitch));
+    float angle_yaw =   wrap_180(degrees(tmp_yaw));
+
+    // Vector3f target_unit = Vector3f(1.0f, 0.0f, 0.0f);
+    // Matrix3f tmp_target_cam_m;
+    // tmp_target_cam_m.from_euler(0.0f, radians(p2), radians(p1));
+    // Vector3f cam_unit = tmp_target_cam_m*target_unit;
+
+    // Matrix3f tmp_cam_body_m;
+    // tmp_cam_body_m.from_euler(0.0f, radians(0.0f), radians(0.0f));
+    // Vector3f bf_unit = tmp_cam_body_m*cam_unit;
+
+    // Matrix3f tmp_body_earth_m;
+    // tmp_body_earth_m.from_euler(_roll, _pitch, _yaw);
+    // Vector3f ef_unit = tmp_body_earth_m*bf_unit;
+
+    // float angle_pitch = wrap_180(degrees(atan2f(-ef_unit.z, ef_unit.xy().length())));
+    // float angle_yaw =   wrap_180(degrees(atan2f( ef_unit.y, ef_unit.x)));
 
     ef_info.x = angle_yaw;
     ef_info.y = angle_pitch;
@@ -275,9 +298,20 @@ void UAttack::update_target_pitch_rate() {
     float k1_pitch = attack_k1_pitch.get();
     float k2_pitch = attack_k2_pitch.get();
     float pitch_off = attack_pitch_off.get();
+    float p = attack_k_angle.get();
     // float boost_factor = constrain_float(fabsf(bf_info.y)/15.0f, 0.0f, 1.0f) * 2.0f;
     float angle_err = constrain_float(bf_info.y + pitch_off, -30.0f, 30.0f);
-    _target_pitch_rate = k1_pitch * ef_rate_info.y + k2_pitch * angle_err; // degrees/s
+
+    _attack_angle_target = attack_angle.get();
+    _attack_angle_measure = -ef_info.y;
+    _attack_angle_rate_target = (_attack_angle_target - _attack_angle_measure) * p;
+    _attack_angle_rate_measure = -ef_rate_info.y;
+
+    float attack_angle_rate_err = _attack_angle_rate_target - _attack_angle_rate_measure;
+
+    attack_angle_rate_err = constrain_float(attack_angle_rate_err, -30.0f, 30.0f);
+
+    _target_pitch_rate = k1_pitch * attack_angle_rate_err + k2_pitch * angle_err; // degrees/s
 
     //Limit pitch rate
     float limit_pitch_rate = pitch_rate_limit;
