@@ -231,25 +231,21 @@ void UAttack::handle_info(float p1, float p2) {
     //     _yaw = copter.ahrs_view->yaw;
     // }
 
-    p1 = constrain_float(p1, -80.f, 80.f);
-    p2 = constrain_float(p2, -80.f, 80.f);
-
     bf_info.x = p1; // yaw degree
     bf_info.y = p2; // pitch degree
 
-    float bf_x    =  100.0f;
-    float bf_y    =  bf_x*tanf(radians(p1));
-    float bf_z    = -bf_x*tanf(radians(p2));
-    Vector3f cam_unit = Vector3f(bf_x, bf_y, bf_z);
-    cam_unit.normalized();
+    Vector3f target_unit = Vector3f(1.0f, 0.0f, 0.0f);
+    Matrix3f tmp_target_cam_m;
+    tmp_target_cam_m.from_euler(0.0f, radians(p2), radians(p1));
+    Vector3f cam_unit = tmp_target_cam_m*target_unit;
 
-    Matrix3f tmp_cam_m;
-    tmp_cam_m.from_euler(0.0f, radians(0.0f), radians(0.0f));
-    Vector3f bf_unit = tmp_cam_m*cam_unit;
+    Matrix3f tmp_cam_body_m;
+    tmp_cam_body_m.from_euler(0.0f, radians(0.0f), radians(0.0f));
+    Vector3f bf_unit = tmp_cam_body_m*cam_unit;
 
-    Matrix3f tmp_body_m;
-    tmp_body_m.from_euler(_roll, _pitch, _yaw);
-    Vector3f ef_unit = tmp_body_m*bf_unit;
+    Matrix3f tmp_body_earth_m;
+    tmp_body_earth_m.from_euler(_roll, _pitch, _yaw);
+    Vector3f ef_unit = tmp_body_earth_m*bf_unit;
 
     float angle_pitch = wrap_180(degrees(atan2f(-ef_unit.z, ef_unit.x)));
     float angle_yaw =   wrap_180(degrees(atan2f( ef_unit.y, ef_unit.x)));
