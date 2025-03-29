@@ -2041,7 +2041,6 @@ public:
     void hook_run();
     bool check_touch();
     bool check_done();
-    bool auto_init();
     void set_stage(Stage stage_in);
     void update_stage();
 
@@ -2084,7 +2083,6 @@ public:
 
     void unhook_run();
     bool check_down();
-    bool away_init();
     void set_stage(Stage stage_in);
     void update_stage();
 

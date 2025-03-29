@@ -17,15 +17,7 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     AP_GROUPINFO("_CAM_ANG_Y",  7, UserParameters, cam_angle_y,            45.0f),
     AP_GROUPINFO("_LIM_ANGLE" , 8, UserParameters, angle_limit,            30.f),
     AP_GROUPINFO("_LIM_RATE",   9, UserParameters, rate_limit,             20.f),
-    AP_GROUPINFO("_LOCA_LAT",   10, UserParameters, loc_A_lat,              0),
-    AP_GROUPINFO("_LOCA_LNG",   11, UserParameters, loc_A_lng,              0),
-    AP_GROUPINFO("_LOCA_ALT",   12, UserParameters, loc_A_alt,              0),
-    AP_GROUPINFO("_LOCA_YAW",   13, UserParameters, loc_A_yaw,              0.f),
-    AP_GROUPINFO("_LOCB_LAT",   14, UserParameters, loc_B_lat,              0),
-    AP_GROUPINFO("_LOCB_LNG",   15, UserParameters, loc_B_lng,              0),
-    AP_GROUPINFO("_LOCB_ALT",   16, UserParameters, loc_B_alt,              0),
-    AP_GROUPINFO("_LOCB_YAW",   17, UserParameters, loc_B_yaw,              0.f),
-
+    AP_GROUPINFO("_MIS_IDX",   10, UserParameters, hook_mission_idx,       0),
     AP_GROUPEND
 };
 

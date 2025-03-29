@@ -35,7 +35,7 @@ void ModeLudeng_unhook::run()
 {
     update_stage();
     if (_stage == Stage::AWAY) {
-        copter.mode_guided.run();
+        copter.mode_auto.run();
     } else {
         unhook_run();
     }
@@ -152,8 +152,12 @@ void ModeLudeng_unhook::update_stage()
             }
             break;
         case Stage::AWAY:
-            if (copter.mode_guided.wp_distance() < 100) {
-                set_stage(Stage::LAND);
+            if (copter.mode_auto.mission.state() == AP_Mission::mission_state::MISSION_COMPLETE) {
+                if (copter.uk230.is_valid()) {
+                    set_mode(Mode::Number::LDHOOK, ModeReason::AUTO_HOOK);
+                } else {
+                    set_stage(Stage::LAND);
+                }
             }
             break;
         case Stage::LAND:
@@ -181,27 +185,6 @@ bool ModeLudeng_unhook::check_down()
     return ret;
 }
 
-bool ModeLudeng_unhook::away_init()
-{
-    // bool loc_A_OK = (lat_A != 0 && lng_A !=0);
-    int32_t lat_A = copter.g2.user_parameters.loc_A_lat.get()*1e7;
-    int32_t lng_A = copter.g2.user_parameters.loc_A_lng.get()*1e7;
-    int32_t alt_A = copter.g2.user_parameters.loc_A_alt.get();
-    bool loc_A_OK = (lat_A != 0 && lng_A !=0);
-    if (!loc_A_OK) {
-        return false;
-    }
-    Location loc = Location(lat_A, lng_A, alt_A, Location::AltFrame::ABOVE_HOME);
-    bool use_yaw = true;
-    float yaw_cd = copter.g2.user_parameters.loc_A_yaw.get()*100.f;
-    bool use_yaw_rate = false;
-    float yaw_rate_cds = 0.0;
-    if (copter.mode_guided.set_destination(loc, use_yaw, yaw_cd, use_yaw_rate, yaw_rate_cds)) {
-        return true;
-    }
-    return false;
-}
-
 void ModeLudeng_unhook::set_stage(Stage stage_in) {
     _stage = stage_in;
     _stage_time = millis();
@@ -218,10 +201,10 @@ void ModeLudeng_unhook::set_stage(Stage stage_in) {
             gcs().send_text(MAV_SEVERITY_INFO, "Stage DOWN");
             break;
         case Stage::AWAY:
-            if (away_init()) {
+            if (copter.mode_auto.init(false) && copter.mode_auto.mission.set_current_cmd(copter.g2.user_parameters.hook_mission_idx.get())) {
                 gcs().send_text(MAV_SEVERITY_INFO, "Stage AWAY");
             } else {
-                gcs().send_text(MAV_SEVERITY_INFO, "NO LOC!");
+                gcs().send_text(MAV_SEVERITY_INFO, "No Mission");
                 set_stage(Stage::LAND);
             }
             break;

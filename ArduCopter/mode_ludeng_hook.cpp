@@ -232,17 +232,12 @@ bool ModeLudeng_hook::is_taking_off() const
     return ((_stage == Stage::AUTO) && copter.mode_auto.is_taking_off());
 }
 
-bool ModeLudeng_hook::auto_init()
-{
-    return copter.mode_auto.init(false);
-}
-
 void ModeLudeng_hook::set_stage(Stage stage_in) {
     _stage = stage_in;
     _stage_time = millis();
     switch (_stage) {
         case Stage::AUTO:
-            if (auto_init() && !copter.uk230.is_valid()) {
+            if (copter.mode_auto.init(false)) {
                 copter.mode_auto.mission.reset();
                 gcs().send_text(MAV_SEVERITY_INFO, "Stage AUTO");
             } else {

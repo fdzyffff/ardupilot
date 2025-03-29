@@ -91,19 +91,37 @@ void UK230::handle_info(float p1, float p2, float p3) {
     _last_ms = millis();
     display_info.count++;
 
-    Vector3f tmp_cam_input = Vector3f(radians(p1), radians(p2), radians(p3));
-    Matrix3f tmp_cam_m;
-    tmp_cam_m.from_euler(0.0f, 0.0f, radians(270.0f));
-    Vector3f tmp_cam_output = tmp_cam_m*tmp_cam_input;
+    bf_info.x = p1; // yaw degree
+    bf_info.y = p2; // pitch degree
 
-    bf_info.x = degrees(tmp_cam_output.x); // roll degree
-    bf_info.y = degrees(tmp_cam_output.y); // pitch degree
-    bf_info.z = wrap_180(degrees(tmp_cam_output.z) + 270.f);; // yaw degree
+    if (p2 < -90.f) {
+        p2 = -180.0f - p2;
+    } else if (p2 > 90.0f) {
+        p2 = 180.0f - p2;
+    }
+
+    Matrix3f tmp_extra_m;
+    tmp_extra_m.from_euler(0.0f, radians(-90.0f), 0.0f);
+    Matrix3f tmp_target_cam_m;
+    tmp_target_cam_m.from_euler(radians(p3), radians(p2), radians(p1));
+    Matrix3f tmp_cam_body_m;
+    tmp_cam_body_m.from_euler(0.0f, radians(90.0f), radians(-90.0f));
+    Matrix3f tmp_target_body_m = tmp_cam_body_m*tmp_target_cam_m*tmp_extra_m;
+
+    float tmp_roll = 0.0f;
+    float tmp_pitch = 0.0f;
+    float tmp_yaw = 0.0f;
+
+    tmp_target_body_m.to_euler(&tmp_roll, &tmp_pitch, &tmp_yaw);
+
+    bf_info.x = degrees(tmp_roll); // roll degree
+    bf_info.y = degrees(tmp_pitch); // pitch degree
+    bf_info.z = wrap_180(degrees(tmp_yaw));; // yaw degree
 
 
-    display_info.p11 = bf_info.x;
-    display_info.p12 = bf_info.y;
-    display_info.p13 = bf_info.z;
+    // display_info.p11 = bf_info.x;
+    // display_info.p12 = bf_info.y;
+    // display_info.p13 = bf_info.z;
 
     update_target_roll_rate();
     update_target_pitch_rate();
@@ -112,11 +130,9 @@ void UK230::handle_info(float p1, float p2, float p3) {
     display_info.p22 = get_target_pitch_rate();
     display_info.p23 = get_target_yaw_rate();
 
-    Matrix3f tmp_bf_m;
-    tmp_bf_m.from_euler(radians(bf_info.x), radians(bf_info.y), 0.0f);
-    Matrix3f tmp_body_m;
-    tmp_body_m.from_euler(copter.ahrs_view->roll, copter.ahrs_view->pitch, 0.0f);
-    Matrix3f tmp_efbf_m = tmp_body_m*tmp_bf_m;
+    Matrix3f tmp_earthb_m;
+    tmp_earthb_m.from_euler(copter.ahrs_view->roll, copter.ahrs_view->pitch, 0.0f);
+    Matrix3f tmp_efbf_m = tmp_earthb_m*tmp_target_body_m;
     tmp_efbf_m.to_euler(&efb_info.x, &efb_info.y, &efb_info.z);
     efb_info.x = degrees(efb_info.x);
     efb_info.y = degrees(efb_info.y);
