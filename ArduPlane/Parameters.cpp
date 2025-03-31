@@ -1000,6 +1000,8 @@ const AP_Param::Info Plane::var_info[] = {
     // @Path: mode_takeoff.cpp
     GOBJECT(mode_takeoff, "TKOFF_", ModeTakeoff),
 
+    GOBJECT(uattack,      "UATK_", UAttack),
+
     // @Group:
     // @Path: ../libraries/AP_Vehicle/AP_Vehicle.cpp
     PARAM_VEHICLE_INFO,

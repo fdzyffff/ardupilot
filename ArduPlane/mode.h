@@ -855,6 +855,7 @@ protected:
 class ModeAttackLoc : public Mode
 {
 public:
+    friend class UAttack;
 
     Mode::Number mode_number() const override { return Mode::Number::ATTACK_LOC; }
     const char *name() const override { return "ATTACK_LOC"; }
@@ -891,6 +892,5 @@ protected:
     float _cmd_throttle;
     stage_class stage;
 };
-
 
 

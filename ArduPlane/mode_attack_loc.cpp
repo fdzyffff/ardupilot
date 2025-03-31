@@ -3,10 +3,15 @@
 
 bool ModeAttackLoc::_enter()
 {
-    if (plane.uattack.is_active()) {
-        set_stage(stage_class::APPROACH);
-        gcs().send_text(MAV_SEVERITY_INFO, "Attack LOC!");
-        build_path();
+    if (plane.uattack.is_active_loc()) {
+        target_loc = plane.uattack._Target_ptr_loc->target_loc;
+        if (check_approach()) {
+            set_stage(stage_class::ATTACK);                
+        } else {
+            set_stage(stage_class::APPROACH);
+            build_path();
+            gcs().send_text(MAV_SEVERITY_INFO, "Attack LOC!");
+        }
         _cmd_throttle = MAX(SRV_Channels::get_output_scaled(SRV_Channel::k_throttle), plane.aparm.throttle_cruise);
         return true;
     } else {
@@ -78,10 +83,7 @@ void ModeAttackLoc::update()
         case stage_class::APPROACH:
             update_approach();
             if (check_approach()) {
-                set_stage(stage_class::ATTACK);                
-                plane.g2.attack_roll_pid.reset_I();
-                plane.g2.attack_roll_pid.reset_filter();
-                plane.g2.attack_roll_pid.set_integrator(0);
+                set_stage(stage_class::ATTACK);
             }
             break;
         case stage_class::ATTACK:
@@ -94,7 +96,7 @@ void ModeAttackLoc::update()
 
 bool ModeAttackLoc::check_approach()
 {
-    return (plane.current_loc.get_distance(target_loc) < 400);
+    return (plane.current_loc.get_distance(target_loc) < plane.uattack._Target_ptr_loc->nav_radius.get());
 }
 
 void ModeAttackLoc::update_approach()
@@ -109,8 +111,8 @@ void ModeAttackLoc::update_attack()
     // plane.nav_roll_cd = 0;//plane.ahrs.roll_sensor;
     plane.nav_pitch_cd = plane.ahrs.pitch_sensor;
 
-    float throtle_rate = plane.g2.attack_throttle_rate*plane.G_Dt;
-    float target_throttle = plane.g2.attack_throttle;
+    float throtle_rate = plane.uattack.attack_throttle_rate*plane.G_Dt;
+    float target_throttle = plane.uattack.attack_throttle;
     _cmd_throttle = _cmd_throttle + constrain_float(target_throttle - _cmd_throttle, -throtle_rate, throtle_rate);
 }
 
@@ -134,6 +136,9 @@ void ModeAttackLoc::set_stage(ModeAttackLoc::stage_class stage_in)
             break;
         case stage_class::ATTACK:
             gcs().send_text(MAV_SEVERITY_INFO, "In Attack");
+            plane.uattack.attack_roll_pid.reset_I();
+            plane.uattack.attack_roll_pid.reset_filter();
+            plane.uattack.attack_roll_pid.set_integrator(0);
             break;
         default:
             break;

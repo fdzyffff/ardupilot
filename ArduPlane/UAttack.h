@@ -1,22 +1,28 @@
 #pragma once
 
 #include <AP_HAL/AP_HAL.h>
-#include "UTarget.h"
-
-class UTarget_Base;
+#include <FD_Target/FD_Target.h>
+#include "UDelay.h"
 
 class UAttack {
 
 public:
 
+    friend class Plane;
+    friend class ModeAttackCam;
+    friend class ModeAttackLoc;
+
     // constructor, destructor
     UAttack();
 
+    // var_info for holding Parameter information
+    static const struct AP_Param::GroupInfo var_info[];
+
     void init();
-    bool is_active() const { return _active; }
+    bool is_active() const { return (current_idx>0); }
+    bool is_active_loc() const { return (current_idx == 2); }
     void udpate_control_value();
     void init_target();
-    void delete_target();
     void update();
     const Vector2f& get_bf_info();
     const Vector2f& get_ef_info();
@@ -27,6 +33,12 @@ public:
     float get_target_yaw_rate() {return _target_yaw_rate;}
 
     void handle_attack_msg(const mavlink_message_t &msg);
+    void handle_info(float p1, float p2);
+
+    void update_target_pitch_rate();
+    void update_target_roll_angle();
+    void update_target_yaw_rate();
+    void update_log();
 
     struct {
         float p1;
@@ -58,17 +70,39 @@ public:
     float _attack_angle_rate_target;
     float _attack_angle_rate_measure;
 
-    UTarget_Base* _UTarget_ptr;
-    uint8_t _target_type;
-
+    UDelay udelay;
 
 private:
-    void target_update();
-    void time_out_check();
-    void update_target_pitch_rate();
-    void update_target_roll_angle();
-    void update_target_yaw_rate();
-    void update_log();
+
+    AP_Float        attack_k1_pitch;
+    AP_Float        attack_k2_pitch;
+    AP_Float        attack_k1_yaw;
+    AP_Float        attack_k2_yaw;
+    AP_Float        attack_k2_roll;
+    AP_Float        attack_k_angle;
+    AP_Float        attack_throttle;
+    AP_Float        attack_throttle_rate;
+    AP_Int16        attack_timeout;
+    AP_Float        attack_angle;
+    AP_Float        pitch_limit;
+    AP_Float        pitch_rate_limit;
+    AP_Float        attack_pitch_off;
+    AP_Int16        print;
+    AP_Int8         use_target_cam;
+    AP_Int8         use_target_loc;
+
+    AC_PID          attack_roll_pid{0.5f, 0.1f, 0.01f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.5f};
+
+    FD_Target_K230* _Target_ptr_cam;
+    FD_Target_Loc* _Target_ptr_loc;
 
     uint32_t _last_ms;
+    int8_t current_idx;
+
+    DerivativeFilterFloat_Size7 _pitch_filter;
+    DerivativeFilterFloat_Size7 _yaw_filter;
+    LowPassFilterFloat _yaw_sample_filter;
+    LowPassFilterFloat _pitch_sample_filter;
+    float _last_yaw;
+    float _last_yaw_sample;
 };
