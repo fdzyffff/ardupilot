@@ -38,7 +38,7 @@ using namespace AP_HAL;
 #elif APM_BUILD_TYPE(APM_BUILD_AntennaTracker)
 #define AP_SIM_FRAME_CLASS Tracker
 #elif APM_BUILD_TYPE(APM_BUILD_ArduPlane)
-#define AP_SIM_FRAME_CLASS Plane
+#define AP_SIM_FRAME_CLASS QuadPlane
 #elif APM_BUILD_TYPE(APM_BUILD_Rover)
 #define AP_SIM_FRAME_CLASS SimRover
 #elif APM_BUILD_TYPE(APM_BUILD_Blimp)
@@ -56,7 +56,7 @@ using namespace AP_HAL;
 #elif APM_BUILD_TYPE(APM_BUILD_AntennaTracker)
 #define AP_SIM_FRAME_STRING "tracker"
 #elif APM_BUILD_TYPE(APM_BUILD_ArduPlane)
-#define AP_SIM_FRAME_STRING "plane"
+#define AP_SIM_FRAME_STRING "quadplane"
 #elif APM_BUILD_TYPE(APM_BUILD_Rover)
 #define AP_SIM_FRAME_STRING "rover"
 #elif APM_BUILD_TYPE(APM_BUILD_Blimp)
