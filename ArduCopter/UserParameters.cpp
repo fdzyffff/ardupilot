@@ -31,6 +31,7 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     AP_GROUPINFO("_CAM_OFFY",     23, UserParameters, cam_y_offset,          370),
     AP_GROUPINFO("_LOCK_Y_DOWN",  24, UserParameters, lock_y_down,             2),
     AP_GROUPINFO("_A_OFF_PTH",    25, UserParameters, attack_pitch_off,       -5.0f),
+    AP_GROUPINFO("_A_THR_MIN",    26, UserParameters, attack_throttle_min,     0.06f),
  
     AP_GROUPEND
 };

@@ -216,21 +216,47 @@ void UCam::handle_info(float p1, float p2) {
     _frotend.bf_info.x = p1; // yaw degree
     _frotend.bf_info.y = p2; // pitch degree
 
-    p1 = constrain_float(p1, -80.f, 80.f);
-    p2 = constrain_float(p2, -80.f, 80.f);
+    if (p2 < -90.f) {
+        p2 = -180.0f - p2;
+    } else if (p2 > 90.0f) {
+        p2 = 180.0f - p2;
+    }
 
-    float bf_x    = 100.0f;
-    float bf_y    =  bf_x*tanf(radians(p1));
-    float bf_z    = -bf_x*tanf(radians(p2));
-    Vector3f bf_unit = Vector3f(bf_x, bf_y, bf_z);
-    bf_unit.normalized();
+    Matrix3f tmp_target_cam_m;
+    tmp_target_cam_m.from_euler(0.0f, radians(p2), radians(p1));
+    Matrix3f tmp_cam_body_m;
+    tmp_cam_body_m.from_euler(0.0f, radians(0.0f), radians(0.0f));
+    Matrix3f tmp_body_earth_m;
+    tmp_body_earth_m.from_euler(_roll, _pitch, _yaw);
+    Matrix3f tmp_target_earth_m = tmp_body_earth_m*tmp_cam_body_m*tmp_target_cam_m;
 
-    Matrix3f tmp_body_m;
-    tmp_body_m.from_euler(_roll, _pitch, _yaw);
-    Vector3f ef_unit = tmp_body_m*bf_unit;
+    float tmp_roll = 0.0f;
+    float tmp_pitch = 0.0f;
+    float tmp_yaw = 0.0f;
 
-    float angle_pitch = wrap_180(degrees(atan2f(-ef_unit.z, ef_unit.x)));
-    float angle_yaw =   wrap_180(degrees(atan2f( ef_unit.y, ef_unit.x)));
+    tmp_target_earth_m.to_euler(&tmp_roll, &tmp_pitch, &tmp_yaw);
+
+    float angle_pitch = wrap_180(degrees(tmp_pitch));
+    float angle_yaw =   wrap_180(degrees(tmp_yaw));
+
+    // _frotend.bf_info.x = p1; // yaw degree
+    // _frotend.bf_info.y = p2; // pitch degree
+
+    // p1 = constrain_float(p1, -80.f, 80.f);
+    // p2 = constrain_float(p2, -80.f, 80.f);
+
+    // float bf_x    = 100.0f;
+    // float bf_y    =  bf_x*tanf(radians(p1));
+    // float bf_z    = -bf_x*tanf(radians(p2));
+    // Vector3f bf_unit = Vector3f(bf_x, bf_y, bf_z);
+    // bf_unit.normalized();
+
+    // Matrix3f tmp_body_m;
+    // tmp_body_m.from_euler(_roll, _pitch, _yaw);
+    // Vector3f ef_unit = tmp_body_m*bf_unit;
+
+    // float angle_pitch = wrap_180(degrees(atan2f(-ef_unit.z, ef_unit.x)));
+    // float angle_yaw =   wrap_180(degrees(atan2f( ef_unit.y, ef_unit.x)));
 
     _frotend.ef_info.x = angle_yaw;
     _frotend.ef_info.y = angle_pitch;

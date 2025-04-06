@@ -10,6 +10,9 @@ bool ModeAttack::init(const bool ignore_checks)
     copter.g2.user_parameters.attack_throttle_pid.reset_I();
     copter.g2.user_parameters.attack_throttle_pid.reset_filter();
     copter.g2.user_parameters.attack_throttle_pid.set_integrator(get_pilot_desired_throttle());
+    copter.g2.user_parameters.attack_roll_pid.reset_I();
+    copter.g2.user_parameters.attack_roll_pid.reset_filter();
+    copter.g2.user_parameters.attack_roll_pid.set_integrator(degrees(copter.ahrs_view->roll));
     gcs().send_text(MAV_SEVERITY_WARNING, "Throttle I to %0.2f", get_pilot_desired_throttle());
     return true;
 }
@@ -72,7 +75,7 @@ void ModeAttack::run()
     attitude_control->input_euler_angle_roll_euler_rate_pitch_yaw(target_roll, target_pitch_rate, target_yaw_rate);
 
     float target_throttle = copter.uattack._attack_throttle;
-    target_throttle = constrain_float(target_throttle, 0.05f, 1.0f);
+    target_throttle = constrain_float(target_throttle, copter.g2.user_parameters.attack_throttle_min.get(), 1.0f);
 
     // output pilot's throttle
     attitude_control->set_throttle_out(target_throttle, false, g.throttle_filt);

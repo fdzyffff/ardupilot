@@ -257,7 +257,11 @@ void UAttack::update_target_throttle() {
     float dt = (millis() - _last_ms);
     dt = dt * 0.001f;
     if (dt > 0.2f) {dt = 0.2f;}
-    _attack_throttle = copter.g2.user_parameters.attack_throttle_pid.get_ff() + copter.g2.user_parameters.attack_throttle_pid.update_all(_attack_angle_rate_target, _attack_angle_rate_measure, dt);
+    bool limit = false;
+    if (_attack_throttle < copter.g2.user_parameters.attack_throttle_min.get()) {
+        limit = true;
+    }
+    _attack_throttle = copter.g2.user_parameters.attack_throttle_pid.get_ff() + copter.g2.user_parameters.attack_throttle_pid.update_all(_attack_angle_rate_target, _attack_angle_rate_measure, dt, limit);
 
     _attack_throttle_p = copter.g2.user_parameters.attack_throttle_pid.get_p();
     _attack_throttle_i = copter.g2.user_parameters.attack_throttle_pid.get_i();
