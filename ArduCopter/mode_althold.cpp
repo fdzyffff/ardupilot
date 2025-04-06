@@ -84,6 +84,8 @@ void ModeAltHold::run()
         copter.avoid.adjust_roll_pitch(target_roll, target_pitch, copter.aparm.angle_max);
 #endif
 
+        copter.user_update_assit(target_roll, target_pitch);
+
         // get avoidance adjusted climb rate
         target_climb_rate = get_avoidance_adjusted_climbrate(target_climb_rate);
 

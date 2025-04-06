@@ -2,7 +2,6 @@
 
 #include <AP_HAL/AP_HAL.h>
 
-#define UFence_BUFFER 100
 class UFence {
 public:
     UFence();
