@@ -8,10 +8,10 @@ echo "~~~~~~~~~~~~~~~ start ~~~~~~~~~~~~~~~"
 # mkdir firmare/APzF400
 cp build/APzF400/bin/arducopter.apj firmare/$current_datetime\_APzF400_arducopter.apj
 # echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
-# ./waf configure --board APzH7
-# ./waf heli
-# # mkdir firmare/APzH7
-# cp build/APzH7/bin/arducopter-heli.apj firmare/$current_datetime\_APzH7_arducopter-heli.apj
+./waf configure --board APzF400-H7
+./waf copter
+# mkdir firmare/APzF400
+cp build/APzF400-H7/bin/arducopter.apj firmare/$current_datetime\_APzF400-H7_arducopter.apj
 # echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
 # ./waf configure --board APzF4
 # ./waf copter
