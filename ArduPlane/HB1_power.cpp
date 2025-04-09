@@ -363,39 +363,42 @@ void Plane::HB1_msg_apm2power_set_rocket_on() {
 }
 
 void Plane::HB1_Power_throttle_update() {
-    bool dont_send_throttle = false;
-    switch (HB1_Power.state) {
-        case HB1_PowerAction_GROUND_EngineSTART_PRE:
-            dont_send_throttle = true;
-            break;
-        case HB1_PowerAction_None:
-        case HB1_PowerAction_RocketON:
-        case HB1_PowerAction_EnginePullUP:
-        case HB1_PowerAction_EngineON:
-        case HB1_PowerAction_EngineOFF:
-        case HB1_PowerAction_ParachuteON:
-        case HB1_PowerAction_GROUND_RocketON:
-        case HB1_PowerAction_GROUND_EngineSTART:
-        case HB1_PowerAction_GROUND_EngineON:
-        case HB1_PowerAction_GROUND_EngineOFF:
-        case HB1_PowerAction_GROUND_EngineFULL:
-        case HB1_PowerAction_GROUND_EngineMID:
-        default:
-            break;
-    }
-    if (dont_send_throttle) {return;}
-    float throttle_out = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle_HB1);
     HB1_apm2power &tmp_msg = HB1_uart_power.get_msg_apm2power();
+    tmp_msg.set_engine_throttle_control();
     tmp_msg._msg_1.need_send = true;
-    // tmp_msg.set_throttle(throttle_out);
-    uint16_t rpm_half = 17500 + (uint16_t)(throttle_out*500.f*0.5f);
-    if (throttle_out < g2.hb1_engine60_min.get()) {
-        rpm_half = 17500;
-    }
-    tmp_msg.set_rpm_half(rpm_half);
-    tmp_msg.make_sum();
-    tmp_msg._msg_1.print = false;
-    return;
+    // bool dont_send_throttle = false;
+    // switch (HB1_Power.state) {
+    //     case HB1_PowerAction_GROUND_EngineSTART_PRE:
+    //         dont_send_throttle = true;
+    //         break;
+    //     case HB1_PowerAction_None:
+    //     case HB1_PowerAction_RocketON:
+    //     case HB1_PowerAction_EnginePullUP:
+    //     case HB1_PowerAction_EngineON:
+    //     case HB1_PowerAction_EngineOFF:
+    //     case HB1_PowerAction_ParachuteON:
+    //     case HB1_PowerAction_GROUND_RocketON:
+    //     case HB1_PowerAction_GROUND_EngineSTART:
+    //     case HB1_PowerAction_GROUND_EngineON:
+    //     case HB1_PowerAction_GROUND_EngineOFF:
+    //     case HB1_PowerAction_GROUND_EngineFULL:
+    //     case HB1_PowerAction_GROUND_EngineMID:
+    //     default:
+    //         break;
+    // }
+    // if (dont_send_throttle) {return;}
+    // float throttle_out = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle_HB1);
+    // HB1_apm2power &tmp_msg = HB1_uart_power.get_msg_apm2power();
+    // tmp_msg._msg_1.need_send = true;
+    // // tmp_msg.set_throttle(throttle_out);
+    // uint16_t rpm_half = 17500 + (uint16_t)(throttle_out*500.f*0.5f);
+    // if (throttle_out < g2.hb1_engine60_min.get()) {
+    //     rpm_half = 17500;
+    // }
+    // tmp_msg.set_rpm_half(rpm_half);
+    // tmp_msg.make_sum();
+    // tmp_msg._msg_1.print = false;
+    // return;
 }
 
 void Plane::HB1_Power_on_send() {
