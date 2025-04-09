@@ -10,23 +10,14 @@ public:
     // message structure
     struct PACKED MSG_Command_1 {
         HB1_power2apm_header header;
-        uint8_t COMM1;
-        uint8_t COMM2;
-        uint8_t rpm_h;
-        uint8_t rpm_l;
-        uint8_t rel_alt;//[0~205]代表[-500,20K]m, 解析：(H - 5) * 100
-        uint8_t temp;//无符号char型，[0~100]代表[-50,50]℃，ECU内部初始为15℃
-        uint8_t setting_flag;//11代表设定初始温度和高度有效，22代表高度发生变化，33代表GPS不定位，00代表未设定高度。
-        uint8_t airspeed;//[0~255]代表[0,510]m/s，ECU内部初始为0m/s
-        uint8_t byte_11;
-        uint8_t byte_22;
-        uint8_t sum;
-        uint8_t xorsum;
+        uint8_t byte1;
+        uint8_t byte2;
+        uint8_t crc;
     };
 
     union PACKED Content_1 {
         MSG_Command_1 msg;
-        uint8_t data[14];
+        uint8_t data[4];
     };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -35,7 +26,7 @@ public:
         bool print;
         bool updated;
         bool need_send;
-        const uint16_t length = 14;
+        const uint16_t length = 4;
         Content_1 content;
     };
 
@@ -64,8 +55,7 @@ public:
     HB1_apm2power(const HB1_apm2power &other) = delete;
     HB1_apm2power &operator=(const HB1_apm2power&) = delete;
 
-    static const uint8_t PREAMBLE1 = 0xAA;
-    static const uint8_t PREAMBLE2 = 0x55;
+    static const uint8_t PREAMBLE1 = 0xFF;
 
     void process_message(void) override;
     void parse(uint8_t temp) override;
@@ -73,7 +63,8 @@ public:
 
     void set_engine_start();
     void set_engine_stop();
-    void set_engine_reset();
+    void set_engine_throttle_control();
+    void set_engine_emergency_stop();
     void set_throttle(uint8_t thr_in);
     void set_rpm_half(uint16_t rpm_in);
     void make_sum();

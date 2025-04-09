@@ -25,58 +25,36 @@ void HB1_apm2power::swap_message(void)
     // }
 }
 
+void HB1_apm2power::set_engine_throttle_control()
+{
+    _msg_1.content.msg.header.head_1 = HB1_apm2power::PREAMBLE1;
+    _msg_1.content.msg.byte1 = 0x10;
+    _msg_1.content.msg.byte2 = 0x00;
+    _msg_1.content.msg.crc = 0xEC;
+}
+
 void HB1_apm2power::set_engine_start()
 {
     _msg_1.content.msg.header.head_1 = HB1_apm2power::PREAMBLE1;
-    _msg_1.content.msg.header.head_2 = HB1_apm2power::PREAMBLE2;
-    _msg_1.content.msg.COMM1 = 0xFC;
-    _msg_1.content.msg.COMM2 = 0xFC;
-    _msg_1.content.msg.rpm_h = 0;
-    _msg_1.content.msg.rpm_l = 0;
-    _msg_1.content.msg.rel_alt = 0;
-    _msg_1.content.msg.temp = 0;
-    _msg_1.content.msg.setting_flag = 0;
-    _msg_1.content.msg.airspeed = 0;
-    _msg_1.content.msg.byte_11 = 0;
-    _msg_1.content.msg.byte_22 = 0;
-    _msg_1.content.msg.sum = 0;
-    _msg_1.content.msg.xorsum = 0;
+    _msg_1.content.msg.byte1 = 0x1C;
+    _msg_1.content.msg.byte2 = 0x00;
+    _msg_1.content.msg.crc = 0xA1;
 }
 
 void HB1_apm2power::set_engine_stop()
 {
     _msg_1.content.msg.header.head_1 = HB1_apm2power::PREAMBLE1;
-    _msg_1.content.msg.header.head_2 = HB1_apm2power::PREAMBLE2;
-    _msg_1.content.msg.COMM1 = 0xF0;
-    _msg_1.content.msg.COMM2 = 0xF0;
-    _msg_1.content.msg.rpm_h = 0;
-    _msg_1.content.msg.rpm_l = 0;
-    _msg_1.content.msg.rel_alt = 0;
-    _msg_1.content.msg.temp = 0;
-    _msg_1.content.msg.setting_flag = 0;
-    _msg_1.content.msg.airspeed = 0;
-    _msg_1.content.msg.byte_11 = 0;
-    _msg_1.content.msg.byte_22 = 0;
-    _msg_1.content.msg.sum = 0;
-    _msg_1.content.msg.xorsum = 0;
+    _msg_1.content.msg.byte1 = 0x18;
+    _msg_1.content.msg.byte2 = 0x00;
+    _msg_1.content.msg.crc = 0x9A;
 }
 
-void HB1_apm2power::set_engine_reset()
+void HB1_apm2power::set_engine_emergency_stop()
 {
     _msg_1.content.msg.header.head_1 = HB1_apm2power::PREAMBLE1;
-    _msg_1.content.msg.header.head_2 = HB1_apm2power::PREAMBLE2;
-    _msg_1.content.msg.COMM1 = 0xF4;
-    _msg_1.content.msg.COMM2 = 0xF4;
-    _msg_1.content.msg.rpm_h = 0;
-    _msg_1.content.msg.rpm_l = 0;
-    _msg_1.content.msg.rel_alt = 0;
-    _msg_1.content.msg.temp = 0;
-    _msg_1.content.msg.setting_flag = 0;
-    _msg_1.content.msg.airspeed = 0;
-    _msg_1.content.msg.byte_11 = 0;
-    _msg_1.content.msg.byte_22 = 0;
-    _msg_1.content.msg.sum = 0;
-    _msg_1.content.msg.xorsum = 0;
+    _msg_1.content.msg.byte1 = 0x14;
+    _msg_1.content.msg.byte2 = 0x00;
+    _msg_1.content.msg.crc = 0xD7;
 }
 
 void HB1_apm2power::set_throttle(uint8_t thr_in)
