@@ -90,10 +90,13 @@ private:
     AP_Int16        print;
     AP_Int8         use_target_cam;
     AP_Int8         use_target_loc;
+    AP_Int8         use_target_cam_type;
+    AP_Float        filt_yaw_hz;
+    AP_Float        filt_pithc_hz;
 
     AC_PID          attack_roll_pid{0.5f, 0.1f, 0.01f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.5f};
 
-    FD_Target_K230* _Target_ptr_cam;
+    FD_Target_Base* _Target_ptr_cam;
     FD_Target_Loc* _Target_ptr_loc;
 
     uint32_t _last_ms;

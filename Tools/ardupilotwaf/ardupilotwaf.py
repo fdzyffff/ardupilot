@@ -118,6 +118,7 @@ COMMON_VEHICLE_DEPENDENT_LIBRARIES = [
     'AP_ExternalControl',
     'FD1_UART',
     'FD_K230',
+    'FD_RK3588',
     'FD_LRB',
     'FD_Target',
 ]
