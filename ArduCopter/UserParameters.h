@@ -20,4 +20,6 @@ public:
     AP_Float rate_limit;
     AP_Int16 hook_mission_idx;
     AP_Int16 hook_mission_alt;
+    AP_Float assit_gain;
+    AP_Float filt_hz;
 };

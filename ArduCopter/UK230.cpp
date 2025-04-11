@@ -42,7 +42,7 @@ void UK230::init()
     _target_yaw_rate = 0.0f;
     FD1_uart_K230.init();
     FD1_uart_K230.get_msg_K230().set_enable();
-    efb_info_filt.set_cutoff_frequency(20.f, 10.f);
+    efb_info_filt.set_cutoff_frequency(20.f, copter.g2.user_parameters.filt_hz.get());
     // gcs().send_text(MAV_SEVERITY_INFO, "FD1_uart_K230.init()");
 }
 

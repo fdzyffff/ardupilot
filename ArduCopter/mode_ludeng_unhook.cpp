@@ -61,6 +61,8 @@ void ModeLudeng_unhook::unhook_run()
 
     float target_yaw_rate = 0.0f;
     float target_climb_rate = 0.0f;
+    float target_roll = 0.0f;
+    float target_pitch = 0.0f;
 
     bool use_posctrl = true;
     static bool old_use_posctrl = true;
@@ -86,6 +88,7 @@ void ModeLudeng_unhook::unhook_run()
             _vel_target_cms.zero();
             target_yaw_rate = 0.f;
             target_climb_rate = -25.0f;
+            copter.user_update_assit(target_roll, target_pitch);
             // target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
             // target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
             break;

@@ -19,6 +19,8 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     AP_GROUPINFO("_LIM_RATE",   9, UserParameters, rate_limit,             20.f),
     AP_GROUPINFO("_MIS_IDX",   10, UserParameters, hook_mission_idx,       0),
     AP_GROUPINFO("_MIS_ALT",   11, UserParameters, hook_mission_alt,       200),
+    AP_GROUPINFO("_ASSIT",     12, UserParameters, assit_gain,             3.0f),
+    AP_GROUPINFO("_FILT_HZ",   13, UserParameters, filt_hz,               10.0f),
     AP_GROUPEND
 };
 
