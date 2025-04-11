@@ -19,4 +19,5 @@ public:
     AP_Float angle_limit;
     AP_Float rate_limit;
     AP_Int16 hook_mission_idx;
+    AP_Int16 hook_mission_alt;
 };

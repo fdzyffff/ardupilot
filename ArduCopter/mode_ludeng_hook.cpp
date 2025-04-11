@@ -90,7 +90,7 @@ void ModeLudeng_hook::hook_run()
         case Stage::LOCK:
             _vel_target_cms.zero();
             target_climb_rate = 10.0f;
-            target_yaw_rate = -2500.f;
+            target_yaw_rate = 2500.f;
             use_posctrl = false;
             // target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
             // target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);

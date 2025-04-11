@@ -42,6 +42,7 @@ void UK230::init()
     _target_yaw_rate = 0.0f;
     FD1_uart_K230.init();
     FD1_uart_K230.get_msg_K230().set_enable();
+    efb_info_filt.set_cutoff_frequency(20.f, 10.f);
     // gcs().send_text(MAV_SEVERITY_INFO, "FD1_uart_K230.init()");
 }
 
@@ -135,10 +136,14 @@ void UK230::handle_info(float p1, float p2, float p3) {
     Matrix3f tmp_earthb_m;
     tmp_earthb_m.from_euler(copter.ahrs_view->roll, copter.ahrs_view->pitch, 0.0f);
     Matrix3f tmp_efbf_m = tmp_earthb_m*tmp_target_body_m;
-    tmp_efbf_m.to_euler(&efb_info.x, &efb_info.y, &efb_info.z);
-    efb_info.x = degrees(efb_info.x);
-    efb_info.y = degrees(efb_info.y);
-    efb_info.z = bf_info.z;
+
+    Vector3f tmp_efb;
+    tmp_efbf_m.to_euler(&tmp_efb.x, &tmp_efb.y, &tmp_efb.z);
+    tmp_efb.x = degrees(tmp_efb.x);
+    tmp_efb.y = degrees(tmp_efb.y);
+    tmp_efb.z = bf_info.z;
+    efb_info_filt.apply(tmp_efb);
+    efb_info = efb_info_filt.get();
     // efb_info = tmp_body_m*bf_info;
     update_target_bf_vel_x_ms();
     update_target_bf_vel_y_ms();

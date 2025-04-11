@@ -76,7 +76,7 @@ void ModeLudeng_unhook::unhook_run()
             break;
         case Stage::UNLOCK:
             _vel_target_cms.zero();
-            target_yaw_rate = 2500.f;
+            target_yaw_rate = -2500.f;
             target_climb_rate = 10.0f;
             use_posctrl = false;
             // target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
@@ -134,20 +134,21 @@ void ModeLudeng_unhook::update_stage()
     uint32_t dt = millis() - _stage_time;
     switch (_stage) {
         case Stage::UP:
-            if ((dt > 5000) || ((motors->get_throttle() > MIN(motors->get_throttle_hover()*1.5f, motors->get_throttle_hover()+0.15f)))) {
+            if ((dt > 5000) || ((dt > 3000) && (motors->get_throttle() > MIN(motors->get_throttle_hover()*1.5f, motors->get_throttle_hover()+0.15f)))) {
                 set_stage(Stage::UNLOCK);
             }
             break;
         case Stage::UNLOCK:
-            if (dt > 3000) {
+            if (dt > 5000) {
                 set_stage(Stage::DOWN);
             }
             break;
         case Stage::DOWN:
             if (check_down()) {
+                set_home_to_current_alt();
                 set_stage(Stage::AWAY);
             }
-            if (dt > 4000) {
+            if (dt > 10000) {
                 set_stage(Stage::UP);
             }
             break;
@@ -216,3 +217,22 @@ void ModeLudeng_unhook::set_stage(Stage stage_in) {
             break;
     }
 }
+
+// set_home_to_current_alt - set home to current vertically
+void ModeLudeng_unhook::set_home_to_current_alt() {
+    // get current location from EKF
+    Location temp_loc;
+    if (copter.ahrs.get_location(temp_loc)) {
+        temp_loc.lat = copter.ahrs.get_home().lat;
+        temp_loc.lng = copter.ahrs.get_home().lng;
+        temp_loc.alt -= copter.g2.user_parameters.hook_mission_alt.get();
+        if (!copter.set_home(temp_loc, false)) {
+            return;
+        }
+        // we have successfully set AHRS home, set it for SmartRTL
+#if MODE_SMARTRTL_ENABLED == ENABLED
+        copter.g2.smart_rtl.set_home(true);
+#endif
+    }
+}
+

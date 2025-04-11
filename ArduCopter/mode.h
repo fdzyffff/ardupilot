@@ -2085,6 +2085,7 @@ public:
     bool check_down();
     void set_stage(Stage stage_in);
     void update_stage();
+    void set_home_to_current_alt();
 
     Stage _stage;
     uint32_t _stage_time;

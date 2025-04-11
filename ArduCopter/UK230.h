@@ -68,4 +68,6 @@ private:
     uint32_t _last_ms;
     bool _valid;
 
+    LowPassFilterVector3f efb_info_filt;
+
 };

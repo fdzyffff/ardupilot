@@ -18,6 +18,7 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     AP_GROUPINFO("_LIM_ANGLE" , 8, UserParameters, angle_limit,            30.f),
     AP_GROUPINFO("_LIM_RATE",   9, UserParameters, rate_limit,             20.f),
     AP_GROUPINFO("_MIS_IDX",   10, UserParameters, hook_mission_idx,       0),
+    AP_GROUPINFO("_MIS_ALT",   11, UserParameters, hook_mission_alt,       200),
     AP_GROUPEND
 };
 
