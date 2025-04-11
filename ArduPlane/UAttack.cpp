@@ -17,11 +17,14 @@ const AP_Param::GroupInfo UAttack::var_info[] = {
     AP_GROUPINFO("PTH_RLIM",   12, UAttack, pitch_rate_limit,       30.f),
     AP_GROUPINFO("OFF_PTH",    13, UAttack, attack_pitch_off,        0.0f),
     AP_GROUPINFO("UPRINT",     14, UAttack, print,                   0),
-    AP_GROUPINFO("TC_USE",     15, UAttack, use_target_cam,          0),
-    AP_GROUPINFO("TL_USE",     16, UAttack, use_target_loc,          0),
+    AP_GROUPINFO("TCAM_USE",   15, UAttack, use_target_cam,          0),
+    AP_GROUPINFO("TLOC_USE",   16, UAttack, use_target_loc,          0),
+    AP_GROUPINFO("TCAM_TYPE",  17, UAttack, use_target_cam_type,     0),
+    AP_GROUPINFO("FILT_Y_HZ",  18, UAttack, filt_yaw_hz,             2.0f),
+    AP_GROUPINFO("FILT_P_HZ",  19, UAttack, filt_pithc_hz,           2.0f),
 
-    AP_SUBGROUPPTR(_Target_ptr_cam, "TC_",   17, UAttack,  FD_Target_K230),
-    AP_SUBGROUPPTR(_Target_ptr_loc, "TL_",   18, UAttack,  FD_Target_Loc),
+    AP_SUBGROUPPTR(_Target_ptr_cam, "TC_",   20, UAttack,  FD_Target_K230),
+    AP_SUBGROUPPTR(_Target_ptr_loc, "TL_",   21, UAttack,  FD_Target_Loc),
     AP_GROUPEND
 };
 
@@ -29,8 +32,6 @@ UAttack::UAttack()
 {
     AP_Param::setup_object_defaults(this, var_info);
 
-    _yaw_sample_filter.set_cutoff_frequency(30.f, 2.f);
-    _pitch_sample_filter.set_cutoff_frequency(30.f, 2.f);
     _last_yaw = 0.0f;
     _last_yaw_sample = 0.0f;
 }
@@ -67,6 +68,10 @@ void UAttack::init()
     _Target_ptr_loc = nullptr;
     _last_ms = millis();
     init_target();
+
+    _yaw_sample_filter.set_cutoff_frequency(30.f, filt_yaw_hz.get());
+    _pitch_sample_filter.set_cutoff_frequency(30.f, filt_pithc_hz.get());
+    gcs().send_text(MAV_SEVERITY_WARNING, "Target FILT HZ [%0.0f, %0.0f]", filt_yaw_hz.get(), filt_pithc_hz.get());
 }
 
 void UAttack::udpate_control_value(){
@@ -141,14 +146,38 @@ void UAttack::init_target()
     bool use_loc = use_target_loc.get();
 
     if (use_cam) {
-        _Target_ptr_cam = new FD_Target_K230();
-        if (_Target_ptr_cam->init()) {
-            gcs().send_text(MAV_SEVERITY_WARNING, "Target K230 init");
-        } else {
-            gcs().send_text(MAV_SEVERITY_WARNING, "Target K230 Fail");
-            _Target_ptr_cam = nullptr;
+        if (use_target_cam_type.get() == 0) { // 0:RK3588, 1:K230, 2:LRB
+            _Target_ptr_cam = new FD_Target_RK3588();
+            if (_Target_ptr_cam->init()) {
+                gcs().send_text(MAV_SEVERITY_WARNING, "Target RK3588 init");
+            } else {
+                gcs().send_text(MAV_SEVERITY_WARNING, "Target RK3588 Fail");
+                _Target_ptr_cam = nullptr;
+            }
+        } 
+        else if (use_target_cam_type.get() == 1) {
+            _Target_ptr_cam = new FD_Target_K230();
+            if (_Target_ptr_cam->init()) {
+                gcs().send_text(MAV_SEVERITY_WARNING, "Target K230 init");
+            } else {
+                gcs().send_text(MAV_SEVERITY_WARNING, "Target K230 Fail");
+                _Target_ptr_cam = nullptr;
+            }
+        } 
+        else if (use_target_cam_type.get() == 2) {
+            _Target_ptr_cam = new FD_Target_LRB();
+            if (_Target_ptr_cam->init()) {
+                gcs().send_text(MAV_SEVERITY_WARNING, "Target LRB init");
+            } else {
+                gcs().send_text(MAV_SEVERITY_WARNING, "Target LRB Fail");
+                _Target_ptr_cam = nullptr;
+            }
+        } 
+        else {
+            gcs().send_text(MAV_SEVERITY_WARNING, "Target CAM UNKNOW %d", use_target_cam_type.get());
         }
     }
+
     if (use_loc) {
         _Target_ptr_loc = new FD_Target_Loc();
         if (_Target_ptr_loc->init()) {

@@ -119,6 +119,7 @@ COMMON_VEHICLE_DEPENDENT_LIBRARIES = [
     'FD1_UART',
     'FD_K230',
     'FD_LRB',
+    'FD_RK3588',
     'FD_Target',
 ]
 

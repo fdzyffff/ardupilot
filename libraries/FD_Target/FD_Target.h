@@ -12,6 +12,7 @@
 
 #include <FD_LRB/FD_LRB.h>
 #include <FD_K230/FD_K230.h>
+#include <FD_RK3588/FD_RK3588.h>
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 class FD_Target_Base {
@@ -19,9 +20,11 @@ public:
     FD_Target_Base() {};
     virtual ~FD_Target_Base() {};
     virtual bool init() {return false;}
+    virtual void update() = 0;
     bool is_valid() {return _valid;}
     void handle_info(float p1, float p2);
     bool get_info(float &p1, float &p2);
+    virtual void handle_msg(const mavlink_message_t &msg);
     uint32_t _last_ms;
     bool _new_data;
     bool _valid;
@@ -37,8 +40,8 @@ public:
     static const struct AP_Param::GroupInfo var_info[];
 
     bool init() override;
-    void update();
-    void handle_msg(const mavlink_message_t &msg);
+    void update() override;
+    void handle_msg(const mavlink_message_t &msg) override;
     void handle_info_test(float p1, float p2);
 
     Location current_loc;
@@ -59,8 +62,8 @@ public:
     static const struct AP_Param::GroupInfo var_info[];
 
     bool init() override;
-    void update();
-    void handle_msg(const mavlink_message_t &msg);
+    void update() override;
+    void handle_msg(const mavlink_message_t &msg) override;
     float cal_frame_angle(float pixel, float angle, float x_in);
     void handle_info_test(float p1, float p2);
 
@@ -79,7 +82,7 @@ public:
     FD_Target_LRB();
     ~FD_Target_LRB() {};
     bool init() override;
-    void update();
+    void update() override;
     void do_cmd_on(bool on);
     void do_cmd_pre_lock();
     void handle_info_test(float p1, float p2);
@@ -102,13 +105,34 @@ private:
     FD_LRB* FD_LRB_ptr;
 };
 
+class FD_Target_RK3588: public FD_Target_Base {
+public:
+    FD_Target_RK3588();
+    ~FD_Target_RK3588() {};
+
+    static const struct AP_Param::GroupInfo var_info[];
+
+    bool init() override;
+    void update() override;
+    void handle_msg(const mavlink_message_t &msg) override;
+    float cal_frame_angle(float angle, float x_in);
+    void handle_info_test(float p1, float p2);
+
+private:
+    AP_Int32 target_timeout;
+    AP_Float cam_angle_x;
+    AP_Float cam_angle_y;
+
+    FD_RK3588* FD_RK3588_ptr;
+};
+
 class FD_Target_Mav: public FD_Target_Base {
 public:
     FD_Target_Mav();
     ~FD_Target_Mav() {};
     bool init() override;
-    void update();
-    void handle_msg(const mavlink_message_t &msg);
+    void update() override;
+    void handle_msg(const mavlink_message_t &msg) override;
     void handle_info_test(float p1, float p2);
 
 private:

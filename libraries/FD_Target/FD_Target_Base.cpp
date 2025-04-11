@@ -17,3 +17,8 @@ bool FD_Target_Base::get_info(float &p1, float &p2) {
     }
     return false;
 }
+
+void FD_Target_Base::handle_msg(const mavlink_message_t &msg) {
+    return;
+}
+
