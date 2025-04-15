@@ -74,6 +74,8 @@
 
 #include "mode.h"
 
+#include <FD_Uartpass/FD_Uartpass.h>
+
 class Rover : public AP_Vehicle {
 public:
     friend class GCS_MAVLINK_Rover;
@@ -442,6 +444,8 @@ public:
 
     // Simple mode
     float simple_sin_yaw;
+
+    FD_Uartpass uartpass;
 };
 
 extern Rover rover;

@@ -393,6 +393,8 @@ const AP_Param::Info Rover::var_info[] = {
     GOBJECT(optflow,   "FLOW", AP_OpticalFlow),
 #endif
 
+    GOBJECT(uartpass, "UPASS", FD_Uartpass),
+
     // @Group:
     // @Path: ../libraries/AP_Vehicle/AP_Vehicle.cpp
     PARAM_VEHICLE_INFO,

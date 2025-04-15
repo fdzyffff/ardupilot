@@ -178,6 +178,8 @@
 #endif
 #include "mode.h"
 
+#include <FD_Uartpass/FD_Uartpass.h>
+
 class Copter : public AP_Vehicle {
 public:
     friend class GCS_MAVLINK_Copter;
@@ -1057,6 +1059,8 @@ private:
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);
+
+    FD_Uartpass uartpass;
 
 public:
     void failsafe_check();      // failsafe.cpp
