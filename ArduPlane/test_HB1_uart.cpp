@@ -41,21 +41,21 @@ void Plane::test_HB1_uart(uint8_t msg_id, uint8_t option)
 
 void Plane::test_HB1_uart_msg1(uint8_t option){
     gcs().send_text(MAV_SEVERITY_INFO, "SIM power2apm :");
-    HB1_power2apm &tmp_msg = HB1_uart_mission.get_msg_power2apm();
-    tmp_msg._msg_1.updated = true;
-    tmp_msg._msg_1.need_send = true;
-    tmp_msg._msg_1.print = true;
-    tmp_msg._msg_1.content.msg.header.head_1 = HB1_power2apm::PREAMBLE1;
-    tmp_msg._msg_1.content.msg.header.head_2 = HB1_power2apm::PREAMBLE2;
+    // HB1_power2apm &tmp_msg = HB1_uart_mission.get_msg_power2apm();
+    // tmp_msg._msg_1.updated = true;
+    // tmp_msg._msg_1.need_send = true;
+    // tmp_msg._msg_1.print = true;
+    // tmp_msg._msg_1.content.msg.header.head_1 = HB1_power2apm::PREAMBLE1;
+    // // tmp_msg._msg_1.content.msg.header.head_2 = HB1_power2apm::PREAMBLE2;
 
-    for (int8_t i = 2; i < tmp_msg._msg_1.length; i++) {
-        tmp_msg._msg_1.content.data[i] = 0;
-    }
+    // for (int8_t i = 2; i < tmp_msg._msg_1.length; i++) {
+    //     tmp_msg._msg_1.content.data[i] = 0;
+    // }
     
-    tmp_msg._msg_1.content.msg.rpm_h = 10;
-    tmp_msg._msg_1.content.msg.rpm_l = 10;
-    tmp_msg._msg_1.content.msg.temp_h = 0;
-    tmp_msg._msg_1.content.msg.temp_l = 90;
+    // tmp_msg._msg_1.content.msg.rpm_h = 10;
+    // tmp_msg._msg_1.content.msg.rpm_l = 10;
+    // tmp_msg._msg_1.content.msg.temp_h = 0;
+    // tmp_msg._msg_1.content.msg.temp_l = 90;
 }
 
 void Plane::test_HB1_uart_msg2(uint8_t option){

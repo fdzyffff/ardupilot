@@ -15,31 +15,10 @@ void HB1_power2apm::parse(uint8_t temp)
         default:
         case HB1UART_msg_parser::HB1UART_PREAMBLE1:
             _msg.read = 0;
-            _msg.sum_check = 0;
-            _msg.sum_xor = 0;
             if (temp == PREAMBLE1) {
-                _msg.msg_state = HB1UART_msg_parser::HB1UART_PREAMBLE2;
-                _msg.data[_msg.read] = temp;
-                _msg.read++;
-                _msg.sum_check += temp;
-                _msg.sum_xor = _msg.sum_xor ^ temp;
-            }
-            break;
-        case HB1UART_msg_parser::HB1UART_PREAMBLE2:
-            if (temp == PREAMBLE2)
-            {
-                _msg.header.head_1 = PREAMBLE1;
-                _msg.header.head_2 = PREAMBLE2;
-                _msg.length = _msg_1.length;
-                _msg.data[_msg.read] = temp;
-                _msg.read++;
                 _msg.msg_state = HB1UART_msg_parser::HB1UART_DATA;
-                _msg.sum_check += temp;
-                _msg.sum_xor = _msg.sum_xor ^ temp;
-            }
-            else
-            {
-                _msg.msg_state = HB1UART_msg_parser::HB1UART_PREAMBLE1;
+                _msg.data[_msg.read] = temp;
+                _msg.read++;
             }
             break;
         case HB1UART_msg_parser::HB1UART_DATA:
@@ -49,29 +28,37 @@ void HB1_power2apm::parse(uint8_t temp)
             }
             _msg.data[_msg.read] = temp;
             _msg.read++;
-            _msg.sum_check += temp;
-            _msg.sum_xor = _msg.sum_xor ^ temp;
-            if (_msg.read >= (_msg.length - 2))
+            if (_msg.read >= (_msg.length - 1))
             {
                 _msg.msg_state = HB1UART_msg_parser::HB1UART_SUM;
             }
             break;
-        case HB1UART_msg_parser::HB1UART_SUM:
+        case HB1UART_msg_parser::HB1UART_SUM: {
             _msg.data[_msg.read] = temp;
             _msg.read++;
-            _msg.sum_xor = _msg.sum_xor ^ temp;
-            if (_msg.sum_check == temp)
-            {
-                _msg.msg_state = HB1UART_msg_parser::HB1UART_XOR;
-            } else {
-                _msg.msg_state = HB1UART_msg_parser::HB1UART_PREAMBLE1;
+            uint8_t i = 0;
+            uint8_t k = 0;
+            uint8_t crc8 = 0;
+            for (i = 0; i < _msg.read-1; i++) {
+                k = _msg.data[i]^crc8;
+                crc8 = 0;
+                if (k & 0x01) {crc8 ^= 0x5E;}
+                if (k & 0x02) {crc8 ^= 0xBC;}
+                if (k & 0x04) {crc8 ^= 0x61;}
+                if (k & 0x08) {crc8 ^= 0xC2;}
+                if (k & 0x10) {crc8 ^= 0x9D;}
+                if (k & 0x20) {crc8 ^= 0x23;}
+                if (k & 0x40) {crc8 ^= 0x46;}
+                if (k & 0x80) {crc8 ^= 0x8C;}
             }
-            break;
-        case HB1UART_msg_parser::HB1UART_XOR:
-            _msg.data[_msg.read] = temp;
-            process_message();
+            // gcs().send_text(MAV_SEVERITY_INFO, "KKK %d", i);
+            // gcs().send_text(MAV_SEVERITY_INFO, "FFF %x, %x", temp, crc8);
+            if (temp == k) {
+                process_message();
+            }
             _msg.msg_state = HB1UART_msg_parser::HB1UART_PREAMBLE1;
             break;
+        }
     }
 }
 
@@ -100,3 +87,23 @@ void HB1_power2apm::swap_message(void)
     // swap_message_sub(_msg_1.content.data[22], _msg_1.content.data[23]);
     ;
 }
+
+// void HB1_power2apm::make_sum()
+// {
+//     uint8_t i = 0;
+//     uint8_t k = 0;
+//     uint8_t crc8 = 0;
+//     for (i = 0; i < _msg_1.length-1; i++) {
+//         k = _msg_1.content.data[i]^crc8;
+//         crc8 = 0;
+//         if (k & 0x01) {crc8 ^= 0x5E;}
+//         if (k & 0x02) {crc8 ^= 0xBC;}
+//         if (k & 0x04) {crc8 ^= 0x61;}
+//         if (k & 0x08) {crc8 ^= 0xC2;}
+//         if (k & 0x10) {crc8 ^= 0x9D;}
+//         if (k & 0x20) {crc8 ^= 0x23;}
+//         if (k & 0x40) {crc8 ^= 0x46;}
+//         if (k & 0x80) {crc8 ^= 0x8C;}
+//     }
+//     _msg_1.content.msg.crc = k;
+// }

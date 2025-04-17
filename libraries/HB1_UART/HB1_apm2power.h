@@ -4,7 +4,6 @@ class HB1_apm2power : public HB1_message{
 public:
     struct PACKED HB1_power2apm_header {
         uint8_t head_1;
-        uint8_t head_2;
     };
 
     // message structure
@@ -63,7 +62,7 @@ public:
 
     void set_engine_start();
     void set_engine_stop();
-    void set_engine_throttle_control();
+    void set_engine_throttle_control(uint16_t thr_in);
     void set_engine_emergency_stop();
     void set_throttle(uint8_t thr_in);
     void set_rpm_half(uint16_t rpm_in);

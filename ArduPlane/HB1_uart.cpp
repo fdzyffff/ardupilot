@@ -55,7 +55,7 @@ void Plane::HB1_uart_power_send()
             HB1_uart_mission.get_msg_apm2rocket()._msg_1.need_send = true;
         }
     }
-    if (millis() - HB1_Power.status_ms > 200) {
+    if (millis() - HB1_Power.status_ms > 20) {
         HB1_Power.status_ms = millis();
         if (HB1_Power.send_start_counter>0) {
             HB1_Power.send_start_counter--;
@@ -171,13 +171,13 @@ void Plane::HB1_msg_mission2apm_handle() {
 
 void Plane::HB1_msg_power2apm_handle() {
     HB1_power2apm &tmp_msg = HB1_uart_power.get_msg_power2apm();
-    uint16_t rpm = ((uint16_t)tmp_msg._msg_1.content.msg.rpm_h << 8 | tmp_msg._msg_1.content.msg.rpm_l);
-    uint16_t temp = ((uint16_t)tmp_msg._msg_1.content.msg.temp_h << 8 | tmp_msg._msg_1.content.msg.temp_l);
+    uint16_t rpm = ((uint16_t)tmp_msg._msg_1.content.msg.msb << 8 | tmp_msg._msg_1.content.msg.lsb);
+    // uint16_t temp = ((uint16_t)tmp_msg._msg_1.content.msg.temp_h << 8 | tmp_msg._msg_1.content.msg.temp_l);
 
-    HB1_Power.HB1_engine_rpm.apply((float)rpm);
-    HB1_Power.HB1_engine_fuel = (float)tmp_msg._msg_1.content.msg.main_pwm;
-    HB1_Power.HB1_engine_temp = (float)temp;
-    HB1_Power.HB1_engine_status = tmp_msg._msg_1.content.msg.status;
+    HB1_Power.HB1_engine_rpm.apply(10.0f * (float)rpm);
+    // HB1_Power.HB1_engine_fuel = (float)tmp_msg._msg_1.content.msg.main_pwm;
+    // HB1_Power.HB1_engine_temp = (float)temp;
+    // HB1_Power.HB1_engine_status = tmp_msg._msg_1.content.msg.status;
     HB1_Power.last_update_ms = millis();
 }
 
