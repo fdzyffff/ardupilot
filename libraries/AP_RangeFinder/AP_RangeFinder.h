@@ -174,6 +174,7 @@ public:
 #if AP_RANGEFINDER_JRE_SERIAL_ENABLED
         JRE_Serial = 41,
 #endif
+        VL53L5CX = 42,
 #if AP_RANGEFINDER_SIM_ENABLED
         SIM = 100,
 #endif

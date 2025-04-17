@@ -2,21 +2,21 @@
 
 #include "AP_RangeFinder_config.h"
 
-#if AP_RANGEFINDER_VL53L1X_ENABLED
+#if AP_RANGEFINDER_VL53L5CX_ENABLED
 
 #include "AP_RangeFinder.h"
 #include "AP_RangeFinder_Backend.h"
 
 #include <AP_HAL/I2CDevice.h>
 
-class AP_RangeFinder_VL53L1X : public AP_RangeFinder_Backend
+class AP_RangeFinder_VL53L5CX : public AP_RangeFinder_Backend
 {
 
 public:
     enum class DistanceMode { Short, Medium, Long, Unknown };
 
     // static detection function
-    static AP_RangeFinder_Backend *detect(RangeFinder::RangeFinder_State &_state, AP_RangeFinder_Params &_params, AP_HAL::OwnPtr<AP_HAL::I2CDevice> _dev, DistanceMode mode);
+    static AP_RangeFinder_Backend *detect(RangeFinder::RangeFinder_State &_state, AP_RangeFinder_Params &_params, AP_HAL::OwnPtr<AP_HAL::I2CDevice> _dev);
 
     // update state
     void update(void) override;
@@ -55,7 +55,7 @@ private:
         RANGECOMPLETE_MERGED_PULSE  = 22,
     };
 
-    // register addresses from API vl53l1x_register_map.h
+    // register addresses from API VL53L5CX_register_map.h
     enum regAddr : uint16_t
     {
         SOFT_RESET                                                                 = 0x0000,
@@ -1247,9 +1247,9 @@ private:
     };
 
     // constructor
-    AP_RangeFinder_VL53L1X(RangeFinder::RangeFinder_State &_state, AP_RangeFinder_Params &_params, AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev);
+    AP_RangeFinder_VL53L5CX(RangeFinder::RangeFinder_State &_state, AP_RangeFinder_Params &_params, AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev);
 
-    bool init(DistanceMode mode);
+    bool init();
     void timer();
 
     // check sensor ID
@@ -1282,7 +1282,6 @@ private:
 
     bool read_register(uint16_t reg, uint8_t &value) WARN_IF_UNUSED;
     bool read_register16(uint16_t reg, uint16_t &value) WARN_IF_UNUSED;
-    bool read_register16(uint16_t reg, uint8_t &value) WARN_IF_UNUSED;
     bool write_register(uint16_t reg, uint8_t value) WARN_IF_UNUSED;
     bool write_register16(uint16_t reg, uint16_t value) WARN_IF_UNUSED;
     bool write_register32(uint16_t reg, uint32_t value) WARN_IF_UNUSED;
@@ -1300,4 +1299,4 @@ private:
     bool setupManualCalibration(void);
 };
 
-#endif  // AP_RANGEFINDER_VL53L1X_ENABLED
+#endif  // AP_RANGEFINDER_VL53L5CX_ENABLED
