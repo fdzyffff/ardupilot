@@ -370,7 +370,7 @@ void RangeFinder::detect_instance(uint8_t instance, uint8_t& serial_instance)
         if (params[instance].address != 0) {
             addr = params[instance].address;
         }
-        FOREACH_I2C_EXTERNAL(i) {
+        FOREACH_I2C(i) {
             if (_add_backend(AP_RangeFinder_VL53L5CX::detect(state[instance], params[instance],
                                                             hal.i2c_mgr->get_device(i, addr)),
                              instance)) {

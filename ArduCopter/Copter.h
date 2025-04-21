@@ -984,6 +984,10 @@ private:
     void userhook_auxSwitch1(const RC_Channel::AuxSwitchPos ch_flag);
     void userhook_auxSwitch2(const RC_Channel::AuxSwitchPos ch_flag);
     void userhook_auxSwitch3(const RC_Channel::AuxSwitchPos ch_flag);
+    // void userhook_i2c_test();
+    // bool write_register(uint16_t reg, uint8_t value);
+    // bool read_register(uint16_t reg, uint8_t &value);
+    // AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev;
 
     void FD_handle_message();
     void FD_send_raw_imu();
