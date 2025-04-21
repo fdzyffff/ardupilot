@@ -14,11 +14,14 @@ extern const AP_HAL::HAL& hal;
 
 FD_Uartpass::FD_Uartpass()
 {
+    _initialized = false;
     AP_Param::setup_object_defaults(this, var_info);
     return;
 }
 
 void FD_Uartpass::init() {
+    last_check_ms = millis();
+
     _initialized = false;
 
     if (port_num.get() <=0) {
@@ -36,7 +39,7 @@ void FD_Uartpass::init() {
         gcs().send_text(MAV_SEVERITY_INFO, "SERIAL%d !state", port_num.get());
         return;
     }
-    if (uart_state->protocol.get() >= 0) {
+    if (uart_state->protocol.get() != 0) {
         gcs().send_text(MAV_SEVERITY_INFO, "SERIAL%d is used", port_num.get());
         return;
     }
@@ -48,7 +51,13 @@ void FD_Uartpass::init() {
 }
 
 void FD_Uartpass::update() {
-    if (!_initialized) {return;}
+    if (!_initialized) {
+        if ((port_num.get() >=0) && (millis() - last_check_ms > 10000)) {
+            gcs().send_text(MAV_SEVERITY_INFO, "Uart Pass try");
+            init();
+        }
+        return;
+    }
     read_uart();
     data_buffer_instance.set_active();
     data_buffer_instance.update();

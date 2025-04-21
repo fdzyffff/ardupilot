@@ -158,7 +158,6 @@ void Rover::init_ardupilot()
         rover.g2.mis_done_behave.set_default(ModeAuto::Mis_Done_Behave::MIS_DONE_BEHAVE_LOITER);
     }
 
-    uartpass.init();
     // flag that initialisation has completed
     initialised = true;
 }

@@ -35,6 +35,8 @@ public:
     AP_Int8 source_sys_id;
 
     FD_Uartpass_buffer data_buffer_instance;
+
+    uint32_t last_check_ms;
 };
 
 
