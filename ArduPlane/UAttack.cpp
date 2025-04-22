@@ -269,6 +269,7 @@ void UAttack::handle_info(float p1, float p2) {
         p2 = 180.0f - p2;
     }
 
+    Vector3f target_unit = Vector3f(1.0f, 0.0f, 0.0f);
     Matrix3f tmp_target_cam_m;
     tmp_target_cam_m.from_euler(0.0f, radians(p2), radians(p1));
     Matrix3f tmp_cam_body_m;
@@ -276,31 +277,10 @@ void UAttack::handle_info(float p1, float p2) {
     Matrix3f tmp_body_earth_m;
     tmp_body_earth_m.from_euler(_roll, _pitch, _yaw);
     Matrix3f tmp_target_earth_m = tmp_body_earth_m*tmp_cam_body_m*tmp_target_cam_m;
+    Vector3f ef_unit = tmp_target_earth_m*target_unit;
 
-    float tmp_roll = 0.0f;
-    float tmp_pitch = 0.0f;
-    float tmp_yaw = 0.0f;
-
-    tmp_target_earth_m.to_euler(&tmp_roll, &tmp_pitch, &tmp_yaw);
-
-    float angle_pitch = wrap_180(degrees(tmp_pitch));
-    float angle_yaw =   wrap_180(degrees(tmp_yaw));
-
-    // Vector3f target_unit = Vector3f(1.0f, 0.0f, 0.0f);
-    // Matrix3f tmp_target_cam_m;
-    // tmp_target_cam_m.from_euler(0.0f, radians(p2), radians(p1));
-    // Vector3f cam_unit = tmp_target_cam_m*target_unit;
-
-    // Matrix3f tmp_cam_body_m;
-    // tmp_cam_body_m.from_euler(0.0f, radians(0.0f), radians(0.0f));
-    // Vector3f bf_unit = tmp_cam_body_m*cam_unit;
-
-    // Matrix3f tmp_body_earth_m;
-    // tmp_body_earth_m.from_euler(_roll, _pitch, _yaw);
-    // Vector3f ef_unit = tmp_body_earth_m*bf_unit;
-
-    // float angle_pitch = wrap_180(degrees(atan2f(-ef_unit.z, ef_unit.xy().length())));
-    // float angle_yaw =   wrap_180(degrees(atan2f( ef_unit.y, ef_unit.x)));
+    float angle_pitch = wrap_180(degrees(atan2f(-ef_unit.z, ef_unit.xy().length())));
+    float angle_yaw =   wrap_180(degrees(atan2f( ef_unit.y, ef_unit.x)));
 
     ef_info.x = angle_yaw;
     ef_info.y = angle_pitch;

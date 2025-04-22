@@ -26,10 +26,13 @@ void FD_Target_LRB::update() {
     if (tmp_msg._msg_1.updated) {
         // DYT -> APM
         if (tmp_msg._msg_1.content.msg.status == 1) {
-            float p1 =  cal_frame_angle(cam_width.get(), cam_angle_x.get(), (tmp_msg._msg_1.content.msg.target_x + tmp_msg._msg_1.content.msg.target_w/2 - cam_x_offset.get()) ); // x-axis, degree
-            float p2 = -cal_frame_angle(cam_height.get(), cam_angle_y.get(), (tmp_msg._msg_1.content.msg.target_y + tmp_msg._msg_1.content.msg.target_h/2- cam_y_offset.get()) ); // y-axis, degree
+            float theta1 =  cal_frame_angle(cam_width.get(), cam_angle_x.get(), (tmp_msg._msg_1.content.msg.target_x + tmp_msg._msg_1.content.msg.target_w/2 - cam_x_offset.get()) ); // x-axis, degree
+            float theta2 = -cal_frame_angle(cam_height.get(), cam_angle_y.get(), (tmp_msg._msg_1.content.msg.target_y + tmp_msg._msg_1.content.msg.target_h/2- cam_y_offset.get()) ); // y-axis, degree
 
-            // p2 += cam_pitch_offset.get(); // add offset between cam and uav
+            Vector3f tmp = Vector3f(1.f, tanf(radians(theta1)), -tanf(radians(theta2)));
+            float p1 = atanf(tmp.y/tmp.x);
+            float p2 = atanf(tmp.z/tmp.xy().length());
+
             handle_info(p1, p2);
         } else {
             // unhealthy massage
