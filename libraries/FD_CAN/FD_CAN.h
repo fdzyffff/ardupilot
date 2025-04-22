@@ -38,6 +38,9 @@ public:
 
     FD_BATT *_batt_ptr;
 
+    AP_Int32 _print;       
+    AP_Int16 _out;       
+
 private:
 
     // loop to send output to ESCs in background thread
@@ -57,6 +60,4 @@ private:
     AP_HAL::CANIface* _can_iface;
     HAL_BinarySemaphore sem_handle;
 
-    AP_Int32 _print;       
-    AP_Int16 _out;       
 };

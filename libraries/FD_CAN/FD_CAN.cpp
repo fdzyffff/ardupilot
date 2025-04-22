@@ -146,7 +146,7 @@ void FD_CAN::loop() {
             // }
         }
             
-        // 定时将电调状态存入日志，10Hz
+        // 测试数据，10Hz
         if (AP_HAL::millis() -  last_log_ms >= 100) {
             last_log_ms = AP_HAL::millis();
             log_status();

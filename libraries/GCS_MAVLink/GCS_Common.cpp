@@ -5757,11 +5757,19 @@ void GCS_MAVLINK::send_autopilot_state_for_gimbal_device() const
 
 void GCS_MAVLINK::send_hxts_bat_can_status() const
 {
-    for (uint8_t i = 1; i < AP::can().get_num_drivers(); i++) {
+    for (uint8_t i = 0; i < AP::can().get_num_drivers(); i++) {
         if (AP::can().get_driver_type(i) == AP_CAN::Protocol::FDCAN) {
             FD_CAN* fd_can = (FD_CAN*)AP::can().get_driver(i);
-            if (fd_can == nullptr) {return;}
-            if (fd_can->_batt_ptr == nullptr) {return;}
+            if (fd_can == nullptr) {
+                // send_text(MAV_SEVERITY_INFO, "%d| fd_can == nullptr", i);
+                continue;
+            }
+            if (fd_can->_batt_ptr == nullptr) {
+                if (fd_can->_print.get()) {
+                    send_text(MAV_SEVERITY_INFO, "%d| fd_can->_batt_ptr", i);
+                    continue;
+                }
+            }
             mavlink_msg_hxts_bat_can_status_send(
                 chan,
                 fd_can->_batt_ptr->status.vfc,
@@ -5780,7 +5788,12 @@ void GCS_MAVLINK::send_hxts_bat_can_status() const
                 fd_can->_batt_ptr->status.HPWM2,
                 fd_can->_batt_ptr->status.error,
                 fd_can->_batt_ptr->status.run);
+            if (fd_can->_print.get()) {
+                send_text(MAV_SEVERITY_INFO, "%d|%f %f %f", i, fd_can->_batt_ptr->status.vfc, fd_can->_batt_ptr->status.vout, fd_can->_batt_ptr->status.I);
+            }
             break;
+        } else {
+            // send_text(MAV_SEVERITY_INFO, "%d| no type", i);
         } 
     }
 }
