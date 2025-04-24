@@ -89,20 +89,21 @@ bool AP_RangeFinder_VL53L5CX::check_id(void)
     status |= read_register(1, revision_id);
     status |= write_register(0x7fff, 0x02);
 
-    if(status)
-    {
-        GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "FIND VL53L5CX53L5CX");
-    } else {
-        GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "[%x, %x] VL53L5CX53L5CX", device_id, revision_id);
-        return false;
-    }
-
-    // if((device_id == (uint8_t)0xF0) && (revision_id == (uint8_t)0x02))
+    // if(status)
     // {
-    //     GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "Detected VL53L5CX on bus 0x%x\n", (uint8_t)dev->get_bus_id());
+    //     GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "FIND VL53L5CX53L5CX");
     // } else {
+    //     GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "[%x, %x] VL53L5CX53L5CX", device_id, revision_id);
     //     return false;
     // }
+
+    if((device_id == (uint8_t)0xF0) && (revision_id == (uint8_t)0x02))
+    {
+        GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "Detected VL53L5CX on bus 0x%x\n", (uint8_t)dev->get_bus_id());
+    } else {
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "[%d], No VL53L5CX53L5CX", status);
+        return false;
+    }
     printf("Detected VL53L5CX on bus 0x%x\n", dev->get_bus_id());
     return true;
 }
@@ -436,24 +437,31 @@ bool AP_RangeFinder_VL53L5CX::get_reading(uint16_t &reading_mm)
         return true;
     }
 
-    GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "BUS ADD 0x%x\n", dev->get_bus_address());
+    GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "BUS ADD 0x%x\n", (uint8_t)dev->get_bus_id());
 
     uint8_t status = 0;
-    uint8_t device_id, revision_id;
+    uint8_t tmp[4];
 
-    status |= write_register(0x7fff, 0x00);
-    status |= read_register(0, device_id);
-    status |= read_register(1, revision_id);
-    status |= write_register(0x7fff, 0x02);
+    status |= read_registermulti(0x0, tmp, 4);
+
+    bool isready = (tmp[0] != (uint8_t)255) && (tmp[1] == (uint8_t)0x5) && ((tmp[2] & (uint8_t)0x5) == (uint8_t)0x5) && ((tmp[3] & (uint8_t)0x10) == (uint8_t)0x10);
+
+    if (!isready) {
+        GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "NOT READY VL53L5CX53L5CX");
+        return false;
+    }
+
+    status = 0;
+    status |= read_registermulti(0x0, tmp, 4);
 
     if((device_id == (uint8_t)0xF0) && (revision_id == (uint8_t)0x02))
     {
         GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "FIND VL53L5CX53L5CX");
     } else {
-        GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "[%x, %x] VL53L5CX53L5CX", device_id, revision_id);
+        GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "[%d] No VL53L5CX53L5CX", status);
     }
 
-    GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "STATUS %d VL53L5CX53L5CX", status);
+    // GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "STATUS %d VL53L5CX53L5CX", status);
 
 
     hal.scheduler->delay(1);
@@ -477,6 +485,16 @@ bool AP_RangeFinder_VL53L5CX::read_register16(uint16_t reg, uint16_t &value)
     return true;
 }
 
+bool AP_RangeFinder_VL53L5CX::read_registermulti(uint16_t reg, uint8_t* value, uint32_t len)
+{
+    uint8_t b[2] = { uint8_t(reg >> 8), uint8_t(reg & 0xFF) };
+    if (!dev->transfer(b, 2, value, len)) {
+        return false;
+    }
+    return true;
+}
+
+
 bool AP_RangeFinder_VL53L5CX::write_register(uint16_t reg, uint8_t value)
 {
     uint8_t b[3] = { uint8_t(reg >> 8), uint8_t(reg & 0xFF), value };
@@ -499,7 +517,6 @@ bool AP_RangeFinder_VL53L5CX::write_register32(uint16_t reg, uint32_t value)
                      uint8_t((value)       & 0xFF) };
     return dev->transfer(b, 6, nullptr, 0);
 }
-
 /*
   timer called at 20Hz
 */

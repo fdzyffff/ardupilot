@@ -1280,11 +1280,15 @@ private:
     uint32_t counter;
     bool calibrated;
 
+    uint8_t target_status[64];
+    uint8_t distance_mm[64];
+
     bool read_register(uint16_t reg, uint8_t &value) WARN_IF_UNUSED;
     bool read_register16(uint16_t reg, uint16_t &value) WARN_IF_UNUSED;
     bool write_register(uint16_t reg, uint8_t value) WARN_IF_UNUSED;
     bool write_register16(uint16_t reg, uint16_t value) WARN_IF_UNUSED;
     bool write_register32(uint16_t reg, uint32_t value) WARN_IF_UNUSED;
+    bool write_registermulti(uint16_t reg, uint8_t* value, uint32_t len) WARN_IF_UNUSED;
     bool dataReady(void);
     bool reset(void) WARN_IF_UNUSED;
     bool setDistanceMode(DistanceMode distance_mode) WARN_IF_UNUSED;

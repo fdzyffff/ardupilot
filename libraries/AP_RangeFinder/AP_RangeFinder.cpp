@@ -366,7 +366,7 @@ void RangeFinder::detect_instance(uint8_t instance, uint8_t& serial_instance)
         break;
 
     case Type::VL53L5CX: {
-        uint8_t addr = 0x52;
+        uint8_t addr = 0x29;
         if (params[instance].address != 0) {
             addr = params[instance].address;
         }
