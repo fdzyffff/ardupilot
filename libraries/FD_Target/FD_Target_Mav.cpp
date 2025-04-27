@@ -38,8 +38,9 @@ void FD_Target_Mav::handle_msg(const mavlink_message_t &msg)
         switch(packet.command) {
             case MAV_CMD_USER_1:
                 if (is_equal(packet.param7, 1.0f)) {
-                    float p1 = packet.param5;
-                    float p2 = packet.param6;
+                    Vector3f tmp = Vector3f(1.f, tanf(radians(packet.param1)), -tanf(radians(packet.param2)));
+                    float p1 = degrees(atanf(tmp.y/tmp.x));
+                    float p2 = degrees(atanf(tmp.z/tmp.xy().length()));
                     handle_info(p1, p2);
                 }
                 break;
