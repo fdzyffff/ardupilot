@@ -11,10 +11,10 @@ void Plane::HB1_Power_pwm_update() {
     float thr_min = 0.0f;
     float thr_max = 100.0f;
     float timer = (millis() - HB1_Power.timer);
+    if (HB1_Power_engine_type() == 0) {
+        thr_min = g2.hb1_engine60_min.get();
+    }
     if (!arming.is_armed()) {
-        if (HB1_Power_engine_type() == 0) {
-            thr_min = g2.hb1_engine60_min.get();
-        }
         switch (HB1_Power.state) {
             case HB1_PowerAction_None:
             case HB1_PowerAction_RocketON:
@@ -45,7 +45,7 @@ void Plane::HB1_Power_pwm_update() {
                 }
                 break;
             case HB1_PowerAction_GROUND_EngineMID:
-                HB1_throttle = constrain_float(30.f, thr_min, thr_max);
+                HB1_throttle = constrain_float(50.f, thr_min, thr_max);
                 break;
             default:
                 break;
@@ -53,53 +53,42 @@ void Plane::HB1_Power_pwm_update() {
     } else {
         HB1_throttle = throttle;
 
-        if (HB1_Power_engine_type() == 0) {
-            thr_min = g2.hb1_engine60_min.get();
-        }
-
         if (plane.throttle_suppressed) {
             HB1_throttle = thr_min;
-        }
-
-        switch (HB1_Power.state) {
-            case HB1_PowerAction_None:
-                if (HB1_Status.state == HB1_Mission_Takeoff) {
-                    HB1_throttle = thr_min;
-                } else {
-                    HB1_throttle = throttle;
-                }
-                break;
-            case HB1_PowerAction_RocketON:
-                HB1_throttle = thr_min;
-                break;
-            case HB1_PowerAction_EnginePullUP:
-                {   
-                    float timer_delay = MAX(timer - 0.0f, 0.0f);
-                    if (timer_delay < 800.f) {
-                        HB1_throttle = constrain_float(35.f*timer_delay/800.f, thr_min, 35.f);
-                    } else if (timer_delay < 1500.f) {
-                        HB1_throttle = constrain_float(35.f + 65.f*(timer_delay-800.f)/700.f, 35.f, thr_max);
-                    }
+            switch (HB1_Power.state) {
+                case HB1_PowerAction_GROUND_EngineOFF:
+                case HB1_PowerAction_EngineOFF:
+                case HB1_PowerAction_ParachuteON:
+                    HB1_throttle = 0.0f;
                     break;
-                }
-            case HB1_PowerAction_EngineON:
-                HB1_throttle = constrain_float(throttle, 30.f, thr_max);
-                break;
-            case HB1_PowerAction_GROUND_EngineOFF:
-            case HB1_PowerAction_EngineOFF:
-            case HB1_PowerAction_ParachuteON:
-                HB1_throttle = 0.0f;
-                break;
-            case HB1_PowerAction_GROUND_RocketON:
-            case HB1_PowerAction_GROUND_EngineSTART:
-            case HB1_PowerAction_GROUND_EngineSTART_PRE:
-            case HB1_PowerAction_GROUND_EngineON:
-            case HB1_PowerAction_GROUND_EngineFULL:
-            case HB1_PowerAction_GROUND_EngineMID:
-                HB1_throttle = thr_min;
-                break;
-            default:
-                break;
+                default:
+                    HB1_throttle = thr_min;
+                    break;
+            }
+        } else {
+            switch (HB1_Power.state) {
+                case HB1_PowerAction_None:
+                case HB1_PowerAction_RocketON:
+                case HB1_PowerAction_EnginePullUP:
+                case HB1_PowerAction_EngineON:
+                    HB1_throttle = constrain_float(throttle, thr_min, thr_max);
+                    break;
+                case HB1_PowerAction_GROUND_EngineOFF:
+                case HB1_PowerAction_EngineOFF:
+                case HB1_PowerAction_ParachuteON:
+                    HB1_throttle = 0.0f;
+                    break;
+                case HB1_PowerAction_GROUND_RocketON:
+                case HB1_PowerAction_GROUND_EngineSTART:
+                case HB1_PowerAction_GROUND_EngineSTART_PRE:
+                case HB1_PowerAction_GROUND_EngineON:
+                case HB1_PowerAction_GROUND_EngineFULL:
+                case HB1_PowerAction_GROUND_EngineMID:
+                    HB1_throttle = thr_min;
+                    break;
+                default:
+                    break;
+            }
         }
     }
     SRV_Channels::set_output_scaled(SRV_Channel::k_throttle_HB1, HB1_throttle);

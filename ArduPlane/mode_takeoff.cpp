@@ -124,7 +124,7 @@ void ModeTakeoff::update()
     }
 
     if (plane.flight_stage == AP_Vehicle::FixedWing::FLIGHT_TAKEOFF) {
-        SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, 100);
+        SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, 50);
         plane.takeoff_calc_roll();
         //plane.takeoff_calc_pitch();
         plane.nav_pitch_cd = level_pitch * 100;
