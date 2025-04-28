@@ -3,11 +3,11 @@
 const AP_Param::GroupInfo UAttack::var_info[] = {
 
     AP_SUBGROUPINFO(attack_roll_pid    , "ATKRLL_", 0, UAttack, AC_PID),
-    AP_GROUPINFO("K1_PTH",      1, UAttack, attack_k1_pitch,         2.0f),
-    AP_GROUPINFO("K2_PTH",      2, UAttack, attack_k2_pitch,         2.0f),
-    AP_GROUPINFO("K1_YAW",      3, UAttack, attack_k1_yaw,           2.0f),
-    AP_GROUPINFO("K2_YAW",      4, UAttack, attack_k2_yaw,           2.0f),
-    AP_GROUPINFO("K2_ROLL",     5, UAttack, attack_k2_roll,          2.0f),
+    AP_GROUPINFO("K1_PTH",      1, UAttack, attack_k1_pitch,         1.0f),
+    AP_GROUPINFO("K2_PTH",      2, UAttack, attack_k2_pitch,         1.0f),
+    AP_GROUPINFO("K1_YAW",      3, UAttack, attack_k1_yaw,           0.0f),
+    AP_GROUPINFO("K2_YAW",      4, UAttack, attack_k2_yaw,           1.0f),
+    AP_GROUPINFO("K2_ROLL",     5, UAttack, attack_k2_roll,          0.0f),
     AP_GROUPINFO("K_ANGLE",     6, UAttack, attack_k_angle,          1.0f),
     AP_GROUPINFO("THR",         7, UAttack, attack_throttle,        75.0f),
     AP_GROUPINFO("THR_RATE",    8, UAttack, attack_throttle_rate,    1.0f),
@@ -23,7 +23,7 @@ const AP_Param::GroupInfo UAttack::var_info[] = {
     AP_GROUPINFO("FILT_Y_HZ",  18, UAttack, filt_yaw_hz,             2.0f),
     AP_GROUPINFO("FILT_P_HZ",  19, UAttack, filt_pithc_hz,           2.0f),
 
-    AP_SUBGROUPPTR(_Target_ptr_cam, "TC_",   20, UAttack,  FD_Target_K230),
+    AP_SUBGROUPPTR(_Target_ptr_cam, "TC_",   20, UAttack,  FD_Target_RK3588),
     AP_SUBGROUPPTR(_Target_ptr_loc, "TL_",   21, UAttack,  FD_Target_Loc),
     AP_GROUPEND
 };

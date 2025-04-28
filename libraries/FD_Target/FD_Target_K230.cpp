@@ -37,9 +37,12 @@ void FD_Target_K230::update() {
 
         if (tmp_msg._msg_1.content.msg.tag_ok) {
             _last_ms = millis();
-            float p1 = -cal_frame_angle(cam_width.get(), cam_angle_x.get(), tmp_msg._msg_1.content.msg.tag_x); // x-axis, degree
-            float p2 =  cal_frame_angle(cam_height.get(), cam_angle_y.get(), tmp_msg._msg_1.content.msg.tag_y); // y-axis, degree
+            float theta1 = -cal_frame_angle(cam_width.get(), cam_angle_x.get(), tmp_msg._msg_1.content.msg.tag_x); // x-axis, degree
+            float theta2 =  cal_frame_angle(cam_height.get(), cam_angle_y.get(), tmp_msg._msg_1.content.msg.tag_y); // y-axis, degree
 
+            Vector3f tmp = Vector3f(1.f, tanf(radians(theta1)), -tanf(radians(theta2)));
+            float p1 = degrees(atanf(tmp.y/tmp.x));
+            float p2 = degrees(atanf(tmp.z/tmp.xy().length()));
             handle_info(p1, p2);
         }
 
