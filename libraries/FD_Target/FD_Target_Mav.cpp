@@ -15,6 +15,7 @@ const AP_Param::GroupInfo FD_Target_Mav::var_info[] = {
 
 FD_Target_Mav::FD_Target_Mav()
 {
+    AP_Param::setup_object_defaults(this, var_info);
     return;
 }
 
