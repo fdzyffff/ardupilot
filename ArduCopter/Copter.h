@@ -178,6 +178,8 @@
 #endif
 #include "mode.h"
 
+#include "UAttack.h"
+
 class Copter : public AP_Vehicle {
 public:
     friend class GCS_MAVLINK_Copter;
@@ -227,10 +229,13 @@ public:
     friend class ModeZigZag;
     friend class ModeAutorotate;
     friend class ModeTurtle;
+    friend class ModeAttack;
 
     friend class _AutoTakeoff;
 
     friend class PayloadPlace;
+
+    friend class UAttack;
 
     Copter(void);
 
@@ -1054,9 +1059,14 @@ private:
     ModeTurtle mode_turtle;
 #endif
 
+    ModeAttack mode_attack;
+
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);
+
+    UAttack uattack;
+
 
 public:
     void failsafe_check();      // failsafe.cpp
