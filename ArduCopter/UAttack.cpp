@@ -2,8 +2,8 @@
 
 const AP_Param::GroupInfo UAttack::var_info[] = {
 
-    AP_SUBGROUPINFO(attack_throttle_pid, "ATKTHR_", 0, UAttack, AC_PID),
-    AP_SUBGROUPINFO(attack_roll_pid    , "ATKRLL_", 1, UAttack, AC_PID),
+    AP_SUBGROUPINFO(attack_throttle_pid, "_THR_", 0, UAttack, AC_PID),
+    AP_SUBGROUPINFO(attack_roll_pid    , "_RLL_", 1, UAttack, AC_PID),
     AP_GROUPINFO("K1_PTH",      2, UAttack, attack_k1_pitch,         0.0f),
     AP_GROUPINFO("K2_PTH",      3, UAttack, attack_k2_pitch,         1.0f),
     AP_GROUPINFO("K1_YAW",      4, UAttack, attack_k1_yaw,           0.0f),
