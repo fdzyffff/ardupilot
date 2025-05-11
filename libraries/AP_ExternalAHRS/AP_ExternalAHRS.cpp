@@ -26,6 +26,7 @@
 #include "AP_ExternalAHRS_MicroStrain5.h"
 #include "AP_ExternalAHRS_MicroStrain7.h"
 #include "AP_ExternalAHRS_InertialLabs.h"
+#include "AP_ExternalAHRS_TZ605.h"
 
 #include <GCS_MAVLink/GCS.h>
 #include <AP_AHRS/AP_AHRS.h>
@@ -128,6 +129,9 @@ void AP_ExternalAHRS::init(void)
         backend = new AP_ExternalAHRS_InertialLabs(this, state);
         return;
 #endif
+    case DevType::TZ605:
+        backend = new AP_ExternalAHRS_TZ605(this, state);
+        return;
 
     }
 

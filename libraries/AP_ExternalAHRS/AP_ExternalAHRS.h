@@ -34,6 +34,7 @@ class AP_ExternalAHRS {
 public:
     friend class AP_ExternalAHRS_backend;
     friend class AP_ExternalAHRS_VectorNav;
+    friend class AP_ExternalAHRS_TZ605;
 
     AP_ExternalAHRS();
 
@@ -61,6 +62,7 @@ public:
         // 8 reserved for SBG
         // 9 reserved for EulerNav
         // 10 reserved for Aeron
+        TZ605 = 11,
     };
 
     static AP_ExternalAHRS *get_singleton(void) {
@@ -151,6 +153,12 @@ public:
         float  ned_vel_north;
         float  ned_vel_east;
         float  ned_vel_down;
+        float gps_yaw;                      ///< GPS derived yaw information, if available (degrees)
+        uint32_t gps_yaw_time_ms;           ///< timestamp of last GPS yaw reading
+        bool  gps_yaw_configured;           ///< GPS is configured to provide yaw
+        float gps_yaw_accuracy;           ///< heading accuracy of the GPS in degrees
+        bool have_gps_yaw;                ///< does GPS give yaw? Set to true only once available.
+        bool have_gps_yaw_accuracy;       ///< does the GPS give a heading accuracy estimate? Set to true only once available
     } gps_data_message_t;
 
     typedef struct {
