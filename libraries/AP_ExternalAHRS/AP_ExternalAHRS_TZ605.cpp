@@ -6,6 +6,7 @@
 #include <AP_Math/AP_Math.h>
 #include <AP_Math/crc.h>
 #include <AP_GPS/AP_GPS.h>
+#include <AP_Baro/AP_Baro.h>
 #include <AP_InertialSensor/AP_InertialSensor.h>
 #include <GCS_MAVLink/GCS.h>
 #include <AP_Logger/AP_Logger.h>
@@ -280,7 +281,7 @@ void AP_ExternalAHRS_TZ605::post_baro()
         AP_ExternalAHRS::baro_data_message_t baro {
             instance     : baro_data.instance,
             pressure_pa  : baro_data.pressure_pa,
-            temperature  : baro_data.temperature
+            temperature  : baro_data.temperature,
         };
         AP::baro().handle_external(baro);
     }
