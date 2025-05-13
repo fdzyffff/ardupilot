@@ -589,6 +589,16 @@ public:
     
     AP_Int8         axis_bitmask; // axes to be autotuned
 
+    AP_Int16 user_cam_time_out;
+    AP_Int8  user_cam_print;
+    AP_Float user_attack_k;
+    AP_Float user_attack_k2;
+    AP_Float user_cam_width;
+    AP_Float user_cam_height;
+    AP_Float user_cam_angle_x;
+    AP_Float user_cam_angle_y;
+
+
     // just to make compilation easier when all things are compiled out...
     uint8_t unused_integer;
 };

@@ -1266,6 +1266,16 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_SUBGROUPINFO(precland, "PLND_", 35, ParametersG2, AC_PrecLand),
 #endif
 
+    AP_GROUPINFO("USR_PRINT",     40, ParametersG2, user_cam_print,            0),
+    AP_GROUPINFO("USR_TIMEOUT",   41, ParametersG2, user_cam_time_out,      2000),
+    AP_GROUPINFO("USR_AIM_K",     42, ParametersG2, user_attack_k,             2.0f),
+    AP_GROUPINFO("USR_AIM_K2",    43, ParametersG2, user_attack_k2,            2.0f),
+    AP_GROUPINFO("USR_CAM_W",     44, ParametersG2, user_cam_width,          720),
+    AP_GROUPINFO("USR_CAM_H",     45, ParametersG2, user_cam_height,         720),
+    AP_GROUPINFO("USR_CAM_ANG_X", 46, ParametersG2, user_cam_angle_x,         45.0f),
+    AP_GROUPINFO("USR_CAM_ANG_Y", 47, ParametersG2, user_cam_angle_y,         45.0f),
+
+
     AP_GROUPEND
 };
 
