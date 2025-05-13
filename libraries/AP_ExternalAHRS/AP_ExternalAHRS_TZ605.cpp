@@ -270,8 +270,11 @@ void AP_ExternalAHRS_TZ605::handle_baro()
     // last_baro_pkt = AP_HAL::millis();
 
     baro_data.instance = 0;
-    baro_data.pressure_pa = ((float)_msg_air._msg_1.content.msg.ps/1024.f*(132.0f-14.0f) + 14.0f)*1000.f;
-    baro_data.temperature = ((float)_msg_air._msg_1.content.msg.ts/16.f*(96.0f+72.0f) - 72.0f);
+    baro_data.pressure_pa = ((float)_msg_air._msg_1.content.msg.ps/1024.f *1000.f);
+    baro_data.temperature = ((float)_msg_air._msg_1.content.msg.ts/16.f);
+
+    gcs().send_text(MAV_SEVERITY_INFO, "pressure_pa: %f | %f", baro_data.pressure_pa, (float)_msg_air._msg_1.content.msg.ps);
+    gcs().send_text(MAV_SEVERITY_INFO, "temperature: %f | %f", baro_data.temperature, (float)_msg_air._msg_1.content.msg.ts);
 }
 
 // Posts data from an baro packet to `state` and `handle_external` methods

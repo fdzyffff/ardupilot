@@ -28,6 +28,7 @@
 #include <AP_KDECAN/AP_KDECAN.h>
 #include <AP_SerialManager/AP_SerialManager.h>
 #include <AP_PiccoloCAN/AP_PiccoloCAN.h>
+#include <FD_CAN/FD_CAN.h>
 #include <AP_EFI/AP_EFI_NWPMU.h>
 #include <GCS_MAVLink/GCS.h>
 #if CONFIG_HAL_BOARD == HAL_BOARD_LINUX
@@ -142,6 +143,7 @@ void AP_CANManager::init()
     // loop through interfaces and allocate and initialise Iface,
     // Also allocate Driver objects, and add interfaces to them
     for (uint8_t i = 0; i < HAL_NUM_CAN_IFACES; i++) {
+        printf("CANManager: SITL %d\n", i);
         // Get associated Driver to the interface
         uint8_t drv_num = _interfaces[i]._driver_number;
         if (drv_num == 0 || drv_num > HAL_MAX_CAN_PROTOCOL_DRIVERS) {
@@ -223,7 +225,19 @@ void AP_CANManager::init()
             AP_Param::load_object_from_eeprom((AP_PiccoloCAN*)_drivers[drv_num], AP_PiccoloCAN::var_info);
         } else
 #endif
+        if (drv_type[drv_num] == AP_CAN::Protocol::FDCAN) {
+            printf("AP_CAN::Protocol::FDCAN\n");
+            _drivers[drv_num] = _drv_param[drv_num]._fdcan = new FD_CAN;
+            if (_drivers[drv_num] == nullptr) {
+                AP_BoardConfig::allocation_error("FD CAN %d", i + 1);
+                continue;
+            }
+
+            AP_Param::load_object_from_eeprom((FD_CAN*)_drivers[drv_num], FD_CAN::var_info);
+        } else
+
         {
+            printf("AP_CANManager::init continue\n");
             continue;
         }
 

@@ -118,6 +118,7 @@ COMMON_VEHICLE_DEPENDENT_LIBRARIES = [
     'AP_ExternalControl',
     'FD1_UART',
     'FD1_DATA',
+    'FD_CAN',
 ]
 
 def get_legacy_defines(sketch_name, bld):

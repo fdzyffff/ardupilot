@@ -10,7 +10,6 @@ FD1_msg_INS::FD1_msg_INS(void)
 
 void FD1_msg_INS::parse(uint8_t temp)
 {
-    // gcs().send_text(MAV_SEVERITY_INFO, "State: %d, Byte: %d",_msg.msg_state, temp);
     switch (_msg.msg_state)
     {
         default:
@@ -29,7 +28,6 @@ void FD1_msg_INS::parse(uint8_t temp)
                 _msg.length = _msg_1.length;
                 _msg.read = 2;
                 _msg.xor_check = _msg.xor_check ^ temp;
-                _msg.xor_check = 0;
                 _msg.msg_state = FD1UART_msg_parser::FD1UART_DATA;
                 _msg.data[1] = temp;
             }
@@ -56,6 +54,7 @@ void FD1_msg_INS::parse(uint8_t temp)
             _msg.data[_msg.read] = temp;
             _msg.read++;
 
+            // gcs().send_text(MAV_SEVERITY_INFO, "State: %d, Byte: %x - %x",_msg.msg_state, temp, _msg.xor_check);
             if (temp == _msg.xor_check)
             {
                 process_message();
@@ -81,12 +80,32 @@ void FD1_msg_INS::process_message(void)
 
 void FD1_msg_INS::swap_message(void)
 {
-    // swap_message_sub(_msg_1.content.data[7-1] , _msg_1.content.data[8-1] );
-    // swap_message_sub(_msg_1.content.data[9-1] , _msg_1.content.data[10-1] );
-    // swap_message_sub(_msg_1.content.data[4-1] , _msg_1.content.data[5-1] , _msg_1.content.data[6-1] , _msg_1.content.data[7-1]);
-    // swap_message_sub(_msg_1.content.data[8-1] , _msg_1.content.data[9-1] , _msg_1.content.data[10-1], _msg_1.content.data[11-1]);
-    // swap_message_sub(_msg_1.content.data[12-1], _msg_1.content.data[13-1], _msg_1.content.data[14-1], _msg_1.content.data[15-1]);
-    // swap_message_sub(_msg_1.content.data[16-1], _msg_1.content.data[17-1], _msg_1.content.data[18-1], _msg_1.content.data[19-1]);
-    // swap_message_sub(_msg_1.content.data[20-1], _msg_1.content.data[21-1], _msg_1.content.data[22-1], _msg_1.content.data[23-1]);
-    // swap_message_sub(_msg_1.content.data[24-1], _msg_1.content.data[25-1], _msg_1.content.data[26-1], _msg_1.content.data[27-1]);
+    _msg_1.content.msg.start_ms = swap_message_uint32_t(_msg_1.content.msg.start_ms);
+    _msg_1.content.msg.work_ms = swap_message_uint32_t(_msg_1.content.msg.work_ms);
+    _msg_1.content.msg.pitch_micro_deg = swap_message_int32_t(_msg_1.content.msg.pitch_micro_deg);
+    _msg_1.content.msg.roll_micro_deg = swap_message_int32_t(_msg_1.content.msg.roll_micro_deg);
+    _msg_1.content.msg.yaw_micro_deg = swap_message_int32_t(_msg_1.content.msg.yaw_micro_deg);
+    _msg_1.content.msg.lng = swap_message_int32_t(_msg_1.content.msg.lng);
+    _msg_1.content.msg.lat = swap_message_int32_t(_msg_1.content.msg.lat);
+    _msg_1.content.msg.alt_mm = swap_message_int32_t(_msg_1.content.msg.alt_mm);
+    _msg_1.content.msg.vel_e_mms = swap_message_int32_t(_msg_1.content.msg.vel_e_mms);
+    _msg_1.content.msg.vel_n_mms = swap_message_int32_t(_msg_1.content.msg.vel_n_mms);
+    _msg_1.content.msg.vel_u_mms = swap_message_int32_t(_msg_1.content.msg.vel_u_mms);
+    _msg_1.content.msg.rate_x_degrees = swap_message_float(_msg_1.content.msg.rate_x_degrees);
+    _msg_1.content.msg.rate_y_degrees = swap_message_float(_msg_1.content.msg.rate_y_degrees);
+    _msg_1.content.msg.rate_z_degrees = swap_message_float(_msg_1.content.msg.rate_z_degrees);
+    _msg_1.content.msg.acc_x_mss = swap_message_float(_msg_1.content.msg.acc_x_mss);
+    _msg_1.content.msg.acc_y_mss = swap_message_float(_msg_1.content.msg.acc_y_mss);
+    _msg_1.content.msg.acc_z_mss = swap_message_float(_msg_1.content.msg.acc_z_mss);
+    _msg_1.content.msg.gps_pps = swap_message_uint32_t(_msg_1.content.msg.gps_pps);
+    _msg_1.content.msg.gps_lng = swap_message_int32_t(_msg_1.content.msg.gps_lng);
+    _msg_1.content.msg.gps_lag = swap_message_int32_t(_msg_1.content.msg.gps_lag);
+    _msg_1.content.msg.gps_alt_mm = swap_message_int32_t(_msg_1.content.msg.gps_alt_mm);
+    _msg_1.content.msg.gps_vel_e_ms_o4 = swap_message_int32_t(_msg_1.content.msg.gps_vel_e_ms_o4);
+    _msg_1.content.msg.gps_vel_n_ms_o4 = swap_message_int32_t(_msg_1.content.msg.gps_vel_n_ms_o4);
+    _msg_1.content.msg.gps_vel_u_ms_o2 = swap_message_int16_t(_msg_1.content.msg.gps_vel_u_ms_o2);
+    _msg_1.content.msg.gps_numstat = swap_message_uint16_t(_msg_1.content.msg.gps_numstat);
+    _msg_1.content.msg.gps_height_error = swap_message_int16_t(_msg_1.content.msg.gps_height_error);
+    _msg_1.content.msg.gps_hdop = swap_message_uint16_t(_msg_1.content.msg.gps_hdop);
+    _msg_1.content.msg.gps_vdop = swap_message_uint16_t(_msg_1.content.msg.gps_vdop);
 }
