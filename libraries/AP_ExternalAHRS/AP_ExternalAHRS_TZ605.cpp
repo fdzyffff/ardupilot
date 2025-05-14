@@ -61,23 +61,44 @@ AP_ExternalAHRS_TZ605::AP_ExternalAHRS_TZ605(AP_ExternalAHRS *_frontend,
 
 void AP_ExternalAHRS_TZ605::update_thread(void)
 {
+    hal.scheduler->delay(5000);
     if (uart_ins) {
         if (!port_open_ins) {
             port_open_ins = true;
-            uart_ins->begin(baudrate_ins);
+            uart_ins->begin(baudrate_ins, 1024, 512);
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "SerialProtocol_AHRS %ld", baudrate_ins);
         }
     }
 
     if (uart_air) {
         if (!port_open_air) {
             port_open_air = true;
-            uart_air->begin(baudrate_air);
+            uart_air->begin(baudrate_air, 1024, 512);
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "SerialProtocol_AIR %ld", baudrate_air);
         }
     }
 
+    // uint32_t _last_post = AP_HAL::millis();
+    bool do_print = false;
+
     while (true) {
-        if (port_open_ins) {build_packet_ins();}
-        if (port_open_air) {build_packet_air();}
+        do_print = false;
+        // if (AP_HAL::millis() - _last_post > 5000) {
+        //     _last_post = AP_HAL::millis();
+        //     do_print = true;
+        // }
+        if (port_open_ins) {
+            build_packet_ins();
+            if (do_print) {
+                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "build_packet_ins");
+            }
+        }
+        if (port_open_air) {
+            build_packet_air();
+            if (do_print) {
+                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "build_packet_air");
+            }
+        }
         hal.scheduler->delay_microseconds(100);
     }
 }
@@ -85,17 +106,18 @@ void AP_ExternalAHRS_TZ605::update_thread(void)
 // Builds packets by looking at each individual byte, once a full packet has been read in it checks the checksum then handles the packet.
 void AP_ExternalAHRS_TZ605::build_packet_ins()
 {
-    WITH_SEMAPHORE(sem);
-    uint32_t nbytes = MIN(uart_ins->available(), 2048u);
+    // uint32_t nbytes = MIN(uart_ins->available(), 2048u);
 
     // static uint32_t _last_post = AP_HAL::millis();
 
-    while (nbytes--> 0) {
-        const int16_t b = uart_ins->read();
-
-        _msg_ins.parse(b);
+    // GCS_SEND_TEXT(MAV_SEVERITY_INFO, "nbytes %ld", nbytes);
+    
+    while (uart_ins->available() > 0) {
+        uint8_t temp = uart_ins->read();
+        _msg_ins.parse(temp);
 
         if (_msg_ins._msg_1.updated) {
+            // GCS_SEND_TEXT(MAV_SEVERITY_INFO, "updated");
             if (frontend.has_sensor(AP_ExternalAHRS::AvailableSensor::IMU)) {
                 handle_imu();
                 post_imu();
@@ -117,15 +139,13 @@ void AP_ExternalAHRS_TZ605::build_packet_ins()
 
 void AP_ExternalAHRS_TZ605::build_packet_air()
 {
-    WITH_SEMAPHORE(sem);
-    uint32_t nbytes = MIN(uart_air->available(), 2048u);
+    // uint32_t nbytes = MIN(uart_air->available(), 2048u);
 
     // static uint32_t _last_post = AP_HAL::millis();
 
-    while (nbytes--> 0) {
-        const int16_t b = uart_air->read();
-
-        _msg_air.parse(b);
+    while (uart_air->available() > 0) {
+        uint8_t temp = uart_air->read();
+        _msg_air.parse(temp);
 
         if (_msg_air._msg_1.updated) {
             if (frontend.has_sensor(AP_ExternalAHRS::AvailableSensor::BARO)) {
@@ -155,6 +175,9 @@ void AP_ExternalAHRS_TZ605::handle_imu()
     imu_data.accel = gravity + Vector3f(_msg_ins._msg_1.content.msg.acc_x_mss,
                                         _msg_ins._msg_1.content.msg.acc_y_mss,
                                         -_msg_ins._msg_1.content.msg.acc_z_mss);
+    // imu_data.accel = Vector3f(_msg_ins._msg_1.content.msg.acc_x_mss,
+    //                                     _msg_ins._msg_1.content.msg.acc_y_mss,
+    //                                     -_msg_ins._msg_1.content.msg.acc_z_mss);
                                         // m/s^2
     imu_data.gyro = Vector3f(radians(_msg_ins._msg_1.content.msg.rate_x_degrees),
                              radians(_msg_ins._msg_1.content.msg.rate_y_degrees),
@@ -174,7 +197,12 @@ void AP_ExternalAHRS_TZ605::post_imu()
         };
         AP::ins().handle_external(ins);
     }
-
+    static uint32_t _last_post = AP_HAL::millis();
+    if (AP_HAL::millis() - _last_post > 10000) {
+        _last_post = AP_HAL::millis();
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "accel : (%f, %f, %f)", imu_data.accel.x, imu_data.accel.y, imu_data.accel.z);
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "gyro : (%f, %f, %f)", imu_data.gyro.x, imu_data.gyro.y, imu_data.gyro.z);
+    }
     // GCS_SEND_TEXT(MAV_SEVERITY_INFO, "acc (%f, %f, %f)", state.accel.x, state.accel.y, state.accel.z);
 }
 
