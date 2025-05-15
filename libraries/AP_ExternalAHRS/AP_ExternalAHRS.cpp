@@ -90,6 +90,7 @@ const AP_Param::GroupInfo AP_ExternalAHRS::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("_LOG_RATE", 5, AP_ExternalAHRS, log_rate, 10),
     
+    AP_GROUPINFO("_DEBUG", 6, AP_ExternalAHRS, debug_print, 0),
     AP_GROUPEND
 };
 

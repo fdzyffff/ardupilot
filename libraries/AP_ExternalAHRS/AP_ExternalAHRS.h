@@ -192,6 +192,7 @@ private:
     AP_Int16         log_rate;
     AP_Int16         options;
     AP_Int16         sensors;
+    AP_Int8          debug_print;
 
     static AP_ExternalAHRS *_singleton;
 

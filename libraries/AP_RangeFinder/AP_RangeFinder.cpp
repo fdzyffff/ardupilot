@@ -59,6 +59,7 @@
 #include "AP_RangeFinder_NRA24_CAN.h"
 #include "AP_RangeFinder_TOFSenseF_I2C.h"
 #include "AP_RangeFinder_JRE_Serial.h"
+#include "AP_RangeFinder_MUNIU.h"
 
 #include <AP_BoardConfig/AP_BoardConfig.h>
 #include <AP_Logger/AP_Logger.h>
@@ -584,6 +585,12 @@ void RangeFinder::detect_instance(uint8_t instance, uint8_t& serial_instance)
         break;
 #endif
 
+#if AP_RANGEFINDER_MUNIU_ENABLED
+    case Type::MUNIU:
+        serial_create_fn = AP_RangeFinder_MUNIU::create;
+        gcs().send_text(MAV_SEVERITY_INFO, "INIT MUNIU");
+        break;
+#endif
     case Type::NONE:
         break;
     }

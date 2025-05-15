@@ -53,6 +53,7 @@ private:
 
     uint32_t last_ins_pkt;
     uint32_t last_gps_pkt;
+    uint32_t last_ahrs_pkt;
 
     AP_ExternalAHRS::ins_data_message_t imu_data;
     AP_ExternalAHRS::gps_data_message_t gps_data;
