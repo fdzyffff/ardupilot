@@ -184,6 +184,15 @@ void AP_ExternalAHRS_TZ605::handle_imu()
                              radians(_msg_ins._msg_1.content.msg.rate_z_degrees));
                              // rad/s
     imu_data.temperature = 0.0f;
+
+
+    static uint32_t _last_post = AP_HAL::millis();
+    if (AP_HAL::millis() - _last_post > 5000) {
+        _last_post = AP_HAL::millis();
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "accel : (%f, %f, %f)", _msg_ins._msg_1.content.msg.acc_x_mss, _msg_ins._msg_1.content.msg.acc_y_mss, _msg_ins._msg_1.content.msg.acc_z_mss);
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "gyro : (%f, %f, %f)", _msg_ins._msg_1.content.msg.rate_x_degrees, _msg_ins._msg_1.content.msg.rate_y_degrees, _msg_ins._msg_1.content.msg.rate_z_degrees);
+    }
+
 }
 
 // Posts data from an imu packet to `state` and `handle_external` methods
@@ -196,12 +205,6 @@ void AP_ExternalAHRS_TZ605::post_imu()
             temperature  : imu_data.temperature
         };
         AP::ins().handle_external(ins);
-    }
-    static uint32_t _last_post = AP_HAL::millis();
-    if (AP_HAL::millis() - _last_post > 10000) {
-        _last_post = AP_HAL::millis();
-        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "accel : (%f, %f, %f)", imu_data.accel.x, imu_data.accel.y, imu_data.accel.z);
-        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "gyro : (%f, %f, %f)", imu_data.gyro.x, imu_data.gyro.y, imu_data.gyro.z);
     }
     // GCS_SEND_TEXT(MAV_SEVERITY_INFO, "acc (%f, %f, %f)", state.accel.x, state.accel.y, state.accel.z);
 }
@@ -221,7 +224,7 @@ void AP_ExternalAHRS_TZ605::handle_gps()
     gps_data.hdop                        = (0.01f*(float)_msg_ins._msg_1.content.msg.gps_hdop);
     gps_data.vdop                        = (0.01f*(float)_msg_ins._msg_1.content.msg.gps_vdop);
     gps_data.longitude                   = (_msg_ins._msg_1.content.msg.gps_lng);
-    gps_data.latitude                    = (_msg_ins._msg_1.content.msg.gps_lag);
+    gps_data.latitude                    = (_msg_ins._msg_1.content.msg.gps_lat);
     gps_data.msl_altitude                = (_msg_ins._msg_1.content.msg.gps_alt_mm/10);
     gps_data.ned_vel_north               = (_msg_ins._msg_1.content.msg.gps_vel_n_ms_o4/100);
     gps_data.ned_vel_down                = (-_msg_ins._msg_1.content.msg.gps_vel_u_ms_o2);
@@ -232,6 +235,15 @@ void AP_ExternalAHRS_TZ605::handle_gps()
     gps_data.gps_yaw_accuracy            = (5.0f);
     gps_data.have_gps_yaw                = (true);
     gps_data.have_gps_yaw_accuracy       = (true);
+
+    static uint32_t _last_post = AP_HAL::millis();
+    if (AP_HAL::millis() - _last_post > 5000) {
+        _last_post = AP_HAL::millis();
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "gps fix %d", _msg_ins._msg_1.content.msg.gps_fix_state);
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "gps lng %ld | lat %ld", _msg_ins._msg_1.content.msg.gps_lng, _msg_ins._msg_1.content.msg.gps_lat);
+    }
+    
+
 }
 
 // Posts data from an gps packet to `state` and `handle_external` methods
@@ -301,8 +313,12 @@ void AP_ExternalAHRS_TZ605::handle_baro()
     baro_data.pressure_pa = ((float)_msg_air._msg_1.content.msg.ps/1024.f *1000.f);
     baro_data.temperature = ((float)_msg_air._msg_1.content.msg.ts/16.f);
 
-    gcs().send_text(MAV_SEVERITY_INFO, "pressure_pa: %f | %f", baro_data.pressure_pa, (float)_msg_air._msg_1.content.msg.ps);
-    gcs().send_text(MAV_SEVERITY_INFO, "temperature: %f | %f", baro_data.temperature, (float)_msg_air._msg_1.content.msg.ts);
+    static uint32_t _last_post = AP_HAL::millis();
+    if (AP_HAL::millis() - _last_post > 5000) {
+        _last_post = AP_HAL::millis();
+        gcs().send_text(MAV_SEVERITY_INFO, "baro ps: %f | %f", baro_data.pressure_pa, (float)_msg_air._msg_1.content.msg.ps);
+        gcs().send_text(MAV_SEVERITY_INFO, "baro ts: %f | %f", baro_data.temperature, (float)_msg_air._msg_1.content.msg.ts);
+    }
 }
 
 // Posts data from an baro packet to `state` and `handle_external` methods
@@ -322,10 +338,19 @@ void AP_ExternalAHRS_TZ605::post_baro()
 void AP_ExternalAHRS_TZ605::handle_airspeed()
 {
     // last_airspeed_pkt = AP_HAL::millis();
-    float ps = ((float)_msg_air._msg_1.content.msg.ps/1024.f*(132.0f-14.0f) + 14.0f)*1000.f;
-    float qc = ((float)_msg_air._msg_1.content.msg.qc/1024.f*(132.0f-14.0f) + 14.0f)*1000.f;
+    float ps = ((float)_msg_air._msg_1.content.msg.ps/1024.f*1000.f);
+    float qc = ((float)_msg_air._msg_1.content.msg.qc/1024.f*1000.f);
+    float rev_airspeed = ((float)_msg_air._msg_1.content.msg.vi/64.f);
     airspeed_data.differential_pressure = ps-qc;
-    airspeed_data.temperature = ((float)_msg_air._msg_1.content.msg.ts/16.f*(96.0f+72.0f) - 72.0f);
+    airspeed_data.temperature = ((float)_msg_air._msg_1.content.msg.ts/16.f);
+
+    static uint32_t _last_post = AP_HAL::millis();
+    if (AP_HAL::millis() - _last_post > 5000) {
+        _last_post = AP_HAL::millis();
+        gcs().send_text(MAV_SEVERITY_INFO, "airspeed ps: %f", (float)_msg_air._msg_1.content.msg.ps);
+        gcs().send_text(MAV_SEVERITY_INFO, "airspeed qc: %f", (float)_msg_air._msg_1.content.msg.qc);
+        gcs().send_text(MAV_SEVERITY_INFO, "airspeed vi: %f | %f", rev_airspeed, (float)_msg_air._msg_1.content.msg.vi);
+    }
 }
 
 // Posts data from an airspeed packet to `state` and `handle_external` methods

@@ -17,7 +17,7 @@ public:
         uint32_t work_ms;
         uint8_t state;
         uint8_t nav_state;
-        uint8_t error_code;
+        uint32_t error_code;
         int32_t pitch_micro_deg;
         int32_t roll_micro_deg;
         int32_t yaw_micro_deg;
@@ -26,23 +26,24 @@ public:
         int32_t alt_mm;
         int32_t vel_e_mms;
         int32_t vel_n_mms;
-        int32_t vel_u_mms;
+        int32_t vel_u_mms; //54
         float rate_x_degrees;
         float rate_y_degrees;
         float rate_z_degrees;
         float acc_x_mss;
         float acc_y_mss;
-        float acc_z_mss;
+        float acc_z_mss; //78
         uint8_t gps_ok;
         uint32_t gps_pps;
+        uint32_t gps_utc;
         int32_t gps_lng;
-        int32_t gps_lag;
+        int32_t gps_lat;
         int32_t gps_alt_mm;
         int32_t gps_vel_e_ms_o4; // m/s 1E-4
         int32_t gps_vel_n_ms_o4; // m/s 1E-4
         int16_t gps_vel_u_ms_o2; // m/s 1E-2
         uint8_t gps_fix_state; //GGA
-        uint16_t gps_numstat;
+        uint8_t gps_numstat;
         int16_t gps_height_error; // m 1E-2
         uint16_t gps_hdop; //1E-2
         uint16_t gps_vdop; //1E-2
