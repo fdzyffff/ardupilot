@@ -67,6 +67,7 @@
 #include <AP_Vehicle/AP_Vehicle_Type.h>
 #include <AP_HAL/I2CDevice.h>
 #include <AP_InternalError/AP_InternalError.h>
+// #include <GCS_MAVLink/GCS_MAVLink.h>
 
 extern const AP_HAL::HAL &hal;
 
@@ -588,7 +589,7 @@ void RangeFinder::detect_instance(uint8_t instance, uint8_t& serial_instance)
 #if AP_RANGEFINDER_MUNIU_ENABLED
     case Type::MUNIU:
         serial_create_fn = AP_RangeFinder_MUNIU::create;
-        gcs().send_text(MAV_SEVERITY_INFO, "INIT MUNIU");
+        // gcs().send_text(MAV_SEVERITY_INFO, "INIT MUNIU");
         break;
 #endif
     case Type::NONE:
