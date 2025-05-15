@@ -117,6 +117,8 @@ void FD_CAN::loop() {
     uint32_t last_servo_ms = AP_HAL::millis();
     uint32_t last_mot_ms = AP_HAL::millis();
     uint32_t last_print_ms = AP_HAL::millis();
+    bool should_print_servo = false;
+    bool should_print_mot = false;
 
     while (true) {
         if (!_initialized) {
@@ -131,9 +133,9 @@ void FD_CAN::loop() {
                 //     gcs().send_text(MAV_SEVERITY_INFO, "%d, %x", i, rxFrame.data[i]);
                 // }
             // }
-            if (_batt_ptr != nullptr) {
-                _batt_ptr->handle_info(rxFrame, _print.get());
-            }
+            // if (_batt_ptr != nullptr) {
+            //     _batt_ptr->handle_info(rxFrame, _print.get());
+            // }
             // if (rxFrame.id == 0xFF) {
             //     txFrame.id = 0xEE;
             //     txFrame.data[0] = 0x11;
@@ -150,34 +152,46 @@ void FD_CAN::loop() {
             // }
         }
         
-        bool should_print = false;
         if (_print.get()) {
-            if (AP_HAL::millis() -  last_print_ms >= 1000) {
+            if (AP_HAL::millis() -  last_print_ms >= 5000) {
                 last_print_ms = AP_HAL::millis();
-                should_print = true;
+                should_print_servo = true;
+                should_print_mot = true;
             }
         }
 
         if (_enable_srv.get()) {    
             if (AP_HAL::millis() -  last_servo_ms >= 20) {
                 last_servo_ms = AP_HAL::millis();
-                for (uint8_t i_servo = 1; i_servo <=8; i_servo++) {
-                    float pwm_value = SRV_Channels::srv_channel(i_servo-1)->get_output_pwm();
-                    pwm_value = constrain_float(pwm_value, 1000.f, 2000.f);
+                for (uint8_t i_servo = 1; i_servo <=10; i_servo++) {
+                    SRV_Channel *this_channel = SRV_Channels::srv_channel(i_servo-1);
+                    if (this_channel == nullptr) {
+                        if (should_print_servo) {
+                            gcs().send_text(MAV_SEVERITY_INFO, "%d nullptr", i_servo);
+                        }
+                        continue;
+                    }
+                    uint16_t pwm = this_channel->get_output_pwm();
+                    if (pwm == 0) {
+                        pwm = 1500;
+                    }
+                    float pwm_value = constrain_float((float)pwm, 1000.f, 2000.f);
                     int16_t servo_angle = (pwm_value - 1500.f)*9.f;//+-4500
                     
                     txFrame.id = i_servo;
                     txFrame.data[0] = (uint8_t)(servo_angle&0xFF);
                     txFrame.data[1] = (uint8_t)((servo_angle>>8)&0xFF);
+                    txFrame.data[2] = i_servo;
                     txFrame.dlc = 8;
                     if (write_frame(txFrame, 0)) {
-                        if (should_print) {
-                            gcs().send_text(MAV_SEVERITY_INFO, "Send %x-%d", (uint16_t)txFrame.id, servo_angle);
+                        if (should_print_servo) {
+                            gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, servo_angle);
                         }
                     } else {
-                        // gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
+                        gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d Fail", (uint16_t)txFrame.id, servo_angle);
                     }
                 }
+                should_print_servo = false;
             }
         }
 
@@ -193,8 +207,8 @@ void FD_CAN::loop() {
                 txFrame.data[1] = (uint8_t)((thr_left>>8)&0xFF);
                 txFrame.dlc = 8;
                 if (write_frame(txFrame, 0)) {
-                    if (should_print) {
-                        gcs().send_text(MAV_SEVERITY_INFO, "Send %x-%d", (uint16_t)txFrame.id, thr_left);
+                    if (should_print_mot) {
+                        gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, thr_left);
                     }
                 } else {
                     // gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
@@ -205,8 +219,8 @@ void FD_CAN::loop() {
                 txFrame.data[1] = (uint8_t)((thr_left>>8)&0xFF);
                 txFrame.dlc = 8;
                 if (write_frame(txFrame, 0)) {
-                    if (should_print) {
-                        gcs().send_text(MAV_SEVERITY_INFO, "Send %x-%d", (uint16_t)txFrame.id, thr_left);
+                    if (should_print_mot) {
+                        gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, thr_left);
                     }
                 } else {
                     // gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
@@ -217,8 +231,8 @@ void FD_CAN::loop() {
                 txFrame.data[1] = (uint8_t)((thr_right>>8)&0xFF);
                 txFrame.dlc = 8;
                 if (write_frame(txFrame, 0)) {
-                    if (should_print) {
-                        gcs().send_text(MAV_SEVERITY_INFO, "Send %x-%d", (uint16_t)txFrame.id, thr_right);
+                    if (should_print_mot) {
+                        gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, thr_right);
                     }
                 } else {
                     // gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
@@ -229,12 +243,13 @@ void FD_CAN::loop() {
                 txFrame.data[1] = (uint8_t)((thr_right>>8)&0xFF);
                 txFrame.dlc = 8;
                 if (write_frame(txFrame, 0)) {
-                    if (should_print) {
-                        gcs().send_text(MAV_SEVERITY_INFO, "Send %x-%d", (uint16_t)txFrame.id, thr_right);
+                    if (should_print_mot) {
+                        gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, thr_right);
                     }
                 } else {
                     // gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
                 }
+                should_print_mot = false;
             }
         }
 
