@@ -88,9 +88,9 @@ void FD1_msg_INS::swap_message(void)
     // _msg_1.content.msg.lng = swap_message_int32_t(_msg_1.content.msg.lng);
     // _msg_1.content.msg.lat = swap_message_int32_t(_msg_1.content.msg.lat);
     // _msg_1.content.msg.alt_mm = swap_message_int32_t(_msg_1.content.msg.alt_mm);
-    // _msg_1.content.msg.vel_e_mms = swap_message_int32_t(_msg_1.content.msg.vel_e_mms);
-    // _msg_1.content.msg.vel_n_mms = swap_message_int32_t(_msg_1.content.msg.vel_n_mms);
-    // _msg_1.content.msg.vel_u_mms = swap_message_int32_t(_msg_1.content.msg.vel_u_mms);
+    // _msg_1.content.msg.vel_e = swap_message_int32_t(_msg_1.content.msg.vel_e);
+    // _msg_1.content.msg.vel_n = swap_message_int32_t(_msg_1.content.msg.vel_n);
+    // _msg_1.content.msg.vel_u = swap_message_int32_t(_msg_1.content.msg.vel_u);
     // _msg_1.content.msg.rate_x_degrees = swap_message_float(_msg_1.content.msg.rate_x_degrees);
     // _msg_1.content.msg.rate_y_degrees = swap_message_float(_msg_1.content.msg.rate_y_degrees);
     // _msg_1.content.msg.rate_z_degrees = swap_message_float(_msg_1.content.msg.rate_z_degrees);

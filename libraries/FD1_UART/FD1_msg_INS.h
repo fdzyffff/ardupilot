@@ -24,9 +24,9 @@ public:
         int32_t lng;
         int32_t lat;
         int32_t alt_mm;
-        int32_t vel_e_mms;
-        int32_t vel_n_mms;
-        int32_t vel_u_mms; //54
+        int32_t vel_e; //1E-4
+        int32_t vel_n;
+        int32_t vel_u; //54
         float rate_x_degrees;
         float rate_y_degrees;
         float rate_z_degrees;

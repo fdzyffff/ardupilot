@@ -161,9 +161,9 @@ void FD_CAN::loop() {
         }
 
         if (_enable_srv.get()) {    
-            if (AP_HAL::millis() -  last_servo_ms >= 20) {
+            if (AP_HAL::millis() -  last_servo_ms >= 10) {
                 last_servo_ms = AP_HAL::millis();
-                for (uint8_t i_servo = 1; i_servo <=10; i_servo++) {
+                for (uint8_t i_servo = 1; i_servo <=20; i_servo++) {
                     SRV_Channel *this_channel = SRV_Channels::srv_channel(i_servo-1);
                     if (this_channel == nullptr) {
                         if (should_print_servo) {
@@ -196,13 +196,16 @@ void FD_CAN::loop() {
         }
 
         if (_enable_mot.get()) {    
-            if (AP_HAL::millis() -  last_mot_ms >= 20) {
+            if (AP_HAL::millis() -  last_mot_ms >= 10) {
                 last_mot_ms = AP_HAL::millis();
 
                 uint16_t thr_left = SRV_Channels::get_output_scaled(SRV_Channel::k_throttleLeft)*10.f;//100
                 uint16_t thr_right = SRV_Channels::get_output_scaled(SRV_Channel::k_throttleRight)*10.f;
 
-                txFrame.id = 0x11;
+                thr_left = 3000;
+                thr_right = 3000;
+
+                txFrame.id = 0x21;
                 txFrame.data[0] = (uint8_t)(thr_left&0xFF);
                 txFrame.data[1] = (uint8_t)((thr_left>>8)&0xFF);
                 txFrame.dlc = 8;
@@ -214,7 +217,7 @@ void FD_CAN::loop() {
                     // gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
                 }
 
-                txFrame.id = 0x12;
+                txFrame.id = 0x22;
                 txFrame.data[0] = (uint8_t)(thr_left&0xFF);
                 txFrame.data[1] = (uint8_t)((thr_left>>8)&0xFF);
                 txFrame.dlc = 8;
@@ -226,7 +229,7 @@ void FD_CAN::loop() {
                     // gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
                 }
 
-                txFrame.id = 0x13;
+                txFrame.id = 0x23;
                 txFrame.data[0] = (uint8_t)(thr_right&0xFF);
                 txFrame.data[1] = (uint8_t)((thr_right>>8)&0xFF);
                 txFrame.dlc = 8;
@@ -238,7 +241,7 @@ void FD_CAN::loop() {
                     // gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
                 }
 
-                txFrame.id = 0x14;
+                txFrame.id = 0x24;
                 txFrame.data[0] = (uint8_t)(thr_right&0xFF);
                 txFrame.data[1] = (uint8_t)((thr_right>>8)&0xFF);
                 txFrame.dlc = 8;
@@ -249,6 +252,59 @@ void FD_CAN::loop() {
                 } else {
                     // gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
                 }
+
+
+                thr_left = 65535/2 + SRV_Channels::get_output_scaled(SRV_Channel::k_throttleLeft)*277;//0~65535对应-90°到90°范围桨距角
+                thr_right = 65535/2 + SRV_Channels::get_output_scaled(SRV_Channel::k_throttleRight)*277;
+
+                txFrame.id = 0x101;
+                txFrame.data[0] = (uint8_t)(thr_right&0xFF);
+                txFrame.data[1] = (uint8_t)((thr_right>>8)&0xFF);
+                txFrame.dlc = 8;
+                if (write_frame(txFrame, 0)) {
+                    if (should_print_mot) {
+                        gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, thr_right);
+                    }
+                } else {
+                    // gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
+                }
+
+                txFrame.id = 0x102;
+                txFrame.data[0] = (uint8_t)(thr_right&0xFF);
+                txFrame.data[1] = (uint8_t)((thr_right>>8)&0xFF);
+                txFrame.dlc = 8;
+                if (write_frame(txFrame, 0)) {
+                    if (should_print_mot) {
+                        gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, thr_right);
+                    }
+                } else {
+                    // gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
+                }
+
+                txFrame.id = 0x103;
+                txFrame.data[0] = (uint8_t)(thr_right&0xFF);
+                txFrame.data[1] = (uint8_t)((thr_right>>8)&0xFF);
+                txFrame.dlc = 8;
+                if (write_frame(txFrame, 0)) {
+                    if (should_print_mot) {
+                        gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, thr_right);
+                    }
+                } else {
+                    // gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
+                }
+
+                txFrame.id = 0x104;
+                txFrame.data[0] = (uint8_t)(thr_right&0xFF);
+                txFrame.data[1] = (uint8_t)((thr_right>>8)&0xFF);
+                txFrame.dlc = 8;
+                if (write_frame(txFrame, 0)) {
+                    if (should_print_mot) {
+                        gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, thr_right);
+                    }
+                } else {
+                    // gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
+                }
+
                 should_print_mot = false;
             }
         }

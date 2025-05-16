@@ -36,13 +36,20 @@ bool AP_RangeFinder_MUNIU::get_reading(float &reading_m)
     uint16_t count = 0;
 
     // read any available lines from the lidar
+    static uint32_t _last_post = AP_HAL::millis();
 
     while (uart->available() > 0) {
         uint8_t temp = uart->read();
         _msg_ranger.parse(temp);
         if (_msg_ranger._msg_1.updated) {
             _msg_ranger._msg_1.updated = false;
-            if (_msg_ranger._msg_1.content.msg.error) {break;}
+            if (_msg_ranger._msg_1.content.msg.error) {
+                if (AP_HAL::millis() - _last_post > 5000) {
+                    _last_post = AP_HAL::millis();
+                    gcs().send_text(MAV_SEVERITY_INFO, "RNGFNDER ERROR: %d ", _msg_ranger._msg_1.content.msg.error);
+                }
+                break;
+            }
             sum_cm += (float)_msg_ranger._msg_1.content.msg.high3;
             count++;
             // gcs().send_text(MAV_SEVERITY_INFO, "RNGFND %d",_msg_ranger._msg_1.content.msg.high3);
