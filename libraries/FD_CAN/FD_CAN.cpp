@@ -176,7 +176,7 @@ void FD_CAN::loop() {
                         pwm = 1500;
                     }
                     float pwm_value = constrain_float((float)pwm, 1000.f, 2000.f);
-                    int16_t servo_angle = (pwm_value - 1500.f)*9.f;//+-4500
+                    int16_t servo_angle = (pwm_value - 1500.f)*12.f;//+-4500
                     
                     txFrame.id = i_servo;
                     txFrame.data[0] = (uint8_t)(servo_angle&0xFF);
