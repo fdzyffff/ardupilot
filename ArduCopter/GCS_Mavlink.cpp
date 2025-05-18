@@ -1384,6 +1384,7 @@ void GCS_MAVLINK_Copter::handle_message(const mavlink_message_t &msg)
 
     case MAVLINK_MSG_ID_SET_POSITION_TARGET_GLOBAL_INT:    // MAV ID: 86
     {
+        copter.gcs().send_text(MAV_SEVERITY_CRITICAL, "MAVLINK_MSG_ID_SET_POSITION_TARGET_GLOBAL_INT");
         // decode packet
         mavlink_set_position_target_global_int_t packet;
         mavlink_msg_set_position_target_global_int_decode(&msg, &packet);
