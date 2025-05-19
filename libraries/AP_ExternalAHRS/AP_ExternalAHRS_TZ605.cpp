@@ -347,7 +347,7 @@ void AP_ExternalAHRS_TZ605::handle_baro()
             gcs().send_text(MAV_SEVERITY_INFO, "baro ps: %f | %f", baro_data.pressure_pa, (float)_msg_air._msg_1.content.msg.ps);
             gcs().send_text(MAV_SEVERITY_INFO, "baro ts: %f | %f", baro_data.temperature, (float)_msg_air._msg_1.content.msg.ts);
             gcs().send_text(MAV_SEVERITY_INFO, "baro AOAt1: %f, AOAt2: %f ", ((float)_msg_air._msg_1.content.msg.aoat1/128.f), ((float)_msg_air._msg_1.content.msg.aoat2/128.f));
-            gcs().send_text(MAV_SEVERITY_INFO, "baro AOSt1: %f, AOSt2: %f ", ((float)_msg_air._msg_1.content.msg.aoas1/128.f), ((float)_msg_air._msg_1.content.msg.aoas2/128.f));
+            gcs().send_text(MAV_SEVERITY_INFO, "baro AOSt1: %f, AOSt2: %f ", ((float)_msg_air._msg_1.content.msg.aost1/128.f), ((float)_msg_air._msg_1.content.msg.aost2/128.f));
             gcs().send_text(MAV_SEVERITY_INFO, "baro ERROR: %d ", _msg_air._msg_1.content.msg.faultword);
         }
     }
