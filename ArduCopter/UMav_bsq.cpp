@@ -18,11 +18,11 @@ void UMav::read_bsq_message()
         uint8_t ret = mavlink_frame_char_buffer(&mavlink.rxmsg, &mavlink.status, temp, &msg, &status);
 
         if (ret >= MAVLINK_FRAMING_OK) {
-            if (ret > MAVLINK_FRAMING_OK) {
-                gcs().send_text(MAV_SEVERITY_INFO, "BAD MSG");
-            } else {
-                gcs().send_text(MAV_SEVERITY_INFO, "MSG");
-            }
+            // if (ret > MAVLINK_FRAMING_OK) {
+            //     gcs().send_text(MAV_SEVERITY_INFO, "BAD MSG");
+            // } else {
+            //     gcs().send_text(MAV_SEVERITY_INFO, "MSG");
+            // }
             handle_bsq_msg(msg);
         }
     }

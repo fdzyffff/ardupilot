@@ -1282,6 +1282,7 @@ private:
 
     uint8_t target_status[64];
     uint8_t distance_mm[64];
+    
 
     bool read_register(uint16_t reg, uint8_t &value) WARN_IF_UNUSED;
     bool read_register16(uint16_t reg, uint16_t &value) WARN_IF_UNUSED;

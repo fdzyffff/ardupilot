@@ -84,6 +84,7 @@ public:
         SerialProtocol_PPP = 48,
         SerialProtocol_IMU = 49,
         SerialProtocol_BSQ = 50,
+        SerialProtocol_Payload = 51,
         SerialProtocol_NumProtocols                    // must be the last value
     };
 

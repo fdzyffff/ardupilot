@@ -364,7 +364,7 @@ void RangeFinder::detect_instance(uint8_t instance, uint8_t& serial_instance)
 #endif
             }
         break;
-
+#if AP_RANGEFINDER_VL53L5CX_ENABLED
     case Type::VL53L5CX: {
         uint8_t addr = 0x29;
         if (params[instance].address != 0) {
@@ -379,6 +379,7 @@ void RangeFinder::detect_instance(uint8_t instance, uint8_t& serial_instance)
         }
         break;
     }
+#endif
 #if AP_RANGEFINDER_BENEWAKE_TFMINIPLUS_ENABLED
     case Type::BenewakeTFminiPlus: {
         uint8_t addr = TFMINIPLUS_ADDR_DEFAULT;
