@@ -3,6 +3,14 @@
 void UMav::send_raw_imu()
 {
     if (!FD_uart_imu.initialized()) {return;}
+    static uint32_t _last_imu_ms = millis();
+
+    if (millis() - _last_imu_ms > 5) {
+        _last_imu_ms = millis();
+    } else {
+        return;
+    }
+
     mavlink_status_t *chan0_status = mavlink_get_channel_status(MAVLINK_COMM_0);
     uint8_t saved_seq = chan0_status->current_tx_seq;
     uint8_t saved_flags = chan0_status->flags;

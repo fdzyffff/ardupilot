@@ -10,7 +10,7 @@
 # On board WIFI；
 
  #-----------------------------------MCU------------------------------------------
-MCU STM32F4xx STM32F407xx
+MCU STM32F4xx STM32F417xx
 APJ_BOARD_ID 258
 OSCILLATOR_HZ 24000000
 STM32_VDD 330U
@@ -19,7 +19,7 @@ FLASH_RESERVE_START_KB 64
 define STM32_ST_USE_TIMER 5
 
 #define HAL_MINIMIZE_FEATURES 1
-#env OPTIMIZE -O2
+env OPTIMIZE -O2
 
 # Strict API checking in ChibiOS
 #define CH_DBG_ENABLE_ASSERTS TRUE

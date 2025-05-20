@@ -1,7 +1,7 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_SerialManager/AP_SerialManager.h>
 
-// #include "FD_msg_ue4_ahrs.h"
+#include "FD_msg_Payload.h"
 
 class FD_UART {
 public:
@@ -28,7 +28,7 @@ public:
 
     uint32_t port_avaliable();
 
-    // FD_msg_ue4_ahrs& get_msg_ue4_ahrs()   { return _msg_ue4_ahrs; }
+    FD_msg_Payload& get_msg_payload()  {_msg_payload;}
 
 private:
 
@@ -36,5 +36,5 @@ private:
     AP_SerialManager::SerialProtocol _protocol; // protocol used - detected using SerialManager's SERIAL#_PROTOCOL parameter
     bool _initialized;
 
-    // FD_msg_ue4_ahrs _msg_ue4_ahrs;
+    FD_msg_Payload _msg_payload;
 };

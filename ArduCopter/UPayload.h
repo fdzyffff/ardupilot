@@ -10,23 +10,27 @@ public:
 
     enum state_t {
         payload_none = 0,
-        payload_parse,
-        payload_selfcheck,
-        payload_voltup,
-        payload_arm,
-        payload_fire
+        payload_parse = 1,
+        payload_arm1 = 2,
+        payload_arm2 = 3,
+        payload_armfinal = 4,
+        payload_fire = 5,
+        payload_destroy = 6,
+        payload_disarm = 99,
     };
 
     // initialise
     void init();
     void update();
     void set_state(state_t state);
+    void send_state_msg(state_t state);
     void cmd_handle(int16_t cmd_in);
     bool initialised() {return _uart.initialized();}
 
 private:
 
-    HB1_UART _uart{AP_SerialManager::SerialProtocol_Payload};
+    FD_UART FD_uart_payload{AP_SerialManager::SerialProtocol_Payload};
+
     state_t _desire_state;
     state_t _current_state;
     uint32_t _last_state_ms;

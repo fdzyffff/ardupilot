@@ -52,7 +52,7 @@ void FD_UART::parse(uint8_t byte_in)
     if(!initialized()) {
         return ;
     }
-    // if (_msg_ue4_ahrs.enable())   {_msg_ue4_ahrs.parse(byte_in);}
+    if (_msg_payload.enable())   {_msg_payload.parse(byte_in);}
     // if (_msg2apm_ue4_gimbal.enable())   {_msg2apm_ue4_gimbal.parse(byte_in);}
 }
 
