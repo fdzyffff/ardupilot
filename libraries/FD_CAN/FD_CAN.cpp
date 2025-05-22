@@ -33,6 +33,8 @@ const AP_Param::GroupInfo FD_CAN::var_info[] = {
     // No use, reserved
     AP_GROUPINFO("SRV", 2, FD_CAN, _enable_srv, 1),
     AP_GROUPINFO("MOT", 3, FD_CAN, _enable_mot, 1),
+    AP_GROUPINFO("TS", 4, FD_CAN, _interval_srv, 20),
+    AP_GROUPINFO("TM", 5, FD_CAN, _interval_mot, 20),
 
     AP_GROUPEND};
 
@@ -119,6 +121,8 @@ void FD_CAN::loop() {
     uint32_t last_print_ms = AP_HAL::millis();
     bool should_print_servo = false;
     bool should_print_mot = false;
+    uint64_t timeout = AP_HAL::micros64() + 1000ULL;
+
 
     while (true) {
         if (!_initialized) {
@@ -126,6 +130,9 @@ void FD_CAN::loop() {
             hal.scheduler->delay_microseconds(10000);
             continue;
         }
+
+        uint32_t srv_interval = constrain_int32(_interval_srv.get(), 1, 1000);
+        uint32_t mot_interval = constrain_int32(_interval_mot.get(), 1, 1000);
 
         while (read_frame(rxFrame, 0)) {
             // gcs().send_text(MAV_SEVERITY_INFO, "rxFrame.id %ld", rxFrame.id);
@@ -161,7 +168,7 @@ void FD_CAN::loop() {
         }
 
         if (_enable_srv.get()) {    
-            if (AP_HAL::millis() -  last_servo_ms >= 10) {
+            if (AP_HAL::millis() -  last_servo_ms >= srv_interval) {
                 last_servo_ms = AP_HAL::millis();
                 for (uint8_t i_servo = 1; i_servo <=20; i_servo++) {
                     SRV_Channel *this_channel = SRV_Channels::srv_channel(i_servo-1);
@@ -183,7 +190,8 @@ void FD_CAN::loop() {
                     txFrame.data[1] = (uint8_t)((servo_angle>>8)&0xFF);
                     txFrame.data[2] = i_servo;
                     txFrame.dlc = 8;
-                    if (write_frame(txFrame, 0)) {
+                    timeout = AP_HAL::micros64() + 1000ULL;
+                    if (write_frame(txFrame, timeout)) {
                         if (should_print_servo) {
                             gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, servo_angle);
                         }
@@ -196,7 +204,7 @@ void FD_CAN::loop() {
         }
 
         if (_enable_mot.get()) {    
-            if (AP_HAL::millis() -  last_mot_ms >= 10) {
+            if (AP_HAL::millis() -  last_mot_ms >= mot_interval) {
                 last_mot_ms = AP_HAL::millis();
 
                 uint16_t thr_left = SRV_Channels::get_output_scaled(SRV_Channel::k_throttleLeft)*10.f;//100
@@ -209,7 +217,8 @@ void FD_CAN::loop() {
                 txFrame.data[0] = (uint8_t)(thr_left&0xFF);
                 txFrame.data[1] = (uint8_t)((thr_left>>8)&0xFF);
                 txFrame.dlc = 8;
-                if (write_frame(txFrame, 0)) {
+                timeout = AP_HAL::micros64() + 1000ULL;
+                if (write_frame(txFrame, timeout)) {
                     if (should_print_mot) {
                         gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, thr_left);
                     }
@@ -221,7 +230,8 @@ void FD_CAN::loop() {
                 txFrame.data[0] = (uint8_t)(thr_left&0xFF);
                 txFrame.data[1] = (uint8_t)((thr_left>>8)&0xFF);
                 txFrame.dlc = 8;
-                if (write_frame(txFrame, 0)) {
+                timeout = AP_HAL::micros64() + 1000ULL;
+                if (write_frame(txFrame, timeout)) {
                     if (should_print_mot) {
                         gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, thr_left);
                     }
@@ -233,7 +243,8 @@ void FD_CAN::loop() {
                 txFrame.data[0] = (uint8_t)(thr_right&0xFF);
                 txFrame.data[1] = (uint8_t)((thr_right>>8)&0xFF);
                 txFrame.dlc = 8;
-                if (write_frame(txFrame, 0)) {
+                timeout = AP_HAL::micros64() + 1000ULL;
+                if (write_frame(txFrame, timeout)) {
                     if (should_print_mot) {
                         gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, thr_right);
                     }
@@ -245,7 +256,8 @@ void FD_CAN::loop() {
                 txFrame.data[0] = (uint8_t)(thr_right&0xFF);
                 txFrame.data[1] = (uint8_t)((thr_right>>8)&0xFF);
                 txFrame.dlc = 8;
-                if (write_frame(txFrame, 0)) {
+                timeout = AP_HAL::micros64() + 1000ULL;
+                if (write_frame(txFrame, timeout)) {
                     if (should_print_mot) {
                         gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, thr_right);
                     }
@@ -261,7 +273,8 @@ void FD_CAN::loop() {
                 txFrame.data[0] = (uint8_t)(thr_right&0xFF);
                 txFrame.data[1] = (uint8_t)((thr_right>>8)&0xFF);
                 txFrame.dlc = 8;
-                if (write_frame(txFrame, 0)) {
+                timeout = AP_HAL::micros64() + 1000ULL;
+                if (write_frame(txFrame, timeout)) {
                     if (should_print_mot) {
                         gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, thr_right);
                     }
@@ -273,7 +286,8 @@ void FD_CAN::loop() {
                 txFrame.data[0] = (uint8_t)(thr_right&0xFF);
                 txFrame.data[1] = (uint8_t)((thr_right>>8)&0xFF);
                 txFrame.dlc = 8;
-                if (write_frame(txFrame, 0)) {
+                timeout = AP_HAL::micros64() + 1000ULL;
+                if (write_frame(txFrame, timeout)) {
                     if (should_print_mot) {
                         gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, thr_right);
                     }
@@ -285,7 +299,8 @@ void FD_CAN::loop() {
                 txFrame.data[0] = (uint8_t)(thr_right&0xFF);
                 txFrame.data[1] = (uint8_t)((thr_right>>8)&0xFF);
                 txFrame.dlc = 8;
-                if (write_frame(txFrame, 0)) {
+                timeout = AP_HAL::micros64() + 1000ULL;
+                if (write_frame(txFrame, timeout)) {
                     if (should_print_mot) {
                         gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, thr_right);
                     }
@@ -297,7 +312,8 @@ void FD_CAN::loop() {
                 txFrame.data[0] = (uint8_t)(thr_right&0xFF);
                 txFrame.data[1] = (uint8_t)((thr_right>>8)&0xFF);
                 txFrame.dlc = 8;
-                if (write_frame(txFrame, 0)) {
+                timeout = AP_HAL::micros64() + 1000ULL;
+                if (write_frame(txFrame, timeout)) {
                     if (should_print_mot) {
                         gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, thr_right);
                     }

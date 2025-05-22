@@ -40,7 +40,9 @@ public:
 
     AP_Int32 _print;       
     AP_Int8 _enable_srv;
-    AP_Int8 _enable_mot;       
+    AP_Int8 _enable_mot;   
+    AP_Int32 _interval_srv;       
+    AP_Int32 _interval_mot;      
 
 private:
 
