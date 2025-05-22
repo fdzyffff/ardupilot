@@ -1,13 +1,28 @@
 #pragma once
 
-#include <FD1_UART/FD1_UART.h>
+#define UFENCE_UAV_NUM 5
 
-class UK230 {
+class UFence {
 
 public:
 
+    class uav_status {
+    public:
+        void init();
+        bool is_valid() {return valid;}
+        void update();
+        uint16_t id = 0;
+        Location current_loc;
+        Location tgt_pose_obs_loc;
+        Vector2f tgt_accel_obs;
+        uint32_t last_msg_ms;
+        bool valid;
+    };
+
+    uav_status otheruav[UFENCE_UAV_NUM];
+
     // constructor, destructor
-    UK230();
+    UFence();
 
     // initialise
     void init();
@@ -18,21 +33,6 @@ public:
 
 private:
 
-    // LowPassFilterVector3f _filter_target_cm;
-
-    // Vector3f _raw_target_cm;
-
-    Vector3f bf_info;
-    Vector3f efb_info;
-    float _target_pitch_rate;
-    float _target_roll_rate;
-    float _target_yaw_rate;
-    float _target_dist_cm;
-    float _target_bf_vel_x;
-    float _target_bf_vel_y;
-    uint32_t _last_ms;
-    bool _valid;
-
-    LowPassFilterVector3f efb_info_filt;
+    
 
 };
