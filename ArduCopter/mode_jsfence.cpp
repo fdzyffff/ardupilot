@@ -24,12 +24,29 @@ bool ModeJSFence::init(bool ignore_checks)
         pos_control->init_z_controller();
     }
 
+    if (is_disarmed_or_landed()) {
+        set_stage(Stage::TAKEOFF);
+    } else {
+        set_stage(Stage::FENCE);
+    }
+
     return true;
 }
 
 // althold_run - runs the althold controller
 // should be called at 100hz or more
 void ModeJSFence::run()
+{
+    update_stage();
+    if (_stage == Stage::TAKEOFF) {
+        copter.set_auto_armed(true);
+        auto_takeoff.run();
+    } else {
+        fence_run();
+    }
+}
+
+void ModeJSFence::fence_run()
 {
     // if not armed set throttle to zero and exit immediately
     if (is_disarmed_or_landed()) {
@@ -67,4 +84,45 @@ void ModeJSFence::run()
     pos_control->set_pos_target_z_from_climb_rate_cm(_vel_target_cms.z);
     // run the vertical position controller and set output throttle
     pos_control->update_z_controller();
+}
+
+void ModeJSFence::set_stage(Stage stage_in) {
+    _stage = stage_in;
+    _stage_time = millis();
+    switch (_stage) {
+        case Stage::TAKEOFF:
+            // initialise alt for WP_NAVALT_MIN and set completion alt
+            auto_takeoff.start(150, false);
+            gcs().send_text(MAV_SEVERITY_INFO, "Stage Takeoff");
+            break;
+        case Stage::FENCE:
+            gcs().send_text(MAV_SEVERITY_INFO, "Stage FENCE");
+            break;
+        default:
+            gcs().send_text(MAV_SEVERITY_INFO, "Stage UNKNOWN");
+            break;
+    }
+}
+
+void ModeJSFence::update_stage()
+{
+    // uint32_t dt = millis() - _stage_time;
+    switch (_stage) {
+        case Stage::TAKEOFF:
+            {
+                if (auto_takeoff.complete) {
+                    set_stage(Stage::FENCE);
+                }
+            }
+            break;
+        case Stage::FENCE:
+            break;
+        default:
+            break;
+    }
+}
+
+bool ModeJSFence::is_taking_off() const
+{
+    return ((_stage == Stage::TAKEOFF) && !auto_takeoff.complete);
 }

@@ -1987,12 +1987,24 @@ public:
     bool init(bool ignore_checks) override;
     void run() override;
 
+    void fence_run();
+
     bool requires_GPS() const override { return true; }
     bool has_manual_throttle() const override { return false; }
-    bool allows_arming(AP_Arming::Method method) const override { return false; };
+    bool allows_arming(AP_Arming::Method method) const override { return true; };
     bool is_autopilot() const override { return false; }
     bool has_user_takeoff(bool must_navigate) const override { return false; }
     bool allows_autotune() const override { return false; }
+    bool is_taking_off() const override;
+    enum class Stage {
+        TAKEOFF = 0,
+        FENCE = 1
+    };
+    void set_stage(Stage stage_in);
+    void update_stage();
+
+    Stage _stage;
+    uint32_t _stage_time;
 
 protected:
 
