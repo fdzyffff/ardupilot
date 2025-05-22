@@ -116,8 +116,8 @@ void UK230::handle_info(float p1, float p2, float p3) {
     tmp_cam_body_m.from_euler(0.0f, 0.0f, radians(-90.0f));
     bf_info = tmp_cam_body_m*tmp_cam;
 
-    bf_info.x = degrees(bf_info.x);
-    bf_info.y = degrees(bf_info.y);
+    bf_info.x = wrap_180(degrees(bf_info.x)+copter.g2.user_parameters.cam_roll_off.get());
+    bf_info.y = wrap_180(degrees(bf_info.y)+copter.g2.user_parameters.cam_pitch_off.get());
     bf_info.z = wrap_180(p3-90.f);
 
     display_info.p11 = bf_info.x;

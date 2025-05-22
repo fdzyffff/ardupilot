@@ -7,6 +7,7 @@ void Copter::userhook_init()
     // this will be called once at start-up
 
     uk230.init();
+    copter.g2.user_parameters.hook_mission_idx.set_and_save(0);
 }
 #endif
 

@@ -143,7 +143,10 @@ void ModeLudeng_hook::update_stage()
     switch (_stage) {
         case Stage::AUTO:
             {
-                if (copter.uk230.is_valid()) {
+                if (copter.mode_auto.mission.get_current_nav_index() != copter.g2.user_parameters.hook_mission_idx.get()) {
+                    copter.g2.user_parameters.hook_mission_idx.set_and_save(copter.mode_auto.mission.get_current_nav_index());
+                }
+                if (copter.uk230.is_valid() && (copter.current_loc.get_distance_NE(copter.ahrs.get_home()).length()>10.f)) {
                     set_stage(Stage::STANDBY);
                 }
             }
@@ -238,12 +241,15 @@ void ModeLudeng_hook::set_stage(Stage stage_in) {
     switch (_stage) {
         case Stage::AUTO:
             if (copter.mode_auto.init(false)) {
-                copter.mode_auto.mission.reset();
-                gcs().send_text(MAV_SEVERITY_INFO, "Stage AUTO");
-            } else {
-                gcs().send_text(MAV_SEVERITY_INFO, "NO AUTO!");
-                set_stage(Stage::STANDBY);
+                if (copter.mode_auto.mission.set_current_cmd(copter.g2.user_parameters.hook_mission_idx.get())) {
+                    gcs().send_text(MAV_SEVERITY_INFO, "Stage AUTO");
+                    break;
+                } else {
+                    gcs().send_text(MAV_SEVERITY_INFO, "Can not jump to %d", copter.g2.user_parameters.hook_mission_idx.get());
+                }
             }
+            gcs().send_text(MAV_SEVERITY_INFO, "NO AUTO!");
+            set_stage(Stage::STANDBY);
             break;
         case Stage::STANDBY:
             gcs().send_text(MAV_SEVERITY_INFO, "Stage STANDBY");

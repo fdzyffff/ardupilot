@@ -156,13 +156,7 @@ void ModeLudeng_unhook::update_stage()
             }
             break;
         case Stage::AWAY:
-            if (copter.mode_auto.mission.state() == AP_Mission::mission_state::MISSION_COMPLETE) {
-                if (copter.uk230.is_valid()) {
-                    set_mode(Mode::Number::LDHOOK, ModeReason::AUTO_HOOK);
-                } else {
-                    set_stage(Stage::LAND);
-                }
-            }
+            ;
             break;
         case Stage::LAND:
             break;
@@ -205,7 +199,7 @@ void ModeLudeng_unhook::set_stage(Stage stage_in) {
             gcs().send_text(MAV_SEVERITY_INFO, "Stage DOWN");
             break;
         case Stage::AWAY:
-            if (copter.mode_auto.init(false) && copter.mode_auto.mission.set_current_cmd(copter.g2.user_parameters.hook_mission_idx.get())) {
+            if (set_mode(Mode::Number::LDHOOK, ModeReason::AUTO_HOOK)) {
                 gcs().send_text(MAV_SEVERITY_INFO, "Stage AWAY");
             } else {
                 gcs().send_text(MAV_SEVERITY_INFO, "No Mission");
@@ -214,6 +208,7 @@ void ModeLudeng_unhook::set_stage(Stage stage_in) {
             break;
         case Stage::LAND:
             gcs().send_text(MAV_SEVERITY_INFO, "Stage LAND");
+            set_mode(Mode::Number::LAND, ModeReason::AUTO_HOOK);
             break;
         default:
             gcs().send_text(MAV_SEVERITY_INFO, "Stage UNKNOWN");

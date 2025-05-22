@@ -22,4 +22,6 @@ public:
     AP_Int16 hook_mission_alt;
     AP_Float assit_gain;
     AP_Float filt_hz;
+    AP_Float cam_roll_off;
+    AP_Float cam_pitch_off;
 };
