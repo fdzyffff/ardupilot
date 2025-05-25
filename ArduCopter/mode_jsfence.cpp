@@ -67,8 +67,8 @@ void ModeJSFence::fence_run()
     // set motors to full range
     motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
 
-    _vel_target_cms.x = copter.ufence.cmd_vel_enu.x;
-    _vel_target_cms.y = copter.ufence.cmd_vel_enu.y;
+    _vel_target_cms.x = copter.ufence.cmd_vel_enu.x * 100.0f;
+    _vel_target_cms.y = copter.ufence.cmd_vel_enu.y * 100.0f;
     _vel_target_cms.z = 0.0f;
 
     _accel_target_cmss = Vector3f(0.0f, 0.0f, 0.0f);

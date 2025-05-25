@@ -6,23 +6,6 @@ class UFence {
 
 public:
 
-    class uav_status {
-    public:
-        void init();
-        bool is_valid() {return valid;}
-        void update();
-        uint16_t id = 0;
-        Location current_loc;
-        Location tgt_pose_obs_loc;
-        Vector2f tgt_pose_obs;
-        Vector2f tgt_accel_obs;
-        Vector2f tgt_vel_obs;
-        uint32_t last_msg_ms;
-        bool valid;
-    };
-
-    uav_status otheruav[UFENCE_UAV_NUM];
-
     // constructor, destructor
     UFence();
 
@@ -30,12 +13,8 @@ public:
     void init();
 
     void update();
-    void update_vel();
     void update_mavlink(); 
 
-    void handle_message(const mavlink_message_t &msg);
-    void handle_message_uav(uint16_t msg_sysid, mavlink_jsfencing_t &packet);
-    void handle_message_target(mavlink_jsfencing_t &packet);
     void send_mavlink(mavlink_channel_t chan);
 
     Vector2f cmd_accel_enu;
@@ -46,7 +25,6 @@ private:
     float detect;
     Vector2f tgt_pose;
     Vector2f tgt_accel_est;
-    Vector2f tgt_vel_est;
     Location tgt_pose_obs_loc;
     Location tgt_pose_loc;
     float tgt_last_ms;
@@ -55,8 +33,6 @@ private:
     float gp;
     float ca;
     float ga;
-    float cv;
-    float gv;
     float R;
 
     uint16_t thisuav_id;
@@ -68,16 +44,12 @@ private:
     Vector2f tgt_accel_obs;  // 对目标加速度的分布式观测值，在论文的Section3.B中记录为\hat{a}_{d,i}
     Vector2f con_pose;   // 对目标位置的分布式观测值的一致性误差，在论文的Section3.B中的（17）中记录为\omega_i
     Vector2f con_accel;   // 对目标加速度的分布式观测值的一致性误差，在论文的Section3.B中的（18）中记录为\ksi_i
-    Vector2f tgt_vel_obs;
-    Vector2f dot_tgt_vel_obs;
-    Vector2f con_vel;
+
     Vector2f current_position;
     float dot_hattheta;
     float hattheta;  // 自适应估计项\hat{\theta}
     float dot_hatksi;
     float hatksi;  // 自适应估计项\hat{\ksi}
-    float dot_hatphi;
-    float hatphi;  // 自适应估计项\hat{\ksi}
 
     // 无标签目标包围控制器参数设置      
     float c1;
@@ -97,4 +69,6 @@ private:
     Vector2f repulsiontotal;   // 计算无人机与其他无人机间斥力综合的辅助向量
     Vector2f attract;   // 目标对无人机的斥力
 
+    DerivativeFilterFloat_Size7 _accel_x;
+    DerivativeFilterFloat_Size7 _accel_y;
 };

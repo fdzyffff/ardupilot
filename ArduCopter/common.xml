@@ -6463,6 +6463,8 @@
       <field type="int32_t" name="tgt_pose_obs_lng" units="degE7">Longitude (WGS84)</field>
       <field type="float" name="tgt_accel_obs_x" units="m/s/s">accel in x</field>
       <field type="float" name="tgt_accel_obs_y" units="m/s/s">accel in y</field>
+      <field type="float" name="tgt_vel_obs_x" units="m/s">vel in x</field>
+      <field type="float" name="tgt_vel_obs_y" units="m/s">vel in y</field>
       <field type="uint8_t" name="role">1 for uav, 2 for target</field>
     </message>
 

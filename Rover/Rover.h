@@ -74,6 +74,8 @@
 
 #include "mode.h"
 
+#include "UFence.h"
+
 class Rover : public AP_Vehicle {
 public:
     friend class GCS_MAVLINK_Rover;
@@ -111,6 +113,8 @@ public:
     friend class RC_Channels_Rover;
 
     friend class Sailboat;
+
+    friend class UFence;
 
     Rover(void);
 
@@ -427,6 +431,11 @@ private:
     static_assert(_failsafe_priorities[ARRAY_SIZE(_failsafe_priorities) - 1] == -1,
                   "_failsafe_priorities is missing the sentinel");
 
+
+    void userhook_init();
+    void userhook_FastLoop();
+
+    UFence ufence;
 
 public:
     void failsafe_check();
