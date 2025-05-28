@@ -38,6 +38,8 @@ public:
     void handle_message_target(mavlink_jsfencing_t &packet);
     void send_mavlink(mavlink_channel_t chan);
 
+    void update_log();
+
     Vector2f cmd_accel_enu;
     Vector2f cmd_vel_enu;
 

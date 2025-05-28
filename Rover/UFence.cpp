@@ -83,12 +83,13 @@ void UFence::update()
         _accel_y.update(temp_vel.y, millis());
     }
     update_mavlink();
+    update_log();
 }
 
 void UFence::update_mavlink() {
     static uint32_t _last_send_ms = millis();
     uint16_t mask = GCS_MAVLINK::active_channel_mask() | GCS_MAVLINK::streaming_channel_mask();
-    if (millis() - _last_send_ms > 500) {//30 Hz
+    if (millis() - _last_send_ms > 200) {//30 Hz
         _last_send_ms = millis();
         for (uint8_t i=0; i<gcs().num_gcs(); i++) {
             mavlink_channel_t channel = (mavlink_channel_t)(MAVLINK_COMM_0 + i);
@@ -113,11 +114,39 @@ void UFence::send_mavlink(mavlink_channel_t chan) {
                                 chan,
                                 rover.current_loc.lat,//current_lat,
                                 rover.current_loc.lng,//current_lng,
-                                tgt_pose_obs_loc.lat, //tgt_pose_obs_lat,
-                                tgt_pose_obs_loc.lng, //tgt_pose_obs_lng,
+                                rover.current_loc.lat, //tgt_pose_obs_lat,
+                                rover.current_loc.lng, //tgt_pose_obs_lng,
                                 _accel_x.slope()*1000.f, //tgt_accel_obs_x,
                                 _accel_y.slope()*1000.f, //tgt_accel_obs_y,
                                 temp_vel.x, //tgt_vel_obs_x,
                                 temp_vel.y, //tgt_vel_obs_y,
                                 2);
+}
+
+void UFence::update_log() {
+    const bool position_ok = rover.ekf_position_ok() && !rover.failsafe.ekf;
+    if (!position_ok) {return;}
+
+    static uint32_t _last_log_ms = millis();
+    if (millis() - _last_log_ms > 100) {
+        _last_log_ms = millis();
+    } else {
+        return;
+    }
+    Vector3f temp_vel;
+    if (rover.ahrs.get_velocity_NED(temp_vel)) {
+        temp_vel = temp_vel * 0.01f;
+    }
+    AP::logger().WriteStreaming("JFN5",
+                                "TimeUS,tlat,tlng,tvx,tvy,tax,tay",
+                                "s------",
+                                "F------",
+                                "Qiiffff",
+                                AP_HAL::micros64(),
+                                (float)rover.current_loc.lat,
+                                (float)rover.current_loc.lng,
+                                (float)temp_vel.x,
+                                (float)temp_vel.y,
+                                (float)_accel_x.slope()*1000.f,
+                                (float)_accel_y.slope()*1000.f);
 }

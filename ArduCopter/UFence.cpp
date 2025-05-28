@@ -87,6 +87,8 @@ void UFence::update()
     for (uint8_t i_uav = 0; i_uav < UFENCE_UAV_NUM; i_uav++) {
         otheruav[i_uav].update();
     }
+
+    update_log();
 }
 
 void UFence::update_vel()
@@ -244,7 +246,7 @@ void UFence::update_vel()
 void UFence::update_mavlink() {
     static uint32_t _last_send_ms = millis();
     uint16_t mask = GCS_MAVLINK::active_channel_mask() | GCS_MAVLINK::streaming_channel_mask();
-    if (millis() - _last_send_ms > 333) {//30 Hz
+    if (millis() - _last_send_ms > 100) {//30 Hz
         _last_send_ms = millis();
         for (uint8_t i=0; i<gcs().num_gcs(); i++) {
             mavlink_channel_t channel = (mavlink_channel_t)(MAVLINK_COMM_0 + i);
@@ -340,6 +342,69 @@ void UFence::handle_message_target(mavlink_jsfencing_t &packet) {
 
     tgt_last_ms = millis();
 }
+
+
+void UFence::update_log() {
+    if (!copter.position_ok()) {return;}
+    static uint32_t _last_log_ms = millis();
+    if (millis() - _last_log_ms > 100) {
+        _last_log_ms = millis();
+    } else {
+        return;
+    }
+
+    AP::logger().WriteStreaming("JFN1",
+                                "TimeUS,tlat,tlng,tvx,tvy,tax,tay",
+                                "s------",
+                                "F------",
+                                "Qiiffff",
+                                AP_HAL::micros64(),
+                                (float)tgt_pose_loc.lat,
+                                (float)tgt_pose_loc.lng,
+                                (float)tgt_vel_est.x,
+                                (float)tgt_vel_est.y,
+                                (float)tgt_accel_est.x,
+                                (float)tgt_accel_est.y);
+
+    AP::logger().WriteStreaming("JFN2",
+                                "TimeUS,olat,olng,ovx,ovy,oax,oay",
+                                "s------",
+                                "F------",
+                                "Qiiffff",
+                                AP_HAL::micros64(),
+                                (float)tgt_pose_obs_loc.lat,
+                                (float)tgt_pose_obs_loc.lng,
+                                (float)tgt_vel_obs.x,
+                                (float)tgt_vel_obs.y,
+                                (float)tgt_accel_obs.x,
+                                (float)tgt_accel_obs.y);
+
+    AP::logger().WriteStreaming("JFN3",
+                                "TimeUS,olat,olng,ovx,ovy,oax,oay",
+                                "s------",
+                                "F------",
+                                "Qiiffff",
+                                AP_HAL::micros64(),
+                                (float)tgt_pose_obs_loc.lat,
+                                (float)tgt_pose_obs_loc.lng,
+                                (float)tgt_vel_obs.x,
+                                (float)tgt_vel_obs.y,
+                                (float)tgt_accel_obs.x,
+                                (float)tgt_accel_obs.y);
+
+    AP::logger().WriteStreaming("JFN4",
+                                "TimeUS,theta,ksi,phi,atkx,atky",
+                                "s-----",
+                                "F-----",
+                                "Qfffff",
+                                AP_HAL::micros64(),
+                                (float)hattheta,
+                                (float)hatksi,
+                                (float)hatphi,
+                                (float)hatk.x,
+                                (float)hatk.y);
+}
+
 
 void UFence::uav_status::init() {
     valid = false;

@@ -17,6 +17,8 @@ public:
 
     void send_mavlink(mavlink_channel_t chan);
 
+    void update_log();
+
     Vector2f cmd_accel_enu;
     Vector2f cmd_vel_enu;
 
