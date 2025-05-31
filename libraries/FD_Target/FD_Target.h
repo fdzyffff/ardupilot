@@ -81,6 +81,9 @@ class FD_Target_LRB: public FD_Target_Base {
 public:
     FD_Target_LRB();
     ~FD_Target_LRB() {};
+
+    // static const struct AP_Param::GroupInfo var_info[];
+
     bool init() override;
     void update() override;
     void do_cmd_on(bool on);

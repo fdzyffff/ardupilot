@@ -52,13 +52,14 @@ void FD_Target_Mav::handle_msg(const mavlink_message_t &msg)
             case MAV_CMD_USER_5:
                 {
                     _last_ms = millis();
-                    float theta1 = -cal_frame_angle(cam_width.get(), cam_angle_x.get(), packet.param1); // x-axis, degree
-                    float theta2 =  cal_frame_angle(cam_height.get(), cam_angle_y.get(), packet.param2); // y-axis, degree
+                    float theta1 =  cal_frame_angle(cam_width.get(), cam_angle_x.get(), packet.param1); // x-axis, degree
+                    float theta2 = -cal_frame_angle(cam_height.get(), cam_angle_y.get(), packet.param2); // y-axis, degree
 
                     Vector3f tmp = Vector3f(1.f, tanf(radians(theta1)), -tanf(radians(theta2)));
-                    float p1 = degrees(atanf(tmp.y/tmp.x));
-                    float p2 = degrees(atanf(tmp.z/tmp.xy().length()));
+                    float p1 =  degrees(atanf(tmp.y/tmp.x));
+                    float p2 = -degrees(atanf(tmp.z/tmp.xy().length()));
                     handle_info(p1, p2);
+                    // handle_info(theta1, theta2);
                 }
                 break;
             default:

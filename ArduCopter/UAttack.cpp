@@ -172,6 +172,7 @@ void UAttack::init_target()
             if (_Target_ptr_cam_mav->init()) {
                 gcs().send_text(MAV_SEVERITY_WARNING, "Target Mav init");
                 _Target_ptr_cam = _Target_ptr_cam_mav;
+                AP_Param::load_object_from_eeprom(_Target_ptr_cam, FD_Target_Mav::var_info);
             } else {
                 gcs().send_text(MAV_SEVERITY_WARNING, "Target Mav Fail");
                 _Target_ptr_cam_mav = nullptr;
@@ -182,6 +183,7 @@ void UAttack::init_target()
             if (_Target_ptr_cam_rk3588->init()) {
                 gcs().send_text(MAV_SEVERITY_WARNING, "Target RK3588 init");
                 _Target_ptr_cam = _Target_ptr_cam_rk3588;
+                AP_Param::load_object_from_eeprom(_Target_ptr_cam_rk3588, FD_Target_RK3588::var_info);
             } else {
                 gcs().send_text(MAV_SEVERITY_WARNING, "Target RK3588 Fail");
                 _Target_ptr_cam_rk3588 = nullptr;
@@ -192,6 +194,7 @@ void UAttack::init_target()
             if (_Target_ptr_cam_k230->init()) {
                 gcs().send_text(MAV_SEVERITY_WARNING, "Target K230 init");
                 _Target_ptr_cam = _Target_ptr_cam_k230;
+                AP_Param::load_object_from_eeprom(_Target_ptr_cam_k230, FD_Target_K230::var_info);
             } else {
                 gcs().send_text(MAV_SEVERITY_WARNING, "Target K230 Fail");
                 _Target_ptr_cam_k230= nullptr;
@@ -202,6 +205,7 @@ void UAttack::init_target()
             if (_Target_ptr_cam_lrb->init()) {
                 gcs().send_text(MAV_SEVERITY_WARNING, "Target LRB init");
                 _Target_ptr_cam = _Target_ptr_cam_lrb;
+                // AP_Param::load_object_from_eeprom(_Target_ptr_cam_lrb, FD_Target_LRB::var_info);
             } else {
                 gcs().send_text(MAV_SEVERITY_WARNING, "Target LRB Fail");
                 _Target_ptr_cam_lrb = nullptr;
