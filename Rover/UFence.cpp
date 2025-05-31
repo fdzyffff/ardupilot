@@ -77,7 +77,7 @@ void UFence::update()
     if (position_ok) {
         Vector3f temp_vel;
         if (rover.ahrs.get_velocity_NED(temp_vel)) {
-            temp_vel = temp_vel * 0.01f;
+            temp_vel = temp_vel;
         }
         _accel_x.update(temp_vel.x, millis());
         _accel_y.update(temp_vel.y, millis());
@@ -108,7 +108,7 @@ void UFence::send_mavlink(mavlink_channel_t chan) {
             // gcs().send_text(MAV_SEVERITY_INFO, "JSFence mavlink_msg_jsfencing_send");
     Vector3f temp_vel;
     if (rover.ahrs.get_velocity_NED(temp_vel)) {
-        temp_vel = temp_vel * 0.01f;
+        temp_vel = temp_vel;
     }
     mavlink_msg_jsfencing_send(
                                 chan,
@@ -135,7 +135,7 @@ void UFence::update_log() {
     }
     Vector3f temp_vel;
     if (rover.ahrs.get_velocity_NED(temp_vel)) {
-        temp_vel = temp_vel * 0.01f;
+        temp_vel = temp_vel;
     }
     AP::logger().WriteStreaming("JFN5",
                                 "TimeUS,tlat,tlng,tvx,tvy,tax,tay",

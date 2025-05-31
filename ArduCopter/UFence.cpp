@@ -76,6 +76,7 @@ void UFence::init()
     attract = Vector2f(0.0f, 0.0f);   // 目标对无人机的斥力
     cmd_accel_enu = Vector2f(0.0f, 0.0f);
     cmd_vel_enu = Vector2f(0.0f, 0.0f);
+    cmd_vel_enu_final = Vector2f(0.0f, 0.0f);
 }
 
 // update 
@@ -107,7 +108,8 @@ void UFence::update_vel()
     static uint32_t last_cal_ms = millis();
     if (millis() - last_cal_ms > 5000) {
         last_cal_ms = millis();
-        // gcs().send_text(MAV_SEVERITY_INFO, "JSFence: T x:%f, y:%f", tgt_pose_obs.x, tgt_pose_obs.y);
+        // gcs().send_text(MAV_SEVERITY_INFO, "JSFence: posobs x:%f, y:%f", tgt_pose_obs.x, tgt_pose_obs.y);
+        // gcs().send_text(MAV_SEVERITY_INFO, "JSFence: velobs x:%f, y:%f", tgt_vel_obs.x, tgt_vel_obs.y);
         // gcs().send_text(MAV_SEVERITY_INFO, "JSFence: C x:%f, y:%f", cmd_vel_enu.x, cmd_vel_enu.y);
         // gcs().send_text(MAV_SEVERITY_INFO, "JSFence: A x:%f, y:%f", xy_tgt_accel_obs.x, xy_tgt_accel_obs.y);
     }
@@ -157,6 +159,7 @@ void UFence::update_vel()
     // tgt_accel_obs publish
     con_pose =  (tgt_pose_obs - tgt_pose) * detect;
     con_accel = (tgt_accel_obs - tgt_accel_est) * detect;
+    con_vel = (tgt_vel_obs - tgt_vel_est) * detect;
     // if (do_print) {gcs().send_text(MAV_SEVERITY_INFO, "JSFence: conpos 1");}
     for (uint8_t i_uav = 0; i_uav < UFENCE_UAV_NUM; i_uav++) {
         if (!otheruav[i_uav].is_valid()) {continue;}
@@ -167,6 +170,7 @@ void UFence::update_vel()
                 otheruav[i_uav].tgt_pose_obs = otheruav[i_uav].tgt_pose_obs * 0.01f;
                 con_pose = con_pose + tgt_pose_obs - otheruav[i_uav].tgt_pose_obs;
                 con_accel = con_accel + tgt_accel_obs - otheruav[i_uav].tgt_accel_obs;
+                con_vel = con_vel + tgt_vel_obs - otheruav[i_uav].tgt_vel_obs;
             }
         }
     }
@@ -186,7 +190,7 @@ void UFence::update_vel()
     hatksi = hatksi + dot_hatksi*dt;
 
     float temp_con_vel_length = MAX(0.0001f, con_vel.length());
-    dot_tgt_vel_obs = con_vel*(-cv) - (con_vel*hatksi/temp_con_vel_length);
+    dot_tgt_vel_obs = con_vel*(-cv) - (con_vel*hatphi/temp_con_vel_length);
     dot_hatphi = gv * con_vel.length();
     tgt_vel_obs = tgt_vel_obs + dot_tgt_vel_obs*dt;
     hatphi = hatphi + dot_hatphi*dt;
@@ -234,19 +238,24 @@ void UFence::update_vel()
     Vector2f brake_accel_enu;
     brake_accel_enu = cmd_vel_enu * (-0.15f);
 
-    cmd_vel_enu = cmd_vel_enu + cmd_accel_enu*dt + brake_accel_enu * dt + tgt_vel_obs;
+    cmd_vel_enu = cmd_vel_enu + cmd_accel_enu*dt + brake_accel_enu * dt;// + tgt_vel_obs;
     if (cmd_vel_enu.length() > 1.0f) {
         cmd_vel_enu = cmd_vel_enu/cmd_vel_enu.length();
     }
+    cmd_vel_enu_final = (cmd_vel_enu+tgt_vel_obs);
 
     
     if (do_print) {gcs().send_text(MAV_SEVERITY_INFO, "JSFence: cmd_accel_enu");}  
 }
 
+Vector2f& UFence::get_cmd_vel_enu() {
+    return cmd_vel_enu_final;
+}
+
 void UFence::update_mavlink() {
     static uint32_t _last_send_ms = millis();
     uint16_t mask = GCS_MAVLINK::active_channel_mask() | GCS_MAVLINK::streaming_channel_mask();
-    if (millis() - _last_send_ms > 100) {//30 Hz
+    if (millis() - _last_send_ms > 200) {//30 Hz
         _last_send_ms = millis();
         for (uint8_t i=0; i<gcs().num_gcs(); i++) {
             mavlink_channel_t channel = (mavlink_channel_t)(MAVLINK_COMM_0 + i);
@@ -359,8 +368,8 @@ void UFence::update_log() {
                                 "F------",
                                 "Qiiffff",
                                 AP_HAL::micros64(),
-                                (float)tgt_pose_loc.lat,
-                                (float)tgt_pose_loc.lng,
+                                tgt_pose_loc.lat,
+                                tgt_pose_loc.lng,
                                 (float)tgt_vel_est.x,
                                 (float)tgt_vel_est.y,
                                 (float)tgt_accel_est.x,
@@ -372,8 +381,8 @@ void UFence::update_log() {
                                 "F------",
                                 "Qiiffff",
                                 AP_HAL::micros64(),
-                                (float)tgt_pose_obs_loc.lat,
-                                (float)tgt_pose_obs_loc.lng,
+                                tgt_pose_obs_loc.lat,
+                                tgt_pose_obs_loc.lng,
                                 (float)tgt_vel_obs.x,
                                 (float)tgt_vel_obs.y,
                                 (float)tgt_accel_obs.x,
@@ -385,8 +394,8 @@ void UFence::update_log() {
                                 "F------",
                                 "Qiiffff",
                                 AP_HAL::micros64(),
-                                (float)tgt_pose_obs_loc.lat,
-                                (float)tgt_pose_obs_loc.lng,
+                                tgt_pose_obs_loc.lat,
+                                tgt_pose_obs_loc.lng,
                                 (float)tgt_vel_obs.x,
                                 (float)tgt_vel_obs.y,
                                 (float)tgt_accel_obs.x,

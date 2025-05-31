@@ -40,8 +40,11 @@ public:
 
     void update_log();
 
+    Vector2f &get_cmd_vel_enu();
+
     Vector2f cmd_accel_enu;
     Vector2f cmd_vel_enu;
+    Vector2f cmd_vel_enu_final;
 
 private:
 
