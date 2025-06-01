@@ -227,7 +227,7 @@ void UFence::update_vel()
 
     // // 3.3 计算加速度（x与y轴的最大加速度均设置为1m/s^2）
     cmd_accel_enu = attract + repulsiontotal;
-    if (cmd_accel_enu.length() > 1.0f) {
+    if (cmd_accel_enu.length() > 2.0f) {
         cmd_accel_enu = cmd_accel_enu/cmd_accel_enu.length();
     }
 
@@ -239,10 +239,10 @@ void UFence::update_vel()
     brake_accel_enu = cmd_vel_enu * (-0.15f);
 
     cmd_vel_enu = cmd_vel_enu + cmd_accel_enu*dt + brake_accel_enu * dt;// + tgt_vel_obs;
-    if (cmd_vel_enu.length() > 1.0f) {
+    if (cmd_vel_enu.length() > 2.0f) {
         cmd_vel_enu = cmd_vel_enu/cmd_vel_enu.length();
     }
-    cmd_vel_enu_final = (cmd_vel_enu+tgt_vel_obs);
+    cmd_vel_enu_final = (cmd_vel_enu);//+tgt_vel_obs);
 
     
     if (do_print) {gcs().send_text(MAV_SEVERITY_INFO, "JSFence: cmd_accel_enu");}  
@@ -389,24 +389,26 @@ void UFence::update_log() {
                                 (float)tgt_accel_obs.y);
 
     AP::logger().WriteStreaming("JFN3",
-                                "TimeUS,olat,olng,ovx,ovy,oax,oay",
+                                "TimeUS,tpx,tpy,cvx,cvy,cax,cay",
                                 "s------",
                                 "F------",
-                                "Qiiffff",
+                                "Qffffff",
                                 AP_HAL::micros64(),
-                                tgt_pose_obs_loc.lat,
-                                tgt_pose_obs_loc.lng,
-                                (float)tgt_vel_obs.x,
-                                (float)tgt_vel_obs.y,
-                                (float)tgt_accel_obs.x,
-                                (float)tgt_accel_obs.y);
+                                (float)tgt_pose.x,
+                                (float)tgt_pose.y,
+                                (float)cmd_vel_enu.x,
+                                (float)cmd_vel_enu.y,
+                                (float)cmd_accel_enu.x,
+                                (float)cmd_accel_enu.y);
 
     AP::logger().WriteStreaming("JFN4",
-                                "TimeUS,theta,ksi,phi,atkx,atky",
-                                "s-----",
-                                "F-----",
-                                "Qfffff",
+                                "TimeUS,tpox,tpoy,theta,ksi,phi,atkx,atky",
+                                "s-------",
+                                "F-------",
+                                "Qfffffff",
                                 AP_HAL::micros64(),
+                                (float)tgt_pose_obs.x,
+                                (float)tgt_pose_obs.y,
                                 (float)hattheta,
                                 (float)hatksi,
                                 (float)hatphi,

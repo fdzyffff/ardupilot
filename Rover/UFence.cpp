@@ -73,7 +73,7 @@ void UFence::init()
 // update 
 void UFence::update()
 {
-    const bool position_ok = rover.ekf_position_ok() && !rover.failsafe.ekf;
+    const bool position_ok = rover.ekf_position_ok();
     if (position_ok) {
         Vector3f temp_vel;
         if (rover.ahrs.get_velocity_NED(temp_vel)) {
@@ -103,9 +103,16 @@ void UFence::update_mavlink() {
 }
 
 void UFence::send_mavlink(mavlink_channel_t chan) {
-    const bool position_ok = rover.ekf_position_ok() && !rover.failsafe.ekf;
+    const bool position_ok = rover.ekf_position_ok();
     if (!position_ok) {return;}
-            // gcs().send_text(MAV_SEVERITY_INFO, "JSFence mavlink_msg_jsfencing_send");
+
+
+    static uint32_t _last_mav_ms = millis();
+    if (millis() - _last_mav_ms > 3000) {
+        _last_mav_ms = millis();
+        gcs().send_text(MAV_SEVERITY_INFO, "JSFence mavlink_msg_jsfencing_send");
+    }
+
     Vector3f temp_vel;
     if (rover.ahrs.get_velocity_NED(temp_vel)) {
         temp_vel = temp_vel;
@@ -124,7 +131,7 @@ void UFence::send_mavlink(mavlink_channel_t chan) {
 }
 
 void UFence::update_log() {
-    const bool position_ok = rover.ekf_position_ok() && !rover.failsafe.ekf;
+    const bool position_ok = rover.ekf_position_ok();
     if (!position_ok) {return;}
 
     static uint32_t _last_log_ms = millis();
