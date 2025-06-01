@@ -6461,6 +6461,8 @@
       <field type="int32_t" name="current_lng" units="degE7">Longitude (WGS84)</field>
       <field type="int32_t" name="tgt_pose_obs_lat" units="degE7">Latitude (WGS84)</field>
       <field type="int32_t" name="tgt_pose_obs_lng" units="degE7">Longitude (WGS84)</field>
+      <field type="float" name="current_vel_x" units="m/s">current velocity in x</field>
+      <field type="float" name="current_vel_y" units="m/s">current velocity in y</field>
       <field type="float" name="tgt_accel_obs_x" units="m/s/s">accel in x</field>
       <field type="float" name="tgt_accel_obs_y" units="m/s/s">accel in y</field>
       <field type="float" name="tgt_vel_obs_x" units="m/s">vel in x</field>

@@ -14,6 +14,7 @@ public:
         uint16_t id = 0;
         Location current_loc;
         Location tgt_pose_obs_loc;
+        Vector2f current_vel;
         Vector2f tgt_pose_obs;
         Vector2f tgt_accel_obs;
         Vector2f tgt_vel_obs;

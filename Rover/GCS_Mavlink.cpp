@@ -404,6 +404,7 @@ void GCS_MAVLINK_Rover::packetReceived(const mavlink_status_t &status, const mav
     // pass message to follow library
     rover.g2.follow.handle_msg(msg);
 #endif
+    rover.ufence.handle_message(msg);
     GCS_MAVLINK::packetReceived(status, msg);
 }
 

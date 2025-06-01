@@ -77,19 +77,23 @@ void UFence::update()
     if (position_ok) {
         Vector3f temp_vel;
         if (rover.ahrs.get_velocity_NED(temp_vel)) {
-            temp_vel = temp_vel;
+            ;
         }
         _accel_x.update(temp_vel.x, millis());
         _accel_y.update(temp_vel.y, millis());
     }
     update_mavlink();
     update_log();
+
+    for (uint8_t i_uav = 0; i_uav < UFENCE_UAV_NUM; i_uav++) {
+        otheruav[i_uav].update();
+    }
 }
 
 void UFence::update_mavlink() {
     static uint32_t _last_send_ms = millis();
     uint16_t mask = GCS_MAVLINK::active_channel_mask() | GCS_MAVLINK::streaming_channel_mask();
-    if (millis() - _last_send_ms > 200) {//30 Hz
+    if (millis() - _last_send_ms > 100) {//30 Hz
         _last_send_ms = millis();
         for (uint8_t i=0; i<gcs().num_gcs(); i++) {
             mavlink_channel_t channel = (mavlink_channel_t)(MAVLINK_COMM_0 + i);
@@ -106,16 +110,15 @@ void UFence::send_mavlink(mavlink_channel_t chan) {
     const bool position_ok = rover.ekf_position_ok();
     if (!position_ok) {return;}
 
-
-    static uint32_t _last_mav_ms = millis();
-    if (millis() - _last_mav_ms > 3000) {
-        _last_mav_ms = millis();
-        gcs().send_text(MAV_SEVERITY_INFO, "JSFence mavlink_msg_jsfencing_send");
-    }
+    // static uint32_t _last_mav_ms = millis();
+    // if (millis() - _last_mav_ms > 3000) {
+    //     _last_mav_ms = millis();
+    //     gcs().send_text(MAV_SEVERITY_INFO, "JSFence mavlink_msg_jsfencing_send");
+    // }
 
     Vector3f temp_vel;
     if (rover.ahrs.get_velocity_NED(temp_vel)) {
-        temp_vel = temp_vel;
+        ;
     }
     mavlink_msg_jsfencing_send(
                                 chan,
@@ -123,12 +126,62 @@ void UFence::send_mavlink(mavlink_channel_t chan) {
                                 rover.current_loc.lng,//current_lng,
                                 rover.current_loc.lat, //tgt_pose_obs_lat,
                                 rover.current_loc.lng, //tgt_pose_obs_lng,
+                                temp_vel.x, //tgt_vel_obs_x,
+                                temp_vel.y, //tgt_vel_obs_y,
                                 _accel_x.slope()*1000.f, //tgt_accel_obs_x,
                                 _accel_y.slope()*1000.f, //tgt_accel_obs_y,
                                 temp_vel.x, //tgt_vel_obs_x,
                                 temp_vel.y, //tgt_vel_obs_y,
                                 2);
 }
+
+void UFence::handle_message(const mavlink_message_t &msg) {
+    // skip our own messages
+    if (msg.sysid == rover.g.sysid_this_mav.get()) {
+        return;
+    }
+
+    switch (msg.msgid) {
+        case MAVLINK_MSG_ID_JSFENCING: {
+            // gcs().send_text(MAV_SEVERITY_INFO, "get msg from %d", msg.sysid);
+            // decode message
+            mavlink_jsfencing_t packet;
+            mavlink_msg_jsfencing_decode(&msg, &packet);
+            if (packet.role == 1) {
+                // skip out-of-predefined messages
+                if (!(0 < msg.sysid && msg.sysid <= UFENCE_UAV_NUM)) {
+                    return;
+                }
+                handle_message_uav(msg.sysid, packet);
+            }
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+void UFence::handle_message_uav(uint16_t msg_sysid, mavlink_jsfencing_t &packet) {
+    const bool position_ok = rover.ekf_position_ok();
+    if (!position_ok) {return;}
+    otheruav[msg_sysid-1].id = msg_sysid;
+    otheruav[msg_sysid-1].current_loc.lat = packet.current_lat;
+    otheruav[msg_sysid-1].current_loc.lng = packet.current_lng;
+    otheruav[msg_sysid-1].tgt_pose_obs_loc.lat = packet.tgt_pose_obs_lat;
+    otheruav[msg_sysid-1].tgt_pose_obs_loc.lng = packet.tgt_pose_obs_lng;
+    otheruav[msg_sysid-1].current_vel.x = packet.current_vel_x;
+    otheruav[msg_sysid-1].current_vel.y = packet.current_vel_y;
+    otheruav[msg_sysid-1].tgt_accel_obs.x = packet.tgt_accel_obs_x;
+    otheruav[msg_sysid-1].tgt_accel_obs.y = packet.tgt_accel_obs_y;
+    otheruav[msg_sysid-1].tgt_vel_obs.x = packet.tgt_vel_obs_x;
+    otheruav[msg_sysid-1].tgt_vel_obs.y = packet.tgt_vel_obs_y;
+    otheruav[msg_sysid-1].last_msg_ms = millis();
+    if (!otheruav[msg_sysid-1].valid) {
+        otheruav[msg_sysid-1].valid = true;
+        gcs().send_text(MAV_SEVERITY_INFO, "JSFence %d connect", otheruav[msg_sysid-1].id);
+    }
+}
+
 
 void UFence::update_log() {
     const bool position_ok = rover.ekf_position_ok();
@@ -142,18 +195,225 @@ void UFence::update_log() {
     }
     Vector3f temp_vel;
     if (rover.ahrs.get_velocity_NED(temp_vel)) {
-        temp_vel = temp_vel;
+        ;
     }
-    AP::logger().WriteStreaming("JFN5",
-                                "TimeUS,tlat,tlng,tvx,tvy,tax,tay",
-                                "s------",
-                                "F------",
-                                "Qiiffff",
+
+    if (rover.current_loc.get_vector_xy_from_origin_NE(current_position)) {
+        current_position = current_position * 0.01f;
+    }
+    AP::logger().WriteStreaming("JFT",
+                                "TimeUS,tlat,tlng,tpx,tpy,tvx,tvy,tax,tay",
+                                "s--------",
+                                "F--------",
+                                "Qiiffffff",
                                 AP_HAL::micros64(),
                                 (float)rover.current_loc.lat,
                                 (float)rover.current_loc.lng,
+                                (float)current_position.x,
+                                (float)current_position.y,
                                 (float)temp_vel.x,
                                 (float)temp_vel.y,
                                 (float)_accel_x.slope()*1000.f,
                                 (float)_accel_y.slope()*1000.f);
+
+
+    uint8_t i_uav = 0;
+
+    i_uav = 0;
+    if (otheruav[i_uav].valid) {
+        Vector2f uav_pos;
+        if (otheruav[i_uav].current_loc.get_vector_xy_from_origin_NE(uav_pos)) {
+            uav_pos = uav_pos * 0.01f;
+        }
+        Vector2f tgt_pos;
+        if (otheruav[i_uav].tgt_pose_obs_loc.get_vector_xy_from_origin_NE(tgt_pos)) {
+            tgt_pos = tgt_pos * 0.01f;
+        }
+        AP::logger().WriteStreaming("JFU1",
+                                    "TimeUS,lat,lng,px,py,vx,vy",
+                                    "s------",
+                                    "F------",
+                                    "Qiiffff",
+                                    AP_HAL::micros64(),
+                                    otheruav[i_uav].current_loc.lat,
+                                    otheruav[i_uav].current_loc.lng,
+                                    (float)uav_pos.x,
+                                    (float)uav_pos.y,
+                                    (float)otheruav[i_uav].current_vel.x,
+                                    (float)otheruav[i_uav].current_vel.y);
+
+        AP::logger().WriteStreaming("JFT1",
+                                    "TimeUS,opx,opy,ovx,ovy,oax,oay",
+                                    "s------",
+                                    "F------",
+                                    "Qffffff",
+                                    AP_HAL::micros64(),
+                                    (float)tgt_pos.x,
+                                    (float)tgt_pos.y,
+                                    (float)otheruav[i_uav].tgt_vel_obs.x,
+                                    (float)otheruav[i_uav].tgt_vel_obs.y,
+                                    (float)otheruav[i_uav].tgt_accel_obs.x,
+                                    (float)otheruav[i_uav].tgt_accel_obs.y);
+    }
+
+    i_uav = 1;
+    if (otheruav[i_uav].valid) {
+        Vector2f uav_pos;
+        if (otheruav[i_uav].current_loc.get_vector_xy_from_origin_NE(uav_pos)) {
+            uav_pos = uav_pos * 0.01f;
+        }
+        Vector2f tgt_pos;
+        if (otheruav[i_uav].tgt_pose_obs_loc.get_vector_xy_from_origin_NE(tgt_pos)) {
+            tgt_pos = tgt_pos * 0.01f;
+        }
+        AP::logger().WriteStreaming("JFU2",
+                                    "TimeUS,lat,lng,px,py,vx,vy",
+                                    "s------",
+                                    "F------",
+                                    "Qiiffff",
+                                    AP_HAL::micros64(),
+                                    otheruav[i_uav].current_loc.lat,
+                                    otheruav[i_uav].current_loc.lng,
+                                    (float)uav_pos.x,
+                                    (float)uav_pos.y,
+                                    (float)otheruav[i_uav].current_vel.x,
+                                    (float)otheruav[i_uav].current_vel.y);
+
+        AP::logger().WriteStreaming("JFT2",
+                                    "TimeUS,opx,opy,ovx,ovy,oax,oay",
+                                    "s------",
+                                    "F------",
+                                    "Qffffff",
+                                    AP_HAL::micros64(),
+                                    (float)tgt_pos.x,
+                                    (float)tgt_pos.y,
+                                    (float)otheruav[i_uav].tgt_vel_obs.x,
+                                    (float)otheruav[i_uav].tgt_vel_obs.y,
+                                    (float)otheruav[i_uav].tgt_accel_obs.x,
+                                    (float)otheruav[i_uav].tgt_accel_obs.y);
+    }
+
+    i_uav = 2;
+    if (otheruav[i_uav].valid) {
+        Vector2f uav_pos;
+        if (otheruav[i_uav].current_loc.get_vector_xy_from_origin_NE(uav_pos)) {
+            uav_pos = uav_pos * 0.01f;
+        }
+        Vector2f tgt_pos;
+        if (otheruav[i_uav].tgt_pose_obs_loc.get_vector_xy_from_origin_NE(tgt_pos)) {
+            tgt_pos = tgt_pos * 0.01f;
+        }
+        AP::logger().WriteStreaming("JFU3",
+                                    "TimeUS,lat,lng,px,py,vx,vy",
+                                    "s------",
+                                    "F------",
+                                    "Qiiffff",
+                                    AP_HAL::micros64(),
+                                    otheruav[i_uav].current_loc.lat,
+                                    otheruav[i_uav].current_loc.lng,
+                                    (float)uav_pos.x,
+                                    (float)uav_pos.y,
+                                    (float)otheruav[i_uav].current_vel.x,
+                                    (float)otheruav[i_uav].current_vel.y);
+
+        AP::logger().WriteStreaming("JFT3",
+                                    "TimeUS,opx,opy,ovx,ovy,oax,oay",
+                                    "s------",
+                                    "F------",
+                                    "Qffffff",
+                                    AP_HAL::micros64(),
+                                    (float)tgt_pos.x,
+                                    (float)tgt_pos.y,
+                                    (float)otheruav[i_uav].tgt_vel_obs.x,
+                                    (float)otheruav[i_uav].tgt_vel_obs.y,
+                                    (float)otheruav[i_uav].tgt_accel_obs.x,
+                                    (float)otheruav[i_uav].tgt_accel_obs.y);
+    }
+
+    i_uav = 3;
+    if (otheruav[i_uav].valid) {
+        Vector2f uav_pos;
+        if (otheruav[i_uav].current_loc.get_vector_xy_from_origin_NE(uav_pos)) {
+            uav_pos = uav_pos * 0.01f;
+        }
+        Vector2f tgt_pos;
+        if (otheruav[i_uav].tgt_pose_obs_loc.get_vector_xy_from_origin_NE(tgt_pos)) {
+            tgt_pos = tgt_pos * 0.01f;
+        }
+        AP::logger().WriteStreaming("JFU4",
+                                    "TimeUS,lat,lng,px,py,vx,vy",
+                                    "s------",
+                                    "F------",
+                                    "Qiiffff",
+                                    AP_HAL::micros64(),
+                                    otheruav[i_uav].current_loc.lat,
+                                    otheruav[i_uav].current_loc.lng,
+                                    (float)uav_pos.x,
+                                    (float)uav_pos.y,
+                                    (float)otheruav[i_uav].current_vel.x,
+                                    (float)otheruav[i_uav].current_vel.y);
+
+        AP::logger().WriteStreaming("JFT4",
+                                    "TimeUS,opx,opy,ovx,ovy,oax,oay",
+                                    "s------",
+                                    "F------",
+                                    "Qffffff",
+                                    AP_HAL::micros64(),
+                                    (float)tgt_pos.x,
+                                    (float)tgt_pos.y,
+                                    (float)otheruav[i_uav].tgt_vel_obs.x,
+                                    (float)otheruav[i_uav].tgt_vel_obs.y,
+                                    (float)otheruav[i_uav].tgt_accel_obs.x,
+                                    (float)otheruav[i_uav].tgt_accel_obs.y);
+    }
+
+    i_uav = 4;
+    if (otheruav[i_uav].valid) {
+        Vector2f uav_pos;
+        if (otheruav[i_uav].current_loc.get_vector_xy_from_origin_NE(uav_pos)) {
+            uav_pos = uav_pos * 0.01f;
+        }
+        Vector2f tgt_pos;
+        if (otheruav[i_uav].tgt_pose_obs_loc.get_vector_xy_from_origin_NE(tgt_pos)) {
+            tgt_pos = tgt_pos * 0.01f;
+        }
+        AP::logger().WriteStreaming("JFU5",
+                                    "TimeUS,lat,lng,px,py,vx,vy",
+                                    "s------",
+                                    "F------",
+                                    "Qiiffff",
+                                    AP_HAL::micros64(),
+                                    otheruav[i_uav].current_loc.lat,
+                                    otheruav[i_uav].current_loc.lng,
+                                    (float)uav_pos.x,
+                                    (float)uav_pos.y,
+                                    (float)otheruav[i_uav].current_vel.x,
+                                    (float)otheruav[i_uav].current_vel.y);
+
+        AP::logger().WriteStreaming("JFT5",
+                                    "TimeUS,opx,opy,ovx,ovy,oax,oay",
+                                    "s------",
+                                    "F------",
+                                    "Qffffff",
+                                    AP_HAL::micros64(),
+                                    (float)tgt_pos.x,
+                                    (float)tgt_pos.y,
+                                    (float)otheruav[i_uav].tgt_vel_obs.x,
+                                    (float)otheruav[i_uav].tgt_vel_obs.y,
+                                    (float)otheruav[i_uav].tgt_accel_obs.x,
+                                    (float)otheruav[i_uav].tgt_accel_obs.y);
+    }
+}
+
+void UFence::uav_status::init() {
+    valid = false;
+}
+
+void UFence::uav_status::update() {
+    if (millis() - last_msg_ms > 2000) {
+        if (valid == true) {
+            gcs().send_text(MAV_SEVERITY_INFO, "JSFence %d lost", id);
+        }
+        valid = false;
+    }
 }

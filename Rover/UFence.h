@@ -6,6 +6,24 @@ class UFence {
 
 public:
 
+    class uav_status {
+    public:
+        void init();
+        bool is_valid() {return valid;}
+        void update();
+        uint16_t id = 0;
+        Location current_loc;
+        Location tgt_pose_obs_loc;
+        Vector2f current_vel;
+        Vector2f tgt_pose_obs;
+        Vector2f tgt_accel_obs;
+        Vector2f tgt_vel_obs;
+        uint32_t last_msg_ms;
+        bool valid;
+    };
+
+    uav_status otheruav[UFENCE_UAV_NUM];
+
     // constructor, destructor
     UFence();
 
@@ -14,6 +32,9 @@ public:
 
     void update();
     void update_mavlink(); 
+
+    void handle_message(const mavlink_message_t &msg);
+    void handle_message_uav(uint16_t msg_sysid, mavlink_jsfencing_t &packet);
 
     void send_mavlink(mavlink_channel_t chan);
 
