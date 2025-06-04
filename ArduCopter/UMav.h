@@ -14,6 +14,7 @@ public:
     void update();
 
     void send_raw_imu();
+    void send_raw_imu_loop();
     void read_bsq_message();
     void handle_bsq_msg(const mavlink_message_t &msg);
     void send_bsq_message(mavlink_message_t *msg);

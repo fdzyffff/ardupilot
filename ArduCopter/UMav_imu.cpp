@@ -1,15 +1,31 @@
 #include "Copter.h"
 
+void UMav::send_raw_imu_loop() {
+    hal.scheduler->delay(3000);
+    gcs().send_text(MAV_SEVERITY_INFO, "LOOP IMURAW Start");
+    while (true) {
+        send_raw_imu();
+    }
+}
+
 void UMav::send_raw_imu()
 {
-    if (!FD_uart_imu.initialized()) {return;}
-    static uint32_t _last_imu_ms = millis();
-
-    if (millis() - _last_imu_ms > 5) {
-        _last_imu_ms = millis();
-    } else {
+    if (!FD_uart_imu.initialized()) {
+        hal.scheduler->delay(3000);
         return;
     }
+    static uint32_t _last_imu_ms = millis();
+    static int16_t count = 0;
+
+    if (millis() - _last_imu_ms > 1000) {
+        gcs().send_text(MAV_SEVERITY_INFO, "LOOP IMURAW %d", count);
+        _last_imu_ms = millis();
+        count = 0;
+    } else {
+        // return;
+    }
+
+    count++;
 
     mavlink_status_t *chan0_status = mavlink_get_channel_status(MAVLINK_COMM_0);
     uint8_t saved_seq = chan0_status->current_tx_seq;
@@ -19,8 +35,6 @@ void UMav::send_raw_imu()
 
     mavlink_message_t msg;
     uint16_t len;
-
-
 
 #if AP_INERTIALSENSOR_ENABLED
     const Vector3f &accel = copter.ins.get_accel(0);
@@ -57,4 +71,5 @@ void UMav::send_raw_imu()
     chan0_status->current_tx_seq = saved_seq;
     chan0_status->flags = saved_flags;
 #endif
+    hal.scheduler->delay_microseconds(5000);
 }

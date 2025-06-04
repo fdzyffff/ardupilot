@@ -388,6 +388,8 @@ public:
 
         // the k_param_* space is 9-bits in size
         // 511: reserved
+
+        k_param_uattack,
     };
 
     AP_Int16        format_version;

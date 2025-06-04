@@ -178,6 +178,7 @@
 #include "Parameters.h"
 #include "mode.h"
 #include "UMav.h"
+#include "UPayload.h"
 
 class Copter : public AP_Vehicle {
 public:
@@ -239,6 +240,8 @@ public:
     friend class UMav_trans_target;
     friend class UMav_trans_mission;
     friend class UMav_trans_relay_positon;
+
+    friend class UPayload;
 
     Copter(void);
 
@@ -1078,6 +1081,8 @@ private:
 
     FD_UART FD_uart_imu{AP_SerialManager::SerialProtocol_IMU};
     FD_UART FD_uart_bsq{AP_SerialManager::SerialProtocol_BSQ};
+
+    UPayload upayload;
 
 public:
     void failsafe_check();      // failsafe.cpp

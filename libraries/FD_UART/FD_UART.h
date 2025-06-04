@@ -1,3 +1,5 @@
+#pragma once
+
 #include <AP_HAL/AP_HAL.h>
 #include <AP_SerialManager/AP_SerialManager.h>
 
@@ -28,7 +30,7 @@ public:
 
     uint32_t port_avaliable();
 
-    FD_msg_Payload& get_msg_payload()  {_msg_payload;}
+    FD_msg_Payload& get_msg_payload()  {return _msg_payload;}
 
 private:
 

@@ -1,14 +1,14 @@
-#include "FD1_msg_Payload.h"
+#include "FD_msg_Payload.h"
 #include <GCS_MAVLink/GCS.h>
 
-FD1_msg_Payload::FD1_msg_Payload(void)
+FD_msg_Payload::FD_msg_Payload(void)
 {
     _enable = false;
     _msg_1.need_send = false;
     _msg_1.updated = false;
 }
 
-void FD1_msg_Payload::parse(uint8_t temp)
+void FD_msg_Payload::parse(uint8_t temp)
 {
     // gcs().send_text(MAV_SEVERITY_INFO, "State: %d, Byte: %d",_msg.msg_state, temp);
     switch (_msg.msg_state)
@@ -90,7 +90,7 @@ void FD1_msg_Payload::parse(uint8_t temp)
     }
 }
 
-void FD1_msg_Payload::process_message(void)
+void FD_msg_Payload::process_message(void)
 {
     int16_t i = 0;
 
@@ -103,7 +103,7 @@ void FD1_msg_Payload::process_message(void)
     _msg_1.print = true;
 }
 
-void FD1_msg_Payload::swap_message(void)
+void FD_msg_Payload::swap_message(void)
 {
     // _msg_1.content.msg.psi = swap_message_uint32_t(_msg_1.content.msg.psi);
     // _msg_1.content.msg.ps = swap_message_uint32_t(_msg_1.content.msg.ps);
@@ -136,3 +136,11 @@ void FD1_msg_Payload::swap_message(void)
     // _msg_1.content.msg.coffangle_k2 = swap_message_int16_t(_msg_1.content.msg.coffangle_k2);
     // _msg_1.content.msg.coffangle_k3 = swap_message_int16_t(_msg_1.content.msg.coffangle_k3);
 }
+
+void FD_msg_Payload::sum_check() {
+    _msg_1.content.msg.sum = 0;
+    int16_t i = 0;
+    for (i = 2; i < _msg_1.length - 3; i ++) {
+        _msg_1.content.msg.sum += _msg_1.content.data[i];
+    }
+} 

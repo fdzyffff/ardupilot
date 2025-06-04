@@ -7,6 +7,7 @@ void Copter::userhook_init()
     // this will be called once at start-up
     
     umav.init();
+    upayload.init();
 }
 #endif
 
@@ -22,6 +23,7 @@ void Copter::userhook_FastLoop()
 {
     // put your 100Hz code here
     umav.update();
+    upayload.update();
 }
 #endif
 

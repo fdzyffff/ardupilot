@@ -1,8 +1,8 @@
 #pragma once
 
-#include <HB1_UART/HB1_UART.h>
-class UPayload {
+#include <FD_UART/FD_UART.h>
 
+class UPayload {
 public:
 
     // constructor, destructor
@@ -10,13 +10,13 @@ public:
 
     enum state_t {
         payload_none = 0,
-        payload_parse = 1,
-        payload_arm1 = 2,
-        payload_arm2 = 3,
-        payload_armfinal = 4,
-        payload_fire = 5,
-        payload_destroy = 6,
-        payload_disarm = 99,
+        payload_parse,
+        payload_arm1,
+        payload_arm2,
+        payload_armfinal,
+        payload_fire,
+        payload_destroy,
+        payload_disarm,
     };
 
     // initialise
@@ -25,7 +25,7 @@ public:
     void set_state(state_t state);
     void send_state_msg(state_t state);
     void cmd_handle(int16_t cmd_in);
-    bool initialised() {return _uart.initialized();}
+    bool initialised() {return FD_uart_payload.initialized();}
 
 private:
 

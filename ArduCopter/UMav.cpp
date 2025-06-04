@@ -14,6 +14,15 @@ void UMav::init()
     _imu_acc.set_cutoff_frequency(400.f, copter.g2.user_parameters.filt_acc_hz.get());
 
     gcs().send_text(MAV_SEVERITY_INFO, "UMAV INIT");
+
+
+    // start calls to loop in separate thread
+    if (!hal.scheduler->thread_create(
+            FUNCTOR_BIND_MEMBER(&UMav::send_raw_imu_loop, void), "IMURAW", 2048, AP_HAL::Scheduler::PRIORITY_SPI, 0)) {
+            gcs().send_text(MAV_SEVERITY_INFO, "IMURAW: couldn't create thread\n\r");
+    } else {
+        gcs().send_text(MAV_SEVERITY_INFO, "IMURAW: create thread\n\r");
+    }
 }
 
 void UMav::update()
