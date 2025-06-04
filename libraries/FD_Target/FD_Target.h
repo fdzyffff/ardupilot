@@ -10,9 +10,9 @@
 #include <GCS_MAVLink/GCS.h>
 #include <stdio.h>
 
-#include <FD_LRB/FD_LRB.h>
-#include <FD_K230/FD_K230.h>
-#include <FD_RK3588/FD_RK3588.h>
+#include <FD_Target_Uart/FD_LRB.h>
+#include <FD_Target_Uart/FD_K230.h>
+#include <FD_Target_Uart/FD_RK3588.h>
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 class FD_Target_Base {
@@ -81,6 +81,9 @@ class FD_Target_LRB: public FD_Target_Base {
 public:
     FD_Target_LRB();
     ~FD_Target_LRB() {};
+
+    // static const struct AP_Param::GroupInfo var_info[];
+
     bool init() override;
     void update() override;
     void do_cmd_on(bool on);
@@ -130,14 +133,44 @@ class FD_Target_Mav: public FD_Target_Base {
 public:
     FD_Target_Mav();
     ~FD_Target_Mav() {};
+
+    static const struct AP_Param::GroupInfo var_info[];
+
     bool init() override;
     void update() override;
     void handle_msg(const mavlink_message_t &msg) override;
     void handle_info_test(float p1, float p2);
+    float cal_frame_angle(float pixel, float angle, float x_in);
 
 private:
     AP_Int32 target_timeout;
-
+    AP_Float cam_width;
+    AP_Float cam_height;
+    AP_Float cam_angle_x;
+    AP_Float cam_angle_y;
 };
+
+class FD_Target_Topotek: public FD_Target_Base {
+public:
+    FD_Target_Topotek();
+    ~FD_Target_Topotek() {};
+
+    static const struct AP_Param::GroupInfo var_info[];
+
+    bool init() override;
+    void update() override;
+    void handle_msg(const mavlink_message_t &msg) override;
+    void handle_info_test(float p1, float p2);
+    float cal_frame_angle(float pixel, float angle, float x_in);
+    void cal_and_handle(float p1, float p2);
+
+private:
+    AP_Int32 target_timeout;
+    AP_Float cam_width;
+    AP_Float cam_height;
+    AP_Float cam_angle_x;
+    AP_Float cam_angle_y;
+};
+
 
 using AP_HAL::millis;
