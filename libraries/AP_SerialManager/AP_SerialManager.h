@@ -83,6 +83,7 @@ public:
         // Reserving Serial Protocol 47 for SerialProtocol_IQ
         SerialProtocol_PPP = 48,
         SerialProtocol_AIR = 49,
+        SerialProtocol_OUTPUT = 50,
         SerialProtocol_NumProtocols                    // must be the last value
     };
 

@@ -53,6 +53,20 @@ void AP_Airspeed_External::handle_external(const AP_ExternalAHRS::airspeed_data_
         sum_temperature /= 2;
         temperature_count /= 2;
     }
+
+    direct_airspeed = pkt.airspeed;
+    airspeed_count ++;
+}
+
+// read the from the sensor
+bool AP_Airspeed_External::get_airspeed(float &airspeed)
+{
+    if (airspeed_count == 0) {
+        return false;
+    }
+    airspeed = direct_airspeed;
+    airspeed_count = 0;
+    return true;
 }
 
 #endif // AP_AIRSPEED_EXTERNAL_ENABLED

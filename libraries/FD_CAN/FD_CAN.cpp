@@ -121,7 +121,7 @@ void FD_CAN::loop() {
     uint32_t last_print_ms = AP_HAL::millis();
     bool should_print_servo = false;
     bool should_print_mot = false;
-    uint64_t timeout = AP_HAL::micros64() + 1000ULL;
+    uint64_t timeout = AP_HAL::micros64() + 10000ULL;
 
 
     while (true) {
@@ -190,13 +190,15 @@ void FD_CAN::loop() {
                     txFrame.data[1] = (uint8_t)((servo_angle>>8)&0xFF);
                     txFrame.data[2] = i_servo;
                     txFrame.dlc = 8;
-                    timeout = AP_HAL::micros64() + 1000ULL;
+                    timeout = AP_HAL::micros64() + 10000ULL;
                     if (write_frame(txFrame, timeout)) {
                         if (should_print_servo) {
                             gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, servo_angle);
                         }
                     } else {
-                        gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d Fail", (uint16_t)txFrame.id, servo_angle);
+                        if (should_print_servo) {
+                            gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d Fail", (uint16_t)txFrame.id, servo_angle);
+                        }
                     }
                 }
                 should_print_servo = false;
@@ -217,108 +219,127 @@ void FD_CAN::loop() {
                 txFrame.data[0] = (uint8_t)(thr_left&0xFF);
                 txFrame.data[1] = (uint8_t)((thr_left>>8)&0xFF);
                 txFrame.dlc = 8;
-                timeout = AP_HAL::micros64() + 1000ULL;
+                timeout = AP_HAL::micros64() + 10000ULL;
                 if (write_frame(txFrame, timeout)) {
                     if (should_print_mot) {
                         gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, thr_left);
                     }
                 } else {
-                    // gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
+                    if (should_print_mot) {
+                        gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
+                    }
                 }
 
                 txFrame.id = 0x22;
                 txFrame.data[0] = (uint8_t)(thr_left&0xFF);
                 txFrame.data[1] = (uint8_t)((thr_left>>8)&0xFF);
                 txFrame.dlc = 8;
-                timeout = AP_HAL::micros64() + 1000ULL;
+                timeout = AP_HAL::micros64() + 10000ULL;
                 if (write_frame(txFrame, timeout)) {
                     if (should_print_mot) {
                         gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, thr_left);
                     }
                 } else {
-                    // gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
+                    if (should_print_mot) {
+                        gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
+                    }
                 }
 
                 txFrame.id = 0x23;
                 txFrame.data[0] = (uint8_t)(thr_right&0xFF);
                 txFrame.data[1] = (uint8_t)((thr_right>>8)&0xFF);
                 txFrame.dlc = 8;
-                timeout = AP_HAL::micros64() + 1000ULL;
+                timeout = AP_HAL::micros64() + 10000ULL;
                 if (write_frame(txFrame, timeout)) {
                     if (should_print_mot) {
                         gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, thr_right);
                     }
                 } else {
-                    // gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
+                    if (should_print_mot) {
+                        gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
+                    }
                 }
 
                 txFrame.id = 0x24;
                 txFrame.data[0] = (uint8_t)(thr_right&0xFF);
                 txFrame.data[1] = (uint8_t)((thr_right>>8)&0xFF);
                 txFrame.dlc = 8;
-                timeout = AP_HAL::micros64() + 1000ULL;
+                timeout = AP_HAL::micros64() + 10000ULL;
                 if (write_frame(txFrame, timeout)) {
                     if (should_print_mot) {
                         gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, thr_right);
                     }
                 } else {
-                    // gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
+                    if (should_print_mot) {
+                        gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
+                    }
                 }
 
 
-                thr_left = 65535/2 + SRV_Channels::get_output_scaled(SRV_Channel::k_throttleLeft)*277;//0~65535对应-90°到90°范围桨距角
-                thr_right = 65535/2 + SRV_Channels::get_output_scaled(SRV_Channel::k_throttleRight)*277;
+                // thr_left = 65535/2 + SRV_Channels::get_output_scaled(SRV_Channel::k_throttleLeft)*277;//0~65535对应-90°到90°范围桨距角
+                // thr_right = 65535/2 + SRV_Channels::get_output_scaled(SRV_Channel::k_throttleRight)*277;
+
+                thr_left = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle)*10.f;//100
+                thr_right = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle)*10.f;
 
                 txFrame.id = 0x101;
                 txFrame.data[0] = (uint8_t)(thr_right&0xFF);
                 txFrame.data[1] = (uint8_t)((thr_right>>8)&0xFF);
                 txFrame.dlc = 8;
-                timeout = AP_HAL::micros64() + 1000ULL;
+                timeout = AP_HAL::micros64() + 10000ULL;
                 if (write_frame(txFrame, timeout)) {
                     if (should_print_mot) {
                         gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, thr_right);
                     }
                 } else {
-                    // gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
+                    if (should_print_mot) {
+                        gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
+                    }
                 }
 
                 txFrame.id = 0x102;
                 txFrame.data[0] = (uint8_t)(thr_right&0xFF);
                 txFrame.data[1] = (uint8_t)((thr_right>>8)&0xFF);
                 txFrame.dlc = 8;
-                timeout = AP_HAL::micros64() + 1000ULL;
+                timeout = AP_HAL::micros64() + 10000ULL;
                 if (write_frame(txFrame, timeout)) {
                     if (should_print_mot) {
                         gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, thr_right);
                     }
                 } else {
-                    // gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
+                    if (should_print_mot) {
+                        gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
+                    }
                 }
 
                 txFrame.id = 0x103;
                 txFrame.data[0] = (uint8_t)(thr_right&0xFF);
                 txFrame.data[1] = (uint8_t)((thr_right>>8)&0xFF);
                 txFrame.dlc = 8;
-                timeout = AP_HAL::micros64() + 1000ULL;
+                timeout = AP_HAL::micros64() + 10000ULL;
                 if (write_frame(txFrame, timeout)) {
                     if (should_print_mot) {
                         gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, thr_right);
                     }
                 } else {
-                    // gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
+                    if (should_print_mot) {
+                        gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
+                    }
                 }
 
                 txFrame.id = 0x104;
                 txFrame.data[0] = (uint8_t)(thr_right&0xFF);
                 txFrame.data[1] = (uint8_t)((thr_right>>8)&0xFF);
                 txFrame.dlc = 8;
-                timeout = AP_HAL::micros64() + 1000ULL;
+                timeout = AP_HAL::micros64() + 10000ULL;
                 if (write_frame(txFrame, timeout)) {
                     if (should_print_mot) {
                         gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, thr_right);
                     }
                 } else {
-                    // gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
+                    if (should_print_mot) {
+                        gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
+                    }
                 }
 
                 should_print_mot = false;

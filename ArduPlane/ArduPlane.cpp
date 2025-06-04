@@ -144,6 +144,7 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
 #if AC_PRECLAND_ENABLED
     SCHED_TASK(precland_update, 400, 50, 160),
 #endif
+    SCHED_TASK(userhook_FastLoop, 400, 50, 166),
 };
 
 void Plane::get_scheduler_tasks(const AP_Scheduler::Task *&tasks,

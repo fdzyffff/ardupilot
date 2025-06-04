@@ -372,9 +372,11 @@ void AP_ExternalAHRS_TZ605::handle_airspeed()
     // last_airspeed_pkt = AP_HAL::millis();
     float ps = ((float)_msg_air._msg_1.content.msg.ps/1024.f*1000.f);
     float qc = ((float)_msg_air._msg_1.content.msg.qc/1024.f*1000.f);
-    float rev_airspeed = ((float)_msg_air._msg_1.content.msg.vi/64.f);
+    float rev_airspeed = ((float)_msg_air._msg_1.content.msg.vi/64.f)/3.6f;
     airspeed_data.differential_pressure = ps-qc;
     airspeed_data.temperature = ((float)_msg_air._msg_1.content.msg.ts/16.f);
+    airspeed_data.airspeed = rev_airspeed;
+
 
     static uint32_t _last_post = AP_HAL::millis();
     if (AP_HAL::millis() - _last_post > 5000) {
@@ -393,7 +395,8 @@ void AP_ExternalAHRS_TZ605::post_airspeed()
     {
         AP_ExternalAHRS::airspeed_data_message_t airspeed {
             differential_pressure     : airspeed_data.differential_pressure,
-            temperature               : airspeed_data.temperature
+            temperature               : airspeed_data.temperature,
+            airspeed                  : airspeed_data.airspeed
         };
         AP::airspeed()->handle_external(airspeed);
     }

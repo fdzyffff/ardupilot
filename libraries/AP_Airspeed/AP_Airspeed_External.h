@@ -26,12 +26,20 @@ public:
 
     // temperature not available via analog backend
     bool get_temperature(float &temperature) override;
-    
+
+    // this reads airspeed directly
+    bool has_airspeed() override {return true;}
+
+    // read the from the sensor
+    bool get_airspeed(float &airspeed) override;
+
 private:
     float sum_pressure;
     uint8_t press_count;
     float sum_temperature;
     uint8_t temperature_count;
+    float direct_airspeed;
+    uint8_t airspeed_count;
 };
 
 #endif // AP_AIRSPEED_EXTERNAL_ENABLED

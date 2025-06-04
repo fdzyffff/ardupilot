@@ -170,6 +170,7 @@ public:
     typedef struct {
         float differential_pressure; // Pa
         float temperature; // degC
+        float airspeed;
     } airspeed_data_message_t;
 
     // set GNSS disable for auxillary function GPS_DISABLE
