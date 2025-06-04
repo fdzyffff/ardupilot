@@ -18,7 +18,7 @@ void UMav::send_raw_imu()
     static int16_t count = 0;
 
     if (millis() - _last_imu_ms > 1000) {
-        gcs().send_text(MAV_SEVERITY_INFO, "LOOP IMURAW %d", count);
+        // gcs().send_text(MAV_SEVERITY_INFO, "LOOP IMURAW %d", count);
         _last_imu_ms = millis();
         count = 0;
     } else {

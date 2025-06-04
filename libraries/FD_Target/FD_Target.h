@@ -10,10 +10,6 @@
 #include <GCS_MAVLink/GCS.h>
 #include <stdio.h>
 
-#include <FD_Target_Uart/FD_LRB.h>
-#include <FD_Target_Uart/FD_K230.h>
-#include <FD_Target_Uart/FD_RK3588.h>
-
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 class FD_Target_Base {
 public:
@@ -32,107 +28,10 @@ public:
     float _p2;
 };
 
-class FD_Target_Loc: public FD_Target_Base {
+class FD_Target_WXBS: public FD_Target_Base {
 public:
-    FD_Target_Loc();
-    ~FD_Target_Loc() {};
-
-    static const struct AP_Param::GroupInfo var_info[];
-
-    bool init() override;
-    void update() override;
-    void handle_msg(const mavlink_message_t &msg) override;
-    void handle_info_test(float p1, float p2);
-
-    Location current_loc;
-    Location target_loc;
-
-    AP_Int32 target_timeout;
-    AP_Float nav_radius;
-
-private:
-    bool _have_target;
-};
-
-class FD_Target_K230: public FD_Target_Base {
-public:
-    FD_Target_K230();
-    ~FD_Target_K230() {};
-
-    static const struct AP_Param::GroupInfo var_info[];
-
-    bool init() override;
-    void update() override;
-    void handle_msg(const mavlink_message_t &msg) override;
-    float cal_frame_angle(float pixel, float angle, float x_in);
-    void handle_info_test(float p1, float p2);
-
-private:
-    AP_Int32 target_timeout;
-    AP_Float cam_width;
-    AP_Float cam_height;
-    AP_Float cam_angle_x;
-    AP_Float cam_angle_y;
-
-    FD_K230* FD_K230_ptr;
-};
-
-class FD_Target_LRB: public FD_Target_Base {
-public:
-    FD_Target_LRB();
-    ~FD_Target_LRB() {};
-
-    // static const struct AP_Param::GroupInfo var_info[];
-
-    bool init() override;
-    void update() override;
-    void do_cmd_on(bool on);
-    void do_cmd_pre_lock();
-    void handle_info_test(float p1, float p2);
-    float cal_frame_angle(float pixel, float angle, float x_in);
-
-private:
-    AP_Int32 target_timeout;
-    AP_Float cam_width;
-    AP_Float cam_height;
-    AP_Float cam_angle_x;
-    AP_Float cam_angle_y;
-    AP_Float cam_pitch_offset;
-    AP_Int16 lock_x;
-    AP_Int16 lock_y;
-    AP_Int8  lock_size;
-    AP_Int16 cam_x_offset;
-    AP_Int16 cam_y_offset;
-    AP_Int16 lock_y_down;
-
-    FD_LRB* FD_LRB_ptr;
-};
-
-class FD_Target_RK3588: public FD_Target_Base {
-public:
-    FD_Target_RK3588();
-    ~FD_Target_RK3588() {};
-
-    static const struct AP_Param::GroupInfo var_info[];
-
-    bool init() override;
-    void update() override;
-    void handle_msg(const mavlink_message_t &msg) override;
-    float cal_frame_angle(float angle, float x_in);
-    void handle_info_test(float p1, float p2);
-
-private:
-    AP_Int32 target_timeout;
-    AP_Float cam_angle_x;
-    AP_Float cam_angle_y;
-
-    FD_RK3588* FD_RK3588_ptr;
-};
-
-class FD_Target_Mav: public FD_Target_Base {
-public:
-    FD_Target_Mav();
-    ~FD_Target_Mav() {};
+    FD_Target_WXBS();
+    ~FD_Target_WXBS() {};
 
     static const struct AP_Param::GroupInfo var_info[];
 

@@ -18,7 +18,6 @@ public:
 
     void init();
     bool is_active() const { return (current_idx>0); }
-    bool is_active_loc() const { return (current_idx == 2); }
     void udpate_control_value();
     void init_target();
     void update();
@@ -100,12 +99,7 @@ private:
     AC_PID          attack_roll_pid{0.5f, 0.1f, 0.01f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.5f};
     AC_PID          attack_throttle_pid{0.5f, 0.03f, 0.01f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.5f};
 
-    FD_Target_Base*   _Target_ptr_cam;
-    FD_Target_Mav*    _Target_ptr_cam_mav;
-    FD_Target_RK3588* _Target_ptr_cam_rk3588;
-    FD_Target_K230*   _Target_ptr_cam_k230;
-    FD_Target_LRB*    _Target_ptr_cam_lrb;
-    FD_Target_Loc*    _Target_ptr_loc;
+    FD_Target_WXBS*    _Target_ptr_cam;
 
     uint32_t _last_ms;
     int8_t current_idx;

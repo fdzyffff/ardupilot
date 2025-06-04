@@ -7,6 +7,22 @@ void UMav::handle_mission_msg(const mavlink_message_t &msg)
     trans_target.handle_mission_msg(msg);
     trans_mission.handle_mission_msg(msg);
     trans_relay_positon.handle_mission_msg(msg);
+
+    if (msg.msgid == MAVLINK_MSG_ID_WXBS_ATTACK_CMD) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Receive WXBS_ATTACK_CMD");
+        // decode packet
+        mavlink_wxbs_attack_cmd_t packet;
+        mavlink_msg_wxbs_attack_cmd_decode(&msg, &packet);
+        if (packet.attack_cmd == 1) {
+            copter.set_mode(Mode::Number::ATTACK, ModeReason::GCS_COMMAND);
+            if (!copter.motors->armed()) {
+                // if disarmed, arm motors
+                copter.arming.arm(AP_Arming::Method::MAVLINK);
+                gcs().send_text(MAV_SEVERITY_INFO, "Set ATTACK Mode");
+            }
+        }
+    }
+
     // //self check cmd 400;
     // switch (msg.msgid) {
     //     case MAVLINK_MSG_ID_WXBS_DO_SELFCHECK:

@@ -15,12 +15,11 @@ const AP_Param::GroupInfo UAttack::var_info[] = {
     AP_GROUPINFO("PTH_RLIM",   10, UAttack, pitch_rate_limit,       30.f),
     AP_GROUPINFO("OFF_PTH",    11, UAttack, attack_pitch_off,        0.0f),
     AP_GROUPINFO("UPRINT",     12, UAttack, print,                   0),
-    AP_GROUPINFO("TLOC_USE",   13, UAttack, use_target_loc,          0),
-    AP_GROUPINFO("TCAM_TYPE",  14, UAttack, use_target_cam_type,     0),
-    AP_GROUPINFO("FILT_Y_HZ",  15, UAttack, filt_yaw_hz,             2.0f),
-    AP_GROUPINFO("FILT_P_HZ",  16, UAttack, filt_pithc_hz,           2.0f),
+    AP_GROUPINFO("TCAM_TYPE",  13, UAttack, use_target_cam_type,     0),
+    AP_GROUPINFO("FILT_Y_HZ",  14, UAttack, filt_yaw_hz,             2.0f),
+    AP_GROUPINFO("FILT_P_HZ",  15, UAttack, filt_pithc_hz,           2.0f),
 
-    AP_SUBGROUPPTR(_Target_ptr_cam_mav,    "TC0_",   17, UAttack,  FD_Target_Mav),
+    AP_SUBGROUPPTR(_Target_ptr_cam,    "TC0_",   16, UAttack,  FD_Target_WXBS),
     AP_GROUPEND
 };
 
@@ -60,12 +59,7 @@ void UAttack::init()
     _target_pitch_rate = 0.0f;
     _target_yaw_rate = 0.0f;
     _target_roll_angle = 0.0f;
-    _Target_ptr_loc = nullptr;
     _Target_ptr_cam = nullptr;
-    _Target_ptr_cam_mav = nullptr;
-    _Target_ptr_cam_rk3588 = nullptr;
-    _Target_ptr_cam_k230 = nullptr;
-    _Target_ptr_cam_lrb = nullptr;
     _last_ms = millis();
     init_target();
 
@@ -158,15 +152,15 @@ const Vector2f& UAttack::get_ef_rate_info() {
 
 void UAttack::init_target()
 {
-    bool use_cam = use_target_cam_type.get()>0;
+    // bool use_cam = use_target_cam_type.get()>0;
 
-    _Target_ptr_cam = new FD_Target_Mav();
+    _Target_ptr_cam = new FD_Target_WXBS();
     if (_Target_ptr_cam->init()) {
-        gcs().send_text(MAV_SEVERITY_WARNING, "Target Mav init");
-        AP_Param::load_object_from_eeprom(_Target_ptr_cam, FD_Target_Mav::var_info);
+        gcs().send_text(MAV_SEVERITY_WARNING, "Target WXBS init");
+        AP_Param::load_object_from_eeprom(_Target_ptr_cam, FD_Target_WXBS::var_info);
     } else {
-        gcs().send_text(MAV_SEVERITY_WARNING, "Target Mav Fail");
-        _Target_ptr_cam_mav = nullptr;
+        gcs().send_text(MAV_SEVERITY_WARNING, "Target WXBS Fail");
+        _Target_ptr_cam = nullptr;
     }
 
 }
@@ -207,11 +201,6 @@ void UAttack::update()
     float p2 = 0;
     if (current_idx == 1) {
         if (_Target_ptr_cam->get_info(p1, p2)) {
-            handle_info(p1, p2);
-            udpate_control_value();
-        }
-    } else if (current_idx == 2) {
-        if (_Target_ptr_loc->get_info(p1, p2)) {
             handle_info(p1, p2);
             udpate_control_value();
         }
@@ -349,9 +338,6 @@ void UAttack::update_target_throttle() {
 }
 
 void UAttack::handle_attack_msg(const mavlink_message_t &msg) {
-    if (_Target_ptr_loc != nullptr) {
-        _Target_ptr_loc->handle_msg(msg);
-    }
     if (_Target_ptr_cam != nullptr) {
         _Target_ptr_cam->handle_msg(msg);
     }

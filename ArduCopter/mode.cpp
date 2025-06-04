@@ -178,6 +178,9 @@ Mode *Copter::mode_from_mode_num(const Mode::Number mode)
             ret = &mode_turtle;
             break;
 #endif
+        case Mode::Number::ATTACK:
+            ret = &mode_attack;
+            break;
 
         default:
             break;
@@ -226,7 +229,8 @@ bool Copter::gcs_mode_enabled(const Mode::Number mode_num)
         (uint8_t)Mode::Number::SYSTEMID,
         (uint8_t)Mode::Number::AUTOROTATE,
         (uint8_t)Mode::Number::AUTO_RTL,
-        (uint8_t)Mode::Number::TURTLE
+        (uint8_t)Mode::Number::TURTLE,
+        (uint8_t)Mode::Number::ATTACK
     };
 
     if (!block_GCS_mode_change((uint8_t)mode_num, mode_list, ARRAY_SIZE(mode_list))) {

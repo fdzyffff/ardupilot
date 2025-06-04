@@ -59,6 +59,7 @@ void Mode::_TakeOff::start(float alt_cm)
 // stop takeoff
 void Mode::_TakeOff::stop()
 {
+    // copter.gcs().send_text(MAV_SEVERITY_INFO, "_TakeOff stop");
     _running = false;
     // Check if we have progressed far enough through the takeoff process that the
     // aircraft may have left the ground but not yet detected the climb.

@@ -179,6 +179,7 @@
 #include "mode.h"
 #include "UMav.h"
 #include "UPayload.h"
+#include "UAttack.h"
 
 class Copter : public AP_Vehicle {
 public:
@@ -229,6 +230,7 @@ public:
     friend class ModeZigZag;
     friend class ModeAutorotate;
     friend class ModeTurtle;
+    friend class ModeAttack;
 
     friend class _AutoTakeoff;
 
@@ -242,6 +244,8 @@ public:
     friend class UMav_trans_relay_positon;
 
     friend class UPayload;
+
+    friend class UAttack;
 
     Copter(void);
 
@@ -1072,6 +1076,7 @@ private:
 #if MODE_TURTLE_ENABLED == ENABLED
     ModeTurtle mode_turtle;
 #endif
+    ModeAttack mode_attack;
 
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);
@@ -1083,6 +1088,8 @@ private:
     FD_UART FD_uart_bsq{AP_SerialManager::SerialProtocol_BSQ};
 
     UPayload upayload;
+
+    UAttack uattack;
 
 public:
     void failsafe_check();      // failsafe.cpp

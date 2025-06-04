@@ -95,6 +95,7 @@ public:
         AUTOROTATE =   26,  // Autonomous autorotation
         AUTO_RTL =     27,  // Auto RTL, this is not a true mode, AUTO will report as this mode if entered to perform a DO_LAND_START Landing sequence
         TURTLE =       28,  // Flip over after crash
+        ATTACK =       30,
 
         // Mode number 127 reserved for the "drone show mode" in the Skybrush
         // fork at https://github.com/skybrush-io/ardupilot
@@ -1970,3 +1971,46 @@ private:
 
 };
 #endif
+
+
+class ModeAttack : public Mode {
+
+public:
+    // inherit constructor
+    using Mode::Mode;
+    Number mode_number() const override { return Number::ATTACK; }
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    void takeoff_run();
+    void attack_run();
+    void land_run();
+
+    bool requires_GPS() const override { return false; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(AP_Arming::Method method) const override { return true; };
+    bool is_autopilot() const override { return false; }
+    bool has_user_takeoff(bool must_navigate) const override { return false; }
+    bool allows_autotune() const override { return false; }
+    bool is_taking_off() const override;
+    enum class Stage {
+        TAKEOFF = 0,
+        ATTACK = 1,
+        LAND = 2
+    };
+    void set_stage(Stage stage_in);
+    void update_stage();
+
+    Stage _stage;
+    uint32_t _stage_time;
+
+protected:
+
+    const char *name() const override { return "ATTACK"; }
+    const char *name4() const override { return "ATKA"; }
+
+private:
+    ;
+
+};
