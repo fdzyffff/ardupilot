@@ -192,15 +192,19 @@ void AP_ExternalAHRS_TZ605::handle_imu()
                              // rad/s
     imu_data.temperature = 0.0f;
 
-
     static uint32_t _last_post = AP_HAL::millis();
+    static float count = 0.0f;
+    count += 1.0f;
     if (AP_HAL::millis() - _last_post > 5000) {
+        float dt = (float)(AP_HAL::millis() - _last_post) * 0.001f;
         _last_post = AP_HAL::millis();
         if (frontend.debug_print.get()>0) {
             GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS accel : (%f, %f, %f)", _msg_ins._msg_1.content.msg.acc_x_mss, _msg_ins._msg_1.content.msg.acc_y_mss, _msg_ins._msg_1.content.msg.acc_z_mss);
             GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS gyro : (%f, %f, %f)", _msg_ins._msg_1.content.msg.rate_x_degrees, _msg_ins._msg_1.content.msg.rate_y_degrees, _msg_ins._msg_1.content.msg.rate_z_degrees);
             GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS ERROR1: %d ", int(_msg_ins._msg_1.content.msg.error_code>>16));
             GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS ERROR2: %d ", int(_msg_ins._msg_1.content.msg.error_code&0x0000ffff));
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS Rate [%0.1f Hz]", count/dt);
+            count = 0.0f;
         }
     }
 
@@ -341,14 +345,19 @@ void AP_ExternalAHRS_TZ605::handle_baro()
     baro_data.temperature = ((float)_msg_air._msg_1.content.msg.ts/16.f);
 
     static uint32_t _last_post = AP_HAL::millis();
+    static float count = 0.0f;
+    count += 1.0f;
     if (AP_HAL::millis() - _last_post > 5000) {
         _last_post = AP_HAL::millis();
         if (frontend.debug_print.get()>0) {
+        float dt = (float)(AP_HAL::millis() - _last_post) * 0.001f;
             gcs().send_text(MAV_SEVERITY_INFO, "baro ps: %f | %f", baro_data.pressure_pa, (float)_msg_air._msg_1.content.msg.ps);
             gcs().send_text(MAV_SEVERITY_INFO, "baro ts: %f | %f", baro_data.temperature, (float)_msg_air._msg_1.content.msg.ts);
             gcs().send_text(MAV_SEVERITY_INFO, "baro AOAt1: %f, AOAt2: %f ", ((float)_msg_air._msg_1.content.msg.aoat1/128.f), ((float)_msg_air._msg_1.content.msg.aoat2/128.f));
             gcs().send_text(MAV_SEVERITY_INFO, "baro AOSt1: %f, AOSt2: %f ", ((float)_msg_air._msg_1.content.msg.aost1/128.f), ((float)_msg_air._msg_1.content.msg.aost2/128.f));
             gcs().send_text(MAV_SEVERITY_INFO, "baro ERROR: %d ", _msg_air._msg_1.content.msg.faultword);
+            gcs().send_text(MAV_SEVERITY_INFO, "baro Rate [%0.1f Hz]", count/dt);
+            count = 0.0f;
         }
     }
 }
