@@ -50,7 +50,7 @@ public:
 
         uint16_t length;
         uint16_t read;
-        uint16_t sum_check;
+        uint8_t sum_check;
         uint8_t data[FD_MSG_PAYLOAD_LEN];
     } _msg;
 

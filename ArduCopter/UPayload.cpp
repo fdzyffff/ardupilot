@@ -414,6 +414,7 @@ void UPayload::update()
         uint8_t temp = FD_uart_payload.get_port()->read();
         FD_uart_payload.get_msg_payload().parse(temp);
         if (FD_uart_payload.get_msg_payload()._msg_1.updated) {
+            gcs().send_text(MAV_SEVERITY_INFO, "updated");
             msg_payload2apm_handle();
         }
     }
@@ -425,42 +426,42 @@ void UPayload::update()
     push_state();
 
     // for test purpose
-    static uint32_t last_test_ms = millis();
-    if (millis() - last_test_ms > 10000) {
-        last_test_ms = millis();
-        switch (_desire_state) {
-            case payload_none:
-                set_state(payload_parse);
-                _current_state = payload_none;
-                break;
-            case payload_parse:
-                set_state(payload_arm1);
-                _current_state = payload_parse;
-                break;
-            case payload_arm1:
-                set_state(payload_arm2);
-                _current_state = payload_arm1;
-                break;
-            case payload_arm2:
-                set_state(payload_armfinal);
-                _current_state = payload_arm2;
-                break;
-            case payload_armfinal:
-                set_state(payload_fire);
-                _current_state = payload_armfinal;
-                break;
-            case payload_fire:
-                set_state(payload_disarm);
-                _current_state = payload_fire;
-                break;
-            case payload_disarm:
-                set_state(payload_parse);
-                _current_state = payload_disarm;
-                break;
-            default:
-                break;
-        }
-    }
+    // static uint32_t last_test_ms = millis();
+    // if (millis() - last_test_ms >5000 && (_desire_state == _current_state)) {
+    //     last_test_ms = millis();
+    //     switch (_desire_state) {
+    //         case payload_none:
+    //             set_state(payload_parse);
+    //             // _current_state = payload_none;
+    //             break;
+    //         case payload_parse:
+    //             set_state(payload_arm1);
+    //             // _current_state = payload_parse;
+    //             break;
+    //         case payload_arm1:
+    //             set_state(payload_arm2);
+    //             // _current_state = payload_arm1;
+    //             break;
+    //         case payload_arm2:
+    //             set_state(payload_armfinal);
+    //             // _current_state = payload_arm2;
+    //             break;
+    //         case payload_armfinal:
+    //             set_state(payload_fire);
+    //             // _current_state = payload_armfinal;
+    //             break;
+    //         case payload_fire:
+    //             set_state(payload_disarm);
+    //             // _current_state = payload_fire;
+    //             break;
+    //         case payload_disarm:
+    //             set_state(payload_parse);
+    //             // _current_state = payload_disarm;
+    //             break;
+    //         default:
+    //             break;
+    //     }
+    // }
 }
 
 void UPayload::cmd_handle(int16_t cmd_in)

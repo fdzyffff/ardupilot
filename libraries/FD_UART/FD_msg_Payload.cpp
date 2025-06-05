@@ -17,7 +17,6 @@ void FD_msg_Payload::parse(uint8_t temp)
         case FD1UART_msg_parser::FD1UART_PREAMBLE1:
             _msg.read = 0;
             _msg.sum_check = 0;
-            _msg.sum_check += temp;
             _msg.data[0] = temp;
             if (temp == PREAMBLE1) {
                 _msg.msg_state = FD1UART_msg_parser::FD1UART_PREAMBLE2;
@@ -28,7 +27,7 @@ void FD_msg_Payload::parse(uint8_t temp)
             {
                 _msg.length = _msg_1.length;
                 _msg.read = 2;
-                _msg.sum_check += temp;
+                _msg.sum_check = 0;
                 _msg.msg_state = FD1UART_msg_parser::FD1UART_DATA;
                 _msg.data[1] = temp;
             }
@@ -67,8 +66,8 @@ void FD_msg_Payload::parse(uint8_t temp)
         case FD1UART_msg_parser::FD1UART_POSTAMBLE1:
             _msg.data[_msg.read] = temp;
             _msg.read++;
-            // gcs().send_text(MAV_SEVERITY_INFO, "State: %d, Byte: %x - %x", _msg.msg_state, temp, (_msg.sum_check&0xFF));
-
+            // gcs().send_text(MAV_SEVERITY_INFO, "temp: %x, POSTAMBLE1: %x",temp, POSTAMBLE1);
+    
             if (temp == POSTAMBLE1) {
                 _msg.msg_state = FD1UART_msg_parser::FD1UART_POSTAMBLE2;
             } else {
@@ -78,13 +77,14 @@ void FD_msg_Payload::parse(uint8_t temp)
         case FD1UART_msg_parser::FD1UART_POSTAMBLE2:
             _msg.data[_msg.read] = temp;
 
+            // gcs().send_text(MAV_SEVERITY_INFO, "temp: %x, POSTAMBLE2: %x",temp, POSTAMBLE2);
+
             if (temp == POSTAMBLE2) {
                 process_message();
             }
             
             _msg.msg_state = FD1UART_msg_parser::FD1UART_PREAMBLE1;
 
-            // gcs().send_text(MAV_SEVERITY_INFO, "temp: %d, _msg.sum_check: %d",temp, _msg.sum_check);
 
             break;
     }
