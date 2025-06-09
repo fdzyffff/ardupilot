@@ -240,7 +240,9 @@ protected:
     // options parameter bitmask handling
     enum class Options : uint8_t {
         RCTARGETING_LOCK_FROM_PREVMODE = (1U << 0), // RC_TARGETING mode's lock/follow state maintained from previous mode
+        CUSTOM_TRACKING_CMD            = (1U << 6),
     };
+
     bool option_set(Options opt) const { return (_params.options.get() & (uint8_t)opt) != 0; }
 
     // returns true if user has configured a valid yaw angle range

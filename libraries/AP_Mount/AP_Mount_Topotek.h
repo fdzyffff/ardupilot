@@ -72,6 +72,16 @@ public:
     // p1,p2 are in range 0 to 1.  0 is left or top, 1 is right or bottom
     bool set_tracking(TrackingType tracking_type, const Vector2f& p1, const Vector2f& p2) override;
 
+    // set tracking to none, point or rectangle (see TrackingType enum)
+    // if POINT only p1 is used, if RECTANGLE then p1 is top-left, p2 is bottom-right
+    // p1,p2 are in range 0 to 1.  0 is left or top, 1 is right or bottom
+    bool set_tracking_gimbal(TrackingType tracking_type, const Vector2f& p1, const Vector2f& p2);
+
+    // set tracking to none, point or rectangle (see TrackingType enum)
+    // if POINT only p1 is used, if RECTANGLE then p1 is top-left, p2 is bottom-right
+    // p1,p2 are in range 0 to 1.  0 is left or top, 1 is right or bottom
+    bool set_tracking_custom(TrackingType tracking_type, const Vector2f& p1, const Vector2f& p2);
+
     // send command to gimbal to cancel tracking (if necessary)
     // returns true on success, false on failure to send message
     bool cancel_tracking();
@@ -169,6 +179,8 @@ private:
     // request gimbal attitude
     void request_gimbal_attitude();
 
+    void set_gimbal_attitude_frequency();
+
     // request gimbal memory card information
     void request_gimbal_sdcard_info();
 
@@ -254,6 +266,7 @@ private:
     Vector3f _current_angle_rad;                                // current angles in radians received from gimbal (x=roll, y=pitch, z=yaw)
     uint32_t _last_current_angle_ms;                            // system time (in milliseconds) that angle information received from the gimbal
     uint32_t _last_req_current_info_ms;                         // system time that this driver last requested current gimbal infomation
+    uint32_t _last_set_gimbal_attitude_ms;
     uint8_t _last_req_step;                                     // 10hz request loop step (different requests are sent at various steps)
     uint8_t _stop_order_count;                                  // number of stop commands sent since target rates became zero
     float _measure_dist_m = -1.0f;                              // latest rangefinder distance (in meters)

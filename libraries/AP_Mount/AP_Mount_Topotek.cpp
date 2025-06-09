@@ -28,6 +28,8 @@ extern const AP_HAL::HAL& hal;
 # define AP_MOUNT_TOPOTEK_ID3CHAR_SET_ZOOM_AND_FOCU "ZFP"       // set zoom and focus
 # define AP_MOUNT_TOPOTEK_ID3CHAR_DAY_NIGHT_SWITCHING "IRC"     // set day/night setting, data bytes: 00:day, 01:night, 0A:toggle state
 # define AP_MOUNT_TOPOTEK_ID3CHAR_TRACKING      "TRC"           // get/set image tracking, data bytes: 00:get status (use with "r"), 01:stop (use with "w")
+# define AP_MOUNT_TOPOTEK_ID3CHAR_START_TRACKING_CUSTOM "SIT"
+# define AP_MOUNT_TOPOTEK_ID3CHAR_GIMBAL_ATT_FREQ    "SAF"
 # define AP_MOUNT_TOPOTEK_ID3CHAR_START_TRACKING "LOC"          // start image tracking
 # define AP_MOUNT_TOPOTEK_ID3CHAR_LRF           "LRF"           // laser rangefinder control, data bytes: 00:ranging stop, 01:ranging start, 02:single measurement, 03:continuous measurement
 # define AP_MOUNT_TOPOTEK_ID3CHAR_PIP           "PIP"           // set picture-in-picture setting, data bytes: // 00:main only, 01:main+sub, 02:sub+main, 03:sub only, 0A:next
@@ -65,6 +67,13 @@ void AP_Mount_Topotek::update()
 
     // everything below updates at 10hz
     uint32_t now_ms = AP_HAL::millis();
+
+    if ((now_ms - _last_set_gimbal_attitude_ms) >= 15000) {
+        set_gimbal_attitude_frequency();
+        _last_set_gimbal_attitude_ms = now_ms;
+    }
+
+
     if ((now_ms - _last_req_current_info_ms) < 100) {
         return;
     }
@@ -340,6 +349,22 @@ SetFocusResult AP_Mount_Topotek::set_focus(FocusType focus_type, float focus_val
 // p1,p2 are in range 0 to 1.  0 is left or top, 1 is right or bottom
 bool AP_Mount_Topotek::set_tracking(TrackingType tracking_type, const Vector2f& p1, const Vector2f& p2)
 {
+    bool res;
+
+    if (option_set(Options::CUSTOM_TRACKING_CMD)) {
+        res = set_tracking_custom(tracking_type, p1, p2);
+    } else {
+        res = set_tracking_gimbal(tracking_type, p1, p2);
+    }
+
+    return res;
+}
+
+// set tracking to none, point or rectangle (see TrackingType enum)
+// if POINT only p1 is used, if RECTANGLE then p1 is top-left, p2 is bottom-right
+// p1,p2 are in range 0 to 1.  0 is left or top, 1 is right or bottom
+bool AP_Mount_Topotek::set_tracking_gimbal(TrackingType tracking_type, const Vector2f& p1, const Vector2f& p2)
+{
     // exit immediately if not initialised
     if (!_initialised) {
         return false;
@@ -416,6 +441,117 @@ bool AP_Mount_Topotek::set_tracking(TrackingType tracking_type, const Vector2f& 
                                            AP_MOUNT_TOPOTEK_ID3CHAR_START_TRACKING,
                                            true,
                                            (uint8_t*)databuff, ARRAY_SIZE(databuff));
+
+        // display error message on failure
+        if (!res) {
+            GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "%s tracking failed", send_message_prefix);
+        }
+
+        return res;
+    }
+
+    // should never reach here
+    return false;
+}
+
+// set tracking to none, point or rectangle (see TrackingType enum)
+// if POINT only p1 is used, if RECTANGLE then p1 is top-left, p2 is bottom-right
+// p1,p2 are in range 0 to 1.  0 is left or top, 1 is right or bottom
+bool AP_Mount_Topotek::set_tracking_custom(TrackingType tracking_type, const Vector2f& p1, const Vector2f& p2)
+{
+    // exit immediately if not initialised
+    if (!_initialised) {
+        return false;
+    }
+
+    // local variables holding tracker center and width
+    int16_t track_center_x = 0;
+    int16_t track_center_y = 0;
+    int16_t track_width = 0;
+    int16_t track_height = 0;
+    bool send_tracking_cmd = false;
+
+    switch (tracking_type) {
+
+    case TrackingType::TRK_NONE: {
+        uint8_t tracking_type2 = (tracking_type == TrackingType::TRK_POINT) ? 1 : 0;   // when tracking point, enable fuzzy click function
+
+        const char* format_str = "%03X%03X%03X%03X%02X";
+
+        // prepare data bytes
+        uint8_t databuff[16];
+        hal.util->snprintf((char *)databuff, ARRAY_SIZE(databuff), format_str, track_center_x, track_center_y,
+            track_width, track_height, tracking_type2);
+
+        // send tracking command
+        bool res = send_variablelen_packet(HeaderType::VARIABLE_LEN,
+                                           AddressByte::SYSTEM_AND_IMAGE,
+                                           AP_MOUNT_TOPOTEK_ID3CHAR_START_TRACKING_CUSTOM,
+                                           true,
+                                           (const uint8_t*)databuff, ARRAY_SIZE(databuff)-1);
+
+        // display error message on failure
+        if (!res) {
+            GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "%s tracking failed", send_message_prefix);
+        }
+
+        return res;
+        }
+
+    case TrackingType::TRK_POINT: {
+        // calculate tracking center, width and height
+        track_center_x = (int16_t)(p1.x * TRACK_TOTAL_WIDTH);
+        track_center_y = (int16_t)(p1.y * TRACK_TOTAL_HEIGHT);
+        track_width = (int16_t)(TRACK_RANGE);
+        track_height = (int16_t)(TRACK_RANGE);
+        send_tracking_cmd = true;
+        break;
+        }
+
+    case TrackingType::TRK_RECTANGLE: {
+        // calculate upper left and bottom right points
+        // handle case where p1 and p2 are in an unexpected order
+        int16_t upper_leftx = (int16_t)(MIN(p1.x, p2.x)*TRACK_TOTAL_WIDTH);
+        int16_t upper_lefty = (int16_t)(MIN(p1.y, p2.y)*TRACK_TOTAL_HEIGHT);
+        int16_t bottom_rightx = (int16_t)(MAX(p1.x, p2.x)*TRACK_TOTAL_WIDTH);
+        int16_t bottom_righty = (int16_t)(MAX(p1.y, p2.y)*TRACK_TOTAL_HEIGHT);
+
+        // calculated width and height and sanity check 
+        const int16_t frame_selection_width = bottom_rightx - upper_leftx;
+        const int16_t frame_selection_height = bottom_righty - upper_lefty;
+        if (frame_selection_width <= 0 || frame_selection_height <= 0) {
+            return false;
+        }
+
+        // calculate tracking center
+        track_center_x = (int16_t)((upper_leftx + bottom_rightx) * 0.5f);
+        track_center_y = (int16_t)((upper_lefty + bottom_righty) * 0.5f);
+
+        // tracking range after conversion
+        track_width = (int16_t)(frame_selection_width);
+        track_height = (int16_t)(frame_selection_height);
+
+        send_tracking_cmd = true;
+        break;
+        }
+    }
+
+    if (send_tracking_cmd) {
+        uint8_t tracking_type2 = (tracking_type == TrackingType::TRK_POINT) ? 1 : 0;   // when tracking point, enable fuzzy click function
+
+        const char* format_str = "%03X%03X%03X%03X%02X";
+
+        // prepare data bytes
+        uint8_t databuff[16];
+        hal.util->snprintf((char *)databuff, ARRAY_SIZE(databuff), format_str, track_center_x, track_center_y,
+            track_width, track_height, tracking_type2);
+
+        // send tracking command
+        bool res = send_variablelen_packet(HeaderType::VARIABLE_LEN,
+                                           AddressByte::SYSTEM_AND_IMAGE,
+                                           AP_MOUNT_TOPOTEK_ID3CHAR_START_TRACKING_CUSTOM,
+                                           true,
+                                           (const uint8_t*)databuff, ARRAY_SIZE(databuff)-1);
 
         // display error message on failure
         if (!res) {
@@ -769,6 +905,12 @@ void AP_Mount_Topotek::request_gimbal_attitude()
     send_fixedlen_packet(AddressByte::GIMBAL, AP_MOUNT_TOPOTEK_ID3CHAR_GIMBAL_ATT, true, 1);
 }
 
+void AP_Mount_Topotek::set_gimbal_attitude_frequency()
+{
+    // sample command: #TPUG2wSAF10
+    send_fixedlen_packet(AddressByte::GIMBAL, AP_MOUNT_TOPOTEK_ID3CHAR_GIMBAL_ATT_FREQ, true, 10);
+}
+
 // request gimbal memory card information
 void AP_Mount_Topotek::request_gimbal_sdcard_info()
 {
@@ -963,6 +1105,10 @@ bool AP_Mount_Topotek::send_location_info()
 // attitude information analysis of gimbal
 void AP_Mount_Topotek::gimbal_angle_analyse()
 {
+    if (char_to_hex(_msg_buff[5] != 12)) {
+        return;
+    }
+
     // consume current angles
     int16_t yaw_angle_cd = wrap_180_cd(hexchar4_to_int16(_msg_buff[10], _msg_buff[11], _msg_buff[12], _msg_buff[13]));
     int16_t pitch_angle_cd = -hexchar4_to_int16(_msg_buff[14], _msg_buff[15], _msg_buff[16], _msg_buff[17]);
