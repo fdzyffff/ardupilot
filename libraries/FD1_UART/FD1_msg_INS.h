@@ -27,9 +27,9 @@ public:
         int32_t vel_e; //1E-4
         int32_t vel_n;
         int32_t vel_u; //54
-        float rate_x_degrees;
-        float rate_y_degrees;
-        float rate_z_degrees;
+        float rate_e_degrees;
+        float rate_n_degrees;
+        float rate_u_degrees;
         float acc_x_mss;
         float acc_y_mss;
         float acc_z_mss; //78

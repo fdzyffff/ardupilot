@@ -64,6 +64,18 @@ void AP_Baro_Backend::_copy_to_frontend(uint8_t instance, float pressure, float 
     _frontend.sensors[instance].last_update_ms = now;
 }
 
+void AP_Baro_Backend::_copy_to_frontend(uint8_t instance, float altitude)
+{
+    if (instance >= _frontend._num_sensors) {
+        return;
+    }
+    uint32_t now = AP_HAL::millis();
+
+    // update readings
+    _frontend.sensors[instance].altitude = altitude;
+    _frontend.sensors[instance].last_update_ms = now;
+}
+
 static constexpr float FILTER_KOEF = 0.1f;
 
 /* Check that the baro value is valid by using a mean filter. If the

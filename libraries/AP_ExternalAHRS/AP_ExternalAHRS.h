@@ -134,6 +134,11 @@ public:
     } baro_data_message_t;
 
     typedef struct {
+        uint8_t instance;
+        float altitude;
+    } baro_alt_message_t;
+
+    typedef struct {
         Vector3f field;
     } mag_data_message_t;
 

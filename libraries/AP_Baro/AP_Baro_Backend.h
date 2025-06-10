@@ -67,6 +67,8 @@ protected:
 
     void _copy_to_frontend(uint8_t instance, float pressure, float temperature);
 
+    void _copy_to_frontend(uint8_t instance, float altitude);
+
     // semaphore for access to shared frontend data
     HAL_Semaphore _sem;
 

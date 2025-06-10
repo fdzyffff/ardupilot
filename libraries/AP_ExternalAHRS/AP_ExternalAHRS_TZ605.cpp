@@ -156,8 +156,8 @@ void AP_ExternalAHRS_TZ605::build_packet_air()
             handle_airspeed();
             if (frontend.has_sensor(AP_ExternalAHRS::AvailableSensor::BARO)) {
                 post_baro();
-                post_airspeed();
             }
+            post_airspeed();
             _msg_air._msg_1.updated = false;
         }
 
@@ -183,9 +183,9 @@ void AP_ExternalAHRS_TZ605::handle_imu()
     //                                     _msg_ins._msg_1.content.msg.acc_y_mss,
     //                                     -_msg_ins._msg_1.content.msg.acc_z_mss);
                                         // m/s^2
-    imu_data.gyro = Vector3f(radians(_msg_ins._msg_1.content.msg.rate_x_degrees),
-                             radians(_msg_ins._msg_1.content.msg.rate_y_degrees),
-                             radians(_msg_ins._msg_1.content.msg.rate_z_degrees));
+    imu_data.gyro = Vector3f(radians(_msg_ins._msg_1.content.msg.rate_n_degrees),
+                             radians(_msg_ins._msg_1.content.msg.rate_e_degrees),
+                             -radians(_msg_ins._msg_1.content.msg.rate_u_degrees));
     // imu_data.gyro = Vector3f(radians(1.f),
     //                          radians(1.f),
     //                          radians(1.f));
@@ -200,7 +200,7 @@ void AP_ExternalAHRS_TZ605::handle_imu()
         _last_post = AP_HAL::millis();
         if (frontend.debug_print.get()>0) {
             GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS accel : (%f, %f, %f)", _msg_ins._msg_1.content.msg.acc_x_mss, _msg_ins._msg_1.content.msg.acc_y_mss, _msg_ins._msg_1.content.msg.acc_z_mss);
-            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS gyro : (%f, %f, %f)", _msg_ins._msg_1.content.msg.rate_x_degrees, _msg_ins._msg_1.content.msg.rate_y_degrees, _msg_ins._msg_1.content.msg.rate_z_degrees);
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS gyro : (%f, %f, %f)", _msg_ins._msg_1.content.msg.rate_n_degrees, _msg_ins._msg_1.content.msg.rate_e_degrees, _msg_ins._msg_1.content.msg.rate_u_degrees);
             GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS ERROR1: %d ", int(_msg_ins._msg_1.content.msg.error_code>>16));
             GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS ERROR2: %d ", int(_msg_ins._msg_1.content.msg.error_code&0x0000ffff));
             GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS Rate [%0.1f Hz]", count/dt);
@@ -301,7 +301,7 @@ void AP_ExternalAHRS_TZ605::handle_ahrs()
         last_ahrs_pkt = AP_HAL::millis();
         state.accel = imu_data.accel;
         state.gyro = imu_data.gyro;
-        state.quat.from_euler(radians(0.000001f*(float)_msg_ins._msg_1.content.msg.roll_micro_deg), radians(0.000001f*(float)_msg_ins._msg_1.content.msg.pitch_micro_deg), radians(0.000001f*(float)_msg_ins._msg_1.content.msg.yaw_micro_deg));
+        state.quat.from_euler(0.000001f*radians((float)_msg_ins._msg_1.content.msg.roll_micro_deg), 0.000001f*radians((float)_msg_ins._msg_1.content.msg.pitch_micro_deg), -0.000001f*radians((float)_msg_ins._msg_1.content.msg.yaw_micro_deg));
         state.location.lng = _msg_ins._msg_1.content.msg.lng;
         state.location.lat = _msg_ins._msg_1.content.msg.lat;
         state.location.set_alt_cm(_msg_ins._msg_1.content.msg.alt_mm/10, Location::AltFrame::ABSOLUTE);
@@ -344,13 +344,16 @@ void AP_ExternalAHRS_TZ605::handle_baro()
     baro_data.pressure_pa = ((float)_msg_air._msg_1.content.msg.ps/1024.f *1000.f);
     baro_data.temperature = ((float)_msg_air._msg_1.content.msg.ts/16.f);
 
+    // bara_alt.instance = 0;
+    // bara_alt.altitude = 
+
     static uint32_t _last_post = AP_HAL::millis();
     static float count = 0.0f;
     count += 1.0f;
     if (AP_HAL::millis() - _last_post > 5000) {
+        float dt = (float)(AP_HAL::millis() - _last_post) * 0.001f;
         _last_post = AP_HAL::millis();
         if (frontend.debug_print.get()>0) {
-        float dt = (float)(AP_HAL::millis() - _last_post) * 0.001f;
             gcs().send_text(MAV_SEVERITY_INFO, "baro ps: %f | %f", baro_data.pressure_pa, (float)_msg_air._msg_1.content.msg.ps);
             gcs().send_text(MAV_SEVERITY_INFO, "baro ts: %f | %f", baro_data.temperature, (float)_msg_air._msg_1.content.msg.ts);
             gcs().send_text(MAV_SEVERITY_INFO, "baro AOAt1: %f, AOAt2: %f ", ((float)_msg_air._msg_1.content.msg.aoat1/128.f), ((float)_msg_air._msg_1.content.msg.aoat2/128.f));

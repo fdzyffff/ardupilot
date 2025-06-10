@@ -937,7 +937,11 @@ void AP_Baro::update(void)
                 //101325Pa is sea level air pressure, 9800 Pascal/ m depth in water.
                 //No temperature or depth compensation for density of water.
                 altitude = (sensors[i].ground_pressure - corrected_pressure) / 9800.0f / _specific_gravity;
-            }
+            } 
+            // else if (sensors[i].type == BARO_TYPE_AIR_DIRECT) {
+            //     // get altitude from external baro sensor directly
+            //     altitude = sensors[i].altitude - _alt_offset_active;
+            // }
             // sanity check altitude
             sensors[i].alt_ok = !(isnan(altitude) || isinf(altitude));
             if (sensors[i].alt_ok) {

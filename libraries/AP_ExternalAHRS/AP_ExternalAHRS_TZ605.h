@@ -59,6 +59,7 @@ private:
     AP_ExternalAHRS::gps_data_message_t gps_data;
     AP_ExternalAHRS::baro_data_message_t baro_data;
     AP_ExternalAHRS::airspeed_data_message_t airspeed_data;
+    AP_ExternalAHRS::baro_alt_message_t bara_alt;
 
     void build_packet_ins();
     void build_packet_air();
