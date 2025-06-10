@@ -2253,6 +2253,13 @@ bool AP_GPS::is_healthy(uint8_t instance) const
         t.average_delta_ms < delay_avg_max &&
         state[instance].lagged_sample_count < 5;
     if (!delay_ok) {
+        // printf("GPS delta_time_ms %d\n", t.delta_time_ms);
+        // printf("GPS delayed_count %d\n", t.delayed_count);
+        // printf("GPS delay_threshold %d\n", delay_threshold);
+        // printf("GPS average_delta_ms %f\n", t.average_delta_ms);
+        // printf("GPS delay_avg_max %f\n", delay_avg_max);
+        // printf("GPS state[instance].lagged_sample_count %d\n", state[instance].lagged_sample_count);
+        // printf("GPS !delay_ok\n");
         return false;
     }
 #endif // HAL_BUILD_AP_PERIPH

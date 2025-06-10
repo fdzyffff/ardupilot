@@ -300,7 +300,7 @@ void AP_GPS_Backend::check_new_itow(uint32_t itow, uint32_t msg_length)
         // This is disabled on AP_Periph as it is better to catch missed packet rate at the flight
         // controller level
         float expected_lag;
-        if (gps.get_lag(state.instance, expected_lag)) {
+        if (gps.get_lag(state.instance, expected_lag) && gps.get_type(state.instance) != AP_GPS::GPS_TYPE_EXTERNAL_AHRS) {
             float lag_s = (now - (state.last_corrected_gps_time_us/1000U)) * 0.001;
             if (lag_s > expected_lag+0.05) {
                 // more than 50ms over expected lag, increment lag counter

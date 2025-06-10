@@ -1254,6 +1254,7 @@ private:
 
     void userhook_init();
     void userhook_FastLoop();
+    void userhook_SlowLoop();
     AP_HAL::UARTDriver *uart_output;
 
 public:

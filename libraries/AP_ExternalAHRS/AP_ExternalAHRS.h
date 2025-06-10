@@ -35,6 +35,7 @@ public:
     friend class AP_ExternalAHRS_backend;
     friend class AP_ExternalAHRS_VectorNav;
     friend class AP_ExternalAHRS_TZ605;
+    friend class AP_ExternalAHRS_SITL;
 
     AP_ExternalAHRS();
 
@@ -63,6 +64,7 @@ public:
         // 9 reserved for EulerNav
         // 10 reserved for Aeron
         TZ605 = 11,
+        SITL = 99,
     };
 
     static AP_ExternalAHRS *get_singleton(void) {

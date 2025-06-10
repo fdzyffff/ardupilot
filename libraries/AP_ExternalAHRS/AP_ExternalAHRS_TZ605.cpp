@@ -312,7 +312,33 @@ void AP_ExternalAHRS_TZ605::handle_ahrs()
         state.have_location = _msg_ins._msg_1.content.msg.gps_ok || (_msg_ins._msg_1.content.msg.state == 5);
         state.have_velocity = _msg_ins._msg_1.content.msg.gps_ok || (_msg_ins._msg_1.content.msg.state == 5);
 
-        state.last_location_update_us = AP_HAL::micros();;
+        state.last_location_update_us = AP_HAL::micros();
+        
+        if (!frontend.has_sensor(AP_ExternalAHRS::AvailableSensor::GPS)) {
+            //fake gps
+            gps_data.gps_week                    = (0XFF);
+            gps_data.ms_tow                      = (AP_HAL::millis());
+            gps_data.fix_type                    = (state.have_location?3:1);
+            gps_data.satellites_in_view          = (99);
+            gps_data.horizontal_pos_accuracy     = (1.0f);
+            gps_data.vertical_pos_accuracy       = (1.0f);
+            gps_data.horizontal_vel_accuracy     = (1.0f);
+            gps_data.hdop                        = (1.0f);
+            gps_data.vdop                        = (1.0f);
+            gps_data.longitude                   = (state.location.lng);
+            gps_data.latitude                    = (state.location.lat);
+            gps_data.msl_altitude                = (state.location.alt);
+            gps_data.ned_vel_north               = (state.velocity.x);
+            gps_data.ned_vel_down                = (state.velocity.z);
+            gps_data.ned_vel_east                = (state.velocity.y);
+            gps_data.gps_yaw                     = (-0.000001f*radians((float)_msg_ins._msg_1.content.msg.yaw_micro_deg));
+            gps_data.gps_yaw_time_ms             = (AP_HAL::millis());
+            gps_data.gps_yaw_configured          = (true);
+            gps_data.gps_yaw_accuracy            = (5.0f);
+            gps_data.have_gps_yaw                = (true);
+            gps_data.have_gps_yaw_accuracy       = (true);
+            post_gps();
+        }
     }
 
     if (!state.have_origin && _msg_ins._msg_1.content.msg.gps_ok) {

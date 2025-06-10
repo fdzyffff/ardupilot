@@ -98,3 +98,22 @@ void Plane::userhook_FastLoop()
     uart_output->write((uint8_t)((thr_right>>8)&0xFF));
     uart_output->write(0xFF);
 }
+
+void Plane::userhook_SlowLoop() {
+    // 1Hz code
+    // float tmp_airspeed;
+    // if (ahrs.airspeed_estimate(tmp_airspeed)) {
+    //     gcs().send_text(MAV_SEVERITY_INFO, "airspeed %f", tmp_airspeed);
+    // }
+    // Vector3f velned;
+    // if (ahrs.get_velocity_NED(velned)) {
+    //     gcs().send_text(MAV_SEVERITY_INFO, "velned (%f, %f, %f)", velned.x, velned.y, velned.z);
+    // }
+    // float _height;
+    // ahrs.get_relative_position_D_home(_height);
+    // gcs().send_text(MAV_SEVERITY_INFO, "home _height %f", _height);
+
+    // gcs().send_text(MAV_SEVERITY_INFO, "home alt %d", int(ahrs.get_home().alt));
+
+    // gcs().send_text(MAV_SEVERITY_INFO, "GPS healthy: %d", gps.is_healthy());
+}
