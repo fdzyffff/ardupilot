@@ -435,6 +435,7 @@ void AP_ExternalAHRS_SITL::get_filter_status(nav_filter_status &status) const
     if (now - last_ahrs_pkt < 140 && state.have_location) {
         status.flags.horiz_pos_rel = 1;
         status.flags.horiz_pos_abs = 1;
+        status.flags.using_gps = 1;
     }
     if (now - last_ahrs_pkt < 140 && state.have_velocity) {
         status.flags.horiz_vel = 1;

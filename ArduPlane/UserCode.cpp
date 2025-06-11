@@ -116,4 +116,6 @@ void Plane::userhook_SlowLoop() {
     // gcs().send_text(MAV_SEVERITY_INFO, "home alt %d", int(ahrs.get_home().alt));
 
     // gcs().send_text(MAV_SEVERITY_INFO, "GPS healthy: %d", gps.is_healthy());
+
+    // gcs().send_text(MAV_SEVERITY_INFO, "EKF type: %d", ahrs.get_ekf_type());
 }

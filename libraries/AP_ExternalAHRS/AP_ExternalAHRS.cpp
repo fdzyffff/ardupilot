@@ -134,9 +134,11 @@ void AP_ExternalAHRS::init(void)
     case DevType::TZ605:
         backend = new AP_ExternalAHRS_TZ605(this, state);
         return;
+#if AP_EXTERNAL_AHRS_SITL_ENABLED
     case DevType::SITL:
         backend = new AP_ExternalAHRS_SITL(this, state);
         return;
+#endif
 
     }
 

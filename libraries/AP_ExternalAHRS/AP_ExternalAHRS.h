@@ -64,7 +64,9 @@ public:
         // 9 reserved for EulerNav
         // 10 reserved for Aeron
         TZ605 = 11,
+#if AP_EXTERNAL_AHRS_SITL_ENABLED
         SITL = 99,
+#endif
     };
 
     static AP_ExternalAHRS *get_singleton(void) {
