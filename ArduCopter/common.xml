@@ -6490,12 +6490,14 @@
       <field type="uint8_t" name="uav_num">amount of group</field>
       <field type="uint8_t" name="relay_id">relay ID</field>
       <field type="uint8_t" name="count">mission_count</field>
-      <field type="int32_t[10]" name="lat" units="degE7">Latitude (WGS84)</field>
-      <field type="int32_t[10]" name="lon" units="degE7">Longitude (WGS84)</field>
-      <field type="int32_t[10]" name="alt" units="mm">Altitude (WGS84)</field>
+      <field type="uint8_t" name="package_number">Package number</field>
+      <field type="int32_t[15]" name="lat" units="degE7">Latitude (WGS84)</field>
+      <field type="int32_t[15]" name="lon" units="degE7">Longitude (WGS84)</field>
+      <field type="int32_t[15]" name="alt" units="mm">Altitude (WGS84)</field>
     </message>
     <message id="406" name="WXBS_MISSION_RESULT">
       <description> </description>
+      <field type="uint8_t" name="package_number">Package number</field>
       <field type="uint8_t" name="mission_ok">0:not ready, 1:ready.</field>
     </message>
     <message id="407" name="WXBS_RELAY_POSITION">

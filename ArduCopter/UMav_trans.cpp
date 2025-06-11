@@ -241,6 +241,7 @@ void UMav_trans_mission::send_mission_msg()
                     in_packet.group_id,
                     in_packet.uav_num,
                     in_packet.relay_id,
+                    in_packet.package_number,
                     in_packet.count,
                     in_packet.lat,
                     in_packet.lon,
