@@ -135,6 +135,17 @@ bool AP_RangeFinder_VL53L5CX::init()
         return false;
     }
 
+    uint8_t status = 0;
+    status = vl53l5cx_set_resolution(&(pL5obj->Dev), VL53L5CX_RESOLUTION_4X4);
+    status |= vl53l5cx_set_ranging_mode(&(pL5obj->Dev), VL53L5CX_RANGING_MODE_CONTINUOUS);
+    status |= vl53l5cx_set_integration_time_ms(&(pL5obj->Dev), TIMING_BUDGET);
+    status |= vl53l5cx_set_ranging_frequency_hz(&(pL5obj->Dev), RANGING_FREQUENCY);
+    if (status != VL53L5CX_STATUS_OK)
+    {
+    printf("ERROR : Configuration programming error!\n\n");
+    while (1);
+    }
+
     // call timer() every MEASUREMENT_TIME_MS. We expect new data to be available every MEASUREMENT_TIME_MS
     dev->register_periodic_callback(MEASUREMENT_TIME_MS * 1000,
                                     FUNCTOR_BIND_MEMBER(&AP_RangeFinder_VL53L5CX::timer, void));
@@ -142,290 +153,165 @@ bool AP_RangeFinder_VL53L5CX::init()
     return true;
 }
 
-// set distance mode to Short, Medium, or Long
-// based on VL53L1_SetDistanceMode()
-bool AP_RangeFinder_VL53L5CX::setDistanceMode(DistanceMode distance_mode)
+uint8_t AP_RangeFinder_VL53L5CX::vl53l5cx_set_resolution(
+  uint8_t       resolution)
 {
-    // save existing timing budget
-    uint32_t budget_us = 0;
-    if (!getMeasurementTimingBudget(budget_us)) {
-        return false;
-    }
+  uint8_t status = VL53L5CX_STATUS_OK;
 
-    switch (distance_mode) {
-      case DistanceMode::Short:
-            // from VL53L1_preset_mode_standard_ranging_short_range()
+  switch (resolution) {
+    case VL53L5CX_RESOLUTION_4X4:
+      status |= vl53l5cx_dci_read_data(
+                  p_dev->temp_buffer,
+                  VL53L5CX_DCI_DSS_CONFIG, 16);
+      p_dev->temp_buffer[0x04] = 64;
+      p_dev->temp_buffer[0x06] = 64;
+      p_dev->temp_buffer[0x09] = 4;
+      status |= vl53l5cx_dci_write_data(
+                  p_dev->temp_buffer,
+                  VL53L5CX_DCI_DSS_CONFIG, 16);
 
-            if (!(// timing config
-                  write_register(RANGE_CONFIG__VCSEL_PERIOD_A, 0x07) &&
-                  write_register(RANGE_CONFIG__VCSEL_PERIOD_B, 0x05) &&
-                  write_register(RANGE_CONFIG__VALID_PHASE_HIGH, 0x38) &&
+      status |= vl53l5cx_dci_read_data(
+                  p_dev->temp_buffer,
+                  VL53L5CX_DCI_ZONE_CONFIG, 8);
+      p_dev->temp_buffer[0x00] = 4;
+      p_dev->temp_buffer[0x01] = 4;
+      p_dev->temp_buffer[0x04] = 8;
+      p_dev->temp_buffer[0x05] = 8;
+      status |= vl53l5cx_dci_write_data(
+                  p_dev->temp_buffer,
+                  VL53L5CX_DCI_ZONE_CONFIG, 8);
+      break;
 
-                  // dynamic config
-                  write_register(SD_CONFIG__WOI_SD0, 0x07) &&
-                  write_register(SD_CONFIG__WOI_SD1, 0x05) &&
-                  write_register(SD_CONFIG__INITIAL_PHASE_SD0, 6) && // tuning parm default
-                  write_register(SD_CONFIG__INITIAL_PHASE_SD1, 6))) { // tuning parm default
-                return false;
-            }
+    case VL53L5CX_RESOLUTION_8X8:
+      status |= vl53l5cx_dci_read_data(
+                  p_dev->temp_buffer,
+                  VL53L5CX_DCI_DSS_CONFIG, 16);
+      p_dev->temp_buffer[0x04] = 16;
+      p_dev->temp_buffer[0x06] = 16;
+      p_dev->temp_buffer[0x09] = 1;
+      status |= vl53l5cx_dci_write_data(
+                  p_dev->temp_buffer,
+                  VL53L5CX_DCI_DSS_CONFIG, 16);
 
-            break;
+      status |= vl53l5cx_dci_read_data(
+                  p_dev->temp_buffer,
+                  VL53L5CX_DCI_ZONE_CONFIG, 8);
+      p_dev->temp_buffer[0x00] = 8;
+      p_dev->temp_buffer[0x01] = 8;
+      p_dev->temp_buffer[0x04] = 4;
+      p_dev->temp_buffer[0x05] = 4;
+      status |= vl53l5cx_dci_write_data(
+                  p_dev->temp_buffer,
+                  VL53L5CX_DCI_ZONE_CONFIG, 8);
 
-        case DistanceMode::Medium:
-            // from VL53L1_preset_mode_standard_ranging()
+      break;
 
-            if (!(// timing config
-                  write_register(RANGE_CONFIG__VCSEL_PERIOD_A, 0x0B) &&
-                  write_register(RANGE_CONFIG__VCSEL_PERIOD_B, 0x09) &&
-                  write_register(RANGE_CONFIG__VALID_PHASE_HIGH, 0x78) &&
+    default:
+      status = VL53L5CX_STATUS_INVALID_PARAM;
+      break;
+  }
 
-                  // dynamic config
-                  write_register(SD_CONFIG__WOI_SD0, 0x0B) &&
-                  write_register(SD_CONFIG__WOI_SD1, 0x09) &&
-                  write_register(SD_CONFIG__INITIAL_PHASE_SD0, 10) && // tuning parm default
-                  write_register(SD_CONFIG__INITIAL_PHASE_SD1, 10))) { // tuning parm default
-                return false;
-            }
+  status |= _vl53l5cx_send_offset_data(resolution);
+  status |= _vl53l5cx_send_xtalk_data(resolution);
 
-            break;
-
-        case DistanceMode::Long:
-            // from VL53L1_preset_mode_standard_ranging_long_range()
-
-            if (!(// timing config
-                  write_register(RANGE_CONFIG__VCSEL_PERIOD_A, 0x0F) &&
-                  write_register(RANGE_CONFIG__VCSEL_PERIOD_B, 0x0D) &&
-                  write_register(RANGE_CONFIG__VALID_PHASE_HIGH, 0xB8) &&
-
-                  // dynamic config
-                  write_register(SD_CONFIG__WOI_SD0, 0x0F) &&
-                  write_register(SD_CONFIG__WOI_SD1, 0x0D) &&
-                  write_register(SD_CONFIG__INITIAL_PHASE_SD0, 14) && // tuning parm default
-                  write_register(SD_CONFIG__INITIAL_PHASE_SD1, 14))) { // tuning parm default
-                return false;
-            }
-
-            break;
-
-        default:
-            // unrecognized mode - do nothing
-            return false;
-    }
-
-    // reapply timing budget
-    return setMeasurementTimingBudget(budget_us);
+  return status;
 }
 
-// Set the measurement timing budget in microseconds, which is the time allowed
-// for one measurement. A longer timing budget allows for more accurate measurements.
-// based on VL53L1_SetMeasurementTimingBudgetMicroSeconds()
-bool AP_RangeFinder_VL53L5CX::setMeasurementTimingBudget(uint32_t budget_us)
+
+uint8_t AP_RangeFinder_VL53L5CX::vl53l5cx_dci_read_data(
+  uint8_t       *data,
+  uint32_t      index,
+  uint16_t      data_size)
 {
-    // assumes PresetMode is LOWPOWER_AUTONOMOUS
-    if (budget_us <= TimingGuard) {
-        return false;
+  int16_t i;
+  uint8_t status = VL53L5CX_STATUS_OK;
+  uint32_t rd_size = (uint32_t) data_size + (uint32_t)12;
+  uint8_t cmd[] = {0x00, 0x00, 0x00, 0x00,
+                   0x00, 0x00, 0x00, 0x0f,
+                   0x00, 0x02, 0x00, 0x08
+                  };
+
+  /* Check if tmp buffer is large enough */
+  if ((data_size + (uint16_t)12) > (uint16_t)VL53L5CX_TEMPORARY_BUFFER_SIZE) {
+    status |= VL53L5CX_STATUS_ERROR;
+  } else {
+    cmd[0] = (uint8_t)(index >> 8);
+    cmd[1] = (uint8_t)(index & (uint32_t)0xff);
+    cmd[2] = (uint8_t)((data_size & (uint16_t)0xff0) >> 4);
+    cmd[3] = (uint8_t)((data_size & (uint16_t)0xf) << 4);
+
+    /* Request data reading from FW */
+    status |= WrMulti(&(p_dev->platform),
+                      (VL53L5CX_UI_CMD_END - (uint16_t)11), cmd, sizeof(cmd));
+    status |= _vl53l5cx_poll_for_answer(4, 1,
+                                        VL53L5CX_UI_CMD_STATUS,
+                                        0xff, 0x03);
+
+    /* Read new data sent (4 bytes header + data_size + 8 bytes footer) */
+    status |= RdMulti(&(p_dev->platform), VL53L5CX_UI_CMD_START,
+                      p_dev->temp_buffer, rd_size);
+    SwapBuffer(p_dev->temp_buffer, data_size + (uint16_t)12);
+
+    /* Copy data from FW into input structure (-4 bytes to remove header) */
+    for (i = 0 ; i < (int16_t)data_size; i++) {
+      data[i] = p_dev->temp_buffer[i + 4];
+    }
+  }
+
+  return status;
+}
+
+uint8_t VL53L5CX::vl53l5cx_dci_write_data(
+  uint8_t       *data,
+  uint32_t      index,
+  uint16_t      data_size)
+{
+  uint8_t status = VL53L5CX_STATUS_OK;
+  int16_t i;
+
+  uint8_t headers[] = {0x00, 0x00, 0x00, 0x00};
+  uint8_t footer[] = {0x00, 0x00, 0x00, 0x0f, 0x05, 0x01,
+                      (uint8_t)((data_size + (uint16_t)8) >> 8),
+                      (uint8_t)((data_size + (uint16_t)8) & (uint8_t)0xFF)
+                     };
+
+  uint16_t address = (uint16_t)VL53L5CX_UI_CMD_END -
+                     (data_size + (uint16_t)12) + (uint16_t)1;
+
+  /* Check if cmd buffer is large enough */
+  if ((data_size + (uint16_t)12)
+      > (uint16_t)VL53L5CX_TEMPORARY_BUFFER_SIZE) {
+    status |= VL53L5CX_STATUS_ERROR;
+  } else {
+    headers[0] = (uint8_t)(index >> 8);
+    headers[1] = (uint8_t)(index & (uint32_t)0xff);
+    headers[2] = (uint8_t)(((data_size & (uint16_t)0xff0) >> 4));
+    headers[3] = (uint8_t)((data_size & (uint16_t)0xf) << 4);
+
+    /* Copy data from structure to FW format (+4 bytes to add header) */
+    SwapBuffer(data, data_size);
+    for (i = (int16_t)data_size - (int16_t)1 ; i >= 0; i--) {
+      p_dev->temp_buffer[i + 4] = data[i];
     }
 
-    uint32_t range_config_timeout_us = budget_us - TimingGuard;
-    if (range_config_timeout_us > 1100000) {
-        return false; // FDA_MAX_TIMING_BUDGET_US * 2
-    }
+    /* Add headers and footer */
+    (void)memcpy(&p_dev->temp_buffer[0], headers, sizeof(headers));
+    (void)memcpy(&p_dev->temp_buffer[data_size + (uint16_t)4],
+                 footer, sizeof(footer));
 
-    range_config_timeout_us /= 2;
+    /* Send data to FW */
+    status |= WrMulti(&(p_dev->platform), address,
+                      p_dev->temp_buffer,
+                      (uint32_t)((uint32_t)data_size + (uint32_t)12));
+    status |= _vl53l5cx_poll_for_answer(4, 1,
+                                        VL53L5CX_UI_CMD_STATUS, 0xff, 0x03);
 
-    // VL53L1_calc_timeout_register_values() begin
+    SwapBuffer(data, data_size);
+  }
 
-    uint8_t range_config_vcsel_period = 0;
-    if (!read_register(RANGE_CONFIG__VCSEL_PERIOD_A, range_config_vcsel_period)) {
-        return false;
-    }
-
-    // "Update Macro Period for Range A VCSEL Period"
-    uint32_t macro_period_us = calcMacroPeriod(range_config_vcsel_period);
-
-    // "Update Phase timeout - uses Timing A"
-    // Timeout of 1000 is tuning parm default (TIMED_PHASECAL_CONFIG_TIMEOUT_US_DEFAULT)
-    // via VL53L1_get_preset_mode_timing_cfg().
-    uint32_t phasecal_timeout_mclks = timeoutMicrosecondsToMclks(1000, macro_period_us);
-    if (phasecal_timeout_mclks > 0xFF) {
-        phasecal_timeout_mclks = 0xFF;
-    }
-
-    if (!( write_register(PHASECAL_CONFIG__TIMEOUT_MACROP, phasecal_timeout_mclks) &&
-
-          // "Update MM Timing A timeout"
-          // Timeout of 1 is tuning parm default (LOWPOWERAUTO_MM_CONFIG_TIMEOUT_US_DEFAULT)
-          // via VL53L1_get_preset_mode_timing_cfg(). With the API, the register
-          // actually ends up with a slightly different value because it gets assigned,
-          // retrieved, recalculated with a different macro period, and reassigned,
-          // but it probably doesn't matter because it seems like the MM ("mode
-          // mitigation"?) sequence steps are disabled in low power auto mode anyway.
-          write_register16(MM_CONFIG__TIMEOUT_MACROP_A, encodeTimeout(
-              timeoutMicrosecondsToMclks(1, macro_period_us))) &&
-
-          // "Update Range Timing A timeout"
-          write_register16(RANGE_CONFIG__TIMEOUT_MACROP_A, encodeTimeout(
-              timeoutMicrosecondsToMclks(range_config_timeout_us, macro_period_us))) &&
-
-          // "Update Macro Period for Range B VCSEL Period"
-          read_register(RANGE_CONFIG__VCSEL_PERIOD_B, range_config_vcsel_period)
-         )) {
-        return false;
-    }
-
-    // "Update Macro Period for Range B VCSEL Period"
-    macro_period_us = calcMacroPeriod(range_config_vcsel_period);
-
-    // "Update MM Timing B timeout"
-    // (See earlier comment about MM Timing A timeout.)
-    return write_register16(MM_CONFIG__TIMEOUT_MACROP_B, encodeTimeout(
-               timeoutMicrosecondsToMclks(1, macro_period_us))) &&
-
-           // "Update Range Timing B timeout"
-           write_register16(RANGE_CONFIG__TIMEOUT_MACROP_B, encodeTimeout(
-               timeoutMicrosecondsToMclks(range_config_timeout_us, macro_period_us)));
+  return status;
 }
 
-// Get the measurement timing budget in microseconds
-// based on VL53L1_SetMeasurementTimingBudgetMicroSeconds()
-bool AP_RangeFinder_VL53L5CX::getMeasurementTimingBudget(uint32_t &budget)
-{
-    // assumes PresetMode is LOWPOWER_AUTONOMOUS and these sequence steps are
-    // enabled: VHV, PHASECAL, DSS1, RANGE
-
-    // "Update Macro Period for Range A VCSEL Period"
-    uint8_t range_config_vcsel_period_a = 0;
-    if (!read_register(RANGE_CONFIG__VCSEL_PERIOD_A, range_config_vcsel_period_a)) {
-        return false;
-    }
-
-    uint32_t macro_period_us = calcMacroPeriod(range_config_vcsel_period_a);
-
-    uint16_t timeout_macrop_a = 0;
-    if (!read_register16(RANGE_CONFIG__TIMEOUT_MACROP_A, timeout_macrop_a)) {
-        return false;
-    }
-
-    // "Get Range Timing A timeout"
-    uint32_t range_config_timeout_us = timeoutMclksToMicroseconds(decodeTimeout(timeout_macrop_a), macro_period_us);
-
-    budget = 2 * range_config_timeout_us + TimingGuard;
-    return true;
-}
-
-// Start continuous ranging measurements, with the given inter-measurement
-// period in milliseconds determining how often the sensor takes a measurement.
-bool AP_RangeFinder_VL53L5CX::startContinuous(uint32_t period_ms)
-{
-    // fix for actual measurement period shorter than set
-    uint32_t adjusted_period_ms = period_ms + (period_ms * 64 / 1000);
-
-    // from VL53L1_set_inter_measurement_period_ms()
-    return write_register32(SYSTEM__INTERMEASUREMENT_PERIOD, adjusted_period_ms * osc_calibrate_val) &&
-           write_register(SYSTEM__INTERRUPT_CLEAR, 0x01) && // sys_interrupt_clear_range
-           write_register(SYSTEM__MODE_START, 0x40); // mode_range__timed
-}
-
-// Decode sequence step timeout in MCLKs from register value
-// based on VL53L1_decode_timeout()
-uint32_t AP_RangeFinder_VL53L5CX::decodeTimeout(uint16_t reg_val)
-{
-    return ((uint32_t)(reg_val & 0xFF) << (reg_val >> 8)) + 1;
-}
-
-// Encode sequence step timeout register value from timeout in MCLKs
-// based on VL53L1_encode_timeout()
-uint16_t AP_RangeFinder_VL53L5CX::encodeTimeout(uint32_t timeout_mclks)
-{
-    // encoded format: "(LSByte * 2^MSByte) + 1"
-    uint32_t ls_byte = 0;
-    uint16_t ms_byte = 0;
-
-    if (timeout_mclks > 0) {
-        ls_byte = timeout_mclks - 1;
-        while ((ls_byte & 0xFFFFFF00) > 0) {
-            ls_byte >>= 1;
-            ms_byte++;
-        }
-        return (ms_byte << 8) | (ls_byte & 0xFF);
-    }
-    else {
-        return 0;
-    }
-}
-
-// Convert sequence step timeout from macro periods to microseconds with given
-// macro period in microseconds (12.12 format)
-// based on VL53L1_calc_timeout_us()
-uint32_t AP_RangeFinder_VL53L5CX::timeoutMclksToMicroseconds(uint32_t timeout_mclks, uint32_t macro_period_us)
-{
-    return ((uint64_t)timeout_mclks * macro_period_us + 0x800) >> 12;
-}
-
-// Convert sequence step timeout from microseconds to macro periods with given
-// macro period in microseconds (12.12 format)
-// based on VL53L1_calc_timeout_mclks()
-uint32_t AP_RangeFinder_VL53L5CX::timeoutMicrosecondsToMclks(uint32_t timeout_us, uint32_t macro_period_us)
-{
-    return (((uint32_t)timeout_us << 12) + (macro_period_us >> 1)) / macro_period_us;
-}
-
-// Calculate macro period in microseconds (12.12 format) with given VCSEL period
-// assumes fast_osc_frequency has been read and stored
-// based on VL53L1_calc_macro_period_us()
-uint32_t AP_RangeFinder_VL53L5CX::calcMacroPeriod(uint8_t vcsel_period) const
-{
-    // from VL53L1_calc_pll_period_us()
-    // fast osc frequency in 4.12 format; PLL period in 0.24 format
-    uint32_t pll_period_us = ((uint32_t)0x01 << 30) / fast_osc_frequency;
-
-    // from VL53L1_decode_vcsel_period()
-    uint8_t vcsel_period_pclks = (vcsel_period + 1) << 1;
-
-    // VL53L1_MACRO_PERIOD_VCSEL_PERIODS = 2304
-    uint32_t macro_period_us = (uint32_t)2304 * pll_period_us;
-    macro_period_us >>= 6;
-    macro_period_us *= vcsel_period_pclks;
-    macro_period_us >>= 6;
-
-    return macro_period_us;
-}
-
-// "Setup ranges after the first one in low power auto mode by turning off
-// FW calibration steps and programming static values"
-// based on VL53L1_low_power_auto_setup_manual_calibration()
-bool AP_RangeFinder_VL53L5CX::setupManualCalibration(void)
-{
-    uint8_t saved_vhv_init = 0;
-    uint8_t saved_vhv_timeout = 0;
-    uint8_t phasecal_result_vcsel_start = 0;
-
-    return // "save original vhv configs"
-           read_register(VHV_CONFIG__INIT, saved_vhv_init) &&
-           read_register(VHV_CONFIG__TIMEOUT_MACROP_LOOP_BOUND, saved_vhv_timeout) &&
-
-           // "disable VHV init"
-           write_register(VHV_CONFIG__INIT, saved_vhv_init & 0x7F) &&
-
-          // "set loop bound to tuning param"
-          write_register(VHV_CONFIG__TIMEOUT_MACROP_LOOP_BOUND,
-                         (saved_vhv_timeout & 0x03) + (3 << 2)) && // tuning parm default (LOWPOWERAUTO_VHV_LOOP_BOUND_DEFAULT)
-
-          // "override phasecal"
-          write_register(PHASECAL_CONFIG__OVERRIDE, 0x01) &&
-          read_register(PHASECAL_RESULT__VCSEL_START, phasecal_result_vcsel_start) &&
-          write_register(CAL_CONFIG__VCSEL_START, phasecal_result_vcsel_start);
-}
-
-// check if sensor has new reading available
-// assumes interrupt is active low (GPIO_HV_MUX__CTRL bit 4 is 1)
-bool AP_RangeFinder_VL53L5CX::dataReady(void)
-{
-    uint8_t gpio_tio_hv_status = 0;
-
-    return read_register(GPIO__TIO_HV_STATUS, gpio_tio_hv_status) &&
-           ((gpio_tio_hv_status & 0x01) == 0);
-}
 
 // read - return last value measured by sensor
 bool AP_RangeFinder_VL53L5CX::get_reading(uint16_t &reading_mm)

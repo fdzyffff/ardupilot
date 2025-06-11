@@ -9,6 +9,13 @@
 
 #include <AP_HAL/I2CDevice.h>
 
+#define VL53L5CX_STATUS_OK      ((uint8_t) 0U)
+#define VL53L5CX_MCU_ERROR      ((uint8_t) 66U)
+#define VL53L5CX_STATUS_INVALID_PARAM   ((uint8_t) 127U)
+#define VL53L5CX_STATUS_ERROR     ((uint8_t) 255U)
+#define VL53L5CX_RESOLUTION_4X4     ((uint8_t) 16U)
+#define VL53L5CX_RESOLUTION_8X8     ((uint8_t) 64U)
+
 class AP_RangeFinder_VL53L5CX : public AP_RangeFinder_Backend
 {
 
