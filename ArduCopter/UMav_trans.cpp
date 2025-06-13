@@ -224,6 +224,9 @@ void UMav_trans_mission::handle_bsq_msg(const mavlink_message_t &msg)
         bsq_waiting = true;
         last_send_mission_ms = 0;
         receive_bsq_ms = millis();
+        // gcs().send_text(MAV_SEVERITY_INFO, "[%d]lat {%d %d %d}", in_packet.package_number, in_packet.lat[0], in_packet.lat[1], in_packet.lat[2]);
+        // gcs().send_text(MAV_SEVERITY_INFO, "[%d]lng {%d %d %d}", in_packet.package_number, in_packet.lng[0], in_packet.lng[1], in_packet.lng[2]);
+        // gcs().send_text(MAV_SEVERITY_INFO, "[%d]alt {%d %d %d}", in_packet.package_number, in_packet.alt[0], in_packet.alt[1], in_packet.lng[2]);
     }
 }
 
