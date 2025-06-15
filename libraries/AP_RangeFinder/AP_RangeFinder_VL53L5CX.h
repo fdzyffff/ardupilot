@@ -31,6 +31,12 @@
 #define VL53L5CX_NB_TARGET_PER_ZONE     (1U)
 #endif
 
+#define VL53L5CX_RANGING_MODE_CONTINUOUS    ((uint8_t) 1U)
+#define VL53L5CX_RANGING_MODE_AUTONOMOUS    ((uint8_t) 3U)
+#define TIMING_BUDGET (30U) /* 5 ms < TimingBudget < 100 ms */
+#define RANGING_FREQUENCY (5U) /* Ranging frequency Hz (shall be consistent with TimingBudget value) */
+
+
 // #define VL53L5CX_DISABLE_AMBIENT_PER_SPAD
 #define VL53L5CX_DISABLE_NB_SPADS_ENABLED
 #define VL53L5CX_DISABLE_AMBIENT_DMAX
@@ -191,7 +197,7 @@ private:
     // constructor
     AP_RangeFinder_VL53L5CX(RangeFinder::RangeFinder_State &_state, AP_RangeFinder_Params &_params, AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev);
 
-    union Block_header {
+    union PACKED Block_header {
         uint32_t bytes;
         struct {
             uint32_t type : 4;
@@ -215,7 +221,7 @@ private:
         /* Offset buffer */
         uint8_t             offset_data[VL53L5CX_OFFSET_BUFFER_SIZE];
         /* Xtalk buffer */
-        // uint8_t             xtalk_data[VL53L5CX_XTALK_BUFFER_SIZE];
+        uint8_t             xtalk_data[VL53L5CX_XTALK_BUFFER_SIZE];
         /* Temporary buffer used for internal driver processing */
          uint8_t            temp_buffer[VL53L5CX_TEMPORARY_BUFFER_SIZE];
     } VL53L5CX_Configuration;
@@ -321,8 +327,15 @@ private:
 
     VL53L5CX_ResultsData Data;
     RANGING_SENSOR_Result_t Result;
+    Block_header Bh;
     
     bool reset(void);
+
+    uint8_t vl53l5cx_set_resolution(VL53L5CX_Configuration *p_dev, uint8_t resolution);
+    uint8_t vl53l5cx_set_ranging_mode(VL53L5CX_Configuration *p_dev, uint8_t ranging_mode);
+    uint8_t vl53l5cx_set_integration_time_ms(VL53L5CX_Configuration *p_dev, uint32_t integration_time_ms);
+    uint8_t vl53l5cx_set_ranging_frequency_hz(VL53L5CX_Configuration *p_dev, uint8_t frequency_hz);
+
     uint8_t vl53l5cx_start_ranging(VL53L5CX_Configuration *p_dev);
     uint8_t vl53l5cx_check_data_ready(VL53L5CX_Configuration *p_dev, uint8_t *p_isReady);
     uint8_t vl53l5cx_get_resolution(VL53L5CX_Configuration *p_dev, uint8_t *p_resolution);
@@ -331,6 +344,9 @@ private:
     uint8_t vl53l5cx_dci_read_data(VL53L5CX_Configuration *p_dev, uint8_t *data, uint32_t index, uint16_t data_size);
     uint8_t vl53l5cx_dci_write_data(VL53L5CX_Configuration *p_dev, uint8_t *data, uint32_t index, uint16_t data_size);
     uint8_t vl53l5cx_dci_replace_data(VL53L5CX_Configuration *p_dev, uint8_t *data, uint32_t index, uint16_t data_size, uint8_t *new_data, uint16_t new_data_size, uint16_t new_data_pos);
+    uint8_t _vl53l5cx_send_offset_data(VL53L5CX_Configuration *p_dev, uint8_t resolution);
+    uint8_t _vl53l5cx_send_xtalk_data(VL53L5CX_Configuration *p_dev, uint8_t resolution);\
+
     void SwapBuffer(uint8_t *buffer, uint16_t size);
     uint8_t map_target_status(uint8_t status);
     bool read_register(uint16_t reg, uint8_t &value);

@@ -12,11 +12,11 @@ cp build/APzF400/bin/arducopter.apj firmware/$current_datetime\_APzF400_arducopt
 ./waf copter
 # mkdir firmware/APz400
 cp build/APz400-H7/bin/arducopter.apj firmware/$current_datetime\_APz400-H7_arducopter.apj
-# echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
-# ./waf configure --board APzF4
-# ./waf copter
-# # mkdir firmware/APzF4
-# cp build/APzF4/bin/arducopter.apj firmware/$current_datetime\_APzF4_arducopter.apj
+echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
+./waf configure --board APzF4
+./waf copter
+# mkdir firmware/APzF4
+cp build/APzF4/bin/arducopter.apj firmware/$current_datetime\_APzF4_arducopter.apj
 # echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
 # ./waf configure --board APzF4
 # ./waf heli
