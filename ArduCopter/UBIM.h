@@ -17,21 +17,30 @@ public:
     // static const struct AP_Param::GroupInfo var_info[];
 
     void init();
-    void update();
     void update_log();
+    void update();
+    void update_msg_cmd();
+    void update_msg_send();
+    bool switch_back_to_wp();
+    bool switch_hover();
+    bool switch_unlock();
+    bool switch_manual();
+    bool switch_land();
+    bool cmd_add_wp();
+    bool cmd_set_pos();
+    bool cmd_set_speed();
+    bool cmd_set_alt();
+    bool cmd_set_yaw();
+    bool cmd_set_pos_offset();
 
-
-    class enum BIM_STATUS {
-        STANDBY = 0,
-        AUTO = 1,
-        HOVER,
-        MANUAL,
-        LAND,
-    };
-
-    bool uav_armed;
+    bool uav_unlock;
+    bool uav_manual;
+    uint8_t _plat_switch_cmd;
+    uint8_t _plat_switch_act;
+    uint8_t _plat_input_cmd;
+    uint8_t _plat_input_act;
 
 private:
 
-    FD1_UART uart_bim;
+    FD1_UART uart_bim{AP_SerialManager::SerialProtocol_BIM};
 };

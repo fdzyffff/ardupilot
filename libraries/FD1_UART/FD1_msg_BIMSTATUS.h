@@ -17,8 +17,8 @@ public:
         uint8_t  flag_sim;              // 6   1   无   0：真实，1：仿真
         uint16_t uav_type;              // 7   2   无   1：无人车；2：旋翼；3：固定翼；4：非合作目标
         uint32_t uav_id;                // 9   4   无   1~4294967295
-        float    lng;                   // 13  4   有   Y=X*180/（231-1），单位：°
-        float    lat;                   // 17  4   有   Y=X*180/（231-1），单位：°
+        int32_t  lng;                   // 13  4   有   Y=X*180/（231-1），单位：°
+        int32_t  lat;                   // 17  4   有   Y=X*180/（231-1），单位：°
         int16_t  alt_baro;              // 21  2   有   Y=X，单位：m，有符号
         uint16_t nouse_1;               // 23  2   无   
         uint16_t nouse_2;               // 25  2   无   
@@ -33,26 +33,26 @@ public:
         uint16_t nouse_8;               // 43  2   无   
         uint16_t power_rest;            // 45  2   无   电量，Y=X，单位：%
         int32_t  dist_roll;             // 47  4   有   Y=X/10，单位m，指向机头方向左负右正
-        uint8_t  nouse_8;               // 51  1   无   
-        uint8_t  nouse_9;               // 52  1   无    
+        uint8_t  nouse_9;               // 51  1   无   
+        uint8_t  nouse_10;              // 52  1   无    
         uint16_t target_speed;          // 53  2   无   Y=X/16，单位：km/h
         int16_t  target_alt;            // 55  2   有   Y=X，单位：m
-        uint8_t  nouse_10;              // 57  1   无   
+        uint8_t  nouse_11;              // 57  1   无   
         uint16_t next_wp_id;            // 58  2   无   Y=X，1~65535
         uint32_t next_wp_dist;          // 60  4   无   Y=X，单位：m
-        uint16_t nouse_11;              // 64  2   无   
+        uint16_t nouse_12;              // 64  2   无   
         uint8_t  plat_switch_cmd;       // 66  1   无   
         uint8_t  plat_switch_act;       // 67  1   无   0：未执行，1：已执行
         uint8_t  plat_input_cmd;        // 68  1   无   
         uint8_t  plat_input_param[28];  // 69  28  无   
         uint8_t  plat_input_act;        // 97  1   无   0：未执行，1：已执行
-        uint8_t  nouse_12;              // 98  1   无   
-        uint8_t  nouse_13;              // 99  1   无   
-        uint8_t  nouse_14;              // 100 1   无   
-        uint8_t  nouse_15;              // 101 1   无   
-        uint8_t  nouse_16;              // 102 1   无   
-        uint8_t  nouse_17[28];          // 103 28  无   
-        uint8_t  nouse_18;              // 131 1   无   
+        uint8_t  nouse_13;              // 98  1   无   
+        uint8_t  nouse_14;              // 99  1   无   
+        uint8_t  nouse_15;              // 100 1   无   
+        uint8_t  nouse_16;              // 101 1   无   
+        uint8_t  nouse_17;              // 102 1   无   
+        uint8_t  nouse_18[28];          // 103 28  无   
+        uint8_t  nouse_19;              // 131 1   无   
         int32_t  pos_x;                 // 132 4   有   Y=X/100，单位：m
         int32_t  pos_y;                 // 136 4   有   Y=X/100，单位：m
         int32_t  pos_z;                 // 140 4   有   Y=X/100，单位：m

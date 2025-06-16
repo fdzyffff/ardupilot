@@ -52,7 +52,7 @@ void FD1_UART::parse(uint8_t temp)
     if (_msg_BIMSTATUS.enable())   {_msg_BIMSTATUS.parse(temp);}
 }
 
-void FD1_UART::_byte(uint8_t temp)
+void FD1_UART::write_byte(uint8_t temp)
 {
     if(!initialized()) {
         return ;

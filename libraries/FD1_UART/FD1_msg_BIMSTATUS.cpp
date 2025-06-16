@@ -1,14 +1,14 @@
-#include "FD1_msg_BIMSTAUTS.h"
+#include "FD1_msg_BIMSTATUS.h"
 #include <GCS_MAVLink/GCS.h>
 
-FD1_msg_BIMSTAUTS::FD1_msg_BIMSTAUTS(void)
+FD1_msg_BIMSTATUS::FD1_msg_BIMSTATUS(void)
 {
     _enable = false;
     _msg_1.need_send = false;
     _msg_1.updated = false;
 }
 
-void FD1_msg_BIMSTAUTS::parse(uint8_t temp)
+void FD1_msg_BIMSTATUS::parse(uint8_t temp)
 {
     // gcs().send_text(MAV_SEVERITY_INFO, "State: %d, Byte: %d",_msg.msg_state, temp);
     switch (_msg.msg_state)
@@ -65,7 +65,7 @@ void FD1_msg_BIMSTAUTS::parse(uint8_t temp)
     }
 }
 
-void FD1_msg_BIMSTAUTS::process_message(void)
+void FD1_msg_BIMSTATUS::process_message(void)
 {
     int16_t i = 0;
 
@@ -78,7 +78,7 @@ void FD1_msg_BIMSTAUTS::process_message(void)
     _msg_1.print = true;
 }
 
-void FD1_msg_BIMSTAUTS::swap_message(void)
+void FD1_msg_BIMSTATUS::swap_message(void)
 {
     // _msg_1.content.msg.psi = swap_message_uint32_t(_msg_1.content.msg.psi);
     // _msg_1.content.msg.ps = swap_message_uint32_t(_msg_1.content.msg.ps);
@@ -112,7 +112,7 @@ void FD1_msg_BIMSTAUTS::swap_message(void)
     // _msg_1.content.msg.coffangle_k3 = swap_message_int16_t(_msg_1.content.msg.coffangle_k3);
 }
 
-void FD1_msg_BIMSTAUTS::sum_check()
+void FD1_msg_BIMSTATUS::sum_check()
 {
     int16_t i = 0;
     _msg_1.content.msg.header.head_1 = PREAMBLE1;

@@ -589,7 +589,11 @@ void AP_SerialManager::init()
                                          AP_SERIALMANAGER_PPP_BUFSIZE_TX);
                     break;
 #endif
-                    
+                case SerialProtocol_BIM:
+                    uart->begin(state[i].baudrate(),
+                                         512,
+                                         512);
+                    break;
                 default:
                     uart->begin(state[i].baudrate());
             }

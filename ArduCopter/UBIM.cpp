@@ -10,8 +10,8 @@ UBIM::UBIM()
 void UBIM::init()
 {
     if (uart_bim.init()) {
-        uart_bim.get_msg_BIMCMD().set_enable(true);
-        uart_bim.get_msg_BIMSTATUS().set_enable(true);
+        uart_bim.get_msg_BIMCMD().set_enable();
+        uart_bim.get_msg_BIMSTATUS().set_enable();
         gcs().send_text(MAV_SEVERITY_INFO, "BIM INIT");
     } else {
         gcs().send_text(MAV_SEVERITY_WARNING, "Err: BIM INIT FAIL");
@@ -19,7 +19,8 @@ void UBIM::init()
 }
 
 
-void UBIM::update_log() {
+void UBIM::update_log()
+{
     // AP::logger().WriteStreaming("UATK",
     //                             "TimeUS,bfx,bfy,efx,efy,efrx,efry,tpth,trll,tyaw",
     //                             "s---------",
@@ -86,67 +87,163 @@ void UBIM::update()
     static uint32_t last_count_ms = millis();
     uint32_t tnow_ms = millis();
     if (tnow_ms - last_count_ms > 1000) {
-        display_info.count_log = display_info.count;
-        display_info.count = 0;
-        last_count_ms = tnow_ms;
-        //update filter cutoff HZ in flight
-        _yaw_sample_filter.set_cutoff_frequency(30.f, filt_yaw_hz.get());
-        _pitch_sample_filter.set_cutoff_frequency(30.f, filt_pithc_hz.get());
+        update_log();
     }
 
+    update_msg_cmd();
+    update_msg_send();
+}
+
+void UBIM::update_msg_cmd()
+{
     while (uart_bim.port_avaliable() > 0) {
         uint8_t temp = uart_bim.read_byte();
         uart_bim.parse(temp);
 
-        if (uart_bim.get_msg_BIMCMD()._msg_1.updated) {
-            FD1_msg_BIMCMD &tmp_msg = uart_bim.get_msg_BIMCMD();
-            uint8_t plat_switch_cmd = tmp_msg._msg_1.content.msg.plat_switch_cmd[0];
-            uint8_t plat_input_cmd = tmp_msg._msg_1.content.msg.plat_input_cmd[0];
-            switch (plat_switch_cmd) {
+        FD1_msg_BIMCMD &tmp_msg = uart_bim.get_msg_BIMCMD();
+        if (tmp_msg._msg_1.updated) {
+            
+            _plat_switch_cmd = tmp_msg._msg_1.content.msg.plat_switch_cmd[0];
+            switch (_plat_switch_cmd) {
                 case 0xA0:
                     {
-                        switch_back_to_wp();
+                        _plat_switch_act = switch_back_to_wp();
                         break;
                     }
                 case 0x28:
                     {
-                        switch_hover();
+                        _plat_switch_act = switch_hover();
                         break;
                     }
                 case 0x40:
                     {
-                        switch_arm();
+                        _plat_switch_act = switch_unlock();
                         break;
                     }
                 case 0x42:
                     {
-                        switch_manual();
+                        _plat_switch_act = switch_manual();
                         break;
                     }
                 case 0x44:
                     {
-                        switch_land();
+                        _plat_switch_act = switch_land();
                         break;
                     }
                 default:
+                    _plat_switch_act = false;
                     break;
             }
 
-            switch (plat_switch_cmd) {
-                case :
+            _plat_input_cmd = tmp_msg._msg_1.content.msg.plat_input_cmd[0];
+            switch (_plat_input_cmd) {
+                case 0x56:
                     {
+                        _plat_input_act = cmd_add_wp();
+                        break;
+                    }
+                case 0x72:
+                    {
+                        _plat_input_act = cmd_set_pos();
+                        break;
+                    }
+                case 0x74:
+                    {
+                        _plat_input_act = cmd_set_speed();
+                        break;
+                    }
+                case 0x76:
+                    {
+                        _plat_input_act = cmd_set_alt();
+                        break;
+                    }
+                case 0x78:
+                    {
+                        _plat_input_act = cmd_set_yaw();
+                        break;
+                    }
+                case 0x7A:
+                    {
+                        _plat_input_act = cmd_set_pos_offset();
                         break;
                     }
                 default:
+                    _plat_input_act = false;
                     break;
             }
-
         }
     }
+}
 
-    if (AP_HAL::millis() - _last_post > 1000) {
-        _last_post = AP_HAL::millis();
-        update_log();
-        // GCS_SEND_TEXT(MAV_SEVERITY_INFO, "PORT IN : %x", b);
+void UBIM::update_msg_send()
+{
+    static uint32_t last_send_ms = millis();
+    uint32_t tnow_ms = millis();
+    if (tnow_ms - last_send_ms > 100) {
+        FD1_msg_BIMSTATUS &tmp_msg = uart_bim.get_msg_BIMSTATUS();
+        tmp_msg._msg_1.need_send = true;
+
+        tmp_msg._msg_1.content.msg.idx = 0x01;
+        tmp_msg._msg_1.content.msg.version = 0x00;
+        tmp_msg._msg_1.content.msg.flag_sim = 1;
+        tmp_msg._msg_1.content.msg.uav_type = 2;
+        tmp_msg._msg_1.content.msg.uav_id = copter.g.sysid_this_mav.get();
+        tmp_msg._msg_1.content.msg.lng = 0.0;
+        tmp_msg._msg_1.content.msg.lat = 0.0;
+        if (copter.position_ok()) {
+            tmp_msg._msg_1.content.msg.lng = (int32_t)(((float)copter.current_loc.lng) * (2147483647.f/180.f));
+            tmp_msg._msg_1.content.msg.lat = (int32_t)(((float)copter.current_loc.lat) * (2147483647.f/180.f));
+        }
+        float tmp_alt = 0.0f;
+        if (copter.ahrs_view->get_relative_position_D_origin(tmp_alt))
+        {
+            ;
+        }
+        tmp_msg._msg_1.content.msg.alt_baro = (int16_t)tmp_alt;
+        tmp_msg._msg_1.content.msg.pitch = (int16_t)(degrees(copter.ahrs_view->pitch) * (65535.f/180.f));
+        tmp_msg._msg_1.content.msg.roll = (int16_t)(degrees(copter.ahrs_view->roll) * (65535.f/180.f));
+        tmp_msg._msg_1.content.msg.yaw = (int16_t)(wrap_360(degrees(copter.ahrs_view->yaw)) * (65535.f/360.f));
+        tmp_msg._msg_1.content.msg.power_rest = 99;
+        tmp_msg._msg_1.content.msg.dist_roll = 0;
+        tmp_msg._msg_1.content.msg.target_speed = 0;
+        tmp_msg._msg_1.content.msg.target_alt = 0;
+        tmp_msg._msg_1.content.msg.next_wp_id = copter.mode_auto.mission.get_current_nav_index();
+        tmp_msg._msg_1.content.msg.next_wp_dist = copter.flightmode->wp_distance();
+        tmp_msg._msg_1.content.msg.plat_switch_cmd = _plat_switch_cmd;
+        tmp_msg._msg_1.content.msg.plat_switch_act = _plat_switch_act;
+        tmp_msg._msg_1.content.msg.plat_input_cmd = _plat_input_cmd;
+        memcpy(tmp_msg._msg_1.content.msg.plat_input_param, uart_bim.get_msg_BIMSTATUS()._msg_1.content.msg.plat_input_param, 28);
+        tmp_msg._msg_1.content.msg.plat_input_act = _plat_input_act;
+        tmp_msg._msg_1.content.msg.pos_x = 0.0f;
+        tmp_msg._msg_1.content.msg.pos_y = 0.0f;
+        tmp_msg._msg_1.content.msg.pos_z = 0.0f;
+        if (copter.position_ok()) {
+            Vector3f current_pos;
+            if (copter.ahrs_view->get_relative_position_NED_origin(current_pos))
+            {
+                ;
+            }
+            tmp_msg._msg_1.content.msg.pos_x =  current_pos.y;
+            tmp_msg._msg_1.content.msg.pos_y =  current_pos.x;
+            tmp_msg._msg_1.content.msg.pos_z = -current_pos.z;
+        }
+        tmp_msg._msg_1.content.msg.control_mode = uav_manual?2:1;
+        if (copter.motors->armed()) {
+            tmp_msg._msg_1.content.msg.uav_moving_status = 1;
+        } else {
+            tmp_msg._msg_1.content.msg.uav_moving_status = 0;
+        }
+        tmp_msg._msg_1.content.msg.arm_status = uav_unlock?1:0;
+        tmp_msg._msg_1.content.msg.copter_speed = 0.0f;
+        if (copter.position_ok()) {
+            Vector3f tmp_vec;
+            if (copter.ahrs_view->get_velocity_NED(tmp_vec))
+            {
+                ;
+            }
+            tmp_msg._msg_1.content.msg.copter_speed = tmp_vec.xy().length();
+        }
+        tmp_msg.sum_check();
+        uart_bim.write();
     }
 }
