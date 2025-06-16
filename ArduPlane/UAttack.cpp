@@ -23,10 +23,11 @@ const AP_Param::GroupInfo UAttack::var_info[] = {
     AP_GROUPINFO("FILT_Y_HZ",  18, UAttack, filt_yaw_hz,             2.0f),
     AP_GROUPINFO("FILT_P_HZ",  19, UAttack, filt_pithc_hz,           2.0f),
 
-    AP_SUBGROUPPTR(_Target_ptr_loc,        "TL_",    20, UAttack,  FD_Target_Loc),
-    AP_SUBGROUPPTR(_Target_ptr_cam_mav,    "TC0_",   21, UAttack,  FD_Target_Mav),
-    AP_SUBGROUPPTR(_Target_ptr_cam_rk3588, "TC1_",   22, UAttack,  FD_Target_RK3588),
-    AP_SUBGROUPPTR(_Target_ptr_cam_k230,   "TC2_",   23, UAttack,  FD_Target_K230),
+    AP_SUBGROUPPTR(_Target_ptr_loc,           "TL_",    20, UAttack,  FD_Target_Loc),
+    AP_SUBGROUPPTR(_Target_ptr_cam_mav,       "TC0_",   21, UAttack,  FD_Target_Mav),
+    AP_SUBGROUPPTR(_Target_ptr_cam_rk3588,    "TC1_",   22, UAttack,  FD_Target_RK3588),
+    AP_SUBGROUPPTR(_Target_ptr_cam_k230,      "TC2_",   23, UAttack,  FD_Target_K230),
+    AP_SUBGROUPPTR(_Target_ptr_cam_topotek,   "TC5_",   24, UAttack,  FD_Target_Topotek),
     AP_GROUPEND
 };
 
@@ -191,6 +192,17 @@ void UAttack::init_target()
             } else {
                 gcs().send_text(MAV_SEVERITY_WARNING, "Target LRB Fail");
                 _Target_ptr_cam_lrb = nullptr;
+            }
+        } 
+        else if (use_target_cam_type.get() == 5) {
+            _Target_ptr_cam_topotek = new FD_Target_Topotek();
+            if (_Target_ptr_cam_topotek->init()) {
+                gcs().send_text(MAV_SEVERITY_WARNING, "Target Topotek init");
+                _Target_ptr_cam = _Target_ptr_cam_topotek;
+                AP_Param::load_object_from_eeprom(_Target_ptr_cam_topotek, FD_Target_Topotek::var_info);
+            } else {
+                gcs().send_text(MAV_SEVERITY_WARNING, "Target Topotek Fail");
+                _Target_ptr_cam_topotek = nullptr;
             }
         } 
         else {
