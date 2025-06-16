@@ -66,7 +66,7 @@ float FD_Target_LRB::cal_frame_angle(float pixel, float angle, float x_in)
     // ret, eg: 0°
     pixel = constrain_float(pixel, 100.0f, 8000.f);
     angle = constrain_float(radians(angle), radians(10.0f), radians(150.0f));
-    x_in = constrain_float(x_in, 0.f, pixel);
+    x_in = constrain_float(x_in, -pixel, pixel);
     float ret = atanf(2.0f*(x_in-pixel*0.5f)/pixel*tanf(angle*0.5f));
     return degrees(ret);
 }

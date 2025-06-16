@@ -7,4 +7,9 @@ echo "~~~~~~~~~~~~~~~ start ~~~~~~~~~~~~~~~"
 ./waf copter
 # mkdir firmware/KakuteH7
 cp build/KakuteH7/bin/arducopter.apj firmware/$current_datetime\_KakuteH7_arducopter.apj 
+echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
+./waf configure --board MatekH743
+./waf copter
+# mkdir firmware/MatekH743
+cp build/MatekH743/bin/arducopter.apj firmware/$current_datetime\_MatekH743_arducopter.apj 
 echo "~~~~~~~~~~~~~~~ done ~~~~~~~~~~~~~~~"

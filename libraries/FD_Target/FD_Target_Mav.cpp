@@ -52,8 +52,10 @@ void FD_Target_Mav::handle_msg(const mavlink_message_t &msg)
             case MAV_CMD_USER_5:
                 {
                     _last_ms = millis();
+                    // gcs().send_text(MAV_SEVERITY_INFO, "p1 %f| p2 %f", packet.param1, packet.param2);
                     float theta1 =  cal_frame_angle(cam_width.get(), cam_angle_x.get(), packet.param1); // x-axis, degree
-                    float theta2 = -cal_frame_angle(cam_height.get(), cam_angle_y.get(), packet.param2); // y-axis, degree
+                    float theta2 =  cal_frame_angle(cam_height.get(), cam_angle_y.get(), packet.param2); // y-axis, degree
+                    // gcs().send_text(MAV_SEVERITY_INFO, "t1 %f| t2 %f", theta1, theta2);
 
                     Vector3f tmp = Vector3f(1.f, tanf(radians(theta1)), -tanf(radians(theta2)));
                     float p1 =  degrees(atanf(tmp.y/tmp.x));
@@ -76,8 +78,8 @@ float FD_Target_Mav::cal_frame_angle(float pixel, float angle, float x_in)
     // ret, eg: 0°
     pixel = constrain_float(pixel, 100.0f, 8000.f);
     angle = constrain_float(radians(angle), radians(10.0f), radians(150.0f));
-    x_in = constrain_float(x_in, 0.f, pixel);
-    float ret = atanf(2.0f*(x_in-pixel*0.5f)/pixel*tanf(angle*0.5f));
+    x_in = constrain_float(x_in, -pixel, pixel);
+    float ret = atanf(2.0f*x_in/pixel*tanf(angle*0.5f));
     return degrees(ret);
 }
 
