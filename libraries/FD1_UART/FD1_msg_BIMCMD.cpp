@@ -10,7 +10,7 @@ FD1_msg_BIMCMD::FD1_msg_BIMCMD(void)
 
 void FD1_msg_BIMCMD::parse(uint8_t temp)
 {
-    // gcs().send_text(MAV_SEVERITY_INFO, "State: %d, Byte: %d",_msg.msg_state, temp);
+    // gcs().send_text(MAV_SEVERITY_INFO, "State: %d, Byte: %x",_msg.msg_state, temp);
     switch (_msg.msg_state)
     {
         default:
@@ -38,7 +38,7 @@ void FD1_msg_BIMCMD::parse(uint8_t temp)
             }
             break;
         case FD1UART_msg_parser::FD1UART_DATA:
-            if (_msg.read >= sizeof(_msg.data)-2) {
+            if (_msg.read >= sizeof(_msg.data)-1) {
                 _msg.msg_state = FD1UART_msg_parser::FD1UART_PREAMBLE1;
                 break;
             }
@@ -54,7 +54,7 @@ void FD1_msg_BIMCMD::parse(uint8_t temp)
         case FD1UART_msg_parser::FD1UART_SUM:
             _msg.data[_msg.read] = temp;
 
-            // gcs().send_text(MAV_SEVERITY_INFO, "State: %d, Byte: %x - %x", _msg.msg_state, temp, (_msg.sum_check>>8));
+            // gcs().send_text(MAV_SEVERITY_INFO, "State: %d, Byte: %x - %x", _msg.msg_state, temp, _msg.sum_check);
             if (temp == _msg.sum_check)
             {
                 process_message();

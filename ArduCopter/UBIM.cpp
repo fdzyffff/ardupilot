@@ -99,9 +99,13 @@ void UBIM::update_msg_cmd()
     while (uart_bim.port_avaliable() > 0) {
         uint8_t temp = uart_bim.read_byte();
         uart_bim.parse(temp);
+        // gcs().send_text(MAV_SEVERITY_INFO, "temp %x", temp);
 
         FD1_msg_BIMCMD &tmp_msg = uart_bim.get_msg_BIMCMD();
         if (tmp_msg._msg_1.updated) {
+            if (tmp_msg._msg_1.content.msg.uav_id != (uint32_t)copter.g.sysid_this_mav.get()) {
+                return;
+            }
             
             _plat_switch_cmd = tmp_msg._msg_1.content.msg.plat_switch_cmd[0];
             switch (_plat_switch_cmd) {
@@ -180,6 +184,8 @@ void UBIM::update_msg_send()
     static uint32_t last_send_ms = millis();
     uint32_t tnow_ms = millis();
     if (tnow_ms - last_send_ms > 100) {
+        last_send_ms = tnow_ms;
+
         FD1_msg_BIMSTATUS &tmp_msg = uart_bim.get_msg_BIMSTATUS();
         tmp_msg._msg_1.need_send = true;
 
@@ -191,8 +197,8 @@ void UBIM::update_msg_send()
         tmp_msg._msg_1.content.msg.lng = 0.0;
         tmp_msg._msg_1.content.msg.lat = 0.0;
         if (copter.position_ok()) {
-            tmp_msg._msg_1.content.msg.lng = (int32_t)(((float)copter.current_loc.lng) * (2147483647.f/180.f));
-            tmp_msg._msg_1.content.msg.lat = (int32_t)(((float)copter.current_loc.lat) * (2147483647.f/180.f));
+            // tmp_msg._msg_1.content.msg.lng = (int32_t)(((float)copter.current_loc.lng) * (2147483647.f/180.f));
+            // tmp_msg._msg_1.content.msg.lat = (int32_t)(((float)copter.current_loc.lat) * (2147483647.f/180.f));
         }
         float tmp_alt = 0.0f;
         if (copter.ahrs_view->get_relative_position_D_origin(tmp_alt))
@@ -218,14 +224,14 @@ void UBIM::update_msg_send()
         tmp_msg._msg_1.content.msg.pos_y = 0.0f;
         tmp_msg._msg_1.content.msg.pos_z = 0.0f;
         if (copter.position_ok()) {
-            Vector3f current_pos;
-            if (copter.ahrs_view->get_relative_position_NED_origin(current_pos))
-            {
-                ;
-            }
-            tmp_msg._msg_1.content.msg.pos_x =  current_pos.y;
-            tmp_msg._msg_1.content.msg.pos_y =  current_pos.x;
-            tmp_msg._msg_1.content.msg.pos_z = -current_pos.z;
+            // Vector3f current_pos;
+            // if (copter.ahrs_view->get_relative_position_NED_origin(current_pos))
+            // {
+            //     ;
+            // }
+            // tmp_msg._msg_1.content.msg.pos_x =  current_pos.y;
+            // tmp_msg._msg_1.content.msg.pos_y =  current_pos.x;
+            // tmp_msg._msg_1.content.msg.pos_z = -current_pos.z;
         }
         tmp_msg._msg_1.content.msg.control_mode = uav_manual?2:1;
         if (copter.motors->armed()) {
@@ -236,12 +242,12 @@ void UBIM::update_msg_send()
         tmp_msg._msg_1.content.msg.arm_status = uav_unlock?1:0;
         tmp_msg._msg_1.content.msg.copter_speed = 0.0f;
         if (copter.position_ok()) {
-            Vector3f tmp_vec;
-            if (copter.ahrs_view->get_velocity_NED(tmp_vec))
-            {
-                ;
-            }
-            tmp_msg._msg_1.content.msg.copter_speed = tmp_vec.xy().length();
+            // Vector3f tmp_vec;
+            // if (copter.ahrs_view->get_velocity_NED(tmp_vec))
+            // {
+            //     ;
+            // }
+            // tmp_msg._msg_1.content.msg.copter_speed = tmp_vec.xy().length();
         }
         tmp_msg.sum_check();
         uart_bim.write();
