@@ -14,6 +14,8 @@ void UPayload::init()
     _new_msg = false;
     FD_uart_payload.init();
     FD_uart_payload.get_msg_payload().set_enable();
+    _fire_ms = 0;
+    copter.gcs().send_text(MAV_SEVERITY_WARNING, "Payload Init");
 }
 
 // clear return path and set home location.  This should be called as part of the arming procedure
@@ -425,6 +427,8 @@ void UPayload::update()
     // send cmd to payload to push state to desire_state
     push_state();
 
+    update_fire();
+
     // for test purpose
     // static uint32_t last_test_ms = millis();
     // if (millis() - last_test_ms >5000 && (_desire_state == _current_state)) {
@@ -497,5 +501,58 @@ void UPayload::cmd_handle(int16_t cmd_in)
 
     if (cmd_in == 2) {
         set_state(payload_fire);
+    }
+}
+
+void UPayload::handle_msg(const mavlink_message_t &msg)
+{
+    if (msg.msgid == MAVLINK_MSG_ID_COMMAND_LONG) {
+        // decode packet
+        // gcs().send_text(MAV_SEVERITY_WARNING, "Target mavpkg");
+        // decode packet
+        mavlink_command_long_t packet;
+        mavlink_msg_command_long_decode(&msg, &packet);
+        switch(packet.command) {
+            case MAV_CMD_USER_5:
+                {
+                    if (is_equal(packet.param1, 1.0f)) {
+                        _fire_ms = millis();
+                        _fire_count_s = packet.param2;
+                        gcs().send_text(MAV_SEVERITY_INFO, "fire after %0.1fs", _fire_count_s);
+                    }
+
+                    if (is_equal(packet.param1, 0.0f)) {
+                        _fire_ms = 0;
+                        _fire_count_s = 0.0f;
+                        gcs().send_text(MAV_SEVERITY_INFO, "fire cancel");
+                        set_state(payload_disarm);
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+void UPayload::update_fire()
+{
+    if (_fire_ms == 0) {return;}
+    float dt = ((float)(millis() - _fire_ms)) * 0.001f;
+    if (dt > _fire_count_s) {
+        if (copter.motors->armed()) {
+            set_state(payload_fire);
+        } else {
+            gcs().send_text(MAV_SEVERITY_INFO, "fire cancel due to disarm");
+        }
+        _fire_ms = 0;
+        _fire_count_s = 0.0f;
+    }
+
+
+    static uint32_t _last_info_ms = millis();
+    if (millis() - _last_info_ms > 10000) {
+        _last_info_ms = millis();
+        gcs().send_text(MAV_SEVERITY_INFO, "fire after %0.1fs", _fire_count_s - dt);
     }
 }

@@ -26,6 +26,7 @@ public:
     void send_state_msg(state_t state);
     void cmd_handle(int16_t cmd_in);
     bool initialised() {return FD_uart_payload.initialized();}
+    void handle_msg(const mavlink_message_t &msg);
 
 private:
 
@@ -36,9 +37,13 @@ private:
     uint32_t _last_state_ms;
     bool _new_msg;
 
+    uint32_t _fire_ms;
+    float _fire_count_s;
+
     void msg_payload2apm_handle();
     void send_current_state_text();
     void do_next_state();
     void push_state();
     void flying_check();
+    void update_fire();
 };

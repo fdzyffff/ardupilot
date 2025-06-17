@@ -642,7 +642,7 @@ bool GCS_MAVLINK_Copter::handle_guided_request(AP_Mission::Mission_Command &cmd)
 void GCS_MAVLINK_Copter::packetReceived(const mavlink_status_t &status,
                                         const mavlink_message_t &msg)
 {
-    copter.user_count_msg(msg);
+    // copter.user_count_msg(msg);
     // we handle these messages here to avoid them being blocked by mavlink routing code
 #if HAL_ADSB_ENABLED
     if (copter.g2.dev_options.get() & DevOptionADSBMAVLink) {
@@ -656,6 +656,7 @@ void GCS_MAVLINK_Copter::packetReceived(const mavlink_status_t &status,
 #endif
     copter.umav.handle_mission_msg(msg);
     copter.uattack.handle_attack_msg(msg);
+    copter.upayload.handle_msg(msg);
     GCS_MAVLINK::packetReceived(status, msg);
 }
 
