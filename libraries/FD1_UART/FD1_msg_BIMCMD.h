@@ -50,9 +50,9 @@ public:
 
     // 旋翼机XYZ位移
     struct PACKED MSG_Input_7AH {//遥控帧字节  信号名          参数范围                精度          分辨率           变换关系
-        float    offset_pos_x;   //21~24      X              -10000000m-10000000m    0.01m         1/100           Y=X/100
-        float    offset_pos_y;   //25~28      Y              -10000000m-10000000m    0.01m         1/100           Y=X/100
-        float    offset_pos_z;   //29~32      Z              -10000000m-10000000m    0.01m         1/100           Y=X/100
+        int32_t  offset_pos_x;   //21~24      X              -10000000m-10000000m    0.01m         1/100           Y=X/100
+        int32_t  offset_pos_y;   //25~28      Y              -10000000m-10000000m    0.01m         1/100           Y=X/100
+        int32_t  offset_pos_z;   //29~32      Z              -10000000m-10000000m    0.01m         1/100           Y=X/100
         uint8_t  empty[12];      //33~48      空                   
     };
 

@@ -591,8 +591,10 @@ void AP_SerialManager::init()
 #endif
                 case SerialProtocol_BIM:
                     uart->begin(state[i].baudrate(),
-                                         512,
-                                         512);
+                                         256,
+                                         256);
+                    // uart->set_flow_control(AP_HAL::UARTDriver::FLOW_CONTROL_DISABLE);
+                    // uart->set_unbuffered_writes(true);
                     break;
                 default:
                     uart->begin(state[i].baudrate());

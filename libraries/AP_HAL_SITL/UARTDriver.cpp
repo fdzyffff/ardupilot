@@ -837,6 +837,7 @@ void UARTDriver::handle_writing_from_writebuffer_to_device()
         }
     }
 #endif
+    _packetise = false;
     if (_packetise) {
         uint16_t n = _writebuffer.available();
         n = MIN(n, max_bytes);

@@ -35,6 +35,7 @@ public:
     void parse(uint8_t temp);
     void write();
     void write_byte(uint8_t temp);
+    AP_HAL::UARTDriver* get_port() {return _port;}
 
     uint32_t port_avaliable();
 

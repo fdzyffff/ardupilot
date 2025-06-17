@@ -124,16 +124,19 @@ bool UBIM::cmd_set_pos_offset()
         ;
     }
     current_pos.z = -current_pos.z; // from NED to NEU
+    current_pos = current_pos * 100.f;
     FD1_msg_BIMCMD &tmp_msg = uart_bim.get_msg_BIMCMD();
     Vector3f tmp_pos = Vector3f(
-        tmp_msg._msg_1.content.msg.plat_input_param.input_7AH.offset_pos_y,
-        tmp_msg._msg_1.content.msg.plat_input_param.input_7AH.offset_pos_x,
-        tmp_msg._msg_1.content.msg.plat_input_param.input_7AH.offset_pos_z
+        (float)tmp_msg._msg_1.content.msg.plat_input_param.input_7AH.offset_pos_y,
+        (float)tmp_msg._msg_1.content.msg.plat_input_param.input_7AH.offset_pos_x,
+        (float)tmp_msg._msg_1.content.msg.plat_input_param.input_7AH.offset_pos_z
         );
-    tmp_pos = tmp_pos + current_pos; // NEU
-    if (copter.mode_guided.set_destination(tmp_pos))
+    // gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV tmp_pos [%0.1f, %0.1f, %0.1f]", tmp_pos.x, tmp_pos.y, tmp_pos.z);
+    // tmp_pos = tmp_pos + current_pos; // NEU
+    // gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV offset pos [%0.1f, %0.1f, %0.1f]", tmp_pos.x, tmp_pos.y, tmp_pos.z);
+    if (copter.mode_guided.set_destination(tmp_pos + current_pos))
     {
-        gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV set posoff");
+        gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV set posoff [%0.1f, %0.1f, %0.1f]", tmp_pos.x, tmp_pos.y, tmp_pos.z);
         return true;
     } else {
         gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV set posoff Fail");
