@@ -71,12 +71,22 @@ bool UBIM::switch_manual()
         gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV hover reject, set unlock first!");
         return false;
     }
-    if (!uav_manual) {
+    // if (!uav_manual) {
         uav_manual = true;
         gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV manual");
-    } else {
-        // gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV already manual");
-    }
+
+
+        if (!copter.set_mode(Mode::Number::GUIDED, ModeReason::GCS_COMMAND))
+        {
+            gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV can NOT hover");
+            return false;
+        }
+
+        copter.mode_guided.init(false);
+
+    // } else {
+    //     // gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV already manual");
+    // }
     return true;
 }
 
@@ -86,11 +96,11 @@ bool UBIM::switch_land()
         gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV hover reject, set unlock first!");
         return false;
     }
-    if (!uav_manual) 
-    {
-        gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV land reject, set manual first!");
-        return false;
-    }
+    // if (!uav_manual) 
+    // {
+    //     gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV land reject, set manual first!");
+    //     return false;
+    // }
     if (copter.set_mode(Mode::Number::LAND, ModeReason::GCS_COMMAND)) 
     {
         // gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV land");
