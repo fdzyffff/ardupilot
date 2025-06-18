@@ -75,7 +75,6 @@ bool UBIM::switch_manual()
         uav_manual = true;
         gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV manual");
 
-
         if (!copter.set_mode(Mode::Number::GUIDED, ModeReason::GCS_COMMAND))
         {
             gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV can NOT hover");
