@@ -833,6 +833,10 @@ bool AP_Arming_Copter::disarm(const AP_Arming::Method method, bool do_disarm_che
     copter.mode_autotune.autotune.disarmed(copter.flightmode == &copter.mode_autotune);
 #endif
 
+    copter.ubim.uav_unlock = false;
+    copter.ubim.uav_manual = false;
+    copter.mode_auto.mission.clear();
+    gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV wp clear %d", copter.mode_auto.mission.num_commands());
     return true;
 }
 

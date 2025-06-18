@@ -51,14 +51,17 @@ bool UBIM::switch_hover()
 bool UBIM::switch_unlock()
 {
     if (!uav_unlock) {
-        uav_unlock = true;
-        gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV unlock");
-        copter.set_mode(Mode::Number::GUIDED, ModeReason::GCS_COMMAND);
-        copter.mode_auto.mission.clear();
-        gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV wp clear %d", copter.mode_auto.mission.num_commands());
+        ;
     } else {
         // gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV already unlock");
     }
+
+    uav_unlock = true;
+    uav_manual = false;
+    gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV unlock");
+    copter.set_mode(Mode::Number::GUIDED, ModeReason::GCS_COMMAND);
+    copter.mode_auto.mission.clear();
+    gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV wp clear %d", copter.mode_auto.mission.num_commands());
     return true;
 }
 

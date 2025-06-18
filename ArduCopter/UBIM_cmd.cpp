@@ -7,7 +7,17 @@ bool UBIM::cmd_add_wp()
         return false;
     }
 
+    if (!uav_unlock) {
+        gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV wp Fail, need unlock");
+        return false;
+    }
+
     FD1_msg_BIMCMD &tmp_msg = uart_bim.get_msg_BIMCMD();
+
+    if (tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_idx == 1) {
+        copter.mode_auto.mission.clear();
+        gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV wp clear %d", copter.mode_auto.mission.num_commands());
+    }
 
     if (copter.mode_auto.mission.num_commands() == 0) {
         AP_Mission::Mission_Command tmp_cmd;
@@ -45,10 +55,11 @@ bool UBIM::cmd_add_wp()
             tmp_cmd.content.location = Location(tmp_pos, Location::AltFrame::ABSOLUTE);
             tmp_cmd.id = MAV_CMD_NAV_WAYPOINT;
             tmp_cmd.p1 = 1;
-            gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV wp [%0.1f, %0.1f, %0.1f]", tmp_pos.x, tmp_pos.y, tmp_pos.z);
+            gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV wp [%0.1f, %0.1f, %0.1f] %0.1f", tmp_pos.x, tmp_pos.y, tmp_pos.z, (float)tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_speed);
             // tmp_cmd.content.location.lng = 
             // tmp_cmd.content.location.lat = 
             // tmp_cmd.content.location.alt = 
+            AP_Param::set_default_by_name("WPNAV_SPEED", (float)tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_speed);
             break;
         }
         case 1:
