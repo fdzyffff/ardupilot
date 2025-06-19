@@ -43,6 +43,7 @@ bool UBIM::cmd_add_wp()
         return false;
     }
 
+    uav_wp_ok = false;
     AP_Mission::Mission_Command tmp_cmd;
     switch (tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_type) {
         case 0:
@@ -85,6 +86,7 @@ bool UBIM::cmd_add_wp()
             tmp_cmd.content.location = Location(tmp_pos, Location::AltFrame::ABSOLUTE);
             tmp_cmd.id = MAV_CMD_NAV_LAND;
             tmp_cmd.p1 = 1;
+            uav_wp_ok = true;
             break;
         }
     }

@@ -35,6 +35,7 @@ public:
 
     bool uav_unlock;
     bool uav_manual;
+    bool uav_wp_ok;
     uint8_t _plat_switch_cmd;
     uint8_t _plat_switch_act;
     uint8_t _plat_input_cmd;

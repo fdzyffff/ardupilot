@@ -3,7 +3,12 @@
 bool UBIM::switch_back_to_wp()
 {
     if (!uav_unlock) {
-        gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV hover reject, set unlock first!");
+        gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV auto reject, set unlock first!");
+        return false;
+    }
+
+    if (!uav_wp_ok) {
+        gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV auto reject, bad wp list");
         return false;
     }
 

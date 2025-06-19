@@ -16,6 +16,7 @@ void UBIM::init()
     } else {
         gcs().send_text(MAV_SEVERITY_WARNING, "Err: BIM INIT FAIL");
     }
+    uav_wp_ok = false;
 }
 
 
