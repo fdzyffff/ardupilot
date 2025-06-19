@@ -103,80 +103,105 @@ void UBIM::update_msg_cmd()
         // gcs().send_text(MAV_SEVERITY_INFO, "temp %x", temp);
 
         FD1_msg_BIMCMD &tmp_msg = uart_bim.get_msg_BIMCMD();
+        uint8_t tmp_plat_switch_cmd = 0;
+        uint8_t tmp_plat_switch_act = 0;
+        uint8_t tmp_plat_input_cmd = 0;
+        uint8_t tmp_plat_input_act = 0;
         if (tmp_msg._msg_1.updated) {
+            bool need_store = false;
             if (tmp_msg._msg_1.content.msg.uav_id != (uint32_t)copter.g.sysid_this_mav.get()) {
                 return;
             }
             
-            _plat_switch_cmd = tmp_msg._msg_1.content.msg.plat_switch_cmd[0];
-            switch (_plat_switch_cmd) {
+            tmp_plat_switch_cmd = tmp_msg._msg_1.content.msg.plat_switch_cmd[0];
+
+            switch (tmp_plat_switch_cmd) {
                 case 0xA0:
                     {
-                        _plat_switch_act = switch_back_to_wp();
+                        tmp_plat_switch_act = switch_back_to_wp();
+                        need_store = true;
                         break;
                     }
                 case 0x28:
                     {
-                        _plat_switch_act = switch_hover();
+                        tmp_plat_switch_act = switch_hover();
+                        need_store = true;
                         break;
                     }
                 case 0x40:
                     {
-                        _plat_switch_act = switch_unlock();
+                        tmp_plat_switch_act = switch_unlock();
+                        need_store = true;
                         break;
                     }
                 case 0x42:
                     {
-                        _plat_switch_act = switch_manual();
+                        tmp_plat_switch_act = switch_manual();
+                        need_store = true;
                         break;
                     }
                 case 0x44:
                     {
-                        _plat_switch_act = switch_land();
+                        tmp_plat_switch_act = switch_land();
+                        need_store = true;
                         break;
                     }
                 default:
-                    _plat_switch_act = false;
+                    tmp_plat_switch_act = false;
                     break;
             }
 
-            _plat_input_cmd = tmp_msg._msg_1.content.msg.plat_input_cmd[0];
-            switch (_plat_input_cmd) {
+            tmp_plat_input_cmd = tmp_msg._msg_1.content.msg.plat_input_cmd[0];
+            switch (tmp_plat_input_cmd) {
                 case 0x56:
                     {
-                        _plat_input_act = cmd_add_wp();
+                        tmp_plat_input_act = cmd_add_wp();
+                        need_store = true;
                         break;
                     }
                 case 0x72:
                     {
-                        _plat_input_act = cmd_set_pos();
+                        tmp_plat_input_act = cmd_set_pos();
+                        need_store = true;
                         break;
                     }
                 case 0x74:
                     {
-                        _plat_input_act = cmd_set_speed();
+                        tmp_plat_input_act = cmd_set_speed();
+                        need_store = true;
                         break;
                     }
                 case 0x76:
                     {
-                        _plat_input_act = cmd_set_alt();
+                        tmp_plat_input_act = cmd_set_alt();
+                        need_store = true;
                         break;
                     }
                 case 0x78:
                     {
-                        _plat_input_act = cmd_set_yaw();
+                        tmp_plat_input_act = cmd_set_yaw();
+                        need_store = true;
                         break;
                     }
                 case 0x7A:
                     {
-                        _plat_input_act = cmd_set_pos_offset();
+                        tmp_plat_input_act = cmd_set_pos_offset();
+                        need_store = true;
                         break;
                     }
                 default:
-                    _plat_input_act = false;
+                    tmp_plat_input_act = false;
                     break;
             }
             tmp_msg._msg_1.updated = false;
+
+            if (need_store) {
+                _plat_switch_cmd = tmp_plat_switch_cmd;
+                _plat_switch_act = tmp_plat_switch_act;
+                _plat_input_cmd = tmp_plat_input_cmd;
+                _plat_input_act = tmp_plat_input_act;
+                memcpy(_plat_input_param, uart_bim.get_msg_BIMCMD()._msg_1.content.msg.plat_input_param.data, 28);
+            }
         }
     }
 }
@@ -222,7 +247,7 @@ void UBIM::update_msg_send()
         tmp_msg._msg_1.content.msg.plat_switch_cmd = _plat_switch_cmd;
         tmp_msg._msg_1.content.msg.plat_switch_act = _plat_switch_act;
         tmp_msg._msg_1.content.msg.plat_input_cmd = _plat_input_cmd;
-        memcpy(tmp_msg._msg_1.content.msg.plat_input_param, uart_bim.get_msg_BIMCMD()._msg_1.content.msg.plat_input_param.data, 28);
+        memcpy(tmp_msg._msg_1.content.msg.plat_input_param, _plat_input_param, 28);
         tmp_msg._msg_1.content.msg.plat_input_act = _plat_input_act;
         tmp_msg._msg_1.content.msg.pos_x = 0.0f;
         tmp_msg._msg_1.content.msg.pos_y = 0.0f;

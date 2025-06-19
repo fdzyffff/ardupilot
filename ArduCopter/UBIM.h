@@ -40,6 +40,7 @@ public:
     uint8_t _plat_switch_act;
     uint8_t _plat_input_cmd;
     uint8_t _plat_input_act;
+    uint8_t _plat_input_param[28];
 
 private:
 
