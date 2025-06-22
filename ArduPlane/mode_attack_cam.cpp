@@ -19,8 +19,8 @@ void ModeAttackCam::update()
     // plane.nav_roll_cd = 0;//plane.ahrs.roll_sensor;
     plane.nav_pitch_cd = plane.ahrs.pitch_sensor;
 
-    float throtle_rate = plane.g2.attack_throttle_rate*plane.G_Dt;
-    float target_throttle = plane.g2.attack_throttle;
+    float throtle_rate = plane.uattack.attack_throttle_rate*plane.G_Dt;
+    float target_throttle = plane.uattack.attack_throttle;
     _cmd_throttle = _cmd_throttle + constrain_float(target_throttle - _cmd_throttle, -throtle_rate, throtle_rate);
 
     if (!plane.uattack.is_active()) {

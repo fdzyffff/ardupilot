@@ -33,16 +33,17 @@ void FD_Target_RK3588::update() {
     FD_msg_RK3588 &tmp_msg = FD_RK3588_ptr->get_msg_RK3588();
     if (tmp_msg._msg_1.updated) {
 
-        if (tmp_msg._msg_1.content.msg.tag_cl > 0.5f) {
-            _last_ms = millis();
-            float theta1 = -cal_frame_angle(cam_angle_x.get(), tmp_msg._msg_1.content.msg.tag_x); // x-axis, degree
-            float theta2 =  cal_frame_angle(cam_angle_y.get(), tmp_msg._msg_1.content.msg.tag_y); // y-axis, degree
+        // if (tmp_msg._msg_1.content.msg.tag_cl > 0.5f) {
+        _last_ms = millis();
+        float theta1 =  cal_frame_angle(cam_angle_x.get(), tmp_msg._msg_1.content.msg.tag_x); // x-axis, degree
+        float theta2 = -cal_frame_angle(cam_angle_y.get(), tmp_msg._msg_1.content.msg.tag_y); // y-axis, degree //change +/-
 
-            Vector3f tmp = Vector3f(1.f, tanf(radians(theta1)), -tanf(radians(theta2)));
-            float p1 = degrees(atanf(tmp.y/tmp.x));
-            float p2 = degrees(atanf(tmp.z/tmp.xy().length()));
-            handle_info(p1, p2);
-        }
+        // handle_info(tmp_msg._msg_1.content.msg.tag_x*100.f, tmp_msg._msg_1.content.msg.tag_y*100.f);
+        Vector3f tmp = Vector3f(1.f, tanf(radians(theta1)), -tanf(radians(theta2)));
+        float p1 =  degrees(atanf(tmp.y/tmp.x));
+        float p2 = -degrees(atanf(tmp.z/tmp.xy().length()));
+        handle_info(p1, p2);
+        // }
 
         tmp_msg._msg_1.updated = false;   
     }

@@ -37,12 +37,12 @@ void FD_Target_K230::update() {
 
         if (tmp_msg._msg_1.content.msg.tag_ok) {
             _last_ms = millis();
-            float theta1 = -cal_frame_angle(cam_width.get(), cam_angle_x.get(), tmp_msg._msg_1.content.msg.tag_x); // x-axis, degree
-            float theta2 =  cal_frame_angle(cam_height.get(), cam_angle_y.get(), tmp_msg._msg_1.content.msg.tag_y); // y-axis, degree
+            float theta1 = cal_frame_angle(cam_width.get(), cam_angle_x.get(), tmp_msg._msg_1.content.msg.tag_x); // x-axis, degree
+            float theta2 = cal_frame_angle(cam_height.get(), cam_angle_y.get(), tmp_msg._msg_1.content.msg.tag_y); // y-axis, degree
 
             Vector3f tmp = Vector3f(1.f, tanf(radians(theta1)), -tanf(radians(theta2)));
-            float p1 = degrees(atanf(tmp.y/tmp.x));
-            float p2 = degrees(atanf(tmp.z/tmp.xy().length()));
+            float p1 =  degrees(atanf(tmp.y/tmp.x));
+            float p2 = -degrees(atanf(tmp.z/tmp.xy().length()));
             handle_info(p1, p2);
         }
 
@@ -71,8 +71,8 @@ float FD_Target_K230::cal_frame_angle(float pixel, float angle, float x_in)
     // ret, eg: 0°
     pixel = constrain_float(pixel, 100.0f, 8000.f);
     angle = constrain_float(radians(angle), radians(10.0f), radians(150.0f));
-    x_in = constrain_float(x_in, 0.f, pixel);
-    float ret = atanf(2.0f*(x_in-pixel*0.5f)/pixel*tanf(angle*0.5f));
+    x_in = constrain_float(x_in, -pixel, pixel);
+    float ret = atanf(2.0f*x_in/pixel*tanf(angle*0.5f));
     return degrees(ret);
 }
 

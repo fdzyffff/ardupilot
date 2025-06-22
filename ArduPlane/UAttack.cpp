@@ -23,8 +23,11 @@ const AP_Param::GroupInfo UAttack::var_info[] = {
     AP_GROUPINFO("FILT_Y_HZ",  18, UAttack, filt_yaw_hz,             2.0f),
     AP_GROUPINFO("FILT_P_HZ",  19, UAttack, filt_pithc_hz,           2.0f),
 
-    AP_SUBGROUPPTR(_Target_ptr_cam, "TC_",   20, UAttack,  FD_Target_RK3588),
-    AP_SUBGROUPPTR(_Target_ptr_loc, "TL_",   21, UAttack,  FD_Target_Loc),
+    AP_SUBGROUPPTR(_Target_ptr_loc,           "TL_",    20, UAttack,  FD_Target_Loc),
+    AP_SUBGROUPPTR(_Target_ptr_cam_mav,       "TC0_",   21, UAttack,  FD_Target_Mav),
+    AP_SUBGROUPPTR(_Target_ptr_cam_rk3588,    "TC1_",   22, UAttack,  FD_Target_RK3588),
+    AP_SUBGROUPPTR(_Target_ptr_cam_k230,      "TC2_",   23, UAttack,  FD_Target_K230),
+    AP_SUBGROUPPTR(_Target_ptr_cam_topotek,   "TC5_",   24, UAttack,  FD_Target_Topotek),
     AP_GROUPEND
 };
 
@@ -146,35 +149,65 @@ void UAttack::init_target()
     bool use_loc = use_target_loc.get();
 
     if (use_cam) {
-        if (use_target_cam_type.get() == 0) { // 0:RK3588, 1:K230, 2:LRB
-            _Target_ptr_cam = new FD_Target_RK3588();
-            if (_Target_ptr_cam->init()) {
-                gcs().send_text(MAV_SEVERITY_WARNING, "Target RK3588 init");
+         // 1:mav, 2:RK3588, 3:K230, 4:LRB
+        if (use_target_cam_type.get() == 1) {
+            _Target_ptr_cam_mav = new FD_Target_Mav();
+            if (_Target_ptr_cam_mav->init()) {
+                gcs().send_text(MAV_SEVERITY_WARNING, "Target Mav init");
+                _Target_ptr_cam = _Target_ptr_cam_mav;
+                AP_Param::load_object_from_eeprom(_Target_ptr_cam, FD_Target_Mav::var_info);
             } else {
-                gcs().send_text(MAV_SEVERITY_WARNING, "Target RK3588 Fail");
-                _Target_ptr_cam = nullptr;
-            }
-        } 
-        else if (use_target_cam_type.get() == 1) {
-            _Target_ptr_cam = new FD_Target_K230();
-            if (_Target_ptr_cam->init()) {
-                gcs().send_text(MAV_SEVERITY_WARNING, "Target K230 init");
-            } else {
-                gcs().send_text(MAV_SEVERITY_WARNING, "Target K230 Fail");
-                _Target_ptr_cam = nullptr;
+                gcs().send_text(MAV_SEVERITY_WARNING, "Target Mav Fail");
+                _Target_ptr_cam_mav = nullptr;
             }
         } 
         else if (use_target_cam_type.get() == 2) {
-            _Target_ptr_cam = new FD_Target_LRB();
-            if (_Target_ptr_cam->init()) {
+            _Target_ptr_cam_rk3588 = new FD_Target_RK3588();
+            if (_Target_ptr_cam_rk3588->init()) {
+                gcs().send_text(MAV_SEVERITY_WARNING, "Target RK3588 init");
+                _Target_ptr_cam = _Target_ptr_cam_rk3588;
+                AP_Param::load_object_from_eeprom(_Target_ptr_cam_rk3588, FD_Target_RK3588::var_info);
+            } else {
+                gcs().send_text(MAV_SEVERITY_WARNING, "Target RK3588 Fail");
+                _Target_ptr_cam_rk3588 = nullptr;
+            }
+        } 
+        else if (use_target_cam_type.get() == 3) {
+            _Target_ptr_cam_k230= new FD_Target_K230();
+            if (_Target_ptr_cam_k230->init()) {
+                gcs().send_text(MAV_SEVERITY_WARNING, "Target K230 init");
+                _Target_ptr_cam = _Target_ptr_cam_k230;
+                AP_Param::load_object_from_eeprom(_Target_ptr_cam_k230, FD_Target_K230::var_info);
+            } else {
+                gcs().send_text(MAV_SEVERITY_WARNING, "Target K230 Fail");
+                _Target_ptr_cam_k230= nullptr;
+            }
+        } 
+        else if (use_target_cam_type.get() == 4) {
+            _Target_ptr_cam_lrb = new FD_Target_LRB();
+            if (_Target_ptr_cam_lrb->init()) {
                 gcs().send_text(MAV_SEVERITY_WARNING, "Target LRB init");
+                _Target_ptr_cam = _Target_ptr_cam_lrb;
+                // AP_Param::load_object_from_eeprom(_Target_ptr_cam_lrb, FD_Target_LRB::var_info);
             } else {
                 gcs().send_text(MAV_SEVERITY_WARNING, "Target LRB Fail");
-                _Target_ptr_cam = nullptr;
+                _Target_ptr_cam_lrb = nullptr;
+            }
+        } 
+        else if (use_target_cam_type.get() == 5) {
+            _Target_ptr_cam_topotek = new FD_Target_Topotek();
+            if (_Target_ptr_cam_topotek->init()) {
+                gcs().send_text(MAV_SEVERITY_WARNING, "Target Topotek init");
+                _Target_ptr_cam = _Target_ptr_cam_topotek;
+                AP_Param::load_object_from_eeprom(_Target_ptr_cam_topotek, FD_Target_Topotek::var_info);
+            } else {
+                gcs().send_text(MAV_SEVERITY_WARNING, "Target Topotek Fail");
+                _Target_ptr_cam_topotek = nullptr;
             }
         } 
         else {
             gcs().send_text(MAV_SEVERITY_WARNING, "Target CAM UNKNOW %d", use_target_cam_type.get());
+            _Target_ptr_cam = nullptr;
         }
     }
 

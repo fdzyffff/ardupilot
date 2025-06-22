@@ -1,6 +1,6 @@
 #include "FD_RK3588_message.h"
 
-#define FD_MSG_RK3588_LEN 16
+#define FD_MSG_RK3588_LEN 15
 class FD_msg_RK3588 : public FD_RK3588_message{
 public:
     struct PACKED FD_msg_header {
@@ -55,8 +55,8 @@ public:
     FD_msg_RK3588(const FD_msg_RK3588 &other) = delete;
     FD_msg_RK3588 &operator=(const FD_msg_RK3588&) = delete;
 
-    static const uint8_t PREAMBLE1 = 0xEB;
-    static const uint8_t PREAMBLE2 = 0x90;
+    static const uint8_t PREAMBLE1 = 0xA5;
+    static const uint8_t PREAMBLE2 = 0x5A;
 
     void process_message(void) override;
     void parse(uint8_t temp) override;

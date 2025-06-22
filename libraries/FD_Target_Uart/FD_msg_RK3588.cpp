@@ -10,7 +10,7 @@ FD_msg_RK3588::FD_msg_RK3588(void)
 
 void FD_msg_RK3588::parse(uint8_t temp)
 {
-    // gcs().send_text(MAV_SEVERITY_INFO, "State: %d, Byte: %d",_msg.msg_state, temp);
+    // gcs().send_text(MAV_SEVERITY_INFO, "State: %d, Byte: %x",_msg.msg_state, temp);
     switch (_msg.msg_state)
     {
         default:
@@ -43,7 +43,6 @@ void FD_msg_RK3588::parse(uint8_t temp)
             }
             _msg.data[_msg.read] = temp;
             _msg.read++;
-            _msg.sum_check = 0;
             _msg.sum_check += temp;
 
             if (_msg.read >= (_msg.length - 1))

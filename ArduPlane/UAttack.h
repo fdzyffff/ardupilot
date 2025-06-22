@@ -95,8 +95,14 @@ private:
     AP_Float        filt_pithc_hz;
     AC_PID          attack_roll_pid{0.5f, 0.1f, 0.01f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.5f};
 
-    FD_Target_Base* _Target_ptr_cam;
-    FD_Target_Loc* _Target_ptr_loc;
+    FD_Target_Base*       _Target_ptr_cam;
+    FD_Target_Mav*        _Target_ptr_cam_mav;
+    FD_Target_RK3588*     _Target_ptr_cam_rk3588;
+    FD_Target_K230*       _Target_ptr_cam_k230;
+    FD_Target_LRB*        _Target_ptr_cam_lrb;
+    FD_Target_Topotek*    _Target_ptr_cam_topotek;
+    FD_Target_Loc*        _Target_ptr_loc;
+
 
     uint32_t _last_ms;
     int8_t current_idx;
