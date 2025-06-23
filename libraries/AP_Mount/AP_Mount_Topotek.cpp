@@ -1105,7 +1105,7 @@ bool AP_Mount_Topotek::send_location_info()
 // attitude information analysis of gimbal
 void AP_Mount_Topotek::gimbal_angle_analyse()
 {
-    if (char_to_hex(_msg_buff[5] != 12)) {
+    if (char_to_hex(_msg_buff[5]) != 12) {
         return;
     }
 

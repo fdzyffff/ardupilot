@@ -19,17 +19,21 @@ class FD_Target_Base {
 public:
     FD_Target_Base() {};
     virtual ~FD_Target_Base() {};
-    virtual bool init() {return false;}
+    virtual bool init();
     virtual void update() = 0;
     bool is_valid() {return _valid;}
     void handle_info(float p1, float p2);
     bool get_info(float &p1, float &p2);
+    void handle_raw_info(float p1, float p2);
+    bool get_raw_info(float &p1, float &p2);
     virtual void handle_msg(const mavlink_message_t &msg);
     uint32_t _last_ms;
     bool _new_data;
     bool _valid;
     float _p1;
     float _p2;
+    float _raw_p1;
+    float _raw_p2;
 };
 
 class FD_Target_Loc: public FD_Target_Base {
@@ -163,6 +167,7 @@ public:
     void handle_info_test(float p1, float p2);
     float cal_frame_angle(float pixel, float angle, float x_in);
     void cal_and_handle(float p1, float p2);
+    void test_cal();
 
 private:
     AP_Int32 target_timeout;

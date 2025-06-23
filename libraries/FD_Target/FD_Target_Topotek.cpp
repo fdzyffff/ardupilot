@@ -39,6 +39,47 @@ void FD_Target_Topotek::update() {
         //gcs().send_text(MAV_SEVERITY_INFO, "raw: %d, att: %d, arspd: %d", pk0_count, pk1_count, pk2_count);
         last_update_ms = tnow;
     }
+
+    // for test purpose
+    // test_cal();
+}
+
+void FD_Target_Topotek::test_cal()
+{
+    static uint32_t _last_test_ms = millis();
+    if (millis() - _last_test_ms > 1000) {
+        _last_test_ms = millis();
+
+        _last_ms = millis();
+        float theta1 =  cal_frame_angle(cam_width.get(), cam_angle_x.get(),  0.f); // x-axis, degree
+        float theta2 =  cal_frame_angle(cam_height.get(), cam_angle_y.get(), 0.f); // y-axis, degree
+        handle_raw_info(theta1, theta2);
+
+        Vector3f tmp = Vector3f(1.f, tanf(radians(theta1)), -tanf(radians(theta2)));
+        float p1 =  degrees(atanf(tmp.y/tmp.x));
+        float p2 = -degrees(atanf(tmp.z/tmp.xy().length()));
+
+        float _roll = AP::ahrs().get_roll();
+        float _pitch = AP::ahrs().get_pitch();
+        _roll = radians(0.0f);
+        _pitch = radians(10.0f);
+        Vector3f target_unit = Vector3f(1.0f, 0.0f, 0.0f);
+        Matrix3f tmp_target_cam_m;
+        tmp_target_cam_m.from_euler(0.0f, radians(p2), radians(p1));
+        Matrix3f tmp_cam_level_m;
+        tmp_cam_level_m.from_euler(radians(0.0f), radians(0.0f), radians(90.f));
+
+        Matrix3f tmp_level_body_m;
+        tmp_level_body_m.from_euler(_roll, _pitch, 0.0f);
+        tmp_level_body_m.transpose();
+        Matrix3f tmp_target_earth_m = tmp_level_body_m*tmp_cam_level_m*tmp_target_cam_m;
+        Vector3f bf_unit = tmp_target_earth_m*target_unit;
+
+        float angle_yaw =   wrap_180(degrees(atan2f( bf_unit.y, bf_unit.x)));
+        float angle_pitch = wrap_180(degrees(atan2f(-bf_unit.z, bf_unit.xy().length())));
+        
+        handle_info(angle_yaw, angle_pitch);
+    }
 }
 
 void FD_Target_Topotek::handle_msg(const mavlink_message_t &msg)
@@ -54,7 +95,8 @@ void FD_Target_Topotek::handle_msg(const mavlink_message_t &msg)
                 {
                     _last_ms = millis();
                     float theta1 =  cal_frame_angle(cam_width.get(), cam_angle_x.get(), packet.param1); // x-axis, degree
-                    float theta2 = -cal_frame_angle(cam_height.get(), cam_angle_y.get(), packet.param2); // y-axis, degree
+                    float theta2 =  cal_frame_angle(cam_height.get(), cam_angle_y.get(), packet.param2); // y-axis, degree
+                    // handle_raw_info(theta1, theta2);
 
                     Vector3f tmp = Vector3f(1.f, tanf(radians(theta1)), -tanf(radians(theta2)));
                     float p1 =  degrees(atanf(tmp.y/tmp.x));
@@ -76,6 +118,11 @@ void FD_Target_Topotek::cal_and_handle(float p1, float p2)
     if (mount != nullptr) {
         mount->get_attitude_euler(0, cam_roll, cam_pitch, cam_bf_yaw);
     }
+    // static uint32_t _last_info_ms = millis();
+    // if (millis() - _last_info_ms > 1000) {
+    //     gcs().send_text(MAV_SEVERITY_INFO, "VV %d, %f, %f, %f", mount != nullptr, cam_roll, cam_pitch, cam_bf_yaw);
+    //     _last_info_ms = millis();
+    // }
     float _roll = AP::ahrs().get_roll();
     float _pitch = AP::ahrs().get_pitch();
     Vector3f target_unit = Vector3f(1.0f, 0.0f, 0.0f);
@@ -103,8 +150,8 @@ float FD_Target_Topotek::cal_frame_angle(float pixel, float angle, float x_in)
     // ret, eg: 0°
     pixel = constrain_float(pixel, 100.0f, 8000.f);
     angle = constrain_float(radians(angle), radians(10.0f), radians(150.0f));
-    x_in = constrain_float(x_in, 0.f, pixel);
-    float ret = atanf(2.0f*(x_in-pixel*0.5f)/pixel*tanf(angle*0.5f));
+    x_in = constrain_float(x_in, -pixel, pixel);
+    float ret = atanf(2.0f*x_in/pixel*tanf(angle*0.5f));
     return degrees(ret);
 }
 

@@ -263,6 +263,9 @@ void UAttack::update()
     float p2 = 0;
     if (current_idx == 1) {
         if (_Target_ptr_cam->get_info(p1, p2)) {
+            if (_Target_ptr_cam->get_raw_info(display_info.p1, display_info.p2)) {
+                ;
+            }
             handle_info(p1, p2);
             udpate_control_value();
         }

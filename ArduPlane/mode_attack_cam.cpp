@@ -26,14 +26,14 @@ void ModeAttackCam::update()
     float target_throttle = plane.uattack.attack_throttle;
     _cmd_throttle = _cmd_throttle + constrain_float(target_throttle - _cmd_throttle, -throtle_rate, throtle_rate);
 
-    if (!plane.uattack.is_active()) {
-        if (plane.set_mode(plane.mode_auto, ModeReason::ATTACK_END)) {
-            gcs().send_text(MAV_SEVERITY_INFO, "Back to AUTO");
-        } else {
-            plane.set_mode(plane.mode_fbwb, ModeReason::ATTACK_END);
-            gcs().send_text(MAV_SEVERITY_INFO, "Back to FBWB");
-        }
-    }
+    // if (!plane.uattack.is_active()) {
+    //     if (plane.set_mode(plane.mode_auto, ModeReason::ATTACK_END)) {
+    //         gcs().send_text(MAV_SEVERITY_INFO, "Back to AUTO");
+    //     } else {
+    //         plane.set_mode(plane.mode_fbwb, ModeReason::ATTACK_END);
+    //         gcs().send_text(MAV_SEVERITY_INFO, "Back to FBWB");
+    //     }
+    // }
 }
 
 void ModeAttackCam::run()
