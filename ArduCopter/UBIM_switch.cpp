@@ -25,7 +25,7 @@ bool UBIM::switch_back_to_wp()
             return false;
         }
     }
-
+  
     if (!copter.set_mode(Mode::Number::AUTO, ModeReason::GCS_COMMAND))
     {
         gcs().send_text(MAV_SEVERITY_INFO, "BIM: UAV can NOT AUTO");

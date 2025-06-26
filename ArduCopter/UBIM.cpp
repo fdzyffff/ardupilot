@@ -286,7 +286,7 @@ void UBIM::update_msg_send()
             {
                 ;
             }
-            tmp_msg._msg_1.content.msg.copter_speed = tmp_vec.xy().length()*100.f;
+            tmp_msg._msg_1.content.msg.copter_speed = tmp_vec.length()*100.f;
         }
         tmp_msg.sum_check();
         uart_bim.get_port()->write(tmp_msg._msg_1.content.data, sizeof(tmp_msg._msg_1.content.data));
