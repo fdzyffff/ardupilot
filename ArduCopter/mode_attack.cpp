@@ -10,6 +10,10 @@ bool ModeAttack::init(const bool ignore_checks)
     copter.uattack.attack_throttle_pid.reset_I();
     copter.uattack.attack_throttle_pid.reset_filter();
     copter.uattack.attack_throttle_pid.set_integrator(get_pilot_desired_throttle());
+    copter.uattack.attack_roll_pid.reset_I();
+    copter.uattack.attack_roll_pid.reset_filter();
+    copter.uattack.attack_roll_pid.set_integrator(degrees(copter.ahrs.get_roll()));
+    // copter.uattack.attack_roll_pid.set_integrator(0.0f);
     gcs().send_text(MAV_SEVERITY_WARNING, "Throttle I to %0.2f", get_pilot_desired_throttle());
     return true;
 }

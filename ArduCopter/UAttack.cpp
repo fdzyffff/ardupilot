@@ -71,6 +71,7 @@ void UAttack::init()
     _Target_ptr_cam_k230 = nullptr;
     _Target_ptr_cam_lrb = nullptr;
     _last_ms = millis();
+    _last_switch_ms = 0;
     init_target();
 
     _yaw_sample_filter.set_cutoff_frequency(30.f, filt_yaw_hz.get());
@@ -83,6 +84,11 @@ void UAttack::udpate_control_value(){
     update_target_yaw_rate();
     update_target_roll_angle();
     update_target_throttle();
+    if (millis() - _last_switch_ms < 1500) {
+        // _target_pitch_rate = 0.0f;
+        _target_roll_angle = 0.0f;
+        // _target_yaw_rate = 0.0f;
+    }
     _last_ms = millis();
     update_log();
 }
@@ -252,10 +258,16 @@ void UAttack::update()
         if (current_idx != 1) {
             gcs().send_text(MAV_SEVERITY_INFO, "Change to CAM");
         }
+        if (current_idx == 0) {
+            _last_switch_ms = millis();
+        }
         current_idx = 1;
     } else if (_Target_ptr_loc != nullptr && _Target_ptr_loc->is_valid()) {
         if (current_idx != 2) {
             gcs().send_text(MAV_SEVERITY_INFO, "Change to LOC");
+        }
+        if (current_idx == 0) {
+            _last_switch_ms = millis();
         }
         current_idx = 2;
     } else {
@@ -293,11 +305,11 @@ void UAttack::handle_info(float p1, float p2) {
     float _roll = AP::ahrs().get_roll();
     float _pitch = AP::ahrs().get_pitch();
     float _yaw = AP::ahrs().get_yaw();
-    if (!udelay.get_idx(10-1, _roll, _pitch, _yaw)) {
-        _roll = AP::ahrs().get_roll();
-        _pitch = AP::ahrs().get_pitch();
-        _yaw = AP::ahrs().get_yaw();
-    }
+    // if (!udelay.get_idx(10-1, _roll, _pitch, _yaw)) {
+    //     _roll = AP::ahrs().get_roll();
+    //     _pitch = AP::ahrs().get_pitch();
+    //     _yaw = AP::ahrs().get_yaw();
+    // }
 
     bf_info.x = p1; // yaw degree
     bf_info.y = p2; // pitch degree
@@ -317,6 +329,13 @@ void UAttack::handle_info(float p1, float p2) {
     tmp_body_earth_m.from_euler(_roll, _pitch, _yaw);
     Matrix3f tmp_target_earth_m = tmp_body_earth_m*tmp_cam_body_m*tmp_target_cam_m;
     Vector3f ef_unit = tmp_target_earth_m*target_unit;
+
+    // static uint32_t last_info_ms = millis();
+    // if (millis() - last_info_ms > 1000) {
+    //     last_info_ms = millis();
+    //     gcs().send_text(MAV_SEVERITY_INFO, "KKKKKK (%f, %f, %f)", ef_unit.x, ef_unit.y, ef_unit.z);
+    //     gcs().send_text(MAV_SEVERITY_INFO, "VVVVVV (%f, %f, %f)", degrees(_roll), degrees(_pitch), degrees(_yaw));
+    // }
 
     float angle_pitch = wrap_180(degrees(atan2f(-ef_unit.z, ef_unit.xy().length())));
     float angle_yaw =   wrap_180(degrees(atan2f( ef_unit.y, ef_unit.x)));
@@ -455,6 +474,9 @@ bool UAttack::UDelay::get_idx(uint16_t step, float &roll, float &pitch, float &y
     roll = _buffer[this_idx].roll;
     pitch = _buffer[this_idx].pitch;
     yaw = _buffer[this_idx].yaw;
+    if (millis() - _buffer[this_idx].time_ms > 500) {
+        return false;
+    }
     // gcs().send_text(MAV_SEVERITY_INFO, "%d", (millis()-_buffer[this_idx].time_ms));
     return true;
 }

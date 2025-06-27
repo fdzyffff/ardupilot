@@ -38,6 +38,26 @@ void FD_Target_Mav::update() {
         //gcs().send_text(MAV_SEVERITY_INFO, "raw: %d, att: %d, arspd: %d", pk0_count, pk1_count, pk2_count);
         last_update_ms = tnow;
     }
+    // for test purpose
+    // test_cal();
+}
+
+void FD_Target_Mav::test_cal()
+{
+    static uint32_t _last_test_ms = millis();
+    if (millis() - _last_test_ms > 1000) {
+        _last_test_ms = millis();
+
+        _last_ms = millis();
+        float theta1 =  10.f; // x-axis, degree
+        float theta2 =  -10.f; // y-axis, degree
+        // gcs().send_text(MAV_SEVERITY_INFO, "t1 %f| t2 %f", theta1, theta2);
+
+        Vector3f tmp = Vector3f(1.f, tanf(radians(theta1)), -tanf(radians(theta2)));
+        float p1 =  degrees(atanf(tmp.y/tmp.x));
+        float p2 = -degrees(atanf(tmp.z/tmp.xy().length()));
+        handle_info(p1, p2);
+    }
 }
 
 void FD_Target_Mav::handle_msg(const mavlink_message_t &msg)

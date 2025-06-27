@@ -141,6 +141,7 @@ public:
     void handle_msg(const mavlink_message_t &msg) override;
     void handle_info_test(float p1, float p2);
     float cal_frame_angle(float pixel, float angle, float x_in);
+    void test_cal();
 
 private:
     AP_Int32 target_timeout;
