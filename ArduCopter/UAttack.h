@@ -108,7 +108,8 @@ private:
     FD_Target_Loc*    _Target_ptr_loc;
 
     uint32_t _last_ms;
-    uint32_t _last_switch_ms;
+    uint32_t _last_reset_ms;
+    bool _reset;
     int8_t current_idx;
 
     DerivativeFilterFloat_Size7 _pitch_filter;

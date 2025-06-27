@@ -71,7 +71,8 @@ void UAttack::init()
     _Target_ptr_cam_k230 = nullptr;
     _Target_ptr_cam_lrb = nullptr;
     _last_ms = millis();
-    _last_switch_ms = 0;
+    _last_reset_ms = 0;
+    _reset = true;
     init_target();
 
     _yaw_sample_filter.set_cutoff_frequency(30.f, filt_yaw_hz.get());
@@ -84,7 +85,7 @@ void UAttack::udpate_control_value(){
     update_target_yaw_rate();
     update_target_roll_angle();
     update_target_throttle();
-    if (millis() - _last_switch_ms < 1500) {
+    if (millis() - _last_reset_ms < 1500) {
         // _target_pitch_rate = 0.0f;
         _target_roll_angle = 0.0f;
         // _target_yaw_rate = 0.0f;
@@ -258,23 +259,23 @@ void UAttack::update()
         if (current_idx != 1) {
             gcs().send_text(MAV_SEVERITY_INFO, "Change to CAM");
         }
-        if (current_idx == 0) {
-            _last_switch_ms = millis();
-        }
         current_idx = 1;
     } else if (_Target_ptr_loc != nullptr && _Target_ptr_loc->is_valid()) {
         if (current_idx != 2) {
             gcs().send_text(MAV_SEVERITY_INFO, "Change to LOC");
         }
-        if (current_idx == 0) {
-            _last_switch_ms = millis();
-        }
         current_idx = 2;
     } else {
         if (current_idx != 0) {
             gcs().send_text(MAV_SEVERITY_INFO, "No Valid Target");
+            _yaw_sample_filter.reset();
+            _pitch_sample_filter.reset();
+            _yaw_filter.reset();
+            _pitch_filter.reset();
         }
         current_idx = 0;
+        _reset = true;
+        _last_reset_ms = millis();
     }
 
     float p1 = 0;
@@ -347,6 +348,15 @@ void UAttack::handle_info(float p1, float p2) {
     _last_yaw = angle_yaw;
     _last_yaw_sample += delta_yaw;
 
+    if (_reset) {
+        _last_yaw_sample = _last_yaw;
+        _yaw_sample_filter.reset();
+        _pitch_sample_filter.reset();
+        _yaw_filter.reset();
+        _pitch_filter.reset();
+        _reset = false;
+    }
+
     _yaw_sample_filter.apply(_last_yaw_sample);
     _pitch_sample_filter.apply(angle_pitch);
 
@@ -391,7 +401,7 @@ void UAttack::update_target_roll_angle() {
 
     float dt = (millis() - _last_ms);
     dt = dt * 0.001f;
-    if (dt > 0.2f) {dt = 0.2f;}
+    if (dt > 0.05f) {dt = 0.05f;}
     _target_roll_angle = attack_roll_pid.update_all(0.0f, -ef_rate_info.x, dt) + k2_roll * _target_yaw_rate;
 }
 
@@ -420,7 +430,7 @@ void UAttack::update_target_throttle() {
 
     float dt = (millis() - _last_ms);
     dt = dt * 0.001f;
-    if (dt > 0.2f) {dt = 0.2f;}
+    if (dt > 0.05f) {dt = 0.05f;}
     _attack_throttle = attack_throttle_pid.get_ff() + attack_throttle_pid.update_all(_attack_angle_rate_target, _attack_angle_rate_measure, dt);
 
     _attack_throttle_p = attack_throttle_pid.get_p();
