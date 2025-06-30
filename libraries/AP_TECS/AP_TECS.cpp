@@ -771,11 +771,12 @@ void AP_TECS::_update_throttle_with_airspeed(void)
         // Set integrator to a max throttle value during climbout
         _integTHR_state = _integTHR_state + (_STE_error * _get_i_gain()) * _DT * K_STE2Thr;
         if (_flight_stage == AP_FixedWing::FlightStage::TAKEOFF || _flight_stage == AP_FixedWing::FlightStage::ABORT_LANDING) {
-            if (!_flags.reached_speed_takeoff) {
-                // ensure we run at full throttle until we reach the target airspeed
-                _throttle_dem = MAX(_throttle_dem, _THRmaxf - _integTHR_state);
-            }
-            _integTHR_state = integ_max;
+            // if (!_flags.reached_speed_takeoff) {
+            //     // ensure we run at full throttle until we reach the target airspeed
+            //     _throttle_dem = MAX(_throttle_dem, _THRmaxf - _integTHR_state);
+            // }
+            // _integTHR_state = integ_max;
+            _integTHR_state = constrain_float(_integTHR_state, integ_min, integ_max);
         } else {
             _integTHR_state = constrain_float(_integTHR_state, integ_min, integ_max);
         }

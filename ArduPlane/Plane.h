@@ -1257,6 +1257,9 @@ private:
     void userhook_SlowLoop();
     AP_HAL::UARTDriver *uart_output;
 
+    float _commanded_throttle;
+    void userhook_calc_throttle();
+
 public:
     void failsafe_check(void);
     bool is_landing() const override;

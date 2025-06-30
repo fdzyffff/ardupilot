@@ -6,6 +6,7 @@ void Plane::userhook_init()
     // this will be called once at start-up
     auto &sm = AP::serialmanager();
     uart_output = sm.find_serial(AP_SerialManager::SerialProtocol_OUTPUT, 0);
+    _commanded_throttle = 0.0f;
 }
 
 void Plane::userhook_FastLoop()
@@ -118,4 +119,28 @@ void Plane::userhook_SlowLoop() {
     // gcs().send_text(MAV_SEVERITY_INFO, "GPS healthy: %d", gps.is_healthy());
 
     // gcs().send_text(MAV_SEVERITY_INFO, "EKF type: %d", ahrs.get_ekf_type());
+}
+
+
+void Plane::userhook_calc_throttle() {
+    static uint32_t _last_call_ms = millis();
+    float dt = (float)(millis() - _last_call_ms)*0.001f;
+    dt = constrain_float(dt, 0.0f, 0.1f);
+    float d_alt = (float)calc_altitude_error_cm() * 0.01f;
+    float target_climb_rate = constrain_float(d_alt*0.5f, -0.5f, 0.5f);
+    Vector3f vel;
+    if (ahrs.get_velocity_NED(vel)) {
+        ;
+    }
+    float current_climb_rate = -vel.z;
+    float delta_climb_rate = constrain_float(target_climb_rate - current_climb_rate, -0.5f, 0.5f);
+
+    _commanded_throttle = _commanded_throttle + delta_climb_rate*10.0f*dt;
+    constrain_float(_commanded_throttle, 0.0f, 100.f);
+    if (throttle_suppressed) {
+        _commanded_throttle = 0.0f;
+    }
+    SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, _commanded_throttle);
+
+    _last_call_ms = millis();
 }
