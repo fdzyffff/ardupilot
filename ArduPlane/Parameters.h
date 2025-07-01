@@ -588,6 +588,8 @@ public:
     AP_Int32        oneshot_mask;
     
     AP_Int8         axis_bitmask; // axes to be autotuned
+    
+    AC_PID          user_thr_pid{0.1f, 0.1f, 0.01f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.0f};
 
     // just to make compilation easier when all things are compiled out...
     uint8_t unused_integer;

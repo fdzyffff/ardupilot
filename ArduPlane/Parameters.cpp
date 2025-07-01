@@ -1265,6 +1265,7 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @Path: ../libraries/AC_PrecLand/AC_PrecLand.cpp
     AP_SUBGROUPINFO(precland, "PLND_", 35, ParametersG2, AC_PrecLand),
 #endif
+    AP_SUBGROUPINFO(user_thr_pid, "UTHR_", 36, ParametersG2, AC_PID),
 
     AP_GROUPEND
 };

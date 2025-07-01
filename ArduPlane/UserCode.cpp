@@ -125,7 +125,10 @@ void Plane::userhook_SlowLoop() {
 void Plane::userhook_calc_throttle() {
     static uint32_t _last_call_ms = millis();
     float dt = (float)(millis() - _last_call_ms)*0.001f;
-    dt = constrain_float(dt, 0.0f, 0.1f);
+    if (dt > 0.1f) {
+        dt = 0.1f;
+        g2.user_thr_pid.reset_I();
+    }
     float d_alt = (float)calc_altitude_error_cm() * 0.01f;
     float target_climb_rate = constrain_float(d_alt*0.5f, -0.5f, 0.5f);
     Vector3f vel;
@@ -133,14 +136,37 @@ void Plane::userhook_calc_throttle() {
         ;
     }
     float current_climb_rate = -vel.z;
-    float delta_climb_rate = constrain_float(target_climb_rate - current_climb_rate, -0.5f, 0.5f);
+    // float delta_climb_rate = constrain_float(target_climb_rate - current_climb_rate, -0.5f, 0.5f);
 
-    _commanded_throttle = _commanded_throttle + delta_climb_rate*10.0f*dt;
+    // _commanded_throttle = _commanded_throttle + delta_climb_rate*10.0f*dt;
+    // constrain_float(_commanded_throttle, 0.0f, 100.f);
+    _commanded_throttle = 50.f + 50.f * g2.user_thr_pid.update_all(target_climb_rate , current_climb_rate, dt);
     constrain_float(_commanded_throttle, 0.0f, 100.f);
     if (throttle_suppressed) {
         _commanded_throttle = 0.0f;
+        g2.user_thr_pid.reset_I();
     }
     SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, _commanded_throttle);
 
     _last_call_ms = millis();
+
+    static uint32_t _last_log_ms = millis();
+    if (millis() - _last_log_ms > 100) {
+        // gcs().send_text(MAV_SEVERITY_INFO, "%f | %f | %f", d_alt, target_climb_rate, current_climb_rate);
+        _last_log_ms = millis();
+        AP::logger().WriteStreaming("UTHR",
+                                    "TimeUS,target,actual,ff,P,I,D,srate,dmod",
+                                    "s--------",
+                                    "F--------",
+                                    "Qffffffff",
+                                    AP_HAL::micros64(),
+                                    (float)g2.user_thr_pid.get_pid_info().target,
+                                    (float)g2.user_thr_pid.get_pid_info().actual,
+                                    (float)g2.user_thr_pid.get_pid_info().FF,
+                                    (float)g2.user_thr_pid.get_pid_info().P,
+                                    (float)g2.user_thr_pid.get_pid_info().I,
+                                    (float)g2.user_thr_pid.get_pid_info().D,
+                                    (float)g2.user_thr_pid.get_pid_info().slew_rate,
+                                    (float)g2.user_thr_pid.get_pid_info().Dmod);
+    }
 }
