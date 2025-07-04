@@ -1265,7 +1265,14 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @Path: ../libraries/AC_PrecLand/AC_PrecLand.cpp
     AP_SUBGROUPINFO(precland, "PLND_", 35, ParametersG2, AC_PrecLand),
 #endif
-    AP_SUBGROUPINFO(user_thr_pid, "UTHR_", 36, ParametersG2, AC_PID),
+    AP_SUBGROUPINFO(user_thr_pid, "U_THR_", 36, ParametersG2, AC_PID),
+    AP_SUBGROUPINFO(user_pth_pid, "U_PTH_", 37, ParametersG2, AC_PID),
+    AP_GROUPINFO("U_THR_TKF", 38, ParametersG2, user_throttle_takeoff, 50.f),
+    AP_GROUPINFO("U_SPD_TKF", 39, ParametersG2, user_airspeed_target_takeoff, 23.f),
+    AP_GROUPINFO("U_C_P_TKF", 40, ParametersG2, user_climbrate_p_takeoff, 0.15f),
+    AP_GROUPINFO("U_SPD_CRS", 41, ParametersG2, user_airspeed_target_curise, 23.f),
+    AP_GROUPINFO("U_C_P_CRS", 42, ParametersG2, user_climbrate_p_curise, 0.3f),
+    AP_GROUPINFO("U_SPD_LND", 43, ParametersG2, user_airspeed_target_land, 22.5f),
 
     AP_GROUPEND
 };

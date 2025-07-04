@@ -6,7 +6,10 @@ void Plane::userhook_init()
     // this will be called once at start-up
     auto &sm = AP::serialmanager();
     uart_output = sm.find_serial(AP_SerialManager::SerialProtocol_OUTPUT, 0);
-    _commanded_throttle = 0.0f;
+    _user_throttle_out = 0.0f;
+    _user_airspeed_target = 0.0f;
+    _user_climbrate_p = 0.0f;
+    _user_pitch_target = 0.0f;
 }
 
 void Plane::userhook_FastLoop()
@@ -121,38 +124,119 @@ void Plane::userhook_SlowLoop() {
     // gcs().send_text(MAV_SEVERITY_INFO, "EKF type: %d", ahrs.get_ekf_type());
 }
 
+void Plane::userhook_auto_takeoff() {
+    _user_airspeed_target = g2.user_airspeed_target_takeoff;
+    _user_climbrate_p = g2.user_climbrate_p_takeoff;
+    userhook_calc_pitch();
+    nav_pitch_cd = _user_pitch_target;
+    userhook_calc_throttle();
+}
 
-void Plane::userhook_calc_throttle() {
+void Plane::userhook_auto_cruise() {
+    _user_airspeed_target = g2.user_airspeed_target_curise;
+    _user_climbrate_p = g2.user_climbrate_p_curise;
+    userhook_calc_pitch();
+    nav_pitch_cd = _user_pitch_target;
+    userhook_calc_throttle();
+}
+
+void Plane::userhook_auto_land() {
+    float h = plane.relative_altitude;
+    _user_airspeed_target = MIN(0.5f/20.f*h, 0.5f) + g2.user_airspeed_target_land;
+    _user_climbrate_p = MIN(0.2f-(20.f-h)*0.18f/20.f, 0.2f);
+    userhook_calc_pitch();
+    nav_pitch_cd = _user_pitch_target;
+    userhook_calc_throttle();
+}
+
+void Plane::userhook_calc_pitch() {
     static uint32_t _last_call_ms = millis();
     float dt = (float)(millis() - _last_call_ms)*0.001f;
+    _last_call_ms = millis();
     if (dt > 0.1f) {
         dt = 0.1f;
-        g2.user_thr_pid.reset_I();
+        g2.user_pth_pid.reset_I();
     }
-    float d_alt = (float)calc_altitude_error_cm() * 0.01f;
-    float target_climb_rate = constrain_float(d_alt*0.5f, -0.5f, 0.5f);
+
+    float TAS = ahrs.get_EAS2TAS();
+    float alt_err = constrain_float((float)calc_altitude_error_cm() * 0.01f, -3.0f, 3.0f);
+    float climb_rate_target = alt_err*_user_climbrate_p;
+    float airspeed_current = 10.0f;
+    if (ahrs.airspeed_estimate(airspeed_current)) {
+        airspeed_current = MAX(10.0f, airspeed_current);
+    }
+    float gamma_target = asinf(climb_rate_target/airspeed_current/TAS);
+    gamma_target = constrain_float(gamma_target, -0.5f, 0.5f);
+
     Vector3f vel;
     if (ahrs.get_velocity_NED(vel)) {
         ;
     }
-    float current_climb_rate = -vel.z;
-    // float delta_climb_rate = constrain_float(target_climb_rate - current_climb_rate, -0.5f, 0.5f);
+    float climb_rate_current = -vel.z;
+    float gamma_current = asinf(climb_rate_current/airspeed_current/TAS);
 
-    // _commanded_throttle = _commanded_throttle + delta_climb_rate*10.0f*dt;
-    // constrain_float(_commanded_throttle, 0.0f, 100.f);
-    _commanded_throttle = 50.f + 50.f * g2.user_thr_pid.update_all(target_climb_rate , current_climb_rate, dt);
-    constrain_float(_commanded_throttle, 0.0f, 100.f);
-    if (throttle_suppressed) {
-        _commanded_throttle = 0.0f;
-        g2.user_thr_pid.reset_I();
-    }
-    SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, _commanded_throttle);
+    float theta_out = g2.user_pth_pid.update_all(gamma_target, gamma_current, dt);
 
-    _last_call_ms = millis();
+    _user_pitch_target = degrees(theta_out) + 5.0f;
 
     static uint32_t _last_log_ms = millis();
     if (millis() - _last_log_ms > 100) {
-        // gcs().send_text(MAV_SEVERITY_INFO, "%f | %f | %f", d_alt, target_climb_rate, current_climb_rate);
+        _last_log_ms = millis();
+        AP::logger().WriteStreaming("UPTH",
+                                    "TimeUS,target,actual,ff,P,I,D,srate,dmod",
+                                    "s--------",
+                                    "F--------",
+                                    "Qffffffff",
+                                    AP_HAL::micros64(),
+                                    (float)g2.user_pth_pid.get_pid_info().target,
+                                    (float)g2.user_pth_pid.get_pid_info().actual,
+                                    (float)g2.user_pth_pid.get_pid_info().FF,
+                                    (float)g2.user_pth_pid.get_pid_info().P,
+                                    (float)g2.user_pth_pid.get_pid_info().I,
+                                    (float)g2.user_pth_pid.get_pid_info().D,
+                                    (float)g2.user_pth_pid.get_pid_info().slew_rate,
+                                    (float)g2.user_pth_pid.get_pid_info().Dmod);
+    }
+}
+
+void Plane::userhook_calc_throttle() {
+    static uint32_t _last_call_ms = millis();
+    float dt = (float)(millis() - _last_call_ms)*0.001f;
+    _last_call_ms = millis();
+    if (dt > 0.1f) {
+        dt = 0.1f;
+        g2.user_thr_pid.reset_I();
+    }
+    _user_throttle_out = 0.0f;
+    bool on_water = false;
+    if (plane.relative_altitude < 3.0f) {
+        on_water = true;
+    }
+
+    if (on_water) {
+        _user_throttle_out = g2.user_throttle_takeoff;
+        g2.user_thr_pid.reset_I();
+        if (throttle_suppressed) {
+            _user_throttle_out = 0.0f;
+            g2.user_thr_pid.reset_I();
+        }
+    } else {
+        float airspeed_current = 10.0f;
+        if (ahrs.airspeed_estimate(airspeed_current)) {
+            airspeed_current = MAX(10.0f, airspeed_current);
+        }
+
+        _user_throttle_out = 25.f + 100.f * g2.user_thr_pid.update_all(_user_airspeed_target , airspeed_current, dt);
+        constrain_float(_user_throttle_out, 0.0f, 100.f);
+        if (throttle_suppressed) {
+            _user_throttle_out = 0.0f;
+            g2.user_thr_pid.reset_I();
+        }
+    }
+    SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, _user_throttle_out);
+
+    static uint32_t _last_log_ms = millis();
+    if (millis() - _last_log_ms > 100) {
         _last_log_ms = millis();
         AP::logger().WriteStreaming("UTHR",
                                     "TimeUS,target,actual,ff,P,I,D,srate,dmod",

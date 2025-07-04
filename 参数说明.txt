@@ -1,0 +1,8 @@
+U_THR_xxx 油门PID
+U_PTH_xxx 俯仰角PID
+U_THR_TKF 起飞油门，离地3m以内用，范围0~100
+U_SPD_TKF 起飞速度，单位m/s
+U_C_P_TKF 起飞爬升率P，无量纲
+U_SPD_CRS 巡航速度，单位m/s
+U_C_P_CRS 巡航爬升率P，无量纲
+U_SPD_LND 降落速度偏移，单位m/s

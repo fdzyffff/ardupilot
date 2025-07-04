@@ -589,7 +589,15 @@ public:
     
     AP_Int8         axis_bitmask; // axes to be autotuned
     
-    AC_PID          user_thr_pid{0.1f, 0.1f, 0.01f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.0f};
+    AC_PID          user_thr_pid{0.1f, 0.02f, 0.00f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.0f};
+    AC_PID          user_pth_pid{2.5f, 2.2f, 0.01f, 0.0f, 5.0f, 5.0f, 5.0f, 5.0f, 0.0f};
+
+    AP_Float        user_throttle_takeoff;
+    AP_Float        user_airspeed_target_takeoff;
+    AP_Float        user_climbrate_p_takeoff;
+    AP_Float        user_airspeed_target_curise;
+    AP_Float        user_climbrate_p_curise;
+    AP_Float        user_airspeed_target_land;
 
     // just to make compilation easier when all things are compiled out...
     uint8_t unused_integer;

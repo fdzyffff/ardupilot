@@ -1257,8 +1257,15 @@ private:
     void userhook_SlowLoop();
     AP_HAL::UARTDriver *uart_output;
 
-    float _commanded_throttle;
+    void userhook_auto_takeoff();
+    void userhook_auto_cruise();
+    void userhook_auto_land();
+    void userhook_calc_pitch();
     void userhook_calc_throttle();
+    float _user_pitch_target;
+    float _user_throttle_out;
+    float _user_airspeed_target;
+    float _user_climbrate_p;
 
 public:
     void failsafe_check(void);

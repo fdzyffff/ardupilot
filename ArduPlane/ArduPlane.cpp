@@ -602,7 +602,7 @@ void Plane::update_alt()
         }
 
         TECS_controller.update_pitch_throttle(tecs_target_alt_cm,
-                                                 target_airspeed_cm,
+                                                 plane.aparm.airspeed_min*100.f,
                                                  flight_stage,
                                                  distance_beyond_land_wp,
                                                  get_takeoff_pitch_min_cd(),

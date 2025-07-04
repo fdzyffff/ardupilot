@@ -84,16 +84,10 @@ void ModeAuto::update()
         plane.takeoff_calc_roll();
         // plane.takeoff_calc_pitch();
         // plane.calc_throttle();
-        if (plane.relative_altitude < 3.0f) {
-            plane.pitchController.reset_I();
-        }
-        plane.nav_pitch_cd = 500.f;
-        plane.userhook_calc_throttle();
+        plane.userhook_auto_takeoff();
     } else if (nav_cmd_id == MAV_CMD_NAV_LAND) {
         plane.calc_nav_roll();
         // plane.calc_nav_pitch();
-        plane.nav_pitch_cd = 500.f;
-        plane.userhook_calc_throttle();
         // allow landing to restrict the roll limits
         plane.nav_roll_cd = plane.landing.constrain_roll(plane.nav_roll_cd, plane.g.level_roll_limit*100UL);
 
@@ -103,6 +97,7 @@ void ModeAuto::update()
         // } else {
         //     plane.calc_throttle();
         // }
+        plane.userhook_auto_land();
 #if AP_SCRIPTING_ENABLED
     } else if (nav_cmd_id == MAV_CMD_NAV_SCRIPT_TIME) {
         // NAV_SCRIPTING has a desired roll and pitch rate and desired throttle
@@ -119,8 +114,7 @@ void ModeAuto::update()
         plane.calc_nav_roll();
         // plane.calc_nav_pitch();
         // plane.calc_throttle();
-        plane.nav_pitch_cd = 000.f;
-        plane.userhook_calc_throttle();
+        plane.userhook_auto_cruise();
     }
 }
 
