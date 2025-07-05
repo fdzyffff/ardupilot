@@ -123,6 +123,7 @@
 #endif
 #include "AP_Arming.h"
 
+#include "User_shiftaverage.h"
 /*
   main APM:Plane class
  */
@@ -175,6 +176,8 @@ public:
 #if AP_EXTERNAL_CONTROL_ENABLED
     friend class AP_ExternalControl_Plane;
 #endif
+
+    friend class User_shiftaverage;
 
     Plane(void);
 
@@ -1266,6 +1269,9 @@ private:
     float _user_throttle_out;
     float _user_airspeed_target;
     float _user_climbrate_p;
+    bool _user_land_flag;
+
+    User_shiftaverage _user_rel_alt_filt;
 
 public:
     void failsafe_check(void);
