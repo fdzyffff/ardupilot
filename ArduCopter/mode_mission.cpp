@@ -85,21 +85,21 @@ void ModeMission::update_state()
             if (mode_guided.guided_mode != SubMode::VelAccel) {
                 copter.mode_guided.pva_control_start();
             }
-            if (copter.umission.target_pos_valid()) {
+            if (copter.umission.target_pos_prob_valid()) {
                 set_state(State::Cruise);
             }
         }
         break;
         case State::Cruise:
         {
-            if (!copter.umission.target_pos_valid()) {
+            if (!copter.umission.target_pos_prob_valid()) {
                 set_state(State::Wait);
             }
             if (mode_guided.guided_mode != SubMode::PosVelAccel) {
                 copter.mode_guided.posvelaccel_control_start();
             }
             if (millis() - copter.mode_guided.update_time_ms > 1000) {
-                copter.mode_guided.set_destination_posvel(copter.umission.get_target_pos());
+                copter.mode_guided.set_destination_posvel(copter.umission.get_target_pos_prob());
             }
             if (copter.umission.get_target_pos().get_distance(copter.current_loc) < 200.f) {
                 set_state(State::Search);
@@ -109,16 +109,16 @@ void ModeMission::update_state()
         break;
         case State::Search:
         {
-            if (!copter.umission.target_pos_valid()) {
+            if (!copter.umission.target_pos_prob_valid()) {
                 set_state(State::Wait);
             }
             if (mode_guided.guided_mode != SubMode::PosVelAccel) {
                 copter.mode_guided.posvelaccel_control_start();
             }
             if (millis() - copter.mode_guided.update_time_ms > 1000) {
-                copter.mode_guided.set_destination_posvel(copter.umission.get_target_pos());
+                copter.mode_guided.set_destination_posvel(copter.umission.get_target_pos_prob());
             }
-            if (copter.ugimbal.have_target) {
+            if (copter.ugimbal.have_target()) {
                 set_state(State::Track);
             }
             copter.ugimbal.set_state(UGimbal_State::Search);
@@ -126,10 +126,10 @@ void ModeMission::update_state()
         break;
         case State::Track:
         {
-            if (copter.ugimbal.have_target && (millis() - copter.mode_guided.update_time_ms > 1000)) {
-                copter.mode_guided.set_destination_posvel(copter.ugimbal.get_target_pos());
+            if (copter.ugimbal.have_target() && (millis() - copter.mode_guided.update_time_ms > 1000)) {
+                copter.mode_guided.set_destination_posvel(copter.umission.get_target_pos_prob());
             }
-            if (!copter.ugimbal.have_target) {
+            if (!copter.ugimbal.have_target()) {
                 set_state(State::Search);
             }
         }

@@ -2,13 +2,13 @@
 
 const AP_Param::GroupInfo UGimbal::var_info[] = {
 
-    AP_SUBGROUPINFO(lock_yaw,     "CYAW_", 0, UGimbal, AC_PID),
-    AP_SUBGROUPINFO(lock_pitch,   "CPTH_", 1, UGimbal, AC_PID),
-    AP_GROUPINFO("TOUT",   2, UGimbal, target_timeout,        2000),
-    AP_GROUPINFO("PIX_W",  3, UGimbal, cam_width,             360),
-    AP_GROUPINFO("PIX_H",  4, UGimbal, cam_height,            360),
-    AP_GROUPINFO("ANG_X",  5, UGimbal, cam_angle_x,           60.0f),
-    AP_GROUPINFO("ANG_Y",  6, UGimbal, cam_angle_y,           60.0f),
+    AP_SUBGROUPINFO(lock_yaw_pid,     "CYAW_", 0, UGimbal, AC_PID),
+    AP_SUBGROUPINFO(lock_pitch_pid,   "CPTH_", 1, UGimbal, AC_PID),
+    AP_GROUPINFO("TCAM_USE",   2, UGimbal, use_gimbal_cam,          0),
+    AP_GROUPINFO("TLOC_USE",   3, UGimbal, use_gimbal_loc,          0),
+    AP_GROUPINFO("UPRINT",     4, UGimbal, print,                   0),
+    AP_SUBGROUPPTR(_Gimbal_ptr_loc,   "TL_",    5, UGimbal,  FD_Gimbal_Loc),
+    AP_SUBGROUPPTR(_Gimbal_ptr_cam,   "TC_",    6, UGimbal,  FD_Gimbal_HaoFu),
 
     AP_GROUPEND
 };
@@ -48,78 +48,78 @@ void UGimbal::init()
     display_info.count = 0;
 
     _last_control_ms = millis();
-    _last_switch_ms = 0;
     _ret_valid = false;
 
     _yaw_sample_filter.set_cutoff_frequency(30.f, filt_yaw_hz.get());
     _pitch_sample_filter.set_cutoff_frequency(30.f, filt_pithc_hz.get());
     gcs().send_text(MAV_SEVERITY_WARNING, "Target FILT HZ [%0.0f, %0.0f]", filt_yaw_hz.get(), filt_pithc_hz.get());
+
+    init_gimbal();
 }
 
-void UGimbal::udpate_control_value(){
-    update_gimbal_pitch_rate();
-    update_gimbal_yaw_rate();
-    _last_control_ms = millis();
-    update_log();
-}
 
 void UGimbal::update_log() {
-    AP::logger().WriteStreaming("UATK",
-                                "TimeUS,bfx,bfy,efx,efy,efrx,efry,tpth,trll,tyaw",
-                                "s---------",
-                                "F---------",
-                                "Qfffffffff",
-                                AP_HAL::micros64(),
-                                (float)bf_info.x,
-                                (float)bf_info.y,
-                                (float)ef_info.x,
-                                (float)ef_info.y,
-                                (float)ef_rate_info.x,
-                                (float)ef_rate_info.y,
-                                (float)_target_pitch_rate,
-                                (float)_target_roll_angle,
-                                (float)_target_yaw_rate);
+    static _last_log_ms = millis();
+    if (millis() - _last_log_ms > 100) {
+        _last_log_ms = millis();
+        AP::logger().WriteStreaming("UATK",
+                                    "TimeUS,bfx,bfy,efx,efy,efrx,efry,tpth,trll,tyaw",
+                                    "s---------",
+                                    "F---------",
+                                    "Qfffffffff",
+                                    AP_HAL::micros64(),
+                                    (float)bf_info.x,
+                                    (float)bf_info.y,
+                                    (float)ef_info.x,
+                                    (float)ef_info.y,
+                                    (float)ef_rate_info.x,
+                                    (float)ef_rate_info.y,
+                                    (float)_target_pitch_rate,
+                                    (float)_target_roll_angle,
+                                    (float)_target_yaw_rate);
 
-    AP::logger().WriteStreaming("UAT2",
-                                "TimeUS,angt,angm,agrt,agrm",
-                                "s----",
-                                "F----",
-                                "Qffff",
-                                AP_HAL::micros64(),
-                                (float)_attack_angle_target,
-                                (float)_attack_angle_measure,
-                                (float)_attack_angle_rate_target,
-                                (float)_attack_angle_rate_measure);
+        AP::logger().WriteStreaming("UAT2",
+                                    "TimeUS,angt,angm,agrt,agrm",
+                                    "s----",
+                                    "F----",
+                                    "Qffff",
+                                    AP_HAL::micros64(),
+                                    (float)_attack_angle_target,
+                                    (float)_attack_angle_measure,
+                                    (float)_attack_angle_rate_target,
+                                    (float)_attack_angle_rate_measure);
 
-    AP::logger().WriteStreaming("UATH",
-                                "TimeUS,target,actual,ff,P,I,D,srate,dmod",
-                                "s--------",
-                                "F--------",
-                                "Qffffffff",
-                                AP_HAL::micros64(),
-                                (float)attack_throttle_pid.get_pid_info().target,
-                                (float)attack_throttle_pid.get_pid_info().actual,
-                                (float)attack_throttle_pid.get_pid_info().FF,
-                                (float)attack_throttle_pid.get_pid_info().P,
-                                (float)attack_throttle_pid.get_pid_info().I,
-                                (float)attack_throttle_pid.get_pid_info().D,
-                                (float)attack_throttle_pid.get_pid_info().slew_rate,
-                                (float)attack_throttle_pid.get_pid_info().Dmod);
+        AP::logger().WriteStreaming("UATH",
+                                    "TimeUS,target,actual,ff,P,I,D,srate,dmod",
+                                    "s--------",
+                                    "F--------",
+                                    "Qffffffff",
+                                    AP_HAL::micros64(),
+                                    (float)attack_throttle_pid.get_pid_info().target,
+                                    (float)attack_throttle_pid.get_pid_info().actual,
+                                    (float)attack_throttle_pid.get_pid_info().FF,
+                                    (float)attack_throttle_pid.get_pid_info().P,
+                                    (float)attack_throttle_pid.get_pid_info().I,
+                                    (float)attack_throttle_pid.get_pid_info().D,
+                                    (float)attack_throttle_pid.get_pid_info().slew_rate,
+                                    (float)attack_throttle_pid.get_pid_info().Dmod);
 
-    AP::logger().WriteStreaming("UARL",
-                                "TimeUS,target,actual,ff,P,I,D,srate,dmod",
-                                "s--------",
-                                "F--------",
-                                "Qffffffff",
-                                AP_HAL::micros64(),
-                                (float)attack_roll_pid.get_pid_info().target,
-                                (float)attack_roll_pid.get_pid_info().actual,
-                                (float)attack_roll_pid.get_pid_info().FF,
-                                (float)attack_roll_pid.get_pid_info().P,
-                                (float)attack_roll_pid.get_pid_info().I,
-                                (float)attack_roll_pid.get_pid_info().D,
-                                (float)attack_roll_pid.get_pid_info().slew_rate,
-                                (float)attack_roll_pid.get_pid_info().Dmod);
+        AP::logger().WriteStreaming("UARL",
+                                    "TimeUS,target,actual,ff,P,I,D,srate,dmod",
+                                    "s--------",
+                                    "F--------",
+                                    "Qffffffff",
+                                    AP_HAL::micros64(),
+                                    (float)attack_roll_pid.get_pid_info().target,
+                                    (float)attack_roll_pid.get_pid_info().actual,
+                                    (float)attack_roll_pid.get_pid_info().FF,
+                                    (float)attack_roll_pid.get_pid_info().P,
+                                    (float)attack_roll_pid.get_pid_info().I,
+                                    (float)attack_roll_pid.get_pid_info().D,
+                                    (float)attack_roll_pid.get_pid_info().slew_rate,
+                                    (float)attack_roll_pid.get_pid_info().Dmod);
+
+    }
 
 }
 
@@ -135,77 +135,57 @@ const Vector2f& UGimbal::get_ef_rate_info() {
     return ef_rate_info;
 }
 
+bool UGimbal::have_target() {
+    if (_Gimbal_ptr == nullptr) {
+        return false;
+    } else {
+        return _ret_valid;
+    }
+    return false;
+}
+
+void UAttack::init_gimbal()
+{
+    bool use_cam = use_gimbal_cam.get();
+    bool use_loc = use_gimbal_loc.get();
+
+    if (use_cam) {
+        _Gimbal_ptr_cam = new FD_Gimbal_HaoFu();
+        if (_Gimbal_ptr_cam->init()) {
+            gcs().send_text(MAV_SEVERITY_WARNING, "Gimbal Cam init");
+            _Gimbal_ptr = _Gimbal_ptr_cam;
+            AP_Param::load_object_from_eeprom(_Gimbal_ptr_cam, FD_Gimbal_HaoFu::var_info);
+        } else {
+            gcs().send_text(MAV_SEVERITY_WARNING, "Gimbal Cam Fail");
+            _Gimbal_ptr_cam = nullptr;
+            _Gimbal_ptr = nullptr;
+        }
+    } else if (use_loc) {
+        _Gimbal_ptr_loc = new FD_Gimbal_Loc();
+        if (_Gimbal_ptr_loc->init()) {
+            gcs().send_text(MAV_SEVERITY_WARNING, "Gimbal Loc init");
+            _Gimbal_ptr = _Gimbal_ptr_loc;
+        } else {
+            gcs().send_text(MAV_SEVERITY_WARNING, "Gimbal Loc Fail");
+            _Gimbal_ptr_loc = nullptr;
+            _Gimbal_ptr = nullptr;
+        }
+    }
+    else {
+        gcs().send_text(MAV_SEVERITY_WARNING, "Gimbal TYPE UNKNOW %d", use_Gimbal_cam_type.get());
+        _Gimbal_ptr = nullptr;
+    }
+}
+
 
 // called at 100 Hz
 void UGimbal::update()
 {
-    uart_gimbal_update();
-    uart_ret_update();
+    gimbal_ret_update();
     gimbal_control_update();
 }
 
-void UGimbal::uart_ret_update()
-{
-    FD_K230_ptr->read();
-    FD_msg_K230 &tmp_msg = FD_K230_ptr->get_msg_K230();
-    if (tmp_msg._msg_1.updated) {
-
-        if (tmp_msg._msg_1.content.msg.tag_ok) {
-            _last_ret_ms = millis();
-            float theta1 = -cal_frame_angle(cam_width.get(), cam_angle_x.get(), tmp_msg._msg_1.content.msg.tag_x); // x-axis, degree
-            float theta2 =  cal_frame_angle(cam_height.get(), cam_angle_y.get(), tmp_msg._msg_1.content.msg.tag_y); // y-axis, degree
-
-            Vector3f tmp = Vector3f(1.f, tanf(radians(theta1)), -tanf(radians(theta2)));
-            float p1 = degrees(atanf(tmp.y/tmp.x));
-            float p2 = degrees(atanf(tmp.z/tmp.xy().length()));
-            cal_and_handle(p1, p2);
-        }
-
-        tmp_msg._msg_1.updated = false;   
-    }
-    uint32_t tnow = millis(); // 只能放这里，handle_info会更新_last_ret_ms的值，如果tnow赋值在其之前，则会小于_last_ret_ms。SITL仿不出来，它周期是50Hz太低了
-    if ((target_timeout > 0) && (tnow - _last_ret_ms > (uint32_t)target_timeout)) {
-        // if (_ret_valid) {
-        //     gcs().send_text(MAV_SEVERITY_INFO, "valid %ld|%ld", tnow, _last_ret_ms);
-        // }
-        _ret_valid = false;
-    }
-}
-
-void UGimbal::cal_and_handle(float p1, float p2) 
-{
-    AP_Mount* mount = AP::mount();
-    float cam_roll, cam_pitch, cam_bf_yaw;
-    if (mount != nullptr) {
-        mount->get_attitude_euler(0, cam_roll, cam_pitch, cam_bf_yaw);
-    }
-
-    float _roll = AP::ahrs().get_roll();
-    float _pitch = AP::ahrs().get_pitch();
-
-    Vector3f target_unit = Vector3f(1.0f, 0.0f, 0.0f);
-    Matrix3f tmp_target_cam_m;
-    tmp_target_cam_m.from_euler(0.0f, radians(p2), radians(p1));
-    Matrix3f tmp_cam_level_m;
-    tmp_cam_level_m.from_euler(radians(cam_roll), radians(cam_pitch), radians(cam_bf_yaw));
-    Matrix3f tmp_level_body_m;
-    tmp_level_body_m.from_euler(_roll, _pitch, 0.0f);
-    tmp_level_body_m.transpose();
-    Matrix3f tmp_target_earth_m = tmp_level_body_m*tmp_cam_level_m*tmp_target_cam_m;
-    Vector3f bf_unit = tmp_target_earth_m*target_unit;
-
-    float angle_yaw =   wrap_180(degrees(atan2f( bf_unit.y, bf_unit.x)));
-    float angle_pitch = wrap_180(degrees(atan2f(-bf_unit.z, bf_unit.xy().length())));
-    
-    _last_ret_ms = millis();
-    _p1 = angle_yaw;
-    _p2 = angle_pitch;
-    _new_data = true;
-    _ret_valid = true;
-}
-
-
-void UGimbal::gimbal_control_update()
+void UGimbal::gimbal_ret_update()
 {
     // for log purpose
     static uint32_t last_count_ms = millis();
@@ -214,52 +194,29 @@ void UGimbal::gimbal_control_update()
         display_info.count_log = display_info.count;
         display_info.count = 0;
         last_count_ms = tnow_ms;
-        //update filter cutoff HZ in flight
-        _yaw_sample_filter.set_cutoff_frequency(30.f, filt_yaw_hz.get());
-        _pitch_sample_filter.set_cutoff_frequency(30.f, filt_pithc_hz.get());
     }
 
-    float p1 = _p1;
-    float p2 = _p2;
-    if (_ret_valid) {
-        if (_new_data) {
-            handle_info_final(p1, p2);
-            udpate_control_value();
-            _new_data = false;
-        }
-        _state = Gimbal_State::AHead;
+    if (_Gimbal_ptr != nullptr) {
+        _Gimbal_ptr->update();
+        _Gimbal_ptr->get_attitude_euler(_cam_roll, _cam_pitch, _cam_bf_yaw);
+        _cam_yaw = wrap_2PI(AP::ahrs().get_yaw() + _cam_bf_yaw);
     } else {
-        _state = Gimbal_State::Search;
+        _target_pitch_rate = 0.0f;
+        _target_roll_angle = 0.0f;
+        _target_yaw_rate = 0.0f;
+        return;
     }
 
-    switch (_state) {
-        case Gimbal_State::AHead:
-        {
-            float target_pitch = 0.0f;
-            float target_yaw = 0.0f;
-        }
-        break;
-        case Gimbal_State::Search:
-        {
-            float target_pitch = 0.0f;
-            float target_yaw = 0.0f;
-        }
-        break;
-        case Gimbal_State::Lock:
-        {
-            if (_ret_valid) {
-                if (_new_data) {
-                    handle_info_final(p1, p2);
-                    float target_pitch = 0.0f;
-                    float target_yaw = 0.0f;
-                }
-            } else {
-                set_state(Gimbal_State::Search);
-            }
-        }
-        break;
+    _ret_valid = _Gimbal_ptr->have_target();
+    if (_ret_valid) {
+        ;
     }
-    update_gimbal_control();
+
+    float p1 = 0;
+    float p2 = 0;
+    if (_Gimbal_ptr->get_info(p1, p2)) {
+        handle_info_final(p1, p2);
+    }
 }
 
 void UGimbal::handle_info_final(float p1, float p2) {
@@ -288,11 +245,9 @@ void UGimbal::handle_info_final(float p1, float p2) {
     Vector3f target_unit = Vector3f(1.0f, 0.0f, 0.0f);
     Matrix3f tmp_target_cam_m;
     tmp_target_cam_m.from_euler(0.0f, radians(p2), radians(p1));
-    Matrix3f tmp_cam_body_m;
-    tmp_cam_body_m.from_euler(0.0f, radians(0.0f), radians(0.0f));
-    Matrix3f tmp_body_earth_m;
-    tmp_body_earth_m.from_euler(_roll, _pitch, _yaw);
-    Matrix3f tmp_target_earth_m = tmp_body_earth_m*tmp_cam_body_m*tmp_target_cam_m;
+    Matrix3f tmp_cam_earth_m;
+    tmp_cam_earth_m.from_euler(_cam_roll, _cam_pitch, _cam_yaw);
+    Matrix3f tmp_target_earth_m = tmp_cam_earth_m*tmp_target_cam_m;
     Vector3f ef_unit = tmp_target_earth_m*target_unit;
 
     // static uint32_t last_info_ms = millis();
@@ -325,64 +280,115 @@ void UGimbal::handle_info_final(float p1, float p2) {
     display_info.count++;
 }
 
-// degree/second
-void UGimbal::update_gimbal_pitch_rate() {
-    float k1_pitch = attack_k1_pitch.get();
-    float k2_pitch = attack_k2_pitch.get();
-    float pitch_off = attack_pitch_off.get();
-    // float boost_factor = constrain_float(fabsf(bf_info.y)/15.0f, 0.0f, 1.0f) * 2.0f;
-    float angle_err = constrain_float(bf_info.y + pitch_off, -30.0f, 30.0f);
-    _target_pitch_rate = k1_pitch * ef_rate_info.y + k2_pitch * angle_err; // degrees/s
+void UGimbal::gimbal_control_update()
+{
+    // for log purpose
+    static uint32_t last_set_ms = millis();
+    uint32_t tnow_ms = millis();
+    if (tnow_ms - last_set_ms > 1000) {
+        last_set_ms = tnow_ms;
+        //update filter cutoff HZ in flight
+        _yaw_sample_filter.set_cutoff_frequency(30.f, filt_yaw_hz.get());
+        _pitch_sample_filter.set_cutoff_frequency(30.f, filt_pithc_hz.get());
+    }
 
-    //Limit pitch rate
-    float limit_pitch_rate = pitch_rate_limit;
-    _target_pitch_rate = constrain_float(_target_pitch_rate, -limit_pitch_rate, limit_pitch_rate);
 
-    // //Limit pitch
-    // float current_pitch = degrees(copter.ahrs.pitch);
-    // float limit_pitch = constrain_float(pitch_limit, -60.f, 60.f);
-    // if (current_pitch > limit_pitch) {
-    //     _target_pitch_rate = MAX(_target_pitch_rate, 0.0f);
-    // } else if (current_pitch < -limit_pitch) {
-    //     _target_pitch_rate = MIN(_target_pitch_rate, 0.0f);
-    // }
-    // gcs().send_text(MAV_SEVERITY_INFO, "%f", _target_pitch_rate_cds);
+    switch (_state) {
+        default:
+        case Gimbal_State::AHead:
+        {
+            float target_pitch = -45.0f;
+            float target_yaw = degrees(AP::ahrs().get_yaw());
+            do_gimbal_attitude_control(target_pitch, target_yaw);
+        }
+        break;
+        case Gimbal_State::Search:
+        {
+            float target_pitch = -45.0f;
+            float target_yaw = degrees(_cam_yaw);
+            do_gimbal_attitude_control(target_pitch, target_yaw);
+            _gimbal_yaw_rate = 10.0f;
+            if (have_target()) {
+                set_state(Gimbal_State::Lock);
+            }
+        }
+        break;
+        case Gimbal_State::Lock:
+        {
+            if (have_target()) {
+                float target_pitch = wrap_360(degrees(_cam_pitch) + bf_info.y);
+                float target_yaw = wrap_360(degrees(_cam_yaw) + bf_info.x);
+                do_gimbal_attitude_control(target_pitch, target_yaw);
+            } else {
+                set_state(Gimbal_State::Search);
+            }
+        }
+        break;
+    }
+
+    update_gimbal_control();
+    update_log();
 }
 
-// degree
-void UGimbal::update_target_roll_angle() {
-    // _target_roll_angle = constrain_float(attack_roll_factor.get() * ef_rate_info.x, -15.f, 15.f);
-    float k2_roll = attack_k2_roll.get();
+void update_gimbal_control() {
+    // send uart ;
+    if (_Gimbal_ptr != nullptr) {
+        _Gimbal_ptr->do_rate_control(_gimbal_pitch_rate, _gimbal_yaw_rate);
+    }
+}
 
+void UGimbal::do_gimbal_attitude_control(float target_gimbal_pitch, float target_gimbal_yaw) {
+    static uint32_t _last_control_ms = millis();
     float dt = (millis() - _last_control_ms);
     dt = dt * 0.001f;
-    if (dt > 0.2f) {dt = 0.2f;}
-    _target_roll_angle = attack_roll_pid.update_all(0.0f, -ef_rate_info.x, dt) + k2_roll * _target_yaw_rate;
+    if (dt > 0.2f) {
+        dt = 0.2f;
+        lock_pitch_pid.reset_I();
+        lock_yaw_pid.reset_I();
+    }
+    _last_control_ms = millis();
+
+    update_gimbal_pitch_rate(target_gimbal_pitch, dt);
+    update_gimbal_yaw_rate(target_gimbal_yaw, dt);
 }
 
 // degree/second
-void UGimbal::update_gimbal_yaw_rate() {
-    float k1_yaw = attack_k1_yaw.get();
-    float k2_yaw = attack_k2_yaw.get();
-    // float boost_factor = constrain_float(fabsf(bf_info.x)/15.0f, 0.0f, 1.0f) * 2.0f;
-    float angle_err = constrain_float(bf_info.x, -30.0f, 30.0f);
-    _target_yaw_rate = k1_yaw * ef_rate_info.x + k2_yaw * angle_err;
-    display_info.p11 = angle_err;
-    display_info.p12 = k2_yaw;
-    display_info.p13 = _target_yaw_rate;
-    display_info.p14 = copter.UGimbal.get_target_yaw_rate();
+void UGimbal::update_gimbal_pitch_rate(float target_gimbal_pitch, float dt) {
+    _gimbal_pitch_rate = lock_pitch_pid.update_all(delta_pitch, degrees(_cam_pitch), dt);
 }
 
+// degree/second
+void UGimbal::update_gimbal_yaw_rate(float target_gimbal_yaw, float dt) {
+    _gimbal_yaw_rate = lock_yaw_pid.update_all(target_gimbal_yaw, degrees(_cam_yaw), dt);
+}
 
-void UGimbal::handle_attack_msg(const mavlink_message_t &msg) {
-    if (_Target_ptr_loc != nullptr) {
-        _Target_ptr_loc->handle_msg(msg);
-    }
-    if (_Target_ptr_cam != nullptr) {
-        _Target_ptr_cam->handle_msg(msg);
+void UGimbal::handle_gimbal_msg(const mavlink_message_t &msg) {
+    if (_Gimbal_ptr != nullptr) {
+        _Gimbal_ptr->handle_msg(msg);
     }
 }
 
+void UGimbal::set_state(UGimbal_State state_in) {
+    _state = state_in;
+    switch (_state) {
+        default:
+        case Gimbal_State::AHead:
+        {
+            gcs().send_text(MAV_SEVERITY_INFO, "[Gimbal] AHead");
+        }
+        break;
+        case Gimbal_State::Search:
+        {
+            gcs().send_text(MAV_SEVERITY_INFO, "[Gimbal] Search");
+        }
+        break;
+        case Gimbal_State::Lock:
+        {
+            gcs().send_text(MAV_SEVERITY_INFO, "[Gimbal] Lock");
+        }
+        break;
+    }
+}
 
 // UDelay
 void UGimbal::UDelay::init()

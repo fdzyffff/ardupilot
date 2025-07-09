@@ -8,36 +8,40 @@ class UGimbal {
 public:
 
     friend class Copter;
-    friend class ModeAttack;
+    friend class ModeMission;
 
     // constructor, destructor
     UGimbal();
+
+    enum class Gimbal_State {
+        AHead = 0,
+        Search,
+        Lock,
+    };
 
     // var_info for holding Parameter information
     static const struct AP_Param::GroupInfo var_info[];
 
     void init();
-    bool is_active() const { return (current_idx>0); }
-    bool is_active_loc() const { return (current_idx == 2); }
-    void udpate_control_value();
-    void init_target();
-    void update();
     const Vector2f& get_bf_info();
     const Vector2f& get_ef_info();
     const Vector2f& get_ef_rate_info();
+    void update();
+    void gimbal_ret_update();
+    void gimbal_control_update();
+    void handle_info_final(float p1, float p2);
+    void do_gimbal_attitude_control(float target_gimbal_pitch, float target_gimbal_yaw);
+    void update_gimbal_pitch_rate(float target_gimbal_pitch, float dt);
+    void update_gimbal_yaw_rate(float target_gimbal_yaw, float dt);
+    void handle_gimbal_msg(const mavlink_message_t &msg);
+    void update_log();
+    void set_state(UGimbal_State state_in);
 
     float get_target_pitch_rate() {return _target_pitch_rate;}
-    float get_target_roll_angle() {return _target_roll_angle;}
     float get_target_yaw_rate() {return _target_yaw_rate;}
 
-    void handle_attack_msg(const mavlink_message_t &msg);
-    void handle_info(float p1, float p2);
+    bool have_target();
 
-    void update_target_pitch_rate();
-    void update_target_roll_angle();
-    void update_target_yaw_rate();
-    void update_target_throttle();
-    void update_log();
 
     struct {
         float p1;
@@ -57,55 +61,30 @@ public:
         uint16_t count_log;
     } display_info;
 
+    Gimbal_State _state;
+
     Vector2f bf_info;
     Vector2f ef_info;
     Vector2f ef_rate_info;
-    bool _active;
-    float _target_pitch_rate;
-    float _target_roll_angle;
-    float _target_yaw_rate;
-    float _attack_angle_target;
-    float _attack_angle_measure;
-    float _attack_angle_rate_target;
-    float _attack_angle_rate_measure;
-    float _attack_throttle;
+    bool _ret_valid;
+    float _gimbal_pitch_rate;
+    float _gimbal_yaw_rate;
 
-    float _attack_throttle_pid;
-    float _attack_throttle_p;
-    float _attack_throttle_i;
-    float _attack_throttle_d;
 
 private:
 
-    AP_Float        attack_k1_pitch;
-    AP_Float        attack_k2_pitch;
-    AP_Float        attack_k1_yaw;
-    AP_Float        attack_k2_yaw;
-    AP_Float        attack_k2_roll;
-    AP_Float        attack_k_angle;
-    AP_Float        attack_throttle;
-    AP_Float        attack_throttle_rate;
-    AP_Int16        attack_timeout;
-    AP_Float        attack_angle;
-    AP_Float        pitch_limit;
-    AP_Float        pitch_rate_limit;
-    AP_Float        attack_pitch_off;
     AP_Int16        print;
-    AP_Int8         use_target_cam;
-    AP_Int8         use_target_loc;
-    AP_Int8         use_target_cam_type;
+    AP_Int8         use_gimbal_cam;
+    AP_Int8         use_gimbal_loc;
     AP_Float        filt_yaw_hz;
     AP_Float        filt_pithc_hz;
 
-    AC_PID          attack_roll_pid{0.5f, 0.1f, 0.01f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.5f};
-    AC_PID          attack_throttle_pid{0.5f, 0.03f, 0.01f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.5f};
+    AC_PID          lock_yaw_pid{0.5f, 0.1f, 0.01f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.5f};
+    AC_PID          lock_pitch_pid{0.5f, 0.03f, 0.01f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.5f};
 
-    FD_Target_Base*   _Target_ptr_cam;
-    FD_Target_Mav*    _Target_ptr_cam_mav;
-    FD_Target_RK3588* _Target_ptr_cam_rk3588;
-    FD_Target_K230*   _Target_ptr_cam_k230;
-    FD_Target_LRB*    _Target_ptr_cam_lrb;
-    FD_Target_Loc*    _Target_ptr_loc;
+    FD_Gimbal_Base*   _Gimbal_ptr;
+    FD_Gimbal_HaoFu*  _Gimbal_ptr_cam;
+    FD_Gimbal_Loc*    _Gimbal_ptr_loc;
 
     uint32_t _last_ms;
     uint32_t _last_switch_ms;
