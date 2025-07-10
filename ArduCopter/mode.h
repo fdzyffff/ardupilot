@@ -100,6 +100,7 @@ public:
         AUTOROTATE =   26,  // Autonomous autorotation
         AUTO_RTL =     27,  // Auto RTL, this is not a true mode, AUTO will report as this mode if entered to perform a DO_LAND_START Landing sequence
         TURTLE =       28,  // Flip over after crash
+        MISSION =      30,
 
         // Mode number 127 reserved for the "drone show mode" in the Skybrush
         // fork at https://github.com/skybrush-io/ardupilot
@@ -1051,6 +1052,7 @@ public:
 #if AP_EXTERNAL_CONTROL_ENABLED
     friend class AP_ExternalControl_Copter;
 #endif
+    friend class ModeMission;
 
     // inherit constructor
     using Mode::Mode;
@@ -1148,6 +1150,8 @@ public:
 #if WEATHERVANE_ENABLED
     bool allows_weathervaning(void) const override;
 #endif
+
+    uint32_t my_update_time_ms;
 
 protected:
 
@@ -2051,3 +2055,49 @@ private:
 
 };
 #endif
+
+
+class ModeMission : public Mode {
+
+public:
+    // inherit constructor
+    using Mode::Mode;
+    Number mode_number() const override { return Number::MISSION; }
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    bool requires_GPS() const override { return true; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(AP_Arming::Method method) const override { return true; }
+    bool is_autopilot() const override { return true; }
+    bool has_user_takeoff(bool must_navigate) const override { return true; }
+
+    bool requires_terrain_failsafe() const override { return true; }
+
+    // Return true if the throttle high arming check can be skipped when arming from GCS or Scripting
+    bool allows_GCS_or_SCR_arming_with_throttle_high() const override { return true; }
+
+
+protected:
+
+    const char *name() const override { return "MISSION"; }
+    const char *name4() const override { return "MISN"; }
+
+    uint32_t wp_distance() const override;
+    int32_t wp_bearing() const override;
+    float crosstrack_error() const override;
+
+    enum class State {
+        Init = 0,
+        Takeoff,
+        Wait,
+        Cruise,
+        Search,
+        Track,
+        Return,
+    };
+    State mission_state;
+    void update_state();
+    void set_state(State state_in);
+};

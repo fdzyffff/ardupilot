@@ -3,12 +3,12 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_SerialManager/AP_SerialManager.h>
 
-#include "FD_msg_RK3588.h"
+#include "FD_msg_HaoFu.h"
 
-class FD_RK3588 {
+class FD_HaoFu {
 public:
 
-    FD_RK3588(enum AP_SerialManager::SerialProtocol protocol):
+    FD_HaoFu(enum AP_SerialManager::SerialProtocol protocol):
     _protocol(protocol)
     {
         _port = NULL;
@@ -16,15 +16,15 @@ public:
         init();
     }
 
-    FD_RK3588(AP_HAL::UARTDriver *port_in)
+    FD_HaoFu(AP_HAL::UARTDriver *port_in)
     {
         _port = port_in;
         _initialized = true;
     }
 
     /* Do not allow copies */
-    FD_RK3588(const FD_RK3588 &other) = delete;
-    FD_RK3588 &operator=(const FD_RK3588&) = delete;
+    FD_HaoFu(const FD_HaoFu &other) = delete;
+    FD_HaoFu &operator=(const FD_HaoFu&) = delete;
 
     // init - perform required initialisation
     bool init();
@@ -36,7 +36,7 @@ public:
 
     uint32_t port_avaliable();
 
-    FD_msg_RK3588& get_msg_RK3588()   { return _msg_RK3588; }
+    FD_msg_HaoFu& get_msg_HaoFu()   { return _msg_HaoFu; }
 
 private:
 
@@ -44,5 +44,5 @@ private:
     AP_SerialManager::SerialProtocol _protocol; // protocol used - detected using SerialManager's SERIAL#_PROTOCOL parameter
     bool _initialized;
 
-    FD_msg_RK3588 _msg_RK3588;
+    FD_msg_HaoFu _msg_HaoFu;
 };

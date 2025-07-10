@@ -1,7 +1,7 @@
 #pragma once
 
 #include <AP_HAL/AP_HAL.h>
-#include <FD_Target/FD_Target.h>
+#include <FD_Gimbal/FD_Gimbal.h>
 
 class UGimbal {
 
@@ -14,7 +14,7 @@ public:
     UGimbal();
 
     enum class Gimbal_State {
-        AHead = 0,
+        Ahead = 0,
         Search,
         Lock,
     };
@@ -23,6 +23,7 @@ public:
     static const struct AP_Param::GroupInfo var_info[];
 
     void init();
+    void init_gimbal();
     const Vector2f& get_bf_info();
     const Vector2f& get_ef_info();
     const Vector2f& get_ef_rate_info();
@@ -35,10 +36,10 @@ public:
     void update_gimbal_yaw_rate(float target_gimbal_yaw, float dt);
     void handle_gimbal_msg(const mavlink_message_t &msg);
     void update_log();
-    void set_state(UGimbal_State state_in);
+    void set_state(Gimbal_State state_in);
 
-    float get_target_pitch_rate() {return _target_pitch_rate;}
-    float get_target_yaw_rate() {return _target_yaw_rate;}
+    float get_gimbal_pitch_rate() {return _gimbal_pitch_rate;}
+    float get_gimbal_yaw_rate() {return _gimbal_yaw_rate;}
 
     bool have_target();
 
@@ -69,6 +70,10 @@ public:
     bool _ret_valid;
     float _gimbal_pitch_rate;
     float _gimbal_yaw_rate;
+    float _cam_roll;
+    float _cam_pitch;
+    float _cam_bf_yaw;
+    float _cam_yaw;
 
 
 private:

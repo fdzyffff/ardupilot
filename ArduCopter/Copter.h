@@ -174,6 +174,9 @@
 #endif
 #include "mode.h"
 
+#include "UMission.h"
+#include "UGimbal.h"
+
 class Copter : public AP_Vehicle {
 public:
     friend class GCS_MAVLINK_Copter;
@@ -223,10 +226,14 @@ public:
     friend class ModeZigZag;
     friend class ModeAutorotate;
     friend class ModeTurtle;
+    friend class ModeMission;
 
     friend class _AutoTakeoff;
 
     friend class PayloadPlace;
+
+    friend class UMission;
+    friend class UGimbal;
 
     Copter(void);
 
@@ -1072,11 +1079,14 @@ private:
 #if MODE_TURTLE_ENABLED
     ModeTurtle mode_turtle;
 #endif
+    ModeMission mode_mission;
 
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);
 
+    UMission umission;
+    UGimbal ugimbal;
 public:
     void failsafe_check();      // failsafe.cpp
 };

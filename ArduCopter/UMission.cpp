@@ -32,7 +32,7 @@ Location UMission::get_target_pos_prob()
 }
 
 // USER_4: 目标概略位置
-// USER_5: 目标计算位置
+// USER_5: 目标解析位置
 void UMission::handle_mission_msg(const mavlink_message_t &msg) {
     if (msg.msgid == MAVLINK_MSG_ID_COMMAND_LONG) {
         // decode packet

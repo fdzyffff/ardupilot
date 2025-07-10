@@ -5,13 +5,15 @@
 // init - initialise guided controller
 bool ModeMission::init(bool ignore_checks)
 {
-    if (copter.mode_guided.init()) {
-        if (copter.motors->armed && !copter.land_complete) {
+    if (copter.mode_guided.init(ignore_checks)) {
+        if (copter.motors->armed() && !copter.ap.land_complete) {
             set_state(State::Wait);
         } else {
             set_state(State::Init);
         }
+        return true;
     }
+    return false;
 }
 
 // run - runs the guided controller
@@ -65,24 +67,24 @@ void ModeMission::update_state()
     switch (mission_state) {
         case State::Init:
         {
-            if (copter.motors->armed && copter.land_complete) {
+            if (copter.motors->armed() && copter.ap.land_complete) {
                 set_state(State::Takeoff);
             }
         }
         break;
         case State::Takeoff:
         {
-            if (mode_guided.guided_mode != SubMode::TakeOff) {
+            if (copter.mode_guided.submode() != ModeGuided::SubMode::TakeOff) {
                 set_state(State::Wait);
             }
-            if (mode_guided.takeoff_complete) {
+            if (copter.mode_guided.takeoff_complete) {
                 set_state(State::Wait);
             }
         }
         break;
         case State::Wait:
         {
-            if (mode_guided.guided_mode != SubMode::VelAccel) {
+            if (copter.mode_guided.submode() != ModeGuided::SubMode::VelAccel) {
                 copter.mode_guided.pva_control_start();
             }
             if (copter.umission.target_pos_prob_valid()) {
@@ -95,16 +97,16 @@ void ModeMission::update_state()
             if (!copter.umission.target_pos_prob_valid()) {
                 set_state(State::Wait);
             }
-            if (mode_guided.guided_mode != SubMode::PosVelAccel) {
+            if (copter.mode_guided.submode() != ModeGuided::SubMode::PosVelAccel) {
                 copter.mode_guided.posvelaccel_control_start();
             }
-            if (millis() - copter.mode_guided.update_time_ms > 1000) {
-                copter.mode_guided.set_destination_posvel(copter.umission.get_target_pos_prob());
+            if (millis() - copter.mode_guided.my_update_time_ms > 1000) {
+                copter.mode_guided.set_destination(copter.umission.get_target_pos_prob());
             }
             if (copter.umission.get_target_pos().get_distance(copter.current_loc) < 200.f) {
                 set_state(State::Search);
             }
-            ugimbal.set_state(UGimbal_State::Ahead);
+            copter.ugimbal.set_state(UGimbal::Gimbal_State::Ahead);
         }
         break;
         case State::Search:
@@ -112,22 +114,22 @@ void ModeMission::update_state()
             if (!copter.umission.target_pos_prob_valid()) {
                 set_state(State::Wait);
             }
-            if (mode_guided.guided_mode != SubMode::PosVelAccel) {
+            if (copter.mode_guided.submode() != ModeGuided::SubMode::PosVelAccel) {
                 copter.mode_guided.posvelaccel_control_start();
             }
-            if (millis() - copter.mode_guided.update_time_ms > 1000) {
-                copter.mode_guided.set_destination_posvel(copter.umission.get_target_pos_prob());
+            if (millis() - copter.mode_guided.my_update_time_ms > 1000) {
+                copter.mode_guided.set_destination(copter.umission.get_target_pos_prob());
             }
             if (copter.ugimbal.have_target()) {
                 set_state(State::Track);
             }
-            copter.ugimbal.set_state(UGimbal_State::Search);
+            copter.ugimbal.set_state(UGimbal::Gimbal_State::Search);
         }
         break;
         case State::Track:
         {
-            if (copter.ugimbal.have_target() && (millis() - copter.mode_guided.update_time_ms > 1000)) {
-                copter.mode_guided.set_destination_posvel(copter.umission.get_target_pos_prob());
+            if (copter.ugimbal.have_target() && (millis() - copter.mode_guided.my_update_time_ms > 1000)) {
+                copter.mode_guided.set_destination(copter.umission.get_target_pos_prob());
             }
             if (!copter.ugimbal.have_target()) {
                 set_state(State::Search);
@@ -142,7 +144,7 @@ void ModeMission::update_state()
     }
 }
 
-void ModeMission::set_state(State::state_in)
+void ModeMission::set_state(State state_in)
 {
     if (mission_state == state_in) {
         return;
@@ -156,7 +158,7 @@ void ModeMission::set_state(State::state_in)
         break;
         case State::Takeoff:
         {
-            if (mode_guided.do_user_takeoff_start(200.f)) {
+            if (copter.mode_guided.do_user_takeoff_start(200.f)) {
                 mission_state = state_in;
             } else {
                 gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: Takeoff");
@@ -210,3 +212,5 @@ void ModeMission::set_state(State::state_in)
         break;
     }
 }
+
+#endif

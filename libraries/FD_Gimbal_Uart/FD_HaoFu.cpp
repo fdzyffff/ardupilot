@@ -1,11 +1,11 @@
-#include "FD_RK3588.h"
+#include "FD_HaoFu.h"
 
 extern const AP_HAL::HAL& hal;
 
 /*
  * init - perform required initialisation
  */
-bool FD_RK3588::init()
+bool FD_HaoFu::init()
 {
     const AP_SerialManager &serial_manager = AP::serialmanager();
 
@@ -16,14 +16,14 @@ bool FD_RK3588::init()
     return _initialized;
 }
 
-uint32_t FD_RK3588::port_avaliable(void) {
+uint32_t FD_HaoFu::port_avaliable(void) {
     if(!initialized()) {
         return false;
     }
     return _port->available();
 }
 
-void FD_RK3588::read(void)
+void FD_HaoFu::read(void)
 {    
     if(!initialized()) {
         return ;
@@ -34,16 +34,16 @@ void FD_RK3588::read(void)
     }
 }
 
-void FD_RK3588::read(uint8_t temp)
+void FD_HaoFu::read(uint8_t temp)
 {    
     if(!initialized()) {
         return ;
     }
 
-    if (_msg_RK3588.enable())   {_msg_RK3588.parse(temp);}
+    if (_msg_HaoFu.enable())   {_msg_HaoFu.parse(temp);}
 }
 
-void FD_RK3588::write(uint8_t temp)
+void FD_HaoFu::write(uint8_t temp)
 {
     if(!initialized()) {
         return ;
@@ -52,20 +52,20 @@ void FD_RK3588::write(uint8_t temp)
 
 }
 
-void FD_RK3588::write(void)
+void FD_HaoFu::write(void)
 {
     if(!initialized()) {
         return ;
     }
     int16_t i = 0;
-    if (_msg_RK3588._msg_1.need_send)
+    if (_msg_HaoFu._msg_1.need_send)
     {
-        _msg_RK3588.swap_message();
-        for(i = 0;i < _msg_RK3588._msg_1.length ; i ++) {
-            _port->write(_msg_RK3588._msg_1.content.data[i]);
+        _msg_HaoFu.swap_message();
+        for(i = 0;i < _msg_HaoFu._msg_1.length ; i ++) {
+            _port->write(_msg_HaoFu._msg_1.content.data[i]);
         }
-        //_msg_RK3588._msg_1.updated = false;
-        _msg_RK3588._msg_1.need_send = false;
-        _msg_RK3588.swap_message();
+        //_msg_HaoFu._msg_1.updated = false;
+        _msg_HaoFu._msg_1.need_send = false;
+        _msg_HaoFu.swap_message();
     }
 }

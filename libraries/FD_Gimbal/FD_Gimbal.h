@@ -10,9 +10,7 @@
 #include <GCS_MAVLink/GCS.h>
 #include <stdio.h>
 
-#include <FD_Gimbal_Uart/FD_LRB.h>
-#include <FD_Gimbal_Uart/FD_K230.h>
-#include <FD_Gimbal_Uart/FD_RK3588.h>
+#include <FD_Gimbal_Uart/FD_HaoFu.h>
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 class FD_Gimbal_Base {
@@ -27,7 +25,7 @@ public:
     void handle_raw_info(float p1, float p2);
     bool get_raw_info(float &p1, float &p2);
     virtual void handle_msg(const mavlink_message_t &msg);
-    virtual void do_rate_control(float pitch_rate, float, yaw_rate);
+    virtual void do_rate_control(float pitch_rate, float yaw_rate);
     virtual void get_attitude_euler(float& gimbal_roll, float& gimbal_pitch, float& gimbal_yaw);
 
     uint32_t _last_ms;
@@ -77,6 +75,7 @@ public:
     void handle_msg(const mavlink_message_t &msg) override;
     float cal_frame_angle(float pixel, float angle, float x_in);
     void handle_info_test(float p1, float p2);
+    void update_uart();
 
 private:
     AP_Int32 target_timeout;
@@ -85,7 +84,7 @@ private:
     AP_Float cam_angle_x;
     AP_Float cam_angle_y;
 
-    FD_K230* FD_K230_ptr;
+    FD_HaoFu* FD_HaoFu_ptr;
 };
 
 

@@ -1,14 +1,14 @@
 #pragma once
 #include <AP_HAL/AP_HAL.h>
 
-class FD_RK3588_message {
+class FD_HaoFu_message {
 public:
 
-    FD_RK3588_message() {_enable = false;}
+    FD_HaoFu_message() {_enable = false;}
     
     /* Do not allow copies */
-    FD_RK3588_message(const FD_RK3588_message &other) = delete;
-    FD_RK3588_message &operator=(const FD_RK3588_message&) = delete;
+    FD_HaoFu_message(const FD_HaoFu_message &other) = delete;
+    FD_HaoFu_message &operator=(const FD_HaoFu_message&) = delete;
 
     virtual bool enable() {return _enable;}
     virtual void set_enable() {_enable = true;}

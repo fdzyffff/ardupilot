@@ -44,6 +44,8 @@ bool ModeGuided::init(bool ignore_checks)
     // clear pause state when entering guided mode
     _paused = false;
 
+    my_update_time_ms = millis();
+
     return true;
 }
 
@@ -398,6 +400,7 @@ bool ModeGuided::set_destination(const Vector3f& destination, bool use_yaw, floa
     guided_vel_target_cms.zero();
     guided_accel_target_cmss.zero();
     update_time_ms = millis();
+    my_update_time_ms = millis();
 
 #if HAL_LOGGING_ENABLED
     // log target
@@ -507,6 +510,7 @@ bool ModeGuided::set_destination(const Location& dest_loc, bool use_yaw, float y
     guided_vel_target_cms.zero();
     guided_accel_target_cmss.zero();
     update_time_ms = millis();
+    my_update_time_ms = millis();
 
     // log target
 #if HAL_LOGGING_ENABLED
@@ -535,6 +539,7 @@ void ModeGuided::set_accel(const Vector3f& acceleration, bool use_yaw, float yaw
     guided_vel_target_cms.zero();
     guided_accel_target_cmss = acceleration;
     update_time_ms = millis();
+    my_update_time_ms = millis();
 
 #if HAL_LOGGING_ENABLED
     // log target
@@ -567,6 +572,7 @@ void ModeGuided::set_velaccel(const Vector3f& velocity, const Vector3f& accelera
     guided_vel_target_cms = velocity;
     guided_accel_target_cmss = acceleration;
     update_time_ms = millis();
+    my_update_time_ms = millis();
 
 #if HAL_LOGGING_ENABLED
     // log target
@@ -604,6 +610,7 @@ bool ModeGuided::set_destination_posvelaccel(const Vector3f& destination, const 
     set_yaw_state(use_yaw, yaw_cd, use_yaw_rate, yaw_rate_cds, relative_yaw);
 
     update_time_ms = millis();
+    my_update_time_ms = millis();
     guided_pos_target_cm = destination.topostype();
     guided_pos_terrain_alt = false;
     guided_vel_target_cms = velocity;

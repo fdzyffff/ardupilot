@@ -4,9 +4,11 @@ const AP_Param::GroupInfo UGimbal::var_info[] = {
 
     AP_SUBGROUPINFO(lock_yaw_pid,     "CYAW_", 0, UGimbal, AC_PID),
     AP_SUBGROUPINFO(lock_pitch_pid,   "CPTH_", 1, UGimbal, AC_PID),
-    AP_GROUPINFO("TCAM_USE",   2, UGimbal, use_gimbal_cam,          0),
-    AP_GROUPINFO("TLOC_USE",   3, UGimbal, use_gimbal_loc,          0),
-    AP_GROUPINFO("UPRINT",     4, UGimbal, print,                   0),
+    AP_GROUPINFO("UPRINT",     2, UGimbal, print,                   0),
+    AP_GROUPINFO("TCAM_USE",   3, UGimbal, use_gimbal_cam,          0),
+    AP_GROUPINFO("TLOC_USE",   4, UGimbal, use_gimbal_loc,          0),
+    AP_GROUPINFO("FILT_Y_HZ",  5, UGimbal, filt_yaw_hz,             2.0f),
+    AP_GROUPINFO("FILT_P_HZ",  6, UGimbal, filt_pithc_hz,           2.0f),
     AP_SUBGROUPPTR(_Gimbal_ptr_loc,   "TL_",    5, UGimbal,  FD_Gimbal_Loc),
     AP_SUBGROUPPTR(_Gimbal_ptr_cam,   "TC_",    6, UGimbal,  FD_Gimbal_HaoFu),
 
@@ -25,7 +27,6 @@ UGimbal::UGimbal()
 void UGimbal::init()
 {
     udelay.init();
-    _active = false;
     bf_info.x = 0.0f;
     bf_info.y = 0.0f;
     ef_info.x = 0.0f;
@@ -47,11 +48,10 @@ void UGimbal::init()
     display_info.p24 = 0.0f;
     display_info.count = 0;
 
-    _last_control_ms = millis();
     _ret_valid = false;
 
-    _yaw_sample_filter.set_cutoff_frequency(30.f, filt_yaw_hz.get());
-    _pitch_sample_filter.set_cutoff_frequency(30.f, filt_pithc_hz.get());
+    _yaw_sample_filter.set_cutoff_frequency(filt_yaw_hz.get());
+    _pitch_sample_filter.set_cutoff_frequency(filt_pithc_hz.get());
     gcs().send_text(MAV_SEVERITY_WARNING, "Target FILT HZ [%0.0f, %0.0f]", filt_yaw_hz.get(), filt_pithc_hz.get());
 
     init_gimbal();
@@ -59,14 +59,14 @@ void UGimbal::init()
 
 
 void UGimbal::update_log() {
-    static _last_log_ms = millis();
+    static uint32_t _last_log_ms = millis();
     if (millis() - _last_log_ms > 100) {
         _last_log_ms = millis();
-        AP::logger().WriteStreaming("UATK",
-                                    "TimeUS,bfx,bfy,efx,efy,efrx,efry,tpth,trll,tyaw",
-                                    "s---------",
-                                    "F---------",
-                                    "Qfffffffff",
+        AP::logger().WriteStreaming("UGB1",
+                                    "TimeUS,bfx,bfy,efx,efy,efrx,efry,gpth,gyaw",
+                                    "s--------",
+                                    "F--------",
+                                    "Qffffffff",
                                     AP_HAL::micros64(),
                                     (float)bf_info.x,
                                     (float)bf_info.y,
@@ -74,50 +74,49 @@ void UGimbal::update_log() {
                                     (float)ef_info.y,
                                     (float)ef_rate_info.x,
                                     (float)ef_rate_info.y,
-                                    (float)_target_pitch_rate,
-                                    (float)_target_roll_angle,
-                                    (float)_target_yaw_rate);
+                                    (float)_gimbal_pitch_rate,
+                                    (float)_gimbal_yaw_rate);
 
-        AP::logger().WriteStreaming("UAT2",
-                                    "TimeUS,angt,angm,agrt,agrm",
-                                    "s----",
-                                    "F----",
-                                    "Qffff",
-                                    AP_HAL::micros64(),
-                                    (float)_attack_angle_target,
-                                    (float)_attack_angle_measure,
-                                    (float)_attack_angle_rate_target,
-                                    (float)_attack_angle_rate_measure);
+        // AP::logger().WriteStreaming("UGB2",
+        //                             "TimeUS,angt,angm,agrt,agrm",
+        //                             "s----",
+        //                             "F----",
+        //                             "Qffff",
+        //                             AP_HAL::micros64(),
+        //                             (float)_attack_angle_target,
+        //                             (float)_attack_angle_measure,
+        //                             (float)_attack_angle_rate_target,
+        //                             (float)_attack_angle_rate_measure);
 
-        AP::logger().WriteStreaming("UATH",
+        AP::logger().WriteStreaming("UGBY",
                                     "TimeUS,target,actual,ff,P,I,D,srate,dmod",
                                     "s--------",
                                     "F--------",
                                     "Qffffffff",
                                     AP_HAL::micros64(),
-                                    (float)attack_throttle_pid.get_pid_info().target,
-                                    (float)attack_throttle_pid.get_pid_info().actual,
-                                    (float)attack_throttle_pid.get_pid_info().FF,
-                                    (float)attack_throttle_pid.get_pid_info().P,
-                                    (float)attack_throttle_pid.get_pid_info().I,
-                                    (float)attack_throttle_pid.get_pid_info().D,
-                                    (float)attack_throttle_pid.get_pid_info().slew_rate,
-                                    (float)attack_throttle_pid.get_pid_info().Dmod);
+                                    (float)lock_yaw_pid.get_pid_info().target,
+                                    (float)lock_yaw_pid.get_pid_info().actual,
+                                    (float)lock_yaw_pid.get_pid_info().FF,
+                                    (float)lock_yaw_pid.get_pid_info().P,
+                                    (float)lock_yaw_pid.get_pid_info().I,
+                                    (float)lock_yaw_pid.get_pid_info().D,
+                                    (float)lock_yaw_pid.get_pid_info().slew_rate,
+                                    (float)lock_yaw_pid.get_pid_info().Dmod);
 
-        AP::logger().WriteStreaming("UARL",
+        AP::logger().WriteStreaming("UGBP",
                                     "TimeUS,target,actual,ff,P,I,D,srate,dmod",
                                     "s--------",
                                     "F--------",
                                     "Qffffffff",
                                     AP_HAL::micros64(),
-                                    (float)attack_roll_pid.get_pid_info().target,
-                                    (float)attack_roll_pid.get_pid_info().actual,
-                                    (float)attack_roll_pid.get_pid_info().FF,
-                                    (float)attack_roll_pid.get_pid_info().P,
-                                    (float)attack_roll_pid.get_pid_info().I,
-                                    (float)attack_roll_pid.get_pid_info().D,
-                                    (float)attack_roll_pid.get_pid_info().slew_rate,
-                                    (float)attack_roll_pid.get_pid_info().Dmod);
+                                    (float)lock_pitch_pid.get_pid_info().target,
+                                    (float)lock_pitch_pid.get_pid_info().actual,
+                                    (float)lock_pitch_pid.get_pid_info().FF,
+                                    (float)lock_pitch_pid.get_pid_info().P,
+                                    (float)lock_pitch_pid.get_pid_info().I,
+                                    (float)lock_pitch_pid.get_pid_info().D,
+                                    (float)lock_pitch_pid.get_pid_info().slew_rate,
+                                    (float)lock_pitch_pid.get_pid_info().Dmod);
 
     }
 
@@ -144,7 +143,7 @@ bool UGimbal::have_target() {
     return false;
 }
 
-void UAttack::init_gimbal()
+void UGimbal::init_gimbal()
 {
     bool use_cam = use_gimbal_cam.get();
     bool use_loc = use_gimbal_loc.get();
@@ -172,7 +171,7 @@ void UAttack::init_gimbal()
         }
     }
     else {
-        gcs().send_text(MAV_SEVERITY_WARNING, "Gimbal TYPE UNKNOW %d", use_Gimbal_cam_type.get());
+        gcs().send_text(MAV_SEVERITY_WARNING, "Gimbal TYPE UNKNOW");
         _Gimbal_ptr = nullptr;
     }
 }
@@ -220,6 +219,9 @@ void UGimbal::gimbal_ret_update()
 }
 
 void UGimbal::handle_info_final(float p1, float p2) {
+    static uint32_t last_info_ms = millis();
+    float dt = (float)(millis() - last_info_ms) * 0.001f;
+    last_info_ms = millis();
 
     display_info.p3 = p1;
     display_info.p4 = p2;
@@ -267,8 +269,8 @@ void UGimbal::handle_info_final(float p1, float p2) {
     _last_yaw = angle_yaw;
     _last_yaw_sample += delta_yaw;
 
-    _yaw_sample_filter.apply(_last_yaw_sample);
-    _pitch_sample_filter.apply(angle_pitch);
+    _yaw_sample_filter.apply(_last_yaw_sample, dt);
+    _pitch_sample_filter.apply(angle_pitch, dt);
 
     _yaw_filter.update(_yaw_sample_filter.get(), millis());
     _pitch_filter.update(_pitch_sample_filter.get(), millis());
@@ -295,7 +297,7 @@ void UGimbal::gimbal_control_update()
 
     switch (_state) {
         default:
-        case Gimbal_State::AHead:
+        case Gimbal_State::Ahead:
         {
             float target_pitch = -45.0f;
             float target_yaw = degrees(AP::ahrs().get_yaw());
@@ -368,13 +370,13 @@ void UGimbal::handle_gimbal_msg(const mavlink_message_t &msg) {
     }
 }
 
-void UGimbal::set_state(UGimbal_State state_in) {
+void UGimbal::set_state(Gimbal_State state_in) {
     _state = state_in;
     switch (_state) {
         default:
-        case Gimbal_State::AHead:
+        case Gimbal_State::Ahead:
         {
-            gcs().send_text(MAV_SEVERITY_INFO, "[Gimbal] AHead");
+            gcs().send_text(MAV_SEVERITY_INFO, "[Gimbal] Ahead");
         }
         break;
         case Gimbal_State::Search:

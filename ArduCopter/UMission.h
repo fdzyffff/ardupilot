@@ -1,7 +1,7 @@
 #pragma once
 
 #include <AP_HAL/AP_HAL.h>
-#include <FD_Target/FD_Target.h>
+#include <FD_Gimbal/FD_Gimbal.h>
 
 class UMission {
 
@@ -26,7 +26,4 @@ public:
     Location _target_loc;
 
     void handle_mission_msg(const mavlink_message_t &msg);
-
-    UDelay udelay;
-
 };

@@ -1,5 +1,4 @@
 #include "FD_Gimbal.h"
-#include <AP_Mount/AP_Mount.h>
 
 // Convenience macros //////////////////////////////////////////////////////////
 //
@@ -33,7 +32,7 @@ void FD_Gimbal_HaoFu::update() {
     update_uart();
 }
 
-void update_uart()
+void FD_Gimbal_HaoFu::update_uart()
 {
     return;
 }

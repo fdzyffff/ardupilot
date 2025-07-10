@@ -39,7 +39,7 @@ void FD_Gimbal_Base::handle_msg(const mavlink_message_t &msg) {
     return;
 }
 
-void FD_Gimbal_Base::do_rate_control(float pitch_rate, float, yaw_rate) {
+void FD_Gimbal_Base::do_rate_control(float pitch_rate, float yaw_rate) {
     return;
 }
 
