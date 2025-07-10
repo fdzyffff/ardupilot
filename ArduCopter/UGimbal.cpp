@@ -200,9 +200,8 @@ void UGimbal::gimbal_ret_update()
         _Gimbal_ptr->get_attitude_euler(_cam_roll, _cam_pitch, _cam_bf_yaw);
         _cam_yaw = wrap_2PI(AP::ahrs().get_yaw() + _cam_bf_yaw);
     } else {
-        _target_pitch_rate = 0.0f;
-        _target_roll_angle = 0.0f;
-        _target_yaw_rate = 0.0f;
+        _gimbal_pitch_rate = 0.0f;
+        _gimbal_yaw_rate = 0.0f;
         return;
     }
 

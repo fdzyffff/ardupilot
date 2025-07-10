@@ -160,50 +160,43 @@ void ModeMission::set_state(State state_in)
         {
             if (copter.mode_guided.do_user_takeoff_start(200.f)) {
                 mission_state = state_in;
-            } else {
                 gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: Takeoff");
+            } else {
+                gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: Takeoff Fail");
             }
         }
         break;
         case State::Wait:
         {
-            if (copter.mode_guided.pva_control_start()) {
-                mission_state = state_in;
-            } else {
-                gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: Wait");
-            }
+            copter.mode_guided.pva_control_start();
+            mission_state = state_in;
+            gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: Wait");
         }
         break;
         case State::Cruise:
         {
-            if (copter.mode_guided.pva_control_start()) {
-                mission_state = state_in;
-            } else {
-                gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: Cruise");
-            }
+            copter.mode_guided.pva_control_start();
+            mission_state = state_in;
+            gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: Cruise");
         }
         break;
         case State::Search:
         {
-            if (copter.mode_guided.pva_control_start()) {
-                mission_state = state_in;
-            } else {
-                gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: Search");
-            }
+            copter.mode_guided.pva_control_start();
+            mission_state = state_in;
+            gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: Search");
         }
         break;
         case State::Track:
         {
-            if (copter.mode_guided.pva_control_start()) {
-                mission_state = state_in;
-            } else {
-                gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: Track");
-            }
+            copter.mode_guided.pva_control_start();
+            mission_state = state_in;
+            gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: Track");
         }
         break;
         case State::Return:
         {
-            if (copter.mode_rtl.init()) {
+            if (copter.mode_rtl.init(false)) {
                 mission_state = state_in;
             } else {
                 gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: Return");
