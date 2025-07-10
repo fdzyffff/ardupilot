@@ -596,8 +596,11 @@ public:
     AP_Float        user_airspeed_target_takeoff;
     AP_Float        user_climbrate_p_takeoff;
     AP_Float        user_airspeed_target_curise;
+    AP_Float        user_altitude_target_cruise;
     AP_Float        user_climbrate_p_curise;
     AP_Float        user_airspeed_target_land;
+    AP_Float        user_climbrate_land_p1;
+    AP_Float        user_climbrate_land_p2;
 
     // just to make compilation easier when all things are compiled out...
     uint8_t unused_integer;

@@ -212,8 +212,12 @@ void FD_CAN::loop() {
                 uint16_t thr_left = SRV_Channels::get_output_scaled(SRV_Channel::k_throttleLeft)*10.f;//100
                 uint16_t thr_right = SRV_Channels::get_output_scaled(SRV_Channel::k_throttleRight)*10.f;
 
-                thr_left = 3000;
-                thr_right = 3000;
+                if (thr_left > 0) {
+                    thr_left = 3000;
+                }
+                if (thr_right > 0) {
+                    thr_right = 3000;
+                }
 
                 txFrame.id = 0x21;
                 txFrame.data[0] = (uint8_t)(thr_left&0xFF);

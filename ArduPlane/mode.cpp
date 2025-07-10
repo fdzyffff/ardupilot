@@ -166,17 +166,17 @@ void Mode::update_target_altitude()
         // during a landing flare, use TECS_LAND_SINK as a target sink
         // rate, and ignores the target altitude
         plane.set_target_altitude_location(plane.next_WP_loc);
-    } else if (plane.landing.is_on_approach()) {
-        plane.landing.setup_landing_glide_slope(plane.prev_WP_loc, plane.next_WP_loc, plane.current_loc, plane.target_altitude.offset_cm);
-        plane.landing.adjust_landing_slope_for_rangefinder_bump(plane.rangefinder_state, plane.prev_WP_loc, plane.next_WP_loc, plane.current_loc, plane.auto_state.wp_distance, plane.target_altitude.offset_cm);
-    } else if (plane.landing.get_target_altitude_location(target_location)) {
-        plane.set_target_altitude_location(target_location);
-#if HAL_SOARING_ENABLED
-    } else if (plane.g2.soaring_controller.is_active() && plane.g2.soaring_controller.get_throttle_suppressed()) {
-        // Reset target alt to current alt, to prevent large altitude errors when gliding.
-        plane.set_target_altitude_location(plane.current_loc);
-        plane.reset_offset_altitude();
-#endif
+//     } else if (plane.landing.is_on_approach()) {
+//         plane.landing.setup_landing_glide_slope(plane.prev_WP_loc, plane.next_WP_loc, plane.current_loc, plane.target_altitude.offset_cm);
+//         plane.landing.adjust_landing_slope_for_rangefinder_bump(plane.rangefinder_state, plane.prev_WP_loc, plane.next_WP_loc, plane.current_loc, plane.auto_state.wp_distance, plane.target_altitude.offset_cm);
+//     } else if (plane.landing.get_target_altitude_location(target_location)) {
+//         plane.set_target_altitude_location(target_location);
+// #if HAL_SOARING_ENABLED
+//     } else if (plane.g2.soaring_controller.is_active() && plane.g2.soaring_controller.get_throttle_suppressed()) {
+//         // Reset target alt to current alt, to prevent large altitude errors when gliding.
+//         plane.set_target_altitude_location(plane.current_loc);
+//         plane.reset_offset_altitude();
+// #endif
     } else if (plane.reached_loiter_target()) {
         // once we reach a loiter target then lock to the final
         // altitude target

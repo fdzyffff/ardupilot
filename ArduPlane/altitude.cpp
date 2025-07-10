@@ -292,20 +292,20 @@ void Plane::change_target_altitude(int32_t change_cm)
  */
 void Plane::set_target_altitude_proportion(const Location &loc, float proportion)
 {
-    set_target_altitude_location(loc);
-    proportion = constrain_float(proportion, 0.0f, 1.0f);
-    change_target_altitude(-target_altitude.offset_cm*proportion);
-    //rebuild the glide slope if we are above it and supposed to be climbing
-    if(g.glide_slope_threshold > 0) {
-        if(target_altitude.offset_cm > 0 && calc_altitude_error_cm() < -100 * g.glide_slope_threshold) {
-            set_target_altitude_location(loc);
-            set_offset_altitude_location(current_loc, loc);
-            change_target_altitude(-target_altitude.offset_cm*proportion);
-            //adjust the new target offset altitude to reflect that we are partially already done
-            if(proportion > 0.0f)
-                target_altitude.offset_cm = ((float)target_altitude.offset_cm)/proportion;
-        }
-    }
+    // set_target_altitude_location(loc);
+    // proportion = constrain_float(proportion, 0.0f, 1.0f);
+    // change_target_altitude(-target_altitude.offset_cm*proportion);
+    // //rebuild the glide slope if we are above it and supposed to be climbing
+    // if(g.glide_slope_threshold > 0) {
+    //     if(target_altitude.offset_cm > 0 && calc_altitude_error_cm() < -100 * g.glide_slope_threshold) {
+    //         set_target_altitude_location(loc);
+    //         set_offset_altitude_location(current_loc, loc);
+    //         change_target_altitude(-target_altitude.offset_cm*proportion);
+    //         //adjust the new target offset altitude to reflect that we are partially already done
+    //         if(proportion > 0.0f)
+    //             target_altitude.offset_cm = ((float)target_altitude.offset_cm)/proportion;
+    //     }
+    // }
 }
 
 /*
@@ -518,12 +518,12 @@ int32_t Plane::adjusted_relative_altitude_cm(void)
 float Plane::mission_alt_offset(void)
 {
     float ret = g.alt_offset;
-    if (control_mode == &mode_auto &&
-            (flight_stage == AP_FixedWing::FlightStage::LAND || auto_state.wp_is_land_approach)) {
-        // when landing after an aborted landing due to too high glide
-        // slope we use an offset from the last landing attempt
-        ret += landing.alt_offset;
-    }
+    // if (control_mode == &mode_auto &&
+    //         (flight_stage == AP_FixedWing::FlightStage::LAND || auto_state.wp_is_land_approach)) {
+    //     // when landing after an aborted landing due to too high glide
+    //     // slope we use an offset from the last landing attempt
+    //     ret += landing.alt_offset;
+    // }
     return ret;
 }
 
