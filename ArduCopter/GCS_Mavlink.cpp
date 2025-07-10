@@ -636,6 +636,8 @@ void GCS_MAVLINK_Copter::packetReceived(const mavlink_status_t &status,
     // pass message to follow library
     copter.g2.follow.handle_msg(msg);
 #endif
+    copter.umission.handle_mission_msg(msg);
+    copter.ugimbal.handle_gimbal_msg(msg);
     GCS_MAVLINK::packetReceived(status, msg);
 }
 
@@ -848,6 +850,14 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_int_packet(const mavlink_command_i
         }
         return MAV_RESULT_FAILED;
 #endif
+
+    case MAV_CMD_USER_1:
+    case MAV_CMD_USER_2:
+    case MAV_CMD_USER_3:
+    case MAV_CMD_USER_4:
+    case MAV_CMD_USER_5:
+        return MAV_RESULT_ACCEPTED;
+
 
     default:
         return GCS_MAVLINK::handle_command_int_packet(packet, msg);

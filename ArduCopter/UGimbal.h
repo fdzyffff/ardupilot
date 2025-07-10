@@ -28,6 +28,7 @@ public:
     const Vector2f& get_ef_info();
     const Vector2f& get_ef_rate_info();
     void update();
+    void update_gimbal_control();
     void gimbal_ret_update();
     void gimbal_control_update();
     void handle_info_final(float p1, float p2);
@@ -42,7 +43,6 @@ public:
     float get_gimbal_yaw_rate() {return _gimbal_yaw_rate;}
 
     bool have_target();
-
 
     struct {
         float p1;
@@ -84,8 +84,8 @@ private:
     AP_Float        filt_yaw_hz;
     AP_Float        filt_pithc_hz;
 
-    AC_PID          lock_yaw_pid{0.5f, 0.1f, 0.01f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.5f};
-    AC_PID          lock_pitch_pid{0.5f, 0.03f, 0.01f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.5f};
+    AC_PID          lock_yaw_pid{0.5f, 0.0f, 0.01f, 0.0f, 0.0f, 5.0f, 5.0f, 5.0f, 0.0f};
+    AC_PID          lock_pitch_pid{0.5f, 0.0f, 0.01f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
 
     FD_Gimbal_Base*   _Gimbal_ptr;
     FD_Gimbal_HaoFu*  _Gimbal_ptr_cam;

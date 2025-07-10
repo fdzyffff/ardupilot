@@ -1412,6 +1412,7 @@ private:
 class ModeRTL : public Mode {
 
 public:
+    friend class ModeMission;
     // inherit constructor
     using Mode::Mode;
     Number mode_number() const override { return Number::RTL; }
@@ -2078,6 +2079,8 @@ public:
     // Return true if the throttle high arming check can be skipped when arming from GCS or Scripting
     bool allows_GCS_or_SCR_arming_with_throttle_high() const override { return true; }
 
+    bool is_taking_off() const override;
+
 
 protected:
 
@@ -2088,7 +2091,7 @@ protected:
     int32_t wp_bearing() const override;
     float crosstrack_error() const override;
 
-    enum class State {
+    enum class Mission_State {
         Init = 0,
         Takeoff,
         Wait,
@@ -2097,7 +2100,7 @@ protected:
         Track,
         Return,
     };
-    State mission_state;
+    Mission_State mission_state;
     void update_state();
-    void set_state(State state_in);
+    void set_state(Mission_State state_in);
 };

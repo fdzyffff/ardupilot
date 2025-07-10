@@ -5,12 +5,12 @@ const AP_Param::GroupInfo UGimbal::var_info[] = {
     AP_SUBGROUPINFO(lock_yaw_pid,     "CYAW_", 0, UGimbal, AC_PID),
     AP_SUBGROUPINFO(lock_pitch_pid,   "CPTH_", 1, UGimbal, AC_PID),
     AP_GROUPINFO("UPRINT",     2, UGimbal, print,                   0),
-    AP_GROUPINFO("TCAM_USE",   3, UGimbal, use_gimbal_cam,          0),
-    AP_GROUPINFO("TLOC_USE",   4, UGimbal, use_gimbal_loc,          0),
+    AP_GROUPINFO("CAM_USE",    3, UGimbal, use_gimbal_cam,          0),
+    AP_GROUPINFO("LOC_USE",    4, UGimbal, use_gimbal_loc,          0),
     AP_GROUPINFO("FILT_Y_HZ",  5, UGimbal, filt_yaw_hz,             2.0f),
     AP_GROUPINFO("FILT_P_HZ",  6, UGimbal, filt_pithc_hz,           2.0f),
-    AP_SUBGROUPPTR(_Gimbal_ptr_loc,   "TL_",    5, UGimbal,  FD_Gimbal_Loc),
-    AP_SUBGROUPPTR(_Gimbal_ptr_cam,   "TC_",    6, UGimbal,  FD_Gimbal_HaoFu),
+    AP_SUBGROUPPTR(_Gimbal_ptr_loc,   "TL_",    7, UGimbal,  FD_Gimbal_Loc),
+    AP_SUBGROUPPTR(_Gimbal_ptr_cam,   "TC_",    8, UGimbal,  FD_Gimbal_HaoFu),
 
     AP_GROUPEND
 };
@@ -180,6 +180,7 @@ void UGimbal::init_gimbal()
 // called at 100 Hz
 void UGimbal::update()
 {
+    if (_Gimbal_ptr == nullptr) {return;}
     gimbal_ret_update();
     gimbal_control_update();
 }
@@ -225,9 +226,9 @@ void UGimbal::handle_info_final(float p1, float p2) {
     display_info.p3 = p1;
     display_info.p4 = p2;
 
-    float _roll = AP::ahrs().get_roll();
-    float _pitch = AP::ahrs().get_pitch();
-    float _yaw = AP::ahrs().get_yaw();
+    // float _roll = AP::ahrs().get_roll();
+    // float _pitch = AP::ahrs().get_pitch();
+    // float _yaw = AP::ahrs().get_yaw();
     // if (!udelay.get_idx(10-1, _roll, _pitch, _yaw)) {
     //     _roll = AP::ahrs().get_roll();
     //     _pitch = AP::ahrs().get_pitch();
@@ -289,8 +290,8 @@ void UGimbal::gimbal_control_update()
     if (tnow_ms - last_set_ms > 1000) {
         last_set_ms = tnow_ms;
         //update filter cutoff HZ in flight
-        _yaw_sample_filter.set_cutoff_frequency(30.f, filt_yaw_hz.get());
-        _pitch_sample_filter.set_cutoff_frequency(30.f, filt_pithc_hz.get());
+        _yaw_sample_filter.set_cutoff_frequency(filt_yaw_hz.get());
+        _pitch_sample_filter.set_cutoff_frequency(filt_pithc_hz.get());
     }
 
 
@@ -331,7 +332,7 @@ void UGimbal::gimbal_control_update()
     update_log();
 }
 
-void update_gimbal_control() {
+void UGimbal::update_gimbal_control() {
     // send uart ;
     if (_Gimbal_ptr != nullptr) {
         _Gimbal_ptr->do_rate_control(_gimbal_pitch_rate, _gimbal_yaw_rate);
@@ -355,12 +356,12 @@ void UGimbal::do_gimbal_attitude_control(float target_gimbal_pitch, float target
 
 // degree/second
 void UGimbal::update_gimbal_pitch_rate(float target_gimbal_pitch, float dt) {
-    _gimbal_pitch_rate = lock_pitch_pid.update_all(delta_pitch, degrees(_cam_pitch), dt);
+    _gimbal_pitch_rate = degrees(lock_pitch_pid.update_all(radians(target_gimbal_pitch), _cam_pitch, dt));
 }
 
 // degree/second
 void UGimbal::update_gimbal_yaw_rate(float target_gimbal_yaw, float dt) {
-    _gimbal_yaw_rate = lock_yaw_pid.update_all(target_gimbal_yaw, degrees(_cam_yaw), dt);
+    _gimbal_yaw_rate = degrees(lock_yaw_pid.update_all(radians(target_gimbal_yaw), _cam_yaw, dt));
 }
 
 void UGimbal::handle_gimbal_msg(const mavlink_message_t &msg) {
@@ -370,6 +371,7 @@ void UGimbal::handle_gimbal_msg(const mavlink_message_t &msg) {
 }
 
 void UGimbal::set_state(Gimbal_State state_in) {
+    if (_state == state_in) {return;}
     _state = state_in;
     switch (_state) {
         default:

@@ -48,3 +48,7 @@ void FD_Gimbal_Base::get_attitude_euler(float& gimbal_roll, float& gimbal_pitch,
     gimbal_pitch = _gimbal_pitch;
     gimbal_yaw = _gimbal_yaw;
 }
+
+bool FD_Gimbal_Base::have_target() {
+    return _valid;
+}

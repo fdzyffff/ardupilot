@@ -27,6 +27,7 @@ public:
     virtual void handle_msg(const mavlink_message_t &msg);
     virtual void do_rate_control(float pitch_rate, float yaw_rate);
     virtual void get_attitude_euler(float& gimbal_roll, float& gimbal_pitch, float& gimbal_yaw);
+    virtual bool have_target();
 
     uint32_t _last_ms;
     bool _new_data;

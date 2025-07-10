@@ -7,7 +7,7 @@ UMission::UMission()
 
 bool UMission::target_pos_prob_valid()
 {
-    if (millis() - _last_loc_prob_ms < 5000) {
+    if (millis() - _last_loc_prob_ms < 50000) {
         return true;
     } 
     return false;
@@ -15,7 +15,7 @@ bool UMission::target_pos_prob_valid()
 
 bool UMission::target_pos_valid()
 {
-    if (millis() - _last_loc_ms < 5000) {
+    if (millis() - _last_loc_ms < 50000) {
         return true;
     } 
     return false;
