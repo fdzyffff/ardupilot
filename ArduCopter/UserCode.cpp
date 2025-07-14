@@ -14,7 +14,7 @@ void Copter::userhook_init()
 void Copter::userhook_FastLoop()
 {
     // put your 100Hz code here
-    // umission.update();
+    umission.update();
     ugimbal.update();
 }
 #endif

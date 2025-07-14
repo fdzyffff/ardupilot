@@ -4,7 +4,7 @@
 //
 const AP_Param::GroupInfo FD_Gimbal_Loc::var_info[] = {
 
-    AP_GROUPINFO("TOUT", 0, FD_Gimbal_Loc, target_timeout, 0),
+    AP_GROUPINFO("TOUT", 0, FD_Gimbal_Loc, target_timeout, 10000),
     AP_GROUPINFO("NRAD", 1, FD_Gimbal_Loc, nav_radius, 1000),
 
     AP_GROUPEND
@@ -18,13 +18,23 @@ FD_Gimbal_Loc::FD_Gimbal_Loc()
 
 bool FD_Gimbal_Loc::init() {
     _have_target = false;
+    _gimbal_roll = 0.0f;
+    _gimbal_pitch = 0.0f;
+    _gimbal_yaw = 0.0f;
+    _last_target_ms = 0;
     return true;
 }
 
 void FD_Gimbal_Loc::update() {
-    static uint32_t last_update_ms = millis();
+    static uint32_t last_log_ms = millis();
 
-    if (_have_target && (millis() - _last_ms) > 33) {
+    if (millis() -_last_target_ms < (uint32_t)target_timeout) {
+        _have_target = true;
+    } else {
+        _have_target = false;
+    }
+
+    if (_have_target && (millis() - _last_ms > 33)) {
         bool have_position = AP::ahrs().get_location(current_loc);
         if (!have_position) {
             return;
@@ -49,32 +59,33 @@ void FD_Gimbal_Loc::update() {
     }
 
     // for print purpose
-    if (tnow - last_update_ms > 1000) {
+    if (tnow - last_log_ms > 1000) {
         //gcs().send_text(MAV_SEVERITY_INFO, "raw: %d, att: %d, arspd: %d", pk0_count, pk1_count, pk2_count);
-        last_update_ms = tnow;
+        last_log_ms = tnow;
     }
 
 }
 
 void FD_Gimbal_Loc::handle_msg(const mavlink_message_t &msg)
 {
-    if (msg.msgid == MAVLINK_MSG_ID_COMMAND_INT) {
+    if (msg.msgid == MAVLINK_MSG_ID_COMMAND_LONG) {
         // decode packet
         // decode packet
-        mavlink_command_int_t packet;
-        mavlink_msg_command_int_decode(&msg, &packet);
+        mavlink_command_long_t packet;
+        mavlink_msg_command_long_decode(&msg, &packet);
         switch(packet.command) {
-            case MAV_CMD_USER_1:
-                gcs().send_text(MAV_SEVERITY_WARNING, "Target mavpkg");
-                target_loc.lat = packet.x;
-                target_loc.lng = packet.y;
-                // target_loc.set_alt_cm(packet.z*100.f, Location::AltFrame::ABOVE_HOME);
-                // target_loc.change_alt_frame(Location::AltFrame::ABSOLUTE);
-                target_loc.set_alt_cm(packet.z*100.f, Location::AltFrame::ABSOLUTE);
-                _have_target = true;
-                // gcs().send_text(MAV_SEVERITY_INFO,"x %f", (float)packet.x);
-                // gcs().send_text(MAV_SEVERITY_INFO,"y %f", (float)packet.y);
-                // gcs().send_text(MAV_SEVERITY_INFO,"z %f", (float)packet.z);
+            case MAV_CMD_USER_2:
+                if ((int16_t)packet.param1 == 99) {                    
+                    // gcs().send_text(MAV_SEVERITY_WARNING, "Target mavpkg");
+                    target_loc.lat = (int32_t)(packet.param5*1e7);
+                    target_loc.lng = (int32_t)(packet.param6*1e7);
+                    target_loc.set_alt_cm(packet.param7*100.f, Location::AltFrame::ABSOLUTE);
+                    _have_target = true;
+                    _last_target_ms = millis();
+                    // gcs().send_text(MAV_SEVERITY_INFO,"lat %f", (float)packet.param5);
+                    // gcs().send_text(MAV_SEVERITY_INFO,"lng %f", (float)packet.param6);
+                    // gcs().send_text(MAV_SEVERITY_INFO,"alt %f", (float)packet.param7);
+                }
                 break;
             default:
                 break;

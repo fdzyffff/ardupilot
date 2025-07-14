@@ -54,6 +54,7 @@ public:
     void handle_msg(const mavlink_message_t &msg) override;
     void handle_info_test(float p1, float p2);
 
+    uint32_t _last_target_ms;
     Location current_loc;
     Location target_loc;
 

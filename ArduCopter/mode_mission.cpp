@@ -46,7 +46,7 @@ void ModeMission::run()
         break;
         case Mission_State::Search:
         {
-            copter.mode_guided.run();
+            copter.mode_circle.run();
         }
         break;
         case Mission_State::Track:
@@ -101,7 +101,7 @@ void ModeMission::update_state()
             if (millis() - copter.mode_guided.my_update_time_ms > 1000) {
                 copter.mode_guided.set_destination(copter.umission.get_target_pos_prob());
             }
-            if (copter.umission.get_target_pos().get_distance(copter.current_loc) < 200.f) {
+            if (copter.umission.get_target_pos_prob().get_distance(copter.current_loc) < 20.f) {
                 set_state(Mission_State::Search);
             }
             copter.ugimbal.set_state(UGimbal::Gimbal_State::Ahead);
@@ -109,12 +109,9 @@ void ModeMission::update_state()
         break;
         case Mission_State::Search:
         {
-            if (!copter.umission.target_pos_prob_valid()) {
-                set_state(Mission_State::Wait);
-            }
-            if (millis() - copter.mode_guided.my_update_time_ms > 1000) {
-                copter.mode_guided.set_destination(copter.umission.get_target_pos_prob());
-            }
+            // if (!copter.umission.target_pos_prob_valid()) {
+            //     set_state(Mission_State::Wait);
+            // }
             if (copter.ugimbal.have_target()) {
                 set_state(Mission_State::Track);
             }
@@ -124,11 +121,39 @@ void ModeMission::update_state()
         case Mission_State::Track:
         {
             if (copter.ugimbal.have_target() && (millis() - copter.mode_guided.my_update_time_ms > 1000)) {
-                copter.mode_guided.set_destination(copter.umission.get_target_pos_prob());
+                if (copter.umission.target_pos_valid()) {
+                    copter.mode_guided.set_destination(copter.umission.get_target_pos());
+                }
             }
             if (!copter.ugimbal.have_target()) {
                 set_state(Mission_State::Search);
             }
+        }
+        break;
+        case Mission_State::Return:
+        {
+            ;
+        }
+        break;
+    }
+}
+
+void ModeMission::set_cruise_state()
+{
+    if (copter.flightmode->mode_number() != Mode::Number::MISSION) {return;}
+    switch (mission_state) {
+        case Mission_State::Init:
+        case Mission_State::Takeoff:
+        case Mission_State::Cruise:
+        {
+            ;
+        }
+        break;
+        case Mission_State::Wait:
+        case Mission_State::Search:
+        case Mission_State::Track:
+        {
+            set_state(Mission_State::Cruise);
         }
         break;
         case Mission_State::Return:
@@ -179,9 +204,12 @@ void ModeMission::set_state(Mission_State state_in)
         break;
         case Mission_State::Search:
         {
-            copter.mode_guided.velaccel_control_start();
-            mission_state = state_in;
-            gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: Search");
+            if (copter.mode_circle.init(false)) {
+                mission_state = state_in;
+                gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: Search");
+            } else {
+                gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: Search");
+            }
         }
         break;
         case Mission_State::Track:
@@ -217,8 +245,10 @@ uint32_t ModeMission::wp_distance() const
         case Mission_State::Init:
         case Mission_State::Takeoff:
         case Mission_State::Wait:
-        case Mission_State::Cruise:
             return copter.mode_guided.wp_distance();
+            break;
+        case Mission_State::Cruise:
+            return copter.mode_circle.wp_distance();
             break;
         case Mission_State::Search:
         case Mission_State::Track:
@@ -240,10 +270,12 @@ int32_t ModeMission::wp_bearing() const
         case Mission_State::Init:
         case Mission_State::Takeoff:
         case Mission_State::Wait:
-        case Mission_State::Cruise:
         case Mission_State::Search:
         case Mission_State::Track:
             return copter.mode_guided.wp_bearing();
+            break;
+        case Mission_State::Cruise:
+            return copter.mode_circle.wp_bearing();
             break;
         case Mission_State::Return:
             return copter.mode_rtl.wp_bearing();
@@ -261,11 +293,11 @@ float ModeMission::crosstrack_error() const
         case Mission_State::Init:
         case Mission_State::Takeoff:
         case Mission_State::Wait:
-        case Mission_State::Cruise:
         case Mission_State::Search:
         case Mission_State::Track:
             return copter.mode_guided.crosstrack_error();
             break;
+        case Mission_State::Cruise:
         case Mission_State::Return:
         default:
             return 0;

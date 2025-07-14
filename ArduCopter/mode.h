@@ -861,6 +861,7 @@ private:
 class ModeCircle : public Mode {
 
 public:
+    friend class ModeMission;
     // inherit constructor
     using Mode::Mode;
     Number mode_number() const override { return Number::CIRCLE; }
@@ -2081,16 +2082,6 @@ public:
 
     bool is_taking_off() const override;
 
-
-protected:
-
-    const char *name() const override { return "MISSION"; }
-    const char *name4() const override { return "MISN"; }
-
-    uint32_t wp_distance() const override;
-    int32_t wp_bearing() const override;
-    float crosstrack_error() const override;
-
     enum class Mission_State {
         Init = 0,
         Takeoff,
@@ -2100,6 +2091,19 @@ protected:
         Track,
         Return,
     };
+
+    Mission_State get_state() {return mission_state;}
+    void set_cruise_state();
+
+
+protected:
+
+    const char *name() const override { return "MISSION"; }
+    const char *name4() const override { return "MISN"; }
+
+    uint32_t wp_distance() const override;
+    int32_t wp_bearing() const override;
+    float crosstrack_error() const override;
     Mission_State mission_state;
     void update_state();
     void set_state(Mission_State state_in);
