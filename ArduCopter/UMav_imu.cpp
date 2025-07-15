@@ -1,7 +1,7 @@
 #include "Copter.h"
 
 void UMav::send_raw_imu_loop() {
-    hal.scheduler->delay(3000);
+    // hal.scheduler->delay(3000);
     gcs().send_text(MAV_SEVERITY_INFO, "LOOP IMURAW Start");
     while (true) {
         send_raw_imu();
@@ -11,18 +11,25 @@ void UMav::send_raw_imu_loop() {
 void UMav::send_raw_imu()
 {
     if (!FD_uart_imu.initialized()) {
-        hal.scheduler->delay(3000);
+        // hal.scheduler->delay(3000);
         return;
     }
     static uint32_t _last_imu_ms = millis();
     static int16_t count = 0;
 
-    if (millis() - _last_imu_ms > 1000) {
+    float dt = (float)(millis() - _last_imu_ms)*0.001f;
+    if (dt > 1.0f) {
         // gcs().send_text(MAV_SEVERITY_INFO, "LOOP IMURAW %d", count);
         _last_imu_ms = millis();
+        float imu_rate = ((float)count)/dt;
         count = 0;
-    } else {
-        // return;
+        AP::logger().WriteStreaming("UIMU",
+                                    "TimeUS,rate",
+                                    "s-",
+                                    "F-",
+                                    "Qf",
+                                    AP_HAL::micros64(),
+                                    (float)imu_rate);
     }
 
     count++;

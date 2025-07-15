@@ -88,11 +88,13 @@ void Copter::userhook_SuperSlowLoop()
 void Copter::userhook_auxSwitch1(const RC_Channel::AuxSwitchPos ch_flag)
 {
     // put your aux switch #1 handler here (CHx_OPT = 47)
+    upayload.set_state(UPayload::payload_arm2);
 }
 
 void Copter::userhook_auxSwitch2(const RC_Channel::AuxSwitchPos ch_flag)
 {
     // put your aux switch #2 handler here (CHx_OPT = 48)
+    upayload.set_state(UPayload::payload_armfinal);
 }
 
 void Copter::userhook_auxSwitch3(const RC_Channel::AuxSwitchPos ch_flag)
