@@ -21,6 +21,19 @@ void Copter::userhook_50Hz()
 {
     // put your 50Hz code here
     ufence.update();
+#if AP_SIM_ENABLED
+    // case MSG_SIMSTATE:
+    //     CHECK_PAYLOAD_SIZE(SIMSTATE);
+    //     send_simstate();
+    //     break;
+
+    // case MSG_SIM_STATE:
+    //     CHECK_PAYLOAD_SIZE(SIM_STATE);
+    //     send_sim_state();
+    //     break;
+    gcs().send_message(MSG_SIM_STATE);
+#endif
+
 }
 #endif
 
@@ -28,6 +41,7 @@ void Copter::userhook_50Hz()
 void Copter::userhook_MediumLoop()
 {
     // put your 10Hz code here
+    user_gps_fail_check();
 }
 #endif
 
@@ -109,5 +123,13 @@ void Copter::user_update_assit(float &target_roll, float &target_pitch)
     }
     if (target_pitch <= 0.0f && assit_pitch < 0.0f) {
         target_pitch = constrain_float(target_pitch, -assit_max, assit_pitch);
+    }
+}
+
+void Copter::user_gps_fail_check()
+{
+    if (flightmode->requires_GPS() && !position_ok() && motors->armed()) {
+        set_mode(Mode::Number::LAND, ModeReason::GPS_GLITCH);
+        gcs().send_text(MAV_SEVERITY_WARNING, "No GPS, Land");
     }
 }

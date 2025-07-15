@@ -275,6 +275,7 @@ void Plane::calculate_forces(const struct sitl_input &input, Vector3f &rot_accel
     float elevator = filtered_servo_angle(input, 1);
     float rudder   = filtered_servo_angle(input, 3);
     bool launch_triggered = input.servos[6] > 1700;
+    bool drop_triggered = input.servos[14] > 1700;
     float throttle;
     if (reverse_elevator_rudder) {
         elevator = -elevator;
@@ -357,7 +358,29 @@ void Plane::calculate_forces(const struct sitl_input &input, Vector3f &rot_accel
             }
         } else {
             // allow reset of catapult
-            launch_start_ms = 0;
+            // launch_start_ms = 0;
+        }
+    }
+
+    if (have_drop) {
+        /*
+          simple simulation of a launcher
+         */
+        if (drop_triggered) {
+            uint64_t now = AP_HAL::millis64();
+            if (drop_start_ms == 0) {
+                printf("Trigger\n");
+                drop_start_ms = now;
+                set_ground_level(get_ground_level() - 100);
+            }
+            if (now - drop_start_ms < drop_time*1000) {
+                rot_accel.x += 2;
+                rot_accel.y += 2;
+                rot_accel.z += 2;
+            }
+        } else {
+            // allow reset of catapult
+            // drop_start_ms = 0;
         }
     }
     

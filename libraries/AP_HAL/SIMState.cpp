@@ -70,13 +70,31 @@ using namespace AP_HAL;
 void SIMState::update()
 {
     static bool init_done;
+
+    if (_sitl == nullptr) {
+        _sitl = AP::sitl();
+    }
+
     if (!init_done) {
-        init_done = true;
-        sitl_model = SITL::AP_SIM_FRAME_CLASS::create(AP_SIM_FRAME_STRING);
+        if (_sitl != nullptr) {
+#if APM_BUILD_TYPE(APM_BUILD_ArduCopter)
+            _build_copter_frame();
+#elif APM_BUILD_TYPE(APM_BUILD_Heli)
+            _build_heli_frame();
+#elif APM_BUILD_TYPE(APM_BUILD_ArduPlane)
+            _build_plane_frame();
+#else
+            sitl_model = SITL::AP_SIM_FRAME_CLASS::create(AP_SIM_FRAME_STRING);//用sitl参数来控制模型初始化
+#endif
+            init_done = true;
+        } else {
+            return;
+        }
     }
 
     _fdm_input_step();
 }
+
 
 /*
   setup for SITL handling

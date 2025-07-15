@@ -81,10 +81,10 @@ private:
      */
     const struct Model {
         // model mass kg
-        float mass = 3.0;
+        float mass = 2.0;
 
         // diameter of model
-        float diagonal_size = 0.35;
+        float diagonal_size = 0.5;
 
         /*
           the ref values are for a test at fixed angle, used to estimate drag
@@ -123,7 +123,7 @@ private:
         float spin_max = 0.95;
 
         // maximum slew rate of motors
-        float slew_max = 150;
+        float slew_max = 250;
 
         // rotor disc area in m**2 for 4 x 0.35m dia rotors
         // Note that coaxial rotors count as one rotor only when calculating effective disc area

@@ -105,6 +105,10 @@ protected:
     float launch_accel;
     float launch_time;
     uint64_t launch_start_ms;
+    bool have_drop;
+    // float drop_accel;
+    float drop_time;
+    uint64_t drop_start_ms;
 
     const uint8_t throttle_servo = 2;
     const int8_t choke_servo = 14;

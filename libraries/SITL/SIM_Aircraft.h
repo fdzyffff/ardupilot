@@ -52,7 +52,7 @@ public:
     Aircraft(const char *frame_str);
 
     // called directly after constructor:
-    virtual void set_start_location(const Location &start_loc, const float start_yaw);
+    virtual void set_start_location(const Location &start_loc, const float start_yaw, float start_pitch = 0.0f);
 
     /*
       set simulation speedup
@@ -162,6 +162,9 @@ public:
     float get_battery_voltage() const { return battery_voltage; }
     float get_battery_temperature() const { return battery.get_temperature(); }
 
+    void set_ground_level(float input_height) {ground_level = input_height; }
+    float get_ground_level() {return ground_level; }
+
     ADSB *adsb;
 
 protected:
@@ -229,8 +232,8 @@ protected:
 
     uint64_t time_now_us;
 
-    const float gyro_noise = radians(0.1f);
-    const float accel_noise = 0.3f;
+    const float gyro_noise = radians(0.01f);
+    const float accel_noise = 0.03f;
     float rate_hz = 1200.0f;
     float target_speedup;
     uint64_t frame_time_us;
