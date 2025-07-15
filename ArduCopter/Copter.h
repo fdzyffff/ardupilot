@@ -980,6 +980,7 @@ private:
     void userhook_auxSwitch3(const RC_Channel::AuxSwitchPos ch_flag);
     bool user_arm_switch_count();
     void user_update_assit(float &target_roll, float &target_pitch);
+    void user_ekf_switch();
 
 #if MODE_ACRO_ENABLED == ENABLED
 #if FRAME_CONFIG == HELI_FRAME

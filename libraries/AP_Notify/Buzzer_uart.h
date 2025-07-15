@@ -17,6 +17,8 @@
  */
 #pragma once
 
+#define MAX_BUZZER_MUSIC_NUM 8
+
 #include "NotifyDevice.h"
 
 class Buzzer_uart: public NotifyDevice
@@ -54,12 +56,15 @@ private:
     const uint8_t      GPS_FIX_BUZZ = 14;
     const uint8_t      RTK_FIX_BUZZ = 15;
 
-    void add_music(const uint8_t music, bool force_priority = true);
-    /// play_music - plays the defined buzzer music
-    void play_music(const uint8_t music);
+    uint8_t _cmd_data[8];
+    struct music_t {
+        uint8_t time;
+        uint8_t music;
+    };
 
     /// buzzer_flag_type - bitmask of current state and ap_notify states we track
     struct buzzer_flag_type {
+        uint8_t loop                : 1;
         uint8_t on                  : 1;    // 1 if the buzzer is currently on
         uint8_t arming              : 1;    // 1 if we are beginning the arming process
         uint8_t armed               : 1;    // 0 = disarmed, 1 = armed
@@ -67,7 +72,8 @@ private:
         uint8_t ekf_bad             : 1;    // 1 if ekf position has gone bad
         uint8_t gyro_calibrated     : 1;    // 1 if calibrating gyro
         uint8_t pre_arm_check       : 1;    // 1 if pre-arm check has passed
-        uint8_t gps_status;
+        uint8_t gps_status          : 1;
+        uint8_t vehicle_lost        : 1;
     } _flags;
 
     uint8_t _music;
@@ -77,7 +83,19 @@ private:
 
     AP_HAL::UARTDriver *_port;
 
-    uint8_t _cmd_data[8];
+    music_t _music_event_buffer[MAX_BUZZER_MUSIC_NUM];
+    music_t _music_loop_buffer[MAX_BUZZER_MUSIC_NUM];
+    music_t _current_music;
+    uint8_t _i_music_loop;
+    bool _print_test;
+
+    void reset_music();
+    void add_event_music(const uint8_t music, uint8_t time = 2);
+    void add_loop_music(const uint8_t music, uint8_t time = 2);
+    void remove_loop_music(const uint8_t music);
+    void play_event_music();
+    void play_loop_music();
+    void play_music();
 
     void update_playing_music();
     void update_music_to_play();

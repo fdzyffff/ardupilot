@@ -28,6 +28,7 @@ void Copter::userhook_50Hz()
 void Copter::userhook_MediumLoop()
 {
     // put your 10Hz code here
+    user_ekf_switch();
 }
 #endif
 
@@ -110,4 +111,9 @@ void Copter::user_update_assit(float &target_roll, float &target_pitch)
     if (target_pitch <= 0.0f && assit_pitch < 0.0f) {
         target_pitch = constrain_float(target_pitch, -assit_max, assit_pitch);
     }
+}
+
+void Copter::user_ekf_switch()
+{
+    
 }
