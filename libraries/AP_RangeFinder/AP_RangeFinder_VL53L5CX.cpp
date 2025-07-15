@@ -31,7 +31,7 @@
 
 extern const AP_HAL::HAL& hal;
 
-static const uint8_t MEASUREMENT_TIME_MS = 50; // Start continuous readings at a rate of one measurement every 50 ms
+static const uint16_t MEASUREMENT_TIME_MS = 500; // Start continuous readings at a rate of one measurement every 500 ms
 
 AP_RangeFinder_VL53L5CX::AP_RangeFinder_VL53L5CX(RangeFinder::RangeFinder_State &_state, AP_RangeFinder_Params &_params, AP_HAL::OwnPtr<AP_HAL::I2CDevice> _dev)
     : AP_RangeFinder_Backend(_state, _params)
@@ -100,7 +100,6 @@ bool AP_RangeFinder_VL53L5CX::check_id(void)
     if((device_id == (uint8_t)0xF0) && (revision_id == (uint8_t)0x02))
     {
         GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "Detected VL53L5CX on bus 0x%x\n", (uint8_t)dev->get_bus_id());
-        vl53l5cx_start_ranging();
     } else {
         GCS_SEND_TEXT(MAV_SEVERITY_INFO, "[%d], No VL53L5CX53L5CX", status);
         return false;
@@ -137,15 +136,17 @@ bool AP_RangeFinder_VL53L5CX::init()
     }
 
     uint8_t status = 0;
-    // status = vl53l5cx_set_resolution(&my_dev, VL53L5CX_RESOLUTION_4X4);
-    // status |= vl53l5cx_set_ranging_mode(&my_dev, VL53L5CX_RANGING_MODE_CONTINUOUS);
-    // status |= vl53l5cx_set_integration_time_ms(&my_dev, TIMING_BUDGET);
-    // status |= vl53l5cx_set_ranging_frequency_hz(&my_dev, RANGING_FREQUENCY);
+    status = vl53l5cx_set_resolution(&my_dev, VL53L5CX_RESOLUTION_4X4);
+    status |= vl53l5cx_set_ranging_mode(&my_dev, VL53L5CX_RANGING_MODE_CONTINUOUS);
+    status |= vl53l5cx_set_integration_time_ms(&my_dev, TIMING_BUDGET);
+    status |= vl53l5cx_set_ranging_frequency_hz(&my_dev, RANGING_FREQUENCY);
+    GCS_SEND_TEXT(MAV_SEVERITY_INFO, "init %d", status);
     if (status != VL53L5CX_STATUS_OK)
     {
-    printf("ERROR : Configuration programming error!\n\n");
-    while (1);
+        GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "ERROR : Configuration programming error!");
     }
+
+    status = vl53l5cx_start_ranging(&my_dev);
 
     // call timer() every MEASUREMENT_TIME_MS. We expect new data to be available every MEASUREMENT_TIME_MS
     dev->register_periodic_callback(MEASUREMENT_TIME_MS * 1000,
@@ -165,12 +166,14 @@ bool AP_RangeFinder_VL53L5CX::get_reading(uint16_t &reading_mm)
     }
 
     // GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "BUS ADD 0x%x\n", (uint8_t)dev->get_bus_id());
-
-    (void)vl53l5cx_check_data_ready(&my_dev, &NewDataReady);
+    
+    uint8_t status = 0;
+    uint8_t NewDataReady = 0;
+    status = vl53l5cx_check_data_ready(&my_dev, &NewDataReady);
 
     if (NewDataReady != 0)
     {
-        status = vl53l5cx_get_ranging_data(&my_dev, &data);
+        status = vl53l5cx_get_ranging_data(&my_dev, &Data);
 
         if (status == VL53L5CX_STATUS_OK)
         {
@@ -178,13 +181,15 @@ bool AP_RangeFinder_VL53L5CX::get_reading(uint16_t &reading_mm)
              Convert the data format to Result format.
              Note that you can print directly from data format
             */
-            if (convert_data_format(pL5obj, &data, &Result) < 0)
+            if (convert_data_format(&my_dev, &Data, &Result) < 0)
             {
-                printf("convert_data_format failed\n");
+                GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "convert_data_format failed");
             } else {
-                ;
+                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "get data");
             }
         }
+    } else {
+        // GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "!NewDataReady");
     }
 
 
@@ -202,7 +207,142 @@ bool AP_RangeFinder_VL53L5CX::get_reading(uint16_t &reading_mm)
     return true;
 }
 
-uint8_t AP_RangeFinder_VL53L5CX::vl53l5cx_start_ranging()
+
+uint8_t AP_RangeFinder_VL53L5CX::vl53l5cx_set_resolution(VL53L5CX_Configuration *p_dev, uint8_t resolution)
+{
+    uint8_t status = VL53L5CX_STATUS_OK;
+
+    switch(resolution){
+        case VL53L5CX_RESOLUTION_4X4:
+            status |= vl53l5cx_dci_read_data(p_dev,
+                    p_dev->temp_buffer,
+                    VL53L5CX_DCI_DSS_CONFIG, 16);
+            p_dev->temp_buffer[0x04] = 64;
+            p_dev->temp_buffer[0x06] = 64;
+            p_dev->temp_buffer[0x09] = 4;
+            status |= vl53l5cx_dci_write_data(p_dev,
+                    p_dev->temp_buffer,
+                    VL53L5CX_DCI_DSS_CONFIG, 16);
+
+            status |= vl53l5cx_dci_read_data(p_dev,
+                    p_dev->temp_buffer,
+                    VL53L5CX_DCI_ZONE_CONFIG, 8);
+            p_dev->temp_buffer[0x00] = 4;
+            p_dev->temp_buffer[0x01] = 4;
+            p_dev->temp_buffer[0x04] = 8;
+            p_dev->temp_buffer[0x05] = 8;
+            status |= vl53l5cx_dci_write_data(p_dev,
+                    p_dev->temp_buffer,
+                    VL53L5CX_DCI_ZONE_CONFIG, 8);
+            break;
+
+        case VL53L5CX_RESOLUTION_8X8:
+            status |= vl53l5cx_dci_read_data(p_dev,
+                    p_dev->temp_buffer,
+                    VL53L5CX_DCI_DSS_CONFIG, 16);
+            p_dev->temp_buffer[0x04] = 16;
+            p_dev->temp_buffer[0x06] = 16;
+            p_dev->temp_buffer[0x09] = 1;
+            status |= vl53l5cx_dci_write_data(p_dev,
+                    p_dev->temp_buffer,
+                    VL53L5CX_DCI_DSS_CONFIG, 16);
+
+            status |= vl53l5cx_dci_read_data(p_dev,
+                    p_dev->temp_buffer,
+                    VL53L5CX_DCI_ZONE_CONFIG, 8);
+            p_dev->temp_buffer[0x00] = 8;
+            p_dev->temp_buffer[0x01] = 8;
+            p_dev->temp_buffer[0x04] = 4;
+            p_dev->temp_buffer[0x05] = 4;
+            status |= vl53l5cx_dci_write_data(p_dev,
+                    p_dev->temp_buffer,
+                    VL53L5CX_DCI_ZONE_CONFIG, 8);
+
+            break;
+
+        default:
+            status = VL53L5CX_STATUS_INVALID_PARAM;
+            break;
+        }
+
+    status |= _vl53l5cx_send_offset_data(p_dev, resolution);
+    status |= _vl53l5cx_send_xtalk_data(p_dev, resolution);
+
+    return status;
+}
+
+
+uint8_t AP_RangeFinder_VL53L5CX::vl53l5cx_set_ranging_mode(VL53L5CX_Configuration *p_dev, uint8_t ranging_mode)
+{
+    uint8_t status = VL53L5CX_STATUS_OK;
+    uint32_t single_range = 0x00;
+
+    status |= vl53l5cx_dci_read_data(p_dev, p_dev->temp_buffer,
+            VL53L5CX_DCI_RANGING_MODE, 8);
+
+    switch(ranging_mode)
+    {
+        case VL53L5CX_RANGING_MODE_CONTINUOUS:
+            p_dev->temp_buffer[0x01] = 0x1;
+            p_dev->temp_buffer[0x03] = 0x3;
+            single_range = 0x00;
+            break;
+
+        case VL53L5CX_RANGING_MODE_AUTONOMOUS:
+            p_dev->temp_buffer[0x01] = 0x3;
+            p_dev->temp_buffer[0x03] = 0x2;
+            single_range = 0x01;
+            break;
+
+        default:
+            status = VL53L5CX_STATUS_INVALID_PARAM;
+            break;
+    }
+
+    status |= vl53l5cx_dci_write_data(p_dev, p_dev->temp_buffer,
+            VL53L5CX_DCI_RANGING_MODE, (uint16_t)8);
+
+    status |= vl53l5cx_dci_write_data(p_dev, (uint8_t*)&single_range,
+            VL53L5CX_DCI_SINGLE_RANGE, 
+                        (uint16_t)sizeof(single_range));
+
+    return status;
+}
+
+uint8_t AP_RangeFinder_VL53L5CX::vl53l5cx_set_integration_time_ms(VL53L5CX_Configuration *p_dev, uint32_t integration_time_ms)
+{
+    uint8_t status = VL53L5CX_STATUS_OK;
+    uint32_t integration = integration_time_ms;
+
+    /* Integration time must be between 2ms and 1000ms */
+    if((integration < (uint32_t)2)
+           || (integration > (uint32_t)1000))
+    {
+        status |= VL53L5CX_STATUS_INVALID_PARAM;
+    }else
+    {
+        integration *= (uint32_t)1000;
+
+        status |= vl53l5cx_dci_replace_data(p_dev, p_dev->temp_buffer,
+                VL53L5CX_DCI_INT_TIME, 20,
+                (uint8_t*)&integration, 4, 0x00);
+    }
+
+    return status;
+}
+
+uint8_t AP_RangeFinder_VL53L5CX::vl53l5cx_set_ranging_frequency_hz(VL53L5CX_Configuration *p_dev, uint8_t frequency_hz)
+{
+    uint8_t status = VL53L5CX_STATUS_OK;
+
+    status |= vl53l5cx_dci_replace_data(p_dev, p_dev->temp_buffer,
+                    VL53L5CX_DCI_FREQ_HZ, 4,
+                    (uint8_t*)&frequency_hz, 1, 0x01);
+
+    return status;
+}
+
+uint8_t AP_RangeFinder_VL53L5CX::vl53l5cx_start_ranging(VL53L5CX_Configuration *p_dev)
 {
     uint8_t resolution, status = VL53L5CX_STATUS_OK;
     uint16_t tmp;
@@ -213,6 +353,9 @@ uint8_t AP_RangeFinder_VL53L5CX::vl53l5cx_start_ranging()
     uint8_t cmd[] = {0x00, 0x03, 0x00, 0x00};
 
     status |= vl53l5cx_get_resolution(p_dev, &resolution);
+
+    GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "vl53l5cx_get_resolution %d\n", status);
+
     p_dev->data_read_size = 0;
     p_dev->streamcount = 255;
 
@@ -304,6 +447,8 @@ uint8_t AP_RangeFinder_VL53L5CX::vl53l5cx_start_ranging()
             (uint8_t*)&(output), VL53L5CX_DCI_OUTPUT_LIST,
             (uint16_t)sizeof(output));
 
+    GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "vl53l5cx_dci_write_data 1 %d\n", status);
+
     header_config[0] = p_dev->data_read_size;
     header_config[1] = i + (uint32_t)1;
 
@@ -311,9 +456,13 @@ uint8_t AP_RangeFinder_VL53L5CX::vl53l5cx_start_ranging()
             (uint8_t*)&(header_config), VL53L5CX_DCI_OUTPUT_CONFIG,
             (uint16_t)sizeof(header_config));
 
+    GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "vl53l5cx_dci_write_data 2 %d\n", status);
+
     status |= vl53l5cx_dci_write_data(p_dev,
             (uint8_t*)&(output_bh_enable), VL53L5CX_DCI_OUTPUT_ENABLES,
             (uint16_t)sizeof(output_bh_enable));
+
+    GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "vl53l5cx_dci_write_data 3 %d\n", status);
 
     /* Start xshut bypass (interrupt mode) */
     status |= WrByte(0x7fff, 0x00);
@@ -321,10 +470,8 @@ uint8_t AP_RangeFinder_VL53L5CX::vl53l5cx_start_ranging()
     status |= WrByte(0x7fff, 0x02);
 
     /* Start ranging session */
-    status |= WrMulti(VL53L5CX_UI_CMD_END -
-            (uint16_t)(4 - 1), (uint8_t*)cmd, sizeof(cmd));
-    status |= _vl53l5cx_poll_for_answer(p_dev, 4, 1,
-            VL53L5CX_UI_CMD_STATUS, 0xff, 0x03);
+    status |= WrMulti(VL53L5CX_UI_CMD_END - (uint16_t)(4 - 1), (uint8_t*)cmd, sizeof(cmd));
+    status |= _vl53l5cx_poll_for_answer(p_dev, 4, 1,  VL53L5CX_UI_CMD_STATUS, 0xff, 0x03);
 
     /* Read ui range data content and compare if data size is the correct one */
     status |= vl53l5cx_dci_read_data(p_dev,
@@ -335,12 +482,12 @@ uint8_t AP_RangeFinder_VL53L5CX::vl53l5cx_start_ranging()
         status |= VL53L5CX_STATUS_ERROR;
     }
 
+    GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "vl53l5cx_start_ranging %d\n", status);
+
     return status;
 }
 
-uint8_t AP_RangeFinder_VL53L5CX::vl53l5cx_check_data_ready(
-        VL53L5CX_Configuration      *p_dev,
-        uint8_t             *p_isReady)
+uint8_t AP_RangeFinder_VL53L5CX::vl53l5cx_check_data_ready(VL53L5CX_Configuration *p_dev, uint8_t *p_isReady)
 {
     uint8_t status = VL53L5CX_STATUS_OK;
 
@@ -369,9 +516,18 @@ uint8_t AP_RangeFinder_VL53L5CX::vl53l5cx_check_data_ready(
     return status;
 }
 
-uint8_t AP_RangeFinder_VL53L5CX::vl53l5cx_get_ranging_data(
-        VL53L5CX_Configuration      *p_dev,
-        VL53L5CX_ResultsData        *p_results)
+uint8_t AP_RangeFinder_VL53L5CX::vl53l5cx_get_resolution(VL53L5CX_Configuration *p_dev, uint8_t *p_resolution)
+{
+    uint8_t status = VL53L5CX_STATUS_OK;
+
+    status |= vl53l5cx_dci_read_data(p_dev, p_dev->temp_buffer, VL53L5CX_DCI_ZONE_CONFIG, 8);
+    *p_resolution = p_dev->temp_buffer[0x00]*p_dev->temp_buffer[0x01];
+
+    return status;
+}
+
+
+uint8_t AP_RangeFinder_VL53L5CX::vl53l5cx_get_ranging_data(VL53L5CX_Configuration *p_dev, VL53L5CX_ResultsData *p_results)
 {
     uint8_t status = VL53L5CX_STATUS_OK;
     union Block_header *bh_ptr;
@@ -385,6 +541,8 @@ uint8_t AP_RangeFinder_VL53L5CX::vl53l5cx_get_ranging_data(
     /* Start conversion at position 16 to avoid headers */
     for (i = 16U; i < (uint32_t)p_dev->data_read_size; i+=4U)
     {
+        // Bh.bytes = p_dev->temp_buffer[i];
+        // bh_ptr = (union Block_header *)&Bh;
         bh_ptr = (union Block_header *)&(p_dev->temp_buffer[i]);
         if ((bh_ptr->type > 0x1U) 
                     && (bh_ptr->type < 0xdU))
@@ -538,19 +696,18 @@ uint8_t AP_RangeFinder_VL53L5CX::vl53l5cx_get_ranging_data(
     return status;
 }
 
-int32_t AP_RangeFinder_VL53L5CX::convert_data_format(VL53L5CX_Object_t *pObj,
-    VL53L5CX_ResultsData *data, RANGING_SENSOR_Result_t *pResult)
+int32_t AP_RangeFinder_VL53L5CX::convert_data_format(VL53L5CX_Configuration *p_dev, VL53L5CX_ResultsData *data, RANGING_SENSOR_Result_t *pResult)
 {
   int32_t ret;
   uint8_t i, j;
   uint8_t resolution;
   uint8_t target_status;
 
-  if ((pObj == NULL) || (pResult == NULL))
+  if (pResult == NULL)
   {
     ret = VL53L5CX_INVALID_PARAM;
   }
-  else if (vl53l5cx_get_resolution(&pObj->Dev, &resolution) != VL53L5CX_STATUS_OK)
+  else if (vl53l5cx_get_resolution(p_dev, &resolution) != VL53L5CX_STATUS_OK)
   {
     ret = VL53L5CX_ERROR;
   }
@@ -567,26 +724,25 @@ int32_t AP_RangeFinder_VL53L5CX::convert_data_format(VL53L5CX_Object_t *pObj,
         pResult->ZoneResult[i].Distance[j] = (uint32_t)data->distance_mm[(VL53L5CX_NB_TARGET_PER_ZONE * i) + j];
 
         /* return Ambient value if ambient rate output is enabled */
-        if (pObj->IsAmbientEnabled == 1U)
-        {
-          /* apply ambient value to all targets in a given zone */
-          pResult->ZoneResult[i].Ambient[j] = (float_t)data->ambient_per_spad[i];
-        }
-        else
+        // if (pObj->IsAmbientEnabled == 1U)
+        // {
+        //   /* apply ambient value to all targets in a given zone */
+        //   pResult->ZoneResult[i].Ambient[j] = (float_t)data->ambient_per_spad[i];
+        // }
+        // else
         {
           pResult->ZoneResult[i].Ambient[j] = 0.0f;
         }
 
         /* return Signal value if signal rate output is enabled */
-        if (pObj->IsSignalEnabled == 1U)
-        {
-          pResult->ZoneResult[i].Signal[j] =
-            (float_t)data->signal_per_spad[(VL53L5CX_NB_TARGET_PER_ZONE * i) + j];
-        }
-        else
-        {
+        // if (pObj->IsSignalEnabled == 1U)
+        // {
+          // pResult->ZoneResult[i].Signal[j] = (float)data->signal_per_spad[(VL53L5CX_NB_TARGET_PER_ZONE * i) + j];
+        // }
+        // else
+        // {
           pResult->ZoneResult[i].Signal[j] = 0.0f;
-        }
+        // }
 
         target_status = data->target_status[(VL53L5CX_NB_TARGET_PER_ZONE * i) + j];
         pResult->ZoneResult[i].Status[j] = map_target_status(target_status);
@@ -599,11 +755,7 @@ int32_t AP_RangeFinder_VL53L5CX::convert_data_format(VL53L5CX_Object_t *pObj,
   return ret;
 }
 
-uint8_t vl53l5cx_dci_read_data(
-        VL53L5CX_Configuration      *p_dev,
-        uint8_t             *data,
-        uint32_t            index,
-        uint16_t            data_size)
+uint8_t AP_RangeFinder_VL53L5CX::vl53l5cx_dci_read_data(VL53L5CX_Configuration *p_dev, uint8_t *data, uint32_t index, uint16_t data_size)
 {
     int16_t i;
     uint8_t status = VL53L5CX_STATUS_OK;
@@ -626,7 +778,7 @@ uint8_t vl53l5cx_dci_read_data(
 
     /* Request data reading from FW */
         status |= WrMulti((VL53L5CX_UI_CMD_END-(uint16_t)11),cmd, sizeof(cmd));
-        // status |= _vl53l5cx_poll_for_answer(p_dev, 4, 1, VL53L5CX_UI_CMD_STATUS, 0xff, 0x03);
+        status |= _vl53l5cx_poll_for_answer(p_dev, 4, 1, VL53L5CX_UI_CMD_STATUS, 0xff, 0x03);
 
     /* Read new data sent (4 bytes header + data_size + 8 bytes footer) */
         status |= RdMulti(VL53L5CX_UI_CMD_START, p_dev->temp_buffer, rd_size);
@@ -641,11 +793,7 @@ uint8_t vl53l5cx_dci_read_data(
     return status;
 }
 
-uint8_t vl53l5cx_dci_write_data(
-        VL53L5CX_Configuration      *p_dev,
-        uint8_t             *data,
-        uint32_t            index,
-        uint16_t            data_size)
+uint8_t AP_RangeFinder_VL53L5CX::vl53l5cx_dci_write_data(VL53L5CX_Configuration *p_dev, uint8_t *data, uint32_t index, uint16_t data_size)
 {
     uint8_t status = VL53L5CX_STATUS_OK;
     int16_t i;
@@ -685,7 +833,7 @@ uint8_t vl53l5cx_dci_write_data(
 
     /* Send data to FW */
         status |= WrMulti(address, p_dev->temp_buffer, (uint32_t)((uint32_t)data_size + (uint32_t)12));
-        // status |= _vl53l5cx_poll_for_answer(p_dev, 4, 1, VL53L5CX_UI_CMD_STATUS, 0xff, 0x03);
+        status |= _vl53l5cx_poll_for_answer(p_dev, 4, 1, VL53L5CX_UI_CMD_STATUS, 0xff, 0x03);
 
         SwapBuffer(data, data_size);
     }
@@ -693,14 +841,7 @@ uint8_t vl53l5cx_dci_write_data(
     return status;
 }
 
-uint8_t vl53l5cx_dci_replace_data(
-        VL53L5CX_Configuration      *p_dev,
-        uint8_t             *data,
-        uint32_t            index,
-        uint16_t            data_size,
-        uint8_t             *new_data,
-        uint16_t            new_data_size,
-        uint16_t            new_data_pos)
+uint8_t AP_RangeFinder_VL53L5CX::vl53l5cx_dci_replace_data(VL53L5CX_Configuration *p_dev, uint8_t *data, uint32_t index, uint16_t data_size, uint8_t *new_data, uint16_t new_data_size, uint16_t new_data_pos)
 {
     uint8_t status = VL53L5CX_STATUS_OK;
 
@@ -711,9 +852,124 @@ uint8_t vl53l5cx_dci_replace_data(
     return status;
 }
 
-void SwapBuffer(
-    uint8_t     *buffer,
-    uint16_t     size)
+uint8_t AP_RangeFinder_VL53L5CX::_vl53l5cx_send_offset_data(VL53L5CX_Configuration *p_dev, uint8_t resolution)
+{
+    uint8_t status = VL53L5CX_STATUS_OK;
+    uint32_t signal_grid[64];
+    int16_t range_grid[64];
+    uint8_t dss_4x4[] = {0x0F, 0x04, 0x04, 0x00, 0x08, 0x10, 0x10, 0x07};
+    uint8_t footer[] = {0x00, 0x00, 0x00, 0x0F, 0x03, 0x01, 0x01, 0xE4};
+    int8_t i, j;
+    uint16_t k;
+
+    (void)memcpy(p_dev->temp_buffer,
+               p_dev->offset_data, VL53L5CX_OFFSET_BUFFER_SIZE);
+
+    /* Data extrapolation is required for 4X4 offset */
+    if(resolution == (uint8_t)VL53L5CX_RESOLUTION_4X4){
+        (void)memcpy(&(p_dev->temp_buffer[0x10]), dss_4x4, sizeof(dss_4x4));
+        SwapBuffer(p_dev->temp_buffer, VL53L5CX_OFFSET_BUFFER_SIZE);
+        (void)memcpy(signal_grid,&(p_dev->temp_buffer[0x3C]),
+            sizeof(signal_grid));
+        (void)memcpy(range_grid,&(p_dev->temp_buffer[0x140]),
+            sizeof(range_grid));
+
+        for (j = 0; j < (int8_t)4; j++)
+        {
+            for (i = 0; i < (int8_t)4 ; i++)
+            {
+                signal_grid[i+(4*j)] =
+                (signal_grid[(2*i)+(16*j)+ (int8_t)0]
+                + signal_grid[(2*i)+(16*j)+(int8_t)1]
+                + signal_grid[(2*i)+(16*j)+(int8_t)8]
+                + signal_grid[(2*i)+(16*j)+(int8_t)9])
+                                  /(uint32_t)4;
+                range_grid[i+(4*j)] =
+                (range_grid[(2*i)+(16*j)]
+                + range_grid[(2*i)+(16*j)+1]
+                + range_grid[(2*i)+(16*j)+8]
+                + range_grid[(2*i)+(16*j)+9])
+                                  /(int16_t)4;
+            }
+        }
+        (void)memset(&range_grid[0x10], 0, (uint16_t)96);
+        (void)memset(&signal_grid[0x10], 0, (uint16_t)192);
+            (void)memcpy(&(p_dev->temp_buffer[0x3C]),
+        signal_grid, sizeof(signal_grid));
+            (void)memcpy(&(p_dev->temp_buffer[0x140]),
+        range_grid, sizeof(range_grid));
+            SwapBuffer(p_dev->temp_buffer, VL53L5CX_OFFSET_BUFFER_SIZE);
+    }
+
+    for(k = 0; k < (VL53L5CX_OFFSET_BUFFER_SIZE - (uint16_t)4); k++)
+    {
+        p_dev->temp_buffer[k] = p_dev->temp_buffer[k + (uint16_t)8];
+    }
+
+    (void)memcpy(&(p_dev->temp_buffer[0x1E0]), footer, 8);
+    status |= WrMulti(0x2e18, p_dev->temp_buffer,
+        VL53L5CX_OFFSET_BUFFER_SIZE);
+    status |=_vl53l5cx_poll_for_answer(p_dev, 4, 1,
+        VL53L5CX_UI_CMD_STATUS, 0xff, 0x03);
+
+    return status;
+}
+
+uint8_t AP_RangeFinder_VL53L5CX::_vl53l5cx_send_xtalk_data(VL53L5CX_Configuration *p_dev, uint8_t resolution)
+{
+    uint8_t status = VL53L5CX_STATUS_OK;
+    uint8_t res4x4[] = {0x0F, 0x04, 0x04, 0x17, 0x08, 0x10, 0x10, 0x07};
+    uint8_t dss_4x4[] = {0x00, 0x78, 0x00, 0x08, 0x00, 0x00, 0x00, 0x08};
+    uint8_t profile_4x4[] = {0xA0, 0xFC, 0x01, 0x00};
+    uint32_t signal_grid[64];
+    int8_t i, j;
+
+    (void)memcpy(p_dev->temp_buffer, &(p_dev->xtalk_data[0]),
+        VL53L5CX_XTALK_BUFFER_SIZE);
+
+    /* Data extrapolation is required for 4X4 Xtalk */
+    if(resolution == (uint8_t)VL53L5CX_RESOLUTION_4X4)
+    {
+        (void)memcpy(&(p_dev->temp_buffer[0x8]),
+            res4x4, sizeof(res4x4));
+        (void)memcpy(&(p_dev->temp_buffer[0x020]),
+            dss_4x4, sizeof(dss_4x4));
+
+        SwapBuffer(p_dev->temp_buffer, VL53L5CX_XTALK_BUFFER_SIZE);
+        (void)memcpy(signal_grid, &(p_dev->temp_buffer[0x34]),
+            sizeof(signal_grid));
+
+        for (j = 0; j < (int8_t)4; j++)
+        {
+            for (i = 0; i < (int8_t)4 ; i++)
+            {
+                signal_grid[i+(4*j)] =
+                (signal_grid[(2*i)+(16*j)+0]
+                + signal_grid[(2*i)+(16*j)+1]
+                + signal_grid[(2*i)+(16*j)+8]
+                + signal_grid[(2*i)+(16*j)+9])/(uint32_t)4;
+            }
+        }
+        (void)memset(&signal_grid[0x10], 0, (uint32_t)192);
+        (void)memcpy(&(p_dev->temp_buffer[0x34]),
+                  signal_grid, sizeof(signal_grid));
+        SwapBuffer(p_dev->temp_buffer, VL53L5CX_XTALK_BUFFER_SIZE);
+        (void)memcpy(&(p_dev->temp_buffer[0x134]),
+        profile_4x4, sizeof(profile_4x4));
+        (void)memset(&(p_dev->temp_buffer[0x078]),0 ,
+                         (uint32_t)4*sizeof(uint8_t));
+    }
+
+    status |= WrMulti(0x2cf8,
+            p_dev->temp_buffer, VL53L5CX_XTALK_BUFFER_SIZE);
+    status |=_vl53l5cx_poll_for_answer(p_dev, 4, 1,
+            VL53L5CX_UI_CMD_STATUS, 0xff, 0x03);
+
+    return status;
+}
+
+
+void AP_RangeFinder_VL53L5CX::SwapBuffer(uint8_t *buffer, uint16_t size)
 {
   uint32_t i, tmp;
 
@@ -728,6 +984,26 @@ void SwapBuffer(
 
     memcpy(&(buffer[i]), &tmp, 4);
   }
+}
+
+uint8_t AP_RangeFinder_VL53L5CX::map_target_status(uint8_t status)
+{
+    uint8_t ret;
+
+    if ((status == 5U) || (status == 9U))
+    {
+        ret = 0U; /* ranging is OK */
+    }
+    else if (status == 0U)
+    {
+        ret = 255U; /* no update */
+    }
+    else
+    {
+        ret = status; /* return device status otherwise */
+    }
+
+    return ret;
 }
 
 bool AP_RangeFinder_VL53L5CX::read_register(uint16_t reg, uint8_t &value)
@@ -760,14 +1036,35 @@ bool AP_RangeFinder_VL53L5CX::WrByte(uint16_t reg, uint8_t value)
 
 bool AP_RangeFinder_VL53L5CX::WrMulti(uint16_t reg, uint8_t* value, uint32_t len)
 {
-    uint8_t b[2] = { uint8_t(reg >> 8), uint8_t(reg & 0xFF) };
-    if (!dev->transfer(b, 2, value, len)) {
+    uint8_t b[len+2] = {0};
+    b[0] = uint8_t(reg >> 8);
+    b[1] = uint8_t(reg & 0xFF);
+    for (uint32_t i_b = 2; i_b < len; i_b++) {
+        b[i_b] = value[i_b -2];
+    }
+    if (!dev->transfer(b, len + 2, nullptr, 0)) {
         return false;
     }
     return true;
 }
+
+uint8_t AP_RangeFinder_VL53L5CX::_vl53l5cx_poll_for_answer(VL53L5CX_Configuration  *p_dev, uint8_t size, uint8_t pos, uint16_t address, uint8_t mask, uint8_t expected_value)
+{
+    uint8_t status = VL53L5CX_STATUS_OK;
+    // uint8_t timeout = 0;
+
+    status |= RdMulti(address, p_dev->temp_buffer, size);
+    if ((p_dev->temp_buffer[pos] & mask) != expected_value)
+    {
+        // status |= VL53L5CX_MCU_ERROR;
+        GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "_vl53l5cx_poll_for_answer ERR");
+    }
+
+    return status;
+}
+
 /*
-  timer called at 20Hz
+  timer called at 2Hz
 */
 void AP_RangeFinder_VL53L5CX::timer(void)
 {

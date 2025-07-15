@@ -9,16 +9,33 @@
 
 #include <AP_HAL/I2CDevice.h>
 
-#define VL53L5CX_STATUS_OK      ((uint8_t) 0U)
-#define VL53L5CX_MCU_ERROR      ((uint8_t) 66U)
-#define VL53L5CX_STATUS_INVALID_PARAM   ((uint8_t) 127U)
-#define VL53L5CX_STATUS_ERROR     ((uint8_t) 255U)
+
+#define VL53L5CX_STATUS_OK          ((uint8_t) 0U)
+#define VL53L5CX_STATUS_TIMEOUT_ERROR       ((uint8_t) 1U)
+#define VL53L5CX_STATUS_CORRUPTED_FRAME     ((uint8_t) 2U)
+#define VL53L5CX_STATUS_CRC_CSUM_FAILED     ((uint8_t) 3U)
+#define VL53L5CX_MCU_ERROR          ((uint8_t) 66U)
+#define VL53L5CX_STATUS_INVALID_PARAM       ((uint8_t) 127U)
+#define VL53L5CX_STATUS_ERROR           ((uint8_t) 255U)
+
 #define VL53L5CX_RESOLUTION_4X4     ((uint8_t) 16U)
 #define VL53L5CX_RESOLUTION_8X8     ((uint8_t) 64U)
+
+#define VL53L5CX_OK                  (0)
+#define VL53L5CX_ERROR               (-1)
+#define VL53L5CX_INVALID_PARAM       (-2)
+#define VL53L5CX_TIMEOUT             (-3)
+#define VL53L5CX_NOT_IMPLEMENTED     (-4)
 
 #ifndef VL53L5CX_NB_TARGET_PER_ZONE
 #define VL53L5CX_NB_TARGET_PER_ZONE     (1U)
 #endif
+
+#define VL53L5CX_RANGING_MODE_CONTINUOUS    ((uint8_t) 1U)
+#define VL53L5CX_RANGING_MODE_AUTONOMOUS    ((uint8_t) 3U)
+#define TIMING_BUDGET (30U) /* 5 ms < TimingBudget < 100 ms */
+#define RANGING_FREQUENCY (5U) /* Ranging frequency Hz (shall be consistent with TimingBudget value) */
+
 
 // #define VL53L5CX_DISABLE_AMBIENT_PER_SPAD
 #define VL53L5CX_DISABLE_NB_SPADS_ENABLED
@@ -79,7 +96,7 @@
 #define VL53L5CX_UI_CMD_START           ((uint16_t)0x2C04U)
 #define VL53L5CX_UI_CMD_END             ((uint16_t)0x2FFFU)
 
-
+#define VL53L5CX_MAX_NB_ZONES        (VL53L5CX_RESOLUTION_8X8)
 /**
  * @brief Inner values for API. Max buffer size depends of the selected output.
  */
@@ -138,6 +155,26 @@
 #define L5CX_MOT_SIZE   0U
 #endif
 
+#define VL53L5CX_MAX_RESULTS_SIZE ( 40U \
+    + L5CX_AMB_SIZE + L5CX_SPAD_SIZE + L5CX_NTAR_SIZE + L5CX_SPS_SIZE \
+    + L5CX_SIGR_SIZE + L5CX_DIST_SIZE + L5CX_RFLEST_SIZE + L5CX_STA_SIZE \
+    + L5CX_MOT_SIZE + 20U)
+
+/**
+ * @brief Macro VL53L5CX_TEMPORARY_BUFFER_SIZE can be used to know the size of
+ * the temporary buffer. The minimum size is 1024, and the maximum depends of
+ * the output configuration.
+ */
+
+#if VL53L5CX_MAX_RESULTS_SIZE < 1024U
+#define VL53L5CX_TEMPORARY_BUFFER_SIZE ((uint32_t) 1024U)
+#else
+#define VL53L5CX_TEMPORARY_BUFFER_SIZE ((uint32_t) VL53L5CX_MAX_RESULTS_SIZE)
+#endif
+
+#define RANGING_SENSOR_NB_TARGET_PER_ZONE   (VL53L5CX_NB_TARGET_PER_ZONE)
+#define RANGING_SENSOR_MAX_NB_ZONES         (VL53L5CX_MAX_NB_ZONES)
+
 class AP_RangeFinder_VL53L5CX : public AP_RangeFinder_Backend
 {
 
@@ -160,7 +197,7 @@ private:
     // constructor
     AP_RangeFinder_VL53L5CX(RangeFinder::RangeFinder_State &_state, AP_RangeFinder_Params &_params, AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev);
 
-    union Block_header {
+    union PACKED Block_header {
         uint32_t bytes;
         struct {
             uint32_t type : 4;
@@ -172,15 +209,15 @@ private:
     typedef struct
     {
         /* Platform, filled by customer into the 'platform.h' file */
-        VL53L5CX_Platform   platform;
+        // VL53L5CX_Platform   platform;
         /* Results streamcount, value auto-incremented at each range */
         uint8_t             streamcount;
         /* Size of data read though I2C */
         uint32_t            data_read_size;
         /* Address of default configuration buffer */
-        uint8_t             *default_configuration;
+        // uint8_t             *default_configuration;
         /* Address of default Xtalk buffer */
-        uint8_t             *default_xtalk;
+        // uint8_t             *default_xtalk;
         /* Offset buffer */
         uint8_t             offset_data[VL53L5CX_OFFSET_BUFFER_SIZE];
         /* Xtalk buffer */
@@ -255,6 +292,21 @@ private:
 
     } VL53L5CX_ResultsData;
 
+    typedef struct
+    {
+      uint32_t NumberOfTargets;
+      uint32_t Distance[RANGING_SENSOR_NB_TARGET_PER_ZONE];  /*!< millimeters */
+      uint32_t Status[RANGING_SENSOR_NB_TARGET_PER_ZONE];    /*!< OK: 0, NOK: !0 */
+      float Ambient[RANGING_SENSOR_NB_TARGET_PER_ZONE];    /*!< kcps / spad */
+      float Signal[RANGING_SENSOR_NB_TARGET_PER_ZONE];     /*!< kcps / spad */
+    } RANGING_SENSOR_ZoneResult_t;
+
+    typedef struct
+    {
+      uint32_t NumberOfZones;
+      RANGING_SENSOR_ZoneResult_t ZoneResult[RANGING_SENSOR_MAX_NB_ZONES];
+    } RANGING_SENSOR_Result_t;
+
     bool init();
     void timer();
 
@@ -267,34 +319,43 @@ private:
 
     VL53L5CX_Configuration my_dev;
 
-    uint16_t fast_osc_frequency;
-    uint16_t osc_calibrate_val;
     uint32_t sum_mm;
     uint32_t counter;
     bool calibrated;
 
-    uint8_t target_status[64];
     uint8_t distance_mm[64];
-    
 
-    bool read_register(uint16_t reg, uint8_t &value) WARN_IF_UNUSED;
-    bool read_register16(uint16_t reg, uint16_t &value) WARN_IF_UNUSED;
-    bool write_register(uint16_t reg, uint8_t value) WARN_IF_UNUSED;
-    bool write_register16(uint16_t reg, uint16_t value) WARN_IF_UNUSED;
-    bool write_register32(uint16_t reg, uint32_t value) WARN_IF_UNUSED;
-    bool write_registermulti(uint16_t reg, uint8_t* value, uint32_t len) WARN_IF_UNUSED;
-    bool dataReady(void);
-    bool reset(void) WARN_IF_UNUSED;
-    bool setDistanceMode(DistanceMode distance_mode) WARN_IF_UNUSED;
-    bool setMeasurementTimingBudget(uint32_t budget_us) WARN_IF_UNUSED;
-    bool getMeasurementTimingBudget(uint32_t &budget) WARN_IF_UNUSED;
-    bool startContinuous(uint32_t period_ms) WARN_IF_UNUSED;
-    uint32_t decodeTimeout(uint16_t reg_val);
-    uint16_t encodeTimeout(uint32_t timeout_mclks);
-    uint32_t timeoutMclksToMicroseconds(uint32_t timeout_mclks, uint32_t macro_period_us);
-    uint32_t timeoutMicrosecondsToMclks(uint32_t timeout_us, uint32_t macro_period_us);
-    uint32_t calcMacroPeriod(uint8_t vcsel_period) const;
-    bool setupManualCalibration(void);
+    VL53L5CX_ResultsData Data;
+    RANGING_SENSOR_Result_t Result;
+    Block_header Bh;
+    
+    bool reset(void);
+
+    uint8_t vl53l5cx_set_resolution(VL53L5CX_Configuration *p_dev, uint8_t resolution);
+    uint8_t vl53l5cx_set_ranging_mode(VL53L5CX_Configuration *p_dev, uint8_t ranging_mode);
+    uint8_t vl53l5cx_set_integration_time_ms(VL53L5CX_Configuration *p_dev, uint32_t integration_time_ms);
+    uint8_t vl53l5cx_set_ranging_frequency_hz(VL53L5CX_Configuration *p_dev, uint8_t frequency_hz);
+
+    uint8_t vl53l5cx_start_ranging(VL53L5CX_Configuration *p_dev);
+    uint8_t vl53l5cx_check_data_ready(VL53L5CX_Configuration *p_dev, uint8_t *p_isReady);
+    uint8_t vl53l5cx_get_resolution(VL53L5CX_Configuration *p_dev, uint8_t *p_resolution);
+    uint8_t vl53l5cx_get_ranging_data(VL53L5CX_Configuration *p_dev, VL53L5CX_ResultsData *p_results);
+    int32_t convert_data_format(VL53L5CX_Configuration *p_dev, VL53L5CX_ResultsData *data, RANGING_SENSOR_Result_t *pResult);
+    uint8_t vl53l5cx_dci_read_data(VL53L5CX_Configuration *p_dev, uint8_t *data, uint32_t index, uint16_t data_size);
+    uint8_t vl53l5cx_dci_write_data(VL53L5CX_Configuration *p_dev, uint8_t *data, uint32_t index, uint16_t data_size);
+    uint8_t vl53l5cx_dci_replace_data(VL53L5CX_Configuration *p_dev, uint8_t *data, uint32_t index, uint16_t data_size, uint8_t *new_data, uint16_t new_data_size, uint16_t new_data_pos);
+    uint8_t _vl53l5cx_send_offset_data(VL53L5CX_Configuration *p_dev, uint8_t resolution);
+    uint8_t _vl53l5cx_send_xtalk_data(VL53L5CX_Configuration *p_dev, uint8_t resolution);\
+
+    void SwapBuffer(uint8_t *buffer, uint16_t size);
+    uint8_t map_target_status(uint8_t status);
+    bool read_register(uint16_t reg, uint8_t &value);
+    bool RdMulti(uint16_t reg, uint8_t* value, uint32_t len);
+    bool write_register(uint16_t reg, uint8_t value);
+    bool WrByte(uint16_t reg, uint8_t value);
+    bool WrMulti(uint16_t reg, uint8_t* value, uint32_t len);
+    uint8_t _vl53l5cx_poll_for_answer(VL53L5CX_Configuration  *p_dev, uint8_t size, uint8_t pos, uint16_t address, uint8_t mask, uint8_t expected_value);
+
 };
 
 #endif  // AP_RANGEFINDER_VL53L5CX_ENABLED
