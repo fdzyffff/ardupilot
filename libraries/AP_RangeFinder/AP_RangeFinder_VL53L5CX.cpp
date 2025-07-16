@@ -31,7 +31,7 @@
 
 extern const AP_HAL::HAL& hal;
 
-static const uint16_t MEASUREMENT_TIME_MS = 500; // Start continuous readings at a rate of one measurement every 500 ms
+static const uint16_t MEASUREMENT_TIME_MS = 50; // Start continuous readings at a rate of one measurement every 500 ms
 
 AP_RangeFinder_VL53L5CX::AP_RangeFinder_VL53L5CX(RangeFinder::RangeFinder_State &_state, AP_RangeFinder_Params &_params, AP_HAL::OwnPtr<AP_HAL::I2CDevice> _dev)
     : AP_RangeFinder_Backend(_state, _params)
@@ -105,7 +105,7 @@ bool AP_RangeFinder_VL53L5CX::check_id(void)
         return false;
     }
     printf("Detected VL53L5CX on bus 0x%x\n", dev->get_bus_id());
-    return true;
+    return false;
 }
 
 bool AP_RangeFinder_VL53L5CX::reset(void) {

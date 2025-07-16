@@ -11,7 +11,7 @@ void UMav::send_raw_imu_loop() {
 void UMav::send_raw_imu()
 {
     if (!FD_uart_imu.initialized()) {
-        // hal.scheduler->delay(3000);
+        hal.scheduler->delay(10000);
         return;
     }
     static uint32_t _last_imu_ms = millis();
