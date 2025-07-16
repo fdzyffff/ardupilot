@@ -168,11 +168,13 @@
 #include "avoidance_adsb.h"
 #endif
 // Local modules
-#include "Parameters.h"
 #if USER_PARAMS_ENABLED
 #include "UserParameters.h"
 #endif
+#include "Parameters.h"
 #include "mode.h"
+
+#include "UAttack.h"
 
 class Copter : public AP_Vehicle {
 public:
@@ -223,10 +225,13 @@ public:
     friend class ModeZigZag;
     friend class ModeAutorotate;
     friend class ModeTurtle;
+    friend class ModeHKFollow;
 
     friend class _AutoTakeoff;
 
     friend class PayloadPlace;
+
+    friend class UAttack;
 
     Copter(void);
 
@@ -254,7 +259,6 @@ private:
 
     AP_SurfaceDistance rangefinder_state {ROTATION_PITCH_270, inertial_nav, 0U};
     AP_SurfaceDistance rangefinder_up_state {ROTATION_PITCH_90, inertial_nav, 1U};
-
     // helper function to get inertially interpolated rangefinder height.
     bool get_rangefinder_height_interpolated_cm(int32_t& ret) const;
 
@@ -1072,10 +1076,13 @@ private:
 #if MODE_TURTLE_ENABLED
     ModeTurtle mode_turtle;
 #endif
+    ModeHKFollow mode_hkfollow;
 
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);
+
+    UAttack uattack;
 
 public:
     void failsafe_check();      // failsafe.cpp

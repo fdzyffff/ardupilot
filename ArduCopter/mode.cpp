@@ -178,6 +178,9 @@ Mode *Copter::mode_from_mode_num(const Mode::Number mode)
             ret = &mode_turtle;
             break;
 #endif
+        case Mode::Number::HKFOLLOW:
+            ret = &mode_hkfollow;
+            break;
 
         default:
             break;
