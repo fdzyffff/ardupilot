@@ -38,6 +38,7 @@ private:
 
     uint32_t _fire_ms;
     float _fire_count_s;
+    int32_t _msg_count;
 
     void msg_payload2apm_handle();
     void send_current_state_text();

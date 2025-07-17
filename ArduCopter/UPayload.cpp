@@ -14,6 +14,7 @@ void UPayload::init()
     FD_uart_payload.init();
     FD_uart_payload.get_msg_payload().set_enable();
     _fire_ms = 0;
+    _msg_count = 0;
     copter.gcs().send_text(MAV_SEVERITY_WARNING, "Payload Init");
 }
 
@@ -200,6 +201,7 @@ void UPayload::send_state_msg(state_t state) {
     if (FD_uart_payload.initialized()) {
         FD_uart_payload.get_msg_payload().sum_check();
         FD_uart_payload.get_port()->write(FD_uart_payload.get_msg_payload()._msg_1.content.data, sizeof(FD_uart_payload.get_msg_payload()._msg_1.content.data));
+        _msg_count++;
     }
 }
 
@@ -218,7 +220,12 @@ void UPayload::push_state() {
 
         if (_desire_state != _current_state) {
             send_state_msg(_desire_state);
-        _last_state_ms = AP_HAL::millis();
+            _last_state_ms = AP_HAL::millis();
+
+            if (_msg_count > 5) {
+                gcs().send_text(MAV_SEVERITY_INFO, "No Payload response");
+                _msg_count = 0;
+            }
         }
     }
 }
@@ -255,8 +262,9 @@ void UPayload::update()
         uint8_t temp = FD_uart_payload.get_port()->read();
         FD_uart_payload.get_msg_payload().parse(temp);
         if (FD_uart_payload.get_msg_payload()._msg_1.updated) {
-            gcs().send_text(MAV_SEVERITY_INFO, "updated");
+            // gcs().send_text(MAV_SEVERITY_INFO, "updated");
             msg_payload2apm_handle();
+            if (_msg_count > 0) {_msg_count--;}
         }
     }
 
