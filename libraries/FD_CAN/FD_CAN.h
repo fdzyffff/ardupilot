@@ -36,7 +36,7 @@ public:
     // test if the CAN driver is ready to be armed
     bool pre_arm_check(char* reason, uint8_t reason_len);
 
-    FD_BATT *_batt_ptr;
+    FD_BATT *_batt_ptr[15];
 
     AP_Int32 _print;       
     AP_Int8 _enable_srv;

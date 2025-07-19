@@ -17,28 +17,26 @@ public:
     FD_BATT &operator=(const FD_BATT&) = delete;
 
     void handle_info(AP_HAL::CANFrame &in_frame, bool do_print = false);
-    void send_cmd(uint32_t id, uint8_t *data);
+    void update_cmd();
 
     FD_CAN* _frotend_ptr;
 
     struct status_t {
-        float vfc;
-        float vout;
-        float I;
-        float T1;
-        float T2;
-        float P;
-        uint8_t PWM1;
-        uint8_t PWM2;
-        float vli;
-        float vhy;
-        float vbus;
-        float power;
-        uint8_t HPWM1;
-        uint8_t HPWM2;
-        uint8_t error;
-        uint8_t run;
+        uint32_t id;
+        float current;
+        float voltage;
+        float temperature;
+        bool  brake;
+        bool  brake_confirm;
+        bool  zero;
+        bool  zero_confirm;
+        float pos;
+        // union PACKED{
+        //     int16_t v;
+        //     uint8_t data[2];
+        // } pos;
     };
 
-    status_t status;
+    status_t last_ask_status_ms;
+    uint8_t _data[8];
 };

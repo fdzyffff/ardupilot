@@ -14,78 +14,102 @@ FD_BATT::FD_BATT(FD_CAN *frotend) {
 }
 
 void FD_BATT::handle_info(AP_HAL::CANFrame &in_frame, bool do_print) {
-    switch (in_frame.id) {
-        case 0x16:
-            if (in_frame.data[0] == 0x1 && in_frame.data[1] == 0xFF) {
-                if (do_print) {gcs().send_text(MAV_SEVERITY_INFO, "get %x", (uint8_t)in_frame.id);}
-                status.vfc  = float(in_frame.data[2]) + float(in_frame.data[3])*0.01f;
-                status.vout = float(in_frame.data[4]) + float(in_frame.data[5])*0.01f;
-                status.I    = float(in_frame.data[6]) + float(in_frame.data[7])*0.01f;
-            } else {
-                if (do_print) {gcs().send_text(MAV_SEVERITY_INFO, "Err %x", (uint8_t)in_frame.id);}
-            }
-            break;
-        case 0x17:
-            if (in_frame.data[0] == 0x1 && in_frame.data[1] == 0xFE) {
-                if (do_print) {gcs().send_text(MAV_SEVERITY_INFO, "get %x", (uint8_t)in_frame.id);}
-                status.T1   = float(in_frame.data[2]) + float(in_frame.data[3])*0.01f;
-                status.T2   = float(in_frame.data[4]) + float(in_frame.data[5])*0.01f;
-                status.P    = float(in_frame.data[6]) + float(in_frame.data[7])*0.01f;
-            } else {
-                if (do_print) {gcs().send_text(MAV_SEVERITY_INFO, "Err %x", (uint8_t)in_frame.id);}
-            }
-            break;
-        case 0x18:
-            if (in_frame.data[0] == 0x1 && in_frame.data[1] == 0xFD) {
-                if (do_print) {gcs().send_text(MAV_SEVERITY_INFO, "get %x", (uint8_t)in_frame.id);}
-                status.PWM1 = in_frame.data[2];
-                status.PWM2 = in_frame.data[3];
-            } else {
-                if (do_print) {gcs().send_text(MAV_SEVERITY_INFO, "Err %x", (uint8_t)in_frame.id);}
-            }
-            break;
-        case 0x19:
-            if (in_frame.data[0] == 0x1 && in_frame.data[1] == 0xFC) {
-                if (do_print) {gcs().send_text(MAV_SEVERITY_INFO, "get %x", (uint8_t)in_frame.id);}
-                status.vli  = float(in_frame.data[2]) + float(in_frame.data[3])*0.01f;
-                status.vhy  = float(in_frame.data[4]) + float(in_frame.data[5])*0.01f;
-                status.vbus = float(in_frame.data[6]) + float(in_frame.data[7])*0.01f;
-            } else {
-                if (do_print) {gcs().send_text(MAV_SEVERITY_INFO, "Err %x", (uint8_t)in_frame.id);}
-            }
-            break;
-        case 0x20:
-            if (in_frame.data[0] == 0x1 && in_frame.data[1] == 0xFB) {
-                if (do_print) {gcs().send_text(MAV_SEVERITY_INFO, "get %x", (uint8_t)in_frame.id);}
-                status.power = float(in_frame.data[2])*100.f + float(in_frame.data[3]) + float(in_frame.data[4])*0.01f;
-                status.HPWM1 = in_frame.data[5];
-                status.HPWM2 = in_frame.data[6];
-            } else {
-                if (do_print) {gcs().send_text(MAV_SEVERITY_INFO, "Err %x", (uint8_t)in_frame.id);}
-            }
-            break;
-        case 0x14:
-            if (in_frame.data[0] == 0x1 && in_frame.data[1] == 0xFC) {
-                if (do_print) {gcs().send_text(MAV_SEVERITY_INFO, "get %x", (uint8_t)in_frame.id);}
-                status.error = in_frame.data[2];
-                status.run   = in_frame.data[3];
-            } else {
-                if (do_print) {gcs().send_text(MAV_SEVERITY_INFO, "Err %x", (uint8_t)in_frame.id);}
-            }
-            break;
-        case 0x13:
-            if (in_frame.data[0] == 0x5 && in_frame.data[1] == 0x5) {
-                gcs().send_text(MAV_SEVERITY_INFO, "cmd OK");
-            } else if (in_frame.data[0] == 0x6 && in_frame.data[1] == 0x6) {
-                gcs().send_text(MAV_SEVERITY_INFO, "cmd Fail");
-            } else {
-                if (do_print) {gcs().send_text(MAV_SEVERITY_INFO, "Err %x", (uint8_t)in_frame.id);}
-            }
-            break;
-        default:
-            if (do_print) {gcs().send_text(MAV_SEVERITY_INFO, "unknown %x", (uint8_t)in_frame.id);}
-            break;
+    if (in_frame.id != (0x580+status.id)) {
+        return;
     }
+    if (in_frame.data[0] == 0x60
+     && in_frame.data[1] == 0x00
+     && in_frame.data[2] == 0x30
+     && in_frame.data[3] == 0x00
+     && in_frame.data[4] == 0x00
+     && in_frame.data[5] == 0x00
+     && in_frame.data[6] == 0x00
+     && in_frame.data[7] == 0x00) {
+        status.brake_confirm = true;
+    }
+    if (in_frame.data[0] == 0x60
+     && in_frame.data[1] == 0x00
+     && in_frame.data[2] == 0x30
+     && in_frame.data[3] == 0x00
+     && in_frame.data[4] == 0x00
+     && in_frame.data[5] == 0x00
+     && in_frame.data[6] == 0x00
+     && in_frame.data[7] == 0x00) {
+        status.brake_confirm = true;
+    }
+
+}
+
+void FD_BATT::void set_pos(float pos_in)
+{
+    status.pos = constrain_float(pos_in, -45.0f, 45.0f);
+}
+
+void FD_BATT::void set_brake(bool brake_in)
+{
+    status.brake = brake_in;
+    status.brake_confirm = false;
+}
+
+void FD_BATT::void set_id(uint8_t id_in)
+{
+    status.id = id_in;
+}
+
+
+void FD_BATT::void update_cmd()
+{
+    // send confirm
+    if (!status.brake_confirm) {
+        if (millis() - status.last_brake_ms > 100) {
+            status.last_brake_ms = millis();
+            _data[0] = 0x22;
+            _data[1] = 0x0A;
+            _data[2] = 0x30;
+            _data[3] = 0x00;
+            _data[4] = status.brake?0x00:0x01;
+            _data[5] = 0x00;
+            _data[6] = 0x00;
+            _data[7] = 0x00;
+            send_cmd(0x600+status.id);
+        }
+    }
+
+    // set position
+    {
+        if (millis() - status.last_set_pos_ms > 100) {
+            status.last_set_pos_ms = millis();
+            int16_t tmp_pos = (int16_t)(status.pos*100.f);
+            _data[0] = 0x22;
+            _data[1] = 0x03;
+            _data[2] = 0x60;
+            _data[3] = 0x00;
+            _data[4] = (uint8_t)(tmp_pos&0xff);
+            _data[5] = (uint8_t)((tmp_pos>>8)&0xff);
+            _data[6] = 0x00;
+            _data[7] = 0x00;
+            send_cmd(0x600+status.id);
+        }
+    }
+
+    // ask status
+    {
+        if (millis() - status.last_ask_status_ms > 100) {
+            status.last_ask_status_ms = millis();
+            int16_t tmp_pos = (int16_t)(status.pos*100.f);
+            _data[0] = 0x40;
+            _data[1] = 0x01;
+            _data[2] = 0x60;
+            _data[3] = 0x00;
+            _data[4] = 0x00;
+            _data[5] = 0x00;
+            _data[6] = 0x00;
+            _data[7] = 0x00;
+            send_cmd(0x600+status.id);
+            status.ask_send = true;
+        }
+    }
+
 }
 
 void FD_BATT::send_cmd(uint32_t id, uint8_t *data) {
