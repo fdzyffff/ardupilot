@@ -2,6 +2,7 @@
 
 #include <AP_HAL/AP_HAL.h>
 #include <FD_Target/FD_Target.h>
+#include "User_shiftaverage.h"
 
 class UAttack {
 
@@ -22,6 +23,9 @@ public:
     void udpate_control_value();
     void init_target();
     void update();
+    void update_cam();
+    void update_control();
+    void update_attack_angle_target();
     const Vector2f& get_bf_info();
     const Vector2f& get_ef_info();
     const Vector2f& get_ef_rate_info();
@@ -38,6 +42,9 @@ public:
     void update_target_yaw_rate();
     void update_target_throttle();
     void update_log();
+
+    void start();
+    void stop();
 
     struct {
         float p1;
@@ -107,18 +114,24 @@ private:
     FD_Target_LRB*    _Target_ptr_cam_lrb;
     FD_Target_Loc*    _Target_ptr_loc;
 
-    uint32_t _last_ms;
+    uint32_t _last_control_ms;
     uint32_t _last_reset_ms;
+    uint32_t _last_log_ms;
     bool _reset;
+    bool _running;
     int8_t current_idx;
 
     DerivativeFilterFloat_Size7 _pitch_filter;
     DerivativeFilterFloat_Size7 _yaw_filter;
     LowPassFilterFloat _yaw_sample_filter;
     LowPassFilterFloat _pitch_sample_filter;
+
+    User_shiftaverage _throttle_filt;
+    User_shiftaverage _pitch_filt;
+    User_shiftaverage _roll_filt;
+
     float _last_yaw;
     float _last_yaw_sample;
-
 
     #define UDELAY_BUFFER 100
     class UDelay {

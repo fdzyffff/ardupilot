@@ -70,9 +70,14 @@ void UAttack::init()
     _Target_ptr_cam_rk3588 = nullptr;
     _Target_ptr_cam_k230 = nullptr;
     _Target_ptr_cam_lrb = nullptr;
-    _last_ms = millis();
+    _last_control_ms = millis();
     _last_reset_ms = 0;
+    _last_log_ms = 0;
     _reset = true;
+    _running = false;
+    _throttle_filt.init(100.0f, 20);
+    _roll_filt.init(100.0f, 20);
+    _pitch_filt.init(100.0f, 20);
     init_target();
 
     _yaw_sample_filter.set_cutoff_frequency(30.f, filt_yaw_hz.get());
@@ -85,16 +90,18 @@ void UAttack::udpate_control_value(){
     update_target_yaw_rate();
     update_target_roll_angle();
     update_target_throttle();
-    if (millis() - _last_reset_ms < 1500) {
-        // _target_pitch_rate = 0.0f;
-        _target_roll_angle = 0.0f;
-        // _target_yaw_rate = 0.0f;
-    }
-    _last_ms = millis();
-    update_log();
+    // if (millis() - _last_reset_ms < 1500) {
+    //     // _target_pitch_rate = 0.0f;
+    //     _target_roll_angle = 0.0f;
+    //     // _target_yaw_rate = 0.0f;
+    // }
+    _last_control_ms = millis();
 }
 
 void UAttack::update_log() {
+    if (millis() - _last_log_ms < 100) { return;}
+    if (!is_active() && !_running) {return;}
+    _last_log_ms = millis();
     AP::logger().WriteStreaming("UATK",
                                 "TimeUS,bfx,bfy,efx,efy,efrx,efry,tpth,trll,tyaw",
                                 "s---------",
@@ -112,15 +119,16 @@ void UAttack::update_log() {
                                 (float)_target_yaw_rate);
 
     AP::logger().WriteStreaming("UAT2",
-                                "TimeUS,angt,angm,agrt,agrm",
-                                "s----",
-                                "F----",
-                                "Qffff",
+                                "TimeUS,angt,angm,agrt,agrm,start",
+                                "s-----",
+                                "F-----",
+                                "Qfffff",
                                 AP_HAL::micros64(),
                                 (float)_attack_angle_target,
                                 (float)_attack_angle_measure,
                                 (float)_attack_angle_rate_target,
-                                (float)_attack_angle_rate_measure);
+                                (float)_attack_angle_rate_measure,
+                                (float)_running);
 
     AP::logger().WriteStreaming("UATH",
                                 "TimeUS,target,actual,ff,P,I,D,srate,dmod",
@@ -184,7 +192,7 @@ void UAttack::init_target()
                 gcs().send_text(MAV_SEVERITY_WARNING, "Target Mav Fail");
                 _Target_ptr_cam_mav = nullptr;
             }
-        } 
+        }
         else if (use_target_cam_type.get() == 2) {
             _Target_ptr_cam_rk3588 = new FD_Target_RK3588();
             if (_Target_ptr_cam_rk3588->init()) {
@@ -195,7 +203,7 @@ void UAttack::init_target()
                 gcs().send_text(MAV_SEVERITY_WARNING, "Target RK3588 Fail");
                 _Target_ptr_cam_rk3588 = nullptr;
             }
-        } 
+        }
         else if (use_target_cam_type.get() == 3) {
             _Target_ptr_cam_k230= new FD_Target_K230();
             if (_Target_ptr_cam_k230->init()) {
@@ -206,7 +214,7 @@ void UAttack::init_target()
                 gcs().send_text(MAV_SEVERITY_WARNING, "Target K230 Fail");
                 _Target_ptr_cam_k230= nullptr;
             }
-        } 
+        }
         else if (use_target_cam_type.get() == 4) {
             _Target_ptr_cam_lrb = new FD_Target_LRB();
             if (_Target_ptr_cam_lrb->init()) {
@@ -217,7 +225,7 @@ void UAttack::init_target()
                 gcs().send_text(MAV_SEVERITY_WARNING, "Target LRB Fail");
                 _Target_ptr_cam_lrb = nullptr;
             }
-        } 
+        }
         else {
             gcs().send_text(MAV_SEVERITY_WARNING, "Target CAM UNKNOW %d", use_target_cam_type.get());
             _Target_ptr_cam = nullptr;
@@ -235,9 +243,36 @@ void UAttack::init_target()
     }
 }
 
-// called at 100 Hz
+void UAttack::start()
+{
+    _running = true;
+    copter.uattack.attack_throttle_pid.reset_I();
+    copter.uattack.attack_throttle_pid.reset_filter();
+    copter.uattack.attack_throttle_pid.set_integrator(_throttle_filt.get());
+    copter.uattack.attack_roll_pid.reset_I();
+    copter.uattack.attack_roll_pid.reset_filter();
+    copter.uattack.attack_roll_pid.set_integrator(degrees(_roll_filt.get()));
+    if (attack_angle.get() <= 0.0f) {
+        _attack_angle_target = -degrees(_pitch_filt.get());
+    } else {
+        _attack_angle_target = attack_angle.get();
+    }
+}
 
+void UAttack::stop()
+{
+    _running = false;
+}
+
+// called at 100 Hz
 void UAttack::update()
+{
+    update_cam();
+    update_control();
+    update_attack_angle_target();
+}
+
+void UAttack::update_cam()
 {
     // for log purpose
     static uint32_t last_count_ms = millis();
@@ -277,18 +312,25 @@ void UAttack::update()
         _reset = true;
         _last_reset_ms = millis();
     }
+}
 
+void UAttack::update_control()
+{
     float p1 = 0;
     float p2 = 0;
     if (current_idx == 1) {
         if (_Target_ptr_cam->get_info(p1, p2)) {
             handle_info(p1, p2);
-            udpate_control_value();
+            if (_running) {
+                udpate_control_value();
+            }
         }
     } else if (current_idx == 2) {
         if (_Target_ptr_loc->get_info(p1, p2)) {
             handle_info(p1, p2);
-            udpate_control_value();
+            if (_running) {
+                udpate_control_value();
+            }
         }
     } else {
         _target_pitch_rate = 0.0f;
@@ -296,6 +338,13 @@ void UAttack::update()
         _target_yaw_rate = 0.0f;
     }
 
+}
+
+void UAttack::update_attack_angle_target()
+{
+    _throttle_filt.push(copter.motors->get_throttle());
+    _roll_filt.push(AP::ahrs().get_roll());
+    _pitch_filt.push(AP::ahrs().get_pitch());
 }
 
 void UAttack::handle_info(float p1, float p2) {
@@ -399,8 +448,9 @@ void UAttack::update_target_roll_angle() {
     // _target_roll_angle = constrain_float(attack_roll_factor.get() * ef_rate_info.x, -15.f, 15.f);
     float k2_roll = attack_k2_roll.get();
 
-    float dt = (millis() - _last_ms);
+    float dt = (millis() - _last_control_ms);
     dt = dt * 0.001f;
+    if (dt > 1.0f) {attack_roll_pid.reset_I();}
     if (dt > 0.05f) {dt = 0.05f;}
     _target_roll_angle = attack_roll_pid.update_all(0.0f, -ef_rate_info.x, dt) + k2_roll * _target_yaw_rate;
 }
@@ -421,15 +471,16 @@ void UAttack::update_target_yaw_rate() {
 // from 0 to 1, according to ef_info.y, the pitch angle of body-target in earth frame
 void UAttack::update_target_throttle() {
     float p = attack_k_angle.get();
-    _attack_angle_target = attack_angle.get();
+    // _attack_angle_target = attack_angle.get();
     _attack_angle_measure = -ef_info.y;
     _attack_angle_rate_target = (_attack_angle_target - _attack_angle_measure) * p;
     _attack_angle_rate_measure = -ef_rate_info.y;
     _attack_angle_rate_target = _attack_angle_rate_target/45.0f;
     _attack_angle_rate_measure = _attack_angle_rate_measure/45.0f;
 
-    float dt = (millis() - _last_ms);
+    float dt = (millis() - _last_control_ms);
     dt = dt * 0.001f;
+    if (dt > 1.0f) {attack_throttle_pid.reset_I();}
     if (dt > 0.05f) {dt = 0.05f;}
     _attack_throttle = attack_throttle_pid.get_ff() + attack_throttle_pid.update_all(_attack_angle_rate_target, _attack_angle_rate_measure, dt);
 

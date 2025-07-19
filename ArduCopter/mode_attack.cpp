@@ -7,14 +7,10 @@ bool ModeAttack::init(const bool ignore_checks)
         gcs().send_text(MAV_SEVERITY_WARNING, "No target");
     }
 
-    copter.uattack.attack_throttle_pid.reset_I();
-    copter.uattack.attack_throttle_pid.reset_filter();
-    copter.uattack.attack_throttle_pid.set_integrator(get_pilot_desired_throttle());
-    copter.uattack.attack_roll_pid.reset_I();
-    copter.uattack.attack_roll_pid.reset_filter();
-    copter.uattack.attack_roll_pid.set_integrator(degrees(copter.ahrs.get_roll()));
     // copter.uattack.attack_roll_pid.set_integrator(0.0f);
     gcs().send_text(MAV_SEVERITY_WARNING, "Throttle I to %0.2f", get_pilot_desired_throttle());
+
+    copter.uattack.start();
     return true;
 }
 
@@ -80,4 +76,9 @@ void ModeAttack::run()
 
     // output pilot's throttle
     attitude_control->set_throttle_out(target_throttle, false, g.throttle_filt);
+}
+
+void ModeAttack::exit()
+{
+    copter.uattack.stop();
 }
