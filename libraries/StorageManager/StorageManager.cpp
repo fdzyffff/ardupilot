@@ -64,14 +64,16 @@ const StorageManager::StorageArea StorageManager::layout[STORAGE_NUM_AREAS] = {
     { StorageParam,   0,     1280}, // 0x500 parameter bytes
     { StorageMission, 1280,  2506},
     { StorageRally,   3786,   150}, // 10 rally points
-    { StorageFence,   3936,   160}, // 20 fence points
+    { StorageFence,   3936,   152}, // 19 fence points
+    { StorageFDData,  4088,     8}, // 1 Fd data
 #else
     { StorageParam,   0,     1536}, // 0x600 param bytes
     { StorageMission, 1536,  2422},
     { StorageRally,   3958,    90}, // 6 rally points
-    { StorageFence,   4048,    48}, // 6 fence points
+    { StorageFence,   4048,    40}, // 5 fence points
+    { StorageFDData,  4088,     8}, // 1 Fd data
 #endif
-#if STORAGE_NUM_AREAS >= 10
+#if STORAGE_NUM_AREAS >= 11
     { StorageParam,   4096,  1280},
     { StorageRally,   5376,   300},
     { StorageFence,   5676,   256},
@@ -79,15 +81,15 @@ const StorageManager::StorageArea StorageManager::layout[STORAGE_NUM_AREAS] = {
     { StorageKeys,    8064,    64}, 
     { StorageBindInfo,8128,    56},
 #endif
-#if STORAGE_NUM_AREAS == 11
+#if STORAGE_NUM_AREAS == 12
     // optimised for lots of parameters for 15k boards with OSD
     { StorageParam,    8192,  7168},
-#elif STORAGE_NUM_AREAS == 12
+#elif STORAGE_NUM_AREAS == 13
     // optimised for lots of parameters for 15k boards with OSD, plus room for CAN DNA
     { StorageParam,    8192,  6144},
     { StorageCANDNA,   14336, 1024},
 #endif
-#if STORAGE_NUM_AREAS >= 15
+#if STORAGE_NUM_AREAS >= 16
     { StorageParam,    8192,  1280},
     { StorageRally,    9472,   300},
     { StorageFence,    9772,   256},
@@ -95,7 +97,7 @@ const StorageManager::StorageArea StorageManager::layout[STORAGE_NUM_AREAS] = {
     { StorageCANDNA,   15232,  1024},
     // 128 byte gap at end of first 16k
 #endif
-#if STORAGE_NUM_AREAS >= 18
+#if STORAGE_NUM_AREAS >= 19
     { StorageParam,    16384, 1280},
     { StorageMission,  17664, 9842},
     { StorageParamBak, 27506, 5262},

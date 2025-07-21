@@ -119,6 +119,7 @@ COMMON_VEHICLE_DEPENDENT_LIBRARIES = [
     'FD1_UART',
     'FD_Target',
     'FD_Target_Uart',
+    'FD_DATA',
 ]
 
 def get_legacy_defines(sketch_name, bld):

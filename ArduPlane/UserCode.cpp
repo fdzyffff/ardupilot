@@ -15,6 +15,8 @@ void Plane::userhook_100Hz()
 
 void Plane::userhook_1Hz()
 {
+    AP::fd_data().set_is_flying(is_flying());
+    AP::fd_data().update();
     // ufollow.update();
 
     // put your 1Hz code here

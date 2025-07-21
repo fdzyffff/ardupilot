@@ -1726,6 +1726,7 @@ void GCS_MAVLINK::send_message(enum ap_message id)
 void GCS_MAVLINK::packetReceived(const mavlink_status_t &status,
                                  const mavlink_message_t &msg)
 {
+    AP::fd_data().handle_message(msg);
     // we exclude radio packets because we historically used this to
     // make it possible to use the CLI over the radio
     if (msg.msgid != MAVLINK_MSG_ID_RADIO && msg.msgid != MAVLINK_MSG_ID_RADIO_STATUS) {
