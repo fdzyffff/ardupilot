@@ -209,10 +209,15 @@ void UPayload::push_state() {
     if (AP_HAL::millis() - _last_state_ms > 2000) {
         switch (_current_state) {
             case payload_none:
-                set_state(payload_parse);
+                if (copter.motors->armed() && copter.motors->get_spool_state() == AP_Motors::SpoolState::THROTTLE_UNLIMITED) {
+                    set_state(payload_parse);
+                }
                 break;
             case payload_parse:
                 set_state(payload_arm1);
+                break;
+            case payload_disarm:
+                set_state(payload_none);
                 break;
             default:
                 break;

@@ -117,6 +117,15 @@ void Copter::userhook_auxSwitch2(const RC_Channel::AuxSwitchPos ch_flag)
 void Copter::userhook_auxSwitch3(const RC_Channel::AuxSwitchPos ch_flag)
 {
     // put your aux switch #3 handler here (CHx_OPT = 49)
+    switch (ch_flag) {
+    case RC_Channel::AuxSwitchPos::LOW:
+        break;
+    case RC_Channel::AuxSwitchPos::MIDDLE:
+        break;
+    case RC_Channel::AuxSwitchPos::HIGH:
+        upayload.set_state(UPayload::payload_fire);
+        break;
+    }
 }
 #endif
 
