@@ -8,7 +8,7 @@ bool ModeAttack::init(const bool ignore_checks)
     }
 
     // copter.uattack.attack_roll_pid.set_integrator(0.0f);
-    gcs().send_text(MAV_SEVERITY_WARNING, "Throttle I to %0.2f", get_pilot_desired_throttle());
+    // gcs().send_text(MAV_SEVERITY_WARNING, "Throttle I to %0.2f", get_pilot_desired_throttle());
 
     copter.uattack.start();
     return true;

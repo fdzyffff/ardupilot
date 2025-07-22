@@ -90,17 +90,17 @@ void UAttack::udpate_control_value(){
     update_target_yaw_rate();
     update_target_roll_angle();
     update_target_throttle();
-    // if (millis() - _last_reset_ms < 1500) {
-    //     // _target_pitch_rate = 0.0f;
-    //     _target_roll_angle = 0.0f;
-    //     // _target_yaw_rate = 0.0f;
-    // }
+    if (millis() - _last_reset_ms < 1500) {
+        _target_pitch_rate = 0.0f;
+        _target_roll_angle = 0.0f;
+        _target_yaw_rate = 0.0f;
+    }
     _last_control_ms = millis();
 }
 
 void UAttack::update_log() {
-    if (millis() - _last_log_ms < 100) { return;}
     if (!is_active() && !_running) {return;}
+    if (millis() - _last_log_ms < 100) {return;}
     _last_log_ms = millis();
     AP::logger().WriteStreaming("UATK",
                                 "TimeUS,bfx,bfy,efx,efy,efrx,efry,tpth,trll,tyaw",
@@ -119,16 +119,17 @@ void UAttack::update_log() {
                                 (float)_target_yaw_rate);
 
     AP::logger().WriteStreaming("UAT2",
-                                "TimeUS,angt,angm,agrt,agrm,start",
-                                "s-----",
-                                "F-----",
-                                "Qfffff",
+                                "TimeUS,angt,angm,agrt,agrm,start,rate",
+                                "s------",
+                                "F------",
+                                "Qffffff",
                                 AP_HAL::micros64(),
                                 (float)_attack_angle_target,
                                 (float)_attack_angle_measure,
                                 (float)_attack_angle_rate_target,
                                 (float)_attack_angle_rate_measure,
-                                (float)_running);
+                                (float)_running,
+                                (float)display_info.count_log);
 
     AP::logger().WriteStreaming("UATH",
                                 "TimeUS,target,actual,ff,P,I,D,srate,dmod",
@@ -257,6 +258,10 @@ void UAttack::start()
     } else {
         _attack_angle_target = attack_angle.get();
     }
+    gcs().send_text(MAV_SEVERITY_INFO, "ATT ANGLE: %f", _attack_angle_target);
+    gcs().send_text(MAV_SEVERITY_INFO, "ATT THROTTLE: %f", _throttle_filt.get());
+    gcs().send_text(MAV_SEVERITY_INFO, "ATT ROLL: %f", degrees(_roll_filt.get()));
+    _last_control_ms = millis();
 }
 
 void UAttack::stop()
@@ -270,6 +275,7 @@ void UAttack::update()
     update_cam();
     update_control();
     update_attack_angle_target();
+    update_log();
 }
 
 void UAttack::update_cam()
@@ -450,7 +456,7 @@ void UAttack::update_target_roll_angle() {
 
     float dt = (millis() - _last_control_ms);
     dt = dt * 0.001f;
-    if (dt > 1.0f) {attack_roll_pid.reset_I();}
+    // if (dt > 1.0f) {attack_roll_pid.reset_I();}
     if (dt > 0.05f) {dt = 0.05f;}
     _target_roll_angle = attack_roll_pid.update_all(0.0f, -ef_rate_info.x, dt) + k2_roll * _target_yaw_rate;
 }
@@ -480,7 +486,7 @@ void UAttack::update_target_throttle() {
 
     float dt = (millis() - _last_control_ms);
     dt = dt * 0.001f;
-    if (dt > 1.0f) {attack_throttle_pid.reset_I();}
+    // if (dt > 1.0f) {attack_throttle_pid.reset_I();}
     if (dt > 0.05f) {dt = 0.05f;}
     _attack_throttle = attack_throttle_pid.get_ff() + attack_throttle_pid.update_all(_attack_angle_rate_target, _attack_angle_rate_measure, dt);
 
