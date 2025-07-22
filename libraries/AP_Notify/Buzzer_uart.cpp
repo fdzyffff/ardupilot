@@ -179,6 +179,7 @@ void Buzzer_uart::update_music_to_play()
             // ekf bad warning buzz
             add_loop_music(LOW_VOLT_BUZZ);
             if (_print_test) {gcs().send_text(MAV_SEVERITY_INFO, "LOW_VOLT_BUZZ");}
+            gcs().send_text(MAV_SEVERITY_INFO, "LOW_VOLT_BUZZ");
         } else {
             remove_loop_music(LOW_VOLT_BUZZ);
             if (_print_test) {gcs().send_text(MAV_SEVERITY_INFO, "LOW_VOLT_BUZZ remove");}
