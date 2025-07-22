@@ -75,6 +75,7 @@ private:
         uint8_t gps_status          : 1;
         uint8_t vehicle_lost        : 1;
         uint8_t ekf_switch          : 1;
+        uint8_t low_battery         : 1;
     } _flags;
 
     uint8_t _music;

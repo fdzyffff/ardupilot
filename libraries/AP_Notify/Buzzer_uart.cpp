@@ -73,7 +73,6 @@ void Buzzer_uart::update_music_to_play()
         // arming failed buzz
         add_event_music(ARM_FAILED_BUZZ);
         if (_print_test) {gcs().send_text(MAV_SEVERITY_INFO, "ARM_FAILED_BUZZ");}
-        return;
     }
 
     if (AP_Notify::events.user_mode_change_failed) {
@@ -179,7 +178,6 @@ void Buzzer_uart::update_music_to_play()
             // ekf bad warning buzz
             add_loop_music(LOW_VOLT_BUZZ);
             if (_print_test) {gcs().send_text(MAV_SEVERITY_INFO, "LOW_VOLT_BUZZ");}
-            gcs().send_text(MAV_SEVERITY_INFO, "LOW_VOLT_BUZZ");
         } else {
             remove_loop_music(LOW_VOLT_BUZZ);
             if (_print_test) {gcs().send_text(MAV_SEVERITY_INFO, "LOW_VOLT_BUZZ remove");}
@@ -215,6 +213,7 @@ void Buzzer_uart::update_playing_music()
             play_loop_music();
         } else {
             play_event_music();
+            _flags.loop = 1;
         }
     }
 }
@@ -222,8 +221,8 @@ void Buzzer_uart::update_playing_music()
 void Buzzer_uart::play_event_music() 
 {
     if (_music_event_buffer[0].music > 0) {
-        _current_music.music = _music_event_buffer[_i_music_loop].music;
-        _current_music.time = _music_event_buffer[_i_music_loop].time;
+        _current_music.music = _music_event_buffer[0].music;
+        _current_music.time = _music_event_buffer[0].time;
         play_music();
 
         _music_event_buffer[0].music = 0;
@@ -277,12 +276,12 @@ void Buzzer_uart::on(bool turn_on)
 
 void Buzzer_uart::add_event_music(const uint8_t music, uint8_t time)
 {
-    uint8_t i_max = 0;
+    uint8_t i_next = 0;
     // check number of music stored in loop buffer
-    for (i_max = 0; i_max < MAX_BUZZER_MUSIC_NUM; i_max++) {
-        if (_music_event_buffer[i_max].music > 0) {
+    for (i_next = 0; i_next < MAX_BUZZER_MUSIC_NUM; i_next++) {
+        if (_music_event_buffer[i_next].music > 0) {
             // jump exsited music
-            if (_music_event_buffer[i_max].music == music) {
+            if (_music_event_buffer[i_next].music == music) {
                 return;
             }
         } else {
@@ -290,20 +289,20 @@ void Buzzer_uart::add_event_music(const uint8_t music, uint8_t time)
         }
     }
 
-    if (i_max < 8) {
-        _music_event_buffer[i_max].music = music;
-        _music_event_buffer[i_max].time = time;
+    if (i_next < MAX_BUZZER_MUSIC_NUM) {
+        _music_event_buffer[i_next].music = music;
+        _music_event_buffer[i_next].time = time;
     }
 }
     
 void Buzzer_uart::add_loop_music(const uint8_t music, uint8_t time)
 {
-    uint8_t i_max = 0;
+    uint8_t i_next = 0;
     // check number of music stored in loop buffer
-    for (i_max = 0; i_max < MAX_BUZZER_MUSIC_NUM; i_max++) {
-        if (_music_loop_buffer[i_max].music > 0) {
+    for (i_next = 0; i_next < MAX_BUZZER_MUSIC_NUM; i_next++) {
+        if (_music_loop_buffer[i_next].music > 0) {
             // jump exsited music
-            if (_music_loop_buffer[i_max].music == music) {
+            if (_music_loop_buffer[i_next].music == music) {
                 return;
             }
         } else {
@@ -311,9 +310,9 @@ void Buzzer_uart::add_loop_music(const uint8_t music, uint8_t time)
         }
     }
 
-    if (i_max < 8) {
-        _music_loop_buffer[i_max].music = music;
-        _music_loop_buffer[i_max].time = time;
+    if (i_next < MAX_BUZZER_MUSIC_NUM) {
+        _music_loop_buffer[i_next].music = music;
+        _music_loop_buffer[i_next].time = time;
     }
 }
 
@@ -347,6 +346,7 @@ void Buzzer_uart::play_music()
     //     case 1:
     // } 
 
+    // gcs().send_text(MAV_SEVERITY_INFO, "type: %d |time: %d", _current_music.music, _current_music.time);
     _cmd_data[0] = 0x7E;
     _cmd_data[1] = 0xFF;
     _cmd_data[2] = 0x06;
@@ -356,4 +356,5 @@ void Buzzer_uart::play_music()
     _cmd_data[6] = _current_music.music;
     _cmd_data[7] = 0xEF;
     _port->write(_cmd_data, sizeof(_cmd_data));
+    on(true);
 }

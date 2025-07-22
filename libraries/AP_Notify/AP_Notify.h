@@ -142,6 +142,7 @@ public:
         bool temp_cal_running;    // true if a temperature calibration is running
         bool gyro_calibrated;     // true if calibrated gyro/acc
         bool ekf_switch;          // true if calibrated gyro/acc
+        bool low_battery;
     };
 
     /// notify_events_type - bitmask of active events.
