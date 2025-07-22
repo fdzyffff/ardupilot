@@ -186,6 +186,19 @@ void Buzzer_uart::update_music_to_play()
         }
     }
 
+    // if ekf switched automatically due to bad GPS
+    if (_flags.ekf_switch != AP_Notify::flags.ekf_switch) {
+        _flags.ekf_switch = AP_Notify::flags.ekf_switch;
+        if (_flags.ekf_switch) {
+            // ekf bad warning buzz
+            add_loop_music(EKF_BUZZ);
+            if (_print_test) {gcs().send_text(MAV_SEVERITY_INFO, "EKF_BUZZ");}
+        } else {
+            remove_loop_music(EKF_BUZZ);
+            if (_print_test) {gcs().send_text(MAV_SEVERITY_INFO, "EKF_BUZZ remove");}
+        }
+    }
+
 }
 
 void Buzzer_uart::update_playing_music()

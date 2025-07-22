@@ -74,6 +74,7 @@ private:
         uint8_t pre_arm_check       : 1;    // 1 if pre-arm check has passed
         uint8_t gps_status          : 1;
         uint8_t vehicle_lost        : 1;
+        uint8_t ekf_switch          : 1;
     } _flags;
 
     uint8_t _music;

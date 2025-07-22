@@ -524,6 +524,10 @@ const AP_Param::GroupInfo SIM::var_info3[] = {
     // @Bitmask: 0:MAVLink,3:SageTechMXS
     AP_GROUPINFO("ADSB_TYPES",    52, SIM,  adsb_types, 1),
 
+    AP_GROUPINFO("FRAME_TYPE",    53, SIM,  sim_frame_type, 0),
+
+    AP_GROUPINFO("OPOS_PTH",      54, SIM,  opos.pth, 0.0f),
+
 #ifdef SFML_JOYSTICK
     AP_SUBGROUPEXTENSION("",      63, SIM,  var_sfml_joystick),
 #endif // SFML_JOYSTICK
