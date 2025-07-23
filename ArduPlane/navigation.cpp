@@ -237,6 +237,8 @@ void Plane::calc_airspeed_errors()
     } else if (control_mode == &mode_qrtl && quadplane.in_vtol_land_approach()) {
         target_airspeed_cm = quadplane.get_land_airspeed() * 100;
 #endif
+    } else if (control_mode == &mode_mission) {
+        target_airspeed_cm = plane.umission.get_control_speed()*100.f;
     } else {
         // Normal airspeed target for all other cases
         target_airspeed_cm = aparm.airspeed_cruise*100;
@@ -262,6 +264,9 @@ void Plane::calc_airspeed_errors()
     }
 #endif
 
+    if (control_mode == &mode_mission) {
+        airspeed_nudge_cm = 0;
+    }
     // Bump up the target airspeed based on throttle nudging
     if (control_mode->allows_throttle_nudging() && airspeed_nudge_cm > 0) {
         target_airspeed_cm += airspeed_nudge_cm;

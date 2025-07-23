@@ -61,6 +61,7 @@ public:
 #if HAL_QUADPLANE_ENABLED
         LOITER_ALT_QLAND = 25,
 #endif
+        MISSION       = 30,
     };
 
     // Constructor
@@ -890,3 +891,27 @@ protected:
 };
 
 #endif
+
+class ModeMission : public Mode
+{
+public:
+
+    Number mode_number() const override { return Number::MISSION; }
+    const char *name() const override { return "Mission_Swrm"; }
+    const char *name4() const override { return "SWRM"; }
+
+    bool allows_terrain_disable() const override { return true; }
+
+    bool does_automatic_thermal_switch() const override { return true; }
+
+    // methods that affect movement of the vehicle in this mode
+    void update() override;
+
+    bool does_auto_throttle() const override { return true; }
+
+    void update_target_altitude() override {};
+
+protected:
+
+    bool _enter() override;
+};

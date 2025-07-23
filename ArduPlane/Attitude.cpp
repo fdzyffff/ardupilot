@@ -277,7 +277,8 @@ void Plane::stabilize_stick_mixing_fbw()
 #endif
         !quadplane.allow_stick_mixing() ||
 #endif  // HAL_QUADPLANE_ENABLED
-        control_mode == &mode_training) {
+        control_mode == &mode_training ||
+        control_mode == &mode_mission) {
         return;
     }
     // do FBW style stick mixing. We don't treat it linearly

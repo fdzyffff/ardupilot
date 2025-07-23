@@ -614,7 +614,7 @@ float Plane::lookahead_adjustment(void)
     int32_t bearing_cd;
     int16_t distance;
     // work out distance and bearing to target
-    if (control_mode == &mode_fbwb) {
+    if (control_mode == &mode_fbwb || control_mode == &mode_mission) {
         // there is no target waypoint in FBWB, so use yaw as an approximation
         bearing_cd = ahrs.yaw_sensor;
         distance = g.terrain_lookahead;

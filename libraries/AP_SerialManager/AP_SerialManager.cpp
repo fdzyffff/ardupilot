@@ -589,6 +589,12 @@ void AP_SerialManager::init()
                                          AP_SERIALMANAGER_PPP_BUFSIZE_TX);
                     break;
 #endif
+                case SerialProtocol_SwarmControl:
+                case SerialProtocol_SwarmLink:
+                    uart->begin(state[i].baudrate(),
+                                         256,
+                                         256);
+                    break;
                     
                 default:
                     uart->begin(state[i].baudrate());

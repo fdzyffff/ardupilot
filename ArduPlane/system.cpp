@@ -174,7 +174,7 @@ void Plane::init_ardupilot()
 #if AP_ICENGINE_ENABLED
     g2.ice_control.init();
 #endif
-
+    plane.umission.init();
 }
 
 #if AP_FENCE_ENABLED

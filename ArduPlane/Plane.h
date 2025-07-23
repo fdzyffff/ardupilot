@@ -123,6 +123,8 @@
 #include "AP_Arming.h"
 #include "pullup.h"
 
+#include "UMission.h"
+
 /*
   main APM:Plane class
  */
@@ -172,6 +174,7 @@ public:
     friend class ModeTakeoff;
     friend class ModeThermal;
     friend class ModeLoiterAltQLand;
+    friend class ModeMission;
 
 #if AP_EXTERNAL_CONTROL_ENABLED
     friend class AP_ExternalControl_Plane;
@@ -179,6 +182,8 @@ public:
 #if AP_PLANE_GLIDER_PULLUP_ENABLED
     friend class GliderPullup;
 #endif
+
+    friend class UMission;
 
     Plane(void);
 
@@ -329,6 +334,8 @@ private:
 #if HAL_SOARING_ENABLED
     ModeThermal mode_thermal;
 #endif
+
+    ModeMission mode_mission;
 
 #if AP_QUICKTUNE_ENABLED
     AP_Quicktune quicktune;
@@ -1305,6 +1312,8 @@ private:
 
     // last target alt we passed to tecs
     int32_t tecs_target_alt_cm;
+
+    UMission umission;
 
 public:
     void failsafe_check(void);
