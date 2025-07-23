@@ -182,6 +182,9 @@ PE4  LED_BLUE  OUTPUT GPIO(12)
 define AP_NOTIFY_GPIO_LED_RGB_RED_PIN 10
 define AP_NOTIFY_GPIO_LED_RGB_GREEN_PIN 11
 define AP_NOTIFY_GPIO_LED_RGB_BLUE_PIN 12
+
+
+
 #-----------------------------------Other-------------------------------------------
 #空闲
 
