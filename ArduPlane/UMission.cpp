@@ -165,7 +165,7 @@ void UMission::send_status()
     //uint8_t
     tmp_msg._msg_1.content.msg.type = 0xDD;
     //uint16_t
-    tmp_msg._msg_1.content.msg.data_length = 127;
+    tmp_msg._msg_1.content.msg.data_length = 0x79;
     //uint32_t
     tmp_msg._msg_1.content.msg.system_time_s = AP_HAL::millis()/1000;
 
@@ -313,7 +313,7 @@ void UMission::send_trans()
     //uint8_t
     tmp_msg._msg_1.content.msg.number_2 = tmp_sysid;
     //uint16_t
-    tmp_msg._msg_1.content.msg.length = 49;
+    tmp_msg._msg_1.content.msg.length = 0x38;
     //uint8_t
     tmp_msg._msg_1.content.msg.head_1 = 0xAA;
     //uint8_t
@@ -325,7 +325,7 @@ void UMission::send_trans()
     //uint8_t
     tmp_msg._msg_1.content.msg.head_5 = 0x00;
     //uint8_t
-    tmp_msg._msg_1.content.msg.head_6 = 0x00;
+    tmp_msg._msg_1.content.msg.head_6 = 0x31;
     //uint32_t
     tmp_msg._msg_1.content.msg.system_time_s = AP_HAL::millis()/1000;
 
@@ -378,7 +378,11 @@ void UMission::send_trans()
 
     tmp_msg._msg_1.need_send = true;
 
+    memcpy(_uart_control.get_msg_trans()._msg_1.content.data, tmp_msg._msg_1.content.data, sizeof(tmp_msg._msg_1.content.data));
+    _uart_control.get_msg_trans()._msg_1.need_send = true;
+
     _uart_link.write();
+    _uart_control.write();
 }
 
 // for test purpose

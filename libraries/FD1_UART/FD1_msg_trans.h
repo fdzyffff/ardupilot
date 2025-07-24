@@ -84,8 +84,8 @@ public:
     FD1_msg_trans(const FD1_msg_trans &other) = delete;
     FD1_msg_trans &operator=(const FD1_msg_trans&) = delete;
 
-    static const uint8_t PREAMBLE1 = 0xAF;
-    static const uint8_t PREAMBLE2 = 0xAF;
+    static const uint8_t PREAMBLE1 = 0xFA;
+    static const uint8_t PREAMBLE2 = 0xFA;
     static const uint8_t PREAMBLE3 = 0xB4;
 
 
