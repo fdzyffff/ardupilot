@@ -20,13 +20,14 @@ void ModeMission::update()
 
     if (!plane.umission.valid())
     {
+        gcs().send_text(MAV_SEVERITY_INFO, "No cmd, Loiter");
         plane.set_mode(plane.mode_loiter, ModeReason::GCS_COMMAND);
     }
-    if (plane.umission.get_control_type() == 0)
+    if (plane.umission.get_control_type() == 1)
     {
         // roll control
         plane.nav_roll_cd = plane.umission.get_control_roll()*100.f;
-    } else {
+    } else if (plane.umission.get_control_type() == 2) {
         if (AP::gps().status() >= AP_GPS::GPS_OK_FIX_3D && AP::gps().ground_speed() > 10.0f) {
             plane.nav_controller->update_heading_hold(plane.umission.get_control_course()*100.f);
         } else {
@@ -36,6 +37,9 @@ void ModeMission::update()
             }
         }
         plane.calc_nav_roll();
+    } else {
+        gcs().send_text(MAV_SEVERITY_INFO, "bad type %d, Loiter", plane.umission.get_control_type());
+        plane.set_mode(plane.mode_loiter, ModeReason::GCS_COMMAND);
     }
     plane.target_altitude.amsl_cm = plane.home.alt + (int32_t)(plane.umission.get_control_altitude()*100.f);
     plane.update_load_factor();

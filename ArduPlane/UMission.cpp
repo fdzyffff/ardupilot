@@ -107,7 +107,7 @@ void UMission::handle_msg_control()
     FD1_msg_control &tmp_msg = _uart_control.get_msg_control();
     if (tmp_msg._msg_1.updated) {
         _control_type = tmp_msg._msg_1.content.msg.control_mode;
-        _control_altitude = tmp_msg._msg_1.content.msg.target_alt_m;
+        _control_altitude = -tmp_msg._msg_1.content.msg.target_alt_m;
         _control_speed = tmp_msg._msg_1.content.msg.target_airspeed;
         _control_roll = tmp_msg._msg_1.content.msg.target_roll_deg;
         _control_course = tmp_msg._msg_1.content.msg.target_course;
@@ -115,11 +115,15 @@ void UMission::handle_msg_control()
         _last_ms = millis();
     }
 
-    // gcs().send_text(MAV_SEVERITY_INFO, "_control_type %d",     _control_type);
-    // gcs().send_text(MAV_SEVERITY_INFO, "_control_altitude %f", _control_altitude);
-    // gcs().send_text(MAV_SEVERITY_INFO, "_control_speed %f",    _control_speed);
-    // gcs().send_text(MAV_SEVERITY_INFO, "_control_roll %f",     _control_roll);
-    // gcs().send_text(MAV_SEVERITY_INFO, "_control_course %f",   _control_course);
+    static uint32_t last_print_ms = AP_HAL::millis();
+    if (AP_HAL::millis() - last_print_ms > 5000) {
+        last_print_ms = AP_HAL::millis();
+        gcs().send_text(MAV_SEVERITY_INFO, "_control_type %d",     _control_type);
+        gcs().send_text(MAV_SEVERITY_INFO, "_control_altitude %f", _control_altitude);
+        gcs().send_text(MAV_SEVERITY_INFO, "_control_speed %f",    _control_speed);
+        gcs().send_text(MAV_SEVERITY_INFO, "_control_roll %f",     _control_roll);
+        gcs().send_text(MAV_SEVERITY_INFO, "_control_course %f",   _control_course);
+    }
 }
 
 void UMission::handle_msg_ground()
@@ -161,7 +165,7 @@ void UMission::send_status()
     //uint8_t
     tmp_msg._msg_1.content.msg.type = 0xDD;
     //uint16_t
-    tmp_msg._msg_1.content.msg.data_length = 128;
+    tmp_msg._msg_1.content.msg.data_length = 127;
     //uint32_t
     tmp_msg._msg_1.content.msg.system_time_s = AP_HAL::millis()/1000;
 
