@@ -146,6 +146,9 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
 #if HAL_LOGGING_ENABLED
     FAST_TASK(Log_Video_Stabilisation),
 #endif
+#ifdef USERHOOK_FASTLOOP
+    FAST_TASK(userhook_SuperLoop),
+#endif
 
     SCHED_TASK(rc_loop,              250,    130,  3),
     SCHED_TASK(throttle_loop,         50,     75,  6),

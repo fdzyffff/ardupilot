@@ -168,11 +168,12 @@
 #include "avoidance_adsb.h"
 #endif
 // Local modules
-#include "Parameters.h"
 #if USER_PARAMS_ENABLED
 #include "UserParameters.h"
 #endif
+#include "Parameters.h"
 #include "mode.h"
+#include "UMission.h"
 
 class Copter : public AP_Vehicle {
 public:
@@ -223,10 +224,13 @@ public:
     friend class ModeZigZag;
     friend class ModeAutorotate;
     friend class ModeTurtle;
+    friend class ModeMission;
 
     friend class _AutoTakeoff;
 
     friend class PayloadPlace;
+
+    friend class UMission;
 
     Copter(void);
 
@@ -986,6 +990,7 @@ private:
 
     // UserCode.cpp
     void userhook_init();
+    void userhook_SuperLoop();
     void userhook_FastLoop();
     void userhook_50Hz();
     void userhook_MediumLoop();
@@ -1072,10 +1077,15 @@ private:
 #if MODE_TURTLE_ENABLED
     ModeTurtle mode_turtle;
 #endif
+#if MODE_GUIDED_ENABLED
+    ModeMission mode_mission;
+#endif
 
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);
+
+    UMission umission;
 
 public:
     void failsafe_check();      // failsafe.cpp
