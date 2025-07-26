@@ -13,4 +13,6 @@ public:
 
     // Put your parameter variable definitions here
     AP_Int8 print;
+    AP_Int8 log_raw;
+    AP_Int8 log_test;
 };

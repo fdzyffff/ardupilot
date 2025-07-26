@@ -7,7 +7,9 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
 
     // Put your parameters definition here
     // Note the maximum length of parameter name is 13 chars
-    AP_GROUPINFO("_PRINT", 0, UserParameters, print, 0),
+    AP_GROUPINFO("_PRINT",    0, UserParameters, print, 0),
+    AP_GROUPINFO("_LOG_RAW",  1, UserParameters, log_raw, 0),
+    AP_GROUPINFO("_LOG_TEST", 2, UserParameters, log_test, 0),
 
     AP_GROUPEND
 };

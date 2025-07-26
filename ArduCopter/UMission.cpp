@@ -17,14 +17,16 @@ void UMission::init()
     _last_mav_ms = 0;
 }
 
-// called at 100 Hz
+// called at 400 Hz
 void UMission::update()
 {
     update_uart_read();
     update_uart_send();
     update_valid();
-    update_log();
     update_mav();
+    if (copter.g2.user_parameters.log_test.get() == 1) {
+        update_log();
+    }
 }
 
 void UMission::update_uart_read()
@@ -74,6 +76,7 @@ void UMission::handle_msg_control()
         _control_corr_bfz = (float)(tmp_msg._msg_1.content.msg.corr_bfz)*0.01f;
         tmp_msg._msg_1.updated = false;
         _last_ms = millis();
+        update_log();
     }
 
     static uint32_t _last_print_ms = millis();
@@ -168,20 +171,64 @@ void UMission::handle_msg(const mavlink_message_t &msg)
 
 void UMission::update_log()
 {
-    if (millis() - _last_log_ms < 100) {return;}
+    if ((copter.g2.user_parameters.log_raw.get() == 0) && (millis() - _last_log_ms < 100)) {return;}
     _last_log_ms = millis();
-    AP::logger().WriteStreaming("UARL",
-                                "TimeUS,valid,bfy,bfz",
-                                "s---",
-                                "F---",
-                                "Qfff",
+
+    FD1_msg_control &tmp_msg = _uart_control.get_msg_control();
+
+    // if (!copter.motors->armed()) {return;}
+    // AP::logger().WriteStreaming("UDN1",
+    //                             "TimeUS,ctim,cid,fpth,fyaw,tid,tpth,tyaw,lng,lat,alt",
+    //                             "s----------",
+    //                             "F----------",
+    //                             "QHBhhBhhiiH",
+    //                             AP_HAL::micros64(),
+    //                             tmp_msg._msg_1.content.msg.control_time,
+    //                             tmp_msg._msg_1.content.msg.control_id,
+    //                             tmp_msg._msg_1.content.msg.field_pitch,
+    //                             tmp_msg._msg_1.content.msg.field_yaw,
+    //                             tmp_msg._msg_1.content.msg.target_id,
+    //                             tmp_msg._msg_1.content.msg.target_pitch,
+    //                             tmp_msg._msg_1.content.msg.target_yaw,
+    //                             tmp_msg._msg_1.content.msg.lng,
+    //                             tmp_msg._msg_1.content.msg.lat,
+    //                             tmp_msg._msg_1.content.msg.alt);
+    // AP::logger().WriteStreaming("UDN2",
+    //                             "TimeUS,hlng,hlat,halt,R,djy,djz,cdjy,cdjz",
+    //                             "s--------",
+    //                             "F--------",
+    //                             "QiiHhhhhh",
+    //                             AP_HAL::micros64(),
+    //                             tmp_msg._msg_1.content.msg.launch_lng,
+    //                             tmp_msg._msg_1.content.msg.launch_lat,
+    //                             tmp_msg._msg_1.content.msg.launch_alt,
+    //                             tmp_msg._msg_1.content.msg.R,
+    //                             tmp_msg._msg_1.content.msg.djy,
+    //                             tmp_msg._msg_1.content.msg.djz,
+    //                             tmp_msg._msg_1.content.msg.corr_bfy,
+    //                             tmp_msg._msg_1.content.msg.corr_bfz);
+    AP::logger().WriteStreaming("UDNJ",
+                                "TimeUS,ct,ci,fp,fy,ti,tp,ty,lng,lat,alt,R,djy,djz,cdjy,cdjz",
+                                "s---------------",
+                                "F---------------",
+                                "QHBhhBhhiiHhhhhh",
                                 AP_HAL::micros64(),
-                                (float)_valid,
-                                (float)_control_corr_bfy,
-                                (float)_control_corr_bfz);
-
+                                tmp_msg._msg_1.content.msg.control_time,
+                                tmp_msg._msg_1.content.msg.control_id,
+                                tmp_msg._msg_1.content.msg.field_pitch,
+                                tmp_msg._msg_1.content.msg.field_yaw,
+                                tmp_msg._msg_1.content.msg.target_id,
+                                tmp_msg._msg_1.content.msg.target_pitch,
+                                tmp_msg._msg_1.content.msg.target_yaw,
+                                tmp_msg._msg_1.content.msg.lng,
+                                tmp_msg._msg_1.content.msg.lat,
+                                tmp_msg._msg_1.content.msg.alt,
+                                tmp_msg._msg_1.content.msg.R,
+                                tmp_msg._msg_1.content.msg.djy,
+                                tmp_msg._msg_1.content.msg.djz,
+                                tmp_msg._msg_1.content.msg.corr_bfy,
+                                tmp_msg._msg_1.content.msg.corr_bfz);
 }
-
 
 void UMission::update_mav()
 {
