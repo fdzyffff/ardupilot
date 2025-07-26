@@ -15,6 +15,15 @@ void UMission::init()
     _last_ms = 0;
     _last_log_ms = 0;
     _last_mav_ms = 0;
+
+
+    // // start calls to loop in separate thread
+    // if (!hal.scheduler->thread_create(
+    //         FUNCTOR_BIND_MEMBER(&UMission::send_raw_imu_loop, void), "IMURAW", 2048, AP_HAL::Scheduler::PRIORITY_SPI, 0)) {
+    //         gcs().send_text(MAV_SEVERITY_INFO, "IMURAW: couldn't create thread\n\r");
+    // } else {
+    //     gcs().send_text(MAV_SEVERITY_INFO, "IMURAW: create thread\n\r");
+    // }
 }
 
 // called at 400 Hz
@@ -232,7 +241,7 @@ void UMission::update_log()
 
 void UMission::update_mav()
 {
-    if (millis() - _last_mav_ms < 500) {return;}
+    if (millis() - _last_mav_ms < 200) {return;}
     _last_mav_ms = millis();
     uint16_t mask = GCS_MAVLINK::active_channel_mask() | GCS_MAVLINK::streaming_channel_mask();
     for (uint8_t i=0; i<gcs().num_gcs(); i++) {
@@ -244,10 +253,46 @@ void UMission::update_mav()
                     0,
                     0,
                     MAV_CMD_USER_1,
-                    _control_corr_bfy,
-                    _control_corr_bfz,
-                    0, 0, 0, 0, 0, 0);
+                    0,
+                    _control_corr_bfy+ 20.f,
+                    _control_corr_bfz- 20.f,
+                    0, 0, 0, 0, 0);
             }
         }
     }
+}
+
+
+
+void UMission::send_raw_imu_loop() {
+    // hal.scheduler->delay(3000);
+    gcs().send_text(MAV_SEVERITY_INFO, "LOOP IMURAW Start");
+    while (true) {
+        send_raw_imu();
+    }
+}
+
+
+void UMission::send_raw_imu()
+{
+    static uint32_t _last_l_ms = millis();
+    static int16_t count = 0;
+
+    float dt = (float)(millis() - _last_l_ms)*0.001f;
+    if (dt > 1.0f) {
+        // gcs().send_text(MAV_SEVERITY_INFO, "LOOP IMURAW %d", count);
+        _last_l_ms = millis();
+        float imu_rate = ((float)count)/dt;
+        count = 0;
+        AP::logger().WriteStreaming("UIMU",
+                                    "TimeUS,rate",
+                                    "s-",
+                                    "F-",
+                                    "Qf",
+                                    AP_HAL::micros64(),
+                                    (float)imu_rate);
+    }
+
+    count++;
+    hal.scheduler->delay_microseconds(5000);
 }

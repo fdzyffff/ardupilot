@@ -29,6 +29,9 @@ public:
     float get_control_corr_bfy() {return _control_corr_bfy;}
     float get_control_corr_bfz() {return _control_corr_bfz;}
 
+    void send_raw_imu_loop();
+    void send_raw_imu();
+
 private:
     FD1_UART _uart_control{AP_SerialManager::SerialProtocol_SwarmControl};
 
