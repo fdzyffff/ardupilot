@@ -14,13 +14,13 @@ void UMav::send_raw_imu()
         hal.scheduler->delay(10000);
         return;
     }
-    static uint32_t _last_imu_ms = millis();
+    static uint32_t _last_log_ms = millis();
     static int16_t count = 0;
 
-    float dt = (float)(millis() - _last_imu_ms)*0.001f;
+    float dt = (float)(millis() - _last_log_ms)*0.001f;
     if (dt > 1.0f) {
         // gcs().send_text(MAV_SEVERITY_INFO, "LOOP IMURAW %d", count);
-        _last_imu_ms = millis();
+        _last_log_ms = millis();
         float imu_rate = ((float)count)/dt;
         count = 0;
         AP::logger().WriteStreaming("UIMU",
