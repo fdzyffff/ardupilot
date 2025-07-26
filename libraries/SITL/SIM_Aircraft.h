@@ -224,9 +224,12 @@ protected:
     } wind_vane_apparent;
 
     // Wind Turbulence simulated Data
-    float turbulence_azimuth;
-    float turbulence_horizontal_speed;  // m/s
-    float turbulence_vertical_speed;    // m/s
+    uint32_t turbulence_wind_update_ms;
+    float turbulence_x_seed;
+    float turbulence_y_seed;
+    float turbulence_x_speed;  // m/s
+    float turbulence_y_speed;  // m/s
+    float turbulence_z_speed;  // m/s
 
     Vector3f mag_bf;  // local earth magnetic field vector in Gauss, earth frame
 

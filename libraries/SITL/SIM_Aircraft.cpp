@@ -783,22 +783,26 @@ void Aircraft::update_wind(const struct sitl_input &input)
 
     wind_ef.z += get_local_updraft(position + home.get_distance_NED_double(origin));
 
-    const float wind_turb = input.wind.turbulence * 10.0f;  // scale input.wind.turbulence to match standard deviation when using iir_coef=0.98
-    const float iir_coef = 0.98f;  // filtering high frequencies from turbulence
+    const float wind_turb = input.wind.turbulence;  // scale input.wind.turbulence to match standard deviation when using iir_coef=0.98
+    const float iir_coef = 0.995f;  // filtering high frequencies from turbulence
 
     if (wind_turb > 0 && !on_ground()) {
+        if (AP_HAL::millis() -  turbulence_wind_update_ms > 3000) {
+            turbulence_wind_update_ms = AP_HAL::millis();
+            turbulence_x_seed = rand_normal(0, 1);
+            turbulence_y_seed = rand_normal(0, 1);
+        }
 
-        turbulence_azimuth = turbulence_azimuth + (2 * rand());
-
-        turbulence_horizontal_speed =
-                static_cast<float>(turbulence_horizontal_speed * iir_coef+wind_turb * rand_normal(0, 1) * (1 - iir_coef));
-
-        turbulence_vertical_speed = static_cast<float>((turbulence_vertical_speed * iir_coef) + (wind_turb * rand_normal(0, 1) * (1 - iir_coef)));
+        turbulence_x_speed = 
+                static_cast<float>(turbulence_x_speed * iir_coef+wind_turb * turbulence_x_seed * (1 - iir_coef));
+        turbulence_y_speed = 
+                static_cast<float>(turbulence_y_speed * iir_coef+wind_turb * turbulence_y_seed * (1 - iir_coef));
+        turbulence_z_speed = 0.0f;// static_cast<float>((turbulence_vertical_speed * iir_coef) + (wind_turb * vertical_seed * (1 - iir_coef)));
 
         wind_ef += Vector3f(
-            cosf(radians(turbulence_azimuth)) * turbulence_horizontal_speed,
-            sinf(radians(turbulence_azimuth)) * turbulence_horizontal_speed,
-            turbulence_vertical_speed);
+            turbulence_x_speed,
+            turbulence_y_speed,
+            turbulence_z_speed);
     }
 
     // the AHRS wants wind with opposite sense
