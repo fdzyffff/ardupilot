@@ -143,12 +143,9 @@ void ModeHKFollow::set_state(FOLLOW_State state_in)
         break;
         case FOLLOW_State::Search:
         {
-            if (copter.mode_circle.init(false)) {
-                follow_State = state_in;
-                gcs().send_text(MAV_SEVERITY_INFO, "[FLW] State: Search");
-            } else {
-                gcs().send_text(MAV_SEVERITY_INFO, "[FLW] State: Search");
-            }
+            copter.mode_guided.velaccel_control_start();
+            follow_State = state_in;
+            gcs().send_text(MAV_SEVERITY_INFO, "[FLW] State: Search");
         }
         break;
         case FOLLOW_State::Track:

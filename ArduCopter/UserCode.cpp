@@ -42,6 +42,19 @@ void Copter::userhook_SlowLoop()
 void Copter::userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
+    const RangeFinder *rnf = RangeFinder::get_singleton();
+
+    bool rngfnd_good_1 = false;
+    bool rngfnd_good_2 = false;
+    float rngfnd_dist = -1.0f;
+    if (rnf != nullptr) {
+        rngfnd_good_1 = (rnf->status_orient(ROTATION_NONE) == RangeFinder::Status::Good);
+        rngfnd_good_2 = (rnf->range_valid_count_orient(ROTATION_NONE) >= 3);
+        float tilt_correction = sinf(fabsf(AP::ahrs().get_pitch()));
+        rngfnd_dist = tilt_correction * rnf->distance_cm_orient(ROTATION_NONE);
+    }
+    
+    gcs().send_text(MAV_SEVERITY_INFO, "DIST: G1 %d, G2 %d D %f", rngfnd_good_1, rngfnd_good_2, rngfnd_dist);
 }
 #endif
 
