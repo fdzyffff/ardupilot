@@ -53,8 +53,18 @@ void Copter::userhook_SuperSlowLoop()
         float tilt_correction = sinf(fabsf(AP::ahrs().get_pitch()));
         rngfnd_dist = tilt_correction * rnf->distance_cm_orient(ROTATION_NONE);
     }
-    
-    gcs().send_text(MAV_SEVERITY_INFO, "DIST: G1 %d, G2 %d D %f", rngfnd_good_1, rngfnd_good_2, rngfnd_dist);
+
+    // put your 1Hz code here
+    if ((uattack.print.get() & (1<<0)) && uattack.display_info.new_data) { // 1
+        gcs().send_text(MAV_SEVERITY_WARNING, "[%d] %0.0f , %0.0f , %0.0f , %0.0f", uattack.display_info.count_log, uattack.display_info.p1, uattack.display_info.p2, uattack.display_info.p3, uattack.display_info.p4);
+        uattack.display_info.new_data = false;
+    }
+    if (uattack.print.get() & (1<<1)) { // 2
+        gcs().send_text(MAV_SEVERITY_WARNING, "bf_angle (%0.2f , %0.2f) on:%d", uattack.get_bf_info().x,uattack.get_bf_info().y, uattack.is_active());
+    }
+    if (uattack.print.get() & (1<<2)) { // 4
+        gcs().send_text(MAV_SEVERITY_INFO, "DIST: G1 %d, G2 %d D %f", rngfnd_good_1, rngfnd_good_2, rngfnd_dist);
+    }
 }
 #endif
 
