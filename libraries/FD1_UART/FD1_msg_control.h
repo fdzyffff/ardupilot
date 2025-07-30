@@ -1,6 +1,6 @@
 #include "FD1_message.h"
 
-#define FD1_MSG_CONTROL_LEN 42
+#define FD1_MSG_CONTROL_LEN 46
 class FD1_msg_control : public FD1_message{
 public:
     struct PACKED FD1_msg_header {

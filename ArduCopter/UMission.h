@@ -13,6 +13,7 @@ public:
     UMission();
     void init();
     void update();
+    void update_rate();
     void update_log();
     void update_uart_read();
     void update_uart_send();
@@ -39,6 +40,8 @@ private:
     uint32_t _last_ms;
     uint32_t _last_log_ms;
     uint32_t _last_mav_ms;
+    uint32_t _msg_count;
+    uint32_t _last_rate_ms;
 
     float _control_corr_bfy;
     float _control_corr_bfz;

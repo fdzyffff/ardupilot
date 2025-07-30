@@ -15,6 +15,14 @@ void UMission::init()
     _last_ms = 0;
     _last_log_ms = 0;
     _last_mav_ms = 0;
+    _last_rate_ms = 0;
+    _msg_count = 0;
+
+    if (_uart_control.initialized()) {
+        gcs().send_text(MAV_SEVERITY_INFO, "[Danji] INIT");
+    } else {
+        gcs().send_text(MAV_SEVERITY_INFO, "[Danji] INIT FAIL");
+    }
 
 
     // // start calls to loop in separate thread
@@ -33,8 +41,14 @@ void UMission::update()
     update_uart_send();
     update_valid();
     update_mav();
+    update_rate();
     if (copter.g2.user_parameters.log_test.get() == 1) {
         update_log();
+        // if (_uart_control.initialized() && _uart_control.get_port() != nullptr) {
+        //     _uart_control.get_msg_control()._msg_1.updated = true;
+        //     handle_msg_control();
+        // }
+
     }
 }
 
@@ -85,6 +99,7 @@ void UMission::handle_msg_control()
         _control_corr_bfz = (float)(tmp_msg._msg_1.content.msg.corr_bfz)*0.01f;
         tmp_msg._msg_1.updated = false;
         _last_ms = millis();
+        _msg_count++;
         update_log();
     }
 
@@ -92,8 +107,24 @@ void UMission::handle_msg_control()
     if (millis() - _last_print_ms > 2000) {
         _last_print_ms = millis();
         if (copter.g2.user_parameters.print.get() > 0) {
-            gcs().send_text(MAV_SEVERITY_INFO, "_control_corr_bfy %f", _control_corr_bfy);
-            gcs().send_text(MAV_SEVERITY_INFO, "_control_corr_bfz %f", _control_corr_bfz);
+            gcs().send_text(MAV_SEVERITY_INFO, " control_time %f", ((float)tmp_msg._msg_1.content.msg.control_time)*0.001f);
+            gcs().send_text(MAV_SEVERITY_INFO, " control_id %d", (tmp_msg._msg_1.content.msg.control_id));
+            gcs().send_text(MAV_SEVERITY_INFO, " field_pitch %f", ((float)tmp_msg._msg_1.content.msg.field_pitch)*0.001f);
+            gcs().send_text(MAV_SEVERITY_INFO, " field_yaw %f", ((float)tmp_msg._msg_1.content.msg.field_yaw)*0.002f);
+            gcs().send_text(MAV_SEVERITY_INFO, " target_id %d", (tmp_msg._msg_1.content.msg.target_id));
+            gcs().send_text(MAV_SEVERITY_INFO, " target_pitch %f", ((float)tmp_msg._msg_1.content.msg.target_pitch)*0.001f);
+            gcs().send_text(MAV_SEVERITY_INFO, " target_yaw %f", ((float)tmp_msg._msg_1.content.msg.target_yaw)*0.002f);
+            gcs().send_text(MAV_SEVERITY_INFO, " lng %f", ((float)tmp_msg._msg_1.content.msg.lng)*0.000001f);
+            gcs().send_text(MAV_SEVERITY_INFO, " lat %f", ((float)tmp_msg._msg_1.content.msg.lat)*0.000001f);
+            gcs().send_text(MAV_SEVERITY_INFO, " alt %f", ((float)tmp_msg._msg_1.content.msg.alt)*0.1f);
+            gcs().send_text(MAV_SEVERITY_INFO, " launch_lng %f", ((float)tmp_msg._msg_1.content.msg.launch_lng)*0.000001f);
+            gcs().send_text(MAV_SEVERITY_INFO, " launch_lat %f", ((float)tmp_msg._msg_1.content.msg.launch_lat)*0.000001f);
+            gcs().send_text(MAV_SEVERITY_INFO, " launch_alt %f", ((float)tmp_msg._msg_1.content.msg.launch_alt)*0.1f);
+            gcs().send_text(MAV_SEVERITY_INFO, " R %d", (tmp_msg._msg_1.content.msg.R));
+            gcs().send_text(MAV_SEVERITY_INFO, " djy %f", ((float)tmp_msg._msg_1.content.msg.djy)*0.001f);
+            gcs().send_text(MAV_SEVERITY_INFO, " djz %f", ((float)tmp_msg._msg_1.content.msg.djz)*0.002f);
+            gcs().send_text(MAV_SEVERITY_INFO, " corr_bfy %f", ((float)tmp_msg._msg_1.content.msg.corr_bfy)*0.01f);
+            gcs().send_text(MAV_SEVERITY_INFO, " corr_bfz %f", ((float)tmp_msg._msg_1.content.msg.corr_bfz)*0.01f);
         }
     }
 }
@@ -126,7 +157,7 @@ void UMission::send_status()
         tmp_alt = 0;
     }
     //uint16_t
-    tmp_msg._msg_1.content.msg.alt = (uint16_t)(tmp_alt/10);
+    tmp_msg._msg_1.content.msg.alt = (uint16_t)(tmp_alt);
 
     int32_t home_lng = 0;
     int32_t home_lat = 0;
@@ -144,7 +175,7 @@ void UMission::send_status()
     //int32_t
     tmp_msg._msg_1.content.msg.launch_lng = home_lng;
     //int32_t
-    tmp_msg._msg_1.content.msg.launch_lng = home_lat;
+    tmp_msg._msg_1.content.msg.launch_lat = home_lat;
     //uint16_t
     tmp_msg._msg_1.content.msg.launch_alt = (uint16_t)home_alt;
 
@@ -176,6 +207,26 @@ void UMission::handle_msg(const mavlink_message_t &msg)
                 break;
         }
     }
+}
+
+void UMission::update_rate()
+{
+    if (millis() - _last_rate_ms < 1000) {return;}
+    float dt = 0.001f * (float)(millis() - _last_rate_ms);
+    float rate = (float)_msg_count/dt;
+    if (copter.g2.user_parameters.print.get() > 0) {
+        gcs().send_text(MAV_SEVERITY_INFO, " [Rate] %f/s", rate);
+    }
+    _msg_count = 0;
+    _last_rate_ms = millis();
+
+    AP::logger().WriteStreaming("UDN2",
+                                "TimeUS,rate",
+                                "s-",
+                                "F-",
+                                "Qf",
+                                AP_HAL::micros64(),
+                                rate);
 }
 
 void UMission::update_log()
@@ -254,8 +305,8 @@ void UMission::update_mav()
                     0,
                     MAV_CMD_USER_1,
                     0,
-                    _control_corr_bfy+ 20.f,
-                    _control_corr_bfz- 20.f,
+                    _control_corr_bfy,
+                    _control_corr_bfz,
                     0, 0, 0, 0, 0);
             }
         }
