@@ -397,6 +397,7 @@ public:
 #endif // HAL_HIGH_LATENCY2_ENABLED
     void send_uavionix_adsb_out_status() const;
     void send_autopilot_state_for_gimbal_device() const;
+    void send_hxts_bat_can_status() const;
 
     // lock a channel, preventing use by MAVLink
     void lock(bool _lock) {
