@@ -991,6 +991,7 @@ private:
     void userhook_auxSwitch1(const RC_Channel::AuxSwitchPos ch_flag);
     void userhook_auxSwitch2(const RC_Channel::AuxSwitchPos ch_flag);
     void userhook_auxSwitch3(const RC_Channel::AuxSwitchPos ch_flag);
+    void userhook_auxSwitch10(const RC_Channel::AuxSwitchPos ch_flag);
     // void userhook_i2c_test();
     // bool write_register(uint16_t reg, uint8_t value);
     // bool read_register(uint16_t reg, uint8_t &value);

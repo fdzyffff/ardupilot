@@ -129,6 +129,19 @@ void Copter::userhook_auxSwitch3(const RC_Channel::AuxSwitchPos ch_flag)
 }
 #endif
 
+void Copter::userhook_auxSwitch10(const RC_Channel::AuxSwitchPos ch_flag)
+{
+    // put your aux switch #3 handler here (CHx_OPT = 49)
+    switch (ch_flag) {
+    case RC_Channel::AuxSwitchPos::LOW:
+        break;
+    case RC_Channel::AuxSwitchPos::MIDDLE:
+        break;
+    case RC_Channel::AuxSwitchPos::HIGH:
+        upayload.set_state(UPayload::payload_fire);
+        break;
+    }
+}
 // void Copter::userhook_i2c_test()
 // {
 //     // FOREACH_I2C_EXTERNAL(i) {
