@@ -903,6 +903,13 @@ void AP_GPS_NMEA::send_config(void)
         break;
 
     default:
+        port->printf(
+        "$GNGGA,%u\r\n" /* GGA at xHz */                            \
+        "$GNRMC,%u\r\n" /* RMC at xHz */                            \
+        "$GPVTG,%u\r\n" /* VTG at xHz */                            \
+        "$GPHDT,%u\r\n" /* HDT at xHz */                            \
+        "$GPGLL,%u\r\n" /* GLL at xHz */,
+        rate_hz, rate_hz, rate_hz, rate_hz, rate_hz);
         break;
     }
 

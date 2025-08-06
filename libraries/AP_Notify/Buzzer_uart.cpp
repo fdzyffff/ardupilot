@@ -232,6 +232,8 @@ void Buzzer_uart::play_event_music()
             if (_music_event_buffer[i_music].music > 0) {
                 _music_event_buffer[i_music-1].music = _music_event_buffer[i_music].music;
                 _music_event_buffer[i_music-1].time = _music_event_buffer[i_music].time;
+                _music_event_buffer[i_music].music = 0;
+                _music_event_buffer[i_music].time = 0;
             } else {
                 break;
             }
@@ -346,12 +348,12 @@ void Buzzer_uart::play_music()
     //     case 1:
     // } 
 
-    // gcs().send_text(MAV_SEVERITY_INFO, "type: %d |time: %d", _current_music.music, _current_music.time);
+     if (_print_test) {gcs().send_text(MAV_SEVERITY_INFO, "type: %d |time: %d", _current_music.music, _current_music.time);}
     _cmd_data[0] = 0x7E;
     _cmd_data[1] = 0xFF;
     _cmd_data[2] = 0x06;
     _cmd_data[3] = 0x03;
-    _cmd_data[4] = 0x00;
+    _cmd_data[4] = 0x10;
     _cmd_data[5] = 0x00;
     _cmd_data[6] = _current_music.music;
     _cmd_data[7] = 0xEF;
