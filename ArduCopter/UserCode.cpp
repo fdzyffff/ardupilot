@@ -41,6 +41,8 @@ void Copter::userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
     gcs().send_message(MSG_HXTS_BAT_CAN_STATUS);
+    AP::fd_data().set_is_flying(copter.motors->armed() && (!ap.land_complete));
+    AP::fd_data().update();
 }
 #endif
 

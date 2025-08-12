@@ -1268,6 +1268,20 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_SUBGROUPINFO(precland, "PLND_", 35, ParametersG2, AC_PrecLand),
 #endif
 
+#if ENABLE_REDUNDANCY_CONTROL
+    // @Param: BATT_VOLT_MULT
+    // @DisplayName: Battery Voltage Multiplier
+    // @Description:Used to convert the voltage of ADC to the actual battery's voltage
+    // @User: Advanced
+    AP_GROUPINFO("BATT_VOLT_MULT", 36, ParametersG2, batt1_voltage_mult, 7.8f),
+
+    // @Param: BATT2_VOLT_MULT
+    // @DisplayName: Battery Voltage Multiplier
+    // @Description:Used to convert the voltage of ADC to the actual battery's voltage
+    // @User: Advanced
+    AP_GROUPINFO("BATT2_VOLT_MULT", 37, ParametersG2, batt2_voltage_mult, 7.8f),
+#endif
+
     AP_GROUPEND
 };
 

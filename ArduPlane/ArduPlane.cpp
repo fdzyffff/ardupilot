@@ -92,6 +92,9 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     SCHED_TASK(one_second_loop,         1,    400,  90),
     SCHED_TASK(three_hz_loop,           3,     75,  93),
     SCHED_TASK(check_long_failsafe,     3,    400,  96),
+#if ENABLE_REDUNDANCY_CONTROL
+    SCHED_TASK(update_redundancy_control, 400,     50,  97),
+#endif
 #if AP_RPM_ENABLED
     SCHED_TASK_CLASS(AP_RPM,           &plane.rpm_sensor,     update,     10, 100,  99),
 #endif

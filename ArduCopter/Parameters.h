@@ -702,6 +702,11 @@ public:
     AP_Float pldp_range_finder_minimum_m;
     AP_Float pldp_delay_s;
     AP_Float pldp_descent_speed_ms;
+
+#if ENABLE_REDUNDANCY_CONTROL
+    AP_Float batt1_voltage_mult;
+    AP_Float batt2_voltage_mult;
+#endif
 };
 
 extern const AP_Param::Info        var_info[];

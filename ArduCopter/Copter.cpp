@@ -205,6 +205,9 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     SCHED_TASK(landinggear_update,    10,     75,  93),
 #endif
     SCHED_TASK(standby_update,        100,    75,  96),
+#if ENABLE_REDUNDANCY_CONTROL
+    SCHED_TASK(update_redundancy_control, 400,     50,  97),
+#endif
     SCHED_TASK(lost_vehicle_check,    10,     50,  99),
     // SCHED_TASK_CLASS(GCS,                  (GCS*)&copter._gcs,          update_receive, 1, 180, 102),
     // SCHED_TASK_CLASS(GCS,                  (GCS*)&copter._gcs,          update_send,    1, 550, 105),

@@ -86,6 +86,9 @@ public:
         SerialProtocol_HXKY_1 = 49,
         SerialProtocol_UART = 50,
         SerialProtocol_CAM = 51,
+        SerialProtocol_redundancy_FPGA = 52,
+        SerialProtocol_redundancy_FMUa = 53,
+        SerialProtocol_redundancy_FMUb = 54,
         SerialProtocol_NumProtocols                    // must be the last value
     };
 

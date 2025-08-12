@@ -591,6 +591,11 @@ public:
     
     AP_Int8         axis_bitmask; // axes to be autotuned
 
+#if ENABLE_REDUNDANCY_CONTROL
+    AP_Float        batt1_voltage_mult;
+    AP_Float        batt2_voltage_mult;
+#endif
+
     // just to make compilation easier when all things are compiled out...
     uint8_t unused_integer;
 };

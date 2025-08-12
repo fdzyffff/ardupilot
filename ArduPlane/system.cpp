@@ -142,6 +142,11 @@ void Plane::init_ardupilot()
     // ---------------------------
     rc().reset_mode_switch();
 
+#if ENABLE_REDUNDANCY_CONTROL
+    // 初始化余度切换控制
+    init_redundancy_control();
+#endif
+
     // initialise sensor
 #if AP_OPTICALFLOW_ENABLED
     if (optflow.enabled()) {

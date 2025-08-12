@@ -780,6 +780,7 @@ void GCS_MAVLINK_Plane::packetReceived(const mavlink_status_t &status,
     plane.g2.follow.handle_msg(msg);
 #endif
     plane.uattack.handle_attack_msg(msg);
+    AP::fd_data().handle_message(msg);
     GCS_MAVLINK::packetReceived(status, msg);
 }
 

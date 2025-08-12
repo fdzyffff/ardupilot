@@ -1249,6 +1249,20 @@ const AP_Param::GroupInfo ParametersG2::var_info2[] = {
     // @User: Advanced
     AP_GROUPINFO("FS_EKF_FILT", 8, ParametersG2, fs_ekf_filt_hz, FS_EKF_FILT_DEFAULT),
 
+#if ENABLE_REDUNDANCY_CONTROL
+    // @Param: BATT_VOLT_MULT
+    // @DisplayName: Battery Voltage Multiplier
+    // @Description:Used to convert the voltage of ADC to the actual battery's voltage
+    // @User: Advanced
+    AP_GROUPINFO("BATT_VOLT_MULT", 9, ParametersG2, batt1_voltage_mult, 7.8f),
+
+    // @Param: BATT2_VOLT_MULT
+    // @DisplayName: Battery Voltage Multiplier
+    // @Description:Used to convert the voltage of ADC to the actual battery's voltage
+    // @User: Advanced
+    AP_GROUPINFO("BATT2_VOLT_MULT", 10, ParametersG2, batt2_voltage_mult, 7.8f),
+#endif
+
     // ID 62 is reserved for the AP_SUBGROUPEXTENSION
 
     AP_GROUPEND

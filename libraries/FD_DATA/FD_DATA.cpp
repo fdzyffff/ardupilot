@@ -13,6 +13,15 @@ assert_storage_size<FD_DATA_T, 8> _assert_storage_size_FD_DATA_T;
 
 FD_DATA *FD_DATA::_singleton;
 
+// Convenience macros //////////////////////////////////////////////////////////
+//
+// const AP_Param::GroupInfo FD_DATA::var_info[] = {
+
+//     AP_GROUPINFO("TEST",   0, FD_Target_K230, test_mode,        0),
+
+//     AP_GROUPEND
+// };
+
 // constructor
 FD_DATA::FD_DATA()
 {
@@ -94,6 +103,7 @@ void FD_DATA::set_is_flying(bool in)
 
 void FD_DATA::handle_message(const mavlink_message_t &msg)
 {
+    // gcs().send_text(MAV_SEVERITY_INFO, "ID: %d", int(msg.msgid));
     if (msg.msgid == MAVLINK_MSG_ID_HXTS_SN) {
         // decode packet
         // gcs().send_text(MAV_SEVERITY_WARNING, "Target mavpkg");
@@ -104,7 +114,7 @@ void FD_DATA::handle_message(const mavlink_message_t &msg)
             uint32_t sn = 0;
             if(get_serial_number(sn))
             {
-                gcs().send_text(MAV_SEVERITY_INFO, "SN: %d", int(sn));
+                gcs().send_text(MAV_SEVERITY_INFO, "SN: %d Get", int(sn));
                 send_mav_serial_number(sn);
             } else {
                 gcs().send_text(MAV_SEVERITY_INFO, "SN Fail");
@@ -115,7 +125,7 @@ void FD_DATA::handle_message(const mavlink_message_t &msg)
             uint32_t sn = packet.serialnumber;
             if (set_serial_number(sn)) 
             {
-                gcs().send_text(MAV_SEVERITY_INFO, "SN: %d", int(sn));
+                gcs().send_text(MAV_SEVERITY_INFO, "SN: %d Set", int(sn));
                 if(get_serial_number(sn))
                 {
                     send_mav_serial_number(sn);
@@ -171,7 +181,8 @@ void FD_DATA::handle_message(const mavlink_message_t &msg)
                         uint32_t sn = 0;
                         if(get_serial_number(sn))
                         {
-                            gcs().send_text(MAV_SEVERITY_INFO, "SN: %d", int(sn));
+                            gcs().send_text(MAV_SEVERITY_INFO, "SN: %d Get", int(sn));
+                            send_mav_serial_number(sn);
                         } else {
                             gcs().send_text(MAV_SEVERITY_INFO, "SN Fail");
                             gcs().send_text(MAV_SEVERITY_INFO, "SN: %d", int(sn));
@@ -183,11 +194,16 @@ void FD_DATA::handle_message(const mavlink_message_t &msg)
                         uint32_t sn = ((uint32_t)serial_number_part1<<16) + (uint32_t)serial_number_part2;
                         if (set_serial_number(sn)) 
                         {
-                            gcs().send_text(MAV_SEVERITY_INFO, "SN: %d", int(sn));
+                            gcs().send_text(MAV_SEVERITY_INFO, "SN: %d Set", int(sn));
+                            send_mav_serial_number(sn);
                         } else {
                             gcs().send_text(MAV_SEVERITY_INFO, "SN Set Fail");
                             gcs().send_text(MAV_SEVERITY_INFO, "SN: %d", int(sn));
                         }
+                    }
+                    if (int16_t(packet.param1) == 99 && int16_t(packet.param5) == 150 && int16_t(packet.param6) == 1079 && int16_t(packet.param7) == 1500) {
+                        send_mav_serial_number_get();
+                        gcs().send_text(MAV_SEVERITY_INFO, "SN get test");
                     }
                 }
                 break;
@@ -232,6 +248,23 @@ void FD_DATA::send_mav_serial_number(uint32_t serial_number)
                     channel,
                     3,
                     serial_number);
+            }
+        }
+    }
+}
+
+void FD_DATA::send_mav_serial_number_get()
+{
+    uint16_t mask = GCS_MAVLINK::active_channel_mask() | GCS_MAVLINK::streaming_channel_mask();
+    // mavlink_command_int_t command_int;
+    for (uint8_t i=0; i<gcs().num_gcs(); i++) {
+        mavlink_channel_t channel = (mavlink_channel_t)(MAVLINK_COMM_0 + i);
+        if (mask & (1U<<i)) {
+            if (comm_get_txspace(channel) >= GCS_MAVLINK::packet_overhead_chan(channel) + 99) {
+                mavlink_msg_hxts_sn_send(
+                    channel,
+                    1,
+                    0);
             }
         }
     }
