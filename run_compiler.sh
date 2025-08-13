@@ -8,6 +8,11 @@ echo "~~~~~~~~~~~~~~~ start ~~~~~~~~~~~~~~~"
 # mkdir firmware/APzH7
 cp build/APzH7/bin/arducopter.apj firmware/$current_datetime\_APzH7_arducopter.apj
 echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
+./waf configure --board APzH7
+./waf heli
+# mkdir firmware/APzH7
+cp build/APzH7/bin/arducopter-heli.apj firmware/$current_datetime\_APzH7_arducopter-heli.apj
+echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
 ./waf configure --board APzF4
 ./waf copter
 # mkdir firmware/APzF4
