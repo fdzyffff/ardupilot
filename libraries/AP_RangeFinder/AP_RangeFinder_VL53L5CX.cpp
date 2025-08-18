@@ -20,6 +20,7 @@
  */
 #include <string.h>
 #include "AP_RangeFinder_VL53L5CX.h"
+#include <GCS_MAVLink/GCS.h>
 
 #if AP_RANGEFINDER_VL53L5CX_ENABLED
 
@@ -67,6 +68,7 @@ AP_RangeFinder_Backend *AP_RangeFinder_VL53L5CX::detect(RangeFinder::RangeFinder
         sensor->dev->get_semaphore()->give();
         delete sensor;
         printf("\r\nVL53 Init detect Fail\r\n");
+        gcs().send_text(MAV_SEVERITY_INFO, "VL53 Init detect Fail");
         return nullptr;
     }
     sensor->dev->get_semaphore()->give();
@@ -84,15 +86,18 @@ bool AP_RangeFinder_VL53L5CX::check_id(void)
     if(!(read_register(0x00, v1) && read_register(0x01, v2))) 
     {
         printf("\r\n\r\n Read ID is False \r\n\r\n");
+        gcs().send_text(MAV_SEVERITY_INFO, "Read ID is False");
         return false;
     }
     if ((v1 != 0xF0) || (v2 != 0x02))
     {
         printf("\r\n\r\n Check ID is different :0x%x,0x%x,%d \r\n\r\n",v1,v2,Res);
+        gcs().send_text(MAV_SEVERITY_INFO, "Check ID is different :0x%x,0x%x,%d \r\n\r\n",v1,v2,Res);
         return false;
     }
     Res = write_register(0x7FFF, 0x02);             
     printf("Detected VL53L5CX on bus 0x%x\r\n", dev->get_bus_id());      //0x2901
+    gcs().send_text(MAV_SEVERITY_INFO, "Detected VL53L5CX on bus 0x%lx\r\n", dev->get_bus_id());      //0x2901
     return Res;
 }
 bool AP_RangeFinder_VL53L5CX::reset(void) 
@@ -133,13 +138,15 @@ bool AP_RangeFinder_VL53L5CX::PollForAnser(uint8_t Size,uint8_t pos,uint16_t add
         {
             Rec = false;                            //返回错误
             printf("\r\n Over Time \r\n");
+            gcs().send_text(MAV_SEVERITY_INFO, "Over Time");
             break;
         }
         else if((Size > 3) && temp_buffer[2] >= 0x7F)
         {
-                printf("\r\nMUC ERROR\r\n");
-                Rec = false;
-                break;
+            printf("\r\nMUC ERROR\r\n");
+            gcs().send_text(MAV_SEVERITY_INFO, "MUC ERROR");
+            Rec = false;
+            break;
         }
         else
             Cnt++;
@@ -172,6 +179,7 @@ bool AP_RangeFinder_VL53L5CX::PollMCU_Boot(void)
         if((go2_status0 & 0x01) != 0)
         {
             printf("\r\nMCU ReBoot Finish\r\n");
+            gcs().send_text(MAV_SEVERITY_INFO, "MCU ReBoot Finish");
             Rec = true;
             break;
         }
@@ -279,6 +287,7 @@ bool AP_RangeFinder_VL53L5CX::Is_alive(void)
     {
         Rec = true;
         printf("VL53L5 IS alive\r\n");
+        gcs().send_text(MAV_SEVERITY_INFO, "VL53L5 IS alive");
     }       
     return Rec;
 }
@@ -326,6 +335,7 @@ bool AP_RangeFinder_VL53L5CX::init()
     if(!Rec) 
     {
         printf("\r\nWait Sensor boot Fail\r\n");
+        gcs().send_text(MAV_SEVERITY_INFO, "Wait Sensor boot Fail");
         return Rec;
     }       
     Rec = write_register(0x000E, 0x01);
@@ -378,6 +388,7 @@ bool AP_RangeFinder_VL53L5CX::init()
     if(!Rec) 
     {
         printf("\r\nDownload FW Fail\r\n");
+        gcs().send_text(MAV_SEVERITY_INFO, "Download FW Fail");
         return Rec;
     }   
     Rec = write_register(0x7FFF, 0x00);
@@ -397,6 +408,7 @@ bool AP_RangeFinder_VL53L5CX::init()
     if(!Rec) 
     {
         printf("\r\nMCU Reboot Fail\r\n");
+        gcs().send_text(MAV_SEVERITY_INFO, "MCU Reboot Fail");
         return Rec;
     }   
     Rec = write_register(0x7FFF, 0x02);
@@ -417,10 +429,13 @@ bool AP_RangeFinder_VL53L5CX::init()
     if(!Rec)
     {
         printf("\r\n Download Default config is Error \r\n");
+        gcs().send_text(MAV_SEVERITY_INFO, "Download Default config is Error");
         return Rec;
     }
-    else
+    else {
         printf("\r\n Download Default config is OK \r\n");
+        gcs().send_text(MAV_SEVERITY_INFO, "Download Default config is OK");
+    }
 
     uint8_t pipe_ctrl[] = {VL53L5CX_NB_TARGET_PER_ZONE, 0x00, 0x01, 0x00};
     uint32_t single_range = 0x01;
@@ -437,6 +452,7 @@ bool AP_RangeFinder_VL53L5CX::init()
         Object.IsInitialized = 1U;
         Rec = Get_Capabilities(&Cap);
         printf("\r\nGet Capabilities:%d\r\n",Rec);
+        gcs().send_text(MAV_SEVERITY_INFO, "Get Capabilities:%d",Rec);
         Profile.RangingProfile = VL53L5CX_PROFILE_8x8_CONTINUOUS;
         Profile.TimingBudget = TIMING_BUDGET;               /* 5 ms < TimingBudget < 100 ms */
         Profile.Frequency = RANGING_FREQUENCY;              /* Ranging frequency Hz (shall be consistent with TimingBudget value) */
@@ -447,6 +463,7 @@ bool AP_RangeFinder_VL53L5CX::init()
         Rec = Start_Ranging(&Object,VL53L5CX_MODE_BLOCKING_CONTINUOUS); 
         
         printf("\r\nStart Read Data:%d\r\n",Rec);
+        gcs().send_text(MAV_SEVERITY_INFO, "Start Read Data:%d",Rec);
     }
     // call timer() every MEASUREMENT_TIME_MS. We expect new data to be available every MEASUREMENT_TIME_MS
     dev->register_periodic_callback(MEASUREMENT_TIME_MS * 1000,FUNCTOR_BIND_MEMBER(&AP_RangeFinder_VL53L5CX::timer, void));
@@ -538,6 +555,7 @@ bool AP_RangeFinder_VL53L5CX::StartRanging(void)
 
     Rec = GetResolution(Resolution);
     printf("\r\nStart Ranging Resolution :%d\r\n",Resolution);
+    gcs().send_text(MAV_SEVERITY_INFO, "Start Ranging Resolution :%d",Resolution);
     data_read_size = 0;
     streamcount = 255;
     /* Enable mandatory output (meta and common data) */
@@ -629,8 +647,9 @@ bool AP_RangeFinder_VL53L5CX::StartRanging(void)
     /* Start ranging session */
     WriteData(VL53L5CX_UI_CMD_END -(uint16_t)(4 - 1),(uint8_t*)cmd, sizeof(cmd));
     Rec = PollForAnser(4,1,VL53L5CX_UI_CMD_STATUS,0xFF,0x03);
-    if(!Rec)
-        printf("\r\nStart Ranging Session Fail\r\n");   
+    if(!Rec) {
+        printf("\r\nStart Ranging Session Fail\r\n");
+    }
 
 
     /* Read ui range data content and compare if data size is the correct one */
