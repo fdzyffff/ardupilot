@@ -6535,7 +6535,7 @@
     </message>
     <message id="414" name="WXBS_TOF_DISTANCE">
       <description> </description>
-      <field type="float[64]" name="dist"></field>
+      <field type="uint16_t[64]" name="dist"></field>
     </message>
 
     <!-- Rover specific messages -->

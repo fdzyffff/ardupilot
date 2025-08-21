@@ -39,7 +39,11 @@ static const uint8_t MEASUREMENT_TIME_MS = 50; // Start continuous readings at a
 
 AP_RangeFinder_VL53L5CX::AP_RangeFinder_VL53L5CX(RangeFinder::RangeFinder_State &_state, AP_RangeFinder_Params &_params, AP_HAL::OwnPtr<AP_HAL::I2CDevice> _dev)
     : AP_RangeFinder_Backend(_state, _params)
-    , dev(std::move(_dev)) {}
+    , dev(std::move(_dev)) 
+{
+    _print_enable_text = true;
+    // _print_enable_gcs = true;
+}
 
 /*
    detect if a VL53L5CX rangefinder is connected. We'll detect by
@@ -48,6 +52,7 @@ AP_RangeFinder_VL53L5CX::AP_RangeFinder_VL53L5CX(RangeFinder::RangeFinder_State 
 */
 AP_RangeFinder_Backend *AP_RangeFinder_VL53L5CX::detect(RangeFinder::RangeFinder_State &_state, AP_RangeFinder_Params &_params, AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev, DistanceMode mode)
 {
+
     if (!dev) 
     {
         return nullptr;
@@ -85,21 +90,22 @@ bool AP_RangeFinder_VL53L5CX::check_id(void)
     Res = write_register(0x7FFF, 0x00);
     if(!(read_register(0x00, v1) && read_register(0x01, v2))) 
     {
-        printf("\r\n\r\n Read ID is False \r\n\r\n");
-        gcs().send_text(MAV_SEVERITY_INFO, "Read ID is False");
+        if (_print_enable_text) {printf("\r\n\r\n Read ID is False \r\n\r\n");}
+        if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "Read ID is False");}
         return false;
     }
     if ((v1 != 0xF0) || (v2 != 0x02))
     {
-        printf("\r\n\r\n Check ID is different :0x%x,0x%x,%d \r\n\r\n",v1,v2,Res);
-        gcs().send_text(MAV_SEVERITY_INFO, "Check ID is different :0x%x,0x%x,%d \r\n\r\n",v1,v2,Res);
+        if (_print_enable_text) {printf("\r\n\r\n Check ID is different :0x%x,0x%x,%d \r\n\r\n",v1,v2,Res);}
+        if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "Check ID is different :0x%x,0x%x,%d \r\n\r\n",v1,v2,Res);}
         return false;
     }
     Res = write_register(0x7FFF, 0x02);             
-    printf("Detected VL53L5CX on bus 0x%x\r\n", dev->get_bus_id());      //0x2901
-    gcs().send_text(MAV_SEVERITY_INFO, "Detected VL53L5CX on bus 0x%lx\r\n", dev->get_bus_id());      //0x2901
+    if (_print_enable_text) {printf("Detected VL53L5CX on bus 0x%x\r\n", dev->get_bus_id());}      //0x2901
+    if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "Detected VL53L5CX on bus 0x%lx\r\n", dev->get_bus_id());}      //0x2901
     return Res;
 }
+
 bool AP_RangeFinder_VL53L5CX::reset(void) 
 {
     if (dev->get_bus_id()!= 0x29) 
@@ -137,14 +143,14 @@ bool AP_RangeFinder_VL53L5CX::PollForAnser(uint8_t Size,uint8_t pos,uint16_t add
         if(Cnt >= 200)
         {
             Rec = false;                            //返回错误
-            printf("\r\n Over Time \r\n");
-            gcs().send_text(MAV_SEVERITY_INFO, "Over Time");
+            if (_print_enable_text) {printf("\r\n Over Time \r\n");}
+            if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "Over Time");}
             break;
         }
         else if((Size > 3) && temp_buffer[2] >= 0x7F)
         {
-            printf("\r\nMUC ERROR\r\n");
-            gcs().send_text(MAV_SEVERITY_INFO, "MUC ERROR");
+            if (_print_enable_text) {printf("\r\nMUC ERROR\r\n");}
+            if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "MUC ERROR");}
             Rec = false;
             break;
         }
@@ -171,21 +177,21 @@ bool AP_RangeFinder_VL53L5CX::PollMCU_Boot(void)
         if((go2_status0 & 0x80) != 0)                       
         {
             Rec = read_register(0x07,go2_status1);
-            printf("\r\ngo2_status1:%d\r\n",go2_status1);
+            if (_print_enable_text) {printf("\r\ngo2_status1:%d\r\n",go2_status1);}
             break;
         }
         hal.scheduler->delay(1);
         Cnt++;
         if((go2_status0 & 0x01) != 0)
         {
-            printf("\r\nMCU ReBoot Finish\r\n");
-            gcs().send_text(MAV_SEVERITY_INFO, "MCU ReBoot Finish");
+            if (_print_enable_text) {printf("\r\nMCU ReBoot Finish\r\n");}
+            if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "MCU ReBoot Finish");}
             Rec = true;
             break;
         }
         if(Cnt > 500)
         {
-            //printf("\r\nMCU ReBoot OverTime\r\n");
+            //if (_print_enab_textle) {printf("\r\nMCU ReBoot OverTime\r\n");}
             Rec = false;
             break;
         }
@@ -286,8 +292,8 @@ bool AP_RangeFinder_VL53L5CX::Is_alive(void)
     if((DevID == 0xF0) && (RevID == 0x02))
     {
         Rec = true;
-        printf("VL53L5 IS alive\r\n");
-        gcs().send_text(MAV_SEVERITY_INFO, "VL53L5 IS alive");
+        if (_print_enable_text) {printf("VL53L5 IS alive\r\n");}
+        if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "VL53L5 IS alive");}
     }       
     return Rec;
 }
@@ -334,8 +340,8 @@ bool AP_RangeFinder_VL53L5CX::init()
     Rec = PollForAnser(1,0,0x06,0xFF,1);        //19
     if(!Rec) 
     {
-        printf("\r\nWait Sensor boot Fail\r\n");
-        gcs().send_text(MAV_SEVERITY_INFO, "Wait Sensor boot Fail");
+        if (_print_enable_text) {printf("\r\nWait Sensor boot Fail\r\n");}
+        if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "Wait Sensor boot Fail");}
         return Rec;
     }       
     Rec = write_register(0x000E, 0x01);
@@ -387,8 +393,8 @@ bool AP_RangeFinder_VL53L5CX::init()
     Rec = PollForAnser(1,0,0x21,0x10,0x10); //23
     if(!Rec) 
     {
-        printf("\r\nDownload FW Fail\r\n");
-        gcs().send_text(MAV_SEVERITY_INFO, "Download FW Fail");
+        if (_print_enable_text) {printf("\r\nDownload FW Fail\r\n");}
+        if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "Download FW Fail");}
         return Rec;
     }   
     Rec = write_register(0x7FFF, 0x00);
@@ -407,8 +413,8 @@ bool AP_RangeFinder_VL53L5CX::init()
     Rec = PollMCU_Boot();                       //24
     if(!Rec) 
     {
-        printf("\r\nMCU Reboot Fail\r\n");
-        gcs().send_text(MAV_SEVERITY_INFO, "MCU Reboot Fail");
+        if (_print_enable_text) {printf("\r\nMCU Reboot Fail\r\n");}
+        if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "MCU Reboot Fail");}
         return Rec;
     }   
     Rec = write_register(0x7FFF, 0x02);
@@ -428,13 +434,13 @@ bool AP_RangeFinder_VL53L5CX::init()
     Rec = PollForAnser(4,1,VL53L5CX_UI_CMD_STATUS,0xFF,0x03);
     if(!Rec)
     {
-        printf("\r\n Download Default config is Error \r\n");
-        gcs().send_text(MAV_SEVERITY_INFO, "Download Default config is Error");
+        if (_print_enable_text) {printf("\r\n Download Default config is Error \r\n");}
+        if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "Download Default config is Error");}
         return Rec;
     }
     else {
-        printf("\r\n Download Default config is OK \r\n");
-        gcs().send_text(MAV_SEVERITY_INFO, "Download Default config is OK");
+        if (_print_enable_text) {printf("\r\n Download Default config is OK \r\n");}
+        if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "Download Default config is OK");}
     }
 
     uint8_t pipe_ctrl[] = {VL53L5CX_NB_TARGET_PER_ZONE, 0x00, 0x01, 0x00};
@@ -451,8 +457,8 @@ bool AP_RangeFinder_VL53L5CX::init()
         Object.IsSignalEnabled = 0U;
         Object.IsInitialized = 1U;
         Rec = Get_Capabilities(&Cap);
-        printf("\r\nGet Capabilities:%d\r\n",Rec);
-        gcs().send_text(MAV_SEVERITY_INFO, "Get Capabilities:%d",Rec);
+        if (_print_enable_text) {printf("\r\nGet Capabilities:%d\r\n",Rec);}
+        if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "Get Capabilities:%d",Rec);}
         Profile.RangingProfile = VL53L5CX_PROFILE_8x8_CONTINUOUS;
         Profile.TimingBudget = TIMING_BUDGET;               /* 5 ms < TimingBudget < 100 ms */
         Profile.Frequency = RANGING_FREQUENCY;              /* Ranging frequency Hz (shall be consistent with TimingBudget value) */
@@ -462,8 +468,8 @@ bool AP_RangeFinder_VL53L5CX::init()
         Rec = Set_ConfigProfile(&Object,&Profile);
         Rec = Start_Ranging(&Object,VL53L5CX_MODE_BLOCKING_CONTINUOUS); 
         
-        printf("\r\nStart Read Data:%d\r\n",Rec);
-        gcs().send_text(MAV_SEVERITY_INFO, "Start Read Data:%d",Rec);
+        if (_print_enable_text) {printf("\r\nStart Read Data:%d\r\n",Rec);}
+        if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "Start Read Data:%d",Rec);}
     }
     // call timer() every MEASUREMENT_TIME_MS. We expect new data to be available every MEASUREMENT_TIME_MS
     dev->register_periodic_callback(MEASUREMENT_TIME_MS * 1000,FUNCTOR_BIND_MEMBER(&AP_RangeFinder_VL53L5CX::timer, void));
@@ -554,8 +560,8 @@ bool AP_RangeFinder_VL53L5CX::StartRanging(void)
     bool Rec = false;
 
     Rec = GetResolution(Resolution);
-    printf("\r\nStart Ranging Resolution :%d\r\n",Resolution);
-    gcs().send_text(MAV_SEVERITY_INFO, "Start Ranging Resolution :%d",Resolution);
+    if (_print_enable_text) {printf("\r\nStart Ranging Resolution :%d\r\n",Resolution);}
+    if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "Start Ranging Resolution :%d",Resolution);}
     data_read_size = 0;
     streamcount = 255;
     /* Enable mandatory output (meta and common data) */
@@ -604,7 +610,7 @@ bool AP_RangeFinder_VL53L5CX::StartRanging(void)
 #ifndef VL53L5CX_DISABLE_MOTION_INDICATOR
     output_bh_enable[0] += (uint32_t)2048;
 #endif
-    //printf("\r\noutput_bh_enable[0] : %d\r\n",output_bh_enable[0]);
+    //if (_print_enab_textle) {printf("\r\noutput_bh_enable[0] : %d\r\n",output_bh_enable[0]);}
 /* Update data size */
     for (i = 0; i < (uint32_t)(sizeof(output)/sizeof(uint32_t)); i++)
     {
@@ -634,7 +640,7 @@ bool AP_RangeFinder_VL53L5CX::StartRanging(void)
         data_read_size += (uint32_t)4;
     }
     data_read_size += (uint32_t)24;
-    printf("\r\ndata_read_size:%d\r\n",data_read_size);
+    if (_print_enable_text) {printf("\r\ndata_read_size:%d\r\n",data_read_size);}
     Rec = DCI_WriteData((uint8_t*)&(output),VL53L5CX_DCI_OUTPUT_LIST,(uint16_t)sizeof(output));
     HeaderConfig[0] = data_read_size;
     HeaderConfig[1] = i + 1;
@@ -648,7 +654,7 @@ bool AP_RangeFinder_VL53L5CX::StartRanging(void)
     WriteData(VL53L5CX_UI_CMD_END -(uint16_t)(4 - 1),(uint8_t*)cmd, sizeof(cmd));
     Rec = PollForAnser(4,1,VL53L5CX_UI_CMD_STATUS,0xFF,0x03);
     if(!Rec) {
-        printf("\r\nStart Ranging Session Fail\r\n");
+        if (_print_enable_text) {printf("\r\nStart Ranging Session Fail\r\n");}
     }
 
 
@@ -656,10 +662,10 @@ bool AP_RangeFinder_VL53L5CX::StartRanging(void)
     DCI_ReadData(temp_buffer,0x5440,12);
     uint16_t Tmp = 0;
     (void)memcpy(&Tmp,&temp_buffer[0x08],sizeof(Tmp));
-    printf("\r\nDCI Read Size: Tmp:%d,DataLen:%d\r\n",Tmp,data_read_size);
+    if (_print_enable_text) {printf("\r\nDCI Read Size: Tmp:%d,DataLen:%d\r\n",Tmp,data_read_size);}
     if(Tmp != data_read_size)
     {
-        printf("\r\nDCI Read Fail: Tmp:%d,DataLen:%d\r\n",Tmp,data_read_size);
+        if (_print_enable_text) {printf("\r\nDCI Read Fail: Tmp:%d,DataLen:%d\r\n",Tmp,data_read_size);}
         Rec = false;
     }
     else
@@ -692,7 +698,7 @@ bool AP_RangeFinder_VL53L5CX::StopRanging(void)
             timeout++;
             if(timeout > (uint16_t)500)
             {
-                printf("\r\nMCU stop Time Over\r\n");
+                if (_print_enable_text) {printf("\r\nMCU stop Time Over\r\n");}
                 break;
             }
         }
@@ -704,7 +710,7 @@ bool AP_RangeFinder_VL53L5CX::StopRanging(void)
         Rec = read_register(0x07, tmp);
         if((tmp != (uint8_t)0x84) && (tmp != (uint8_t)0x85))
         {
-           printf("\r\nRead 07 Code:%d\r\n",tmp);
+           if (_print_enable_text) {printf("\r\nRead 07 Code:%d\r\n",tmp);}
         }
     }
     /* Undo MCU stop */
@@ -728,14 +734,14 @@ bool AP_RangeFinder_VL53L5CX::Check_DataReady(uint8_t &isReady)
     {       
         isReady = 1;
         streamcount = temp_buffer[0];
-        printf("\r\n Read Data is Ready DataSize:%d \r\n",streamcount);
+        if (_print_enable_text) {printf("\r\n Read Data is Ready DataSize:%d \r\n",streamcount);}
         Rec = true;
     }
     else            /* Return GO2 error status */
     {
         if((temp_buffer[3] & 0x80) != 0)
         {
-            printf("\r\nError Code :%d \r\n",temp_buffer[2]);   
+            if (_print_enable_text) {printf("\r\nError Code :%d \r\n",temp_buffer[2]);   }
             Rec = false;
         }
     }
@@ -751,7 +757,7 @@ bool AP_RangeFinder_VL53L5CX::Get_RangingData(VL53L5CX_ResultsData       *p_resu
 
     ReadData(0,temp_buffer,data_read_size);
     streamcount = temp_buffer[0];
-    printf("\r\ndata_read_size:%d , streamcount:%d\r\n",data_read_size,streamcount);
+    if (_print_enable_text) {printf("\r\ndata_read_size:%d , streamcount:%d\r\n",data_read_size,streamcount);}
     SwapBuffer(temp_buffer, data_read_size);
     /* Start conversion at position 16 to avoid headers */
     for (i = 16U; i < (uint32_t)data_read_size; i+=4U)
@@ -885,7 +891,7 @@ bool AP_RangeFinder_VL53L5CX::Get_RangingData(VL53L5CX_ResultsData       *p_resu
 
     if(header_id != footer_id)
     {
-        printf("\r\nHead ID is Error HeadID:%d ; FooterID:%d\r\n",header_id,footer_id);
+        if (_print_enable_text) {printf("\r\nHead ID is Error HeadID:%d ; FooterID:%d\r\n",header_id,footer_id);}
         Rec = false;
     }   
     else
@@ -938,7 +944,7 @@ bool AP_RangeFinder_VL53L5CX::SetResolution(uint8_t Resolution)
             break;
 
         default:
-            printf("\r\nSet Resolution Fail\r\n");
+            if (_print_enable_text) {printf("\r\nSet Resolution Fail\r\n");}
             Rec = false;
             break;
         }
@@ -984,7 +990,7 @@ bool AP_RangeFinder_VL53L5CX::Set_IntegrationTime_ms(uint32_t Time_ms)
     /* Integration time must be between 2ms and 1000ms */
     if((integration < (uint32_t)2)  || (integration > (uint32_t)1000))
     {
-        printf("\r\nTime Param is invalid\r\n");
+        if (_print_enable_text) {printf("\r\nTime Param is invalid\r\n");}
     }
     else
     {
@@ -1013,8 +1019,9 @@ bool AP_RangeFinder_VL53L5CX::Set_SharpenerPercent(uint8_t SharpenerPercent)
 
     uint8_t sharpener;
 
-    if(SharpenerPercent >= 100)
-        printf("\r\nSharpenerPercent Param Invalid\r\n");
+    if (SharpenerPercent >= 100) {
+        if (_print_enable_text) {printf("\r\nSharpenerPercent Param Invalid\r\n");}
+    }
     else
     {
         sharpener = (SharpenerPercent*(uint8_t)255)/(uint8_t)100;
@@ -1043,7 +1050,7 @@ bool AP_RangeFinder_VL53L5CX::Set_TargetOrder(uint8_t target_order)
         Rec = DCI_ReplaceData(temp_buffer,VL53L5CX_DCI_TARGET_ORDER, 4,(uint8_t*)&target_order, 1, 0x00);
     }
     else
-        printf("\r\nTargetOrder Param Invalid\r\n");
+        if (_print_enable_text) {printf("\r\nTargetOrder Param Invalid\r\n");}
     
     return Rec; 
 }
@@ -1086,7 +1093,7 @@ bool AP_RangeFinder_VL53L5CX::Set_RangingMode(uint8_t ranging_mode)
             break;
 
         default:
-            printf("\r\ranging_mode Param Invalid\r\n");
+            if (_print_enable_text) {printf("\r\ranging_mode Param Invalid\r\n");}
             break;
     }
     Rec = DCI_WriteData(temp_buffer,VL53L5CX_DCI_RANGING_MODE,(uint16_t)8);
@@ -1129,7 +1136,7 @@ bool AP_RangeFinder_VL53L5CX::DCI_ReadData(uint8_t *pData,uint32_t Index,uint16_
 
     if(RdLen > VL53L5CX_TEMPORARY_BUFFER_SIZE)
     {
-        printf("\r\nDataLen :%d,MaxLen:%d\r\n",data_size+12,VL53L5CX_TEMPORARY_BUFFER_SIZE);
+        if (_print_enable_text) {printf("\r\nDataLen :%d,MaxLen:%d\r\n",data_size+12,VL53L5CX_TEMPORARY_BUFFER_SIZE);}
         Rec = false;
     }
     else
@@ -1165,7 +1172,7 @@ bool AP_RangeFinder_VL53L5CX::DCI_WriteData(uint8_t *pData,uint32_t Index,uint16
     /* Check if cmd buffer is large enough */
     if((Size + 12) > VL53L5CX_TEMPORARY_BUFFER_SIZE)
     {
-        printf("\r\nDCI Data Len Over:%d\r\n",Size + 12);
+        if (_print_enable_text) {printf("\r\nDCI Data Len Over:%d\r\n",Size + 12);}
         Rec = false;
     }
     else
@@ -1249,7 +1256,7 @@ bool AP_RangeFinder_VL53L5CX::Set_ConfigProfile(VL53L5CX_Object_t *pObject,VL53L
     if(pConfig == nullptr)
     {
         Rec = false;
-        printf("\r\nConfigProfile Param invalid\r\n");
+        if (_print_enable_text) {printf("\r\nConfigProfile Param invalid\r\n");}
         return Rec;
     }       
     else
@@ -1258,7 +1265,7 @@ bool AP_RangeFinder_VL53L5CX::Set_ConfigProfile(VL53L5CX_Object_t *pObject,VL53L
         integration_time = pConfig->TimingBudget;
         ranging_frequency = (uint8_t)pConfig->Frequency;
     }
-    //printf("\r\nProfile : %d \r\n",profile);
+    //if (_print_enab_textle) {printf("\r\nProfile : %d \r\n",profile);}
     switch (profile)
     {
         case VL53L5CX_PROFILE_4x4_CONTINUOUS:
@@ -1285,22 +1292,22 @@ bool AP_RangeFinder_VL53L5CX::Set_ConfigProfile(VL53L5CX_Object_t *pObject,VL53L
     }
     if(!SetResolution(resolution))
     {
-        printf("\r\nSetResolution Fail\r\n");
+        if (_print_enable_text) {printf("\r\nSetResolution Fail\r\n");}
         Rec = false;    
     }       
     else if(!Set_RangingMode(ranging_mode))
     {
-        printf("\r\nSet_RangingMode Fail\r\n");
+        if (_print_enable_text) {printf("\r\nSet_RangingMode Fail\r\n");}
         Rec = false;
     }       
     else if(!Set_IntegrationTime_ms(integration_time))
     {
-        printf("\r\nSet_IntegrationTime_ms Fail\r\n");
+        if (_print_enable_text) {printf("\r\nSet_IntegrationTime_ms Fail\r\n");}
         Rec = false;
     }       
     else if(!Set_RangingFreqHz(ranging_frequency))
     {
-        printf("\r\nSet_RangingFreqHz Fail\r\n");
+        if (_print_enable_text) {printf("\r\nSet_RangingFreqHz Fail\r\n");}
         Rec = false;    
     }
     else 
@@ -1320,7 +1327,7 @@ bool AP_RangeFinder_VL53L5CX::Start_Ranging(VL53L5CX_Object_t *pObj,uint32_t Mod
     {
         pObj->IsRanging = 1;
         Rec = true;
-        printf("\r\n StartRanging Mode :%d\r\n",Mode);
+        if (_print_enable_text) {printf("\r\n StartRanging Mode :%d\r\n",Mode);}
         switch (Mode)
         {
             case VL53L5CX_MODE_BLOCKING_CONTINUOUS:
@@ -1362,7 +1369,7 @@ bool AP_RangeFinder_VL53L5CX::Poll_For_Measurement(uint32_t Timeout)
         if(NewDataReady)
         {
             Rec = true;
-            printf("\r\n Data is OK\r\n");
+            if (_print_enable_text) {printf("\r\n Data is OK\r\n");}
             break;
         }           
         else
@@ -1381,12 +1388,12 @@ bool AP_RangeFinder_VL53L5CX::Get_Result(VL53L5CX_Object_t *pObj,RANGING_SENSOR_
 
     if(!GetResolution(resolution))
     {
-        printf("\r\nGet Result resolution Fail\r\n");
+        if (_print_enable_text) {printf("\r\nGet Result resolution Fail\r\n");}
         Rec = false;
     }
     else if(!Get_RangingData(&data))
     {
-        printf("\r\nGet RangingData Fail\r\n");
+        if (_print_enable_text) {printf("\r\nGet RangingData Fail\r\n");}
         Rec = false;
     }
     else
@@ -1420,7 +1427,7 @@ bool AP_RangeFinder_VL53L5CX::Get_Result(VL53L5CX_Object_t *pObj,RANGING_SENSOR_
                 {
                     pResult->ZoneResult[i].Signal[j] = 0.0f;
                 }
-                //printf("\r\ndata:%d %d %d\r\n",i,j,pResult->ZoneResult[i].Distance[j]);
+                //if (_print_enab_textle) {printf("\r\ndata:%d %d %d\r\n",i,j,pResult->ZoneResult[i].Distance[j]);}
                 target_status = data.target_status[(VL53L5CX_NB_TARGET_PER_ZONE * i) + j];
                 pResult->ZoneResult[i].Status[j] = Map_TargetStatus(target_status);
             }       
@@ -1453,7 +1460,7 @@ bool AP_RangeFinder_VL53L5CX::GetDistance(VL53L5CX_Object_t *pObj,RANGING_SENSOR
 
     if(pObj->IsRanging == 0)
     {
-        printf("\r\nVL53 not working\r\n");
+        if (_print_enable_text) {printf("\r\nVL53 not working\r\n");}
         Rec = false;
     }
     else
@@ -1461,16 +1468,17 @@ bool AP_RangeFinder_VL53L5CX::GetDistance(VL53L5CX_Object_t *pObj,RANGING_SENSOR
         if(pObj->IsBlocking == 1)
         {
             Rec = Poll_For_Measurement(V53L5CX_POLL_TIMEOUT);
-            printf("\r\nDelay Measurement :%d\r\n",Rec);
+            if (_print_enable_text) {printf("\r\nDelay Measurement :%d\r\n",Rec);}
         }
         else
         {
             Rec = Poll_For_Measurement(0);
-            printf("\r\nMeasurement :%d\r\n",Rec);
+            if (_print_enable_text) {printf("\r\nMeasurement :%d\r\n",Rec);}
         }
     }
-    if(Rec)
+    if(Rec) {
         Rec = Get_Result(pObj,pResult);
+    }
 
     return Rec;
 }
@@ -1766,56 +1774,18 @@ bool AP_RangeFinder_VL53L5CX::dataReady(void)
            ((gpio_tio_hv_status & 0x01) == 0);
 }
 
-// read - return last value measured by sensor
-bool AP_RangeFinder_VL53L5CX::get_reading(uint16_t &reading_mm)
-{
-    uint8_t tries = 10;
-    while (!dataReady()) 
-    {
-        tries--;
-        hal.scheduler->delay(1);
-        if (tries == 0) 
-        {
-            return false;
-        }
-    }
+// // read - return last value measured by sensor
+// bool AP_RangeFinder_VL53L5CX::get_reading(uint16_t &reading_mm)
+// {
 
-    uint8_t range_status = 0;
+//     if (final_dist_mm == 0) {
+//         reading_mm = 0;
+//         return false;
+//     }
 
-    if (!(read_register(RESULT__RANGE_STATUS, range_status) &&
-          read_register16(RESULT__FINAL_CROSSTALK_CORRECTED_RANGE_MM_SD0, reading_mm))) {
-        return false;
-    }
-
-    // "apply correction gain"
-    // gain factor of 2011 is tuning parm default (VL53L1_TUNINGPARM_LITE_RANGING_GAIN_FACTOR_DEFAULT)
-    // Basically, this appears to scale the result by 2011/2048, or about 98%
-    // (with the 1024 added for proper rounding).
-    reading_mm = ((uint32_t)reading_mm * 2011 + 0x0400) / 0x0800;
-
-    if (!write_register(SYSTEM__INTERRUPT_CLEAR, 0x01)) { // sys_interrupt_clear_range
-        return false;
-    }
-
-    switch ((DeviceError)range_status) 
-    {
-      case RANGECOMPLETE:
-        break;
-
-      default:
-#ifdef VL53L5CX_DEBUG
-        hal.console->printf("VL53L5CX: %d ms status %d\n", AP_HAL::millis(), (int)range_status);
-#endif // VL53L5CX_DEBUG
-        return false;
-    }
-
-    if (!calibrated) 
-    {
-        calibrated = setupManualCalibration();
-    }
-
-    return calibrated;
-}
+//     reading_mm = final_dist_mm;
+//     return true;
+// }
 
 bool AP_RangeFinder_VL53L5CX::read_register(uint16_t reg, uint8_t &value)
 {
@@ -1937,54 +1907,86 @@ bool AP_RangeFinder_VL53L5CX::write_register32(uint16_t reg, uint32_t value)
 void AP_RangeFinder_VL53L5CX::timer(void)
 {
  //   uint16_t range_mm;
-        WITH_SEMAPHORE(_sem);
-        GetDistance(&Object,&Result);
+    WITH_SEMAPHORE(_sem);
+    if (GetDistance(&Object,&Result) ) {
         print_result(&Result);
         counter++;
+    }
 
+    if (counter > 0) {
+        // if (_print_enable_text) {printf("\r\nHave %d Sensor\r\n",counter);}
+        state.distance_m = ((float)final_dist_mm * 0.001f);
+        state.last_reading_ms = AP_HAL::millis();
+        update_status();
+        counter = 0;
+    } 
+    else if (AP_HAL::millis() - state.last_reading_ms > 200) {
+        // if no updates for 0.2s set no-data
+        set_status(RangeFinder::Status::NoData);
+    }   
 
-    // if ((get_reading(range_mm)) && (range_mm <= 4000)) 
-    // {
-    //     WITH_SEMAPHORE(_sem);
-    //     sum_mm += range_mm;
-    //     counter++;
-    // }
 }
 bool AP_RangeFinder_VL53L5CX::print_result(RANGING_SENSOR_Result_t *pResult)
 {
-  uint8_t i, j, l;
-  int8_t k;
-  uint8_t zones_per_line;
+    uint8_t i, j, l;
+    int8_t k;
+    uint8_t zones_per_line;
 
-  zones_per_line = ((Profile.RangingProfile == VL53L5CX_PROFILE_8x8_AUTONOMOUS) || (Profile.RangingProfile == VL53L5CX_PROFILE_8x8_CONTINUOUS)) ? 8 : 4;
+    zones_per_line = ((Profile.RangingProfile == VL53L5CX_PROFILE_8x8_AUTONOMOUS) || (Profile.RangingProfile == VL53L5CX_PROFILE_8x8_CONTINUOUS)) ? 8 : 4;
 
-    printf("\r\n");
-    printf("Cell Format :\r\n\r\n");
-    for (l = 0; l < RANGING_SENSOR_NB_TARGET_PER_ZONE; l++)
-    {
-        printf(" %20s : %20s\r\n", "Distance [mm]", "Status");
-        if ((Profile.EnableAmbient != 0) || (Profile.EnableSignal != 0))
+    final_dist_mm = 0;
+    if (pResult->NumberOfZones == 8 && zones_per_line == 8) {
+        if ((pResult->ZoneResult[3*8+3].NumberOfTargets > 0)
+            &&(pResult->ZoneResult[3*8+4].NumberOfTargets > 0)
+            &&(pResult->ZoneResult[4*8+3].NumberOfTargets > 0)
+            &&(pResult->ZoneResult[4*8+4].NumberOfTargets > 0)
+            )
         {
-            printf(" %20s : %20s\r\n", "Signal [kcps/spad]", "Ambient [kcps/spad]");
+            final_dist_mm = pResult->ZoneResult[3*8+3].Distance[0] + pResult->ZoneResult[3*8+4].Distance[0] + pResult->ZoneResult[4*8+3].Distance[0] + pResult->ZoneResult[4*8+4].Distance[0];
+            final_dist_mm = final_dist_mm/4;
         }
     }
-    printf("\r\n NumberOfZones:%d   line:%d\r\n",pResult->NumberOfZones,zones_per_line);
-    printf("\r\n");
+
+
+    if (pResult->NumberOfZones == 8 && zones_per_line == 8) {
+        mavlink_wxbs_tof_distance_t packet;
+
+        for (uint8_t j_t = 0; j_t < 8; j_t++) {
+            for (uint8_t k_t = 0; k_t < 8; k_t++) {
+                uint8_t i_t = j_t*8 + k_t;
+                packet.dist[i_t] = (uint16_t)pResult->ZoneResult[i_t].Distance[0];
+            }
+        }
+        AP::fd_data().send_mav_tof_matrix(&packet);
+    }
+
+    if (_print_enable_text) {printf("\r\n");}
+    if (_print_enable_text) {printf("Cell Format :\r\n\r\n");}
+    for (l = 0; l < RANGING_SENSOR_NB_TARGET_PER_ZONE; l++)
+    {
+        if (_print_enable_text) {printf(" %20s : %20s\r\n", "Distance [mm]", "Status");}
+        if ((Profile.EnableAmbient != 0) || (Profile.EnableSignal != 0))
+        {
+            if (_print_enable_text) {printf(" %20s : %20s\r\n", "Signal [kcps/spad]", "Ambient [kcps/spad]");}
+        }
+    }
+    if (_print_enable_text) {printf("\r\n NumberOfZones:%d   line:%d\r\n",pResult->NumberOfZones,zones_per_line);}
+    if (_print_enable_text) {printf("\r\n");}
 
     for (j = 0; j < pResult->NumberOfZones; j += zones_per_line)
     {
         for (i = 0; i < zones_per_line; i++) /* number of zones per line */
         {
-            printf(" ----------------");
+            if (_print_enable_text) {printf(" ----------------");}
         }      
-        printf("\r\n");
+        if (_print_enable_text) {printf("\r\n");}
 
         for (i = 0; i < zones_per_line; i++)
         {
-            printf("|                 ");   
+            if (_print_enable_text) {printf("|                 ");   }
         }
             
-        printf("|\r\n");
+        if (_print_enable_text) {printf("|\r\n");}
 
         for (l = 0; l < RANGING_SENSOR_NB_TARGET_PER_ZONE; l++)
         {
@@ -1995,19 +1997,19 @@ bool AP_RangeFinder_VL53L5CX::print_result(RANGING_SENSOR_Result_t *pResult)
                 {
                     if ((long)pResult->ZoneResult[j+k].Distance[l] < 500)
                     {
-                        //printf("| \033[38;5;9m%5ld\033[0m  :  %5ld ",
-                        printf("| %5ld :  %5ld ",(long)pResult->ZoneResult[j+k].Distance[l],(long)pResult->ZoneResult[j+k].Status[l]);
+                        //if (_print_enab_textle) {printf("| \033[38;5;9m%5ld\033[0m  :  %5ld ",}
+                        if (_print_enable_text) {printf("| %5ld :  %5ld ",(long)pResult->ZoneResult[j+k].Distance[l],(long)pResult->ZoneResult[j+k].Status[l]);}
                     } 
                     else
                     {
-                        //printf("| \033[38;5;10m%5ld\033[0m  :  %5ld ",
-                        printf("| %5ld  :  %5ld ",(long)pResult->ZoneResult[j+k].Distance[l],(long)pResult->ZoneResult[j+k].Status[l]);
+                        //if (_print_enab_textle) {printf("| \033[38;5;10m%5ld\033[0m  :  %5ld ",}
+                        if (_print_enable_text) {printf("| %5ld  : %5ld ",(long)pResult->ZoneResult[j+k].Distance[l],(long)pResult->ZoneResult[j+k].Status[l]);}
                     }
                 }
                 else
-                    printf("| %5s  :  %5s ", "X", "X");
+                    if (_print_enable_text) {printf("| %5s  :  %5s ", "X", "X");}
             }
-            printf("|\r\n");
+            if (_print_enable_text) {printf("|\r\n");}
 
             if ((Profile.EnableAmbient != 0) || (Profile.EnableSignal != 0))
             {
@@ -2016,27 +2018,33 @@ bool AP_RangeFinder_VL53L5CX::print_result(RANGING_SENSOR_Result_t *pResult)
                 {
                     if (pResult->ZoneResult[j+k].NumberOfTargets > 0)
                     {
-                        if (Profile.EnableSignal != 0)
-                            printf("| %5ld  :  ", (long)pResult->ZoneResult[j+k].Signal[l]);
-                        else
-                            printf("| %5s  :  ", "X");
+                        if (Profile.EnableSignal != 0){
+                            if (_print_enable_text) {printf("| %5ld  :  ", (long)pResult->ZoneResult[j+k].Signal[l]);}
+                        }
+                        else{
+                            if (_print_enable_text) {printf("| %5s  :  ", "X");}
+                        }
 
-                        if (Profile.EnableAmbient != 0)
-                            printf("%5ld ", (long)pResult->ZoneResult[j+k].Ambient[l]);
-                        else
-                            printf("%5s ", "X");
+                        if (Profile.EnableAmbient != 0){
+                            if (_print_enable_text) {printf("%5ld ", (long)pResult->ZoneResult[j+k].Ambient[l]);}
+                        }
+                        else{
+                            if (_print_enable_text) {printf("%5s ", "X");}
+                        }
                     }
-                    else
-                        printf("| %5s  :  %5s ", "X", "X");
+                    else{
+                        if (_print_enable_text) {printf("| %5s  :  %5s ", "X", "X");}
+                    }
                 }
-                printf("|\r\n");
+                if (_print_enable_text) {printf("|\r\n");}
             }
         }
     }
-    for (i = 0; i < zones_per_line; i++)
-        printf(" -----------------");
-    printf("\r\n");
-    printf("\r\n Printf Result is Over!\r\n");
+    for (i = 0; i < zones_per_line; i++) {
+        if (_print_enable_text) {printf(" -----------------");}
+    }
+    if (_print_enable_text) {printf("\r\n");}
+    if (_print_enable_text) {printf("\r\n if (_print_enable) {Printf Result is Over!\r\n");}
     return true;
 }
 
@@ -2045,22 +2053,22 @@ bool AP_RangeFinder_VL53L5CX::print_result(RANGING_SENSOR_Result_t *pResult)
 */
 void AP_RangeFinder_VL53L5CX::update(void)
 {
-    WITH_SEMAPHORE(_sem);
+    // WITH_SEMAPHORE(_sem);
 
-    if (counter > 0) 
-    {
-        printf("\r\nHave %d Sensor\r\n",counter);
-        state.distance_m = (sum_mm * 0.001f) / counter;
-        state.last_reading_ms = AP_HAL::millis();
-        update_status();
-        sum_mm = 0;
-        counter = 0;
-    } 
-    else if (AP_HAL::millis() - state.last_reading_ms > 200) 
-    {
-        // if no updates for 0.2s set no-data
-        set_status(RangeFinder::Status::NoData);
-    }   
+    // if (counter > 0) 
+    // {
+    //     if (_print_enable_text) {printf("\r\nHave %d Sensor\r\n",counter);}
+    //     state.distance_m = (sum_mm * 0.001f) / counter;
+    //     state.last_reading_ms = AP_HAL::millis();
+    //     update_status();
+    //     sum_mm = 0;
+    //     counter = 0;
+    // } 
+    // else if (AP_HAL::millis() - state.last_reading_ms > 200) 
+    // {
+    //     // if no updates for 0.2s set no-data
+    //     set_status(RangeFinder::Status::NoData);
+    // }   
 
 }
 

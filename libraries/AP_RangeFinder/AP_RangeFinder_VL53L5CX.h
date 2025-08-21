@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AP_RangeFinder_config.h"
+#include <FD_DATA/FD_DATA.h>
 
 #if AP_RANGEFINDER_VL53L5CX_ENABLED
 
@@ -1338,7 +1339,7 @@ private:
     bool check_id(void);
 
     // get a reading
-    bool get_reading(uint16_t &reading_cm);
+    // bool get_reading(uint16_t &reading_cm);
     AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev;
 
     // value used in measurement timing budget calculations
@@ -1358,7 +1359,7 @@ private:
 
     uint16_t fast_osc_frequency;
     uint16_t osc_calibrate_val;
-    uint32_t sum_mm;
+    // uint32_t sum_mm;
     uint32_t counter;
     bool calibrated;
 
@@ -1615,6 +1616,10 @@ bool print_result(RANGING_SENSOR_Result_t *Result);
 bool WriteData(uint16_t Address,uint8_t *pData,uint16_t DataLen);
 bool ReadData(uint16_t reg,uint8_t *pData,uint16_t DataLen);
 
+bool _print_enable_text;
+bool _print_enable_gcs;
+
+uint32_t final_dist_mm;
 /**
  * @brief This buffer contains the VL53L5CX firmware (MM1.5)
  */

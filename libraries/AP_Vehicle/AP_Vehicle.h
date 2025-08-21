@@ -68,6 +68,7 @@
 #include <Filter/LowPassFilter.h>
 #include <AP_KDECAN/AP_KDECAN.h>
 #include <Filter/AP_Filter.h>
+#include <FD_DATA/FD_DATA.h>
 
 class AP_DDS_Client;
 
@@ -441,6 +442,8 @@ protected:
 
     // Check if this mode can be entered from the GCS
     bool block_GCS_mode_change(uint8_t mode_num, const uint8_t *mode_list, uint8_t mode_list_length) const;
+
+    FD_DATA fd_data;
 
 private:
 
