@@ -41,7 +41,11 @@ void UMission::handle_msg(const mavlink_message_t &msg) {
                         gcs().send_text(MAV_SEVERITY_INFO, "G[%d, %d, %d]", (int16_t)packet.param2, (int16_t)packet.param3, (int16_t)packet.param4);
                         break;
                     case 3:
-                        if (_role == Mission_Role::Leader) {
+                        if (group_state.in_group) {
+                            if (_role == Mission_Role::Follower) {
+                                do_offboard_control(packet.param2);
+                            }
+                        } else {
                             do_offboard_control(packet.param2);
                         }
                         break;
