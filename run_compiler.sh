@@ -12,4 +12,9 @@ echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
 ./waf copter
 # mkdir firmware/MatekH743
 cp build/MatekH743/bin/arducopter.apj firmware/$current_datetime\_MatekH743_arducopter.apj 
+echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
+./waf configure --board MatekH743-LZC
+./waf copter
+# mkdir firmware/MatekH743-LZC
+cp build/MatekH743-LZC/bin/arducopter.apj firmware/$current_datetime\_MatekH743-LZC_arducopter.apj 
 echo "~~~~~~~~~~~~~~~ done ~~~~~~~~~~~~~~~"

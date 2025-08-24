@@ -1642,9 +1642,9 @@ bool AP_Arming::pre_arm_checks(bool report)
 #if HAL_GENERATOR_ENABLED
         &  generator_checks(report)
 #endif
-#if HAL_PROXIMITY_ENABLED
-        &  proximity_checks(report)
-#endif
+// #if HAL_PROXIMITY_ENABLED
+//         &  proximity_checks(report)
+// #endif
 #if HAL_RUNCAM_ENABLED
         &  camera_checks(report)
 #endif
