@@ -1334,6 +1334,7 @@ private:
     bool init(void);
     //bool init1(DistanceMode mode);
     void timer();
+    void timer_loop();
 
     // check sensor ID
     bool check_id(void);
@@ -1538,8 +1539,8 @@ private:
 #define VL53L5CX_MODE_ASYNC_CONTINUOUS      (3U)
 #define VL53L5CX_MODE_ASYNC_ONESHOT         (4U)
 
-#define TIMING_BUDGET (30U)         /* 5 ms < TimingBudget < 100 ms */
-#define RANGING_FREQUENCY (5U)      /* Ranging frequency Hz (shall be consistent with TimingBudget value) */
+#define TIMING_BUDGET (33U)         /* 5 ms < TimingBudget < 100 ms */
+#define RANGING_FREQUENCY (30U)      /* Ranging frequency Hz (shall be consistent with TimingBudget value) */
 #define V53L5CX_POLL_TIMEOUT  (0x1388U)
 
 #ifndef VL53L5CX_NB_TARGET_PER_ZONE
@@ -1608,9 +1609,11 @@ bool Get_Capabilities(VL53L5CX_Capabilities_t *pCap);
 bool Set_ConfigProfile(VL53L5CX_Object_t *pObject,VL53L5CX_ProfileConfig_t *pConfig);
 bool Start_Ranging(VL53L5CX_Object_t *pObject,uint32_t Mode);
 bool Poll_For_Measurement(uint32_t Timeout);
+// int8_t Poll_For_Measurement_new(uint32_t Timeout);
 bool Get_Result(VL53L5CX_Object_t *pObj,RANGING_SENSOR_Result_t *pResult);
 uint8_t Map_TargetStatus(uint8_t status);
 bool GetDistance(VL53L5CX_Object_t *pObj,RANGING_SENSOR_Result_t *pResult);
+// int8_t GetDistance_new(VL53L5CX_Object_t *pObj,RANGING_SENSOR_Result_t *pResult);
 bool print_result(RANGING_SENSOR_Result_t *Result);
 
 bool WriteData(uint16_t Address,uint8_t *pData,uint16_t DataLen);

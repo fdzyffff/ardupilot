@@ -24,8 +24,6 @@
 
 #if AP_RANGEFINDER_VL53L5CX_ENABLED
 
-
-
 #include <utility>
 
 #include <AP_HAL/AP_HAL.h>
@@ -41,7 +39,7 @@ AP_RangeFinder_VL53L5CX::AP_RangeFinder_VL53L5CX(RangeFinder::RangeFinder_State 
     : AP_RangeFinder_Backend(_state, _params)
     , dev(std::move(_dev)) 
 {
-    _print_enable_text = true;
+    // _print_enable_text = true;
     // _print_enable_gcs = true;
 }
 
@@ -52,7 +50,6 @@ AP_RangeFinder_VL53L5CX::AP_RangeFinder_VL53L5CX(RangeFinder::RangeFinder_State 
 */
 AP_RangeFinder_Backend *AP_RangeFinder_VL53L5CX::detect(RangeFinder::RangeFinder_State &_state, AP_RangeFinder_Params &_params, AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev, DistanceMode mode)
 {
-
     if (!dev) 
     {
         return nullptr;
@@ -102,7 +99,7 @@ bool AP_RangeFinder_VL53L5CX::check_id(void)
     }
     Res = write_register(0x7FFF, 0x02);             
     if (_print_enable_text) {printf("Detected VL53L5CX on bus 0x%x\r\n", dev->get_bus_id());}      //0x2901
-    if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "Detected VL53L5CX on bus 0x%lx\r\n", dev->get_bus_id());}      //0x2901
+    if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "Detected VL53L5CX on bus 0x%lx\r\n", (long)dev->get_bus_id());}      //0x2901
     return Res;
 }
 
@@ -471,9 +468,24 @@ bool AP_RangeFinder_VL53L5CX::init()
         if (_print_enable_text) {printf("\r\nStart Read Data:%d\r\n",Rec);}
         if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "Start Read Data:%d",Rec);}
     }
-    // call timer() every MEASUREMENT_TIME_MS. We expect new data to be available every MEASUREMENT_TIME_MS
-    dev->register_periodic_callback(MEASUREMENT_TIME_MS * 1000,FUNCTOR_BIND_MEMBER(&AP_RangeFinder_VL53L5CX::timer, void));
-        
+
+    if (Rec) {
+        // call timer() every MEASUREMENT_TIME_MS. We expect new data to be available every MEASUREMENT_TIME_MS
+        dev->register_periodic_callback(MEASUREMENT_TIME_MS * 1000,FUNCTOR_BIND_MEMBER(&AP_RangeFinder_VL53L5CX::timer, void));
+    }
+
+    // if (Rec) {
+    //     if (!hal.scheduler->thread_create(
+    //             FUNCTOR_BIND_MEMBER(&AP_RangeFinder_VL53L5CX::timer_loop, void), "TOFF", 4096,
+    //             AP_HAL::Scheduler::PRIORITY_MAIN, 1)) {
+    //         printf("AP_RangeFinder_VL53L5CX: couldn't create thread\n");
+    //         return false;
+    //     }
+    // }
+
+    // if (Rec) {
+    //     timer_loop();
+    // }
     return Rec;
 }
 uint8_t AP_RangeFinder_VL53L5CX::SwapBuffer(uint8_t *pBuf,uint16_t size)
@@ -1372,8 +1384,10 @@ bool AP_RangeFinder_VL53L5CX::Poll_For_Measurement(uint32_t Timeout)
             if (_print_enable_text) {printf("\r\n Data is OK\r\n");}
             break;
         }           
-        else
+        else {
             Rec = false;
+        }
+        hal.scheduler->delay_microseconds(100);
     }
     return Rec;
 }
@@ -1901,31 +1915,7 @@ bool AP_RangeFinder_VL53L5CX::write_register32(uint16_t reg, uint32_t value)
                      uint8_t((value)       & 0xFF) };
     return dev->transfer(b, 6, nullptr, 0);
 }
-/*
-  timer called at 20Hz
-*/
-void AP_RangeFinder_VL53L5CX::timer(void)
-{
- //   uint16_t range_mm;
-    WITH_SEMAPHORE(_sem);
-    if (GetDistance(&Object,&Result) ) {
-        print_result(&Result);
-        counter++;
-    }
 
-    if (counter > 0) {
-        // if (_print_enable_text) {printf("\r\nHave %d Sensor\r\n",counter);}
-        state.distance_m = ((float)final_dist_mm * 0.001f);
-        state.last_reading_ms = AP_HAL::millis();
-        update_status();
-        counter = 0;
-    } 
-    else if (AP_HAL::millis() - state.last_reading_ms > 200) {
-        // if no updates for 0.2s set no-data
-        set_status(RangeFinder::Status::NoData);
-    }   
-
-}
 bool AP_RangeFinder_VL53L5CX::print_result(RANGING_SENSOR_Result_t *pResult)
 {
     uint8_t i, j, l;
@@ -1934,21 +1924,34 @@ bool AP_RangeFinder_VL53L5CX::print_result(RANGING_SENSOR_Result_t *pResult)
 
     zones_per_line = ((Profile.RangingProfile == VL53L5CX_PROFILE_8x8_AUTONOMOUS) || (Profile.RangingProfile == VL53L5CX_PROFILE_8x8_CONTINUOUS)) ? 8 : 4;
 
-    final_dist_mm = 0;
-    if (pResult->NumberOfZones == 8 && zones_per_line == 8) {
+
+    if (pResult->NumberOfZones == 64 && zones_per_line == 8) {
         if ((pResult->ZoneResult[3*8+3].NumberOfTargets > 0)
             &&(pResult->ZoneResult[3*8+4].NumberOfTargets > 0)
             &&(pResult->ZoneResult[4*8+3].NumberOfTargets > 0)
             &&(pResult->ZoneResult[4*8+4].NumberOfTargets > 0)
             )
         {
+            final_dist_mm = 0;
             final_dist_mm = pResult->ZoneResult[3*8+3].Distance[0] + pResult->ZoneResult[3*8+4].Distance[0] + pResult->ZoneResult[4*8+3].Distance[0] + pResult->ZoneResult[4*8+4].Distance[0];
             final_dist_mm = final_dist_mm/4;
+            // if (_print_enable_text) {printf("\n pResult->ZoneResult[3*8+3].Distance[0]: %d", (int)pResult->ZoneResult[3*8+3].Distance[0]);}
+            // if (_print_enable_text) {printf("\n pResult->ZoneResult[3*8+4].Distance[0]: %d", (int)pResult->ZoneResult[3*8+4].Distance[0]);}
+            // if (_print_enable_text) {printf("\n pResult->ZoneResult[4*8+3].Distance[0]: %d", (int)pResult->ZoneResult[4*8+3].Distance[0]);}
+            // if (_print_enable_text) {printf("\n pResult->ZoneResult[4*8+4].Distance[0]: %d", (int)pResult->ZoneResult[4*8+4].Distance[0]);}
+        } else {
+            if (_print_enable_text) {printf("\n pResult->ZoneResult[3*8+3].NumberOfTargets: %d", pResult->ZoneResult[3*8+3].NumberOfTargets);}
+            if (_print_enable_text) {printf("\n pResult->ZoneResult[3*8+4].NumberOfTargets: %d", pResult->ZoneResult[3*8+4].NumberOfTargets);}
+            if (_print_enable_text) {printf("\n pResult->ZoneResult[4*8+3].NumberOfTargets: %d", pResult->ZoneResult[4*8+3].NumberOfTargets);}
+            if (_print_enable_text) {printf("\n pResult->ZoneResult[4*8+4].NumberOfTargets: %d", pResult->ZoneResult[4*8+4].NumberOfTargets);}
         }
+    } else {
+        if (_print_enable_text) {printf("\n pResult->NumberOfZones: %d", pResult->NumberOfZones);}
+        if (_print_enable_text) {printf("\n zones_per_line: %d", zones_per_line);}
     }
 
 
-    if (pResult->NumberOfZones == 8 && zones_per_line == 8) {
+    if (pResult->NumberOfZones == 64 && zones_per_line == 8) {
         mavlink_wxbs_tof_distance_t packet;
 
         for (uint8_t j_t = 0; j_t < 8; j_t++) {
@@ -1977,16 +1980,16 @@ bool AP_RangeFinder_VL53L5CX::print_result(RANGING_SENSOR_Result_t *pResult)
     {
         for (i = 0; i < zones_per_line; i++) /* number of zones per line */
         {
-            if (_print_enable_text) {printf(" ----------------");}
+            // if (_print_enable_text) {printf(" ----------------");}
         }      
-        if (_print_enable_text) {printf("\r\n");}
+        // if (_print_enable_text) {printf("\r\n");}
 
         for (i = 0; i < zones_per_line; i++)
         {
-            if (_print_enable_text) {printf("|                 ");   }
+            // if (_print_enable_text) {printf("|                 ");   }
         }
             
-        if (_print_enable_text) {printf("|\r\n");}
+        // if (_print_enable_text) {printf("|\r\n");}
 
         for (l = 0; l < RANGING_SENSOR_NB_TARGET_PER_ZONE; l++)
         {
@@ -1998,18 +2001,19 @@ bool AP_RangeFinder_VL53L5CX::print_result(RANGING_SENSOR_Result_t *pResult)
                     if ((long)pResult->ZoneResult[j+k].Distance[l] < 500)
                     {
                         //if (_print_enab_textle) {printf("| \033[38;5;9m%5ld\033[0m  :  %5ld ",}
-                        if (_print_enable_text) {printf("| %5ld :  %5ld ",(long)pResult->ZoneResult[j+k].Distance[l],(long)pResult->ZoneResult[j+k].Status[l]);}
+                        // if (_print_enable_text) {printf("| %5ld :  %5ld ",(long)pResult->ZoneResult[j+k].Distance[l],(long)pResult->ZoneResult[j+k].Status[l]);}
                     } 
                     else
                     {
                         //if (_print_enab_textle) {printf("| \033[38;5;10m%5ld\033[0m  :  %5ld ",}
-                        if (_print_enable_text) {printf("| %5ld  : %5ld ",(long)pResult->ZoneResult[j+k].Distance[l],(long)pResult->ZoneResult[j+k].Status[l]);}
+                        // if (_print_enable_text) {printf("| %5ld  : %5ld ",(long)pResult->ZoneResult[j+k].Distance[l],(long)pResult->ZoneResult[j+k].Status[l]);}
                     }
                 }
-                else
+                else { 
                     if (_print_enable_text) {printf("| %5s  :  %5s ", "X", "X");}
+                }
             }
-            if (_print_enable_text) {printf("|\r\n");}
+            // if (_print_enable_text) {printf("|\r\n");}
 
             if ((Profile.EnableAmbient != 0) || (Profile.EnableSignal != 0))
             {
@@ -2019,32 +2023,32 @@ bool AP_RangeFinder_VL53L5CX::print_result(RANGING_SENSOR_Result_t *pResult)
                     if (pResult->ZoneResult[j+k].NumberOfTargets > 0)
                     {
                         if (Profile.EnableSignal != 0){
-                            if (_print_enable_text) {printf("| %5ld  :  ", (long)pResult->ZoneResult[j+k].Signal[l]);}
+                            // if (_print_enable_text) {printf("| %5ld  :  ", (long)pResult->ZoneResult[j+k].Signal[l]);}
                         }
                         else{
-                            if (_print_enable_text) {printf("| %5s  :  ", "X");}
+                            // if (_print_enable_text) {printf("| %5s  :  ", "X");}
                         }
 
                         if (Profile.EnableAmbient != 0){
-                            if (_print_enable_text) {printf("%5ld ", (long)pResult->ZoneResult[j+k].Ambient[l]);}
+                            // if (_print_enable_text) {printf("%5ld ", (long)pResult->ZoneResult[j+k].Ambient[l]);}
                         }
                         else{
-                            if (_print_enable_text) {printf("%5s ", "X");}
+                            // if (_print_enable_text) {printf("%5s ", "X");}
                         }
                     }
                     else{
-                        if (_print_enable_text) {printf("| %5s  :  %5s ", "X", "X");}
+                        // if (_print_enable_text) {printf("| %5s  :  %5s ", "X", "X");}
                     }
                 }
-                if (_print_enable_text) {printf("|\r\n");}
+                // if (_print_enable_text) {printf("|\r\n");}
             }
         }
     }
     for (i = 0; i < zones_per_line; i++) {
-        if (_print_enable_text) {printf(" -----------------");}
+        // if (_print_enable_text) {printf(" -----------------");}
     }
-    if (_print_enable_text) {printf("\r\n");}
-    if (_print_enable_text) {printf("\r\n if (_print_enable) {Printf Result is Over!\r\n");}
+    // if (_print_enable_text) {printf("\r\n");}
+    if (_print_enable_text) {printf("\r\nPrintf Result is Over!\r\n");}
     return true;
 }
 
@@ -2070,6 +2074,43 @@ void AP_RangeFinder_VL53L5CX::update(void)
     //     set_status(RangeFinder::Status::NoData);
     // }   
 
+}
+
+/*
+  timer called at 20Hz
+*/
+void AP_RangeFinder_VL53L5CX::timer(void)
+{
+    if (GetDistance(&Object,&Result) ) {
+        print_result(&Result);
+        counter++;
+    }
+
+    if (counter > 0) {
+        WITH_SEMAPHORE(_sem);
+        // if (_print_enable_text) {printf("\r\nHave %d Sensor\r\n",counter);}
+        state.distance_m = ((float)final_dist_mm * 0.001f);
+        state.last_reading_ms = AP_HAL::millis();
+        update_status();
+        counter = 0;
+    } else if (AP_HAL::millis() - state.last_reading_ms > 2000) {
+        // if no updates for 0.2s set no-data
+        set_status(RangeFinder::Status::NoData);
+    }
+    if (true) {printf("\n++++++++++++++++\n");}
+    if (true) {printf("\nfinal_dist_mm :%f\n", state.distance_m);}
+
+}
+
+void AP_RangeFinder_VL53L5CX::timer_loop()
+{
+    while (true) {
+        {
+            WITH_SEMAPHORE(dev->get_semaphore());
+            timer();
+        }
+        hal.scheduler->delay(500);
+    }
 }
 
 #endif  // AP_RANGEFINDER_VL53L5CX_ENABLED
