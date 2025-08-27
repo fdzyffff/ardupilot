@@ -88,6 +88,7 @@ private:
     AP_Float        attack_k2_pitch;
     AP_Float        attack_k1_yaw;
     AP_Float        attack_k2_yaw;
+    AP_Float        attack_k1_roll;
     AP_Float        attack_k2_roll;
     AP_Float        attack_k_angle;
     AP_Float        attack_throttle;

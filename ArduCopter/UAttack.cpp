@@ -17,14 +17,17 @@ const AP_Param::GroupInfo UAttack::var_info[] = {
     AP_GROUPINFO("UPRINT",     12, UAttack, print,                   0),
     AP_GROUPINFO("TLOC_USE",   13, UAttack, use_target_loc,          0),
     AP_GROUPINFO("TCAM_TYPE",  14, UAttack, use_target_cam_type,     0),
-    AP_GROUPINFO("FILT_Y_HZ",  15, UAttack, filt_yaw_hz,             2.0f),
-    AP_GROUPINFO("FILT_P_HZ",  16, UAttack, filt_pithc_hz,           2.0f),
+    AP_GROUPINFO("FILT_Y_HZ",  15, UAttack, filt_yaw_hz,             5.0f),
+    AP_GROUPINFO("FILT_P_HZ",  16, UAttack, filt_pithc_hz,           5.0f),
 
     AP_SUBGROUPPTR(_Target_ptr_loc,        "TL_",    17, UAttack,  FD_Target_Loc),
     AP_SUBGROUPPTR(_Target_ptr_cam_mav,    "TC0_",   18, UAttack,  FD_Target_Mav),
     AP_SUBGROUPPTR(_Target_ptr_cam_rk3588, "TC1_",   19, UAttack,  FD_Target_RK3588),
     AP_SUBGROUPPTR(_Target_ptr_cam_k230,   "TC2_",   20, UAttack,  FD_Target_K230),
     // AP_SUBGROUPPTR(_Target_ptr_cam_lrb,    "TC3_",   21, UAttack,  FD_Target_LRB),
+
+
+    AP_GROUPINFO("K1_ROLL",     21, UAttack, attack_k1_roll,          0.0f),
     AP_GROUPEND
 };
 
@@ -75,13 +78,13 @@ void UAttack::init()
     _last_log_ms = 0;
     _reset = true;
     _running = false;
-    _throttle_filt.init(100.0f, 20);
-    _roll_filt.init(100.0f, 20);
-    _pitch_filt.init(100.0f, 20);
+    _throttle_filt.init(100.0f, 50);
+    _roll_filt.init(100.0f, 50);
+    _pitch_filt.init(100.0f, 50);
     init_target();
 
-    _yaw_sample_filter.set_cutoff_frequency(30.f, filt_yaw_hz.get());
-    _pitch_sample_filter.set_cutoff_frequency(30.f, filt_pithc_hz.get());
+    _yaw_sample_filter.set_cutoff_frequency(60.f, filt_yaw_hz.get());
+    _pitch_sample_filter.set_cutoff_frequency(60.f, filt_pithc_hz.get());
     gcs().send_text(MAV_SEVERITY_WARNING, "Target FILT HZ [%0.0f, %0.0f]", filt_yaw_hz.get(), filt_pithc_hz.get());
 }
 
@@ -288,8 +291,8 @@ void UAttack::update_cam()
         display_info.count = 0;
         last_count_ms = tnow_ms;
         //update filter cutoff HZ in flight
-        _yaw_sample_filter.set_cutoff_frequency(30.f, filt_yaw_hz.get());
-        _pitch_sample_filter.set_cutoff_frequency(30.f, filt_pithc_hz.get());
+        _yaw_sample_filter.set_cutoff_frequency(60.f, filt_yaw_hz.get());
+        _pitch_sample_filter.set_cutoff_frequency(60.f, filt_pithc_hz.get());
     }
 
     if (_Target_ptr_cam != nullptr) {
@@ -453,13 +456,16 @@ void UAttack::update_target_pitch_rate() {
 // degree
 void UAttack::update_target_roll_angle() {
     // _target_roll_angle = constrain_float(attack_roll_factor.get() * ef_rate_info.x, -15.f, 15.f);
+    float k1_roll = attack_k1_roll.get();
     float k2_roll = attack_k2_roll.get();
 
+    float angle_err = constrain_float(bf_info.x, -30.0f, 30.0f);
     float dt = (millis() - _last_control_ms);
     dt = dt * 0.001f;
     // if (dt > 1.0f) {attack_roll_pid.reset_I();}
     if (dt > 0.05f) {dt = 0.05f;}
-    _target_roll_angle = attack_roll_pid.update_all(0.0f, -ef_rate_info.x, dt) + k2_roll * _target_yaw_rate;
+    float rate_in = k1_roll * ef_rate_info.x + k2_roll * angle_err;
+    _target_roll_angle = attack_roll_pid.update_all(0.0f, -rate_in, dt);
 }
 
 // degree/second
