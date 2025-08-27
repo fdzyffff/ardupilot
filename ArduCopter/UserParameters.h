@@ -15,4 +15,8 @@ public:
     AP_Int8 print;
     AP_Int8 log_raw;
     AP_Int8 log_test;
+    AP_Float x_speed;
+    AP_Float y_speed;
+    AP_Float z_speed;
+    AP_Int8 heading_correction;
 };

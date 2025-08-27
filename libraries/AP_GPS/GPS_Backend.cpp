@@ -357,12 +357,15 @@ bool AP_GPS_Backend::calculate_moving_base_yaw(AP_GPS::GPS_State &interim_state,
         if (offset_dist < minimum_antenna_seperation) {
             // offsets have to be sufficiently large to get a meaningful angle off of them
             Debug("Insufficent antenna offset (%f, %f, %f)", (double)offset.x, (double)offset.y, (double)offset.z);
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Insufficent antenna offset (%f, %f, %f)", (double)offset.x, (double)offset.y, (double)offset.z);
             goto bad_yaw;
         }
 
         if (reported_distance < minimum_antenna_seperation) {
             // if the reported distance is less then the minimum separation it's not sufficiently robust
             Debug("Reported baseline distance (%f) was less then the minimum antenna separation (%f)",
+                  (double)reported_distance, (double)minimum_antenna_seperation);
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Reported baseline distance (%f) was less then the minimum antenna separation (%f)",
                   (double)reported_distance, (double)minimum_antenna_seperation);
             goto bad_yaw;
         }
@@ -371,6 +374,8 @@ bool AP_GPS_Backend::calculate_moving_base_yaw(AP_GPS::GPS_State &interim_state,
         if (fabsf(offset_dist - reported_distance) > (min_dist * permitted_error_length_pct)) {
             // the magnitude of the vector is much further then we were expecting
             Debug("Offset=%.2f vs reported-distance=%.2f (max-delta=%.2f)",
+                  offset_dist, reported_distance, (double)(min_dist * permitted_error_length_pct));
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Offset=%.2f vs reported-distance=%.2f (max-delta=%.2f)",
                   offset_dist, reported_distance, (double)(min_dist * permitted_error_length_pct));
             goto bad_yaw;
         }
@@ -400,6 +405,7 @@ bool AP_GPS_Backend::calculate_moving_base_yaw(AP_GPS::GPS_State &interim_state,
             if (reported_D < min_D || reported_D > max_D) {
                 // the vertical component is out of range, reject it
                 Debug("bad alt_err %f < %f < %f", (double)min_D, (double)reported_D, (double)max_D);
+                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "bad alt_err %f < %f < %f", (double)min_D, (double)reported_D, (double)max_D);
                 goto bad_yaw;
             }
         }

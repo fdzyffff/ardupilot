@@ -96,10 +96,13 @@ void ModeMission::cal_follow_info()
 {
     if (copter.umission.valid()) {
         float kp = 1.0f;
+        float x_max = MAX(0.1f, fabsf(copter.g2.user_parameters.x_speed.get()));
+        float y_max = MAX(0.1f, fabsf(copter.g2.user_parameters.y_speed.get()));
+        float z_max = MAX(0.1f, fabsf(copter.g2.user_parameters.z_speed.get()));
         Vector3f body_vel;
-        body_vel.x = 300.f;
-        body_vel.y = kp * constrain_float(copter.umission.get_control_corr_bfy(), -3.0f, 3.0f) * 100.f;
-        body_vel.z = kp * constrain_float(copter.umission.get_control_corr_bfz(), -3.0f, 3.0f) * 100.f;
+        body_vel.x = x_max*100.f;
+        body_vel.y = kp * constrain_float(copter.umission.get_control_corr_bfz(), -y_max, y_max) * 100.f;
+        body_vel.z = kp * constrain_float(copter.umission.get_control_corr_bfy(), -z_max, z_max) * 100.f;
 
         Matrix3f tmp_body_earth_m;
         tmp_body_earth_m.from_euler(0.0f, 0.0f, AP::ahrs().get_yaw());
@@ -112,6 +115,7 @@ void ModeMission::cal_follow_info()
         float yaw_rate_cds = 0.0f;
         bool  log_request = true;
         bool  relative_yaw = false;
+
         if (millis() - copter.mode_guided.my_update_time_ms > 100) {
             copter.mode_guided.set_velaccel(follow_velocity, follow_acceleration, use_yaw, yaw_cd, use_yaw_rate, yaw_rate_cds, relative_yaw, log_request);
         }

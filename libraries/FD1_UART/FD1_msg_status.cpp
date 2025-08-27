@@ -72,10 +72,9 @@ void FD1_msg_status::parse(uint8_t temp)
             if (temp == (_msg.sum))
             {
                 process_message();
-            } else {
-                _msg.msg_state = FD1UART_msg_parser::FD1UART_PREAMBLE1;
             }
-
+            _msg.msg_state = FD1UART_msg_parser::FD1UART_PREAMBLE1;
+            
             break;
     }
 }
