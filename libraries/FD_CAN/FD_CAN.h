@@ -5,14 +5,16 @@
 
 #include <AP_Param/AP_Param.h>
 
-#include <FD_CAN/FD_BATT.h>
+#include <FD_CAN/FD_SERVO.h>
 
-class FD_BATT;
+#define FD_CAN_MAX_SERVO_NUM 16
+
+class FD_SERVO;
 
 class FD_CAN : public AP_CANDriver
 {
 public:
-    friend class FD_BATT;
+    friend class FD_SERVO;
 
     FD_CAN();
     ~FD_CAN();
@@ -36,7 +38,7 @@ public:
     // test if the CAN driver is ready to be armed
     bool pre_arm_check(char* reason, uint8_t reason_len);
 
-    FD_BATT *_batt_ptr[15];
+    FD_SERVO *_servo_ptr[FD_CAN_MAX_SERVO_NUM];
 
     AP_Int32 _print;       
     AP_Int8 _enable_srv;

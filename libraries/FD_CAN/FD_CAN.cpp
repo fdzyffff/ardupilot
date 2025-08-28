@@ -41,7 +41,14 @@ const AP_Param::GroupInfo FD_CAN::var_info[] = {
 FD_CAN::FD_CAN() {
     AP_Param::setup_object_defaults(this, var_info);
 
-    _batt_ptr = new FD_BATT(this);
+    for (uint8_t i_servo = 0; i_servo < FD_CAN_MAX_SERVO_NUM; i_servo++)
+    {
+        _servo_ptr[i_servo] = new FD_SERVO(this);
+        if (_servo_ptr[i_servo] != nullptr)
+        {
+            _servo_ptr[i_servo]->set_id(i_servo+1);
+        }
+    }
 
     debug_can(AP_CANManager::LOG_INFO, "CAN_FD: constructed\n\r");
 }
@@ -123,7 +130,6 @@ void FD_CAN::loop() {
     bool should_print_mot = false;
     uint64_t timeout = AP_HAL::micros64() + 10000ULL;
 
-
     while (true) {
         if (!_initialized) {
             debug_can(AP_CANManager::LOG_ERROR, "CAN_FD: not initialized\n\r");
@@ -140,25 +146,17 @@ void FD_CAN::loop() {
                 //     gcs().send_text(MAV_SEVERITY_INFO, "%d, %x", i, rxFrame.data[i]);
                 // }
             // }
-            // if (_batt_ptr != nullptr) {
-            //     _batt_ptr->handle_info(rxFrame, _print.get());
-            // }
-            // if (rxFrame.id == 0xFF) {
-            //     txFrame.id = 0xEE;
-            //     txFrame.data[0] = 0x11;
-            //     for (uint8_t i = 0; i<sizeof(txFrame.data); i++) {
-            //         // gcs().send_text(MAV_SEVERITY_INFO, "%d, %x", i, rxFrame.data[i]);
-            //         txFrame.data[i] = i;
-            //     }
-            //     txFrame.dlc = 8;//txFrame.dataLengthToDlc(64);
-            //     if (write_frame(txFrame, 0)) {
-            //         gcs().send_text(MAV_SEVERITY_INFO, "Send %d", sizeof(txFrame.data));
-            //     } else {
-            //         gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
-            //     }
-            // }
+
+
+            for (uint8_t i_servo = 0; i_servo < FD_CAN_MAX_SERVO_NUM; i_servo++)
+            {
+                if (_servo_ptr[i_servo] != nullptr)
+                {
+                    _servo_ptr[i_servo]->handle_info(rxFrame, _print.get());
+                }
+            }
         }
-        
+
         if (_print.get()) {
             if (AP_HAL::millis() -  last_print_ms >= 5000) {
                 last_print_ms = AP_HAL::millis();
@@ -170,13 +168,17 @@ void FD_CAN::loop() {
         if (_enable_srv.get()) {    
             if (AP_HAL::millis() -  last_servo_ms >= srv_interval) {
                 last_servo_ms = AP_HAL::millis();
-                for (uint8_t i_servo = 1; i_servo <=20; i_servo++) {
-                    SRV_Channel *this_channel = SRV_Channels::srv_channel(i_servo-1);
+                for (uint8_t i_servo = 0; i_servo <=FD_CAN_MAX_SERVO_NUM; i_servo++) {
+                    SRV_Channel *this_channel = SRV_Channels::srv_channel(i_servo);
+                    bool is_flap = false;
                     if (this_channel == nullptr) {
                         if (should_print_servo) {
                             gcs().send_text(MAV_SEVERITY_INFO, "%d nullptr", i_servo);
                         }
                         continue;
+                    }
+                    if (this_channel->get_function() == SRV_Channel::Aux_servo_function_t::k_flap) {
+                        is_flap = true;
                     }
                     uint16_t pwm = this_channel->get_output_pwm();
                     if (pwm == 0) {
@@ -184,24 +186,32 @@ void FD_CAN::loop() {
                     }
                     float pwm_value = constrain_float((float)pwm, 1000.f, 2000.f);
                     int16_t servo_angle = (pwm_value - 1500.f)*12.f;//+-4500
-                    
-                    txFrame.id = i_servo;
-                    txFrame.data[0] = (uint8_t)(servo_angle&0xFF);
-                    txFrame.data[1] = (uint8_t)((servo_angle>>8)&0xFF);
-                    txFrame.data[2] = i_servo;
-                    txFrame.dlc = 8;
-                    timeout = AP_HAL::micros64() + 10000ULL;
-                    if (write_frame(txFrame, timeout)) {
-                        if (should_print_servo) {
-                            gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, servo_angle);
-                        }
-                    } else {
-                        if (should_print_servo) {
-                            gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d Fail", (uint16_t)txFrame.id, servo_angle);
-                        }
+
+                    if (_servo_ptr[i_servo] != nullptr) {
+                        _servo_ptr[i_servo]->enable_brake(is_flap);
+                        _servo_ptr[i_servo]->set_pos(servo_angle);
                     }
+                    
+                    // if (write_frame(txFrame, timeout)) {
+                    //     if (should_print_servo) {
+                    //         gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, servo_angle);
+                    //     }
+                    // } else {
+                    //     if (should_print_servo) {
+                    //         gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d Fail", (uint16_t)txFrame.id, servo_angle);
+                    //     }
+                    // }
                 }
                 should_print_servo = false;
+            }
+
+
+            for (uint8_t i_servo = 0; i_servo < FD_CAN_MAX_SERVO_NUM; i_servo++)
+            {
+                if (_servo_ptr[i_servo] != nullptr)
+                {
+                    _servo_ptr[i_servo]->update_cmd();
+                }
             }
         }
 
@@ -425,33 +435,33 @@ void FD_CAN::update() {
 }
 
 void FD_CAN::log_status(void) {
-    if (_batt_ptr == nullptr) {return;}
-    AP::logger().WriteStreaming("HBA1","TimeUS,vfc,vout,I,T1,T2,P,PWM1,PWM2",
-                                "s--------",
-                                "F--------",
-                                "Qffffffff",
-                                AP_HAL::micros64(),
-                                (float)_batt_ptr->status.vfc,
-                                (float)_batt_ptr->status.vout,
-                                (float)_batt_ptr->status.I,
-                                (float)_batt_ptr->status.T1,
-                                (float)_batt_ptr->status.T2,
-                                (float)_batt_ptr->status.P,
-                                (float)_batt_ptr->status.PWM1,
-                                (float)_batt_ptr->status.PWM2);
-    AP::logger().WriteStreaming("HBA2","TimeUS,vli,vhy,vbus,power,HPWM1,HPWM2,error,run",
-                                "s--------",
-                                "F--------",
-                                "Qffffffff",
-                                AP_HAL::micros64(),
-                                (float)_batt_ptr->status.vli,
-                                (float)_batt_ptr->status.vhy,
-                                (float)_batt_ptr->status.vbus,
-                                (float)_batt_ptr->status.power,
-                                (float)_batt_ptr->status.HPWM1,
-                                (float)_batt_ptr->status.HPWM2,
-                                (float)_batt_ptr->status.error,
-                                (float)_batt_ptr->status.run);
+    // if (_batt_ptr == nullptr) {return;}
+    // AP::logger().WriteStreaming("HBA1","TimeUS,vfc,vout,I,T1,T2,P,PWM1,PWM2",
+    //                             "s--------",
+    //                             "F--------",
+    //                             "Qffffffff",
+    //                             AP_HAL::micros64(),
+    //                             (float)_batt_ptr->status.vfc,
+    //                             (float)_batt_ptr->status.vout,
+    //                             (float)_batt_ptr->status.I,
+    //                             (float)_batt_ptr->status.T1,
+    //                             (float)_batt_ptr->status.T2,
+    //                             (float)_batt_ptr->status.P,
+    //                             (float)_batt_ptr->status.PWM1,
+    //                             (float)_batt_ptr->status.PWM2);
+    // AP::logger().WriteStreaming("HBA2","TimeUS,vli,vhy,vbus,power,HPWM1,HPWM2,error,run",
+    //                             "s--------",
+    //                             "F--------",
+    //                             "Qffffffff",
+    //                             AP_HAL::micros64(),
+    //                             (float)_batt_ptr->status.vli,
+    //                             (float)_batt_ptr->status.vhy,
+    //                             (float)_batt_ptr->status.vbus,
+    //                             (float)_batt_ptr->status.power,
+    //                             (float)_batt_ptr->status.HPWM1,
+    //                             (float)_batt_ptr->status.HPWM2,
+    //                             (float)_batt_ptr->status.error,
+    //                             (float)_batt_ptr->status.run);
 }
 
 bool FD_CAN::pre_arm_check(char *reason, uint8_t reason_len) {
