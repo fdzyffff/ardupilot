@@ -104,6 +104,7 @@ private:
     AP_Int8         use_target_cam_type;
     AP_Float        filt_yaw_hz;
     AP_Float        filt_pithc_hz;
+    AP_Int8         use_throttle_boost;
 
     AC_PID          attack_roll_pid{0.5f, 0.1f, 0.01f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.5f};
     AC_PID          attack_throttle_pid{0.5f, 0.03f, 0.01f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.5f};

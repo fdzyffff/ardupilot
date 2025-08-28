@@ -75,7 +75,7 @@ void ModeAttack::run()
     target_throttle = constrain_float(target_throttle, 0.05f, 1.0f);
 
     // output pilot's throttle
-    attitude_control->set_throttle_out(target_throttle, false, g.throttle_filt);
+    attitude_control->set_throttle_out(target_throttle, copter.uattack.use_throttle_boost.get(), g.throttle_filt);
 }
 
 void ModeAttack::exit()

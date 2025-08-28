@@ -28,6 +28,7 @@ const AP_Param::GroupInfo UAttack::var_info[] = {
 
 
     AP_GROUPINFO("K1_ROLL",     21, UAttack, attack_k1_roll,          0.0f),
+    AP_GROUPINFO("THR_BST",     22, UAttack, use_throttle_boost,      1),
     AP_GROUPEND
 };
 
