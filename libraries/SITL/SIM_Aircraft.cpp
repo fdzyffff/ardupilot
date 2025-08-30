@@ -606,7 +606,7 @@ void Aircraft::update_home()
         loc.lat = sitl->opos.lat.get() * 1.0e7;
         loc.lng = sitl->opos.lng.get() * 1.0e7;
         loc.alt = sitl->opos.alt.get() * 1.0e2;
-        set_start_location(loc, sitl->opos.hdg.get());
+        set_start_location(loc, sitl->opos.hdg.get(), sitl->opos.pth.get());
     }
 }
 

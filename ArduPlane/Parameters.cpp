@@ -1282,6 +1282,9 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("BATT2_VOLT_MULT", 37, ParametersG2, batt2_voltage_mult, 7.8f),
 #endif
 
+
+    AP_GROUPINFO("TKOFF_COURSE", 38, ParametersG2, takeoff_course, -1),
+
     AP_GROUPEND
 };
 

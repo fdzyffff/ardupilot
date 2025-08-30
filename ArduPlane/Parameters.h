@@ -596,6 +596,8 @@ public:
     AP_Float        batt2_voltage_mult;
 #endif
 
+    AP_Int16        takeoff_course;
+
     // just to make compilation easier when all things are compiled out...
     uint8_t unused_integer;
 };

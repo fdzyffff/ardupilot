@@ -401,6 +401,9 @@ void Plane::do_takeoff(const AP_Mission::Mission_Command& cmd)
     // zero locked course
     steer_state.locked_course_err = 0;
     steer_state.hold_course_cd = -1;
+    if (plane.g2.takeoff_course.get() >= 0) {
+        steer_state.hold_course_cd = wrap_360_cd(plane.g2.takeoff_course.get()*100);
+    }
     auto_state.baro_takeoff_alt = barometer.get_altitude();
 }
 
