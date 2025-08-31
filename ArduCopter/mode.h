@@ -2082,6 +2082,7 @@ public:
     };
 
     void unhook_run();
+    bool check_touch();
     bool check_down();
     void set_stage(Stage stage_in);
     void update_stage();
