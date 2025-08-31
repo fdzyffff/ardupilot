@@ -376,12 +376,12 @@ void AC_AttitudeControl::input_euler_angle_roll_pitch_yaw(float euler_roll_angle
 }
 
 // Command an euler roll, pitch, and yaw rate with angular velocity feedforward and smoothing
-void AC_AttitudeControl::input_euler_angle_roll_euler_rate_pitch_yaw(float euler_roll_angle_cd, float euler_pitch_rate_cds, float euler_yaw_rate_cds)
+void AC_AttitudeControl::input_euler_angle_roll_bf_rate_pitch_yaw(float euler_roll_angle_cd, float euler_pitch_rate_cds, float euler_yaw_rate_cds)
 {
     // Convert from centidegrees on public interface to radians
     float euler_roll_angle = radians(euler_roll_angle_cd * 0.01f);
-    float euler_pitch_rate = radians(euler_pitch_rate_cds * 0.01f);
-    float euler_yaw_rate = radians(euler_yaw_rate_cds * 0.01f);
+    float pitch_rate_rads = radians(euler_pitch_rate_cds * 0.01f);
+    float yaw_rate_rads = radians(euler_yaw_rate_cds * 0.01f);
 
     // calculate the attitude target euler angles
     _attitude_target.to_euler(_euler_angle_target.x, _euler_angle_target.y, _euler_angle_target.z);
@@ -392,25 +392,29 @@ void AC_AttitudeControl::input_euler_angle_roll_euler_rate_pitch_yaw(float euler
 
         // When acceleration limiting is enabled, the input shaper constrains angular acceleration, slewing
         // the output rate towards the input rate.
-        _euler_rate_target.x = input_shaping_angle(wrap_PI(euler_roll_angle - _euler_angle_target.x), _input_tc, euler_accel.x, _euler_rate_target.x, _dt);
-        _euler_rate_target.y = input_shaping_ang_vel(_euler_rate_target.y, euler_pitch_rate, euler_accel.y, _dt, _rate_rp_tc);
-        _euler_rate_target.z = input_shaping_ang_vel(_euler_rate_target.z, euler_yaw_rate, euler_accel.z, _dt, _rate_y_tc);
+        _ang_vel_target.x = input_shaping_angle(wrap_PI(euler_roll_angle - _euler_angle_target.x), _input_tc, euler_accel.x, _euler_rate_target.x, _dt);
 
-        // Convert euler angle derivative of desired attitude into a body-frame angular velocity vector for feedforward
-        euler_rate_to_ang_vel(_euler_angle_target, _euler_rate_target, _ang_vel_target);
+
+        // Compute acceleration-limited body frame rates
+        // When acceleration limiting is enabled, the input shaper constrains angular acceleration about the axis, slewing
+        // the output rate towards the input rate.
+        // _ang_vel_target.x = input_shaping_ang_vel(_ang_vel_target.x, roll_rate_rads, get_accel_roll_max_radss(), _dt, _rate_rp_tc);
+        _ang_vel_target.y = input_shaping_ang_vel(_ang_vel_target.y, pitch_rate_rads, get_accel_pitch_max_radss(), _dt, _rate_rp_tc);
+        _ang_vel_target.z = input_shaping_ang_vel(_ang_vel_target.z, yaw_rate_rads, get_accel_yaw_max_radss(), _dt, _rate_y_tc);
+
+        // Convert body-frame angular velocity into euler angle derivative of desired attitude
+        ang_vel_to_euler_rate(_euler_angle_target, _ang_vel_target, _euler_rate_target);
+
     } else {
-        // When feedforward is not enabled, the target euler angle is input into the target and the feedforward rate is zeroed.
-        // Pitch angle is restricted to +- 85.0 degrees to avoid gimbal lock discontinuities.
-        _euler_angle_target.x = euler_roll_angle;
-        _euler_angle_target.y = constrain_float(_euler_angle_target.y + euler_pitch_rate * _dt, radians(-85.0f), radians(85.0f));
-        _euler_angle_target.z = wrap_2PI(_euler_angle_target.z + euler_yaw_rate * _dt);
+        // When feedforward is not enabled, the quaternion is calculated and is input into the target and the feedforward rate is zeroed.
+        Quaternion attitude_target_update;
+        attitude_target_update.from_axis_angle(Vector3f{0.0f * _dt, pitch_rate_rads * _dt, yaw_rate_rads * _dt});
+        _attitude_target = _attitude_target * attitude_target_update;
+        _attitude_target.normalize();
 
         // Set rate feedforward requests to zero
         _euler_rate_target.zero();
         _ang_vel_target.zero();
-
-        // Compute quaternion target attitude
-        _attitude_target.from_euler(_euler_angle_target.x, _euler_angle_target.y, _euler_angle_target.z);
     }
 
     // Call quaternion attitude controller

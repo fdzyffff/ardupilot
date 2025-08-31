@@ -29,6 +29,8 @@ const AP_Param::GroupInfo UAttack::var_info[] = {
 
     AP_GROUPINFO("K1_ROLL",     21, UAttack, attack_k1_roll,          0.0f),
     AP_GROUPINFO("THR_BST",     22, UAttack, use_throttle_boost,      1),
+
+    AP_SUBGROUPINFO(attack_vely_pid    , "VELY_", 23, UAttack, AC_PID),
     AP_GROUPEND
 };
 
@@ -165,6 +167,21 @@ void UAttack::update_log() {
                                 (float)attack_roll_pid.get_pid_info().slew_rate,
                                 (float)attack_roll_pid.get_pid_info().Dmod);
 
+    AP::logger().WriteStreaming("UVEY",
+                                "TimeUS,target,actual,ff,P,I,D,srate,dmod",
+                                "s--------",
+                                "F--------",
+                                "Qffffffff",
+                                AP_HAL::micros64(),
+                                (float)attack_vely_pid.get_pid_info().target,
+                                (float)attack_vely_pid.get_pid_info().actual,
+                                (float)attack_vely_pid.get_pid_info().FF,
+                                (float)attack_vely_pid.get_pid_info().P,
+                                (float)attack_vely_pid.get_pid_info().I,
+                                (float)attack_vely_pid.get_pid_info().D,
+                                (float)attack_vely_pid.get_pid_info().slew_rate,
+                                (float)attack_vely_pid.get_pid_info().Dmod);
+
 }
 
 const Vector2f& UAttack::get_bf_info() {
@@ -294,6 +311,8 @@ void UAttack::update_cam()
         //update filter cutoff HZ in flight
         _yaw_sample_filter.set_cutoff_frequency(60.f, filt_yaw_hz.get());
         _pitch_sample_filter.set_cutoff_frequency(60.f, filt_pithc_hz.get());
+        _ef_rate_x_filter.set_cutoff_frequency(60.f, 1.0f);
+        _ef_rate_y_filter.set_cutoff_frequency(60.f, 1.0f);
     }
 
     if (_Target_ptr_cam != nullptr) {
@@ -315,6 +334,8 @@ void UAttack::update_cam()
             gcs().send_text(MAV_SEVERITY_INFO, "No Valid Target");
             _yaw_sample_filter.reset();
             _pitch_sample_filter.reset();
+            _ef_rate_x_filter.reset();
+            _ef_rate_y_filter.reset();
             _yaw_filter.reset();
             _pitch_filter.reset();
         }
@@ -412,6 +433,8 @@ void UAttack::handle_info(float p1, float p2) {
         _last_yaw_sample = _last_yaw;
         _yaw_sample_filter.reset();
         _pitch_sample_filter.reset();
+        _ef_rate_x_filter.reset();
+        _ef_rate_y_filter.reset();
         _yaw_filter.reset();
         _pitch_filter.reset();
         _reset = false;
@@ -423,8 +446,12 @@ void UAttack::handle_info(float p1, float p2) {
     _yaw_filter.update(_yaw_sample_filter.get(), millis());
     _pitch_filter.update(_pitch_sample_filter.get(), millis());
 
-    ef_rate_info.x = _yaw_filter.slope()*1000.f;
-    ef_rate_info.y = _pitch_filter.slope()*1000.f;
+
+    _ef_rate_x_filter.apply(_yaw_filter.slope()*1000.f);
+    _ef_rate_y_filter.apply(_pitch_filter.slope()*1000.f);
+
+    ef_rate_info.x = _ef_rate_x_filter.get();
+    ef_rate_info.y = _ef_rate_y_filter.get();
 
     display_info.new_data = true;
     display_info.count++;
@@ -437,7 +464,23 @@ void UAttack::update_target_pitch_rate() {
     float pitch_off = attack_pitch_off.get();
     // float boost_factor = constrain_float(fabsf(bf_info.y)/15.0f, 0.0f, 1.0f) * 2.0f;
     float angle_err = constrain_float(bf_info.y + pitch_off, -30.0f, 30.0f);
-    _target_pitch_rate = k1_pitch * ef_rate_info.y + k2_pitch * angle_err; // degrees/s
+
+    float rate_in_1 = ef_rate_info.y;
+    float rate_in_2 = angle_err;
+
+    if (rate_in_1 < 0.0f) {
+        rate_in_1 = -safe_sqrt(fabsf(rate_in_1)/3.0f)*3.0f;
+    } else {
+        rate_in_1 =  safe_sqrt(fabsf(rate_in_1)/3.0f)*3.0f;
+    }
+    
+    if (rate_in_2 < 0.0f) {
+        rate_in_2 = -safe_sqrt(fabsf(rate_in_2)/3.0f)*3.0f;
+    } else {
+        rate_in_2 =  safe_sqrt(fabsf(rate_in_2)/3.0f)*3.0f;
+    }
+
+    _target_pitch_rate = k1_pitch * rate_in_1 + k2_pitch * rate_in_2; // degrees/s
 
     //Limit pitch rate
     float limit_pitch_rate = pitch_rate_limit;
@@ -456,17 +499,53 @@ void UAttack::update_target_pitch_rate() {
 
 // degree
 void UAttack::update_target_roll_angle() {
-    // _target_roll_angle = constrain_float(attack_roll_factor.get() * ef_rate_info.x, -15.f, 15.f);
-    float k1_roll = attack_k1_roll.get();
-    float k2_roll = attack_k2_roll.get();
-
-    float angle_err = constrain_float(bf_info.x, -30.0f, 30.0f);
     float dt = (millis() - _last_control_ms);
     dt = dt * 0.001f;
     // if (dt > 1.0f) {attack_roll_pid.reset_I();}
     if (dt > 0.05f) {dt = 0.05f;}
-    float rate_in = k1_roll * ef_rate_info.x + k2_roll * angle_err;
-    _target_roll_angle = attack_roll_pid.update_all(0.0f, -rate_in, dt);
+
+    if (copter.position_ok()) {
+        Vector3f vel_ned;
+        if (copter.ahrs.get_velocity_NED(vel_ned)) {
+            ;
+        }
+
+        Vector3f vel_ef_xy = Vector3f(vel_ned.x, vel_ned.y, 0.0f);
+        Matrix3f tmp_body_earth_m;
+        tmp_body_earth_m.from_euler(0.0f, radians(0.0f), AP::ahrs().get_yaw());
+        tmp_body_earth_m.transpose();
+        Vector3f vel_bf_xy = tmp_body_earth_m*vel_ef_xy;
+
+        _target_roll_angle = attack_vely_pid.update_all(0.0f, vel_bf_xy.y, dt);
+        attack_roll_pid.reset_I();
+        attack_roll_pid.reset_filter();
+    } else {
+        // _target_roll_angle = constrain_float(attack_roll_factor.get() * ef_rate_info.x, -15.f, 15.f);
+        float k1_roll = attack_k1_roll.get();
+        float k2_roll = attack_k2_roll.get();
+
+        float angle_err = constrain_float(bf_info.x, -30.0f, 30.0f);
+        float rate_in_1 = ef_rate_info.x;
+        float rate_in_2 = angle_err;
+
+        if (rate_in_1 < 0.0f) {
+            rate_in_1 = -safe_sqrt(fabsf(rate_in_1)/3.0f)*3.0f;
+        } else {
+            rate_in_1 =  safe_sqrt(fabsf(rate_in_1)/3.0f)*3.0f;
+        }
+
+        if (rate_in_2 < 0.0f) {
+            rate_in_2 = -safe_sqrt(fabsf(rate_in_2)/3.0f)*3.0f;
+        } else {
+            rate_in_2 =  safe_sqrt(fabsf(rate_in_2)/3.0f)*3.0f;
+        }
+
+        float rate_in = k1_roll * rate_in_1 + k2_roll * rate_in_2;
+
+        _target_roll_angle = attack_roll_pid.update_all(0.0f, -rate_in, dt);
+        attack_vely_pid.reset_I();
+        attack_vely_pid.reset_filter();
+    }
 }
 
 // degree/second
@@ -475,7 +554,25 @@ void UAttack::update_target_yaw_rate() {
     float k2_yaw = attack_k2_yaw.get();
     // float boost_factor = constrain_float(fabsf(bf_info.x)/15.0f, 0.0f, 1.0f) * 2.0f;
     float angle_err = constrain_float(bf_info.x, -30.0f, 30.0f);
-    _target_yaw_rate = k1_yaw * ef_rate_info.x + k2_yaw * angle_err;
+
+    float rate_in_1 = ef_rate_info.x;
+    float rate_in_2 = angle_err;
+
+    if (rate_in_1 < 0.0f) {
+        rate_in_1 = -safe_sqrt(fabsf(rate_in_1)/5.0f)*5.0f;
+    } else {
+        rate_in_1 =  safe_sqrt(fabsf(rate_in_1)/5.0f)*5.0f;
+    }
+
+    if (rate_in_2 < 0.0f) {
+        rate_in_2 = -safe_sqrt(fabsf(rate_in_2)/5.0f)*5.0f;
+    } else {
+        rate_in_2 =  safe_sqrt(fabsf(rate_in_2)/5.0f)*5.0f;
+    }
+
+    _target_yaw_rate = k1_yaw * rate_in_1 + k2_yaw * rate_in_2;
+
+    // _target_yaw_rate = k1_yaw * ef_rate_info.x + k2_yaw * angle_err;
     display_info.p11 = angle_err;
     display_info.p12 = k2_yaw;
     display_info.p13 = _target_yaw_rate;

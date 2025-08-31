@@ -106,8 +106,9 @@ private:
     AP_Float        filt_pithc_hz;
     AP_Int8         use_throttle_boost;
 
-    AC_PID          attack_roll_pid{0.5f, 0.1f, 0.01f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.5f};
-    AC_PID          attack_throttle_pid{0.5f, 0.03f, 0.01f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.5f};
+    AC_PID          attack_roll_pid{0.5f, 0.1f, 0.01f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.0f};
+    AC_PID          attack_throttle_pid{0.5f, 0.03f, 0.01f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    AC_PID          attack_vely_pid{0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.0f};
 
     FD_Target_Base*   _Target_ptr_cam;
     FD_Target_Mav*    _Target_ptr_cam_mav;
@@ -127,6 +128,8 @@ private:
     DerivativeFilterFloat_Size7 _yaw_filter;
     LowPassFilterFloat _yaw_sample_filter;
     LowPassFilterFloat _pitch_sample_filter;
+    LowPassFilterFloat _ef_rate_x_filter;
+    LowPassFilterFloat _ef_rate_y_filter;
 
     User_shiftaverage _throttle_filt;
     User_shiftaverage _pitch_filt;
