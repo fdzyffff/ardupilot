@@ -23,6 +23,16 @@ void UMav::handle_mission_msg(const mavlink_message_t &msg)
         }
     }
 
+    if (msg.msgid == MAVLINK_MSG_ID_WXBS_NAV_CMD) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Receive WXBS_NAV_CMD");
+        // decode packet
+        mavlink_wxbs_nav_cmd_t packet;
+        mavlink_msg_wxbs_nav_cmd_decode(&msg, &packet);
+        if (packet.ekf_source <= 2) {
+            AP::ahrs().set_posvelyaw_source_set(packet.ekf_source);
+        }
+    }
+
     // //self check cmd 400;
     // switch (msg.msgid) {
     //     case MAVLINK_MSG_ID_WXBS_DO_SELFCHECK:
