@@ -170,7 +170,6 @@ void FD_CAN::loop() {
                 last_servo_ms = AP_HAL::millis();
                 for (uint8_t i_servo = 0; i_servo <=FD_CAN_MAX_SERVO_NUM; i_servo++) {
                     SRV_Channel *this_channel = SRV_Channels::srv_channel(i_servo);
-
                     bool is_flap = false;
                     if (this_channel == nullptr) {
                         if (should_print_servo) {
