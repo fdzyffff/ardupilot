@@ -230,8 +230,8 @@ void Plane::userhook_calc_pitch() {
 
     float gamma_error = constrain_float(gamma_target - gamma_current, -0.17f, 0.17f);
 
-    float theta_out = g2.user_pth_pid.update_all(gamma_error, 0.0f, dt);
-    _user_pitch_target = degrees(theta_out) + 5.0f;
+    float theta_out = g2.user_pth_pid.update_all(degrees(gamma_error), 0.0f, dt);
+    _user_pitch_target = theta_out + 5.0f;
 
 
     static uint32_t _last_log_ms = millis();
@@ -253,6 +253,20 @@ void Plane::userhook_calc_pitch() {
                                     (float)g2.user_pth_pid.get_pid_info().D,
                                     (float)g2.user_pth_pid.get_pid_info().slew_rate,
                                     (float)g2.user_pth_pid.get_pid_info().Dmod);
+        AP::logger().WriteStreaming("UPH2",
+                                    "TimeUS,gamtgt,gamcrt,gamerr,clbtgt,clbcrt,thtout,alterr,dt",
+                                    "s--------",
+                                    "F--------",
+                                    "Qffffffff",
+                                    AP_HAL::micros64(),
+                                    (float)gamma_target,
+                                    (float)gamma_current,
+                                    (float)gamma_error,
+                                    (float)climb_rate_target,
+                                    (float)climb_rate_current,
+                                    (float)theta_out,
+                                    (float)alt_err,
+                                    (float)dt);
     }
 }
 
@@ -263,11 +277,12 @@ void Plane::userhook_calc_throttle() {
     if (dt > 0.1f) {
         dt = 0.1f;
         g2.user_thr_pid.reset_I();
+        gcs().send_text(MAV_SEVERITY_INFO, "user_thr_pid.reset_I()");
     }
 
-    float airspeed_current = 10.0f;
+    float airspeed_current = 1.0f;
     if (ahrs.airspeed_estimate(airspeed_current)) {
-        airspeed_current = MAX(10.0f, airspeed_current);
+        airspeed_current = MAX(1.0f, airspeed_current);
     }
 
     _user_throttle_out = 25.f + 100.f * g2.user_thr_pid.update_all(_user_airspeed_target , airspeed_current, dt);

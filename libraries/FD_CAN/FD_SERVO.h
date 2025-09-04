@@ -1,0 +1,57 @@
+#pragma once
+
+#include <AP_HAL/AP_HAL.h>
+#include "FD_CAN.h"
+
+class FD_CAN;
+
+class FD_SERVO {
+public:
+    friend class FD_CAN;
+
+    FD_SERVO(FD_CAN* frotend);
+    ~FD_SERVO();
+
+    /* Do not allow copies */
+    FD_SERVO(const FD_SERVO &other) = delete;
+    FD_SERVO &operator=(const FD_SERVO&) = delete;
+
+    void handle_info(AP_HAL::CANFrame &in_frame, bool do_print = false);
+    void set_pos(float pos_in);
+    void set_brake(bool brake_in);
+    void enable_brake(bool enable);
+    void set_id(uint8_t id_in);
+    bool get_brake();
+    void update_cmd();
+    void update_cmd_nobrake();
+    void update_cmd_brake();
+    void send_cmd(uint32_t id, uint8_t *data);
+    FD_CAN* _frotend_ptr;
+
+    struct status_t {
+        uint32_t id;
+        float current;
+        float voltage;
+        float temperature;
+        bool  brake;
+        bool  target_brake;
+        bool  brake_confirm;
+        bool  zero;
+        bool  zero_confirm;
+        float pos;
+        float last_pos;
+        bool  have_brake;
+        uint16_t AngleFb;
+        uint16_t AngleCtrl;
+        uint8_t Current;
+        uint8_t Voltage;
+        uint16_t SelfCheckState;
+        uint32_t last_brake_ms;
+        uint32_t last_pos_ms;
+        uint32_t last_send_pos_ms;
+        uint32_t last_ask_status_ms;
+    };
+
+    status_t status;
+    uint8_t _data[8];
+};
