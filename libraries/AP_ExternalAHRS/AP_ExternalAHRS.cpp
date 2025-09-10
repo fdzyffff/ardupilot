@@ -26,6 +26,7 @@
 #include "AP_ExternalAHRS_MicroStrain5.h"
 #include "AP_ExternalAHRS_MicroStrain7.h"
 #include "AP_ExternalAHRS_InertialLabs.h"
+#include "AP_ExternalAHRS_ESIM.h"
 
 #include <GCS_MAVLink/GCS.h>
 #include <AP_AHRS/AP_AHRS.h>
@@ -89,6 +90,8 @@ const AP_Param::GroupInfo AP_ExternalAHRS::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("_LOG_RATE", 5, AP_ExternalAHRS, log_rate, 10),
     
+    AP_GROUPINFO("_DEBUG", 6, AP_ExternalAHRS, debug_print, 0),
+    
     AP_GROUPEND
 };
 
@@ -128,6 +131,12 @@ void AP_ExternalAHRS::init(void)
         backend = new AP_ExternalAHRS_InertialLabs(this, state);
         return;
 #endif
+#if AP_EXTERNAL_AHRS_ESIM_ENABLED
+    case DevType::ESIM:
+        backend = new AP_ExternalAHRS_ESIM(this, state);
+        return;
+#endif
+
 
     }
 

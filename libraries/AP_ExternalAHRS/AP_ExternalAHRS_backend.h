@@ -48,6 +48,8 @@ public:
     // This can also copy interim state protected by locking.
     virtual void update() = 0;
 
+    AP_ExternalAHRS &frontend;
+
 protected:
     AP_ExternalAHRS::state_t &state;
     uint16_t get_rate(void) const;
@@ -71,7 +73,7 @@ protected:
     bool in_fly_forward(void) const;
 
 private:
-    AP_ExternalAHRS &frontend;
+    ;
 };
 
 #endif  // HAL_EXTERNAL_AHRS_ENABLED
