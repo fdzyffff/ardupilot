@@ -370,14 +370,14 @@ bool AP_GPS_Backend::calculate_moving_base_yaw(AP_GPS::GPS_State &interim_state,
         }
 
 
-        if (fabsf(offset_dist - reported_distance) > (min_dist * permitted_error_length_pct)) {
-            // the magnitude of the vector is much further then we were expecting
-            Debug("Exceeded the permitted error margin %f > %f",
-                  (double)(offset_dist - reported_distance), (double)(min_dist * permitted_error_length_pct));
-            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Offset=%.2f vs reported-distance=%.2f (max-delta=%.2f)",
-                  offset_dist, reported_distance, (double)(min_dist * permitted_error_length_pct));
-            goto bad_yaw;
-        }
+        // if (fabsf(offset_dist - reported_distance) > (min_dist * permitted_error_length_pct)) {
+        //     // the magnitude of the vector is much further then we were expecting
+        //     Debug("Exceeded the permitted error margin %f > %f",
+        //           (double)(offset_dist - reported_distance), (double)(min_dist * permitted_error_length_pct));
+        //     GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Offset=%.2f vs reported-distance=%.2f (max-delta=%.2f)",
+        //           offset_dist, reported_distance, (double)(min_dist * permitted_error_length_pct));
+        //     goto bad_yaw;
+        // }
 
 #if AP_AHRS_ENABLED
         {

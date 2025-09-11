@@ -32,4 +32,34 @@ echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
 ./waf copter
 # mkdir firmware/MatekH743-sim
 cp build/MatekH743-sim/bin/arducopter.apj firmware/$current_datetime\_MatekH743_sim_arducopter.apj
+echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
+./waf configure --board APzH7
+./waf heli
+# mkdir firmware/APzH7
+cp build/APzH7/bin/arducopter-heli.apj firmware/$current_datetime\_APzH7_arducopter-heli.apj
+echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
+./waf configure --board APzF4
+./waf heli
+# mkdir firmware/APzF4
+cp build/APzF4/bin/arducopter-heli.apj firmware/$current_datetime\_APzF4_arducopter-heli.apj
+echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
+./waf configure --board MatekH743
+./waf heli
+# mkdir firmware/MatekH743
+cp build/MatekH743/bin/arducopter-heli.apj firmware/$current_datetime\_MatekH743_arducopter-heli.apj
+echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
+./waf configure --board APzH7-sim
+./waf heli
+# mkdir firmware/APzH7
+cp build/APzH7-sim/bin/arducopter-heli.apj firmware/$current_datetime\_APzH7_sim_arducopter-heli.apj
+echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
+./waf configure --board APzF4-sim
+./waf heli
+# mkdir firmware/APzF4
+cp build/APzF4-sim/bin/arducopter-heli.apj firmware/$current_datetime\_APzF4_sim_arducopter-heli.apj
+echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
+./waf configure --board MatekH743-sim
+./waf heli
+# mkdir firmware/MatekH743-sim
+cp build/MatekH743-sim/bin/arducopter-heli.apj firmware/$current_datetime\_MatekH743_sim_arducopter-heli.apj
 echo "~~~~~~~~~~~~~~~ done ~~~~~~~~~~~~~~~"
