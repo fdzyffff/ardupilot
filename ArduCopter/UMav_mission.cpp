@@ -30,6 +30,7 @@ void UMav::handle_mission_msg(const mavlink_message_t &msg)
         mavlink_msg_wxbs_nav_cmd_decode(&msg, &packet);
         if (packet.ekf_source <= 2) {
             AP::ahrs().set_posvelyaw_source_set(packet.ekf_source);
+            gcs().send_text(MAV_SEVERITY_INFO, "WXBS_NAV_CMD : %d", packet.ekf_source);
         }
     }
 

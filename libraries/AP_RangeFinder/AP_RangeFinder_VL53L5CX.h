@@ -5,7 +5,7 @@
 
 #if AP_RANGEFINDER_VL53L5CX_ENABLED
 
-#define     VL53L5CX_NB_TARGET_PER_ZONE     (1U)
+#define VL53L5CX_NB_TARGET_PER_ZONE     (1U)
 
 #define VL53L5CX_RESOLUTION_4X4         ((uint8_t) 16U)
 #define VL53L5CX_RESOLUTION_8X8         ((uint8_t) 64U)
