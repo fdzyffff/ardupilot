@@ -105,6 +105,7 @@ void UAttack::udpate_control_value(){
 }
 
 void UAttack::update_log() {
+    if (!copter.should_log(MASK_LOG_RCIN)) {return;}
     if (!is_active() && !_running) {return;}
     if (millis() - _last_log_ms < 100) {return;}
     _last_log_ms = millis();
