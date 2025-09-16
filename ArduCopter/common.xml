@@ -6533,7 +6533,7 @@
       <field type="uint8_t" name="atttack">0:nothing, 1:attack, 2:self-destruct.</field>
       <field type="uint8_t" name="payload">0:safe, 1:ready to fire, 2:error.</field>
     </message>
-    <message id="414" name="WXBS_TOF_DISTANCE">
+    <message id="416" name="WXBS_TOF_DISTANCE">
       <description> </description>
       <field type="uint16_t[64]" name="dist"></field>
     </message>

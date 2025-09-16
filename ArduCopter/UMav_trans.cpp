@@ -109,6 +109,7 @@ void UMav_trans_selfcheck::send_bsq_msg()
 {
     //self check result 403;
     gcs().send_text(MAV_SEVERITY_INFO, "Send WXBS_SELFCHECK_RESULT");
+    gcs().send_text(MAV_SEVERITY_INFO, "controller_ok %d, computer_ok %d", out_packet.controller_ok, out_packet.computer_ok);
 
     mavlink_message_t msg;
 
