@@ -50,6 +50,8 @@ FD_CAN::FD_CAN() {
         }
     }
 
+    _collector = new FD_COLLECTOR(this);
+
     debug_can(AP_CANManager::LOG_INFO, "CAN_FD: constructed\n\r");
 }
 
@@ -358,6 +360,10 @@ void FD_CAN::loop() {
 
                 should_print_mot = false;
             }
+        }
+
+        if (_collector != nullptr) {
+            _collector->update_send();
         }
 
 

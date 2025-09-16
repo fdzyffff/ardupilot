@@ -6,15 +6,18 @@
 #include <AP_Param/AP_Param.h>
 
 #include <FD_CAN/FD_SERVO.h>
+#include <FD_CAN/FD_COLLECTOR.h>
 
 #define FD_CAN_MAX_SERVO_NUM 16
 
 class FD_SERVO;
+class FD_COLLECTOR;
 
 class FD_CAN : public AP_CANDriver
 {
 public:
     friend class FD_SERVO;
+    friend class FD_COLLECTOR;
 
     FD_CAN();
     ~FD_CAN();
@@ -39,6 +42,7 @@ public:
     bool pre_arm_check(char* reason, uint8_t reason_len);
 
     FD_SERVO *_servo_ptr[FD_CAN_MAX_SERVO_NUM];
+    FD_COLLECTOR *_collector;
 
     AP_Int32 _print;       
     AP_Int8 _enable_srv;

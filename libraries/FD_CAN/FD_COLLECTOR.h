@@ -16,7 +16,7 @@ public:
     FD_COLLECTOR(const FD_COLLECTOR &other) = delete;
     FD_COLLECTOR &operator=(const FD_COLLECTOR&) = delete;
 
-    bool update_send();
+    void update_send();
     void send_cmd(uint32_t id, uint8_t *data);
     void send_utc();
     FD_CAN* _frotend_ptr;
@@ -51,5 +51,10 @@ public:
         uint8_t data[8];
     } tmp_uint64t_to_data;
 
+    struct status_t {
+        uint32_t last_ask_status_ms;
+    };
+
+    status_t status;
     uint8_t _data[8];
 };
