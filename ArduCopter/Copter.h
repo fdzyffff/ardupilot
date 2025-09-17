@@ -183,6 +183,8 @@
 #endif
 #include "mode.h"
 
+#include "Uart.h"
+
 class Copter : public AP_Vehicle {
 public:
     friend class GCS_MAVLINK_Copter;
@@ -232,10 +234,13 @@ public:
     friend class ModeZigZag;
     friend class ModeAutorotate;
     friend class ModeTurtle;
+    friend class ModeMission;
 
     friend class _AutoTakeoff;
 
     friend class PayloadPlace;
+
+    friend class Uart;
 
     Copter(void);
 
@@ -1087,10 +1092,15 @@ private:
 #if MODE_TURTLE_ENABLED == ENABLED
     ModeTurtle mode_turtle;
 #endif
+#if MODE_GUIDED_NOGPS_ENABLED == ENABLED
+    ModeMission mode_mission;
+#endif
 
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);
+
+    Uart uart;
 
 public:
     void failsafe_check();      // failsafe.cpp

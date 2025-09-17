@@ -61,6 +61,7 @@ void GCS_Copter::update_vehicle_sensor_status_flags(void)
     case Mode::Number::AUTO_RTL:
     case Mode::Number::AVOID_ADSB:
     case Mode::Number::GUIDED:
+    case Mode::Number::MISSION:
     case Mode::Number::LOITER:
     case Mode::Number::RTL:
     case Mode::Number::CIRCLE:

@@ -179,6 +179,11 @@ Mode *Copter::mode_from_mode_num(const Mode::Number mode)
             break;
 #endif
 
+#if MODE_GUIDED_NOGPS_ENABLED == ENABLED
+        case Mode::Number::MISSION:
+            ret = &mode_mission;
+            break;
+#endif
         default:
             break;
     }

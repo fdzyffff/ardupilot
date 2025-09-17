@@ -45,6 +45,7 @@ MAV_MODE GCS_MAVLINK_Copter::base_mode() const
     case Mode::Number::AVOID_ADSB:
     case Mode::Number::FOLLOW:
     case Mode::Number::GUIDED:
+    case Mode::Number::MISSION:
     case Mode::Number::CIRCLE:
     case Mode::Number::POSHOLD:
     case Mode::Number::BRAKE:
@@ -637,6 +638,7 @@ void GCS_MAVLINK_Copter::packetReceived(const mavlink_status_t &status,
     copter.g2.follow.handle_msg(msg);
 #endif
     AP::fd_data().handle_message(msg);
+    // copter.handle_message_for_mission_test(msg);
     GCS_MAVLINK::packetReceived(status, msg);
 }
 
