@@ -17,10 +17,6 @@ FLASH_SIZE_KB 2048
 FLASH_RESERVE_START_KB 128
 env OPTIMIZE -O2
 
-# use last 2 pages for flash storage
-# H743 has 16 pages of 128k each
-STORAGE_FLASH_PAGE 14
-
 #------------------------------------ USB SWD-------------------------------------
 USB_STRING_MANUFACTURER "DronesYoung"
 USB_STRING_PRODUCT "APzeroH7"
