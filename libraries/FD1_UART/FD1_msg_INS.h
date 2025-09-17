@@ -1,6 +1,6 @@
 #include "FD1_message.h"
 
-#define FD1_MSG_INS_LEN 118
+#define FD1_MSG_INS_LEN 120
 class FD1_msg_INS : public FD1_message{
 public:
     struct PACKED FD1_msg_header {
@@ -41,7 +41,7 @@ public:
         int32_t gps_alt_mm;
         int32_t gps_vel_e_ms_o4; // m/s 1E-4
         int32_t gps_vel_n_ms_o4; // m/s 1E-4
-        int16_t gps_vel_u_ms_o2; // m/s 1E-2
+        int32_t gps_vel_u_ms_o2; // m/s 1E-2
         uint8_t gps_fix_state; //GGA
         uint8_t gps_numstat;
         int16_t gps_height_error; // m 1E-2
