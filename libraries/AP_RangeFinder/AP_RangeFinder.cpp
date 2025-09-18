@@ -379,12 +379,6 @@ void RangeFinder::detect_instance(uint8_t instance, uint8_t& serial_instance)
         }
         break;
     }
-#else
-    case Type::VL53L5CX: {
-        gcs().send_text(MAV_SEVERITY_INFO, "Can not run VL53L5CX on this board.")
-        hal.util->printf("Can not run VL53L5CX on this board.");
-    }
-    break;
 #endif
 #if AP_RANGEFINDER_BENEWAKE_TFMINIPLUS_ENABLED
     case Type::BenewakeTFminiPlus: {
@@ -608,6 +602,15 @@ void RangeFinder::detect_instance(uint8_t instance, uint8_t& serial_instance)
 #endif
 
     case Type::NONE:
+        break;
+
+
+
+    default: {
+            gcs().send_text(MAV_SEVERITY_INFO, "Can not run %d on this board.", (int8_t)_type);
+            printf("Can not run %d on this board.", (int8_t)_type);
+        }
+
         break;
     }
 
