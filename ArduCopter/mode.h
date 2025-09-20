@@ -2001,6 +2001,9 @@ public:
     };
 
     MISSION_State get_state() {return mission_state;}
+    void set_loc(Location& dest_1, Location& dest_2);
+    Location& get_target_loc() {return target_loc;}
+    uint16_t get_target_speed() {return target_speed;}
 
 protected:
 
@@ -2012,7 +2015,6 @@ protected:
     float crosstrack_error() const override;
     void update_state();
     void set_state(MISSION_State state_in);
-    void set_loc(Location& dest_1, Location& dest_2);
     bool do_next();
     void wp_control_start();
     void wp_run();
@@ -2021,4 +2023,5 @@ protected:
     Location target_loc;
     Location loc1;
     Location loc2;
+    uint16_t target_speed;
 };

@@ -49,7 +49,11 @@ void ModeMission::run()
 
 void ModeMission::update_state()
 {
-
+    static uint32_t last_update_ms = millis();
+    if (millis() - last_update_ms < 100) {
+        return;
+    }
+    last_update_ms = millis();
     switch (mission_state) {
         case MISSION_State::Init:
         {
@@ -115,6 +119,7 @@ void ModeMission::set_state(MISSION_State state_in)
         {
             copter.mode_guided.velaccel_control_start();
             mission_state = state_in;
+            target_loc = copter.current_loc;
             gcs().send_text(MAV_SEVERITY_INFO, "[MIS] State: Wait");
         }
         break;
@@ -141,21 +146,20 @@ void ModeMission::set_loc(Location& dest_1, Location& dest_2)
 }
 
 bool ModeMission::do_next() {
+    wp_control_start();
     bool ret = false;
     if (target_loc.lat == loc1.lat && target_loc.lng == loc1.lng) {
-        if (target_loc.lat == loc2.lat && target_loc.lng == loc2.lng) {
-            gcs().send_text(MAV_SEVERITY_INFO, "[MIS] Finish, wait");
-            ret = false;
+        if (wp_nav->set_wp_destination_loc(loc2) && wp_nav->set_wp_destination_next_loc(loc2)) {
+            target_loc = loc2;
+            ret = true;
         } else {
-            if (wp_nav->set_wp_destination_next_loc(loc2)) {
-                target_loc = loc2;
-                ret = true;
-            } else {
-                ret = false;
-            }
+            ret = false;
         }
+    } else if (target_loc.lat == loc2.lat && target_loc.lng == loc2.lng) {
+        gcs().send_text(MAV_SEVERITY_INFO, "[MIS] Finish, wait");
+        ret = false;
     } else {
-        if (wp_nav->set_wp_destination_next_loc(loc1)) {
+        if (wp_nav->set_wp_destination_loc(loc1) && wp_nav->set_wp_destination_next_loc(loc1)) {
             target_loc = loc1;
             ret = true;
         } else {
@@ -168,6 +172,10 @@ bool ModeMission::do_next() {
         copter.Log_Write_Guided_Position_Target(ModeGuided::SubMode::WP, Vector3f(target_loc.lat, target_loc.lng, target_loc.alt), (target_loc.get_alt_frame() == Location::AltFrame::ABOVE_TERRAIN), Vector3f(), Vector3f());
     }
 #endif
+
+    if (ret) {
+        gcs().send_text(MAV_SEVERITY_INFO, "WP : %d, %d", (int)target_loc.lat, (int)target_loc.lng);
+    }
     return ret;
 }
 
@@ -190,7 +198,6 @@ void ModeMission::wp_control_start()
         // initialise yaw
         auto_yaw.set_mode_to_default(false);
     }
-
 }
 
 void ModeMission::wp_run()
