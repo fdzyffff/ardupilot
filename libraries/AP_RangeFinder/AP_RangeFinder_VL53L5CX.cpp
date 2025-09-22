@@ -87,18 +87,18 @@ bool AP_RangeFinder_VL53L5CX::check_id(void)
     Res = write_register(0x7FFF, 0x00);
     if(!(read_register(0x00, v1) && read_register(0x01, v2))) 
     {
-        if (_print_enable_text) {printf("\r\n\r\n Read ID is False \r\n\r\n");}
+        if (true) {printf("\r\n\r\n Read ID is False \r\n\r\n");}
         if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "Read ID is False");}
         return false;
     }
     if ((v1 != 0xF0) || (v2 != 0x02))
     {
-        if (_print_enable_text) {printf("\r\n\r\n Check ID is different :0x%x,0x%x,%d \r\n\r\n",v1,v2,Res);}
+        if (true) {printf("\r\n\r\n Check ID is different :0x%x,0x%x,%d \r\n\r\n",v1,v2,Res);}
         if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "Check ID is different :0x%x,0x%x,%d \r\n\r\n",v1,v2,Res);}
         return false;
     }
     Res = write_register(0x7FFF, 0x02);             
-    if (_print_enable_text) {printf("Detected VL53L5CX on bus 0x%x\r\n", dev->get_bus_id());}      //0x2901
+    if (true) {printf("Detected VL53L5CX on bus 0x%x\r\n", dev->get_bus_id());}      //0x2901
     if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "Detected VL53L5CX on bus 0x%lx\r\n", (long)dev->get_bus_id());}      //0x2901
     return Res;
 }
@@ -337,7 +337,7 @@ bool AP_RangeFinder_VL53L5CX::init()
     Rec = PollForAnser(1,0,0x06,0xFF,1);        //19
     if(!Rec) 
     {
-        if (_print_enable_text) {printf("\r\nWait Sensor boot Fail\r\n");}
+        if (true) {printf("\r\nWait Sensor boot Fail\r\n");}
         if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "Wait Sensor boot Fail");}
         return Rec;
     }       
@@ -390,7 +390,7 @@ bool AP_RangeFinder_VL53L5CX::init()
     Rec = PollForAnser(1,0,0x21,0x10,0x10); //23
     if(!Rec) 
     {
-        if (_print_enable_text) {printf("\r\nDownload FW Fail\r\n");}
+        if (true) {printf("\r\nDownload FW Fail\r\n");}
         if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "Download FW Fail");}
         return Rec;
     }   
@@ -410,7 +410,7 @@ bool AP_RangeFinder_VL53L5CX::init()
     Rec = PollMCU_Boot();                       //24
     if(!Rec) 
     {
-        if (_print_enable_text) {printf("\r\nMCU Reboot Fail\r\n");}
+        if (true) {printf("\r\nMCU Reboot Fail\r\n");}
         if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "MCU Reboot Fail");}
         return Rec;
     }   
@@ -431,12 +431,12 @@ bool AP_RangeFinder_VL53L5CX::init()
     Rec = PollForAnser(4,1,VL53L5CX_UI_CMD_STATUS,0xFF,0x03);
     if(!Rec)
     {
-        if (_print_enable_text) {printf("\r\n Download Default config is Error \r\n");}
+        if (true) {printf("\r\n Download Default config is Error \r\n");}
         if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "Download Default config is Error");}
         return Rec;
     }
     else {
-        if (_print_enable_text) {printf("\r\n Download Default config is OK \r\n");}
+        if (true) {printf("\r\n Download Default config is OK \r\n");}
         if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "Download Default config is OK");}
     }
 
@@ -454,7 +454,7 @@ bool AP_RangeFinder_VL53L5CX::init()
         Object.IsSignalEnabled = 0U;
         Object.IsInitialized = 1U;
         Rec = Get_Capabilities(&Cap);
-        if (_print_enable_text) {printf("\r\nGet Capabilities:%d\r\n",Rec);}
+        if (true) {printf("\r\nGet Capabilities:%d\r\n",Rec);}
         if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "Get Capabilities:%d",Rec);}
         Profile.RangingProfile = VL53L5CX_PROFILE_8x8_CONTINUOUS;
         Profile.TimingBudget = TIMING_BUDGET;               /* 5 ms < TimingBudget < 100 ms */
@@ -465,7 +465,7 @@ bool AP_RangeFinder_VL53L5CX::init()
         Rec = Set_ConfigProfile(&Object,&Profile);
         Rec = Start_Ranging(&Object,VL53L5CX_MODE_BLOCKING_CONTINUOUS); 
         
-        if (_print_enable_text) {printf("\r\nStart Read Data:%d\r\n",Rec);}
+        if (true) {printf("\r\nStart Read Data:%d\r\n",Rec);}
         if (_print_enable_gcs) {gcs().send_text(MAV_SEVERITY_INFO, "Start Read Data:%d",Rec);}
     }
 

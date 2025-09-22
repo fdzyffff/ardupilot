@@ -1541,7 +1541,7 @@ private:
 
 #define TIMING_BUDGET (100U)         /* 5 ms < TimingBudget < 100 ms */
 #define RANGING_FREQUENCY (10U)      /* Ranging frequency Hz (shall be consistent with TimingBudget value) */
-#define V53L5CX_POLL_TIMEOUT  (0x888U)
+#define V53L5CX_POLL_TIMEOUT  (0x1388U)
 
 // #define TIMING_BUDGET (33U)         /* 5 ms < TimingBudget < 100 ms */
 // #define RANGING_FREQUENCY (30U)      /* Ranging frequency Hz (shall be consistent with TimingBudget value) */

@@ -22,4 +22,9 @@ echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
 ./waf copter
 # mkdir firmware/APz400g
 cp build/APz400g/bin/arducopter.apj firmware/$current_datetime\_APz400g_arducopter.apj
+# echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
+./waf configure --board APz400g-i2cc
+./waf copter
+# mkdir firmware/APz400g
+cp build/APz400g-i2cc/bin/arducopter.apj firmware/$current_datetime\_APz400g-i2cc_arducopter.apj
 echo "~~~~~~~~~~~~~~~ done ~~~~~~~~~~~~~~~"
