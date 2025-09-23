@@ -29,11 +29,11 @@ void UMav_trans_status::send_bsq_msg()
     mavlink_message_t msg;
 
     // packet.type = 0;
-    if ((copter.flightmode->mode_number() == Mode::Number::THROW) && copter.motors->armed()) {
-        packet.throw_status = 0;
-    } else {
-        packet.throw_status = 1;
-    }
+    // if ((copter.flightmode->mode_number() == Mode::Number::THROW) && copter.motors->armed()) {
+    //     packet.throw_status = 0;
+    // } else {
+    //     packet.throw_status = 1;
+    // }
     packet.battery = 3;
 
     UNUSED_RESULT(mavlink_msg_wxbs_status_encode(copter.g.sysid_this_mav,
