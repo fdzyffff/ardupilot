@@ -3563,6 +3563,7 @@ void GCS_MAVLINK::set_ekf_origin(const Location& loc)
     }
 
     if (!ahrs.set_origin(loc)) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Fail, ekf origin!");
         return;
     }
 
