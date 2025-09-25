@@ -1392,14 +1392,14 @@ bool NavEKF3::setOriginLLH(const Location &loc)
     if (!core) {
         return false;
     }
-    if ((sources.getPosXYSource() == AP_NavEKF_Source::SourceXY::GPS) || common_origin_valid) {
-        // we don't allow setting of the EKF origin if using GPS
-        // or if the EKF origin has already been set.
-        // This is to prevent accidental setting of EKF origin with an
-        // invalid position or height or causing upsets from a shifting origin.
-        GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "EKF3 refusing set origin");
-        return false;
-    }
+    // if ((sources.getPosXYSource() == AP_NavEKF_Source::SourceXY::GPS) || common_origin_valid) {
+    //     // we don't allow setting of the EKF origin if using GPS
+    //     // or if the EKF origin has already been set.
+    //     // This is to prevent accidental setting of EKF origin with an
+    //     // invalid position or height or causing upsets from a shifting origin.
+    //     GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "EKF3 refusing set origin");
+    //     return false;
+    // }
     bool ret = false;
     for (uint8_t i=0; i<num_cores; i++) {
         ret |= core[i].setOriginLLH(loc);
