@@ -186,24 +186,25 @@ void Copter::failsafe_ekf_event()
         return;
     }
 
-    // take action based on fs_ekf_action parameter
-    switch (g.fs_ekf_action) {
-        case FS_EKF_ACTION_ALTHOLD:
-            // AltHold
-            if (failsafe.radio || !set_mode(Mode::Number::ALT_HOLD, ModeReason::EKF_FAILSAFE)) {
-                set_mode_land_with_pause(ModeReason::EKF_FAILSAFE);
-            }
-            break;
-        case FS_EKF_ACTION_LAND:
-        case FS_EKF_ACTION_LAND_EVEN_STABILIZE:
-        default:
-            set_mode_land_with_pause(ModeReason::EKF_FAILSAFE);
-            break;
-    }
+    // // take action based on fs_ekf_action parameter
+    // switch (g.fs_ekf_action) {
+    //     case FS_EKF_ACTION_ALTHOLD:
+    //         // AltHold
+    //         if (failsafe.radio || !set_mode(Mode::Number::ALT_HOLD, ModeReason::EKF_FAILSAFE)) {
+    //             set_mode_land_with_pause(ModeReason::EKF_FAILSAFE);
+    //         }
+    //         break;
+    //     case FS_EKF_ACTION_LAND:
+    //     case FS_EKF_ACTION_LAND_EVEN_STABILIZE:
+    //     default:
+    //         set_mode_land_with_pause(ModeReason::EKF_FAILSAFE);
+    //         break;
+    // }
 
     // set true if ekf action is triggered
     AP_Notify::flags.failsafe_ekf = true;
-    gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Failsafe: changed to %s Mode", flightmode->name());
+    // gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Failsafe: changed to %s Mode", flightmode->name());
+    gcs().send_text(MAV_SEVERITY_CRITICAL, "EKF Failsafe: warning only");
 }
 
 // failsafe_ekf_off_event - actions to take when EKF failsafe is cleared
