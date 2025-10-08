@@ -63,7 +63,7 @@ void ModeThrow::run()
         gcs().send_text(MAV_SEVERITY_INFO,"throttle is unlimited - uprighting");
         stage = Throw_Uprighting;
     } else if (stage == Throw_Uprighting && throw_attitude_good()) {
-        gcs().send_text(MAV_SEVERITY_INFO,"uprighted - controlling height");
+        gcs().send_text(MAV_SEVERITY_INFO,"uprighted - controlling height %d cm", copter.g2.throw_up_cm.get());
         stage = Throw_HgtStabilise;
 
         // initialise the z controller
@@ -71,11 +71,13 @@ void ModeThrow::run()
 
         // initialise the demanded height to 3m above the throw height
         // we want to rapidly clear surrounding obstacles
-        if (g2.throw_type == ThrowType::Drop) {
-            pos_control->set_pos_target_z_cm(inertial_nav.get_position_z_up_cm() - 30);
-        } else {
-            pos_control->set_pos_target_z_cm(inertial_nav.get_position_z_up_cm() + 200);
-        }
+        // if (g2.throw_type == ThrowType::Drop) {
+        //     pos_control->set_pos_target_z_cm(inertial_nav.get_position_z_up_cm() - 30);
+        // } else {
+        //     pos_control->set_pos_target_z_cm(inertial_nav.get_position_z_up_cm() + 200);
+        // }
+
+        pos_control->set_pos_target_z_cm(inertial_nav.get_position_z_up_cm() + copter.g2.throw_up_cm.get());
 
         // Set the auto_arm status to true to avoid a possible automatic disarm caused by selection of an auto mode with throttle at minimum
         copter.set_auto_armed(true);

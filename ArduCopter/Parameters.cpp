@@ -1253,6 +1253,11 @@ const AP_Param::GroupInfo ParametersG2::var_info2[] = {
 
     // ID 62 is reserved for the AP_SUBGROUPEXTENSION
 
+#if MODE_THROW_ENABLED == ENABLED
+
+    AP_GROUPINFO("THROW_UP_CM", 9, ParametersG2, throw_up_cm, 100),
+#endif
+
     AP_GROUPEND
 };
 
