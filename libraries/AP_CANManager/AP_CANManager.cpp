@@ -225,15 +225,26 @@ void AP_CANManager::init()
             AP_Param::load_object_from_eeprom((AP_PiccoloCAN*)_drivers[drv_num], AP_PiccoloCAN::var_info);
         } else
 #endif
-        if (drv_type[drv_num] == AP_CAN::Protocol::FDCAN) {
-            printf("AP_CAN::Protocol::FDCAN\n");
-            _drivers[drv_num] = _drv_param[drv_num]._fdcan = new FD_CAN;
+        if (drv_type[drv_num] == AP_CAN::Protocol::FDCAN_1) {
+            printf("AP_CAN::Protocol::FDCAN_1\n");
+            _drivers[drv_num] = _drv_param[drv_num]._fdcan1 = new FDCAN_1;
             if (_drivers[drv_num] == nullptr) {
-                AP_BoardConfig::allocation_error("FD CAN %d", i + 1);
+                AP_BoardConfig::allocation_error("FD CAN 1 %d", i + 1);
                 continue;
             }
 
-            AP_Param::load_object_from_eeprom((FD_CAN*)_drivers[drv_num], FD_CAN::var_info);
+            AP_Param::load_object_from_eeprom((FDCAN_1*)_drivers[drv_num], FDCAN_1::var_info);
+        } else
+
+        if (drv_type[drv_num] == AP_CAN::Protocol::FDCAN_2) {
+            printf("AP_CAN::Protocol::FDCAN_2\n");
+            _drivers[drv_num] = _drv_param[drv_num]._fdcan2 = new FDCAN_2;
+            if (_drivers[drv_num] == nullptr) {
+                AP_BoardConfig::allocation_error("FD CAN 2 %d", i + 1);
+                continue;
+            }
+
+            AP_Param::load_object_from_eeprom((FDCAN_2*)_drivers[drv_num], FDCAN_2::var_info);
         } else
 
         {

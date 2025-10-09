@@ -29,6 +29,7 @@ public:
         Scripting2 = 12,
         TOFSenseP = 13,
         NanoRadar = 14,
-        FDCAN = 15,
+        FDCAN1 = 15,
+        FDCAN2 = 16,
     };
 };

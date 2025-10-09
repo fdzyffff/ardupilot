@@ -8,28 +8,28 @@
 #include <FD_CAN/FD_SERVO.h>
 #include <FD_CAN/FD_COLLECTOR.h>
 
-#define FD_CAN_MAX_SERVO_NUM 16
+#define FD_CAN_1_MAX_SERVO_NUM 16
 
 class FD_SERVO;
 class FD_COLLECTOR;
 
-class FD_CAN : public AP_CANDriver
+class FD_CAN_1 : public AP_CANDriver
 {
 public:
     friend class FD_SERVO;
     friend class FD_COLLECTOR;
 
-    FD_CAN();
-    ~FD_CAN();
+    FD_CAN_1();
+    ~FD_CAN_1();
 
     /* Do not allow copies */
-    FD_CAN(const FD_CAN &other) = delete;
-    FD_CAN &operator=(const FD_CAN&) = delete;
+    FD_CAN_1(const FD_CAN_1 &other) = delete;
+    FD_CAN_1 &operator=(const FD_CAN_1&) = delete;
 
     static const struct AP_Param::GroupInfo var_info[];
 
     // Return CAN_ESC from @driver_index or nullptr if it's not ready or doesn't exist
-    static FD_CAN *get_can_fd(uint8_t driver_index);
+    static FD_CAN_1 *get_can_fd(uint8_t driver_index);
 
     // initialize CAN_ESC bus
     void init(uint8_t driver_index, bool enable_filters) override;
@@ -41,14 +41,14 @@ public:
     // test if the CAN driver is ready to be armed
     bool pre_arm_check(char* reason, uint8_t reason_len);
 
-    FD_SERVO *_servo_ptr[FD_CAN_MAX_SERVO_NUM];
+    FD_SERVO *_servo_ptr[FD_CAN_1_MAX_SERVO_NUM];
     FD_COLLECTOR *_collector;
 
-    AP_Int32 _print;       
-    AP_Int8 _enable_srv;
-    AP_Int8 _enable_mot;   
-    AP_Int32 _interval_srv;       
-    AP_Int32 _interval_mot;      
+    AP_Int32 _print;    //.控制是否打印调试信息（0 禁用，非 0 启用）       
+    AP_Int8 _enable_srv;    //.控制是否启用舵机（SERVO）控制（1 启用，0 禁用）
+    AP_Int8 _enable_mot;    //.控制是否启用电机（MOT）控制（1 启用，0 禁用）
+    AP_Int32 _interval_srv; //.舵机控制命令的发送间隔（单位：毫秒，范围 1-1000）
+    AP_Int32 _interval_mot; //.电机控制命令的发送间隔（单位：毫秒，范围 1-1000）     
 
 private:
 
@@ -63,9 +63,9 @@ private:
 
     void log_status(void);
 
-    bool _initialized;
+    bool _initialized;  //.标识 CAN FD 驱动是否已初始化
     char _thread_name[16];
-    uint8_t _driver_index;
+    uint8_t _driver_index;  //.CAN 驱动的索引
     AP_HAL::CANIface* _can_iface;
     HAL_BinarySemaphore sem_handle;
 

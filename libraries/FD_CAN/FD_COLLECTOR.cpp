@@ -35,7 +35,7 @@ void FD_COLLECTOR::update_send()
             tmp_float_to_data.v = right_wheel;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
-            _data[2] = 0x01;
+            _data[2] = 0x02;
             _data[3] = tmp_float_to_data.data[0];
             _data[4] = tmp_float_to_data.data[1];
             _data[5] = tmp_float_to_data.data[2];
@@ -47,7 +47,7 @@ void FD_COLLECTOR::update_send()
             tmp_float_to_data.v = left_brake_in;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
-            _data[2] = 0x01;
+            _data[2] = 0x03;
             _data[3] = tmp_float_to_data.data[0];
             _data[4] = tmp_float_to_data.data[1];
             _data[5] = tmp_float_to_data.data[2];
@@ -59,7 +59,7 @@ void FD_COLLECTOR::update_send()
             tmp_float_to_data.v = left_brake_back;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
-            _data[2] = 0x01;
+            _data[2] = 0x04;
             _data[3] = tmp_float_to_data.data[0];
             _data[4] = tmp_float_to_data.data[1];
             _data[5] = tmp_float_to_data.data[2];
@@ -71,7 +71,7 @@ void FD_COLLECTOR::update_send()
             tmp_float_to_data.v = right_brake_in;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
-            _data[2] = 0x01;
+            _data[2] = 0x05;
             _data[3] = tmp_float_to_data.data[0];
             _data[4] = tmp_float_to_data.data[1];
             _data[5] = tmp_float_to_data.data[2];
@@ -83,7 +83,7 @@ void FD_COLLECTOR::update_send()
             tmp_float_to_data.v = right_brake_back;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
-            _data[2] = 0x01;
+            _data[2] = 0x06;
             _data[3] = tmp_float_to_data.data[0];
             _data[4] = tmp_float_to_data.data[1];
             _data[5] = tmp_float_to_data.data[2];
@@ -95,7 +95,7 @@ void FD_COLLECTOR::update_send()
             tmp_float_to_data.v = alt;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
-            _data[2] = 0x01;
+            _data[2] = 0x07;
             _data[3] = tmp_float_to_data.data[0];
             _data[4] = tmp_float_to_data.data[1];
             _data[5] = tmp_float_to_data.data[2];
@@ -107,7 +107,7 @@ void FD_COLLECTOR::update_send()
             tmp_float_to_data.v = arspd_tas;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
-            _data[2] = 0x01;
+            _data[2] = 0x08;
             _data[3] = tmp_float_to_data.data[0];
             _data[4] = tmp_float_to_data.data[1];
             _data[5] = tmp_float_to_data.data[2];
@@ -119,7 +119,7 @@ void FD_COLLECTOR::update_send()
             tmp_float_to_data.v = climb_rate;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
-            _data[2] = 0x01;
+            _data[2] = 0x09;
             _data[3] = tmp_float_to_data.data[0];
             _data[4] = tmp_float_to_data.data[1];
             _data[5] = tmp_float_to_data.data[2];
@@ -131,7 +131,7 @@ void FD_COLLECTOR::update_send()
             tmp_float_to_data.v = aoa;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
-            _data[2] = 0x01;
+            _data[2] = 0x0A;
             _data[3] = tmp_float_to_data.data[0];
             _data[4] = tmp_float_to_data.data[1];
             _data[5] = tmp_float_to_data.data[2];
@@ -143,7 +143,7 @@ void FD_COLLECTOR::update_send()
             tmp_float_to_data.v = ssa;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
-            _data[2] = 0x01;
+            _data[2] = 0x0B;
             _data[3] = tmp_float_to_data.data[0];
             _data[4] = tmp_float_to_data.data[1];
             _data[5] = tmp_float_to_data.data[2];
@@ -155,7 +155,7 @@ void FD_COLLECTOR::update_send()
             tmp_float_to_data.v = roll;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
-            _data[2] = 0x01;
+            _data[2] = 0x0C;
             _data[3] = tmp_float_to_data.data[0];
             _data[4] = tmp_float_to_data.data[1];
             _data[5] = tmp_float_to_data.data[2];
@@ -167,7 +167,7 @@ void FD_COLLECTOR::update_send()
             tmp_float_to_data.v = yaw;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
-            _data[2] = 0x01;
+            _data[2] = 0x0D;
             _data[3] = tmp_float_to_data.data[0];
             _data[4] = tmp_float_to_data.data[1];
             _data[5] = tmp_float_to_data.data[2];
@@ -179,7 +179,7 @@ void FD_COLLECTOR::update_send()
             tmp_float_to_data.v = rate_x;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
-            _data[2] = 0x01;
+            _data[2] = 0x0E;
             _data[3] = tmp_float_to_data.data[0];
             _data[4] = tmp_float_to_data.data[1];
             _data[5] = tmp_float_to_data.data[2];
@@ -191,7 +191,7 @@ void FD_COLLECTOR::update_send()
             tmp_float_to_data.v = rate_y;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
-            _data[2] = 0x01;
+            _data[2] = 0x0F;
             _data[3] = tmp_float_to_data.data[0];
             _data[4] = tmp_float_to_data.data[1];
             _data[5] = tmp_float_to_data.data[2];
@@ -203,7 +203,7 @@ void FD_COLLECTOR::update_send()
             tmp_float_to_data.v = rate_z;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
-            _data[2] = 0x01;
+            _data[2] = 0x10;
             _data[3] = tmp_float_to_data.data[0];
             _data[4] = tmp_float_to_data.data[1];
             _data[5] = tmp_float_to_data.data[2];
@@ -215,7 +215,7 @@ void FD_COLLECTOR::update_send()
             tmp_float_to_data.v = acc_x;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
-            _data[2] = 0x01;
+            _data[2] = 0x11;
             _data[3] = tmp_float_to_data.data[0];
             _data[4] = tmp_float_to_data.data[1];
             _data[5] = tmp_float_to_data.data[2];
@@ -227,7 +227,7 @@ void FD_COLLECTOR::update_send()
             tmp_float_to_data.v = acc_y;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
-            _data[2] = 0x01;
+            _data[2] = 0x12;
             _data[3] = tmp_float_to_data.data[0];
             _data[4] = tmp_float_to_data.data[1];
             _data[5] = tmp_float_to_data.data[2];
@@ -239,11 +239,21 @@ void FD_COLLECTOR::update_send()
             tmp_float_to_data.v = acc_z;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
-            _data[2] = 0x01;
+            _data[2] = 0x13;
             _data[3] = tmp_float_to_data.data[0];
             _data[4] = tmp_float_to_data.data[1];
             _data[5] = tmp_float_to_data.data[2];
             _data[6] = tmp_float_to_data.data[3];
+            _data[7] = 0xEE;
+            send_cmd(0x20, _data);
+
+            _data[0] = 0xFE;
+            _data[1] = 0xFE;
+            _data[2] = 0x14;
+            _data[3] = 0x01;
+            _data[4] = 0x02;
+            _data[5] = 0x03;
+            _data[6] = 0x04;
             _data[7] = 0xEE;
             send_cmd(0x20, _data);
 

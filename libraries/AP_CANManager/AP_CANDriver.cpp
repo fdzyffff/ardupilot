@@ -60,7 +60,8 @@ const AP_Param::GroupInfo AP_CANManager::CANDriver_Params::var_info[] = {
     // @RebootRequired: True
     AP_GROUPINFO("PROTOCOL2", 6, AP_CANManager::CANDriver_Params, _driver_type_11bit, float(AP_CAN::Protocol::None)),
     
-    AP_SUBGROUPPTR(_fdcan, "FC_", 7, AP_CANManager::CANDriver_Params, FD_CAN),
+    AP_SUBGROUPPTR(_fdcan1, "F1_", 7, AP_CANManager::CANDriver_Params, FD_CAN_1),
+    AP_SUBGROUPPTR(_fdcan2, "F2_", 7, AP_CANManager::CANDriver_Params, FD_CAN_2),
 
     AP_GROUPEND
 };

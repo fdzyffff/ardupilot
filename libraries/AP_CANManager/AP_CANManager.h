@@ -149,7 +149,8 @@ private:
         AP_Int8 _driver_type_11bit;
         AP_CANDriver* _uavcan;
         AP_CANDriver* _piccolocan;
-        AP_CANDriver* _fdcan;
+        AP_CANDriver* _fdcan1;
+        AP_CANDriver* _fdcan2;
     };
 
     CANIface_Params _interfaces[HAL_NUM_CAN_IFACES];
