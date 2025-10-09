@@ -22,7 +22,7 @@ public:
     void enable_brake(bool enable);
     void set_id(uint8_t id_in);
     bool get_brake();
-    void update_cmd();
+    void update();
     void update_cmd_nobrake();
     void update_cmd_brake();
     void send_cmd(uint32_t id, uint8_t *data);

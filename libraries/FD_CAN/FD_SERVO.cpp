@@ -84,7 +84,7 @@ void FD_SERVO::set_id(uint8_t id_in)
     status.id = id_in;
 }
 
-void FD_SERVO::update_cmd()
+void FD_SERVO::update()
 {
     if (status.have_brake) {
         update_cmd_brake();

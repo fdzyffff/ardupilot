@@ -77,17 +77,17 @@ bool FD_CAN_2::add_interface(AP_HAL::CANIface *can_iface) {
     _can_iface = can_iface;
 
     if (_can_iface == nullptr) {
-        debug_can(AP_CANManager::LOG_ERROR, "FDCAN: CAN driver not found\n\r");
+        debug_can(AP_CANManager::LOG_ERROR, "CAN_FD_2: CAN driver not found\n\r");
         return false;
     }
 
     if (!_can_iface->is_initialized()) {
-        debug_can(AP_CANManager::LOG_ERROR, "FDCAN: Driver not initialized\n\r");
+        debug_can(AP_CANManager::LOG_ERROR, "CAN_FD_2: Driver not initialized\n\r");
         return false;
     }
 
     if (!_can_iface->set_event_handle(&sem_handle)) {
-        debug_can(AP_CANManager::LOG_ERROR, "FDCAN: Cannot add event handle\n\r");
+        debug_can(AP_CANManager::LOG_ERROR, "CAN_FD_2: Cannot add event handle\n\r");
         return false;
     }
     return true;

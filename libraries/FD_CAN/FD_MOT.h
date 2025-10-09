@@ -5,51 +5,36 @@
 
 class FD_CAN;
 
-class FD_SERVO {
+class FD_MOT {
 public:
     friend class FD_CAN;
 
-    FD_SERVO(FD_CAN* frotend);
-    ~FD_SERVO();
+    FD_MOT(FD_CAN* frotend);
+    ~FD_MOT();
 
     /* Do not allow copies */
-    FD_SERVO(const FD_SERVO &other) = delete;
-    FD_SERVO &operator=(const FD_SERVO&) = delete;
+    FD_MOT(const FD_MOT &other) = delete;
+    FD_MOT &operator=(const FD_MOT&) = delete;
 
     void handle_info(AP_HAL::CANFrame &in_frame, bool do_print = false);
-    void set_pos(float pos_in);
-    void set_brake(bool brake_in);
-    void enable_brake(bool enable);
     void set_id(uint8_t id_in);
-    bool get_brake();
+    void set_mode(uint8_t mode_in);
+    void set_rpm(uint16_t rpm_in);
+    void update();
     void update_cmd();
-    void update_cmd_nobrake();
-    void update_cmd_brake();
+    void sumcheck();
     void send_cmd(uint32_t id, uint8_t *data);
     FD_CAN* _frotend_ptr;
 
     struct status_t {
         uint32_t id;
-        float current;
-        float voltage;
-        float temperature;
-        bool  brake;    //舵机当前制动状态
-        bool  target_brake; //舵机目标制动状态
-        bool  brake_confirm;    //制动状态确认标志（true = 目标与当前状态一致，false = 待确认）
-        bool  zero;
-        bool  zero_confirm;
-        float pos;
-        float last_pos;
-        bool  have_brake;   //是否启用制动功能（true = 有制动功能，如襟翼舵机；false = 无制动功能）
-        uint16_t AngleFb;
-        uint16_t AngleCtrl;
-        uint8_t Current;
-        uint8_t Voltage;
-        uint16_t SelfCheckState;
-        uint32_t last_brake_ms;
-        uint32_t last_pos_ms;
-        uint32_t last_send_pos_ms;
-        uint32_t last_ask_status_ms;
+        uint8_t mode_in; // 0: standby, 1: torque, 2: rpm
+        uint16_t rpm_in;
+        uint32_t last_ctrl_ms;
+        uint8_t send_count;
+
+        uint8_t mode_out;
+        uint16_t rpm_out;
     };
 
     status_t status;

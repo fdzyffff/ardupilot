@@ -1,4 +1,4 @@
-#include "FD_SERVO.h"
+#include "FD_MOT.h"
 
 #include <AP_AHRS/AP_AHRS.h>
 #include <AP_HAL/AP_HAL.h>
@@ -9,210 +9,82 @@
 extern const AP_HAL::HAL &hal;
 
 
-FD_SERVO::FD_SERVO(FD_CAN *frotend) {
+FD_MOT::FD_MOT(FD_CAN *frotend) {
     _frotend_ptr = frotend;
     status.brake_confirm = false;
 }
 
-void FD_SERVO::handle_info(AP_HAL::CANFrame &in_frame, bool do_print) {
-    // if (in_frame.id == (0x580+status.id)) {
-    //     if (in_frame.data[0] == 0x60
-    //      && in_frame.data[1] == 0x00
-    //      && in_frame.data[2] == 0x30
-    //      && in_frame.data[3] == 0x00
-    //      && in_frame.data[4] == 0x00
-    //      && in_frame.data[5] == 0x00
-    //      && in_frame.data[6] == 0x00
-    //      && in_frame.data[7] == 0x00) {
-    //         status.brake_confirm = true;
-    //     }
-    // }
-    if (in_frame.id == (0x480+status.id)) {
-        status.AngleFb = (uint16_t)in_frame.data[0] | (uint16_t)(in_frame.data[1]<<8);
-        status.AngleCtrl = (uint16_t)in_frame.data[2] | (uint16_t)(in_frame.data[3]<<8);
-        status.Current = in_frame.data[4];
-        status.Voltage = in_frame.data[5];
-        status.SelfCheckState = (uint16_t)in_frame.data[6] | (uint16_t)(in_frame.data[7]<<8);
-        if (status.SelfCheckState & 0b0000001000000000) {
-            status.brake = true;
-        }
-        if (status.SelfCheckState & 0b0000000100000000) {
-            status.brake = false;
-        }
-        if (status.target_brake == status.brake){
-            status.brake_confirm = true;
-        }
-        //gcs().send_text(MAV_SEVERITY_INFO, "ID:%lx AngleFb:%u AngleCtrl:%u", in_frame.id,status.AngleFb,status.AngleCtrl);
-    }
-
-}
-
-void FD_SERVO::set_pos(float pos_in)
-{
-    status.pos = constrain_float(pos_in, -45.0f, 45.0f);//////
-    int16_t tmp_pos = (int16_t)(status.pos*100.f);//////
-    int16_t last_pos = (int16_t)(status.last_pos*100.f);//////
-
-    status.last_pos = status.pos;
-    status.last_pos_ms = AP_HAL::millis();
-}
-
-void FD_SERVO::set_brake(bool brake_in)
-{
-    status.target_brake = brake_in;
-    status.brake_confirm = false;
-}
-
-void FD_SERVO::enable_brake(bool enable)
-{
-    status.have_brake = enable;
-    if (!status.have_brake) {
-        if (!status.brake_confirm || status.target_brake) {
-            status.target_brake = false;
-            status.brake_confirm = false;
-        }
+void FD_MOT::handle_info(AP_HAL::CANFrame &in_frame, bool do_print) {
+    if (in_frame.id == (0x80+status.id)) {
+        status.mode_out = in_frame.data[0]&0b00000111;
+        int16_t tmp_rpm_out = (int16_t)in_frame.data[1] | (int16_t)(in_frame.data[2]<<8);
+        status.rpm_out = (uint16_t)(constrain_int32((int32_t)tmp_rpm_out+30000, 0, 65535));
     }
 }
 
-bool FD_SERVO::get_brake()
-{
-    return status.brake;
-}
-
-void FD_SERVO::set_id(uint8_t id_in)
+void FD_MOT::set_id(uint8_t id_in)
 {
     status.id = id_in;
 }
 
-void FD_SERVO::update_cmd()
+void FD_MOT::set_mode(uint8_t mode_in)
 {
-    if (status.have_brake) {
-        update_cmd_brake();
-    } else {
-        update_cmd_nobrake();
+    status.mode_in = mode_in;
+}
+
+void FD_MOT::set_rpm(uint16_t rpm_in)
+{
+    status.rpm_in = rpm_in;
+}
+
+void FD_MOT::update()
+{
+    update_cmd();
+}
+
+void FD_MOT::update_cmd()
+{
+    // send cmd
+    {
+        if (AP_HAL::millis() - status.last_ctrl_ms > 5) {
+            status.last_ctrl_ms = AP_HAL::millis();
+            int16_t tmp_rpm = (constrain_int32((int32_t)(status.rpm_in), 0, 65535) - 30000);
+            _data[0] = status.mode_in&0b00000111;
+            _data[1] = 0x00;
+            _data[2] = 0x00;
+            _data[3] = (uint8_t)(tmp_rpm&0xff);
+            _data[4] = (uint8_t)((tmp_rpm>>8)&0xff);
+            _data[5] = 0x00;
+            _data[6] = (uint8_t)((status.send_count++)<<4);
+            _data[7] = 0x00;
+            sumcheck();
+            send_cmd(0x70+status.id, _data);
+        }
     }
 }
 
-void FD_SERVO::update_cmd_nobrake()
+void FD_MOT::sumcheck()
 {
-    // send confirm
-    if (!status.brake_confirm) {
-        if (AP_HAL::millis() - status.last_brake_ms > 100) {
-            status.last_brake_ms = AP_HAL::millis();
-            _data[0] = 0x22;
-            _data[1] = 0x0A;
-            _data[2] = 0x30;
-            _data[3] = 0x00;
-            _data[4] = status.target_brake?0x00:0x01;
-            _data[5] = 0x00;
-            _data[6] = 0x00;
-            _data[7] = 0x00;
-            send_cmd(0x600+status.id, _data);
-        }
-    }
-
-    // set position
-    {
-        if (AP_HAL::millis() - status.last_send_pos_ms > 5) {
-            status.last_send_pos_ms = AP_HAL::millis();
-            int16_t tmp_pos = (int16_t)(status.pos*100.f);
-            _data[0] = 0x22;
-            _data[1] = 0x03;
-            _data[2] = 0x60;
-            _data[3] = 0x00;
-            _data[4] = (uint8_t)(tmp_pos&0xff);
-            _data[5] = (uint8_t)((tmp_pos>>8)&0xff);
-            _data[6] = 0x00;
-            _data[7] = 0x00;
-            send_cmd(0x600+status.id, _data);
-        }
-    }
-
-    // ask status
-    {
-        if (AP_HAL::millis() - status.last_ask_status_ms > 100) {
-            status.last_ask_status_ms = AP_HAL::millis();
-            _data[0] = 0x40;
-            _data[1] = 0x01;
-            _data[2] = 0x60;
-            _data[3] = 0x00;
-            _data[4] = 0x00;
-            _data[5] = 0x00;
-            _data[6] = 0x00;
-            _data[7] = 0x00;
-            send_cmd(0x500+status.id, _data);
-        }
-    }
-
-}
-
-void FD_SERVO::update_cmd_brake()
-{
-    // send confirm
-    if (!status.brake_confirm) {
-        if (AP_HAL::millis() - status.last_brake_ms > 100) {
-            status.last_brake_ms = AP_HAL::millis();
-            _data[0] = 0x22;
-            _data[1] = 0x0A;
-            _data[2] = 0x30;
-            _data[3] = 0x00;
-            _data[4] = status.target_brake?0x00:0x01;
-            _data[5] = 0x00;
-            _data[6] = 0x00;
-            _data[7] = 0x00;
-            send_cmd(0x600+status.id, _data);
-        }
-        // set position
-        if (AP_HAL::millis() - status.last_send_pos_ms > 5) {
-            status.last_send_pos_ms = AP_HAL::millis();
-            int16_t tmp_pos = (int16_t)(status.pos*100.f);
-            _data[0] = 0x22;
-            _data[1] = 0x03;
-            _data[2] = 0x60;
-            _data[3] = 0x00;
-            _data[4] = (uint8_t)(tmp_pos&0xff);
-            _data[5] = (uint8_t)((tmp_pos>>8)&0xff);
-            _data[6] = 0x00;
-            _data[7] = 0x00;
-            send_cmd(0x600+status.id, _data);
-        }
-    } else {
-        if (!status.brake) {
-            if (AP_HAL::millis() - status.last_send_pos_ms > 5) {
-                status.last_send_pos_ms = AP_HAL::millis();
-                int16_t tmp_pos = (int16_t)(status.pos*100.f);
-                _data[0] = 0x22;
-                _data[1] = 0x03;
-                _data[2] = 0x60;
-                _data[3] = 0x00;
-                _data[4] = (uint8_t)(tmp_pos&0xff);
-                _data[5] = (uint8_t)((tmp_pos>>8)&0xff);
-                _data[6] = 0x00;
-                _data[7] = 0x00;
-                send_cmd(0x600+status.id, _data);
+    uint8_t i, j;
+    uint8_t u8_crc8;
+    uint8_t u8_poly;
+    u8_crc8 = 0xFF;
+    u8_poly = 0x1D;
+    for(i=0; i<7; i++) {
+        u8_crc8 ^= _data[i];
+        for(j=0;j<8;j++) {
+            if (u8_crc8&0x80) {
+                u8_crc8 = (u8_crc8<<1)^u8_poly;
+            } else {
+                u8_crc8<<=1;
             }
-        }
+        } 
     }
-
-    // ask status
-    {
-        if (AP_HAL::millis() - status.last_ask_status_ms > 100) {
-            status.last_ask_status_ms = AP_HAL::millis();
-            _data[0] = 0x40;
-            _data[1] = 0x01;
-            _data[2] = 0x60;
-            _data[3] = 0x00;
-            _data[4] = 0x00;
-            _data[5] = 0x00;
-            _data[6] = 0x00;
-            _data[7] = 0x00;
-            send_cmd(0x500+status.id, _data);
-        }
-    }
-
+    u8_crc8 ^= (uint8_t)0xFF;
+    _data[7] = u8_crc8;
 }
 
-void FD_SERVO::send_cmd(uint32_t id, uint8_t *data) {
+void FD_MOT::send_cmd(uint32_t id, uint8_t *data) {
     if (_frotend_ptr == nullptr) {return;}
     const uint8_t data_length = 8;
     AP_HAL::CANFrame txFrame{};
