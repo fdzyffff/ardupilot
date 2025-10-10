@@ -1,15 +1,15 @@
 #pragma once
 
 #include <AP_HAL/AP_HAL.h>
-#include "FD_CAN.h"
+#include "FD_CAN_1.h"
 
-class FD_CAN;
+class FD_CAN_1;
 
 class FD_SERVO {
 public:
-    friend class FD_CAN;
+    friend class FD_CAN_1;
 
-    FD_SERVO(FD_CAN* frotend);
+    FD_SERVO(FD_CAN_1* frotend);
     ~FD_SERVO();
 
     /* Do not allow copies */
@@ -26,7 +26,7 @@ public:
     void update_cmd_nobrake();
     void update_cmd_brake();
     void send_cmd(uint32_t id, uint8_t *data);
-    FD_CAN* _frotend_ptr;
+    FD_CAN_1* _frotend_ptr;
 
     struct status_t {
         uint32_t id;

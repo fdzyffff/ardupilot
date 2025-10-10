@@ -1,15 +1,15 @@
 #pragma once
 
 #include <AP_HAL/AP_HAL.h>
-#include "FD_CAN.h"
+#include "FD_CAN_2.h"
 
-class FD_CAN;
+class FD_CAN_2;
 
 class FD_COLLECTOR {
 public:
-    friend class FD_CAN;
+    friend class FD_CAN_2;
 
-    FD_COLLECTOR(FD_CAN* frotend);
+    FD_COLLECTOR(FD_CAN_2* frotend);
     ~FD_COLLECTOR();
 
     /* Do not allow copies */
@@ -19,7 +19,7 @@ public:
     void update_send();
     void send_cmd(uint32_t id, uint8_t *data);
     void send_utc();
-    FD_CAN* _frotend_ptr;
+    FD_CAN_2* _frotend_ptr;
 
     float left_wheel; // 左轮速 RPM
     float right_wheel; // 右轮速 RPM

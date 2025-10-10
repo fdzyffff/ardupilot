@@ -1,15 +1,15 @@
 #pragma once
 
 #include <AP_HAL/AP_HAL.h>
-#include "FD_CAN.h"
+#include "FD_CAN_1.h"
 
-class FD_CAN;
+class FD_CAN_1;
 
 class FD_MOT {
 public:
-    friend class FD_CAN;
+    friend class FD_CAN_1;
 
-    FD_MOT(FD_CAN* frotend);
+    FD_MOT(FD_CAN_1* frotend);
     ~FD_MOT();
 
     /* Do not allow copies */
@@ -18,23 +18,29 @@ public:
 
     void handle_info(AP_HAL::CANFrame &in_frame, bool do_print = false);
     void set_id(uint8_t id_in);
+    void set_rev(bool rev_in);
     void set_mode(uint8_t mode_in);
-    void set_rpm(uint16_t rpm_in);
+    void set_rpm(int16_t rpm_in);
+    void set_pitch(float pitch_in);
     void update();
     void update_cmd();
     void sumcheck();
     void send_cmd(uint32_t id, uint8_t *data);
-    FD_CAN* _frotend_ptr;
+    FD_CAN_1* _frotend_ptr;
 
     struct status_t {
         uint32_t id;
         uint8_t mode_in; // 0: standby, 1: torque, 2: rpm
-        uint16_t rpm_in;
-        uint32_t last_ctrl_ms;
+        int16_t rpm_in;
+        uint32_t last_mot_ms;
         uint8_t send_count;
 
         uint8_t mode_out;
-        uint16_t rpm_out;
+        int16_t rpm_out;
+
+        float pitch_in;
+        float pitch_out;
+        uint32_t last_pitch_ms;
     };
 
     status_t status;

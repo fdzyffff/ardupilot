@@ -6,9 +6,10 @@
 #include <AP_Param/AP_Param.h>
 
 #include <FD_CAN/FD_SERVO.h>
-#include <FD_CAN/FD_COLLECTOR.h>
+#include <FD_CAN/FD_MOT.h>
 
 #define FD_CAN_1_MAX_SERVO_NUM 16
+#define FD_CAN_1_MAX_MOT_NUM 4
 
 class FD_SERVO;
 class FD_COLLECTOR;
@@ -42,13 +43,12 @@ public:
     bool pre_arm_check(char* reason, uint8_t reason_len);
 
     FD_SERVO *_servo_ptr[FD_CAN_1_MAX_SERVO_NUM];
-    FD_COLLECTOR *_collector;
+    FD_NOT *_mot_ptr[FD_CAN_1_MAX_MOT_NUM];
 
-    AP_Int32 _print;    //.控制是否打印调试信息（0 禁用，非 0 启用）       
+    AP_Int32 _print;        //.控制是否打印调试信息（0 禁用，非 0 启用）       
     AP_Int8 _enable_srv;    //.控制是否启用舵机（SERVO）控制（1 启用，0 禁用）
     AP_Int8 _enable_mot;    //.控制是否启用电机（MOT）控制（1 启用，0 禁用）
-    AP_Int32 _interval_srv; //.舵机控制命令的发送间隔（单位：毫秒，范围 1-1000）
-    AP_Int32 _interval_mot; //.电机控制命令的发送间隔（单位：毫秒，范围 1-1000）     
+    AP_Int8 _rev_mot;       //.电机设反向掩码    
 
 private:
 

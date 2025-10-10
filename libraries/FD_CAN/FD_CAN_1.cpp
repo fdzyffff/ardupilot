@@ -34,8 +34,7 @@ const AP_Param::GroupInfo FD_CAN_1::var_info[] = {
     // No use, reserved
     AP_GROUPINFO("SRV", 2, FD_CAN_1, _enable_srv, 1),
     AP_GROUPINFO("MOT", 3, FD_CAN_1, _enable_mot, 1),
-    AP_GROUPINFO("TS", 4, FD_CAN_1, _interval_srv, 20),
-    AP_GROUPINFO("TM", 5, FD_CAN_1, _interval_mot, 20),
+    AP_GROUPINFO("MRV", 4, FD_CAN_1, _rev_mot, 0),
 
     AP_GROUPEND};
 
@@ -51,7 +50,14 @@ FD_CAN_1::FD_CAN_1() {  //.构造函数
         }
     }
 
-    _collector = new FD_COLLECTOR(this);
+    for (uint8_t i_mot = 0; i_mot < FD_CAN_1_MAX_MOT_NUM; i_mot++)
+    {
+        _mot_ptr[i_mot] = new FD_mot(this);
+        if (_mot_ptr[i_mot] != nullptr)
+        {
+            _mot_ptr[i_mot]->set_id(i_mot+1);
+        }
+    }
 
     debug_can(AP_CANManager::LOG_INFO, "CAN_FD_1: constructed\n\r");
 }
@@ -140,22 +146,19 @@ void FD_CAN_1::loop() {
             continue;
         }
 
-        uint32_t srv_interval = constrain_int32(_interval_srv.get(), 1, 1000);  //.舵机控制间隔（1-1000ms）
-        uint32_t mot_interval = constrain_int32(_interval_mot.get(), 1, 1000);
-
         while (read_frame(rxFrame, 0)) {    //.循环调用read_frame读取 CAN 帧
-            // gcs().send_text(MAV_SEVERITY_INFO, "rxFrame.id %ld", rxFrame.id);
-                // for (uint8_t i = 0; i<sizeof(rxFrame.data); i++) {
-                //     gcs().send_text(MAV_SEVERITY_INFO, "%d, %x", i, rxFrame.data[i]);
-                // }
-            // }
-
-
             for (uint8_t i_servo = 0; i_servo < FD_CAN_1_MAX_SERVO_NUM; i_servo++)
             {
                 if (_servo_ptr[i_servo] != nullptr)
                 {
                     _servo_ptr[i_servo]->handle_info(rxFrame, _print.get());    //.调用舵机的 handle_info 处理接收帧
+                }
+            }
+            for (uint8_t i_mot = 0; i_mot < FD_CAN_1_MAX_MOT_NUM; i_mot++)
+            {
+                if (_mot_ptr[i_mot] != nullptr)
+                {
+                    _mot_ptr[i_mot]->handle_info(rxFrame, _print.get());    //.调用电机的 handle_info 处理接收帧
                 }
             }
         }
@@ -169,45 +172,31 @@ void FD_CAN_1::loop() {
         }
 
         if (_enable_srv.get()) {    //. 若启用舵机控制 
-            if (AP_HAL::millis() -  last_servo_ms >= srv_interval) {    //.检查是否到达舵机控制间隔（当前时间 - 上次控制时间 ≥ 间隔）
-                last_servo_ms = AP_HAL::millis();
-                for (uint8_t i_servo = 0; i_servo <=FD_CAN_1_MAX_SERVO_NUM; i_servo++) {
-                    SRV_Channel *this_channel = SRV_Channels::srv_channel(i_servo);
-                    bool is_flap = false;   //. 标记当前舵机是否为襟翼
-                    if (this_channel == nullptr) {
-                        if (should_print_servo) {
-                            gcs().send_text(MAV_SEVERITY_INFO, "%d nullptr", i_servo);
-                        }
-                        continue;
+            for (uint8_t i_servo = 0; i_servo <=FD_CAN_1_MAX_SERVO_NUM; i_servo++) {
+                SRV_Channel *this_channel = SRV_Channels::srv_channel(i_servo);
+                // bool is_flap = false;   //. 标记当前舵机是否为襟翼
+                if (this_channel == nullptr) {
+                    if (should_print_servo) {
+                        gcs().send_text(MAV_SEVERITY_INFO, "%d nullptr", i_servo);
                     }
-                    if (this_channel->get_function() == SRV_Channel::Aux_servo_function_t::k_flap) {    //.判断当前通道是否配置为“襟翼”（k_flap是襟翼功能枚举）
-                        is_flap = true;
-                    }
-                    uint16_t pwm = this_channel->get_output_pwm();
-                    if (pwm == 0) {
-                        pwm = 1500;
-                    }
-                    float pwm_value = constrain_float((float)pwm, 1000.f, 2000.f);
-                    int16_t servo_angle = (pwm_value - 1500.f)*12.f;//+-4500
-
-                    if (_servo_ptr[i_servo] != nullptr) {
-                        _servo_ptr[i_servo]->enable_brake(is_flap);//. 襟翼舵机启用刹车
-                        _servo_ptr[i_servo]->set_pos(servo_angle/100.f);//. 设置舵机目标角度
-                    }
-                    
-                    // if (write_frame(txFrame, timeout)) {
-                    //     if (should_print_servo) {
-                    //         gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, servo_angle);
-                    //     }
-                    // } else {
-                    //     if (should_print_servo) {
-                    //         gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d Fail", (uint16_t)txFrame.id, servo_angle);
-                    //     }
-                    // }
+                    continue;
                 }
-                should_print_servo = false;
-            }
+                // if (this_channel->get_function() == SRV_Channel::Aux_servo_function_t::k_flap) {    //.判断当前通道是否配置为“襟翼”（k_flap是襟翼功能枚举）
+                //     is_flap = true;
+                // }
+                uint16_t pwm = this_channel->get_output_pwm();
+                if (pwm == 0) {
+                    pwm = 1500;
+                }
+                float pwm_value = constrain_float((float)pwm, 1000.f, 2000.f);
+                int16_t servo_angle = (pwm_value - 1500.f)*12.f;//+-4500
 
+                if (_servo_ptr[i_servo] != nullptr) {
+                    // _servo_ptr[i_servo]->enable_brake(is_flap);//. 襟翼舵机启用刹车
+                    _servo_ptr[i_servo]->set_pos(servo_angle/100.f);//. 设置舵机目标角度
+                }
+            }
+            should_print_servo = false;
 
             for (uint8_t i_servo = 0; i_servo < FD_CAN_1_MAX_SERVO_NUM; i_servo++)    //.遍历所有舵机，发送控制命令（将set_pos设置的角度转换为CAN帧）
             {
@@ -219,133 +208,67 @@ void FD_CAN_1::loop() {
         }
 
         if (_enable_mot.get()) {    
-            if (AP_HAL::millis() -  last_mot_ms >= mot_interval) {
-                last_mot_ms = AP_HAL::millis();
-                //-桨距控制，0~65535对应-90°到90°范围桨距角
-                // uint16_t thr_left = SRV_Channels::get_output_scaled(SRV_Channel::k_throttleLeft)*10.f;//.get_output_scaled输出0-100
-                // uint16_t thr_right = SRV_Channels::get_output_scaled(SRV_Channel::k_throttleRight)*10.f;
-                uint16_t thr_left = 32768 + SRV_Channels::get_output_scaled(SRV_Channel::k_throttleLeft)*0.4*32767/90;
-                uint16_t thr_right = 32768 + SRV_Channels::get_output_scaled(SRV_Channel::k_throttleRight)*0.4*32767/90;
+            //-桨距控制，0~65535对应-90°到90°范围桨距角
+            float pitch_left = SRV_Channels::get_output_scaled(SRV_Channel::k_throttleLeft)*0.4;
+            float pitch_right = SRV_Channels::get_output_scaled(SRV_Channel::k_throttleRight)*0.4;
 
-                for (uint8_t i_proprller = 1; i_proprller < 3; i_proprller++){//.左边
-                    txFrame.id = 0x400+i_proprller;
-                    txFrame.data[0] = (uint8_t)(thr_left&0xFF);//.低八位
-                    txFrame.data[1] = (uint8_t)((thr_left>>8)&0xFF);//.高八位
-                    txFrame.data[2] = 0x00;
-                    txFrame.data[3] = 0x00;
-                    txFrame.data[4] = 0x00;
-                    txFrame.data[5] = 0x00;
-                    txFrame.data[6] = 0x00;
-                    txFrame.data[7] = 0x00;
-                    txFrame.dlc = 8;
-                    timeout = AP_HAL::micros64() + 10000ULL;
-                    if (write_frame(txFrame, timeout)) {
-                        if (should_print_mot) {
-                            gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, thr_left);
-                        }
-                    } else {
-                        if (should_print_mot) {
-                            gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
-                        }
-                    }
-                    write_frame(txFrame, timeout);
+            if (_mot_ptr[0] != nullptr) {
+                _mot_ptr[0]->set_pitch(pitch_left);
+                if (should_print_mot) {
+                    gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)_mot_ptr[0]->status.id, (uint16_t)pitch_left);
                 }
-                for (uint8_t i_proprller = 3; i_proprller < 5; i_proprller++){//.右边
-                    txFrame.id = 0x400+i_proprller;
-                    txFrame.data[0] = (uint8_t)(thr_right&0xFF);//.低八位
-                    txFrame.data[1] = (uint8_t)((thr_right>>8)&0xFF);//.高八位
-                    txFrame.data[2] = 0x00;
-                    txFrame.data[3] = 0x00;
-                    txFrame.data[4] = 0x00;
-                    txFrame.data[5] = 0x00;
-                    txFrame.data[6] = 0x00;
-                    txFrame.data[7] = 0x00;
-                    txFrame.dlc = 8;
-                    timeout = AP_HAL::micros64() + 10000ULL;
-                    // if (write_frame(txFrame, timeout)) {
-                    //     if (should_print_mot) {
-                    //         gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, thr_left);
-                    //     }
-                    // } else {
-                    //     if (should_print_mot) {
-                    //         gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
-                    //     }
-                    // }
-                    write_frame(txFrame, timeout);
-                }
-
-                // thr_left = 65535/2 + SRV_Channels::get_output_scaled(SRV_Channel::k_throttleLeft)*277;//0~65535对应-90°到90°范围桨距角
-                // thr_right = 65535/2 + SRV_Channels::get_output_scaled(SRV_Channel::k_throttleRight)*277;
-                //-电机转速
-                // uint16_t thr = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle)*10.f;
-                int16_t ch6_pwm = 0;
-                uint16_t thr = 0;
-                RC_Channel* ch6 = RC_Channels::rc_channel(5);
-                if (ch6 != nullptr) {
-                    ch6_pwm = ch6->get_radio_in(); //. 返回PWM值（微秒）数据类型为int16_t
-                }
-
-                if (ch6_pwm < 1100) {
-                    thr = 0;
-                } else if(ch6_pwm < 1600){
-                    thr = 500;
-                }else{
-                    thr = 1000;
-                }
-
-                for (uint8_t i_mot = 1; i_mot < 5; i_mot++){
-                    txFrame.id = 0x70+i_mot;
-                    txFrame.data[0] = 0x04;//二进制00000100
-                    txFrame.data[1] = 0x00;
-                    txFrame.data[2] = 0x00;
-                    txFrame.data[3] = (uint8_t)(thr&0xFF);//.低八位
-                    txFrame.data[4] = (uint8_t)((thr>>8)&0xFF);//.高八位
-                    txFrame.data[5] = 0x00;
-                    txFrame.data[6] = 0x00;
-                    txFrame.data[7] = 0x00;
-                    txFrame.dlc = 8;
-                    timeout = AP_HAL::micros64() + 10000ULL;
-                    // if (write_frame(txFrame, timeout)) {
-                    //     if (should_print_mot) {
-                    //         gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)txFrame.id, thr);
-                    //     }
-                    // } else {
-                    //     if (should_print_mot) {
-                    //         gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
-                    //     }
-                    // }
-                    write_frame(txFrame, timeout);
-                }
-                
-                should_print_mot = false;
             }
+            if (_mot_ptr[1] != nullptr) {
+                _mot_ptr[1]->set_pitch(pitch_left);
+                if (should_print_mot) {
+                    gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)_mot_ptr[1]->status.id, (uint16_t)pitch_left);
+                }
+            }
+            if (_mot_ptr[2] != nullptr) {
+                _mot_ptr[2]->set_pitch(pitch_right);
+                if (should_print_mot) {
+                    gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)_mot_ptr[2]->status.id, (uint16_t)pitch_right);
+                }
+            }
+            if (_mot_ptr[3] != nullptr) {
+                _mot_ptr[3]->set_pitch(pitch_right);
+                if (should_print_mot) {
+                    gcs().send_text(MAV_SEVERITY_INFO, "Send %x- %d", (uint16_t)_mot_ptr[3]->status.id, (uint16_t)pitch_right);
+                }
+            }
+
+            //-电机转速
+            // uint16_t thr = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle)*10.f;
+            int16_t ch6_pwm = 0;
+            int16_t thr = 0;
+            RC_Channel* ch6 = RC_Channels::rc_channel(5);
+            if (ch6 != nullptr) {
+                ch6_pwm = ch6->get_radio_in(); //. 返回PWM值（微秒）数据类型为int16_t
+            }
+
+            if (ch6_pwm < 1100) {
+                thr = 0;
+            } else if(ch6_pwm < 1600){
+                thr = 500;
+            }else{
+                thr = 1000;
+            }
+
+            for (uint8_t i_mot = 1; i_mot < 5; i_mot++){
+                if (_rev_mot & (1<<i_mot)) {
+                    thr = -thr;
+                }
+                _mot_ptr[i_mot]->set_rpm(thr)
+            }
+
+            for (uint8_t i_mot = 1; i_mot < 5; i_mot++){
+                if (_mot_ptr[i_mot] != nullptr) {
+                    _mot_ptr[i_mot]->update();
+                }
+            }
+            
+            should_print_mot = false;
         }
-
-        if (_collector != nullptr) {
-            _collector->update_send();
-        }
-
-
-
-        // // 测试数据，10Hz
-        // if (AP_HAL::millis() -  last_log_ms >= 100) {
-        //     last_log_ms = AP_HAL::millis();
-        //     log_status();
-        //     if (_out.get() > 0) {
-        //         txFrame.id = 0xEE;
-        //         txFrame.data[0] = 0x11;
-        //         for (uint8_t i = 0; i<sizeof(txFrame.data); i++) {
-        //             // gcs().send_text(MAV_SEVERITY_INFO, "%d, %x", i, rxFrame.data[i]);
-        //             txFrame.data[i] = i;
-        //         }
-        //         txFrame.dlc = 8;//txFrame.dataLengthToDlc(64);
-        //         if (write_frame(txFrame, 0)) {
-        //             gcs().send_text(MAV_SEVERITY_INFO, "Send %d", (uint16_t)sizeof(txFrame.data));
-        //         } else {
-        //             gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
-        //         }
-        //     }
-        // }
 
         // 1ms loop delay
         hal.scheduler->delay_microseconds(1000);  // 延时1ms，从而此线程以1KHz的频率执行

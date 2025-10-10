@@ -5,7 +5,8 @@
 
 #include <AP_Param/AP_Param.h>
 
-#include <FD_CAN/FD_SERVO.h>
+#include <FD_CAN/FD_BMS.h>
+#include <FD_CAN/FD_BLOWER.h>
 #include <FD_CAN/FD_COLLECTOR.h>
 
 #define FD_CAN_2_MAX_SERVO_NUM 16
@@ -41,7 +42,8 @@ public:
     // test if the CAN driver is ready to be armed
     bool pre_arm_check(char* reason, uint8_t reason_len);
 
-    FD_SERVO *_servo_ptr[FD_CAN_2_MAX_SERVO_NUM];
+    FD_BMS *_bms;
+    FD_BLOWER *_blower;
     FD_COLLECTOR *_collector;
 
     AP_Int32 _print;    //.控制是否打印调试信息（0 禁用，非 0 启用）       
