@@ -55,7 +55,7 @@ void FD_BMS::do_power_on(uint8_t id)
     _data[7] = 0x00;
 
     if (id >= 1 && id <= 4) {
-        _data[id] = 0x01;
+        _data[id-1] = 0x01;
     }
 
     send_cmd(0x1801F4E5, _data);

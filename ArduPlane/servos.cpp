@@ -660,9 +660,20 @@ void Plane::set_servos_flaps(void)
     int8_t manual_flap_percent = 0;
 
     // work out any manual flap input
-    if (channel_flap != nullptr && rc().has_valid_input()) {
-        manual_flap_percent = channel_flap->percent_input();
+    float flap_angle = 0.0f;
+    RC_Channel* tmp_flap = rc().find_channel_for_option(RC_Channel::AUX_FUNC::FLAP_POS);
+    if (tmp_flap != nullptr) {
+        int16_t tmp_ch_pwm = tmp_flap->get_radio_in(); //. 返回PWM值（微秒）数据类型为int16_t
+        if (tmp_ch_pwm < 1100) {
+            flap_angle = 10.0f;
+        } else if(tmp_ch_pwm < 1600){
+            flap_angle = 50.0f;
+        }else{
+            flap_angle = 60.0f;
+        }
     }
+
+    manual_flap_percent = (int8_t)constrain_float(flap_angle * 100.f/60.f, 0.f, 100.f);
 
     if (control_mode->does_auto_throttle()) {
         int16_t flapSpeedSource = 0;
@@ -896,6 +907,7 @@ void Plane::set_servos(void)
     // set airbrake outputs
     airbrake_update();
 
+    brake_update();
     // slew rate limit throttle
     throttle_slew_limit(SRV_Channel::k_throttle);
 
@@ -1137,4 +1149,20 @@ void Plane::servos_auto_trim(void)
         g2.servo_channels.save_trim();
     }
     
+}
+
+void Plane::brake_update()
+{
+    // work out any manual flap input
+    RC_Channel* tmp_brake_left = rc().find_channel_for_option(RC_Channel::AUX_FUNC::BRAKE_LEFT_IN);
+    if (tmp_brake_left != nullptr) {
+        int16_t tmp_ch_pwm = tmp_brake_left->get_radio_in(); //. 返回PWM值（微秒）数据类型为int16_t
+        SRV_Channels::set_output_pwm(SRV_Channel::k_brake_left, tmp_ch_pwm);
+    }
+
+    RC_Channel* tmp_brake_right = rc().find_channel_for_option(RC_Channel::AUX_FUNC::BRAKE_RIGHT_IN);
+    if (tmp_brake_right != nullptr) {
+        int16_t tmp_ch_pwm = tmp_brake_right->get_radio_in(); //. 返回PWM值（微秒）数据类型为int16_t
+        SRV_Channels::set_output_pwm(SRV_Channel::k_brake_right, tmp_ch_pwm);
+    }
 }

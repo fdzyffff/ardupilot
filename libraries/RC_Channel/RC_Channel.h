@@ -283,8 +283,16 @@ public:
         SCRIPTING_7 =        306,
         SCRIPTING_8 =        307,
 
+        FLAP_LOCK =          400,
+        FLAP_POS =           401,
+        BMS_POWER =          402,
+        MOT_RPM =            403,
+        MOT_PITCH =          404,
+        BRAKE_LEFT_IN =      405,
+        BRAKE_RIGHT_IN =     406,
+        BLOWER_ONOFF =       407,
         // this must be higher than any aux function above
-        AUX_FUNCTION_MAX =   308,
+        AUX_FUNCTION_MAX =   408,
     };
     typedef enum AUX_FUNC aux_func_t;
 

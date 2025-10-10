@@ -1255,6 +1255,8 @@ private:
     // last target alt we passed to tecs
     int32_t tecs_target_alt_cm;
 
+    void brake_update();
+
     void userhook_init();
     void userhook_FastLoop();
     void userhook_SlowLoop();

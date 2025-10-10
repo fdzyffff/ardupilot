@@ -174,16 +174,16 @@ void FD_CAN_1::loop() {
         if (_enable_srv.get()) {    //. 若启用舵机控制 
             for (uint8_t i_servo = 0; i_servo <=FD_CAN_1_MAX_SERVO_NUM; i_servo++) {
                 SRV_Channel *this_channel = SRV_Channels::srv_channel(i_servo);
-                // bool is_flap = false;   //. 标记当前舵机是否为襟翼
+                bool is_flap = false;   //. 标记当前舵机是否为襟翼
                 if (this_channel == nullptr) {
                     if (should_print_servo) {
                         gcs().send_text(MAV_SEVERITY_INFO, "%d nullptr", i_servo);
                     }
                     continue;
                 }
-                // if (this_channel->get_function() == SRV_Channel::Aux_servo_function_t::k_flap) {    //.判断当前通道是否配置为“襟翼”（k_flap是襟翼功能枚举）
-                //     is_flap = true;
-                // }
+                if (this_channel->get_function() == SRV_Channel::Aux_servo_function_t::k_flap_tz605) {    //.判断当前通道是否配置为“襟翼”（k_flap是襟翼功能枚举）
+                    is_flap = true;
+                }
                 uint16_t pwm = this_channel->get_output_pwm();
                 if (pwm == 0) {
                     pwm = 1500;
@@ -192,19 +192,31 @@ void FD_CAN_1::loop() {
                 int16_t servo_angle = (pwm_value - 1500.f)*12.f;//+-4500
 
                 if (_servo_ptr[i_servo] != nullptr) {
-                    // _servo_ptr[i_servo]->enable_brake(is_flap);//. 襟翼舵机启用刹车
-                    _servo_ptr[i_servo]->set_pos(servo_angle/100.f);//. 设置舵机目标角度
-                }
-            }
-            should_print_servo = false;
+                    if (is_flap) {
+                        bool flap_lock = false;
+                        RC_Channel* tmp_ch_flap = rc().find_channel_for_option(RC_Channel::AUX_FUNC::FLAP_LOCK);
+                        if (tmp_ch_flap != nullptr) {
+                            int16_t tmp_ch_pwm = tmp_ch_flap->get_radio_in(); //. 返回PWM值（微秒）数据类型为int16_t
 
-            for (uint8_t i_servo = 0; i_servo < FD_CAN_1_MAX_SERVO_NUM; i_servo++)    //.遍历所有舵机，发送控制命令（将set_pos设置的角度转换为CAN帧）
-            {
-                if (_servo_ptr[i_servo] != nullptr)
-                {
+                            if (tmp_ch_pwm < 1500){
+                                flap_lock = false;
+                            }else{
+                                flap_lock = true;
+                            }
+                        }
+                        _servo_ptr[i_servo]->enable_brake(is_flap);//. 襟翼舵机启用刹车
+                        _servo_ptr[i_servo]->set_brake(flap_brake);//. 襟翼舵机启用刹车
+                        _servo_ptr[i_servo]->set_pos(servo_angle/100.f);//. 设置舵机目标角度
+                    } else {
+                        _servo_ptr[i_servo]->enable_brake(false);//. 襟翼舵机启用刹车
+                        _servo_ptr[i_servo]->set_brake(false);//. 襟翼舵机启用刹车
+                        _servo_ptr[i_servo]->set_pos(servo_angle/100.f);//. 设置舵机目标角度
+                    }
+
                     _servo_ptr[i_servo]->update();  //.核心：生成CAN帧并调用write_frame发送
                 }
             }
+            should_print_servo = false;
         }
 
         if (_enable_mot.get()) {    
@@ -239,30 +251,31 @@ void FD_CAN_1::loop() {
 
             //-电机转速
             // uint16_t thr = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle)*10.f;
-            int16_t ch6_pwm = 0;
-            int16_t thr = 0;
-            RC_Channel* ch6 = RC_Channels::rc_channel(5);
-            if (ch6 != nullptr) {
-                ch6_pwm = ch6->get_radio_in(); //. 返回PWM值（微秒）数据类型为int16_t
-            }
+            int16_t mot_rpm = 0;
+            uint8_t mot_mode = 0;
+            RC_Channel* tmp_ch_mot = rc().find_channel_for_option(RC_Channel::AUX_FUNC::MOT_RPM);
+            if (tmp_ch_mot != nullptr) {
+                int16_t ch_pwm = tmp_ch_mot->get_radio_in(); //. 返回PWM值（微秒）数据类型为int16_t
 
-            if (ch6_pwm < 1100) {
-                thr = 0;
-            } else if(ch6_pwm < 1600){
-                thr = 500;
-            }else{
-                thr = 1000;
-            }
-
-            for (uint8_t i_mot = 1; i_mot < 5; i_mot++){
-                if (_rev_mot & (1<<i_mot)) {
-                    thr = -thr;
+                if (ch_pwm < 1100) {
+                    mot_mode = 0;
+                    mot_rpm = 0;
+                } else if(ch_pwm < 1600){
+                    mot_mode = 2;
+                    mot_rpm = 0;
+                }else{
+                    mot_mode = 2;
+                    mot_rpm = 3000;
                 }
-                _mot_ptr[i_mot]->set_rpm(thr)
             }
 
             for (uint8_t i_mot = 1; i_mot < 5; i_mot++){
                 if (_mot_ptr[i_mot] != nullptr) {
+                    if (_rev_mot & (1<<i_mot)) {
+                        mot_rpm = -mot_rpm;
+                    }
+                    _mot_ptr[i_mot]->set_mode(mot_mode);
+                    _mot_ptr[i_mot]->set_rpm(mot_rpm);
                     _mot_ptr[i_mot]->update();
                 }
             }

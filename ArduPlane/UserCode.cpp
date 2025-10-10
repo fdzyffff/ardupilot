@@ -125,6 +125,8 @@ void Plane::userhook_SlowLoop() {
     // gcs().send_text(MAV_SEVERITY_INFO, "GPS healthy: %d", gps.is_healthy());
 
     // gcs().send_text(MAV_SEVERITY_INFO, "EKF type: %d", ahrs.get_ekf_type());
+
+    userhook_param_check();
 }
 
 void Plane::userhook_auto_takeoff() {
@@ -309,5 +311,111 @@ void Plane::userhook_calc_throttle() {
                                     (float)g2.user_thr_pid.get_pid_info().D,
                                     (float)g2.user_thr_pid.get_pid_info().slew_rate,
                                     (float)g2.user_thr_pid.get_pid_info().Dmod);
+    }
+}
+
+void Plane::userhook_param_check() {
+    FD_CAN_2 *can_2 = nullptr;
+    for (uint8_t i_can = 0; i < AP::can().get_num_drivers(); i_can++) {
+        if (AP::can().get_driver_type(i_can) == AP_CAN::Protocol::FDCAN1) {
+            can_2 = (FD_CAN_2*)AP::can().get_driver(i_can);
+            break;
+        }
+    }
+
+    static uint8_t mot_1 = g2.user_mot_1.get();
+    if (mot_1 != g2.user_mot_1.get()) {
+        mot_1 = g2.user_mot_1.get();
+        if (mot_1) {
+            if (can_2 != nullptr && can_2->_bms != nullptr) {
+                can_2->_bms->do_power_on(1);
+                gcs().send_text(MAV_SEVERITY_INFO, "MOT 1 POWER ON");
+            } else {
+                gcs().send_text(MAV_SEVERITY_INFO, "MOT 1 FAIL");
+            }
+        } else {
+            if (can_2 != nullptr && can_2->_bms != nullptr) {
+                can_2->_bms->do_power_off(1);
+                gcs().send_text(MAV_SEVERITY_INFO, "MOT 1 POWER OFF");
+            } else {
+                gcs().send_text(MAV_SEVERITY_INFO, "MOT 1 FAIL");
+            }
+        }
+    }
+    static uint8_t mot_2 = g2.user_mot_2.get();
+    if (mot_2 != g2.user_mot_2.get()) {
+        mot_2 = g2.user_mot_2.get();
+        if (mot_2) {
+            if (can_2 != nullptr && can_2->_bms != nullptr) {
+                can_2->_bms->do_power_on(2);
+                gcs().send_text(MAV_SEVERITY_INFO, "MOT 2 POWER ON");
+            } else {
+                gcs().send_text(MAV_SEVERITY_INFO, "MOT 2 FAIL");
+            }
+        } else {
+            if (can_2 != nullptr && can_2->_bms != nullptr) {
+                can_2->_bms->do_power_off(2);
+                gcs().send_text(MAV_SEVERITY_INFO, "MOT 2 POWER OFF");
+            } else {
+                gcs().send_text(MAV_SEVERITY_INFO, "MOT 2 FAIL");
+            }
+        }
+    }
+    static uint8_t mot_3 = g2.user_mot_3.get();
+    if (mot_3 != g2.user_mot_3.get()) {
+        mot_3 = g2.user_mot_3.get();
+        if (mot_3) {
+            if (can_2 != nullptr && can_2->_bms != nullptr) {
+                can_2->_bms->do_power_on(3);
+                gcs().send_text(MAV_SEVERITY_INFO, "MOT 3 POWER ON");
+            } else {
+                gcs().send_text(MAV_SEVERITY_INFO, "MOT 3 FAIL");
+            }
+        } else {
+            if (can_2 != nullptr && can_2->_bms != nullptr) {
+                can_2->_bms->do_power_off(3);
+                gcs().send_text(MAV_SEVERITY_INFO, "MOT 3 POWER OFF");
+            } else {
+                gcs().send_text(MAV_SEVERITY_INFO, "MOT 3 FAIL");
+            }
+        }
+    }
+    static uint8_t mot_4 = g2.user_mot_4.get();
+    if (mot_4 != g2.user_mot_4.get()) {
+        mot_4 = g2.user_mot_4.get();
+        if (mot_4) {
+            if (can_2 != nullptr && can_2->_bms != nullptr) {
+                can_2->_bms->do_power_on(4);
+                gcs().send_text(MAV_SEVERITY_INFO, "MOT 4 POWER ON");
+            } else {
+                gcs().send_text(MAV_SEVERITY_INFO, "MOT 4 FAIL");
+            }
+        } else {
+            if (can_2 != nullptr && can_2->_bms != nullptr) {
+                can_2->_bms->do_power_off(4);
+                gcs().send_text(MAV_SEVERITY_INFO, "MOT 4 POWER OFF");
+            } else {
+                gcs().send_text(MAV_SEVERITY_INFO, "MOT 4 FAIL");
+            }
+        }
+    }
+    static uint8_t blower = g2.user_blower.get();
+    if (blower != g2.user_blower.get()) {
+        blower = g2.user_blower.get();
+        if (blower) {
+            if (can_2 != nullptr && can_2->_blower != nullptr) {
+                can_2->_blower->do_power_on(4);
+                gcs().send_text(MAV_SEVERITY_INFO, "BLOWER POWER ON");
+            } else {
+                gcs().send_text(MAV_SEVERITY_INFO, "BLOWER FAIL");
+            }
+        } else {
+            if (can_2 != nullptr && can_2->_blower != nullptr) {
+                can_2->_blower->do_power_off(4);
+                gcs().send_text(MAV_SEVERITY_INFO, "BLOWER POWER OFF");
+            } else {
+                gcs().send_text(MAV_SEVERITY_INFO, "BLOWER FAIL");
+            }
+        }
     }
 }

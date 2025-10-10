@@ -168,6 +168,49 @@ void FD_CAN_2::loop() {
             _collector->update_send();
         }
 
+        if (_bms != nullptr) {
+            static bool bms_on = false;
+            RC_Channel* tmp_ch_bms = rc().find_channel_for_option(RC_Channel::AUX_FUNC::BMS_POWER);
+            if (tmp_ch_bms != nullptr) {
+                int16_t ch_pwm = tmp_ch_bms->get_radio_in(); //. 返回PWM值（微秒）数据类型为int16_t
+
+                if (ch_pwm < 1500){
+                    if (bms_on) {
+                        _bms->do_power_off();
+                        gcs().send_text(MAV_SEVERITY_INFO, "BMS POWER OFF");
+                    }
+                    bms_on = false;
+                } else {
+                    if (!bms_on) {
+                        _bms->do_power_on();
+                        gcs().send_text(MAV_SEVERITY_INFO, "BMS POWER ON");
+                    }
+                    bms_on = true;
+                }
+            }
+        }
+
+        if (_blower != nullptr) {
+            static bool blower_on = false;
+            RC_Channel* tmp_ch_blower = rc().find_channel_for_option(RC_Channel::AUX_FUNC::BLOWER_ONOFF);
+            if (tmp_ch_blower != nullptr) {
+                int16_t ch_pwm = tmp_ch_blower->get_radio_in(); //. 返回PWM值（微秒）数据类型为int16_t
+
+                if (ch_pwm < 1500){
+                    if (blower_on) {
+                        _blower->do_off();
+                        gcs().send_text(MAV_SEVERITY_INFO, "BLOWER SWITCH OFF");
+                    }
+                    blower_on = false;
+                } else {
+                    if (!blower_on) {
+                        _blower->do_on();
+                        gcs().send_text(MAV_SEVERITY_INFO, "BLOWER SWITCH ON");
+                    }
+                    blower_on = true;
+                }
+            }
+        }
 
 
         // // 测试数据，10Hz

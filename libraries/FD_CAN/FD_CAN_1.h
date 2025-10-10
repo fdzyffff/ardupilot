@@ -43,7 +43,7 @@ public:
     bool pre_arm_check(char* reason, uint8_t reason_len);
 
     FD_SERVO *_servo_ptr[FD_CAN_1_MAX_SERVO_NUM];
-    FD_NOT *_mot_ptr[FD_CAN_1_MAX_MOT_NUM];
+    FD_MOT *_mot_ptr[FD_CAN_1_MAX_MOT_NUM];
 
     AP_Int32 _print;        //.控制是否打印调试信息（0 禁用，非 0 启用）       
     AP_Int8 _enable_srv;    //.控制是否启用舵机（SERVO）控制（1 启用，0 禁用）
