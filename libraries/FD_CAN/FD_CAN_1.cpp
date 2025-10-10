@@ -52,7 +52,7 @@ FD_CAN_1::FD_CAN_1() {  //.构造函数
 
     for (uint8_t i_mot = 0; i_mot < FD_CAN_1_MAX_MOT_NUM; i_mot++)
     {
-        _mot_ptr[i_mot] = new FD_mot(this);
+        _mot_ptr[i_mot] = new FD_MOT(this);
         if (_mot_ptr[i_mot] != nullptr)
         {
             _mot_ptr[i_mot]->set_id(i_mot+1);
@@ -65,7 +65,7 @@ FD_CAN_1::FD_CAN_1() {  //.构造函数
 FD_CAN_1 *FD_CAN_1::get_can_fd(uint8_t driver_index) {  //.从 CAN 管理器中获取指定索引（driver_index）的FD_CAN_1实例
     if (driver_index >= AP::can().get_num_drivers() ||
         AP::can().get_driver_type(driver_index) !=
-            AP_CAN::Protocol::FDCAN) {
+            AP_CAN::Protocol::FDCAN_1) {
         return nullptr;
     }
 
@@ -132,12 +132,9 @@ void FD_CAN_1::loop() {
     AP_HAL::CANFrame txFrame{}; //. 发送用的 CAN 帧对象
     AP_HAL::CANFrame rxFrame{};
     // uint32_t last_log_ms = AP_HAL::millis();
-    uint32_t last_servo_ms = AP_HAL::millis();  //. 舵机命令上一次发送时间（毫秒）
-    uint32_t last_mot_ms = AP_HAL::millis();
     uint32_t last_print_ms = AP_HAL::millis();
     bool should_print_servo = false;
     bool should_print_mot = false;
-    uint64_t timeout = AP_HAL::micros64() + 10000ULL;
 
     while (true) {
         if (!_initialized) {
@@ -205,7 +202,7 @@ void FD_CAN_1::loop() {
                             }
                         }
                         _servo_ptr[i_servo]->enable_brake(is_flap);//. 襟翼舵机启用刹车
-                        _servo_ptr[i_servo]->set_brake(flap_brake);//. 襟翼舵机启用刹车
+                        _servo_ptr[i_servo]->set_brake(flap_lock);//. 襟翼舵机启用刹车
                         _servo_ptr[i_servo]->set_pos(servo_angle/100.f);//. 设置舵机目标角度
                     } else {
                         _servo_ptr[i_servo]->enable_brake(false);//. 襟翼舵机启用刹车
@@ -269,7 +266,7 @@ void FD_CAN_1::loop() {
                 }
             }
 
-            for (uint8_t i_mot = 1; i_mot < 5; i_mot++){
+            for (uint8_t i_mot = 1; i_mot < FD_CAN_1_MAX_MOT_NUM; i_mot++){
                 if (_mot_ptr[i_mot] != nullptr) {
                     if (_rev_mot & (1<<i_mot)) {
                         mot_rpm = -mot_rpm;

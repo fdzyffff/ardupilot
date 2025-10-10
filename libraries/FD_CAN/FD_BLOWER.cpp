@@ -9,7 +9,7 @@
 extern const AP_HAL::HAL &hal;
 
 
-FD_BLOWER::FD_BLOWER(FD_CAN *frotend) {
+FD_BLOWER::FD_BLOWER(FD_CAN_2 *frotend) {
     _frotend_ptr = frotend;
 }
 

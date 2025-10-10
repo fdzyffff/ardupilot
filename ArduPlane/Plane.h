@@ -124,6 +124,8 @@
 #include "AP_Arming.h"
 
 #include "User_shiftaverage.h"
+
+#include <FD_CAN/FD_CAN.h>
 /*
   main APM:Plane class
  */
@@ -1267,6 +1269,7 @@ private:
     void userhook_auto_land();
     void userhook_calc_pitch();
     void userhook_calc_throttle();
+    void userhook_param_check();
     float _user_pitch_target;
     float _user_throttle_out;
     float _user_airspeed_target;

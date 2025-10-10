@@ -316,8 +316,8 @@ void Plane::userhook_calc_throttle() {
 
 void Plane::userhook_param_check() {
     FD_CAN_2 *can_2 = nullptr;
-    for (uint8_t i_can = 0; i < AP::can().get_num_drivers(); i_can++) {
-        if (AP::can().get_driver_type(i_can) == AP_CAN::Protocol::FDCAN1) {
+    for (uint8_t i_can = 0; i_can < AP::can().get_num_drivers(); i_can++) {
+        if (AP::can().get_driver_type(i_can) == AP_CAN::Protocol::FDCAN_2) {
             can_2 = (FD_CAN_2*)AP::can().get_driver(i_can);
             break;
         }
@@ -404,14 +404,14 @@ void Plane::userhook_param_check() {
         blower = g2.user_blower.get();
         if (blower) {
             if (can_2 != nullptr && can_2->_blower != nullptr) {
-                can_2->_blower->do_power_on(4);
+                can_2->_blower->do_power_on();
                 gcs().send_text(MAV_SEVERITY_INFO, "BLOWER POWER ON");
             } else {
                 gcs().send_text(MAV_SEVERITY_INFO, "BLOWER FAIL");
             }
         } else {
             if (can_2 != nullptr && can_2->_blower != nullptr) {
-                can_2->_blower->do_power_off(4);
+                can_2->_blower->do_power_off();
                 gcs().send_text(MAV_SEVERITY_INFO, "BLOWER POWER OFF");
             } else {
                 gcs().send_text(MAV_SEVERITY_INFO, "BLOWER FAIL");

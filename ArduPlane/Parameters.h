@@ -602,6 +602,12 @@ public:
     AP_Float        user_climbrate_land_p1;
     AP_Float        user_climbrate_land_p2;
 
+    AP_Int8         user_mot_1;
+    AP_Int8         user_mot_2;
+    AP_Int8         user_mot_3;
+    AP_Int8         user_mot_4;
+    AP_Int8         user_blower;
+
     // just to make compilation easier when all things are compiled out...
     uint8_t unused_integer;
 };

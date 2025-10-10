@@ -8,8 +8,7 @@
 
 extern const AP_HAL::HAL &hal;
 
-
-FD_SERVO::FD_SERVO(FD_CAN *frotend) {
+FD_SERVO::FD_SERVO(FD_CAN_1 *frotend) {
     _frotend_ptr = frotend;
     status.brake_confirm = false;
 }
@@ -50,9 +49,6 @@ void FD_SERVO::handle_info(AP_HAL::CANFrame &in_frame, bool do_print) {
 void FD_SERVO::set_pos(float pos_in)
 {
     status.pos = constrain_float(pos_in, -45.0f, 45.0f);//////
-    int16_t tmp_pos = (int16_t)(status.pos*100.f);//////
-    int16_t last_pos = (int16_t)(status.last_pos*100.f);//////
-
     status.last_pos = status.pos;
     status.last_pos_ms = AP_HAL::millis();
 }

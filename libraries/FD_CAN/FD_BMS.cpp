@@ -9,7 +9,7 @@
 extern const AP_HAL::HAL &hal;
 
 
-FD_BMS::FD_BMS(FD_CAN *frotend) {
+FD_BMS::FD_BMS(FD_CAN_2 *frotend) {
     _frotend_ptr = frotend;
 }
 

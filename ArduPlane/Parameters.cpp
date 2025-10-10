@@ -1276,6 +1276,11 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("U_SPD_LND", 44, ParametersG2, user_airspeed_target_land, 15.1f),
     AP_GROUPINFO("U_LC_P_P1", 45, ParametersG2, user_climbrate_land_p1, 0.1f),
     AP_GROUPINFO("U_LC_P_P2", 46, ParametersG2, user_climbrate_land_p2, 0.04f),
+    AP_GROUPINFO("U_MOT_1", 47, ParametersG2, user_mot_1, 0),
+    AP_GROUPINFO("U_MOT_2", 48, ParametersG2, user_mot_2, 0),
+    AP_GROUPINFO("U_MOT_3", 49, ParametersG2, user_mot_3, 0),
+    AP_GROUPINFO("U_MOT_4", 50, ParametersG2, user_mot_4, 0),
+    AP_GROUPINFO("U_BLOWER", 51, ParametersG2, user_blower, 0),
 
     AP_GROUPEND
 };

@@ -8,8 +8,7 @@
 
 extern const AP_HAL::HAL &hal;
 
-
-FD_MOT::FD_MOT(FD_CAN *frotend) {
+FD_MOT::FD_MOT(FD_CAN_1 *frotend) {
     _frotend_ptr = frotend;
 }
 

@@ -9,7 +9,7 @@
 extern const AP_HAL::HAL &hal;
 
 
-FD_COLLECTOR::FD_COLLECTOR(FD_CAN *frotend) {
+FD_COLLECTOR::FD_COLLECTOR(FD_CAN_2 *frotend) {
     _frotend_ptr = frotend;
 }
 

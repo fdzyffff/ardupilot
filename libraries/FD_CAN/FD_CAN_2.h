@@ -9,15 +9,15 @@
 #include <FD_CAN/FD_BLOWER.h>
 #include <FD_CAN/FD_COLLECTOR.h>
 
-#define FD_CAN_2_MAX_SERVO_NUM 16
-
-class FD_SERVO;
+class FD_BMS;
+class FD_BLOWER;
 class FD_COLLECTOR;
 
 class FD_CAN_2 : public AP_CANDriver
 {
 public:
-    friend class FD_SERVO;
+    friend class FD_BMS;
+    friend class FD_BLOWER;
     friend class FD_COLLECTOR;
 
     FD_CAN_2();
@@ -46,7 +46,7 @@ public:
     FD_BLOWER *_blower;
     FD_COLLECTOR *_collector;
 
-    AP_Int32 _print;    //.控制是否打印调试信息（0 禁用，非 0 启用）       
+    AP_Int32 _print;        //.控制是否打印调试信息（0 禁用，非 0 启用）       
     AP_Int8 _enable_srv;    //.控制是否启用舵机（SERVO）控制（1 启用，0 禁用）
     AP_Int8 _enable_mot;    //.控制是否启用电机（MOT）控制（1 启用，0 禁用）
     AP_Int32 _interval_srv; //.舵机控制命令的发送间隔（单位：毫秒，范围 1-1000）
@@ -70,5 +70,4 @@ private:
     uint8_t _driver_index;  //.CAN 驱动的索引
     AP_HAL::CANIface* _can_iface;
     HAL_BinarySemaphore sem_handle;
-
 };

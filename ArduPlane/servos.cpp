@@ -1157,12 +1157,12 @@ void Plane::brake_update()
     RC_Channel* tmp_brake_left = rc().find_channel_for_option(RC_Channel::AUX_FUNC::BRAKE_LEFT_IN);
     if (tmp_brake_left != nullptr) {
         int16_t tmp_ch_pwm = tmp_brake_left->get_radio_in(); //. 返回PWM值（微秒）数据类型为int16_t
-        SRV_Channels::set_output_pwm(SRV_Channel::k_brake_left, tmp_ch_pwm);
+        SRV_Channels::set_output_pwm(SRV_Channel::k_brake_left_out, tmp_ch_pwm);
     }
 
     RC_Channel* tmp_brake_right = rc().find_channel_for_option(RC_Channel::AUX_FUNC::BRAKE_RIGHT_IN);
     if (tmp_brake_right != nullptr) {
         int16_t tmp_ch_pwm = tmp_brake_right->get_radio_in(); //. 返回PWM值（微秒）数据类型为int16_t
-        SRV_Channels::set_output_pwm(SRV_Channel::k_brake_right, tmp_ch_pwm);
+        SRV_Channels::set_output_pwm(SRV_Channel::k_brake_right_out, tmp_ch_pwm);
     }
 }

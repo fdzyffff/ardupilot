@@ -38,15 +38,8 @@ const AP_Param::GroupInfo FD_CAN_2::var_info[] = {
 FD_CAN_2::FD_CAN_2() {  //.构造函数
     AP_Param::setup_object_defaults(this, var_info);
 
-    for (uint8_t i_servo = 0; i_servo < FD_CAN_2_MAX_SERVO_NUM; i_servo++)
-    {
-        _servo_ptr[i_servo] = new FD_SERVO(this);
-        if (_servo_ptr[i_servo] != nullptr)
-        {
-            _servo_ptr[i_servo]->set_id(i_servo+1);
-        }
-    }
-
+    _bms = new FD_BMS(this);
+    _blower = new FD_BLOWER(this);
     _collector = new FD_COLLECTOR(this);
 
     debug_can(AP_CANManager::LOG_INFO, "CAN_FD_2: constructed\n\r");
@@ -55,7 +48,7 @@ FD_CAN_2::FD_CAN_2() {  //.构造函数
 FD_CAN_2 *FD_CAN_2::get_can_fd(uint8_t driver_index) {  //.从 CAN 管理器中获取指定索引（driver_index）的FD_CAN_2实例
     if (driver_index >= AP::can().get_num_drivers() ||
         AP::can().get_driver_type(driver_index) !=
-            AP_CAN::Protocol::FDCAN) {
+            AP_CAN::Protocol::FDCAN_2) {
         return nullptr;
     }
 
@@ -122,12 +115,9 @@ void FD_CAN_2::loop() {
     AP_HAL::CANFrame txFrame{}; //. 发送用的 CAN 帧对象
     AP_HAL::CANFrame rxFrame{};
     // uint32_t last_log_ms = AP_HAL::millis();
-    uint32_t last_servo_ms = AP_HAL::millis();  //. 舵机命令上一次发送时间（毫秒）
-    uint32_t last_mot_ms = AP_HAL::millis();
     uint32_t last_print_ms = AP_HAL::millis();
-    bool should_print_servo = false;
-    bool should_print_mot = false;
-    uint64_t timeout = AP_HAL::micros64() + 10000ULL;
+    // bool should_print_servo = false;
+    // bool should_print_mot = false;
 
     while (true) {
         if (!_initialized) {
@@ -136,31 +126,22 @@ void FD_CAN_2::loop() {
             continue;
         }
 
-        uint32_t srv_interval = constrain_int32(_interval_srv.get(), 1, 1000);  //.舵机控制间隔（1-1000ms）
-        uint32_t mot_interval = constrain_int32(_interval_mot.get(), 1, 1000);
-
         while (read_frame(rxFrame, 0)) {    //.循环调用read_frame读取 CAN 帧
             // gcs().send_text(MAV_SEVERITY_INFO, "rxFrame.id %ld", rxFrame.id);
                 // for (uint8_t i = 0; i<sizeof(rxFrame.data); i++) {
                 //     gcs().send_text(MAV_SEVERITY_INFO, "%d, %x", i, rxFrame.data[i]);
                 // }
             // }
-
-
-            for (uint8_t i_servo = 0; i_servo < FD_CAN_2_MAX_SERVO_NUM; i_servo++)
-            {
-                if (_servo_ptr[i_servo] != nullptr)
-                {
-                    _servo_ptr[i_servo]->handle_info(rxFrame, _print.get());    //.调用舵机的 handle_info 处理接收帧
-                }
-            }
+            _bms->handle_info(rxFrame, _print.get());    //.调用舵机的 handle_info 处理接收帧
+            _blower->handle_info(rxFrame, _print.get());    //.调用舵机的 handle_info 处理接收帧
+            // _collector->handle_info(rxFrame, _print.get());    //.调用舵机的 handle_info 处理接收帧
         }
 
         if (_print.get()) {
             if (AP_HAL::millis() -  last_print_ms >= 5000) {    //.通过 last_print_ms 限制打印频率为 5 秒一次
                 last_print_ms = AP_HAL::millis();
-                should_print_servo = true;
-                should_print_mot = true;
+                // should_print_servo = true;
+                // should_print_mot = true;
             }
         }
 
