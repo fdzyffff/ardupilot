@@ -705,6 +705,14 @@ void RC_Channel::init_aux_function(const aux_func_t ch_option, const AuxSwitchPo
     case AUX_FUNC::CAMERA_AUTO_FOCUS:
     case AUX_FUNC::CAMERA_LENS:
     case AUX_FUNC::AHRS_TYPE:
+    case AUX_FUNC::FLAP_LOCK:
+    case AUX_FUNC::FLAP_POS:
+    case AUX_FUNC::BMS_POWER:
+    case AUX_FUNC::MOT_RPM:
+    case AUX_FUNC::MOT_PITCH:
+    case AUX_FUNC::BRAKE_LEFT_IN:
+    case AUX_FUNC::BRAKE_RIGHT_IN:
+    case AUX_FUNC::BLOWER_ONOFF:
         run_aux_function(ch_option, ch_flag, AuxFuncTriggerSource::INIT);
         break;
     default:
@@ -1678,6 +1686,14 @@ bool RC_Channel::do_aux_function(const aux_func_t ch_option, const AuxSwitchPos 
     case AUX_FUNC::SCRIPTING_6:
     case AUX_FUNC::SCRIPTING_7:
     case AUX_FUNC::SCRIPTING_8:
+    case AUX_FUNC::FLAP_LOCK:
+    case AUX_FUNC::FLAP_POS:
+    case AUX_FUNC::BMS_POWER:
+    case AUX_FUNC::MOT_RPM:
+    case AUX_FUNC::MOT_PITCH:
+    case AUX_FUNC::BRAKE_LEFT_IN:
+    case AUX_FUNC::BRAKE_RIGHT_IN:
+    case AUX_FUNC::BLOWER_ONOFF:
         break;
 
     case AUX_FUNC::LOWEHEISER_THROTTLE:
