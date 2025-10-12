@@ -137,7 +137,7 @@ void ModeLudeng_unhook::update_stage()
     uint32_t dt = millis() - _stage_time;
     switch (_stage) {
         case Stage::UP:
-            if ((dt > 5000 && check_touch()) || ((dt > 5000) && (motors->get_throttle() > MIN(motors->get_throttle_hover()*1.5f, motors->get_throttle_hover()+0.15f)))) {
+            if ((dt > 5000 && check_touch()) || ((dt > 5000) && (motors->get_throttle() > MIN(motors->get_throttle_hover()*1.5f, motors->get_throttle_hover()+0.15f))) || (dt > 10000)) {
                 set_stage(Stage::UNLOCK);
             }
             break;
