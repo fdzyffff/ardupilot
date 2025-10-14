@@ -100,6 +100,7 @@ public:
         AUTOROTATE =   26,  // Autonomous autorotation
         AUTO_RTL =     27,  // Auto RTL, this is not a true mode, AUTO will report as this mode if entered to perform a DO_LAND_START Landing sequence
         TURTLE =       28,  // Flip over after crash
+        MISSION =      30,
 
         // Mode number 127 reserved for the "drone show mode" in the Skybrush
         // fork at https://github.com/skybrush-io/ardupilot
@@ -2049,5 +2050,59 @@ private:
     //--- Internal functions ---
     void warning_message(uint8_t message_n);    //Handles output messages to the terminal
 
+};
+#endif
+
+#if MODE_GUIDED_ENABLED && MODE_AUTO_ENABLED
+class ModeMission : public Mode {
+
+public:
+    // inherit constructor
+    using Mode::Mode;
+    Number mode_number() const override { return Number::MISSION; }
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    bool requires_GPS() const override { return true; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(AP_Arming::Method method) const override { return true; }
+    bool is_autopilot() const override { return true; }
+    bool has_user_takeoff(bool must_navigate) const override { return true; }
+
+    bool requires_terrain_failsafe() const override { return true; }
+
+    // Return true if the throttle high arming check can be skipped when arming from GCS or Scripting
+    bool allows_GCS_or_SCR_arming_with_throttle_high() const override { return true; }
+
+    bool is_taking_off() const override;
+
+    enum class Mission_State {
+        Init = 0,
+        Takeoff,
+        Wait,
+        Auto,
+        Search,
+        Track,
+        Return,
+    };
+
+    Mission_State get_state() {return mission_state;}
+    void set_cruise_state();
+
+
+protected:
+
+    const char *name() const override { return "MISSION"; }
+    const char *name4() const override { return "MISN"; }
+
+    uint32_t wp_distance() const override;
+    int32_t wp_bearing() const override;
+    float crosstrack_error() const override;
+    Mission_State mission_state;
+    void update_state();
+    void set_state(Mission_State state_in);
+
+    uint32_t state_ms;
 };
 #endif
