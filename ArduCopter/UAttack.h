@@ -104,18 +104,13 @@ private:
     AP_Int8         use_target_cam_type;
     AP_Float        filt_yaw_hz;
     AP_Float        filt_pithc_hz;
-    AP_Int8         use_throttle_boost;
 
     AC_PID          attack_roll_pid{0.5f, 0.1f, 0.01f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.0f};
     AC_PID          attack_throttle_pid{0.5f, 0.03f, 0.01f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f};
     AC_PID          attack_vely_pid{0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.0f};
 
     FD_Target_Base*   _Target_ptr_cam;
-    FD_Target_Mav*    _Target_ptr_cam_mav;
-    FD_Target_RK3588* _Target_ptr_cam_rk3588;
-    FD_Target_K230*   _Target_ptr_cam_k230;
-    FD_Target_LRB*    _Target_ptr_cam_lrb;
-    FD_Target_Loc*    _Target_ptr_loc;
+    FD_Target_QD*   _Target_ptr_cam_QD;
 
     uint32_t _last_control_ms;
     uint32_t _last_reset_ms;
