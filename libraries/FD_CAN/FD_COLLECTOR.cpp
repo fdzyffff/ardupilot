@@ -5,6 +5,23 @@
 #include <AP_Logger/AP_Logger.h>
 #include <GCS_MAVLink/GCS.h>
 #include <SRV_Channel/SRV_Channel.h>
+#include <FD1_DATA/FD1_DATA.h>
+
+// #include <AP_ExternalAHRS/AP_ExternalAHRS_config.h>
+// #include <AP_ExternalAHRS/AP_ExternalAHRS_TZ605.h>
+// #include <AP_Math/AP_Math.h>
+// #include <AP_Math/crc.h>
+// #include <AP_GPS/AP_GPS.h>
+// #include <AP_Baro/AP_Baro.h>
+// #include <AP_InertialSensor/AP_InertialSensor.h>
+// #include <GCS_MAVLink/GCS.h>
+// #include <AP_Logger/AP_Logger.h>
+// #include <AP_SerialManager/AP_SerialManager.h>
+// //#include <AP_HAL/utility/sparse-endian.h>
+// #include <AP_Common/Bitmask.h>
+// #include <AP_Vehicle/AP_Vehicle_Type.h>
+
+
 
 extern const AP_HAL::HAL &hal;
 
@@ -92,6 +109,7 @@ void FD_COLLECTOR::update_send()
             send_cmd(0x20, _data);
 
             // send alt; // 高度 cm
+            alt = AP::fd1_data().get_alt();
             tmp_float_to_data.v = alt;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
@@ -104,6 +122,7 @@ void FD_COLLECTOR::update_send()
             send_cmd(0x20, _data);
 
             // send arspd_tas; // 真空速 m/s
+            arspd_tas = AP::fd1_data().get_arspd_tas();
             tmp_float_to_data.v = arspd_tas;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
@@ -116,6 +135,7 @@ void FD_COLLECTOR::update_send()
             send_cmd(0x20, _data);
 
             // send climb_rate; // 升降速度 cm/s
+            climb_rate = AP::fd1_data().get_climb_rate();
             tmp_float_to_data.v = climb_rate;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
@@ -128,6 +148,7 @@ void FD_COLLECTOR::update_send()
             send_cmd(0x20, _data);
 
             // send aoa; // 迎角 degree
+            aoa = AP::fd1_data().get_aoa();
             tmp_float_to_data.v = aoa;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
@@ -140,6 +161,7 @@ void FD_COLLECTOR::update_send()
             send_cmd(0x20, _data);
 
             // send ssa; // 侧滑角 degree
+            ssa = AP::fd1_data().get_ssa();
             tmp_float_to_data.v = ssa;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
@@ -152,6 +174,7 @@ void FD_COLLECTOR::update_send()
             send_cmd(0x20, _data);
 
             // send roll; // 滚动角 degree
+            roll = AP::fd1_data().get_roll();
             tmp_float_to_data.v = roll;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
@@ -164,6 +187,7 @@ void FD_COLLECTOR::update_send()
             send_cmd(0x20, _data);
 
             // send yaw; // 航向角 degree
+            yaw = AP::fd1_data().get_yaw();
             tmp_float_to_data.v = yaw;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
@@ -176,6 +200,7 @@ void FD_COLLECTOR::update_send()
             send_cmd(0x20, _data);
 
             // send rate_x; // X轴角速度 degree/s
+            rate_x = AP::fd1_data().get_rate_x();
             tmp_float_to_data.v = rate_x;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
@@ -188,6 +213,7 @@ void FD_COLLECTOR::update_send()
             send_cmd(0x20, _data);
 
             // send rate_y; // Y轴角速度 degree/s
+            rate_y = AP::fd1_data().get_rate_y();
             tmp_float_to_data.v = rate_y;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
@@ -200,6 +226,7 @@ void FD_COLLECTOR::update_send()
             send_cmd(0x20, _data);
 
             // send rate_z; // Z轴角速度 degree/s
+            rate_z = AP::fd1_data().get_rate_z();
             tmp_float_to_data.v = rate_z;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
@@ -212,6 +239,7 @@ void FD_COLLECTOR::update_send()
             send_cmd(0x20, _data);
 
             // send acc_x; // X轴加速度 m/s/s
+            acc_x = AP::fd1_data().get_acc_x();
             tmp_float_to_data.v = acc_x;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
@@ -224,6 +252,7 @@ void FD_COLLECTOR::update_send()
             send_cmd(0x20, _data);
 
             // send acc_y; // Y轴加速度 m/s/s
+            acc_x = AP::fd1_data().get_acc_x();
             tmp_float_to_data.v = acc_y;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
@@ -236,6 +265,7 @@ void FD_COLLECTOR::update_send()
             send_cmd(0x20, _data);
 
             // send acc_z; // Z轴加速度 m/s/s
+            acc_x = AP::fd1_data().get_acc_x();
             tmp_float_to_data.v = acc_z;
             _data[0] = 0xFE;
             _data[1] = 0xFE;
@@ -244,16 +274,6 @@ void FD_COLLECTOR::update_send()
             _data[4] = tmp_float_to_data.data[1];
             _data[5] = tmp_float_to_data.data[2];
             _data[6] = tmp_float_to_data.data[3];
-            _data[7] = 0xEE;
-            send_cmd(0x20, _data);
-
-            _data[0] = 0xFE;
-            _data[1] = 0xFE;
-            _data[2] = 0x14;
-            _data[3] = 0x01;
-            _data[4] = 0x02;
-            _data[5] = 0x03;
-            _data[6] = 0x04;
             _data[7] = 0xEE;
             send_cmd(0x20, _data);
 
@@ -277,7 +297,7 @@ void FD_COLLECTOR::send_cmd(uint32_t id, uint8_t *data) {
 void FD_COLLECTOR::send_utc() {
     if (_frotend_ptr == nullptr) {return;}
     AP_HAL::CANFrame txFrame{};
-    tmp_uint64t_to_data.v = 0;
+    tmp_uint64t_to_data.v = AP::fd1_data().get_gps_utc();
     txFrame.data[0] = 0xFE;
     txFrame.data[1] = 0xFE;
     txFrame.data[2] = 0x14;

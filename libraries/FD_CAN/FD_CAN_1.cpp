@@ -34,7 +34,7 @@ const AP_Param::GroupInfo FD_CAN_1::var_info[] = {
     // No use, reserved
     AP_GROUPINFO("SRV", 2, FD_CAN_1, _enable_srv, 1),
     AP_GROUPINFO("MOT", 3, FD_CAN_1, _enable_mot, 1),
-    AP_GROUPINFO("MRV", 4, FD_CAN_1, _rev_mot, 0),
+    AP_GROUPINFO("MRV", 4, FD_CAN_1, _rev_mot, 10),//. 第2个电机和第4个电机反转
 
     AP_GROUPEND};
 
@@ -169,7 +169,7 @@ void FD_CAN_1::loop() {
         }
 
         if (_enable_srv.get()) {    //. 若启用舵机控制 
-            for (uint8_t i_servo = 0; i_servo <=FD_CAN_1_MAX_SERVO_NUM; i_servo++) {
+            for (uint8_t i_servo = 0; i_servo < FD_CAN_1_MAX_SERVO_NUM; i_servo++) {
                 SRV_Channel *this_channel = SRV_Channels::srv_channel(i_servo);
                 bool is_flap = false;   //. 标记当前舵机是否为襟翼
                 if (this_channel == nullptr) {
@@ -186,7 +186,7 @@ void FD_CAN_1::loop() {
                     pwm = 1500;
                 }
                 float pwm_value = constrain_float((float)pwm, 1000.f, 2000.f);
-                int16_t servo_angle = (pwm_value - 1500.f)*12.f;//+-4500
+                int16_t servo_angle = (pwm_value - 1500.f)*12.f;//+-6000
 
                 if (_servo_ptr[i_servo] != nullptr) {
                     if (is_flap) {
@@ -196,18 +196,31 @@ void FD_CAN_1::loop() {
                             int16_t tmp_ch_pwm = tmp_ch_flap->get_radio_in(); //. 返回PWM值（微秒）数据类型为int16_t
 
                             if (tmp_ch_pwm < 1500){
-                                flap_lock = false;
+                                flap_lock = true;//.低PWM上锁，即默认上锁
                             }else{
-                                flap_lock = true;
+                                flap_lock = false;
+                            }
+                        }
+                        int16_t flap_angle = 0;
+                        RC_Channel* tmp_ch_flap_pos = rc().find_channel_for_option(RC_Channel::AUX_FUNC::FLAP_POS);
+                        if (tmp_ch_flap_pos != nullptr) {
+                            int16_t flap_pwm = tmp_ch_flap_pos->get_radio_in(); //. 返回PWM值（微秒）数据类型为int16_t
+                          
+                            if (flap_pwm < 1300) {
+                                flap_angle = 3000;//.舵机30°对应舵面10°
+                            } else if(flap_pwm < 1600){
+                                flap_angle = -600;//.舵机-6°对应舵面50°
+                            }else{
+                                flap_angle = -1500;//.舵机-15°对应舵面60°
                             }
                         }
                         _servo_ptr[i_servo]->enable_brake(is_flap);//. 襟翼舵机启用刹车
                         _servo_ptr[i_servo]->set_brake(flap_lock);//. 襟翼舵机启用刹车
-                        _servo_ptr[i_servo]->set_pos(servo_angle/100.f);//. 设置舵机目标角度
+                        _servo_ptr[i_servo]->set_pos(flap_angle/100.f);//. 设置舵机目标角度
                     } else {
-                        _servo_ptr[i_servo]->enable_brake(false);//. 襟翼舵机启用刹车
-                        _servo_ptr[i_servo]->set_brake(false);//. 襟翼舵机启用刹车
-                        _servo_ptr[i_servo]->set_pos(servo_angle/100.f);//. 设置舵机目标角度
+                        _servo_ptr[i_servo]->enable_brake(false);
+                        _servo_ptr[i_servo]->set_brake(false);
+                        _servo_ptr[i_servo]->set_pos(servo_angle/100.f);
                     }
 
                     _servo_ptr[i_servo]->update();  //.核心：生成CAN帧并调用write_frame发送
@@ -218,8 +231,8 @@ void FD_CAN_1::loop() {
 
         if (_enable_mot.get()) {    
             //-桨距控制，0~65535对应-90°到90°范围桨距角
-            float pitch_left = SRV_Channels::get_output_scaled(SRV_Channel::k_throttleLeft)*0.4;
-            float pitch_right = SRV_Channels::get_output_scaled(SRV_Channel::k_throttleRight)*0.4;
+            float pitch_left = SRV_Channels::get_output_scaled(SRV_Channel::k_throttleLeft)*0.25;//.桨距角限制0-25
+            float pitch_right = SRV_Channels::get_output_scaled(SRV_Channel::k_throttleRight)*0.25;
 
             if (_mot_ptr[0] != nullptr) {
                 _mot_ptr[0]->set_pitch(pitch_left);
@@ -262,11 +275,11 @@ void FD_CAN_1::loop() {
                     mot_rpm = 0;
                 }else{
                     mot_mode = 2;
-                    mot_rpm = 3000;
+                    mot_rpm = 100;
                 }
             }
 
-            for (uint8_t i_mot = 1; i_mot < FD_CAN_1_MAX_MOT_NUM; i_mot++){
+            for (uint8_t i_mot = 0; i_mot < FD_CAN_1_MAX_MOT_NUM; i_mot++){
                 if (_mot_ptr[i_mot] != nullptr) {
                     if (_rev_mot & (1<<i_mot)) {
                         mot_rpm = -mot_rpm;

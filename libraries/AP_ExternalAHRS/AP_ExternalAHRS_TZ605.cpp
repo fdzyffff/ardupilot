@@ -15,10 +15,12 @@
 #include <AP_Common/Bitmask.h>
 #include <AP_Vehicle/AP_Vehicle_Type.h>
 
+#include <FD1_DATA/FD1_DATA.h>
+
 extern const AP_HAL::HAL &hal;
 
 AP_ExternalAHRS_TZ605::AP_ExternalAHRS_TZ605(AP_ExternalAHRS *_frontend,
-        AP_ExternalAHRS::state_t &_state): AP_ExternalAHRS_backend(_frontend, _state)
+        AP_ExternalAHRS::state_t &_state): AP_ExternalAHRS_backend(_frontend, _state)//.构造函数，初始化 TZ605 后端
 {
     auto &sm = AP::serialmanager();
     uart_ins = sm.find_serial(AP_SerialManager::SerialProtocol_AHRS, 0);
@@ -59,13 +61,13 @@ AP_ExternalAHRS_TZ605::AP_ExternalAHRS_TZ605(AP_ExternalAHRS *_frontend,
     GCS_SEND_TEXT(MAV_SEVERITY_INFO, "TZ605 ExternalAHRS initialised");
 }
 
-void AP_ExternalAHRS_TZ605::update_thread(void)
+void AP_ExternalAHRS_TZ605::update_thread(void)//-无限循环后台线程，负责实时读取 UART 数据
 {
     hal.scheduler->delay(5000);
     if (uart_ins) {
         if (!port_open_ins) {
             port_open_ins = true;
-            uart_ins->begin(baudrate_ins, 1024, 512);
+            uart_ins->begin(baudrate_ins, 1024, 512);//.打开串口，配置波特率
             GCS_SEND_TEXT(MAV_SEVERITY_INFO, "SerialProtocol_AHRS %d", int(baudrate_ins));
         }
     }
@@ -88,7 +90,7 @@ void AP_ExternalAHRS_TZ605::update_thread(void)
         //     do_print = true;
         // }
         if (port_open_ins) {
-            build_packet_ins();
+            build_packet_ins();//.读取并解析
             if (do_print) {
                 if (frontend.debug_print.get()>0) {
                     GCS_SEND_TEXT(MAV_SEVERITY_INFO, "build_packet_ins");
@@ -116,9 +118,9 @@ void AP_ExternalAHRS_TZ605::build_packet_ins()
 
     // GCS_SEND_TEXT(MAV_SEVERITY_INFO, "nbytes %ld", nbytes);
     
-    while (uart_ins->available() > 0) {
-        uint8_t temp = uart_ins->read();
-        _msg_ins.parse(temp);
+    while (uart_ins->available() > 0) { //. 检查缓冲区是否有数据
+        uint8_t temp = uart_ins->read();    //. 逐字节读取原始 uint8_t 数据
+        _msg_ins.parse(temp);   //. 传入解析器
 
         if (_msg_ins._msg_1.updated) {
             // GCS_SEND_TEXT(MAV_SEVERITY_INFO, "updated");
@@ -260,7 +262,8 @@ void AP_ExternalAHRS_TZ605::handle_gps()
         }
     }
     
-
+    AP::fd1_data().set_alt(gps_data.msl_altitude);//.高度
+    AP::fd1_data().set_climb_rate(gps_data.ned_vel_down);//.升降速度
 }
 
 // Posts data from an gps packet to `state` and `handle_external` methods
@@ -359,6 +362,17 @@ void AP_ExternalAHRS_TZ605::handle_ahrs()
             GCS_SEND_TEXT(MAV_SEVERITY_INFO, "AHRS gyror : (%f, %f, %f)", imu_data.gyro.x, imu_data.gyro.y, imu_data.gyro.z);
         }
     }
+
+    AP::fd1_data().set_alt(_msg_ins._msg_1.content.msg.alt_mm/1000);//.mm转m
+    AP::fd1_data().set_roll(_msg_ins._msg_1.content.msg.roll_micro_deg/1000000);//.转deg
+    AP::fd1_data().set_yaw(_msg_ins._msg_1.content.msg.yaw_micro_deg/1000000);//.转deg
+    AP::fd1_data().set_rate_x(state.gyro.x);
+    AP::fd1_data().set_rate_y(state.gyro.y);
+    AP::fd1_data().set_rate_z(state.gyro.z);
+    AP::fd1_data().set_acc_x(state.accel.x);
+    AP::fd1_data().set_acc_y(state.accel.y);
+    AP::fd1_data().set_acc_z(state.accel.z);
+    AP::fd1_data().set_gps_utc(_msg_ins._msg_1.content.msg.gps_utc);
 }
 
 // Collects data from an imu packet into `baro_data`
@@ -389,6 +403,9 @@ void AP_ExternalAHRS_TZ605::handle_baro()
             count = 0.0f;
         }
     }
+
+    AP::fd1_data().set_aoa(_msg_air._msg_1.content.msg.aoat1/128.f);//.迎角deg
+    AP::fd1_data().set_ssa(_msg_air._msg_1.content.msg.aost1/128.f);//.侧滑角deg
 }
 
 // Posts data from an baro packet to `state` and `handle_external` methods
@@ -425,6 +442,8 @@ void AP_ExternalAHRS_TZ605::handle_airspeed()
             gcs().send_text(MAV_SEVERITY_INFO, "airspeed vi: %f | %f", rev_airspeed, (float)_msg_air._msg_1.content.msg.vi);
         }
     }
+
+    AP::fd1_data().set_arspd_tas(airspeed_data.airspeed);//.指示空速
 }
 
 // Posts data from an airspeed packet to `state` and `handle_external` methods
@@ -548,6 +567,161 @@ void AP_ExternalAHRS_TZ605::send_status_report(GCS_MAVLINK &link) const
                                        0, 0, 0,
                                        mag_var, 0, 0);
 
+}
+
+//.处理卫星时间
+void AP_ExternalAHRS_TZ605::get_Time(uint8_t &year_out, uint8_t &month_out, uint8_t &day_out, uint8_t &hour_out, uint8_t &minute_out, uint8_t &second_out)
+{
+    uint32_t days;
+
+    uint32_t year;
+    uint32_t month;
+    uint32_t date;
+    uint32_t hour;
+    uint32_t minute;
+    uint32_t second;
+    uint32_t weekday;
+
+    static uint32_t old_year;
+    static uint32_t old_month;
+    static uint32_t old_date;
+    static uint32_t old_week = -1;
+
+    uint32_t days_of_month[13] = { 0,31,28,31,30,31,30,31,31,30,31,30,31 };
+
+    uint16_t GPS_week = plane.gps.time_week();
+    uint32_t time_of_week_s = plane.gps.time_week_ms() / 1000;
+
+    time_of_week_s += 0;  // hour shift*60*60 time zone, now use utc
+    if (time_of_week_s >= 604800)  // 7 * 24 * 60 *60 = 604800
+    {
+        time_of_week_s -= 604800;
+        GPS_week++;
+    }
+
+    if (GPS_week != old_week)
+    {
+        year = 1980;
+        month = 1;
+        date = 6;
+
+        days = GPS_week * 7;
+
+        while (1)
+        {
+            if (year % 4 == 0)
+            {
+                if (days >= 366)
+                {
+                    days -= 366;
+                    year++;
+                }
+                else
+                    break;
+            }
+            else
+            {
+                if (days >= 365)
+                {
+                    days -= 365;
+                    year++;
+                }
+                else
+                    break;
+            }
+        }
+
+        while (1)
+        {
+            if (month == 2 && (year % 4 == 0))
+                if (days >= (days_of_month[month] + 1))
+                {
+                    days -= days_of_month[month] + 1;
+                    month++;
+                }
+                else
+                    break;
+            else
+                if (days >= (days_of_month[month]))
+                {
+                    days -= days_of_month[month];
+                    month++;
+                }
+                else
+                    break;
+        }
+
+        date += days;
+
+        old_year = year;
+        old_month = month;
+        old_date = date;
+        old_week = GPS_week;
+    }
+    else
+    {
+        year = old_year;
+        month = old_month;
+        date = old_date;
+    }
+
+    hour = 0;
+    minute = 0;
+    second = 0;
+    weekday = 0;
+
+    while (1)
+    {
+        if (time_of_week_s >= 24 * 3600)
+        {
+            time_of_week_s -= 24 * 3600;
+            date++;
+            weekday++;
+            if (date> (((year % 4 == 0) && month == 2) ? days_of_month[month] + 1 : days_of_month[month]))
+            {
+                date = 1;
+                month++;
+                if (month>12)
+                {
+                    month = 1;
+                    year++;
+                }
+            }
+        }
+        else
+            break;
+    }
+
+    while (1)
+    {
+        if (time_of_week_s >= 3600)
+        {
+            time_of_week_s -= 3600;
+            hour++;
+        }
+        else
+            break;
+    }
+
+    while (1)
+    {
+        if (time_of_week_s >= 60)
+        {
+            time_of_week_s -= 60;
+            minute++;
+        }
+        else
+            break;
+    }
+
+    second += time_of_week_s;
+
+    year_out = (uint8_t)(year - 2000);
+    month_out = month;
+    day_out = date;
+    hour_out = hour;
+    minute_out = minute;
+    second_out = second;
 }
 
 #endif // AP_EXTERNAL_AHRS_TZ605_ENABLED

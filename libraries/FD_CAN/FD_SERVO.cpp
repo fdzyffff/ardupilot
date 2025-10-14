@@ -48,7 +48,7 @@ void FD_SERVO::handle_info(AP_HAL::CANFrame &in_frame, bool do_print) {
 
 void FD_SERVO::set_pos(float pos_in)
 {
-    status.pos = constrain_float(pos_in, -45.0f, 45.0f);//////
+    status.pos = constrain_float(pos_in, -45.0f, 60.0f);
     status.last_pos = status.pos;
     status.last_pos_ms = AP_HAL::millis();
 }

@@ -84,7 +84,7 @@ void FD_BLOWER::send_cmd(uint32_t id, uint8_t *data) {
     const uint8_t data_length = 8;
     AP_HAL::CANFrame txFrame{};
     memcpy(txFrame.data, data, data_length);
-    txFrame.id = id;
+    txFrame.id = id | AP_HAL::CANFrame::FlagEFF;//.扩展帧
     txFrame.dlc = 8;
     uint64_t timeout = AP_HAL::micros64() + 10000ULL;
     _frotend_ptr->write_frame(txFrame, timeout);

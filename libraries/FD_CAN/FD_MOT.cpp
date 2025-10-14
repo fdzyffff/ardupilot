@@ -58,8 +58,8 @@ void FD_MOT::update_cmd()
             status.last_mot_ms = AP_HAL::millis();
             uint16_t tmp_rpm = (constrain_int32((int32_t)(status.rpm_in + 30000), 0, 65535));
             _data[0] = status.mode_in&0b00000111;
-            _data[1] = 0x00;
-            _data[2] = 0x00;
+            _data[1] = 0x30;
+            _data[2] = 0x75;
             _data[3] = (uint8_t)(tmp_rpm&0xff);
             _data[4] = (uint8_t)((tmp_rpm>>8)&0xff);
             _data[5] = 0x00;

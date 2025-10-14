@@ -132,9 +132,9 @@ void FD_CAN_2::loop() {
                 //     gcs().send_text(MAV_SEVERITY_INFO, "%d, %x", i, rxFrame.data[i]);
                 // }
             // }
-            _bms->handle_info(rxFrame, _print.get());    //.调用舵机的 handle_info 处理接收帧
-            _blower->handle_info(rxFrame, _print.get());    //.调用舵机的 handle_info 处理接收帧
-            // _collector->handle_info(rxFrame, _print.get());    //.调用舵机的 handle_info 处理接收帧
+            _bms->handle_info(rxFrame, _print.get());
+            _blower->handle_info(rxFrame, _print.get());
+            // _collector->handle_info(rxFrame, _print.get());
         }
 
         if (_print.get()) {
