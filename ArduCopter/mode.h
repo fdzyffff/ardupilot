@@ -500,6 +500,7 @@ class ModeAuto : public Mode {
 
 public:
     friend class PayloadPlace;  // in case wp_run is accidentally required
+    friend class ModeMission;
 
     // inherit constructor
     using Mode::Mode;
@@ -1052,6 +1053,7 @@ public:
 #if AP_EXTERNAL_CONTROL_ENABLED
     friend class AP_ExternalControl_Copter;
 #endif
+    friend class ModeMission;
 
     // inherit constructor
     using Mode::Mode;
@@ -1409,6 +1411,7 @@ private:
 class ModeRTL : public Mode {
 
 public:
+    friend class ModeMission;
     // inherit constructor
     using Mode::Mode;
     Number mode_number() const override { return Number::RTL; }
@@ -2088,8 +2091,7 @@ public:
     };
 
     Mission_State get_state() {return mission_state;}
-    void set_cruise_state();
-
+    void do_final_track();
 
 protected:
 

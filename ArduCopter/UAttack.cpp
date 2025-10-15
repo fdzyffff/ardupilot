@@ -50,7 +50,6 @@ void UAttack::init()
     display_info.count = 0;
     _target_vel_x = 0.0f;
     _target_vel_y = 0.0f;
-    _target_roll_angle = 0.0f;
     _Target_ptr_cam = nullptr;
     _Target_ptr_cam_QD = nullptr;
     _last_control_ms = millis();
@@ -60,8 +59,9 @@ void UAttack::init()
     _running = false;
     init_target();
 
-    _yaw_sample_filter.set_cutoff_frequency(30.f, filt_yaw_hz.get());
-    _pitch_sample_filter.set_cutoff_frequency(30.f, filt_pithc_hz.get());
+    // float sample_freq = 30.0f;
+    _yaw_sample_filter.set_cutoff_frequency(filt_yaw_hz.get());
+    _pitch_sample_filter.set_cutoff_frequency(filt_pithc_hz.get());
     gcs().send_text(MAV_SEVERITY_WARNING, "Target FILT HZ [%0.0f, %0.0f]", filt_yaw_hz.get(), filt_pithc_hz.get());
 }
 
@@ -167,20 +167,11 @@ void UAttack::init_target()
 void UAttack::start()
 {
     _running = true;
-    copter.uattack.attack_throttle_pid.reset_I();
-    copter.uattack.attack_throttle_pid.reset_filter();
-    copter.uattack.attack_throttle_pid.set_integrator(_throttle_filt.get());
-    copter.uattack.attack_roll_pid.reset_I();
-    copter.uattack.attack_roll_pid.reset_filter();
-    copter.uattack.attack_roll_pid.set_integrator(degrees(_roll_filt.get()));
-    if (attack_angle.get() <= 0.0f) {
-        _attack_angle_target = -degrees(_pitch_filt.get());
-    } else {
-        _attack_angle_target = attack_angle.get();
-    }
-    gcs().send_text(MAV_SEVERITY_INFO, "ATT ANGLE: %f", _attack_angle_target);
-    gcs().send_text(MAV_SEVERITY_INFO, "ATT THROTTLE: %f", _throttle_filt.get());
-    gcs().send_text(MAV_SEVERITY_INFO, "ATT ROLL: %f", degrees(_roll_filt.get()));
+    copter.uattack.attack_velx_pid.reset_I();
+    copter.uattack.attack_velx_pid.reset_filter();
+    copter.uattack.attack_vely_pid.reset_I();
+    copter.uattack.attack_vely_pid.reset_filter();
+    gcs().send_text(MAV_SEVERITY_INFO, "Track start");
     _last_control_ms = millis();
 }
 
@@ -207,10 +198,10 @@ void UAttack::update_cam()
         display_info.count = 0;
         last_count_ms = tnow_ms;
         //update filter cutoff HZ in flight
-        _yaw_sample_filter.set_cutoff_frequency(60.f, filt_yaw_hz.get());
-        _pitch_sample_filter.set_cutoff_frequency(60.f, filt_pithc_hz.get());
-        _ef_rate_x_filter.set_cutoff_frequency(60.f, 1.0f);
-        _ef_rate_y_filter.set_cutoff_frequency(60.f, 1.0f);
+        _yaw_sample_filter.set_cutoff_frequency(filt_yaw_hz.get());
+        _pitch_sample_filter.set_cutoff_frequency(filt_pithc_hz.get());
+        _ef_rate_x_filter.set_cutoff_frequency(1.0f);
+        _ef_rate_y_filter.set_cutoff_frequency(1.0f);
     }
 
     if (_Target_ptr_cam != nullptr) {
@@ -249,17 +240,9 @@ void UAttack::update_control()
                 udpate_control_value();
             }
         }
-    } else if (current_idx == 2) {
-        if (_Target_ptr_loc->get_info(p1, p2)) {
-            handle_info(p1, p2);
-            if (_running) {
-                udpate_control_value();
-            }
-        }
     } else {
-        _target_pitch_rate = 0.0f;
-        _target_roll_angle = 0.0f;
-        _target_yaw_rate = 0.0f;
+        _target_vel_x = 0.0f;
+        _target_vel_y = 0.0f;
     }
 
 }
@@ -327,15 +310,15 @@ void UAttack::handle_info(float p1, float p2) {
         _reset = false;
     }
 
-    _yaw_sample_filter.apply(_last_yaw_sample);
-    _pitch_sample_filter.apply(angle_pitch);
+    _yaw_sample_filter.apply(_last_yaw_sample, 0.03f);
+    _pitch_sample_filter.apply(angle_pitch, 0.03f);
 
     _yaw_filter.update(_yaw_sample_filter.get(), millis());
     _pitch_filter.update(_pitch_sample_filter.get(), millis());
 
 
-    _ef_rate_x_filter.apply(_yaw_filter.slope()*1000.f);
-    _ef_rate_y_filter.apply(_pitch_filter.slope()*1000.f);
+    _ef_rate_x_filter.apply(_yaw_filter.slope()*1000.f, 0.03f);
+    _ef_rate_y_filter.apply(_pitch_filter.slope()*1000.f, 0.03f);
 
     ef_rate_info.x = _ef_rate_x_filter.get();
     ef_rate_info.y = _ef_rate_y_filter.get();

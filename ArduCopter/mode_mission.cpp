@@ -91,7 +91,7 @@ void ModeMission::update_state()
             if (millis() - state_ms > 5000) {
                 set_state(Mission_State::Auto);
             }
-            if (copter.uattack.is_valid()) {
+            if (copter.uattack.is_active()) {
                 set_state(Mission_State::Search);
             }
         }
@@ -101,7 +101,7 @@ void ModeMission::update_state()
             // if (mission.state() == AP_Mission::mission_state::MISSION_COMPLETE) {
             //     set_state(Mission_State::Search);
             // }
-            if (copter.uattack.is_valid()) {
+            if (copter.uattack.is_active()) {
                 set_state(Mission_State::Search);
             }
         }
@@ -113,7 +113,7 @@ void ModeMission::update_state()
                 copter.mode_guided.velaccel_control_start();
             }
             bool auto_track = false;
-            if (copter.uattack.is_valid() && auto_track) {
+            if (copter.uattack.is_active() && auto_track) {
                 set_state(Mission_State::Track);
             }
             // if (millis() - state_ms > 5000) {
@@ -136,7 +136,7 @@ void ModeMission::update_state()
     }
 }
 
-void ModeMission::do_final_track(uint8_t id_in)
+void ModeMission::do_final_track()
 {
     if (copter.flightmode->mode_number() != Mode::Number::MISSION) {return;}
     switch (mission_state) {
@@ -150,7 +150,7 @@ void ModeMission::do_final_track(uint8_t id_in)
         case Mission_State::Auto:
         case Mission_State::Search:
         {
-            if (copter.uattack.is_valid()) {
+            if (copter.uattack.is_active()) {
                 set_state(Mission_State::Track);
             }
         }
@@ -199,7 +199,7 @@ void ModeMission::set_state(Mission_State state_in)
         break;
         case Mission_State::Auto:
         {
-            copter.mode_guided.velaccel_control_start();
+            copter.mode_auto.init(false);
             mission_state = state_in;
             gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: Auto");
         }

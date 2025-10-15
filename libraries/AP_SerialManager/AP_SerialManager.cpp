@@ -592,6 +592,7 @@ void AP_SerialManager::init()
                                          128);
                     uart->set_unbuffered_writes(true);
                     uart->set_flow_control(AP_HAL::UARTDriver::FLOW_CONTROL_DISABLE);
+                    break;
                     
                 default:
                     uart->begin(state[i].baudrate());

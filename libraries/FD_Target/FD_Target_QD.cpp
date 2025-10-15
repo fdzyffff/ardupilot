@@ -35,10 +35,10 @@ void FD_Target_QD::update() {
     FD_msg_QD_S11 &tmp_msg = FD_QD_ptr->get_msg_QD_S11();
     if (tmp_msg._msg_1.updated) {
 
-        if (tmp_msg._msg_1.content.msg.tag_ok) {
+        if (tmp_msg._msg_1.content.msg.track_status == 0x02) {
             _last_ms = millis();
-            float theta1 = -cal_frame_angle(cam_width.get(), cam_angle_x.get(), tmp_msg._msg_1.content.msg.tag_x); // x-axis, degree
-            float theta2 =  cal_frame_angle(cam_height.get(), cam_angle_y.get(), tmp_msg._msg_1.content.msg.tag_y); // y-axis, degree
+            float theta1 = -cal_frame_angle(cam_width.get(), cam_angle_x.get(), tmp_msg._msg_1.content.msg.target_x); // x-axis, degree
+            float theta2 =  cal_frame_angle(cam_height.get(), cam_angle_y.get(), tmp_msg._msg_1.content.msg.target_y); // y-axis, degree
 
             Vector3f tmp = Vector3f(1.f, tanf(radians(theta1)), -tanf(radians(theta2)));
             float p1 = degrees(atanf(tmp.y/tmp.x));
