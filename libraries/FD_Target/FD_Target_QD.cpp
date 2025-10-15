@@ -2,41 +2,43 @@
 
 // Convenience macros //////////////////////////////////////////////////////////
 //
-const AP_Param::GroupInfo FD_Target_RK3588::var_info[] = {
+const AP_Param::GroupInfo FD_Target_QD::var_info[] = {
 
-    AP_GROUPINFO("TOUT",   0, FD_Target_RK3588, target_timeout,        2000),
-    AP_GROUPINFO("ANG_X",  1, FD_Target_RK3588, cam_angle_x,           60.0f),
-    AP_GROUPINFO("ANG_Y",  2, FD_Target_RK3588, cam_angle_y,           60.0f),
+    AP_GROUPINFO("TOUT",   0, FD_Target_QD, target_timeout,        2000),
+    AP_GROUPINFO("PIX_W",  1, FD_Target_QD, cam_width,             360),
+    AP_GROUPINFO("PIX_H",  2, FD_Target_QD, cam_height,            360),
+    AP_GROUPINFO("ANG_X",  3, FD_Target_QD, cam_angle_x,           60.0f),
+    AP_GROUPINFO("ANG_Y",  4, FD_Target_QD, cam_angle_y,           60.0f),
 
     AP_GROUPEND
 };
 
-FD_Target_RK3588::FD_Target_RK3588()
+FD_Target_QD::FD_Target_QD()
 {
     AP_Param::setup_object_defaults(this, var_info);
     return;
 }
 
-bool FD_Target_RK3588::init() {
+bool FD_Target_QD::init() {
     _last_ms = 0;
     _valid = false;
-    FD_RK3588_ptr = new FD_RK3588(AP_SerialManager::SerialProtocol_CAM);
-    FD_RK3588_ptr->init();
-    FD_RK3588_ptr->get_msg_RK3588().set_enable();
-    return FD_RK3588_ptr->initialized();
+    FD_QD_ptr = new FD_QD(AP_SerialManager::SerialProtocol_CAM);
+    FD_QD_ptr->init();
+    FD_QD_ptr->get_msg_QD_S11().set_enable();
+    return FD_QD_ptr->initialized();
 }
 
-void FD_Target_RK3588::update() {
+void FD_Target_QD::update() {
     static uint32_t last_update_ms = millis();
 
-    FD_RK3588_ptr->read();
-    FD_msg_RK3588 &tmp_msg = FD_RK3588_ptr->get_msg_RK3588();
+    FD_QD_ptr->read();
+    FD_msg_QD_S11 &tmp_msg = FD_QD_ptr->get_msg_QD_S11();
     if (tmp_msg._msg_1.updated) {
 
-        if (tmp_msg._msg_1.content.msg.tag_cl > 0.5f) {
+        if (tmp_msg._msg_1.content.msg.tag_ok) {
             _last_ms = millis();
-            float theta1 = -cal_frame_angle(cam_angle_x.get(), tmp_msg._msg_1.content.msg.tag_x); // x-axis, degree
-            float theta2 =  cal_frame_angle(cam_angle_y.get(), tmp_msg._msg_1.content.msg.tag_y); // y-axis, degree
+            float theta1 = -cal_frame_angle(cam_width.get(), cam_angle_x.get(), tmp_msg._msg_1.content.msg.tag_x); // x-axis, degree
+            float theta2 =  cal_frame_angle(cam_height.get(), cam_angle_y.get(), tmp_msg._msg_1.content.msg.tag_y); // y-axis, degree
 
             Vector3f tmp = Vector3f(1.f, tanf(radians(theta1)), -tanf(radians(theta2)));
             float p1 = degrees(atanf(tmp.y/tmp.x));
@@ -61,27 +63,29 @@ void FD_Target_RK3588::update() {
     }
 }
 
-float FD_Target_RK3588::cal_frame_angle(float angle, float x_in)
+float FD_Target_QD::cal_frame_angle(float pixel, float angle, float x_in)
 {
+    // pixel, eg: 1080
     // angle, eg: 54°
-    // x_in, eg: -0.5
+    // x_in, eg: 540
     // ret, eg: 0°
+    pixel = constrain_float(pixel, 100.0f, 8000.f);
     angle = constrain_float(radians(angle), radians(10.0f), radians(150.0f));
-    x_in = constrain_float(x_in, -1.0f, 1.0f);
-    float ret = atanf(x_in*tanf(angle*0.5f));
+    x_in = constrain_float(x_in, 0.f, pixel);
+    float ret = atanf(2.0f*(x_in-pixel*0.5f)/pixel*tanf(angle*0.5f));
     return degrees(ret);
 }
 
-void FD_Target_RK3588::handle_info_test(float p1, float p2) {
+void FD_Target_QD::handle_info_test(float p1, float p2) {
     handle_info(p1, p2);
-    // FD_RK3588_TARGET &tmp_msg = FD_RK3588_ptr->get_msg_cam_target();
+    // FD_QD_TARGET &tmp_msg = FD_QD_ptr->get_msg_cam_target();
     // tmp_msg._msg_1.updated = true;
     // tmp_msg._msg_1.content.msg.target_x = (int16_t)(p1);
     // tmp_msg._msg_1.content.msg.target_y = (int16_t)(p2);
     // tmp_msg._msg_1.content.msg.status = 1;
 }
 
-void FD_Target_RK3588::handle_msg(const mavlink_message_t &msg)
+void FD_Target_QD::handle_msg(const mavlink_message_t &msg)
 {
     if (msg.msgid == MAVLINK_MSG_ID_COMMAND_LONG) {
         // decode packet
@@ -90,7 +94,7 @@ void FD_Target_RK3588::handle_msg(const mavlink_message_t &msg)
         mavlink_msg_command_long_decode(&msg, &packet);
         switch(packet.command) {
             case MAV_CMD_USER_1:
-                gcs().send_text(MAV_SEVERITY_WARNING, "Target RK3588 Test");
+                gcs().send_text(MAV_SEVERITY_WARNING, "Target QD Test");
                 handle_info_test(packet.param1, packet.param2);
                 break;
             default:

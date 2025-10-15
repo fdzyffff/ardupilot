@@ -30,17 +30,14 @@ public:
     const Vector2f& get_ef_info();
     const Vector2f& get_ef_rate_info();
 
-    float get_target_pitch_rate() {return _target_pitch_rate;}
-    float get_target_roll_angle() {return _target_roll_angle;}
-    float get_target_yaw_rate() {return _target_yaw_rate;}
+    float get_target_vel_x() {return _target_vel_x;}
+    float get_target_vel_y() {return _target_vel_y;}
 
     void handle_attack_msg(const mavlink_message_t &msg);
     void handle_info(float p1, float p2);
 
-    void update_target_pitch_rate();
-    void update_target_roll_angle();
-    void update_target_yaw_rate();
-    void update_target_throttle();
+    void update_target_vel_x();
+    void update_target_vel_y();
     void update_log();
 
     void start();
@@ -68,45 +65,21 @@ public:
     Vector2f ef_info;
     Vector2f ef_rate_info;
     bool _active;
-    float _target_pitch_rate;
-    float _target_roll_angle;
-    float _target_yaw_rate;
-    float _attack_angle_target;
-    float _attack_angle_measure;
-    float _attack_angle_rate_target;
-    float _attack_angle_rate_measure;
-    float _attack_throttle;
+    float _target_vel_x;
+    float _target_vel_y;
 
-    float _attack_throttle_pid;
-    float _attack_throttle_p;
-    float _attack_throttle_i;
-    float _attack_throttle_d;
 
 private:
 
-    AP_Float        attack_k1_pitch;
-    AP_Float        attack_k2_pitch;
-    AP_Float        attack_k1_yaw;
-    AP_Float        attack_k2_yaw;
-    AP_Float        attack_k1_roll;
-    AP_Float        attack_k2_roll;
-    AP_Float        attack_k_angle;
-    AP_Float        attack_throttle;
-    AP_Float        attack_throttle_rate;
-    AP_Int16        attack_timeout;
-    AP_Float        attack_angle;
-    AP_Float        pitch_limit;
-    AP_Float        pitch_rate_limit;
-    AP_Float        attack_pitch_off;
     AP_Int16        print;
     AP_Int8         use_target_cam;
-    AP_Int8         use_target_loc;
     AP_Int8         use_target_cam_type;
     AP_Float        filt_yaw_hz;
     AP_Float        filt_pithc_hz;
 
     AC_PID          attack_roll_pid{0.5f, 0.1f, 0.01f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.0f};
     AC_PID          attack_throttle_pid{0.5f, 0.03f, 0.01f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    AC_PID          attack_velx_pid{0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.0f};
     AC_PID          attack_vely_pid{0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.0f};
 
     FD_Target_Base*   _Target_ptr_cam;
@@ -126,9 +99,9 @@ private:
     LowPassFilterFloat _ef_rate_x_filter;
     LowPassFilterFloat _ef_rate_y_filter;
 
-    User_shiftaverage _throttle_filt;
-    User_shiftaverage _pitch_filt;
-    User_shiftaverage _roll_filt;
+    // User_shiftaverage _throttle_filt;
+    // User_shiftaverage _pitch_filt;
+    // User_shiftaverage _roll_filt;
 
     float _last_yaw;
     float _last_yaw_sample;

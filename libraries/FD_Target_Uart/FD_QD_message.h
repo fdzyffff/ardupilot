@@ -1,14 +1,14 @@
 #pragma once
 #include <AP_HAL/AP_HAL.h>
 
-class FD_LRB_message {
+class FD_QD_message {
 public:
 
-    FD_LRB_message() {_enable = false;}
+    FD_QD_message() {_enable = false;}
     
     /* Do not allow copies */
-    FD_LRB_message(const FD_LRB_message &other) = delete;
-    FD_LRB_message &operator=(const FD_LRB_message&) = delete;
+    FD_QD_message(const FD_QD_message &other) = delete;
+    FD_QD_message &operator=(const FD_QD_message&) = delete;
 
     virtual bool enable() {return _enable;}
     virtual void set_enable() {_enable = true;}

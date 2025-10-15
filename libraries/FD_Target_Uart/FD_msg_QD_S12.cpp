@@ -1,14 +1,14 @@
-#include "FD_msg_K230.h"
+#include "FD_msg_QD_S12.h"
 #include <GCS_MAVLink/GCS.h>
 
-FD_msg_K230::FD_msg_K230(void)
+FD_msg_QD_S12::FD_msg_QD_S12(void)
 {
     _enable = false;
     _msg_1.need_send = false;
     _msg_1.updated = false;
 }
 
-void FD_msg_K230::parse(uint8_t temp)
+void FD_msg_QD_S12::parse(uint8_t temp)
 {
     // gcs().send_text(MAV_SEVERITY_INFO, "State: %d, Byte: %d",_msg.msg_state, temp);
     switch (_msg.msg_state)
@@ -55,7 +55,7 @@ void FD_msg_K230::parse(uint8_t temp)
             _msg.data[_msg.read] = temp;
             _msg.read++;
 
-            if (temp == POSTAMBLE1)
+            if (temp == _msg.sum_check)
             {
                 process_message();
             }
@@ -64,7 +64,7 @@ void FD_msg_K230::parse(uint8_t temp)
     }
 }
 
-void FD_msg_K230::process_message(void)
+void FD_msg_QD_S12::process_message(void)
 {
     int16_t i = 0;
 
@@ -77,7 +77,7 @@ void FD_msg_K230::process_message(void)
     _msg_1.print = true;
 }
 
-void FD_msg_K230::swap_message(void)
+void FD_msg_QD_S12::swap_message(void)
 {
     // swap_message_sub(_msg_1.content.data[7-1] , _msg_1.content.data[8-1] );
     // swap_message_sub(_msg_1.content.data[9-1] , _msg_1.content.data[10-1] );
@@ -89,7 +89,10 @@ void FD_msg_K230::swap_message(void)
     // swap_message_sub(_msg_1.content.data[24-1], _msg_1.content.data[25-1], _msg_1.content.data[26-1], _msg_1.content.data[27-1]);
 }
 
-void FD_msg_K230::sum_check(void)
+void FD_msg_QD_S12::sum_check(void)
 {
-    _msg_1.content.msg.end = POSTAMBLE1;
+    _msg_1.content.msg.sum_check = 0;
+    for (uint32_t i = 0; i < _msg_1.length; i ++) {
+        _msg_1.content.msg.sum_check += _msg.data[i];
+    }
 }

@@ -1,14 +1,14 @@
-#include "FD_msg_RK3588.h"
+#include "FD_msg_QD_S11.h"
 #include <GCS_MAVLink/GCS.h>
 
-FD_msg_RK3588::FD_msg_RK3588(void)
+FD_msg_QD_S11::FD_msg_QD_S11(void)
 {
     _enable = false;
     _msg_1.need_send = false;
     _msg_1.updated = false;
 }
 
-void FD_msg_RK3588::parse(uint8_t temp)
+void FD_msg_QD_S11::parse(uint8_t temp)
 {
     // gcs().send_text(MAV_SEVERITY_INFO, "State: %d, Byte: %d",_msg.msg_state, temp);
     switch (_msg.msg_state)
@@ -17,6 +17,7 @@ void FD_msg_RK3588::parse(uint8_t temp)
         case FD1UART_msg_parser::FD1UART_PREAMBLE1:
             _msg.read = 0;
             _msg.sum_check = 0;
+            _msg.sum_check += temp;
             _msg.data[0] = temp;
             if (temp == PREAMBLE1) {
                 _msg.msg_state = FD1UART_msg_parser::FD1UART_PREAMBLE2;
@@ -27,7 +28,7 @@ void FD_msg_RK3588::parse(uint8_t temp)
             {
                 _msg.length = _msg_1.length;
                 _msg.read = 2;
-                _msg.sum_check = 0;
+                _msg.sum_check += temp;
                 _msg.msg_state = FD1UART_msg_parser::FD1UART_DATA;
                 _msg.data[1] = temp;
             }
@@ -43,7 +44,6 @@ void FD_msg_RK3588::parse(uint8_t temp)
             }
             _msg.data[_msg.read] = temp;
             _msg.read++;
-            _msg.sum_check = 0;
             _msg.sum_check += temp;
 
             if (_msg.read >= (_msg.length - 1))
@@ -64,7 +64,7 @@ void FD_msg_RK3588::parse(uint8_t temp)
     }
 }
 
-void FD_msg_RK3588::process_message(void)
+void FD_msg_QD_S11::process_message(void)
 {
     int16_t i = 0;
 
@@ -77,7 +77,7 @@ void FD_msg_RK3588::process_message(void)
     _msg_1.print = true;
 }
 
-void FD_msg_RK3588::swap_message(void)
+void FD_msg_QD_S11::swap_message(void)
 {
     // swap_message_sub(_msg_1.content.data[7-1] , _msg_1.content.data[8-1] );
     // swap_message_sub(_msg_1.content.data[9-1] , _msg_1.content.data[10-1] );
@@ -89,10 +89,10 @@ void FD_msg_RK3588::swap_message(void)
     // swap_message_sub(_msg_1.content.data[24-1], _msg_1.content.data[25-1], _msg_1.content.data[26-1], _msg_1.content.data[27-1]);
 }
 
-void FD_msg_RK3588::sum_check(void)
+void FD_msg_QD_S11::sum_check(void)
 {
-    _msg_1.content.msg.sum = 0;
-    for (uint8_t i = 2; i < _msg_1.length-1; i ++) {
-        _msg_1.content.msg.sum += _msg_1.content.data[i];
+    _msg_1.content.msg.sum_check = 0;
+    for (uint32_t i = 0; i < _msg_1.length; i ++) {
+        _msg_1.content.msg.sum_check += _msg.data[i];
     }
 }
