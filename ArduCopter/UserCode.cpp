@@ -138,7 +138,7 @@ void Copter::userhook_auxSwitch10(const RC_Channel::AuxSwitchPos ch_flag)
     case RC_Channel::AuxSwitchPos::MIDDLE:
         break;
     case RC_Channel::AuxSwitchPos::HIGH:
-        upayload.set_state(UPayload::payload_fire);
+        upayload.set_state(UPayload::payload_destroy);
         break;
     }
 }
