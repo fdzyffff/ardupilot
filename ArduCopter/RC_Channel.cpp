@@ -474,6 +474,10 @@ bool RC_Channel_Copter::do_aux_function(const aux_func_t ch_option, const AuxSwi
         case AUX_FUNC::USER_FUNC10:
             copter.userhook_auxSwitch10(ch_flag);
             break;
+
+        // case AUX_FUNC::USER_FUNC11:
+        //     copter.userhook_auxSwitch11(ch_flag);
+        //     break;
 #endif
 
         case AUX_FUNC::ZIGZAG:

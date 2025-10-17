@@ -36,6 +36,8 @@ void AP_VisualOdom_MAV::handle_pose_estimate(uint64_t remote_time_us, uint32_t t
     // record quality
     _quality = quality;
 
+    time_ms = AP_HAL::millis();
+
     // send attitude and position to EKF if quality OK
     bool consume = (_quality >= _frontend.get_quality_min());
     if (consume) {
@@ -63,6 +65,8 @@ void AP_VisualOdom_MAV::handle_vision_speed_estimate(uint64_t remote_time_us, ui
 {
     // record quality
     _quality = quality;
+
+    time_ms = AP_HAL::millis();
 
     // send velocity to EKF if quality OK
     bool consume = (_quality >= _frontend.get_quality_min());

@@ -287,6 +287,7 @@ public:
         AUX_FUNCTION_MAX =   308,
 
         USER_FUNC10 =        400,
+        USER_FUNC11 =        401,
     };
     typedef enum AUX_FUNC aux_func_t;
 
