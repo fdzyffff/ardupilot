@@ -366,20 +366,7 @@ void UPayload::handle_msg(const mavlink_message_t &msg)
         mavlink_msg_command_long_decode(&msg, &packet);
         switch(packet.command) {
             case MAV_CMD_USER_5:
-                {
-                    if (is_equal(packet.param1, 1.0f)) {
-                        _fire_ms = millis();
-                        _fire_count_s = packet.param2;
-                        gcs().send_text(MAV_SEVERITY_INFO, "destory after %0.1fs", _fire_count_s);
-                    }
-
-                    if (is_equal(packet.param1, 0.0f)) {
-                        _fire_ms = 0;
-                        _fire_count_s = 0.0f;
-                        gcs().send_text(MAV_SEVERITY_INFO, "destory cancel");
-                        set_state(payload_disarm);
-                    }
-                }
+                handle_destory(is_equal(packet.param1, 1.0f), packet.param2);
                 break;
             default:
                 break;
@@ -387,11 +374,26 @@ void UPayload::handle_msg(const mavlink_message_t &msg)
     }
 }
 
+void UPayload::handle_destory(bool do_destory, float fire_s_in) {
+    if (do_destory) {       
+        _fire_ms = millis();
+        _fire_count_s = fire_s_in;
+        gcs().send_text(MAV_SEVERITY_INFO, "destory after %0.1fs", _fire_count_s);
+    } else {
+        _fire_ms = 0;
+        _fire_count_s = 0.0f;
+        gcs().send_text(MAV_SEVERITY_INFO, "destory cancel");
+        set_state(payload_disarm);
+    }
+
+}
+
 void UPayload::update_destory()
 {
     if (_fire_ms == 0) {return;}
     float dt = ((float)(millis() - _fire_ms)) * 0.001f;
-    if (dt > _fire_count_s) {
+    float last_s = _fire_count_s - dt;
+    if (last_s < 0) {
         if (copter.motors->armed()) {
             set_state(payload_destroy);
         } else {
@@ -403,7 +405,7 @@ void UPayload::update_destory()
 
 
     static uint32_t _last_info_ms = millis();
-    if (millis() - _last_info_ms > 10000) {
+    if (((millis() - _last_info_ms > 10000) && (last_s > 10.0f)) || ((millis() - _last_info_ms > 1000) && (last_s < 10.0f)) ) {
         _last_info_ms = millis();
         gcs().send_text(MAV_SEVERITY_INFO, "destory after %0.1fs", _fire_count_s - dt);
     }

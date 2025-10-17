@@ -27,6 +27,7 @@ public:
     void cmd_handle(int16_t cmd_in);
     bool initialised() {return FD_uart_payload.initialized();}
     void handle_msg(const mavlink_message_t &msg);
+    void handle_destory(bool do_destory, float fire_s_in);
 
 private:
 
