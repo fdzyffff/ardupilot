@@ -9,6 +9,8 @@ void Copter::userhook_init()
     umav.init();
     upayload.init();
     uattack.init();
+    user_gps_spd_filter.set_cutoff_frequency(copter.scheduler.get_loop_rate_hz(), 5.0f);
+    g2.user_parameters.assit_pi_xy.set_dt(1.0/copter.scheduler.get_loop_rate_hz());
 }
 #endif
 
@@ -210,37 +212,105 @@ void Copter::userhook_auxSwitch10(const RC_Channel::AuxSwitchPos ch_flag)
 
 void Copter::user_update_assit(float &target_roll, float &target_pitch)
 {
-    if (is_zero(g2.user_parameters.assit_gain.get())) {return;}
-    if (!position_ok() || !motors->armed()) {
+    // if (is_zero(g2.user_parameters.assit_gain.get())) {return;}
+    // if (!position_ok() || !motors->armed()) {
+    //     return;
+    // }
+
+    // float kp = g2.user_parameters.assit_gain.get();
+
+    // if (gps.status() < AP_GPS::GPS_OK_FIX_3D) {
+    //     return;
+    // }
+
+    // Vector3f vec = gps.velocity();
+
+    // Vector2f bf_vel = ahrs.earth_to_body2D(vec.xy());
+    // float assit_max = 20.f*100.f;
+    // float assit_roll = constrain_float(-bf_vel.y*100.f*kp, -assit_max, assit_max);
+    // float assit_pitch = constrain_float(bf_vel.x*100.f*kp, -assit_max, assit_max);
+
+    // if (target_roll >= 0.0f && assit_roll > 0.0f) {
+    //     target_roll = MAX(target_roll, assit_roll);
+    // }
+
+    // if (target_roll <= 0.0f && assit_roll < 0.0f) {
+    //     target_roll = MIN(target_roll, assit_roll);
+    // }
+
+    // if (target_pitch >= 0.0f && assit_pitch > 0.0f) {
+    //     target_pitch = MAX(target_pitch, assit_pitch);
+    // }
+
+    // if (target_pitch <= 0.0f && assit_pitch < 0.0f) {
+    //     target_pitch = MIN(target_pitch, -assit_max);
+    // }
+
+    Vector2f bf_angles;
+    bf_angles.x = target_roll;
+    bf_angles.y = target_pitch;
+
+    static uint32_t last_ms = 0;
+    // static uint32_t print_ms = AP_HAL::millis();
+    static bool limited = false;
+    uint32_t now = AP_HAL::millis();
+
+    if (!motors->armed()) {
         return;
     }
-
-    float kp = g2.user_parameters.assit_gain.get();
 
     if (gps.status() < AP_GPS::GPS_OK_FIX_3D) {
         return;
     }
 
-    Vector3f vec = gps.velocity();
+    if (now - last_ms > 1000) {
+        g2.user_parameters.assit_pi_xy.reset_I();
+        user_gps_spd_filter.reset();
+        gcs().send_text(MAV_SEVERITY_INFO, "AST reset");
+    }
+    last_ms = now;
 
-    Vector2f bf_vel = ahrs.earth_to_body2D(vec.xy());
-    float assit_roll = -bf_vel.y*100.f*kp;
-    float assit_pitch = bf_vel.x*100.f*kp;
-    float assit_max = 20.f*100.f;
+    Vector3f raw_vec = gps.velocity();
 
-    if (target_roll >= 0.0f && assit_roll > 0.0f) {
-        target_roll = constrain_float(target_roll, assit_roll, assit_max);
+    // x for pitch and y for roll, same direction, rotate later
+    user_gps_spd_filter.apply(Vector2f(-raw_vec.y, raw_vec.x));
+
+    // rotate controller input to earth frame
+    Vector2f input_ef = user_gps_spd_filter.get();
+
+    // run PI controller
+    g2.user_parameters.assit_pi_xy.set_input(input_ef);
+
+    // get earth frame controller attitude in centi-degrees
+    Vector2f ef_output;
+
+    // get P term
+    ef_output = g2.user_parameters.assit_pi_xy.get_p();
+
+    Vector2f xy_I;
+
+    // get I term
+    if (limited) {
+        // only allow I term to shrink in length
+        xy_I = g2.user_parameters.assit_pi_xy.get_i_shrink();
+    } else {
+        // normal I term operation
+        xy_I = g2.user_parameters.assit_pi_xy.get_pi();
     }
 
-    if (target_roll <= 0.0f && assit_roll < 0.0f) {
-        target_roll = constrain_float(target_roll, -assit_max, assit_roll);
-    }
+    ef_output += xy_I;
+    ef_output *= copter.aparm.angle_max;
 
-    if (target_pitch >= 0.0f && assit_pitch > 0.0f) {
-        target_pitch = constrain_float(target_pitch, assit_pitch, assit_max);
-    }
+    // convert to body frame
+    bf_angles += copter.ahrs.earth_to_body2D(ef_output);
 
-    if (target_pitch <= 0.0f && assit_pitch < 0.0f) {
-        target_pitch = constrain_float(target_pitch, -assit_max, assit_pitch);
-    }
+    // set limited flag to prevent integrator windup
+    limited = fabsf(bf_angles.x) > copter.aparm.angle_max || fabsf(bf_angles.y) > copter.aparm.angle_max;
+
+    // constrain to angle limit
+    bf_angles.x = constrain_float(bf_angles.x, -copter.aparm.angle_max, copter.aparm.angle_max);
+    bf_angles.y = constrain_float(bf_angles.y, -copter.aparm.angle_max, copter.aparm.angle_max);
+
+    target_roll = bf_angles.x;
+    target_pitch = bf_angles.y;
 }
