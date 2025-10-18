@@ -207,3 +207,40 @@ void Copter::userhook_auxSwitch10(const RC_Channel::AuxSwitchPos ch_flag)
 //     //     count = 0;
 //     // }
 // }
+
+void Copter::user_update_assit(float &target_roll, float &target_pitch)
+{
+    if (is_zero(g2.user_parameters.assit_gain.get())) {return;}
+    if (!position_ok() || !motors->armed()) {
+        return;
+    }
+
+    float kp = g2.user_parameters.assit_gain.get();
+
+    if (gps.status() < AP_GPS::GPS_OK_FIX_3D) {
+        return;
+    }
+
+    Vector3f vec = gps.velocity();
+
+    Vector2f bf_vel = ahrs.earth_to_body2D(vec.xy());
+    float assit_roll = -bf_vel.y*100.f*kp;
+    float assit_pitch = bf_vel.x*100.f*kp;
+    float assit_max = 20.f*100.f;
+
+    if (target_roll >= 0.0f && assit_roll > 0.0f) {
+        target_roll = constrain_float(target_roll, assit_roll, assit_max);
+    }
+
+    if (target_roll <= 0.0f && assit_roll < 0.0f) {
+        target_roll = constrain_float(target_roll, -assit_max, assit_roll);
+    }
+
+    if (target_pitch >= 0.0f && assit_pitch > 0.0f) {
+        target_pitch = constrain_float(target_pitch, assit_pitch, assit_max);
+    }
+
+    if (target_pitch <= 0.0f && assit_pitch < 0.0f) {
+        target_pitch = constrain_float(target_pitch, -assit_max, assit_pitch);
+    }
+}

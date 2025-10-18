@@ -12,4 +12,5 @@ public:
     // UserCode usage example: g2.user_parameters.get_int8Param()
     AP_Float filt_gyro_hz;
     AP_Float filt_acc_hz;
+    AP_Float assit_gain;
 };

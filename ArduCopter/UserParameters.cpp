@@ -9,6 +9,7 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     // Note the maximum length of parameter name is 13 chars
     AP_GROUPINFO("_FLT_GYRO", 0, UserParameters, filt_gyro_hz, 200.f),
     AP_GROUPINFO("_FLT_ACC", 1, UserParameters, filt_acc_hz, 200.f),
+    AP_GROUPINFO("_ASSIT", 2, UserParameters, assit_gain, 3.0f),
 
     AP_GROUPEND
 };

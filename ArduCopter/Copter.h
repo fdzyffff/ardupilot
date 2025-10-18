@@ -999,6 +999,7 @@ private:
     // void user_count_msg(const mavlink_message_t &msg);
     // AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev;
 
+    void user_update_assit(float &target_roll, float &target_pitch);
     void FD_handle_message();
     void FD_send_raw_imu();
 #if MODE_ACRO_ENABLED == ENABLED
