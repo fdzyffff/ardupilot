@@ -25,22 +25,26 @@ public:
     void update_cam();
     void update_control();
     void update_attack_angle_target();
-    const Vector2f& get_bf_info();
-    const Vector2f& get_ef_info();
-    const Vector2f& get_ef_rate_info();
+    const Vector2f& get_ef_aim_info();
+    const Vector2f& get_ef_cam_info();
 
     float get_target_vel_x() {return _target_vel_x;}
     float get_target_vel_y() {return _target_vel_y;}
+    float get_target_vel_z() {return _target_vel_z;}
+    float get_target_angle_yaw() {return _target_angle_yaw;}
 
     void handle_attack_msg(const mavlink_message_t &msg);
     void handle_info(float p1, float p2);
 
     void update_target_vel_x();
     void update_target_vel_y();
+    void update_target_vel_z();
+    void update_target_angle_yaw();
     void update_log();
 
     void start();
     void stop();
+    void reset();
 
     struct {
         float p1;
@@ -60,12 +64,13 @@ public:
         uint16_t count_log;
     } display_info;
 
-    Vector2f bf_info;
-    Vector2f ef_info;
-    Vector2f ef_rate_info;
+    Vector2f ef_cam_info;
+    Vector2f ef_aim_info;
     bool _active;
     float _target_vel_x;
     float _target_vel_y;
+    float _target_vel_z;
+    float _target_angle_yaw;
 
 
 private:
@@ -76,10 +81,8 @@ private:
     AP_Float        filt_yaw_hz;
     AP_Float        filt_pithc_hz;
 
-    AC_PID          attack_roll_pid{0.5f, 0.1f, 0.01f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.0f};
-    AC_PID          attack_throttle_pid{0.5f, 0.03f, 0.01f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    AC_PID          attack_velx_pid{0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.0f};
-    AC_PID          attack_vely_pid{0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.0f};
+    // AC_PID          attack_velx_pid{0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.0f};
+    AC_PID          attack_velz_pid{0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.0f};
 
     FD_Target_Base*   _Target_ptr_cam;
     FD_Target_QD*   _Target_ptr_cam_QD;
@@ -91,39 +94,10 @@ private:
     bool _running;
     int8_t current_idx;
 
-    DerivativeFilterFloat_Size7 _pitch_filter;
-    DerivativeFilterFloat_Size7 _yaw_filter;
     LowPassFilterFloat _yaw_sample_filter;
     LowPassFilterFloat _pitch_sample_filter;
-    LowPassFilterFloat _ef_rate_x_filter;
-    LowPassFilterFloat _ef_rate_y_filter;
+    LowPassFilterFloat _delta_yaw_filter;
 
-    // User_shiftaverage _throttle_filt;
-    // User_shiftaverage _pitch_filt;
-    // User_shiftaverage _roll_filt;
-
-    float _last_yaw;
-    float _last_yaw_sample;
-
-    #define UDELAY_BUFFER 100
-    class UDelay {
-    public:
-        UDelay() {;};
-        
-        void init();
-        void push();
-        bool get_idx(uint16_t step, float &roll, float &pitch, float &yaw);
-
-    private:
-        struct {
-            float roll;
-            float pitch;
-            float yaw;
-            uint32_t time_ms;
-        } _buffer[UDELAY_BUFFER];
-        uint16_t _idx;
-    };
-
-    UDelay udelay;
-
+    User_shiftaverage _pitch_filter;
+    User_shiftaverage _yaw_filt;
 };

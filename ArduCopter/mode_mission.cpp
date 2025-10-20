@@ -51,7 +51,26 @@ void ModeMission::run()
         break;
         case Mission_State::Track:
         {
-            copter.mode_guided.run();
+            if ((millis() - copter.mode_guided.my_update_time_ms > 1000))
+            {
+                copter.mode_guided.run();
+                Vector3f velocity;
+                velocity.x = 0.0f;
+                velocity.y = 0.0f;
+                velocity.z = copter.uattack.get_target_vel_z();
+                Vector3f acc;
+                acc.x = 0.0f;
+                acc.y = 0.0f;
+                acc.z = 0.0f;
+                const Vector3f& acceleration
+                bool use_yaw = true;
+                float yaw_cd = copter.uattack.get_target_angle_yaw()*100.f;
+                bool use_yaw_rate = false;
+                float yaw_rate_cds = 0.0f;
+                bool relative_yaw = false;
+                bool log_request = false;
+                mode_guided.set_velaccel(velocity, acc, use_yaw, yaw_cd, use_yaw_rate, yaw_rate_cds, relative_yaw, log_request);
+            }
         }
         break;
         case Mission_State::Return:
@@ -88,11 +107,11 @@ void ModeMission::update_state()
             if (copter.mode_guided.submode() != ModeGuided::SubMode::VelAccel) {
                 copter.mode_guided.velaccel_control_start();
             }
-            if (millis() - state_ms > 5000) {
-                set_state(Mission_State::Auto);
-            }
             if (copter.uattack.is_active()) {
                 set_state(Mission_State::Search);
+            }
+            if (millis() - state_ms > 5000) {
+                set_state(Mission_State::Auto);
             }
         }
         break;
@@ -125,6 +144,9 @@ void ModeMission::update_state()
         {
             if (copter.mode_guided.submode() != ModeGuided::SubMode::VelAccel) {
                 copter.mode_guided.velaccel_control_start();
+            }
+            if (!copter.uattack.is_active()) {
+                set_state(Mission_State::Wait);
             }
         }
         break;
@@ -206,7 +228,8 @@ void ModeMission::set_state(Mission_State state_in)
         break;
         case Mission_State::Search:
         {
-            if (copter.mode_circle.init(false)) {
+            if (copter.mode_guided.init(false)) {
+                copter.mode_guided.velaccel_control_start();
                 mission_state = state_in;
                 gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: Search");
             } else {
@@ -216,9 +239,14 @@ void ModeMission::set_state(Mission_State state_in)
         break;
         case Mission_State::Track:
         {
-            copter.mode_guided.velaccel_control_start();
-            mission_state = state_in;
-            gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: Track");
+            if (copter.mode_guided.init(false)) {
+                copter.uattack.reset();
+                copter.mode_guided.velaccel_control_start();
+                mission_state = state_in;
+                gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: Track");
+            } else {
+                gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: Track");
+            }
         }
         break;
         case Mission_State::Return:
