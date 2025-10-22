@@ -1974,6 +1974,7 @@ private:
 #endif
 
 class ModeMission : public Mode {
+    friend class Uart;
 
 public:
     // inherit constructor
@@ -1998,12 +1999,14 @@ public:
         Takeoff,
         Wait,
         Fly,
+        LAND,
+        RETURN,
     };
 
     MISSION_State get_state() {return mission_state;}
-    void set_loc(Location& dest_1, Location& dest_2);
+    void set_loc(Location& dest_in, uint8_t spd_in, uint8_t id_in);
+    void set_wp_number(uint8_t wp_number_in);
     Location& get_target_loc() {return target_loc;}
-    uint16_t get_target_speed() {return target_speed;}
 
 protected:
 
@@ -2019,9 +2022,11 @@ protected:
     void wp_control_start();
     void wp_run();
 
+
     MISSION_State mission_state;
     Location target_loc;
-    Location loc1;
-    Location loc2;
-    uint16_t target_speed;
+    Location loc_list[16];
+    uint8_t spd_list[16];
+    uint8_t wp_number;
+    uint8_t wp_idx;
 };
