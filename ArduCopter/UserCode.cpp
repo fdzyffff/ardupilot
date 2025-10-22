@@ -56,6 +56,7 @@ void Copter::userhook_SlowLoop()
 void Copter::userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
+    gcs().send_message(MSG_ESTIMATOR_STATUS);
     // umav.send_status();
     umav.send_all();
     // userhook_i2c_test();
@@ -249,6 +250,11 @@ void Copter::user_update_assit(float &target_roll, float &target_pitch)
     Vector2f bf_angles;
     bf_angles.x = target_roll;
     bf_angles.y = target_pitch;
+
+    if (!is_zero(target_roll) || !is_zero(target_pitch)) {
+        g2.user_parameters.assit_pi_xy.reset_I();
+        return;
+    }
 
     static uint32_t last_ms = 0;
     // static uint32_t print_ms = AP_HAL::millis();

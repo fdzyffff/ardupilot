@@ -679,7 +679,7 @@ void NavEKF3_core::FuseVelPosNED()
             R_OBS[4] = R_OBS[0];
             for (uint8_t i=0; i<=2; i++) R_OBS_DATA_CHECKS[i] = R_OBS[i];
         } else {
-            if (gpsSpdAccuracy > 0.0f) {
+            if ((gpsSpdAccuracy > 0.0f) && (frontend->sources.getVelXYSource() == AP_NavEKF_Source::SourceXY::GPS)) {
                 // use GPS receivers reported speed accuracy if available and floor at value set by GPS velocity noise parameter
                 R_OBS[0] = sq(constrain_ftype(gpsSpdAccuracy, frontend->_gpsHorizVelNoise, 50.0f));
                 R_OBS[2] = sq(constrain_ftype(gpsSpdAccuracy, frontend->_gpsVertVelNoise, 50.0f));
@@ -694,7 +694,7 @@ void NavEKF3_core::FuseVelPosNED()
             }
             R_OBS[1] = R_OBS[0];
             // Use GPS reported position accuracy if available and floor at value set by GPS position noise parameter
-            if (gpsPosAccuracy > 0.0f) {
+            if ((gpsPosAccuracy > 0.0f) && (frontend->sources.getPosXYSource() == AP_NavEKF_Source::SourceXY::GPS)) {
                 R_OBS[3] = sq(constrain_ftype(gpsPosAccuracy, frontend->_gpsHorizPosNoise, 100.0f));
 #if EK3_FEATURE_EXTERNAL_NAV
             } else if (extNavUsedForPos) {

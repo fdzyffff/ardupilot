@@ -3,11 +3,11 @@ echo $current_datetime
 mkdir firmware
 rm -fr firmware/*
 echo "~~~~~~~~~~~~~~~ start ~~~~~~~~~~~~~~~"
-./waf configure --board APzF400
-./waf copter
-# mkdir firmware/APzF400
-cp build/APzF400/bin/arducopter.apj firmware/$current_datetime\_APzF400_arducopter.apj
-echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
+# ./waf configure --board APzF400
+# ./waf copter
+# # mkdir firmware/APzF400
+# cp build/APzF400/bin/arducopter.apj firmware/$current_datetime\_APzF400_arducopter.apj
+# echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
 ./waf configure --board APz400-H7
 ./waf copter
 # mkdir firmware/APz400
@@ -22,9 +22,9 @@ echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
 ./waf copter
 # mkdir firmware/APz400g
 cp build/APz400g/bin/arducopter.apj firmware/$current_datetime\_APz400g_arducopter.apj
-# echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
-./waf configure --board APz400g-i2cc
-./waf copter
-# mkdir firmware/APz400g
-cp build/APz400g-i2cc/bin/arducopter.apj firmware/$current_datetime\_APz400g-i2cc_arducopter.apj
+# # echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
+# ./waf configure --board APz400g-i2cc
+# ./waf copter
+# # mkdir firmware/APz400g
+# cp build/APz400g-i2cc/bin/arducopter.apj firmware/$current_datetime\_APz400g-i2cc_arducopter.apj
 echo "~~~~~~~~~~~~~~~ done ~~~~~~~~~~~~~~~"

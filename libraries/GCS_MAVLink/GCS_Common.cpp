@@ -1089,6 +1089,7 @@ ap_message GCS_MAVLINK::mavlink_id_to_ap_message_id(const uint32_t mavlink_id) c
         { MAVLINK_MSG_ID_WXBS_SELFCHECK_RESULT, MSG_WXBS_SELFCHECK_RESULT},
         { MAVLINK_MSG_ID_WXBS_TARGET_RESULT,    MSG_WXBS_TARGET_RESULT},
         { MAVLINK_MSG_ID_WXBS_MISSION_RESULT,   MSG_WXBS_MISSION_RESULT},
+        { MAVLINK_MSG_ID_ESTIMATOR_STATUS,      MSG_ESTIMATOR_STATUS},
             };
 
     for (uint8_t i=0; i<ARRAY_SIZE(map); i++) {
@@ -5697,6 +5698,29 @@ void GCS_MAVLINK::send_uavionix_adsb_out_status() const
 }
 #endif
 
+void GCS_MAVLINK::send_estimator_status() const
+{
+    // get estimator flags
+    uint16_t est_status_flags = 0;
+    nav_filter_status nav_filt_status;
+    if (AP::ahrs().get_filter_status(nav_filt_status)) {
+        est_status_flags = (uint16_t)(nav_filt_status.value & 0xFFFF);
+    }
+
+    mavlink_msg_estimator_status_send(
+            chan,
+            AP_HAL::millis(),   // time since system boot TODO: take time of measurement
+            est_status_flags,
+            99.0f, //vel_ratio,
+            99.0f, //pos_horiz_ratio,
+            99.0f, //pos_vert_ratio,
+            99.0f, //mag_ratio,
+            99.0f, //hagl_ratio,
+            99.0f, //tas_ratio,
+            99.0f, //pos_horiz_accuracy,
+            99.0f); //pos_vert_accuracy);
+}
+
 #if AP_MAVLINK_MSG_RELAY_STATUS_ENABLED
 bool GCS_MAVLINK::send_relay_status() const
 {
@@ -6206,6 +6230,11 @@ bool GCS_MAVLINK::try_send_message(const enum ap_message id)
         ret = send_relay_status();
         break;
 #endif
+
+    case MSG_ESTIMATOR_STATUS:
+        CHECK_PAYLOAD_SIZE(ESTIMATOR_STATUS);
+        send_estimator_status();
+        break;
 
     default:
         // try_send_message must always at some stage return true for

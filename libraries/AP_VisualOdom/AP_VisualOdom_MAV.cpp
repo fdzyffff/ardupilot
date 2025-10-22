@@ -27,6 +27,11 @@
 // quality of -1 means failed, 0 means unknown, 1 is worst, 100 is best
 void AP_VisualOdom_MAV::handle_pose_estimate(uint64_t remote_time_us, uint32_t time_ms, float x, float y, float z, const Quaternion &attitude, float posErr, float angErr, uint8_t reset_counter, int8_t quality)
 {
+    if (AP_HAL::millis() - mocap_last_ms > 1000) {
+        mocap_pos_x.reset();
+        mocap_pos_y.reset();
+        mocap_pos_z.reset();
+    }
     const float scale_factor =  _frontend.get_pos_scale();
     Vector3f pos{x * scale_factor, y * scale_factor, z * scale_factor};
 
@@ -54,6 +59,13 @@ void AP_VisualOdom_MAV::handle_pose_estimate(uint64_t remote_time_us, uint32_t t
     // log sensor data
     Write_VisualPosition(remote_time_us, time_ms, pos.x, pos.y, pos.z, degrees(roll), degrees(pitch), degrees(yaw), posErr, angErr, reset_counter, !consume, _quality);
 #endif
+
+    mocap_pos_x.update(pos.x, time_ms);
+    mocap_pos_y.update(pos.y, time_ms);
+    mocap_pos_z.update(pos.z, time_ms);
+    Vector3f vel = Vector3f(mocap_pos_x.slope()*1.0e3f, mocap_pos_y.slope()*1.0e3f, mocap_pos_z.slope()*1.0e3f);
+    handle_vision_speed_estimate(remote_time_us, time_ms, vel, 0, 100);
+    mocap_last_ms = AP_HAL::millis();
 
     // record time for health monitoring
     _last_update_ms = AP_HAL::millis();
