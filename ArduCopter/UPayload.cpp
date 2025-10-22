@@ -15,6 +15,7 @@ void UPayload::init()
     FD_uart_payload.get_msg_payload().set_enable();
     _fire_ms = 0;
     _msg_count = 0;
+    _err_code = 0;
     copter.gcs().send_text(MAV_SEVERITY_WARNING, "Payload Init");
 }
 
@@ -32,6 +33,7 @@ void UPayload::msg_payload2apm_handle()
             }
             if (_cmd == 0xFF) {
                 copter.gcs().send_text(MAV_SEVERITY_WARNING, "Fail: Parse : %x, %x",_type,_cmd);
+                _err_code = _cmd;
             }
             break;
         case 0x88:
@@ -40,6 +42,7 @@ void UPayload::msg_payload2apm_handle()
             }
             if (_cmd == 0xFF) {
                 copter.gcs().send_text(MAV_SEVERITY_WARNING, "Fail: Arm 1 : %x, %x",_type,_cmd);
+                _err_code = _cmd;
             }
             break;
         case 0x99:
@@ -48,6 +51,7 @@ void UPayload::msg_payload2apm_handle()
             }
             if (_cmd == 0xFF) {
                 copter.gcs().send_text(MAV_SEVERITY_WARNING, "Fail: Arm 2 : %x, %x",_type,_cmd);
+                _err_code = _cmd;
             }
             break;
         case 0xC5:
@@ -56,6 +60,7 @@ void UPayload::msg_payload2apm_handle()
             }
             if (_cmd == 0xFF) {
                 copter.gcs().send_text(MAV_SEVERITY_WARNING, "Fail: Arm Final : %x, %x",_type,_cmd);
+                _err_code = _cmd;
             }
             break;
         case 0x58:
@@ -64,6 +69,7 @@ void UPayload::msg_payload2apm_handle()
             }
             if (_cmd == 0xFF) {
                 copter.gcs().send_text(MAV_SEVERITY_WARNING, "Fail: Destroy : %x, %x",_type,_cmd);
+                _err_code = _cmd;
             }
             break;
         case 0xDE:
@@ -72,10 +78,12 @@ void UPayload::msg_payload2apm_handle()
             }
             if (_cmd == 0xFF) {
                 copter.gcs().send_text(MAV_SEVERITY_WARNING, "Fail: Disarm : %x, %x",_type,_cmd);
+                _err_code = _cmd;
             }
             break;
         default:
             copter.gcs().send_text(MAV_SEVERITY_WARNING, "Err: T[%d] C[%d]",_type,_cmd);
+            _err_code = _cmd;
             break;
     }
     send_current_state_text();
@@ -230,7 +238,10 @@ void UPayload::push_state() {
             if (_msg_count > 5) {
                 gcs().send_text(MAV_SEVERITY_INFO, "No Payload response");
                 _msg_count = 0;
+                _err_code = 2;
             }
+        } else {
+            _err_code = 0;
         }
     }
 }
@@ -409,4 +420,30 @@ void UPayload::update_destory()
         _last_info_ms = millis();
         gcs().send_text(MAV_SEVERITY_INFO, "destory after %0.1fs", _fire_count_s - dt);
     }
+}
+
+uint8_t UPayload::get_status()
+{
+    uint8_t ret = 0;
+    if (_err_code) {
+        ret = 2;
+    } else {
+        switch (_current_state) {
+            case payload_none:
+            case payload_parse:
+            case payload_arm1:
+            case payload_arm2:
+            case payload_disarm:
+                ret = 0;
+                break;
+            case payload_armfinal:
+            case payload_fire:
+                ret = 1;
+                break;
+            default:
+                break;
+        }
+    }
+
+    return ret;
 }

@@ -413,9 +413,9 @@ void UMav::send_apm_status()
             if (comm_get_txspace(channel) >= GCS_MAVLINK::packet_overhead_chan(channel) + 255) {
                 mavlink_msg_wxbs_apm_status_send(
                     channel,
-                    1,
-                    1,
-                    1);
+                    AP::ahrs().get_posvelyaw_source_set(),
+                    0,
+                    copter.upayload.get_status());
             }
         }
     }

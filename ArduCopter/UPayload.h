@@ -28,6 +28,7 @@ public:
     bool initialised() {return FD_uart_payload.initialized();}
     void handle_msg(const mavlink_message_t &msg);
     void handle_destory(bool do_destory, float fire_s_in);
+    uint8_t get_status();
 
 private:
 
@@ -40,6 +41,7 @@ private:
     uint32_t _fire_ms;
     float _fire_count_s;
     int32_t _msg_count;
+    uint8_t _err_code;
 
     void msg_payload2apm_handle();
     void send_current_state_text();
