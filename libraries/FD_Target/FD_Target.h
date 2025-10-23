@@ -41,6 +41,7 @@ public:
     void update() override;
     void handle_msg(const mavlink_message_t &msg) override;
     float cal_frame_angle(float pixel, float angle, float x_in);
+    float cal_frame_angle_left_up(float pixel, float angle, float x_in);
     void handle_info_test(float p1, float p2);
 
 private:
@@ -49,6 +50,7 @@ private:
     AP_Float cam_height;
     AP_Float cam_angle_x;
     AP_Float cam_angle_y;
+    AP_Int8  cam_debug;
 
     FD_QD* FD_QD_ptr;
 };

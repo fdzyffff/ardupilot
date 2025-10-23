@@ -44,6 +44,8 @@ bool ModeGuided::init(bool ignore_checks)
     // clear pause state when entering guided mode
     _paused = false;
 
+    my_update_time_ms = millis();
+
     return true;
 }
 
@@ -399,6 +401,8 @@ bool ModeGuided::set_destination(const Vector3f& destination, bool use_yaw, floa
     guided_accel_target_cmss.zero();
     update_time_ms = millis();
 
+    my_update_time_ms = millis();
+
 #if HAL_LOGGING_ENABLED
     // log target
     copter.Log_Write_Guided_Position_Target(guided_mode, guided_pos_target_cm.tofloat(), guided_pos_terrain_alt, guided_vel_target_cms, guided_accel_target_cmss);
@@ -508,6 +512,8 @@ bool ModeGuided::set_destination(const Location& dest_loc, bool use_yaw, float y
     guided_accel_target_cmss.zero();
     update_time_ms = millis();
 
+    my_update_time_ms = millis();
+
     // log target
 #if HAL_LOGGING_ENABLED
     copter.Log_Write_Guided_Position_Target(guided_mode, Vector3f(dest_loc.lat, dest_loc.lng, dest_loc.alt), guided_pos_terrain_alt, guided_vel_target_cms, guided_accel_target_cmss);
@@ -535,6 +541,8 @@ void ModeGuided::set_accel(const Vector3f& acceleration, bool use_yaw, float yaw
     guided_vel_target_cms.zero();
     guided_accel_target_cmss = acceleration;
     update_time_ms = millis();
+
+    my_update_time_ms = millis();
 
 #if HAL_LOGGING_ENABLED
     // log target
@@ -567,6 +575,8 @@ void ModeGuided::set_velaccel(const Vector3f& velocity, const Vector3f& accelera
     guided_vel_target_cms = velocity;
     guided_accel_target_cmss = acceleration;
     update_time_ms = millis();
+
+    my_update_time_ms = millis();
 
 #if HAL_LOGGING_ENABLED
     // log target
@@ -608,6 +618,8 @@ bool ModeGuided::set_destination_posvelaccel(const Vector3f& destination, const 
     guided_pos_terrain_alt = false;
     guided_vel_target_cms = velocity;
     guided_accel_target_cmss = acceleration;
+
+    my_update_time_ms = millis();
 
 #if HAL_LOGGING_ENABLED
     // log target

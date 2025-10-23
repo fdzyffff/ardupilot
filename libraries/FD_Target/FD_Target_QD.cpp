@@ -9,6 +9,7 @@ const AP_Param::GroupInfo FD_Target_QD::var_info[] = {
     AP_GROUPINFO("PIX_H",  2, FD_Target_QD, cam_height,            360),
     AP_GROUPINFO("ANG_X",  3, FD_Target_QD, cam_angle_x,           60.0f),
     AP_GROUPINFO("ANG_Y",  4, FD_Target_QD, cam_angle_y,           60.0f),
+    AP_GROUPINFO("DEBUG",  5, FD_Target_QD, cam_debug,             0),
 
     AP_GROUPEND
 };
@@ -31,18 +32,59 @@ bool FD_Target_QD::init() {
 void FD_Target_QD::update() {
     static uint32_t last_update_ms = millis();
 
+    static uint32_t last_print_ms = millis();
+    bool do_print = false;
+    if (millis() - last_print_ms > 1000) {
+        if (cam_debug.get()) {
+            do_print = true;
+        }
+        last_print_ms = millis();
+    }
+
     FD_QD_ptr->read();
     FD_msg_QD_S11 &tmp_msg = FD_QD_ptr->get_msg_QD_S11();
     if (tmp_msg._msg_1.updated) {
 
         if (tmp_msg._msg_1.content.msg.track_status == 0x02) {
             _last_ms = millis();
-            float theta1 = -cal_frame_angle(cam_width.get(), cam_angle_x.get(), tmp_msg._msg_1.content.msg.target_x); // x-axis, degree
-            float theta2 =  cal_frame_angle(cam_height.get(), cam_angle_y.get(), tmp_msg._msg_1.content.msg.target_y); // y-axis, degree
+            float theta1 =  cal_frame_angle_left_up(cam_width.get(), cam_angle_x.get(), tmp_msg._msg_1.content.msg.target_x); // x-axis, degree
+            float theta2 = -cal_frame_angle_left_up(cam_height.get(), cam_angle_y.get(), tmp_msg._msg_1.content.msg.target_y); // y-axis, degree
+
+            if (do_print) {
+                gcs().send_text(MAV_SEVERITY_INFO, "theta (%0.1f, %0.1f)", theta1, theta2);
+            }
 
             Vector3f tmp = Vector3f(1.f, tanf(radians(theta1)), -tanf(radians(theta2)));
-            float p1 = degrees(atanf(tmp.y/tmp.x));
-            float p2 = degrees(atanf(tmp.z/tmp.xy().length()));
+            float tgt_p1 = degrees(atanf(tmp.y/tmp.x));
+            float tgt_p2 = degrees(atanf(tmp.z/tmp.xy().length()));
+
+            if (do_print) {
+                gcs().send_text(MAV_SEVERITY_INFO, "tgt (%0.1f, %0.1f)", tgt_p1, tgt_p2);
+            }
+
+            Vector3f cam_unit = Vector3f(1.0f, 0.0f, 0.0f);
+            Matrix3f tmp_target_cam_m;
+            tmp_target_cam_m.from_euler(0.0f, radians(tgt_p2), radians(tgt_p1));
+
+            float LSB = 360.f/65536.f;
+            float cam_yaw = (float)(tmp_msg._msg_1.content.msg.cam_yaw)*LSB;
+            float cam_pitch = (float)(tmp_msg._msg_1.content.msg.cam_pitch)*LSB;
+
+            if (do_print) {
+                gcs().send_text(MAV_SEVERITY_INFO, "cam (%0.1f, %0.1f)", cam_yaw, cam_pitch);
+            }
+
+            Matrix3f tmp_cam_body_m;
+            tmp_cam_body_m.from_euler(0.0f, radians(cam_pitch), radians(cam_yaw));
+            Vector3f bef_cam_unit = tmp_cam_body_m*tmp_target_cam_m*cam_unit;
+
+            float p1 = degrees(atanf(bef_cam_unit.y/bef_cam_unit.x));
+            float p2 = degrees(atanf(bef_cam_unit.z/bef_cam_unit.xy().length()));
+
+            if (do_print) {
+                gcs().send_text(MAV_SEVERITY_INFO, "theta (%0.1f, %0.1f)", p1, p2);
+            }
+
             handle_info(p1, p2);
         }
 
@@ -64,6 +106,19 @@ void FD_Target_QD::update() {
 }
 
 float FD_Target_QD::cal_frame_angle(float pixel, float angle, float x_in)
+{
+    // pixel, eg: 1080
+    // angle, eg: 54°
+    // x_in, eg: 540
+    // ret, eg: 0°
+    pixel = constrain_float(pixel, 100.0f, 8000.f);
+    angle = constrain_float(radians(angle), radians(10.0f), radians(150.0f));
+    x_in = constrain_float(x_in, -pixel*0.5f, pixel*0.5f);
+    float ret = atanf(2.0f*(x_in)/pixel*tanf(angle*0.5f));
+    return degrees(ret);
+}
+
+float FD_Target_QD::cal_frame_angle_left_up(float pixel, float angle, float x_in)
 {
     // pixel, eg: 1080
     // angle, eg: 54°

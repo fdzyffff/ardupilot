@@ -7,6 +7,8 @@ const AP_Param::GroupInfo UAttack::var_info[] = {
     AP_GROUPINFO("TCAM_TYPE",  2, UAttack, use_target_cam_type,     0),
     AP_GROUPINFO("FILT_Y_HZ",  3, UAttack, filt_yaw_hz,             5.0f),
     AP_GROUPINFO("FILT_P_HZ",  4, UAttack, filt_pithc_hz,           5.0f),
+    AP_GROUPINFO("GUN_PITCH",  5, UAttack, gun_pitch,               10.0f),
+    AP_GROUPINFO("AIM_PITCH",  6, UAttack, aim_pitch,               10.0f),
 
     AP_SUBGROUPPTR(_Target_ptr_cam_QD,   "TQD_",  5, UAttack,  FD_Target_QD),
     AP_GROUPEND
@@ -16,21 +18,19 @@ UAttack::UAttack()
 {
     AP_Param::setup_object_defaults(this, var_info);
 
-    _last_yaw = 0.0f;
-    _last_yaw_sample = 0.0f;
+    // _last_yaw = 0.0f;
+    // _last_yaw_sample = 0.0f;
 }
 
 // initialise
 void UAttack::init()
 {
-    udelay.init();
+    // udelay.init();
     _active = false;
-    bf_info.x = 0.0f;
-    bf_info.y = 0.0f;
-    ef_info.x = 0.0f;
-    ef_info.y = 0.0f;
-    ef_rate_info.x = 0.0f;
-    ef_rate_info.y = 0.0f;
+    ef_cam_info.x = 0.0f;
+    ef_cam_info.y = 0.0f;
+    ef_gun_info.x = 0.0f;
+    ef_gun_info.y = 0.0f;
     display_info.new_data = false;
     display_info.p1 = 0.0f;
     display_info.p2 = 0.0f;
@@ -62,7 +62,7 @@ void UAttack::init()
     _pitch_sample_filter.set_cutoff_frequency(filt_pithc_hz.get());
     _delta_yaw_filter.set_cutoff_frequency(filt_yaw_hz.get());
     gcs().send_text(MAV_SEVERITY_WARNING, "Target FILT HZ [%0.0f, %0.0f]", filt_yaw_hz.get(), filt_pithc_hz.get());
-    _yaw_filt.init(30, 100);
+    _yaw_filter.init(30, 100);
     _pitch_filter.init(30, 100);
 }
 
@@ -87,8 +87,8 @@ void UAttack::update_log() {
                                 AP_HAL::micros64(),
                                 (float)ef_cam_info.x,
                                 (float)ef_cam_info.y,
-                                (float)ef_aim_info.x,
-                                (float)ef_aim_info.y,
+                                (float)ef_gun_info.x,
+                                (float)ef_gun_info.y,
                                 (float)_running,
                                 (float)display_info.count_log,
                                 (float)_target_angle_yaw);
@@ -111,12 +111,12 @@ void UAttack::update_log() {
 
 }
 
-const Vector2f& UAttack::get_cam_info() {
+const Vector2f& UAttack::get_ef_cam_info() {
     return ef_cam_info;
 }
 
-const Vector2f& UAttack::get_ef_aim_info() {
-    return ef_aim_info;
+const Vector2f& UAttack::get_ef_gun_info() {
+    return ef_gun_info;
 }
 
 
@@ -245,10 +245,10 @@ void UAttack::handle_info(float p1, float p2) {
 
     float _roll = AP::ahrs().get_roll();
     float _pitch = AP::ahrs().get_pitch();
-    float _yaw = AP::ahrs().get_yaw();
+    // float _yaw = AP::ahrs().get_yaw();
 
-    _yaw_sample_filter.apply(p1);
-    _pitch_sample_filter.apply(p2);
+    _yaw_sample_filter.apply(p1, 0.03f);
+    _pitch_sample_filter.apply(p2, 0.03f);
 
     ef_cam_info.x = _yaw_sample_filter.get(); // yaw degree
     ef_cam_info.y = _pitch_sample_filter.get(); // pitch degree
@@ -259,28 +259,26 @@ void UAttack::handle_info(float p1, float p2) {
         p2 = 180.0f - p2;
     }
 
+    // Vector3f cam_unit = Vector3f(1.0f, 0.0f, 0.0f);
+    // Matrix3f tmp_target_earth_m;
+    // tmp_target_earth_m.from_euler(0.0f, radians(p2), radians(p1));
+    // Vector3f ef_cam_unit = tmp_target_earth_m*cam_unit;
 
-    Vector3f cam_unit = Vector3f(1.0f, 0.0f, 0.0f);
-    Matrix3f tmp_cam_earth_m;
-    tmp_target_earth_m.from_euler(0.0f, radians(p2), radians(p1));
-    Vector3f ef_cam_unit = tmp_target_earth_m*target_unit;
-
-    float aim_pitch = 10.0f;
-    Vector3f aim_unit = Vector3f(1.0f, 0.0f, 0.0f);
-    Matrix3f tmp_body_aim_m;
-    tmp_body_aim_m.from_euler(0.0f, radians(aim_pitch), 0.0f);
+    Vector3f gun_unit = Vector3f(1.0f, 0.0f, 0.0f);
+    Matrix3f tmp_body_gun_m;
+    tmp_body_gun_m.from_euler(0.0f, radians(gun_pitch.get()), 0.0f);
     Matrix3f tmp_earth_body_m;
     tmp_earth_body_m.from_euler(_roll, _pitch, 0.0f);
-    Vector3f ef_aim_unit = tmp_earth_body_m*tmp_body_aim_m*aim_unit;
+    Vector3f ef_gun_unit = tmp_earth_body_m*tmp_body_gun_m*gun_unit;
 
-    float angle_pitch = wrap_180(degrees(atan2f(-ef_aim_unit.z, ef_aim_unit.xy().length())));
-    float angle_yaw =   wrap_180(degrees(atan2f( ef_aim_unit.y, ef_aim_unit.x)));
+    float angle_pitch = wrap_180(degrees(atan2f(-ef_gun_unit.z, ef_gun_unit.xy().length())));
+    float angle_yaw   = wrap_180(degrees(atan2f( ef_gun_unit.y, ef_gun_unit.x)));
 
     _yaw_filter.push(angle_yaw);
     _pitch_filter.push(angle_pitch);
 
-    ef_aim_info.x = _yaw_filter.get();
-    ef_aim_info.y = _pitch_filter.get();
+    ef_gun_info.x = _yaw_filter.get();
+    ef_gun_info.y = _pitch_filter.get();
 
     display_info.new_data = true;
     display_info.count++;
@@ -308,8 +306,8 @@ void UAttack::update_target_vel_z() {
         ;
     }
 
-    target_pitch = 10.0f;
-    current_delta_pitch = wrap_180(ef_aim_info.y - ef_cam_info.y);
+    float target_pitch = aim_pitch.get();
+    float current_delta_pitch = wrap_180(ef_gun_info.y - ef_cam_info.y);
 
     float norm_in = 10.0f;
 
@@ -322,7 +320,7 @@ void UAttack::update_target_angle_yaw() {
     // dt = dt * 0.001f;
     // if (dt > 0.05f) {dt = 0.05f;}
 
-    _target_angle_yaw = wrap_360(degrees(AP::ahrs().get_yaw()) + wrap_180(ef_aim_info.x - ef_cam_info.x));
+    _target_angle_yaw = wrap_360(degrees(AP::ahrs().get_yaw()) + wrap_180(ef_gun_info.x - ef_cam_info.x));
 }
 
 
@@ -330,47 +328,4 @@ void UAttack::handle_attack_msg(const mavlink_message_t &msg) {
     if (_Target_ptr_cam != nullptr) {
         _Target_ptr_cam->handle_msg(msg);
     }
-}
-
-
-// UDelay
-void UAttack::UDelay::init()
-{
-    _idx = 0;
-    for (uint16_t i = 0; i < UDELAY_BUFFER; i++) {
-        _buffer[i].roll = 0.0f;
-        _buffer[i].pitch = 0.0f;
-        _buffer[i].yaw = 0.0f;
-        _buffer[i].time_ms = 0;
-    }
-}
-
-void UAttack::UDelay::push()
-{
-    _idx += 1;
-    if (_idx >= UDELAY_BUFFER) {
-        _idx = 0;
-    }
-    _buffer[_idx].roll  = AP::ahrs().get_roll();
-    _buffer[_idx].pitch = AP::ahrs().get_pitch();
-    _buffer[_idx].yaw   = AP::ahrs().get_yaw();
-    _buffer[_idx].time_ms = millis();
-}
-
-bool UAttack::UDelay::get_idx(uint16_t step, float &roll, float &pitch, float &yaw) 
-{
-    uint16_t this_idx = 0;
-    if (_idx >= step) {
-        this_idx = _idx - step;
-    } else {
-        this_idx = UDELAY_BUFFER + _idx - step;
-    }
-    roll = _buffer[this_idx].roll;
-    pitch = _buffer[this_idx].pitch;
-    yaw = _buffer[this_idx].yaw;
-    if (millis() - _buffer[this_idx].time_ms > 500) {
-        return false;
-    }
-    // gcs().send_text(MAV_SEVERITY_INFO, "%d", (millis()-_buffer[this_idx].time_ms));
-    return true;
 }

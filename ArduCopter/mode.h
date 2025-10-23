@@ -1152,6 +1152,8 @@ public:
     bool allows_weathervaning(void) const override;
 #endif
 
+    uint32_t my_update_time_ms;
+
 protected:
 
     const char *name() const override { return "GUIDED"; }

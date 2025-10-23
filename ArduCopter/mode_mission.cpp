@@ -51,25 +51,21 @@ void ModeMission::run()
         break;
         case Mission_State::Track:
         {
-            if ((millis() - copter.mode_guided.my_update_time_ms > 1000))
+            if ((millis() - copter.mode_guided.my_update_time_ms > 100))
             {
                 copter.mode_guided.run();
                 Vector3f velocity;
                 velocity.x = 0.0f;
                 velocity.y = 0.0f;
                 velocity.z = copter.uattack.get_target_vel_z();
-                Vector3f acc;
-                acc.x = 0.0f;
-                acc.y = 0.0f;
-                acc.z = 0.0f;
-                const Vector3f& acceleration
+                const Vector3f& acceleration = Vector3f(0.0f, 0.0f, 0.0f);
                 bool use_yaw = true;
                 float yaw_cd = copter.uattack.get_target_angle_yaw()*100.f;
                 bool use_yaw_rate = false;
                 float yaw_rate_cds = 0.0f;
                 bool relative_yaw = false;
                 bool log_request = false;
-                mode_guided.set_velaccel(velocity, acc, use_yaw, yaw_cd, use_yaw_rate, yaw_rate_cds, relative_yaw, log_request);
+                copter.mode_guided.set_velaccel(velocity, acceleration, use_yaw, yaw_cd, use_yaw_rate, yaw_rate_cds, relative_yaw, log_request);
             }
         }
         break;

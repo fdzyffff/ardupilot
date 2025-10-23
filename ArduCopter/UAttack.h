@@ -25,7 +25,7 @@ public:
     void update_cam();
     void update_control();
     void update_attack_angle_target();
-    const Vector2f& get_ef_aim_info();
+    const Vector2f& get_ef_gun_info();
     const Vector2f& get_ef_cam_info();
 
     float get_target_vel_x() {return _target_vel_x;}
@@ -65,7 +65,7 @@ public:
     } display_info;
 
     Vector2f ef_cam_info;
-    Vector2f ef_aim_info;
+    Vector2f ef_gun_info;
     bool _active;
     float _target_vel_x;
     float _target_vel_y;
@@ -80,6 +80,8 @@ private:
     AP_Int8         use_target_cam_type;
     AP_Float        filt_yaw_hz;
     AP_Float        filt_pithc_hz;
+    AP_Float        gun_pitch;
+    AP_Float        aim_pitch;
 
     // AC_PID          attack_velx_pid{0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.0f};
     AC_PID          attack_velz_pid{0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.0f};
@@ -96,8 +98,10 @@ private:
 
     LowPassFilterFloat _yaw_sample_filter;
     LowPassFilterFloat _pitch_sample_filter;
+    LowPassFilterFloat _ef_rate_x_filter;
+    LowPassFilterFloat _ef_rate_y_filter;
     LowPassFilterFloat _delta_yaw_filter;
 
     User_shiftaverage _pitch_filter;
-    User_shiftaverage _yaw_filt;
+    User_shiftaverage _yaw_filter;
 };
