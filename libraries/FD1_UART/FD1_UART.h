@@ -19,3 +19,11 @@
 #include "FD1_msg_0728_p1.h"
 #include "FD1_msg_0728_p2.h"
 #include "FD1_msg_0728_p3.h"
+
+
+#include "FD1_msg_0919_p1.h" //载荷至无人机 循迹移动控制指令（0xC1，0xD3）。
+#include "FD1_msg_0919_p2.h" //飞行控制指令（0xC1，0xE3）描述：终端按照指令进行起飞/降落。
+#include "FD1_msg_0919_p3.h" //循迹移动执行成功事件（0x75）描述：循迹移动指令回执事件。
+#include "FD1_msg_0919_p4.h" //飞行控制成功事件（0x7D）描述：飞行控制回执事件。
+// #include "FD1_msg_0919_p5.h" //无人机心跳。
+
