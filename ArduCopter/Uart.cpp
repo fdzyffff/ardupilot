@@ -41,15 +41,54 @@ void Uart::update()
 
 void Uart::read_uart()
 {
+    static uint8_t char_end = 0;
+    static uint8_t hex_temp = 0;
     if (get_port() == nullptr) {return;}
     while (get_port()->available()>0) {
         uint8_t temp = get_port()->read();
 
-        uart_msg_0919_p1.parse(temp);
-        handle_0919_p1();
+        // uart_msg_0919_p1.parse(temp);
+        // handle_0919_p1();
 
-        uart_msg_0919_p2.parse(temp);
-        handle_0919_p2();
+        // uart_msg_0919_p2.parse(temp);
+        // handle_0919_p2();
+
+        // gcs().send_text(MAV_SEVERITY_INFO, "temp in %x", temp);
+        if (temp == 44) { //","
+            char_end = 0;
+        } else if (char_end == 0) {
+            hex_temp = 0;
+            char_end++;
+            if ((temp >= 48) && (temp <=57)) {
+                hex_temp += (temp - 48) * 16;
+            }
+            if ((temp >= 65) && (temp <=70)) {
+                hex_temp += (temp - 55) * 16;
+            }
+            if ((temp >= 97) && (temp <=102)) {
+                hex_temp += (temp - 87) * 16;
+            }
+            // gcs().send_text(MAV_SEVERITY_INFO, "t 1 %x", temp);
+        } else if (char_end == 1) {
+            char_end = 0;
+            if ((temp >= 48) && (temp <=57)) {
+                hex_temp += (temp - 48);
+            }
+            if ((temp >= 65) && (temp <=70)) {
+                hex_temp += (temp - 55);
+            }
+            if ((temp >= 97) && (temp <=102)) {
+                hex_temp += (temp - 87);
+            }
+
+            uart_msg_0919_p1.parse(hex_temp);
+            handle_0919_p1();
+
+            uart_msg_0919_p2.parse(hex_temp);
+            handle_0919_p2();
+
+            // gcs().send_text(MAV_SEVERITY_INFO, "t 2 %x", temp);
+        }
     }
 }
 
