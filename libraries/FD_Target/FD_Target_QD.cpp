@@ -9,7 +9,8 @@ const AP_Param::GroupInfo FD_Target_QD::var_info[] = {
     AP_GROUPINFO("PIX_H",  2, FD_Target_QD, cam_height,            360),
     AP_GROUPINFO("ANG_X",  3, FD_Target_QD, cam_angle_x,           60.0f),
     AP_GROUPINFO("ANG_Y",  4, FD_Target_QD, cam_angle_y,           60.0f),
-    AP_GROUPINFO("DEBUG",  5, FD_Target_QD, cam_debug,             0),
+    AP_GROUPINFO("USEXY",  5, FD_Target_QD, cam_use_xy,            0),
+    AP_GROUPINFO("DEBUG",  6, FD_Target_QD, cam_debug,             0),
 
     AP_GROUPEND
 };
@@ -33,19 +34,19 @@ void FD_Target_QD::update() {
     static uint32_t last_update_ms = millis();
 
     static uint32_t last_print_ms = millis();
-    bool do_print = false;
-    if (millis() - last_print_ms > 1000) {
-        if (cam_debug.get()) {
-            do_print = true;
-        }
-        last_print_ms = millis();
-    }
 
     FD_QD_ptr->read();
     FD_msg_QD_S11 &tmp_msg = FD_QD_ptr->get_msg_QD_S11();
     if (tmp_msg._msg_1.updated) {
 
-        if (tmp_msg._msg_1.content.msg.track_status == 0x02) {
+            bool do_print = false;
+            if (millis() - last_print_ms > 1000) {
+                if (cam_debug.get()) {
+                    do_print = true;
+                }
+                last_print_ms = millis();
+            }
+        // if (tmp_msg._msg_1.content.msg.track_status == 0x02) {
             _last_ms = millis();
             float theta1 =  cal_frame_angle_left_up(cam_width.get(), cam_angle_x.get(), tmp_msg._msg_1.content.msg.target_x); // x-axis, degree
             float theta2 = -cal_frame_angle_left_up(cam_height.get(), cam_angle_y.get(), tmp_msg._msg_1.content.msg.target_y); // y-axis, degree
@@ -58,8 +59,12 @@ void FD_Target_QD::update() {
             float tgt_p1 = degrees(atanf(tmp.y/tmp.x));
             float tgt_p2 = degrees(atanf(tmp.z/tmp.xy().length()));
 
+            if (cam_use_xy.get() == 0) {
+                tgt_p1 = 0.0f;
+                tgt_p2 = 0.0f;
+            }
             if (do_print) {
-                gcs().send_text(MAV_SEVERITY_INFO, "tgt (%0.1f, %0.1f)", tgt_p1, tgt_p2);
+                gcs().send_text(MAV_SEVERITY_INFO, "tgt [%d](%0.1f, %0.1f)", cam_use_xy.get(), tgt_p1, tgt_p2);
             }
 
             Vector3f cam_unit = Vector3f(1.0f, 0.0f, 0.0f);
@@ -78,15 +83,15 @@ void FD_Target_QD::update() {
             tmp_cam_body_m.from_euler(0.0f, radians(cam_pitch), radians(cam_yaw));
             Vector3f bef_cam_unit = tmp_cam_body_m*tmp_target_cam_m*cam_unit;
 
-            float p1 = degrees(atanf(bef_cam_unit.y/bef_cam_unit.x));
-            float p2 = degrees(atanf(bef_cam_unit.z/bef_cam_unit.xy().length()));
+            float p1 = wrap_180(degrees(atan2f( bef_cam_unit.y, bef_cam_unit.x)));
+            float p2 = wrap_180(degrees(atan2f(-bef_cam_unit.z, bef_cam_unit.xy().length())));
 
             if (do_print) {
                 gcs().send_text(MAV_SEVERITY_INFO, "theta (%0.1f, %0.1f)", p1, p2);
             }
 
             handle_info(p1, p2);
-        }
+        // }
 
         tmp_msg._msg_1.updated = false;   
     }

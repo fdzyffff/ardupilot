@@ -10,7 +10,7 @@ const AP_Param::GroupInfo UAttack::var_info[] = {
     AP_GROUPINFO("GUN_PITCH",  5, UAttack, gun_pitch,               10.0f),
     AP_GROUPINFO("AIM_PITCH",  6, UAttack, aim_pitch,               10.0f),
 
-    AP_SUBGROUPPTR(_Target_ptr_cam_QD,   "TQD_",  5, UAttack,  FD_Target_QD),
+    AP_SUBGROUPPTR(_Target_ptr_cam_QD,   "TQD_",  7, UAttack,  FD_Target_QD),
     AP_GROUPEND
 };
 
@@ -320,7 +320,7 @@ void UAttack::update_target_angle_yaw() {
     // dt = dt * 0.001f;
     // if (dt > 0.05f) {dt = 0.05f;}
 
-    _target_angle_yaw = wrap_360(degrees(AP::ahrs().get_yaw()) + wrap_180(ef_gun_info.x - ef_cam_info.x));
+    _target_angle_yaw = wrap_360(degrees(AP::ahrs().get_yaw()) + wrap_180(ef_cam_info.x - ef_gun_info.x));
 }
 
 

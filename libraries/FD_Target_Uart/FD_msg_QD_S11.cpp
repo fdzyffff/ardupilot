@@ -55,6 +55,8 @@ void FD_msg_QD_S11::parse(uint8_t temp)
             _msg.data[_msg.read] = temp;
             _msg.read++;
 
+
+            // gcs().send_text(MAV_SEVERITY_INFO, "Sum: %d, Byte: %d",_msg.sum_check, temp);
             if (temp == _msg.sum_check)
             {
                 process_message();

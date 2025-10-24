@@ -50,6 +50,7 @@ private:
     AP_Float cam_height;
     AP_Float cam_angle_x;
     AP_Float cam_angle_y;
+    AP_Int8  cam_use_xy;
     AP_Int8  cam_debug;
 
     FD_QD* FD_QD_ptr;
