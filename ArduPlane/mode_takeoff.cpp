@@ -134,5 +134,11 @@ void ModeTakeoff::update()
         plane.calc_nav_pitch();
         plane.calc_throttle();
     }
+
+    if (plane.HB1_Power.state == Plane::HB1_Power_Action_t::HB1_PowerAction_RocketON) {
+        plane.rollController.reset_I();
+        plane.pitchController.reset_I();
+        plane.yawController.reset_I();
+    }
 }
 

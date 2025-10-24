@@ -627,7 +627,8 @@ def start_mavproxy(opts, stuff):
         cmd.append("-w")
         cmd.append("mavproxy.exe")
     else:
-        cmd.append("mavproxy.py")
+        # cmd.append("mavproxy.py")
+        cmd.append("mavproxy.exe")
 
     if opts.hil:
         cmd.extend(["--load-module", "HIL"])

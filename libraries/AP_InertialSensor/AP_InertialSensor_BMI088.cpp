@@ -248,7 +248,7 @@ bool AP_InertialSensor_BMI088::gyro_init()
     }
 
     // setup FIFO for streaming X,Y,Z
-    if (!dev_gyro->write_register(REGG_FIFO_CONFIG_1, 0x80, true)) {
+    if (!dev_gyro->write_register(REGG_FIFO_CONFIG_1, 0x40, true)) {
         return false;
     }
 
