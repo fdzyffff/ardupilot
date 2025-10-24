@@ -286,59 +286,60 @@ void Plane::HB1_status_set_HB_Power_Action(HB1_Power_Action_t action, bool Force
         default:
             break;
     }
-    // HB1_msg_apm2power_set();
+    HB1_msg_apm2power_set();
 }
 
 void Plane::HB1_msg_apm2power_set() {
-    // switch (HB1_Power.state) {
-    //     case HB1_PowerAction_RocketON:
-    //     case HB1_PowerAction_GROUND_RocketON:
-    //         HB1_msg_apm2power_set_rocket_on();
-    //         HB1_Power.send_counter = 2;
-    //         return;
-    //     default:
-    //         break;
-    // }
+    switch (HB1_Power.state) {
+        case HB1_PowerAction_RocketON:
+        case HB1_PowerAction_GROUND_RocketON:
+            HB1_msg_apm2power_set_rocket_on();
+            HB1_Power.send_counter = 2;
+            return;
+        default:
+            break;
+    }
 
-    // HB1_apm2power &tmp_msg = HB1_uart_power.get_msg_apm2power();
-    // tmp_msg._msg_1.need_send = false;
-    // switch (HB1_Power.state) {
-    //     case HB1_PowerAction_GROUND_EngineSTART:
-    //         tmp_msg.set_engine_start();
-    //         tmp_msg._msg_1.need_send = true;
-    //         break;
-    //     case HB1_PowerAction_GROUND_EngineSTART_PRE:
-    //         tmp_msg.set_engine_stop();
-    //         tmp_msg._msg_1.need_send = true;
-    //         break;
-    //     case HB1_PowerAction_EnginePullUP:
-    //         tmp_msg._msg_1.need_send = false;
-    //         break;
-    //     case HB1_PowerAction_EngineOFF:
-    //     case HB1_PowerAction_GROUND_EngineOFF:
-    //     case HB1_PowerAction_ParachuteON:
-    //         tmp_msg.set_engine_stop();
-    //         tmp_msg._msg_1.need_send = true;
-    //         break;
-    //     default:
-    //         tmp_msg._msg_1.need_send = false;
-    //         break;
-    // }
-    // if (!tmp_msg._msg_1.need_send) {
-    //     HB1_Power.send_start_counter = 0;
-    //     return;
-    // }
-    // HB1_Power.send_start_counter = 20;
+    HB1_apm2power &tmp_msg = HB1_uart_power.get_msg_apm2power();
+    tmp_msg._msg_1.need_send = false;
+    switch (HB1_Power.state) {
+        case HB1_PowerAction_GROUND_EngineSTART:
+            tmp_msg.set_engine_start();
+            tmp_msg._msg_1.need_send = true;
+            break;
+        case HB1_PowerAction_GROUND_EngineSTART_PRE:
+            tmp_msg.set_engine_stop();
+            tmp_msg._msg_1.need_send = true;
+            break;
+        case HB1_PowerAction_EnginePullUP:
+            tmp_msg._msg_1.need_send = false;
+            break;
+        case HB1_PowerAction_EngineOFF:
+        case HB1_PowerAction_GROUND_EngineOFF:
+        case HB1_PowerAction_ParachuteON:
+            tmp_msg.set_engine_stop();
+            tmp_msg._msg_1.need_send = true;
+            break;
+        default:
+            tmp_msg._msg_1.need_send = false;
+            break;
+    }
 
-    // // tmp_msg._msg_1.content.msg.header.head_1 = HB1_apm2power::PREAMBLE1;
-    // // tmp_msg._msg_1.content.msg.header.head_2 = HB1_apm2power::PREAMBLE2;
-    // // tmp_msg._msg_1.content.msg.sum_check = 0;
-    // // for (int8_t i = 0; i < tmp_msg._msg_1.length - 1; i++) {
-    // //     tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
-    // // }
-    // tmp_msg.make_sum();
-    // tmp_msg._msg_1.print = true;
-    // return;
+    if (!tmp_msg._msg_1.need_send) {
+        HB1_Power.send_start_counter = 0;
+        return;
+    }
+    HB1_Power.send_start_counter = 3;
+
+    // tmp_msg._msg_1.content.msg.header.head_1 = HB1_apm2power::PREAMBLE1;
+    // tmp_msg._msg_1.content.msg.header.head_2 = HB1_apm2power::PREAMBLE2;
+    // tmp_msg._msg_1.content.msg.sum_check = 0;
+    // for (int8_t i = 0; i < tmp_msg._msg_1.length - 1; i++) {
+    //     tmp_msg._msg_1.content.msg.sum_check += tmp_msg._msg_1.content.data[i];
+    // }
+    tmp_msg.make_sum();
+    tmp_msg._msg_1.print = true;
+    return;
 }
 
 void Plane::HB1_msg_apm2power_set_rocket_on() {
