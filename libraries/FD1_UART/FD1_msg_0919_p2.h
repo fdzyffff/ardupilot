@@ -1,6 +1,6 @@
 #include "FD1_message.h"
 
-#define FD1_MSG_0919_P2_LEN 15
+#define FD1_MSG_0919_P2_LEN 17
 class FD1_msg_0919_p2 : public FD1_message{
 public:
     struct PACKED FD1_msg_header {
@@ -32,6 +32,7 @@ public:
         uint8_t RID_c;
         uint16_t PID_c;
         uint8_t control_type;
+        uint16_t tof_alt;
         uint8_t sum;
     };
 
