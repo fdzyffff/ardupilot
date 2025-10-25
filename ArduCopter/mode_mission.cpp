@@ -132,7 +132,11 @@ void ModeMission::set_state(MISSION_State state_in)
         break;
         case MISSION_State::Takeoff:
         {
-            if (copter.mode_guided.init(false) && copter.mode_guided.do_user_takeoff_start(120.f)) {
+            float takeoff_alt = 120.0f;
+            if (copter.g2.user_parameters._wp_alt.get() > 0) {
+                takeoff_alt = copter.g2.user_parameters._wp_alt.get();
+            }
+            if (copter.mode_guided.init(false) && copter.mode_guided.do_user_takeoff_start(takeoff_alt)) {
                 copter.set_auto_armed(true);
                 mission_state = state_in;
                 gcs().send_text(MAV_SEVERITY_INFO, "[MIS] State: Takeoff");

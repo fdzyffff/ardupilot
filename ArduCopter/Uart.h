@@ -21,6 +21,7 @@ public:
     void handle_0919_p2();
     void send_0919_p3();
     void send_0919_p4();
+    void send_0919_p5();
     void unpack_0919_lng(int32_t& lng_out, uint8_t lng_in[6]);
     void unpack_0919_lat(int32_t& lat_out, uint8_t lat_in[5]);
     void unpack_0919_alt(int32_t& alt_out, uint8_t alt_in[4]);
@@ -38,4 +39,5 @@ private:
     FD1_msg_0919_p2 uart_msg_0919_p2; //飞行控制指令（0xC1，0xE3）描述：终端按照指令进行起飞/降落。
     FD1_msg_0919_p3 uart_msg_0919_p3; //循迹移动执行成功事件（0x75）描述：循迹移动指令回执事件。
     FD1_msg_0919_p4 uart_msg_0919_p4; //飞行控制成功事件（0x7D）描述：飞行控制回执事件。
+    FD1_msg_0919_p5 uart_msg_0919_p5; //心跳包5s
 };

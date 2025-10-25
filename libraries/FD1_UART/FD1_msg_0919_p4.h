@@ -1,10 +1,11 @@
 #include "FD1_message.h"
 
-#define FD1_MSG_0919_P4_LEN 37
+#define FD1_MSG_0919_P4_LEN 45
 class FD1_msg_0919_p4 : public FD1_message{
 public:
     struct PACKED FD1_msg_header {
         uint8_t head_1;
+        uint8_t head_2;
     };
 
     struct PACKED FD1_msg_content {
@@ -31,6 +32,8 @@ public:
     
     struct PACKED MSG_Collection {
         FD1_msg_header header;
+        uint8_t length;
+        uint8_t E_Type;
         uint8_t T_Type;
         uint8_t T_Subtype;
         uint8_t RID;
@@ -87,7 +90,8 @@ public:
     FD1_msg_0919_p4(const FD1_msg_0919_p4 &other) = delete;
     FD1_msg_0919_p4 &operator=(const FD1_msg_0919_p4&) = delete;
 
-    static const uint8_t PREAMBLE1 = 0x7D;
+    static const uint8_t PREAMBLE1 = 0xA8;
+    static const uint8_t PREAMBLE2 = 0x93;
 
     void process_message(void) override;
     void parse(uint8_t temp) override;

@@ -1,7 +1,7 @@
 #include "FD1_message.h"
 
-#define FD1_MSG_0919_P3_LEN 300
-class FD1_msg_0919_p3 : public FD1_message{
+#define FD1_MSG_0919_P5_LEN 2
+class FD1_msg_0919_p5 : public FD1_message{
 public:
     struct PACKED FD1_msg_header {
         uint8_t head_1;
@@ -32,28 +32,12 @@ public:
     
     struct PACKED MSG_Collection {
         FD1_msg_header header;
-        uint8_t length;
-        uint8_t E_Type;
-        uint8_t T_Type;
-        uint8_t T_Subtype;
-        uint8_t RID;
-        uint16_t PID;
-        uint8_t C_Idegree;
-        FD1_msg_wp loc;
-        FD1_msg_time start_time;
-        uint8_t T_Type_c;
-        uint8_t T_Subtype_c;
-        uint8_t RID_c;
-        uint16_t PID_c;
-        uint8_t wp_number;
-        FD1_msg_wp wp_data[16];
-        uint8_t sum;
     };
 
     // message structure
     union PACKED Content_1 {
         MSG_Collection msg;
-        uint8_t data[FD1_MSG_0919_P3_LEN];
+        uint8_t data[FD1_MSG_0919_P5_LEN];
     };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -62,7 +46,7 @@ public:
         bool print;
         bool updated;
         bool need_send;
-        uint16_t length = FD1_MSG_0919_P3_LEN;
+        uint16_t length = FD1_MSG_0919_P5_LEN;
         Content_1 content;
     };
 
@@ -82,17 +66,17 @@ public:
         uint16_t length;
         uint8_t count;
         uint8_t sum;
-        uint8_t data[FD1_MSG_0919_P3_LEN];
+        uint8_t data[FD1_MSG_0919_P5_LEN];
     } _msg;
 
-    FD1_msg_0919_p3();
+    FD1_msg_0919_p5();
     
     /* Do not allow copies */
-    FD1_msg_0919_p3(const FD1_msg_0919_p3 &other) = delete;
-    FD1_msg_0919_p3 &operator=(const FD1_msg_0919_p3&) = delete;
+    FD1_msg_0919_p5(const FD1_msg_0919_p5 &other) = delete;
+    FD1_msg_0919_p5 &operator=(const FD1_msg_0919_p5&) = delete;
 
     static const uint8_t PREAMBLE1 = 0xA8;
-    static const uint8_t PREAMBLE2 = 0x93;
+    static const uint8_t PREAMBLE2 = 0x92;
 
     void process_message(void) override;
     void parse(uint8_t temp) override;

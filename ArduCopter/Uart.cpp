@@ -94,7 +94,7 @@ void Uart::read_uart()
 
 void Uart::write_uart()
 {
-    ;
+    send_0919_p5();
 }
 
 void Uart::handle_0919_p1()
@@ -110,6 +110,9 @@ void Uart::handle_0919_p1()
                     unpack_0919_alt(temp_loc.alt, uart_msg_0919_p1._msg_1.content.msg.wp_data[i_wp].content_wp.wp_alt);
                     uint8_t temp_spd = uart_msg_0919_p1._msg_1.content.msg.wp_data[i_wp].content_wp.wp_spd;
 
+                    if (copter.g2.user_parameters._wp_alt.get() > 0) {
+                        temp_loc.set_alt_cm(copter.g2.user_parameters._wp_alt.get(), Location::AltFrame::ABOVE_HOME);
+                    }
                     copter.mode_mission.set_loc(temp_loc, temp_spd, i_wp);
                 }
                 copter.mode_mission.set_wp_number(uart_msg_0919_p1._msg_1.content.msg.wp_number);
@@ -248,6 +251,19 @@ void Uart::send_0919_p4()
 
     uart_msg_0919_p4.make_sum();
     get_port()->write(uart_msg_0919_p4._msg_1.content.data, uart_msg_0919_p4._msg_1.length);
+}
+
+void Uart::send_0919_p5()
+{
+    // check send condition
+    if (get_port() == nullptr) {return;}
+    static uint32_t _last_p5_ms = millis();
+    if (millis() - _last_p5_ms < 5000) {
+        return;
+    }
+    _last_p5_ms = millis();
+    uart_msg_0919_p5.make_sum();
+    get_port()->write(uart_msg_0919_p5._msg_1.content.data, uart_msg_0919_p5._msg_1.length);
 }
 
 void Uart::unpack_0919_lng(int32_t& lng_out, uint8_t lng_in[6]) {
