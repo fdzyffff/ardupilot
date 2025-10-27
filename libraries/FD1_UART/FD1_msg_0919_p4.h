@@ -46,6 +46,8 @@ public:
         uint8_t RID_c;
         uint16_t PID_c;
         uint8_t control_type;
+        uint16_t tof_alt;
+        uint16_t ES_Num;
         uint8_t sum;
     };
 

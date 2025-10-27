@@ -204,7 +204,7 @@ void Uart::send_0919_p3()
     uart_msg_0919_p3._msg_1.length = 37 + 1 + 16 * uart_msg_0919_p1._msg_1.content.msg.wp_number;
 
     uart_msg_0919_p3.make_sum();
-    get_port()->write(uart_msg_0919_p3._msg_1.content.data, uart_msg_0919_p3._msg_1.length);
+    get_port()->write(uart_msg_0919_p3._msg_1.content.data, uart_msg_0919_p3._msg_1.length+6);
 }
 
 void Uart::send_0919_p4()
@@ -247,10 +247,11 @@ void Uart::send_0919_p4()
     uart_msg_0919_p4._msg_1.content.msg.RID_c = uart_msg_0919_p2._msg_1.content.msg.RID_c;
     uart_msg_0919_p4._msg_1.content.msg.PID_c = uart_msg_0919_p2._msg_1.content.msg.PID_c;
     uart_msg_0919_p4._msg_1.content.msg.control_type = uart_msg_0919_p2._msg_1.content.msg.control_type;
-    uart_msg_0919_p4._msg_1.length = 37;
+    uart_msg_0919_p4._msg_1.content.msg.tof_alt = uart_msg_0919_p2._msg_1.content.msg.tof_alt;
+    uart_msg_0919_p4._msg_1.length = 39;
 
     uart_msg_0919_p4.make_sum();
-    get_port()->write(uart_msg_0919_p4._msg_1.content.data, uart_msg_0919_p4._msg_1.length);
+    get_port()->write(uart_msg_0919_p4._msg_1.content.data, uart_msg_0919_p4._msg_1.length+6);
 }
 
 void Uart::send_0919_p5()

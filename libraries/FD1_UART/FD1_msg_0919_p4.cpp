@@ -27,7 +27,7 @@ void FD1_msg_0919_p4::make_sum()
     _msg_1.content.data[42] = 0;
     _msg_1.content.data[43] = 0;
     _msg_1.content.msg.sum = 0;
-    for (uint16_t i = 2; i < _msg_1.length - 1; i++) {
+    for (uint16_t i = 2; i < _msg_1.length + 5; i++) {
         _msg_1.content.msg.sum ^= _msg_1.content.data[i];
     }
 }

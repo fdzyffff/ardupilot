@@ -47,6 +47,7 @@ public:
         uint16_t PID_c;
         uint8_t wp_number;
         FD1_msg_wp wp_data[16];
+        uint16_t ES_Num;
         uint8_t sum;
     };
 
