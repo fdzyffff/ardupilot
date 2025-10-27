@@ -1001,6 +1001,7 @@ private:
 
     LowPassFilterVector2f user_gps_spd_filter;
     void user_update_assit(float &target_roll, float &target_pitch);
+    void user_set_origin();
 
     void FD_handle_message();
     void FD_send_raw_imu();

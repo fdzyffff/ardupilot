@@ -57,6 +57,7 @@ void Copter::userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
     gcs().send_message(MSG_ESTIMATOR_STATUS);
+    user_set_origin();
     // umav.send_status();
     umav.send_all();
     // userhook_i2c_test();
@@ -319,4 +320,33 @@ void Copter::user_update_assit(float &target_roll, float &target_pitch)
 
     target_roll = bf_angles.x;
     target_pitch = bf_angles.y;
+}
+
+void Copter::user_set_origin()
+{
+    if (is_zero(g2.user_parameters.opos.lat) || is_zero(g2.user_parameters.opos.lng)) {
+        return;
+    }
+
+    AP_AHRS &user_ahrs = AP::ahrs();
+
+    // check if EKF origin has already been set
+    Location ekf_origin;
+    if (user_ahrs.get_origin(ekf_origin)) {
+        // gcs().send_text(MAV_SEVERITY_INFO, "Warning, current ekf origin changed!");
+        return;
+    }
+
+    Location loc;
+    loc.lat = (int32_t)(g2.user_parameters.opos.lat * 1e7f);
+    loc.lng = (int32_t)(g2.user_parameters.opos.lng * 1e7f);
+    loc.alt = (int32_t)(g2.user_parameters.opos.alt * 1e2f);
+
+    if (!user_ahrs.set_origin(loc)) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Fail, user set ekf origin!");
+        return;
+    } else {
+        gcs().send_text(MAV_SEVERITY_INFO, "user set ekf origin!");
+        gcs().send_text(MAV_SEVERITY_INFO, "%f, %f, %.1f", (float)g2.user_parameters.opos.lat, (float)g2.user_parameters.opos.lng, (float)(g2.user_parameters.opos.alt));
+    }
 }

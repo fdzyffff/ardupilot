@@ -14,4 +14,10 @@ public:
     AP_Float filt_gyro_hz;
     AP_Float filt_acc_hz;
     AC_PI_2D assit_pi_xy{0.2f, 0.3f, 3000, 5, 0.0025f};
+    // original simulated position
+    struct {
+        AP_Float lat;
+        AP_Float lng;
+        AP_Float alt; // metres
+    } opos;
 };
