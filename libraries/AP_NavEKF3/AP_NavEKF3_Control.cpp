@@ -673,7 +673,8 @@ bool NavEKF3_core::setOrigin(const Location &loc)
     }
 
     EKF_origin = loc;
-    ekfGpsRefHgt = (double)0.01 * (double)EKF_origin.alt;
+    ekfGpsRefHgt = (double)0.01 * (double)(dal.gps().location().alt);
+    // ekfGpsRefHgt = (double)0.01 * (double)EKF_origin.alt;
     // define Earth rotation vector in the NED navigation frame at the origin
     calcEarthRateNED(earthRateNED, EKF_origin.lat);
     validOrigin = true;

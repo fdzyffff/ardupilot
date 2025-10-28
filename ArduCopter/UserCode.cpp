@@ -324,7 +324,16 @@ void Copter::user_update_assit(float &target_roll, float &target_pitch)
 
 void Copter::user_set_origin()
 {
+    static bool ekf_set = false;
     if (is_zero(g2.user_parameters.opos.lat) || is_zero(g2.user_parameters.opos.lng)) {
+        return;
+    }
+
+    if (gps.status() < AP_GPS::GPS_OK_FIX_3D) {
+        return;
+    }
+
+    if (ekf_set) {
         return;
     }
 
@@ -341,6 +350,7 @@ void Copter::user_set_origin()
     loc.lat = (int32_t)(g2.user_parameters.opos.lat * 1e7f);
     loc.lng = (int32_t)(g2.user_parameters.opos.lng * 1e7f);
     loc.alt = (int32_t)(g2.user_parameters.opos.alt * 1e2f);
+    loc.set_alt_cm(loc.alt, Location::AltFrame::ABSOLUTE);
 
     if (!user_ahrs.set_origin(loc)) {
         gcs().send_text(MAV_SEVERITY_INFO, "Fail, user set ekf origin!");
@@ -348,5 +358,6 @@ void Copter::user_set_origin()
     } else {
         gcs().send_text(MAV_SEVERITY_INFO, "user set ekf origin!");
         gcs().send_text(MAV_SEVERITY_INFO, "%f, %f, %.1f", (float)g2.user_parameters.opos.lat, (float)g2.user_parameters.opos.lng, (float)(g2.user_parameters.opos.alt));
+        ekf_set = true;
     }
 }

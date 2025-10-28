@@ -5530,7 +5530,11 @@ void GCS_MAVLINK::send_attitude_quaternion() const
 }
 
 int32_t GCS_MAVLINK::global_position_int_alt() const {
-    return global_position_current_loc.alt * 10UL;
+    int32_t temp_alt = global_position_current_loc.alt;
+    if (global_position_current_loc.get_alt_cm(Location::AltFrame::ABSOLUTE, temp_alt)) {
+        ;
+    }
+    return temp_alt * 10UL;
 }
 int32_t GCS_MAVLINK::global_position_int_relative_alt() const {
 #if AP_AHRS_ENABLED
