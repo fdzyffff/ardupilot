@@ -734,6 +734,23 @@ const AP_Param::GroupInfo NavEKF3::var_info2[] = {
     // @Units: m
     AP_GROUPINFO("GPS_VACC_MAX", 10, NavEKF3, _gpsVAccThreshold, 0.0f),
 
+    // the following coordinates are for CMAC, in Canberra
+    // @Param: OPOS_LAT
+    // @DisplayName: Original Position (Latitude)
+    // @Description: Specifies vehicle's startup latitude
+    // @User: Advanced
+    AP_GROUPINFO("OPOS_LAT",     11, NavEKF3,  opos.lat, 0.0f),
+    // @Param: OPOS_LNG
+    // @DisplayName: Original Position (Longitude)
+    // @Description: Specifies vehicle's startup longitude
+    // @User: Advanced
+    AP_GROUPINFO("OPOS_LNG",     12, NavEKF3,  opos.lng, 0.0f),
+    // @Param: OPOS_ALT
+    // @DisplayName: Original Position (Altitude)
+    // @Description: Specifies vehicle's startup altitude (AMSL)
+    // @User: Advanced
+    AP_GROUPINFO("OPOS_ALT",     13, NavEKF3,  opos.alt, 0.0f),
+
     AP_GROUPEND
 };
 

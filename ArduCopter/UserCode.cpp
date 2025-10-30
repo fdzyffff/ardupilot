@@ -324,40 +324,45 @@ void Copter::user_update_assit(float &target_roll, float &target_pitch)
 
 void Copter::user_set_origin()
 {
-    static bool ekf_set = false;
-    if (is_zero(g2.user_parameters.opos.lat) || is_zero(g2.user_parameters.opos.lng)) {
-        return;
-    }
+    // static bool ekf_set = true;
+    // if (is_zero(g2.user_parameters.opos.lat) || is_zero(g2.user_parameters.opos.lng)) {
+    //     return;
+    // }
 
-    if (gps.status() < AP_GPS::GPS_OK_FIX_3D) {
-        return;
-    }
+    // if (gps.status() < AP_GPS::GPS_OK_FIX_3D) {
+    //     return;
+    // }
 
-    if (ekf_set) {
-        return;
-    }
+    // if (ekf_set) {
+    //     return;
+    // }
 
-    AP_AHRS &user_ahrs = AP::ahrs();
+    // AP_AHRS &user_ahrs = AP::ahrs();
 
-    // check if EKF origin has already been set
-    Location ekf_origin;
-    if (user_ahrs.get_origin(ekf_origin)) {
-        // gcs().send_text(MAV_SEVERITY_INFO, "Warning, current ekf origin changed!");
-        return;
-    }
+    // // check if EKF origin has already been set
+    // Location ekf_origin;
+    // if (user_ahrs.get_origin(ekf_origin)) {
+    //     // gcs().send_text(MAV_SEVERITY_INFO, "Warning, current ekf origin changed!");
+    //     return;
+    // }
 
-    Location loc;
-    loc.lat = (int32_t)(g2.user_parameters.opos.lat * 1e7f);
-    loc.lng = (int32_t)(g2.user_parameters.opos.lng * 1e7f);
-    loc.alt = (int32_t)(g2.user_parameters.opos.alt * 1e2f);
-    loc.set_alt_cm(loc.alt, Location::AltFrame::ABSOLUTE);
+    // // if (!ekf_has_absolute_position()) {
+    // //     // gcs().send_text(MAV_SEVERITY_INFO, "Warning, current ekf origin changed!");
+    // //     return;
+    // // }
 
-    if (!user_ahrs.set_origin(loc)) {
-        gcs().send_text(MAV_SEVERITY_INFO, "Fail, user set ekf origin!");
-        return;
-    } else {
-        gcs().send_text(MAV_SEVERITY_INFO, "user set ekf origin!");
-        gcs().send_text(MAV_SEVERITY_INFO, "%f, %f, %.1f", (float)g2.user_parameters.opos.lat, (float)g2.user_parameters.opos.lng, (float)(g2.user_parameters.opos.alt));
-        ekf_set = true;
-    }
+    // Location loc;
+    // loc.lat = (int32_t)(g2.user_parameters.opos.lat * 1e7f);
+    // loc.lng = (int32_t)(g2.user_parameters.opos.lng * 1e7f);
+    // loc.alt = (int32_t)(g2.user_parameters.opos.alt * 1e2f);
+    // loc.set_alt_cm(loc.alt, Location::AltFrame::ABSOLUTE);
+
+    // if (!user_ahrs.set_global_origin(loc)) {
+    //     gcs().send_text(MAV_SEVERITY_INFO, "Fail, user set ekf origin!");
+    //     return;
+    // } else {
+    //     gcs().send_text(MAV_SEVERITY_INFO, "user set ekf origin!");
+    //     gcs().send_text(MAV_SEVERITY_INFO, "%f, %f, %.1f", (float)g2.user_parameters.opos.lat, (float)g2.user_parameters.opos.lng, (float)(g2.user_parameters.opos.alt));
+    //     ekf_set = true;
+    // }
 }

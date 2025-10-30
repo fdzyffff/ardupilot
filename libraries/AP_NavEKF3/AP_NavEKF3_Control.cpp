@@ -673,8 +673,8 @@ bool NavEKF3_core::setOrigin(const Location &loc)
     }
 
     EKF_origin = loc;
-    ekfGpsRefHgt = (double)0.01 * (double)(dal.gps().location().alt);
-    // ekfGpsRefHgt = (double)0.01 * (double)EKF_origin.alt;
+    // ekfGpsRefHgt = (double)0.01 * (double)(dal.gps().location().alt);
+    ekfGpsRefHgt = (double)0.01 * (double)EKF_origin.alt;
     // define Earth rotation vector in the NED navigation frame at the origin
     calcEarthRateNED(earthRateNED, EKF_origin.lat);
     validOrigin = true;
@@ -683,9 +683,21 @@ bool NavEKF3_core::setOrigin(const Location &loc)
     if (!frontend->common_origin_valid) {
         frontend->common_origin_valid = true;
         // put origin in frontend as well to ensure it stays in sync between lanes
-        public_origin = EKF_origin;
-    }
+        if (is_zero(frontend->opos.lat) || is_zero(frontend->opos.lng)) {
+            public_origin = EKF_origin;
+        } else {
+            Location t_loc;
+            t_loc.lat = (int32_t)(frontend->opos.lat * 1e7f);
+            t_loc.lng = (int32_t)(frontend->opos.lng * 1e7f);
+            t_loc.alt = (int32_t)(frontend->opos.alt * 1e2f);
+            t_loc.set_alt_cm(t_loc.alt, Location::AltFrame::ABSOLUTE);
+            public_origin = t_loc;
+            gcs().send_text(MAV_SEVERITY_INFO, "user set ekf origin!");
+            gcs().send_text(MAV_SEVERITY_INFO, "%f, %f, %.1f", (float)frontend->opos.lat, (float)frontend->opos.lng, (float)(frontend->opos.alt));
+        }
 
+        // public_origin = EKF_origin;
+    }
 
     return true;
 }

@@ -39,22 +39,6 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     // @User: Advanced
     AP_SUBGROUPINFO(assit_pi_xy, "_AST_",  2, UserParameters, AC_PI_2D),
 
-    // the following coordinates are for CMAC, in Canberra
-    // @Param: OPOS_LAT
-    // @DisplayName: Original Position (Latitude)
-    // @Description: Specifies vehicle's startup latitude
-    // @User: Advanced
-    AP_GROUPINFO("_OPOS_LAT",    3, UserParameters,  opos.lat, 0.0f),
-    // @Param: OPOS_LNG
-    // @DisplayName: Original Position (Longitude)
-    // @Description: Specifies vehicle's startup longitude
-    // @User: Advanced
-    AP_GROUPINFO("_OPOS_LNG",    4, UserParameters,  opos.lng, 0.0f),
-    // @Param: OPOS_ALT
-    // @DisplayName: Original Position (Altitude)
-    // @Description: Specifies vehicle's startup altitude (AMSL)
-    // @User: Advanced
-    AP_GROUPINFO("_OPOS_ALT",    5, UserParameters,  opos.alt, 0.0f),
     AP_GROUPEND
 };
 

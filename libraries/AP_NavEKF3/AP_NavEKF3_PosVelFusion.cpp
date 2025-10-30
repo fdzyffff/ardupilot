@@ -223,12 +223,15 @@ void NavEKF3_core::ResetPositionD(ftype posD)
     // write to the state vector
     stateStruct.position.z = posD;
 
+    stateStruct.position.z = 0.0f;
+
     // Calculate the position jump due to the reset
     posResetD = stateStruct.position.z - posDOrig;
 
     // Add the offset to the output observer states
     outputDataNew.position.z += posResetD;
     vertCompFiltState.pos = outputDataNew.position.z;
+    vertCompFiltState.pos = 0.0f;
     outputDataDelayed.position.z += posResetD;
     for (uint8_t i=0; i<imu_buffer_length; i++) {
         storedOutput[i].position.z += posResetD;

@@ -449,6 +449,13 @@ private:
     AP_Enum<LogLevel> _log_level;   // log verbosity level
     AP_Float _gpsVAccThreshold;     // vertical accuracy threshold to use GPS as an altitude source
 
+    // original simulated position
+    struct {
+        AP_Float lat;
+        AP_Float lng;
+        AP_Float alt; // metres
+    } opos;
+
 // Possible values for _flowUse
 #define FLOW_USE_NONE    0
 #define FLOW_USE_NAV     1
