@@ -959,7 +959,7 @@ void AP_Baro::update(void)
         }
     }
 #ifndef HAL_BUILD_AP_PERIPH
-    // update_field_elevation();
+    update_field_elevation();
 #endif
 
     // logging
