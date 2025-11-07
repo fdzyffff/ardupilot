@@ -87,6 +87,7 @@ void FD1_msg_RANGER::process_message(void)
 
 void FD1_msg_RANGER::swap_message(void)
 {
+    _msg_1.content.msg.error = swap_message_uint16_t(_msg_1.content.msg.error);
     _msg_1.content.msg.high1 = swap_message_int16_t(_msg_1.content.msg.high1);
     _msg_1.content.msg.speed1 = swap_message_int16_t(_msg_1.content.msg.speed1);
     _msg_1.content.msg.high2 = swap_message_int16_t(_msg_1.content.msg.high2);

@@ -45,7 +45,7 @@ bool AP_RangeFinder_MUNIU::get_reading(float &reading_m)
         if (_msg_ranger._msg_1.updated) {
             _msg_ranger._msg_1.updated = false;
             if (_msg_ranger._msg_1.content.msg.error) {
-                if (AP_HAL::millis() - _last_err_post > 5000) {
+                if ((AP_HAL::millis() - _last_err_post > 5000) &&  (_msg_ranger._msg_1.content.msg.error != 0)) {
                     _last_err_post = AP_HAL::millis();
                     gcs().send_text(MAV_SEVERITY_INFO, "RNGFNDER ERROR: %d ", _msg_ranger._msg_1.content.msg.error);
                 }
