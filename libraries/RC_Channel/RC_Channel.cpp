@@ -713,6 +713,7 @@ void RC_Channel::init_aux_function(const aux_func_t ch_option, const AuxSwitchPo
     case AUX_FUNC::BRAKE_LEFT_IN:
     case AUX_FUNC::BRAKE_RIGHT_IN:
     case AUX_FUNC::BLOWER_ONOFF:
+    case AUX_FUNC::BLOWER_POWER:
         run_aux_function(ch_option, ch_flag, AuxFuncTriggerSource::INIT);
         break;
     default:
@@ -1694,6 +1695,7 @@ bool RC_Channel::do_aux_function(const aux_func_t ch_option, const AuxSwitchPos 
     case AUX_FUNC::BRAKE_LEFT_IN:
     case AUX_FUNC::BRAKE_RIGHT_IN:
     case AUX_FUNC::BLOWER_ONOFF:
+    case AUX_FUNC::BLOWER_POWER:
         break;
 
     case AUX_FUNC::LOWEHEISER_THROTTLE:

@@ -47,9 +47,9 @@ public:
     } tmp_float_to_data;
 
     union PACKED{
-        uint64_t v;
-        uint8_t data[8];
-    } tmp_uint64t_to_data;
+        uint32_t v;
+        uint8_t data[4];
+    } tmp_uint32t_to_data;
 
     struct status_t {
         uint32_t last_ask_status_ms;

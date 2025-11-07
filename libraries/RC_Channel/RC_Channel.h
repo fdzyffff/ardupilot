@@ -291,8 +291,9 @@ public:
         BRAKE_LEFT_IN =      405,
         BRAKE_RIGHT_IN =     406,
         BLOWER_ONOFF =       407,
+        BLOWER_POWER =       408,
         // this must be higher than any aux function above
-        AUX_FUNCTION_MAX =   408,
+        AUX_FUNCTION_MAX =   409,
     };
     typedef enum AUX_FUNC aux_func_t;
 

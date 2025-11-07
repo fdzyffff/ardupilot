@@ -297,22 +297,18 @@ void FD_COLLECTOR::send_cmd(uint32_t id, uint8_t *data) {
 void FD_COLLECTOR::send_utc() {
     if (_frotend_ptr == nullptr) {return;}
     AP_HAL::CANFrame txFrame{};
-    tmp_uint64t_to_data.v = AP::fd1_data().get_gps_utc();
+    tmp_uint32t_to_data.v = AP::fd1_data().get_gps_utc();
     txFrame.data[0] = 0xFE;
     txFrame.data[1] = 0xFE;
     txFrame.data[2] = 0x14;
-    txFrame.data[3] = tmp_uint64t_to_data.data[0];
-    txFrame.data[4] = tmp_uint64t_to_data.data[1];
-    txFrame.data[5] = tmp_uint64t_to_data.data[2];
-    txFrame.data[6] = tmp_uint64t_to_data.data[3];
-    txFrame.data[7] = tmp_uint64t_to_data.data[4];
-    txFrame.data[8] = tmp_uint64t_to_data.data[5];
-    txFrame.data[9] = tmp_uint64t_to_data.data[6];
-    txFrame.data[10] = tmp_uint64t_to_data.data[7];
-    txFrame.data[11] = 0xEE;
+    txFrame.data[3] = tmp_uint32t_to_data.data[0];
+    txFrame.data[4] = tmp_uint32t_to_data.data[1];
+    txFrame.data[5] = tmp_uint32t_to_data.data[2];
+    txFrame.data[6] = tmp_uint32t_to_data.data[3];
+    txFrame.data[7] = 0xEE;
 
     txFrame.id = 0x20;
-    txFrame.dlc = 12;
+    txFrame.dlc = 8;
     uint64_t timeout = AP_HAL::micros64() + 10000ULL;
     _frotend_ptr->write_frame(txFrame, timeout);
 }

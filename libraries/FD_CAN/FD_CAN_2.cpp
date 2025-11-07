@@ -14,6 +14,8 @@
 #include <SRV_Channel/SRV_Channel.h>
 #include <stdio.h>
 
+#include <FD1_DATA/FD1_DATA.h>
+
 extern const AP_HAL::HAL &hal;
 
 #if HAL_CANMANAGER_ENABLED
@@ -116,6 +118,7 @@ void FD_CAN_2::loop() {
     AP_HAL::CANFrame rxFrame{};
     // uint32_t last_log_ms = AP_HAL::millis();
     uint32_t last_print_ms = AP_HAL::millis();
+    uint32_t last_print_time = AP_HAL::millis();
     // bool should_print_servo = false;
     // bool should_print_mot = false;
 
@@ -135,6 +138,29 @@ void FD_CAN_2::loop() {
             _bms->handle_info(rxFrame, _print.get());
             _blower->handle_info(rxFrame, _print.get());
             // _collector->handle_info(rxFrame, _print.get());
+        }
+
+        uint16_t bms_vol = AP::fd1_data().get_bms_vol();
+        uint16_t bms_soc = AP::fd1_data().get_bms_soc();
+        uint16_t bms_tem = AP::fd1_data().get_bms_tem();
+        uint16_t blower_p = AP::fd1_data().get_blower_p();
+        uint16_t blower_tem = AP::fd1_data().get_blower_tem();
+
+        if (AP_HAL::millis() - last_print_time >= 1000) {
+            // gcs().send_text(MAV_SEVERITY_INFO, "vol%04d", (int16_t)(bms_vol*10));
+            // gcs().send_text(MAV_SEVERITY_INFO, "soc%04d", (int16_t)(bms_soc*10));
+            // gcs().send_text(MAV_SEVERITY_INFO, "tem%03d", bms_tem);
+            // gcs().send_text(MAV_SEVERITY_INFO, "p%05d", blower_p);
+            // gcs().send_text(MAV_SEVERITY_INFO, "tem%04d", (int16_t)(blower_tem*10)); 
+            // gcs().send_text(MAV_SEVERITY_INFO, "BMS1%s", AP::fd1_data().get_bms_error1_char());
+            // gcs().send_text(MAV_SEVERITY_INFO, "BMS2%s", AP::fd1_data().get_bms_error2_char());
+            // gcs().send_text(MAV_SEVERITY_INFO, "TUB%s", AP::fd1_data().get_blower_error_char());
+            gcs().send_text(MAV_SEVERITY_INFO, "B%04d%04d%03d%05d%04d", (int16_t)(bms_vol*10),
+            (int16_t)(bms_soc*10), bms_tem, blower_p, (int16_t)(blower_tem*10));
+            gcs().send_text(MAV_SEVERITY_INFO, "BMS1%s", AP::fd1_data().get_bms_error1_char());
+            gcs().send_text(MAV_SEVERITY_INFO, "BMS2%s", AP::fd1_data().get_bms_error2_char());
+            gcs().send_text(MAV_SEVERITY_INFO, "TUB%s", AP::fd1_data().get_blower_error_char());
+            last_print_time = AP_HAL::millis();
         }
 
         if (_print.get()) {
@@ -189,6 +215,26 @@ void FD_CAN_2::loop() {
                         gcs().send_text(MAV_SEVERITY_INFO, "BLOWER SWITCH ON");
                     }
                     blower_on = true;
+                }
+            }
+
+            static bool blower_power_on = false;
+            RC_Channel* tmp_ch_blower_power = rc().find_channel_for_option(RC_Channel::AUX_FUNC::BLOWER_POWER);
+            if (tmp_ch_blower_power != nullptr) {
+                int16_t ch_pwm_1 = tmp_ch_blower_power->get_radio_in(); //. 返回PWM值（微秒）数据类型为int16_t
+
+                if (ch_pwm_1 < 1500){
+                    if (blower_power_on) {
+                        _blower->do_power_off();
+                        gcs().send_text(MAV_SEVERITY_INFO, "BLOWER POWER OFF");
+                    }
+                    blower_power_on = false;
+                } else {
+                    if (!blower_power_on) {
+                        _blower->do_power_on();
+                        gcs().send_text(MAV_SEVERITY_INFO, "BLOWER POWER ON");
+                    }
+                    blower_power_on = true;
                 }
             }
         }

@@ -41,6 +41,11 @@ public:
         float pitch_in;
         float pitch_out;
         uint32_t last_pitch_ms;
+
+        uint16_t mot_temperature;
+        uint16_t controller_temperature;
+        uint16_t mot_error;
+        uint16_t propeller_error;
     };
 
     status_t status;

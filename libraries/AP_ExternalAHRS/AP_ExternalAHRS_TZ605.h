@@ -72,7 +72,6 @@ private:
     void handle_airspeed();
     void post_airspeed();
     void handle_ahrs();
-    void AP_ExternalAHRS_TZ605::get_Time(uint8_t &year_out, uint8_t &month_out, uint8_t &day_out, uint8_t &hour_out, uint8_t &minute_out, uint8_t &second_out)
 
     FD1_msg_INS _msg_ins;   //.自定义消息解析器，处理外部传感器的专有协议
     FD1_msg_AIR _msg_air;

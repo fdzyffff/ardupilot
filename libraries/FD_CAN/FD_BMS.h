@@ -27,18 +27,11 @@ public:
     FD_CAN_2* _frotend_ptr;
 
     struct status_t {
-        // uint32_t id;
-        // uint8_t mode_in; // 0: standby, 1: torque, 2: rpm
-        // uint16_t rpm_in;
-        // uint32_t last_mot_ms;
-        // uint8_t send_count;
-
-        // uint8_t mode_out;
-        // uint16_t rpm_out;
-
-        // float pitch_in;
-        // float pitch_out;
-        // uint32_t last_pitch_ms;
+        uint16_t voltage;
+        uint16_t soc;
+        uint16_t temperature;
+        uint8_t error1[8];
+        uint8_t error2[8];
     };
 
     status_t status;

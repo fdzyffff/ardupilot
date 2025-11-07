@@ -14,6 +14,8 @@
 #include <SRV_Channel/SRV_Channel.h>
 #include <stdio.h>
 
+#include <FD1_DATA/FD1_DATA.h>
+
 extern const AP_HAL::HAL &hal;
 
 #if HAL_CANMANAGER_ENABLED
@@ -46,7 +48,7 @@ FD_CAN_1::FD_CAN_1() {  //.构造函数
         _servo_ptr[i_servo] = new FD_SERVO(this);
         if (_servo_ptr[i_servo] != nullptr)
         {
-            _servo_ptr[i_servo]->set_id(i_servo+1);
+            _servo_ptr[i_servo]->set_id(i_servo+1-2); //.+1是因为数组0-12对应servo1-13，-2是因为前两路servo给刹车
         }
     }
 
@@ -133,6 +135,7 @@ void FD_CAN_1::loop() {
     AP_HAL::CANFrame rxFrame{};
     // uint32_t last_log_ms = AP_HAL::millis();
     uint32_t last_print_ms = AP_HAL::millis();
+    uint32_t last_print_time = AP_HAL::millis();
     bool should_print_servo = false;
     bool should_print_mot = false;
 
@@ -158,6 +161,88 @@ void FD_CAN_1::loop() {
                     _mot_ptr[i_mot]->handle_info(rxFrame, _print.get());    //.调用电机的 handle_info 处理接收帧
                 }
             }
+        }
+
+        int16_t mot1_rpm = AP::fd1_data().get_mot1_rpm();
+        int16_t mot2_rpm = AP::fd1_data().get_mot2_rpm();
+        int16_t mot3_rpm = AP::fd1_data().get_mot3_rpm();
+        int16_t mot4_rpm = AP::fd1_data().get_mot4_rpm();
+
+        uint16_t mot1_temperature = AP::fd1_data().get_mot1_temperature();
+        uint16_t mot2_temperature = AP::fd1_data().get_mot2_temperature();
+        uint16_t mot3_temperature = AP::fd1_data().get_mot3_temperature();
+        uint16_t mot4_temperature = AP::fd1_data().get_mot4_temperature();
+
+        uint16_t controller1_temperature = AP::fd1_data().get_controller1_temperature();
+        uint16_t controller2_temperature = AP::fd1_data().get_controller2_temperature();
+        uint16_t controller3_temperature = AP::fd1_data().get_controller3_temperature();
+        uint16_t controller4_temperature = AP::fd1_data().get_controller4_temperature();
+
+        float propeller1_angle = AP::fd1_data().get_propeller1_angle();
+        float propeller2_angle = AP::fd1_data().get_propeller2_angle();
+        float propeller3_angle = AP::fd1_data().get_propeller3_angle();
+        float propeller4_angle = AP::fd1_data().get_propeller4_angle();
+
+        uint16_t mot1_error = AP::fd1_data().get_mot1_error();
+        uint16_t mot2_error = AP::fd1_data().get_mot2_error();
+        uint16_t mot3_error = AP::fd1_data().get_mot3_error();
+        uint16_t mot4_error = AP::fd1_data().get_mot4_error();
+
+        uint16_t propeller1_error = AP::fd1_data().get_propeller1_error();
+        uint16_t propeller2_error = AP::fd1_data().get_propeller2_error();
+        uint16_t propeller3_error = AP::fd1_data().get_propeller3_error();
+        uint16_t propeller4_error = AP::fd1_data().get_propeller4_error();
+
+        if (AP_HAL::millis() - last_print_time >= 1000) {
+            // gcs().send_text(MAV_SEVERITY_INFO, "P%04d%04d%04d%04d", mot1_rpm, mot2_rpm, mot3_rpm, mot4_rpm);
+            // gcs().send_text(MAV_SEVERITY_INFO, "%03d%03d%03d%03d", mot1_temperature, mot2_temperature, mot3_temperature, mot4_temperature);
+            // gcs().send_text(MAV_SEVERITY_INFO, "%02d%02d%02d%02d", controller1_temperature, controller2_temperature, controller3_temperature, controller4_temperature);
+            // gcs().send_text(MAV_SEVERITY_INFO, "%03ld%03ld%03ld%03ld", (int32_t)(propeller1_angle*10), (int32_t)(propeller2_angle*10),(int32_t) (propeller3_angle*10), (int32_t)(propeller4_angle)*10);
+            // if (mot1_error != 0){
+            //     gcs().send_text(MAV_SEVERITY_INFO, "MOT1%02X", mot1_error);
+            // }
+            // if (mot2_error != 0){
+            //     gcs().send_text(MAV_SEVERITY_INFO, "MOT2%02X", mot2_error);
+            // }
+            // if (mot3_error != 0){
+            //     gcs().send_text(MAV_SEVERITY_INFO, "MOT3%02X", mot3_error);
+            // }
+            // if (mot4_error != 0){
+            //     gcs().send_text(MAV_SEVERITY_INFO, "MOT4%02X", mot4_error);
+            // }
+            // if (propeller1_error != 0){
+            //     gcs().send_text(MAV_SEVERITY_INFO, "PIT1%02X", propeller1_error);
+            // }
+            // if (propeller2_error != 0){
+            //     gcs().send_text(MAV_SEVERITY_INFO, "PIT2%02X", propeller2_error);
+            // }
+            // if (propeller3_error != 0){
+            //     gcs().send_text(MAV_SEVERITY_INFO, "PIT3%02X", propeller3_error);
+            // }
+            // if (propeller4_error != 0){
+            //     gcs().send_text(MAV_SEVERITY_INFO, "PIT4%02X", propeller4_error);
+            // }
+
+            gcs().send_text(MAV_SEVERITY_INFO, "P%04d%04d%04d%04d%03d%03d%03d%03d%02d%02d%02d%02d%03ld%03ld%03ld%03ld",
+                mot1_rpm, mot2_rpm, mot3_rpm, mot4_rpm,
+                mot1_temperature, mot2_temperature, mot3_temperature, mot4_temperature,
+                controller1_temperature, controller2_temperature, controller3_temperature, controller4_temperature,
+                (int32_t)(propeller1_angle*10), (int32_t)(propeller2_angle*10),(int32_t) (propeller3_angle*10), (int32_t)(propeller4_angle*10));
+            // gcs().send_text(MAV_SEVERITY_INFO, "P%04d%04d%04d%04d%03d%03d%03d%03d",
+            //     mot1_rpm, mot2_rpm, mot3_rpm, mot4_rpm,
+            //     mot1_temperature, mot2_temperature, mot3_temperature, mot4_temperature);
+            // gcs().send_text(MAV_SEVERITY_INFO, "W%02d%02d%02d%02d%03ld%03ld%03ld%03ld",
+            // controller1_temperature, controller2_temperature, controller3_temperature, controller4_temperature,
+            // (int32_t)(propeller1_angle*10), (int32_t)(propeller2_angle*10),(int32_t) (propeller3_angle*10), (int32_t)(propeller4_angle*10));
+            gcs().send_text(MAV_SEVERITY_INFO, "MOT1%02X", mot1_error);
+            gcs().send_text(MAV_SEVERITY_INFO, "MOT2%02X", mot2_error);
+            gcs().send_text(MAV_SEVERITY_INFO, "MOT3%02X", mot3_error);
+            gcs().send_text(MAV_SEVERITY_INFO, "MOT4%02X", mot4_error);
+            gcs().send_text(MAV_SEVERITY_INFO, "PIT1%02X", propeller1_error);
+            gcs().send_text(MAV_SEVERITY_INFO, "PIT2%02X", propeller2_error);
+            gcs().send_text(MAV_SEVERITY_INFO, "PIT3%02X", propeller3_error);
+            gcs().send_text(MAV_SEVERITY_INFO, "PIT4%02X", propeller4_error);
+            last_print_time = AP_HAL::millis();
         }
 
         if (_print.get()) {

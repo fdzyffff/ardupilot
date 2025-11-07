@@ -5,6 +5,7 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Common/AP_Common.h>
 #include <AP_Math/AP_Math.h>
+#include <GCS_MAVLink/GCS.h>
 
 #include "AP_BattMonitor_Analog.h"
 
@@ -101,6 +102,15 @@ AP_BattMonitor_Analog::read()
 
     // get voltage
     _state.voltage = (_volt_pin_analog_source->voltage_average() - _volt_offset) * _volt_multiplier;
+
+    for (int pin = 0; pin < 25; pin++) {
+        if (_volt_pin_analog_source->set_pin(pin)) {
+            float v = _volt_pin_analog_source->voltage_average();
+            if (v > 0.05f) {  // 只打印非零信号
+                gcs().send_text(MAV_SEVERITY_INFO, "ADC pin %d voltage = %.3f V", pin, (double)v);
+            }
+        }
+    }
 
     // read current
     if (has_current()) {

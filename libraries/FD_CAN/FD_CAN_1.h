@@ -8,7 +8,7 @@
 #include <FD_CAN/FD_SERVO.h>
 #include <FD_CAN/FD_MOT.h>
 
-#define FD_CAN_1_MAX_SERVO_NUM 16
+#define FD_CAN_1_MAX_SERVO_NUM 32  //.servo扩展到32路
 #define FD_CAN_1_MAX_MOT_NUM 4
 
 class FD_MOT;

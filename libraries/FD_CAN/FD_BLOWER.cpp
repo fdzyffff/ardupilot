@@ -6,6 +6,8 @@
 #include <GCS_MAVLink/GCS.h>
 #include <SRV_Channel/SRV_Channel.h>
 
+#include <FD1_DATA/FD1_DATA.h>
+
 extern const AP_HAL::HAL &hal;
 
 
@@ -14,7 +16,31 @@ FD_BLOWER::FD_BLOWER(FD_CAN_2 *frotend) {
 }
 
 void FD_BLOWER::handle_info(AP_HAL::CANFrame &in_frame, bool do_print) {
-    ;
+    if (in_frame.id == (0x500E)) {
+        uint16_t p_rec = (uint16_t)in_frame.data[0] | (uint16_t)(in_frame.data[1]<<8);
+        status.p = p_rec * 0.1;
+        AP::fd1_data().set_blower_p(status.p);
+    }
+    if (in_frame.id == (0x5022)) {
+        status.temperature = (uint16_t)in_frame.data[0] | (uint16_t)(in_frame.data[1]<<8);
+        AP::fd1_data().set_blower_tem(status.temperature);
+    }
+    if (in_frame.id == (0xFC0D)) {
+        for (int i = 0; i < 8; i++) {
+            status.error[i] = in_frame.data[i];
+        }
+        AP::fd1_data().set_blower_error(status.error);
+
+        char blower_error_str[17] = {0}; // 16字符 + 结束符
+        // for (int i = 0; i < 8; i++) {
+        //     uint8_t byte = status.error[i];
+        //     uint8_t high = (byte >> 4) & 0x0F;
+        //     blower_error_str[2*i] = (high < 10) ? ('0' + high) : ('A' + high - 10);
+        //     uint8_t low = byte & 0x0F;
+        //     blower_error_str[2*i + 1] = (low < 10) ? ('0' + low) : ('A' + low - 10);
+        // }
+        AP::fd1_data().set_blower_error_char(blower_error_str);
+    }
 }
 
 void FD_BLOWER::do_power_on()
@@ -53,12 +79,12 @@ void FD_BLOWER::do_on()
     _data[5] = 0x00;
     _data[6] = 0x00;
     _data[7] = 0x00;
-    send_cmd(0x01, _data);
+    send_cmd(0x7000, _data);
 }
 
 void FD_BLOWER::do_off()
 {
-    _data[0] = 0x02;
+    _data[0] = 0x05;
     _data[1] = 0x00;
     _data[2] = 0x00;
     _data[3] = 0x00;
@@ -66,7 +92,7 @@ void FD_BLOWER::do_off()
     _data[5] = 0x00;
     _data[6] = 0x00;
     _data[7] = 0x00;
-    send_cmd(0x01, _data);
+    send_cmd(0x7000, _data);
 }
 
 void FD_BLOWER::update()
