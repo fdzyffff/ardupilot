@@ -24,12 +24,15 @@ public:
     bool is_valid() {return _valid;}
     void handle_info(float p1, float p2);
     bool get_info(float &p1, float &p2);
+    uint8_t get_type();
+    void set_type(uint8_t type_in);
     virtual void handle_msg(const mavlink_message_t &msg);
     uint32_t _last_ms;
     bool _new_data;
     bool _valid;
     float _p1;
     float _p2;
+    uint8_t _type;
 };
 
 class FD_Target_Loc: public FD_Target_Base {
