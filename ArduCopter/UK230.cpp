@@ -237,7 +237,8 @@ void UK230::update_target_yaw_rate() {
 void UK230::update_target_bf_vel_x_ms() {
     float k = copter.g2.user_parameters.attack_k.get();
     float dist_r = constrain_float(_target_dist_cm*0.01f, 0.0f, 1.0f);
-    float dist = dist_r*tanf(radians(constrain_float(-efb_info.y, -15.0f, 15.0f)));
+    // float dist = dist_r*tanf(radians(constrain_float(-efb_info.y, -15.0f, 15.0f)));
+    float dist = dist_r*tanf(radians(constrain_float(-bf_info.y, -15.0f, 15.0f)));
     _target_bf_vel_x = k * dist; // degrees/s
 }
 
@@ -245,6 +246,7 @@ void UK230::update_target_bf_vel_x_ms() {
 void UK230::update_target_bf_vel_y_ms() {
     float k = copter.g2.user_parameters.attack_k.get();
     float dist_r = constrain_float(_target_dist_cm*0.01f, 0.0f, 1.0f);
-    float dist = dist_r*tanf(radians(constrain_float(efb_info.x, -15.0f, 15.0f)));
+    // float dist = dist_r*tanf(radians(constrain_float(efb_info.x, -15.0f, 15.0f)));
+    float dist = dist_r*tanf(radians(constrain_float(bf_info.x, -15.0f, 15.0f)));
     _target_bf_vel_y = k * dist; // degrees/s
 }
