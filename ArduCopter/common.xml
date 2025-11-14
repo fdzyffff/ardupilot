@@ -6566,11 +6566,11 @@
     <message id="4016" name="GUIDED_WAYPOINTS">
       <description>Cumulative distance traveled for each reported wheel.</description>
       <field type="uint8_t" name="num">number of waypoints.</field>
-      <field type="uint16_t[16]" name="vel_xy">horizontal speed cm/s.</field>
-      <field type="uint16_t[16]" name="vel_z">vertical cm/s.</field>
-      <field type="int32_t[16]" name="lat">latitude 1e-7 degree.</field>
-      <field type="int32_t[16]" name="lng">longitude 1e-7 degree.</field>
-      <field type="int32_t[16]" name="alt">altitude cm.</field>
+      <field type="uint16_t[10]" name="vel_xy">horizontal speed cm/s.</field>
+      <field type="uint16_t[10]" name="vel_z">vertical cm/s.</field>
+      <field type="int32_t[10]" name="lat">latitude 1e-7 degree.</field>
+      <field type="int32_t[10]" name="lng">longitude 1e-7 degree.</field>
+      <field type="int32_t[10]" name="alt">altitude cm.</field>
     </message>
 
     <!-- Rover specific messages -->

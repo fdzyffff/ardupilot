@@ -344,7 +344,7 @@ void ModeMission::handle_msg(const mavlink_message_t &msg)
         mavlink_guided_waypoints_t packet;
         mavlink_msg_guided_waypoints_decode(&msg, &packet);
         for (uint8_t i_wp = 0; i_wp < packet.num; i_wp++) {
-            Loaction temp_loc;
+            Location temp_loc;
             temp_loc.lat = packet.lat[i_wp];
             temp_loc.lng = packet.lng[i_wp];
             temp_loc.alt = packet.alt[i_wp];
