@@ -102,6 +102,54 @@ Plane::Plane(const char *frame_str) :
         mass = 2.0;
         coefficient.c_drag_p = 0.05;
     }
+
+    sitl = AP::sitl();
+    if (sitl) {
+        coefficient.s = sitl->s;
+        coefficient.b = sitl->b;
+        coefficient.c = sitl->c;
+        coefficient.c_lift_0 = sitl->c_lift_0;
+        coefficient.c_lift_deltae = sitl->c_lift_deltae;
+        coefficient.c_lift_a = sitl->c_lift_a;
+        coefficient.c_lift_q = sitl->c_lift_q;
+        coefficient.mcoeff = sitl->mcoeff;
+        coefficient.oswald = sitl->oswald;
+        coefficient.alpha_stall = sitl->alpha_stall;
+        coefficient.c_drag_q = sitl->c_drag_q;
+        coefficient.c_drag_deltae = sitl->c_drag_deltae;
+        coefficient.c_drag_p = sitl->c_drag_p;
+        coefficient.c_y_0 = sitl->c_y_0;
+        coefficient.c_y_b = sitl->c_y_b;
+        coefficient.c_y_p = sitl->c_y_p;
+        coefficient.c_y_r = sitl->c_y_r;
+        coefficient.c_y_deltaa = sitl->c_y_deltaa;
+        coefficient.c_y_deltar = sitl->c_y_deltar;
+        coefficient.c_l_0 = sitl->c_l_0;
+        coefficient.c_l_p = sitl->c_l_p;
+        coefficient.c_l_b = sitl->c_l_b;
+        coefficient.c_l_r = sitl->c_l_r;
+        coefficient.c_l_deltaa = sitl->c_l_deltaa;
+        coefficient.c_l_deltar = sitl->c_l_deltar;
+        coefficient.c_m_0 = sitl->c_m_0;
+        coefficient.c_m_a = sitl->c_m_a;
+        coefficient.c_m_q = sitl->c_m_q;
+        coefficient.c_m_deltae = sitl->c_m_deltae;
+        coefficient.c_n_0 = sitl->c_n_0;
+        coefficient.c_n_b = sitl->c_n_b;
+        coefficient.c_n_p = sitl->c_n_p;
+        coefficient.c_n_r = sitl->c_n_r;
+        coefficient.c_n_deltaa = sitl->c_n_deltaa;
+        coefficient.c_n_deltar = sitl->c_n_deltar;
+        coefficient.deltaa_max = sitl->deltaa_max;
+        coefficient.deltae_max = sitl->deltae_max;
+        coefficient.deltar_max = sitl->deltar_max;
+        coefficient.CGOffset.x = sitl->CGOffset_x;
+        coefficient.CGOffset.y = sitl->CGOffset_y;
+        coefficient.CGOffset.z = sitl->CGOffset_z;
+        mass = sitl->mass;
+        thrust_scale = sitl->thrust_scale;
+        ::printf("Load plane sim param\n");
+    }
 }
 
 /*

@@ -834,27 +834,14 @@ bool AP_Mission::read_cmd_from_storage(uint16_t index, Mission_Command& cmd) con
 
     PackedContent packed_content {};
 
-    const uint8_t b1 = _storage.read_byte(pos_in_storage);
-    if (b1 == 0 || b1 == 1) {
-        cmd.id = _storage.read_uint16(pos_in_storage+1);
-        cmd.p1 = _storage.read_uint16(pos_in_storage+3);
-        _storage.read_block(packed_content.bytes, pos_in_storage+5, 10);
-        format_conversion(b1, cmd, packed_content);
-    } else {
-        cmd.id = b1;
-        cmd.p1 = _storage.read_uint16(pos_in_storage+1);
-        _storage.read_block(packed_content.bytes, pos_in_storage+3, 12);
-    }
+    cmd.id = _storage.read_uint16(pos_in_storage);
+    cmd.p1 = _storage.read_uint16(pos_in_storage+2);
+    cmd.p2 = _storage.read_uint16(pos_in_storage+4);
+    cmd.p3 = _storage.read_uint16(pos_in_storage+6);
+    cmd.p4 = _storage.read_uint16(pos_in_storage+8);
+    _storage.read_block(packed_content.bytes, pos_in_storage+10, 12);
 
     if (stored_in_location(cmd.id)) {
-#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-        // NOTE!  no 16-bit command may be stored_in_location as only
-        // 10 bytes are available for storage and lat/lon/alt required
-        // 4*sizeof(float) == 12 bytes of storage.
-        if (b1 == 0) {
-            AP_HAL::panic("May not store location for 16-bit commands");
-        }
-#endif
         // Location is not PACKED; field-wise copy it:
         cmd.content.location.relative_alt = packed_content.location.flags.relative_alt;
         cmd.content.location.loiter_ccw = packed_content.location.flags.loiter_ccw;
@@ -914,6 +901,7 @@ bool AP_Mission::stored_in_location(uint16_t id)
     case MAV_CMD_NAV_FENCE_CIRCLE_EXCLUSION:
     case MAV_CMD_NAV_FENCE_RETURN_POINT:
     case MAV_CMD_NAV_RALLY_POINT:
+    case MAV_CMD_NAV_NEW_WAYPOINT:
         return true;
     default:
         return false;
@@ -955,26 +943,12 @@ bool AP_Mission::write_cmd_to_storage(uint16_t index, const Mission_Command& cmd
     // calculate where in storage the command should be placed
     uint16_t pos_in_storage = 4 + (index * AP_MISSION_EEPROM_COMMAND_SIZE);
 
-    if (cmd.id < 256) {
-        // for commands below 256 we store up to 12 bytes
-        _storage.write_byte(pos_in_storage, cmd.id);
-        _storage.write_uint16(pos_in_storage+1, cmd.p1);
-        _storage.write_block(pos_in_storage+3, packed.bytes, 12);
-    } else {
-        // if the command ID is above 256 we store a tag byte followed
-        // by the 16 bit command ID. The tag byte is 1 for commands
-        // where we have changed the storage format (see
-        // format_conversion), 0 otherwise
-        uint8_t tag_byte = 0;
-        // currently the only converted structure is NAV_SCRIPT_TIME
-        if (cmd.id == MAV_CMD_NAV_SCRIPT_TIME) {
-            tag_byte = 1;
-        }
-        _storage.write_byte(pos_in_storage, tag_byte);
-        _storage.write_uint16(pos_in_storage+1, cmd.id);
-        _storage.write_uint16(pos_in_storage+3, cmd.p1);
-        _storage.write_block(pos_in_storage+5, packed.bytes, 10);
-    }
+    _storage.write_uint16(pos_in_storage, cmd.id);
+    _storage.write_uint16(pos_in_storage+2, cmd.p1);
+    _storage.write_uint16(pos_in_storage+4, cmd.p2);
+    _storage.write_uint16(pos_in_storage+6, cmd.p3);
+    _storage.write_uint16(pos_in_storage+8, cmd.p4);
+    _storage.write_block(pos_in_storage+10, packed.bytes, 12);
 
     // remember when the mission last changed
     _last_change_time_ms = AP_HAL::millis();
@@ -1437,6 +1411,25 @@ MAV_MISSION_RESULT AP_Mission::mavlink_int_to_mission_cmd(const mavlink_mission_
     case MAV_CMD_VIDEO_STOP_CAPTURE:
         cmd.content.video_stop_capture.video_stream_id = packet.param1;
         break;
+
+    case MAV_CMD_NAV_NEW_WAYPOINT: {                        // MAV ID: 1016
+        cmd.p1 = packet.param1;
+        cmd.p2 = packet.param2;
+        cmd.p3 = packet.param3;
+        cmd.p4 = packet.param4;
+        // gcs().send_text(MAV_SEVERITY_INFO, "handle MAV_CMD_NAV_NEW_WAYPOINT %d", cmd.index);
+        // gcs().send_text(MAV_SEVERITY_INFO, "%d, %d, %d, %d", cmd.p1, cmd.p2, cmd.p3, (int16_t)cmd.p4);
+        break;
+    }
+
+    case MAV_CMD_NAV_NEW_END: {                        // MAV ID: 1021
+        cmd.p1 = packet.param1;
+        cmd.p2 = packet.param2;
+        cmd.p3 = packet.param3;
+        cmd.p4 = packet.param4;
+        // gcs().send_text(MAV_SEVERITY_INFO, "handle MAV_CMD_NAV_NEW_END %d", cmd.index);
+        break;
+    }
 
     default:
         // unrecognised command
@@ -1957,6 +1950,20 @@ bool AP_Mission::mission_cmd_to_mavlink_int(const AP_Mission::Mission_Command& c
 
     case MAV_CMD_VIDEO_STOP_CAPTURE:
         packet.param1 = cmd.content.video_stop_capture.video_stream_id;
+        break;
+
+    case MAV_CMD_NAV_NEW_WAYPOINT:                          // MAV ID: 1016
+        packet.param1 = cmd.p1;
+        packet.param2 = cmd.p2;
+        packet.param3 = cmd.p3;
+        packet.param4 = cmd.p4;
+        break;
+
+    case MAV_CMD_NAV_NEW_END:                               // MAV ID: 1021
+        packet.param1 = cmd.p1;
+        packet.param2 = cmd.p2;
+        packet.param3 = cmd.p3;
+        packet.param4 = cmd.p4;
         break;
 
     default:

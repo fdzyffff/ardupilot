@@ -78,11 +78,16 @@ private:
     void _set_signal_handlers(void) const;
 
     void _update_airspeed(float airspeed);
+
     void _simulator_servos(struct sitl_input &input);
     void _fdm_input_step(void);
     void fdm_input_local(void);
 
     void wait_clock(uint64_t wait_time_usec);
+
+    void _build_copter_frame();
+    void _build_heli_frame();
+    void _build_plane_frame();
 
     uint16_t pwm_input[16];  // was SITL_RC_INPUT_CHANNELS
 

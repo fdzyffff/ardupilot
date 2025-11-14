@@ -100,6 +100,7 @@ public:
         AUTOROTATE =   26,  // Autonomous autorotation
         AUTO_RTL =     27,  // Auto RTL, this is not a true mode, AUTO will report as this mode if entered to perform a DO_LAND_START Landing sequence
         TURTLE =       28,  // Flip over after crash
+        MISSION =      29,
 
         // Mode number 127 reserved for the "drone show mode" in the Skybrush
         // fork at https://github.com/skybrush-io/ardupilot
@@ -654,6 +655,7 @@ private:
 
     void do_takeoff(const AP_Mission::Mission_Command& cmd);
     void do_nav_wp(const AP_Mission::Mission_Command& cmd);
+    void do_nav_new_wp(const AP_Mission::Mission_Command& cmd);
     bool set_next_wp(const AP_Mission::Mission_Command& current_cmd, const Location &default_loc);
     void do_land(const AP_Mission::Mission_Command& cmd);
     void do_loiter_unlimited(const AP_Mission::Mission_Command& cmd);
@@ -1051,6 +1053,7 @@ public:
 #if AP_EXTERNAL_CONTROL_ENABLED
     friend class AP_ExternalControl_Copter;
 #endif
+    friend class ModeMission;
 
     // inherit constructor
     using Mode::Mode;
@@ -2051,3 +2054,63 @@ private:
 
 };
 #endif
+
+class ModeMission : public Mode {
+    friend class Uart;
+
+public:
+    // inherit constructor
+    using Mode::Mode;
+    Number mode_number() const override { return Number::MISSION; }
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    bool requires_GPS() const override { return true; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(AP_Arming::Method method) const override { return true; }
+    bool is_autopilot() const override { return true; }
+    bool has_user_takeoff(bool must_navigate) const override { return true; }
+
+    bool requires_terrain_failsafe() const override { return true; }
+
+    bool is_taking_off() const override;
+
+    enum class MISSION_State {
+        Init = 0,
+        Takeoff,
+        Wait,
+        Fly,
+        LAND,
+        RETURN,
+    };
+
+    MISSION_State get_state() {return mission_state;}
+    void set_loc(Location& dest_in, uint16_t spd_xy_in, uint16_t spd_z_in, uint8_t id_in);
+    void set_wp_number(uint8_t wp_number_in);
+    Location& get_target_loc() {return target_loc;}
+    void handle_msg(const mavlink_message_t &msg);
+
+protected:
+
+    const char *name() const override { return "MISSION"; }
+    const char *name4() const override { return "MISN"; }
+
+    uint32_t wp_distance() const override;
+    int32_t wp_bearing() const override;
+    float crosstrack_error() const override;
+    void update_state();
+    void set_state(MISSION_State state_in);
+    bool do_next();
+    void wp_control_start();
+    void wp_run();
+
+
+    MISSION_State mission_state;
+    Location target_loc;
+    Location loc_list[16];
+    uint8_t spd_xy_list[16];
+    uint8_t spd_z_list[16];
+    uint8_t wp_number;
+    uint8_t wp_idx;
+};
