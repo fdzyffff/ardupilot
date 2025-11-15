@@ -218,6 +218,7 @@ void ModeLudeng_unhook::set_stage(Stage stage_in) {
             break;
         case Stage::AWAY:
             if (set_mode(Mode::Number::LDHOOK, ModeReason::AUTO_HOOK)) {
+                copter.mode_ludeng_hook.set_is_from_unhook();
                 gcs().send_text(MAV_SEVERITY_INFO, "Stage AWAY");
             } else {
                 gcs().send_text(MAV_SEVERITY_INFO, "No Mission");

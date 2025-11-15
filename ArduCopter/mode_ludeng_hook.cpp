@@ -24,11 +24,7 @@ bool ModeLudeng_hook::init(bool ignore_checks)
         pos_control->init_z_controller();
     }
 
-    if (copter.uk230.is_valid() && (copter.current_loc.get_distance_NE(copter.ahrs.get_home()).length()>6.f)) {
-        set_stage(Stage::STANDBY);
-    } else {
-        set_stage(Stage::AUTO);
-    }
+    set_stage(Stage::AUTO);
 
     return true;
 }
@@ -42,6 +38,12 @@ void ModeLudeng_hook::run()
         copter.mode_auto.run();
     } else {
         hook_run();
+    }
+
+    if (_is_from_unhook) {
+        if (copter.current_loc.get_distance_NE(unhook_loc).length()>10.f) {
+            _is_from_unhook = false;
+        }
     }
 }
 
@@ -150,7 +152,7 @@ void ModeLudeng_hook::update_stage()
                 if (copter.mode_auto.mission.get_current_nav_index() != copter.g2.user_parameters.hook_mission_idx.get()) {
                     copter.g2.user_parameters.hook_mission_idx.set(copter.mode_auto.mission.get_current_nav_index());
                 }
-                if (copter.uk230.is_valid() && (copter.current_loc.get_distance_NE(copter.ahrs.get_home()).length()>10.f)) {
+                if (copter.uk230.is_valid() && !_is_from_unhook) {
                     set_stage(Stage::STANDBY);
                 }
             }
@@ -277,4 +279,10 @@ void ModeLudeng_hook::set_stage(Stage stage_in) {
             gcs().send_text(MAV_SEVERITY_INFO, "Stage UNKNOWN");
             break;
     }
+}
+
+void ModeLudeng_hook::set_is_from_unhook()
+{
+    _is_from_unhook = true;
+    unhook_loc = copter.current_loc;
 }

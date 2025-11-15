@@ -2043,6 +2043,7 @@ public:
     bool check_done();
     void set_stage(Stage stage_in);
     void update_stage();
+    void set_is_from_unhook();
 
     Stage _stage;
     uint32_t _stage_time;
@@ -2053,6 +2054,8 @@ protected:
 
     Vector3f _vel_target_cms;
     Vector3f _accel_target_cmss;
+    bool _is_from_unhook;
+    Location unhook_loc;
 };
 
 
