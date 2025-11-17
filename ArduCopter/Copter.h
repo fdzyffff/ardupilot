@@ -185,6 +185,8 @@
 
 #include "Uart.h"
 
+#include "UAttack.h"
+
 class Copter : public AP_Vehicle {
 public:
     friend class GCS_MAVLINK_Copter;
@@ -235,12 +237,15 @@ public:
     friend class ModeAutorotate;
     friend class ModeTurtle;
     friend class ModeMission;
+    friend class ModeAttackVel;
 
     friend class _AutoTakeoff;
 
     friend class PayloadPlace;
 
     friend class Uart;
+
+    friend class UAttack;
 
     Copter(void);
 
@@ -1092,8 +1097,11 @@ private:
 #if MODE_TURTLE_ENABLED == ENABLED
     ModeTurtle mode_turtle;
 #endif
-#if MODE_GUIDED_NOGPS_ENABLED == ENABLED
+#if MODE_GUIDED_ENABLED == ENABLED
     ModeMission mode_mission;
+#endif
+#if MODE_GUIDED_ENABLED == ENABLED
+    ModeAttackVel mode_attack_vel;
 #endif
 
     // mode.cpp
@@ -1101,6 +1109,8 @@ private:
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);
 
     Uart uart;
+
+    UAttack uattack;
 
 public:
     void failsafe_check();      // failsafe.cpp

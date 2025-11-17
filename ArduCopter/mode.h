@@ -96,6 +96,7 @@ public:
         AUTO_RTL =     27,  // Auto RTL, this is not a true mode, AUTO will report as this mode if entered to perform a DO_LAND_START Landing sequence
         TURTLE =       28,  // Flip over after crash
         MISSION =      29,
+        ATTACKVEL =    30,
 
         // Mode number 127 reserved for the "drone show mode" in the Skybrush
         // fork at https://github.com/skybrush-io/ardupilot
@@ -1008,6 +1009,7 @@ public:
     friend class AP_ExternalControl_Copter;
 #endif
     friend class ModeMission;
+    friend class ModeAttackVel;
 
     // inherit constructor
     using Mode::Mode;
@@ -1974,7 +1976,6 @@ private:
 #endif
 
 class ModeMission : public Mode {
-    friend class Uart;
 
 public:
     // inherit constructor
@@ -1999,14 +2000,12 @@ public:
         Takeoff,
         Wait,
         Fly,
-        LAND,
-        RETURN,
     };
 
     MISSION_State get_state() {return mission_state;}
-    void set_loc(Location& dest_in, uint8_t spd_in, uint8_t id_in);
-    void set_wp_number(uint8_t wp_number_in);
+    void set_loc(Location& dest_1, Location& dest_2);
     Location& get_target_loc() {return target_loc;}
+    uint16_t get_target_speed() {return target_speed;}
 
 protected:
 
@@ -2022,11 +2021,36 @@ protected:
     void wp_control_start();
     void wp_run();
 
-
     MISSION_State mission_state;
     Location target_loc;
-    Location loc_list[16];
-    uint8_t spd_list[16];
-    uint8_t wp_number;
-    uint8_t wp_idx;
+    Location loc1;
+    Location loc2;
+    uint16_t target_speed;
+};
+
+
+class ModeAttackVel : public Mode {
+
+public:
+    // inherit constructor
+    using Mode::Mode;
+    friend class ModeGuided;
+
+    Number mode_number() const override { return Number::ATTACKVEL; }
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    bool requires_GPS() const override { return true; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(AP_Arming::Method method) const override { return false; }
+    bool is_autopilot() const override { return true; }
+
+protected:
+
+    const char *name() const override { return "ATTACKVEL"; }
+    const char *name4() const override { return "ATKV"; }
+
+    uint32_t wp_distance() const override;
+    int32_t wp_bearing() const override;
 };

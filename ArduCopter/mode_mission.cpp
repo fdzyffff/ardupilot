@@ -44,18 +44,6 @@ void ModeMission::run()
             wp_run();
         }
         break;
-        case MISSION_State::LAND:
-        {
-            copter.mode_land.run();
-        }
-        break;
-        case MISSION_State::RETURN:
-        {
-            copter.mode_rtl.run();
-        }
-        break;
-        default:
-        break;
     }
 }
 
@@ -69,9 +57,9 @@ void ModeMission::update_state()
     switch (mission_state) {
         case MISSION_State::Init:
         {
-            // if (copter.motors->armed() && copter.ap.land_complete) {
-            //     set_state(MISSION_State::Takeoff);
-            // }
+            if (copter.motors->armed() && copter.ap.land_complete) {
+                set_state(MISSION_State::Takeoff);
+            }
         }
         break;
         case MISSION_State::Takeoff:
@@ -100,18 +88,6 @@ void ModeMission::update_state()
             }
         }
         break;
-        case MISSION_State::LAND:
-        {
-            ;
-        }
-        break;
-        case MISSION_State::RETURN:
-        {
-            ;
-        }
-        break;
-        default:
-        break;
     }
 }
 
@@ -124,15 +100,13 @@ void ModeMission::set_state(MISSION_State state_in)
     switch (state_in) {
         case MISSION_State::Init:
         {
-            if (copter.mode_guided.init(false)) {
-                mission_state = state_in;
-                gcs().send_text(MAV_SEVERITY_INFO, "[MIS] State: Init");
-            }
+            mission_state = state_in;
+            gcs().send_text(MAV_SEVERITY_INFO, "[MIS] State: Init");
         }
         break;
         case MISSION_State::Takeoff:
         {
-            if (copter.mode_guided.init(false) && copter.mode_guided.do_user_takeoff_start(120.f)) {
+            if (copter.mode_guided.do_user_takeoff_start(120.f)) {
                 copter.set_auto_armed(true);
                 mission_state = state_in;
                 gcs().send_text(MAV_SEVERITY_INFO, "[MIS] State: Takeoff");
@@ -143,46 +117,18 @@ void ModeMission::set_state(MISSION_State state_in)
         break;
         case MISSION_State::Wait:
         {
-            if (copter.mode_guided.init(false)) {
-                copter.mode_guided.velaccel_control_start();
-                mission_state = state_in;
-                target_loc = copter.current_loc;
-                gcs().send_text(MAV_SEVERITY_INFO, "[MIS] State: Wait");
-            } else {
-                gcs().send_text(MAV_SEVERITY_INFO, "[MIS] State: Wait Fail");
-            }
+            copter.mode_guided.velaccel_control_start();
+            mission_state = state_in;
+            target_loc = copter.current_loc;
+            gcs().send_text(MAV_SEVERITY_INFO, "[MIS] State: Wait");
         }
         break;
         case MISSION_State::Fly:
         {
-            if (copter.mode_guided.init(false)) {
-                target_loc = copter.current_loc;
-                do_next();
-                mission_state = state_in;
-                gcs().send_text(MAV_SEVERITY_INFO, "[MIS] State: Fly");
-            } else {
-                gcs().send_text(MAV_SEVERITY_INFO, "[MIS] State: Fly Fail");
-            }
-        }
-        break;
-        case MISSION_State::LAND:
-        {
-            if (copter.mode_land.init(false)) {
-                mission_state = state_in;
-                gcs().send_text(MAV_SEVERITY_INFO, "[MIS] State: Land");
-            } else {
-                gcs().send_text(MAV_SEVERITY_INFO, "[MIS] State: Land Fail");
-            }
-        }
-        break;
-        case MISSION_State::RETURN:
-        {
-            if (copter.mode_rtl.init(false)) {
-                mission_state = state_in;
-                gcs().send_text(MAV_SEVERITY_INFO, "[MIS] State: Return");
-            } else {
-                gcs().send_text(MAV_SEVERITY_INFO, "[MIS] State: Return Fail");
-            }
+            target_loc = copter.current_loc;
+            do_next();
+            mission_state = state_in;
+            gcs().send_text(MAV_SEVERITY_INFO, "[MIS] State: Fly");
         }
         break;
         default:
@@ -190,35 +136,35 @@ void ModeMission::set_state(MISSION_State state_in)
     }
 }
 
-void ModeMission::set_loc(Location& dest_in, uint8_t spd_in, uint8_t id_in) 
+void ModeMission::set_loc(Location& dest_1, Location& dest_2) 
 {
-    loc_list[id_in] = dest_in;
-    spd_list[id_in] = spd_in;
-}
-
-void ModeMission::set_wp_number(uint8_t wp_number_in)
-{
-    wp_number = wp_number_in;
-    wp_idx = 0;
+    loc1 = dest_1;
+    loc2 = dest_2;
     if (mission_state == MISSION_State::Wait) {
         set_state(MISSION_State::Fly);
-    }
-    else if (mission_state == MISSION_State::Fly) {
-        do_next();
-        gcs().send_text(MAV_SEVERITY_INFO, "[MIS] State: Fly new");
     }
 }
 
 bool ModeMission::do_next() {
     wp_control_start();
     bool ret = false;
-    if (wp_idx < wp_number) {
-        if (wp_nav->set_wp_destination_loc(loc_list[wp_idx]) && wp_nav->set_wp_destination_next_loc(loc_list[wp_idx])) {
-            target_loc = loc_list[wp_idx];
+    if (target_loc.lat == loc1.lat && target_loc.lng == loc1.lng) {
+        if (wp_nav->set_wp_destination_loc(loc2) && wp_nav->set_wp_destination_next_loc(loc2)) {
+            target_loc = loc2;
             ret = true;
+        } else {
+            ret = false;
         }
-    } else {
+    } else if (target_loc.lat == loc2.lat && target_loc.lng == loc2.lng) {
+        gcs().send_text(MAV_SEVERITY_INFO, "[MIS] Finish, wait");
         ret = false;
+    } else {
+        if (wp_nav->set_wp_destination_loc(loc1) && wp_nav->set_wp_destination_next_loc(loc1)) {
+            target_loc = loc1;
+            ret = true;
+        } else {
+            ret = false;
+        }
     }
 #if HAL_LOGGING_ENABLED
     if (ret) {
@@ -228,9 +174,7 @@ bool ModeMission::do_next() {
 #endif
 
     if (ret) {
-        gcs().send_text(MAV_SEVERITY_INFO, "WP : %d, %d, %d", (int)target_loc.lat, (int)target_loc.lng, (int)target_loc.alt);
-        gcs().send_text(MAV_SEVERITY_INFO, "WP : [%d/%d]", (int)wp_idx, (int)wp_number);
-        wp_idx++;
+        gcs().send_text(MAV_SEVERITY_INFO, "WP : %d, %d", (int)target_loc.lat, (int)target_loc.lng);
     }
     return ret;
 }

@@ -25,6 +25,7 @@ bool FD_Target_K230::init() {
     FD_K230_ptr = new FD_K230(AP_SerialManager::SerialProtocol_CAM);
     FD_K230_ptr->init();
     FD_K230_ptr->get_msg_K230().set_enable();
+    set_type(0);
     return FD_K230_ptr->initialized();
 }
 
