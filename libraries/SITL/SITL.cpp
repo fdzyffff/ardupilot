@@ -255,7 +255,7 @@ const AP_Param::GroupInfo SIM::var_info[] = {
 #endif
     AP_SUBGROUPEXTENSION("",      62, SIM,  var_info3),
     AP_SUBGROUPEXTENSION("",      63, SIM,  var_info2),
-    AP_SUBGROUPEXTENSION("FW_",   64, SIM,  var_infosimparam),
+    AP_SUBGROUPEXTENSION("FW_",   1, SIM,  var_infosimparam),
     AP_GROUPEND
 };
 
