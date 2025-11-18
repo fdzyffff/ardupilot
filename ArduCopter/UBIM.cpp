@@ -258,9 +258,9 @@ void UBIM::update_msg_send()
             {
                 ;
             }
-            tmp_msg._msg_1.content.msg.pos_x = (int32_t)( current_pos.y*100.f);
-            tmp_msg._msg_1.content.msg.pos_y = (int32_t)( current_pos.x*100.f);
-            tmp_msg._msg_1.content.msg.pos_z = (int32_t)(-current_pos.z*100.f);
+            tmp_msg._msg_1.content.msg.pos_x = (int32_t)( (current_pos.y + copter.g2.user_parameters.origin_pos_off_y)*100.f);
+            tmp_msg._msg_1.content.msg.pos_y = (int32_t)( (current_pos.x + copter.g2.user_parameters.origin_pos_off_x)*100.f);
+            tmp_msg._msg_1.content.msg.pos_z = (int32_t)(-(current_pos.z + copter.g2.user_parameters.origin_pos_off_z)*100.f);
         }
         tmp_msg._msg_1.content.msg.control_mode = uav_manual?2:1;
         tmp_msg._msg_1.content.msg.uav_moving_status = 0;

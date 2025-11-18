@@ -22,9 +22,9 @@ bool UBIM::cmd_add_wp()
     if (copter.mode_auto.mission.num_commands() == 0) {
         AP_Mission::Mission_Command tmp_cmd;
         Vector3f tmp_pos = Vector3f(
-            tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_y,
-            tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_x,
-            tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_z
+            tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_y - copter.g2.user_parameters.origin_pos_off_x*100.f,
+            tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_x - copter.g2.user_parameters.origin_pos_off_y*100.f,
+            tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_z + copter.g2.user_parameters.origin_pos_off_z*100.f
             );
         tmp_cmd.content.location = Location(tmp_pos, Location::AltFrame::ABSOLUTE);
         tmp_cmd.id = MAV_CMD_NAV_WAYPOINT;
