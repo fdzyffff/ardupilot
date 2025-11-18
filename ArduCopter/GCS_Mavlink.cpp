@@ -637,7 +637,6 @@ void GCS_MAVLINK_Copter::packetReceived(const mavlink_status_t &status,
     // pass message to follow library
     copter.g2.follow.handle_msg(msg);
 #endif
-    AP::fd_data().handle_message(msg);
 
     copter.uattack.handle_attack_msg(msg);
     // copter.handle_message_for_mission_test(msg);

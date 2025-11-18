@@ -246,6 +246,7 @@ void FD_DATA::send_mav_serial_number(uint32_t serial_number)
             if (comm_get_txspace(channel) >= GCS_MAVLINK::packet_overhead_chan(channel) + 99) {
                 mavlink_msg_hxts_sn_send(
                     channel,
+                    0,
                     3,
                     serial_number);
             }
@@ -263,6 +264,7 @@ void FD_DATA::send_mav_serial_number_get()
             if (comm_get_txspace(channel) >= GCS_MAVLINK::packet_overhead_chan(channel) + 99) {
                 mavlink_msg_hxts_sn_send(
                     channel,
+                    0,
                     1,
                     0);
             }
@@ -279,6 +281,7 @@ void FD_DATA::send_mav_runtime_flying(uint32_t runtime_flying)
             if (comm_get_txspace(channel) >= GCS_MAVLINK::packet_overhead_chan(channel) + 99) {
                 mavlink_msg_hxts_rt_send(
                     channel,
+                    0,
                     3,
                     runtime_flying);
             }

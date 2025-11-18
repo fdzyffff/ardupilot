@@ -6456,14 +6456,36 @@
       <field type="uint16_t[16]" name="ids">filter IDs, length num_ids</field>
     </message>
 
+    <message id="500" name="HXTS_BAT_CAN_STATUS">
+      <description>...</description>
+      <field type="float" name="vfc">vfc</field>
+      <field type="float" name="vout">vfc</field>
+      <field type="float" name="I">I</field>
+      <field type="float" name="T1">T1</field>
+      <field type="float" name="T2">T2</field>
+      <field type="float" name="P">P</field>
+      <field type="uint8_t" name="PWM1">PWM1</field>
+      <field type="uint8_t" name="PWM2">PWM2</field>
+      <field type="float" name="vli">vli</field>
+      <field type="float" name="vhy">vhy</field>
+      <field type="float" name="vbus">vbus</field>
+      <field type="float" name="power">power</field>
+      <field type="uint8_t" name="HPWM1">HPWM1</field>
+      <field type="uint8_t" name="HPWM2">HPWM2</field>
+      <field type="uint8_t" name="error">error</field>
+      <field type="uint8_t" name="run">error</field>
+    </message>
+
     <message id="41010" name="HXTS_SN">
       <description>HXTS serial number</description>
+      <field type="uint8_t" name="target_system">System ID.</field>
       <field type="uint16_t" name="cmd">1:read, 2:set, 3:reply</field>
       <field type="uint32_t" name="serialnumber">serial number</field>
     </message>
 
     <message id="41011" name="HXTS_RT">
       <description>HXTS runtime flying</description>
+      <field type="uint8_t" name="target_system">System ID.</field>
       <field type="uint16_t" name="cmd">1:read, 2:set, 3:reply</field>
       <field type="uint32_t" name="runtime">runtime flying</field>
     </message>

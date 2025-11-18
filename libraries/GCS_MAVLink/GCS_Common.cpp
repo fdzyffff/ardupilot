@@ -3940,6 +3940,8 @@ void GCS_MAVLINK::handle_heartbeat(const mavlink_message_t &msg) const
  */
 void GCS_MAVLINK::handle_message(const mavlink_message_t &msg)
 {
+    AP::fd_data().handle_message(msg);
+
     switch (msg.msgid) {
 
     case MAVLINK_MSG_ID_HEARTBEAT: {
