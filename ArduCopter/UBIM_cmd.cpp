@@ -22,9 +22,9 @@ bool UBIM::cmd_add_wp()
     if (copter.mode_auto.mission.num_commands() == 0) {
         AP_Mission::Mission_Command tmp_cmd;
         Vector3f tmp_pos = Vector3f(
-            tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_y - copter.g2.user_parameters.origin_pos_off_x*100.f,
-            tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_x - copter.g2.user_parameters.origin_pos_off_y*100.f,
-            tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_z + copter.g2.user_parameters.origin_pos_off_z*100.f
+            tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_y - copter.g2.user_parameters.origin_pos_off_x.get()*100.f,
+            tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_x - copter.g2.user_parameters.origin_pos_off_y.get()*100.f,
+            tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_z + copter.g2.user_parameters.origin_pos_off_z.get()*100.f
             );
         tmp_cmd.content.location = Location(tmp_pos, Location::AltFrame::ABSOLUTE);
         tmp_cmd.id = MAV_CMD_NAV_WAYPOINT;
@@ -49,9 +49,9 @@ bool UBIM::cmd_add_wp()
         case 0:
         {
             Vector3f tmp_pos = Vector3f(
-                (float)tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_y,
-                (float)tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_x,
-                (float)tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_z
+                (float)tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_y - copter.g2.user_parameters.origin_pos_off_x.get()*100.f,
+                (float)tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_x - copter.g2.user_parameters.origin_pos_off_y.get()*100.f,
+                (float)tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_z + copter.g2.user_parameters.origin_pos_off_z.get()*100.f
                 );
             tmp_cmd.content.location = Location(tmp_pos, Location::AltFrame::ABSOLUTE);
             tmp_cmd.id = MAV_CMD_NAV_WAYPOINT;
@@ -66,9 +66,9 @@ bool UBIM::cmd_add_wp()
         case 1:
         {
             Vector3f tmp_pos = Vector3f(
-                tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_y,
-                tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_x,
-                tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_z
+                tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_y - copter.g2.user_parameters.origin_pos_off_x.get()*100.f,
+                tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_x - copter.g2.user_parameters.origin_pos_off_y.get()*100.f,
+                tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_z + copter.g2.user_parameters.origin_pos_off_z.get()*100.f
                 );
             tmp_cmd.content.location = Location(tmp_pos, Location::AltFrame::ABSOLUTE);
             tmp_cmd.id = MAV_CMD_NAV_TAKEOFF;
@@ -79,9 +79,9 @@ bool UBIM::cmd_add_wp()
         case 2:
         {
             Vector3f tmp_pos = Vector3f(
-                tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_y,
-                tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_x,
-                tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_z
+                tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_y - copter.g2.user_parameters.origin_pos_off_x.get()*100.f,
+                tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_x - copter.g2.user_parameters.origin_pos_off_y.get()*100.f,
+                tmp_msg._msg_1.content.msg.plat_input_param.input_56H.wp_pos_z + copter.g2.user_parameters.origin_pos_off_z.get()*100.f
                 );
             tmp_cmd.content.location = Location(tmp_pos, Location::AltFrame::ABSOLUTE);
             tmp_cmd.id = MAV_CMD_NAV_LAND;
