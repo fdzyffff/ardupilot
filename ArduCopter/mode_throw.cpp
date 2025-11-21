@@ -27,6 +27,10 @@ bool ModeThrow::init(bool ignore_checks)
     pos_control->set_max_speed_accel_z(BRAKE_MODE_SPEED_Z, BRAKE_MODE_SPEED_Z, BRAKE_MODE_DECEL_RATE);
     pos_control->set_correction_speed_accel_z(BRAKE_MODE_SPEED_Z, BRAKE_MODE_SPEED_Z, BRAKE_MODE_DECEL_RATE);
 
+    float step_time_ms = MAX(10.0f, copter.g2.throw_time_ms.get());
+    uint8_t step_data_max = MAX(MIN(copter.g2.throw_data_max.get(), 100), 10);
+    copter.throw_ef_accel_z_avg.init(step_time_ms, step_data_max);
+    gcs().send_text(MAV_SEVERITY_INFO,"throw %f ms at %d", step_time_ms, step_data_max);
     return true;
 }
 
@@ -240,6 +244,7 @@ void ModeThrow::run()
         const float velocity_z = inertial_nav.get_velocity_z_up_cms();
         const float accel = copter.ins.get_accel().length();
         const float ef_accel_z = ahrs.get_accel_ef().z;
+        const float ef_accel_z_avg = copter.throw_ef_accel_z_avg.get();
         const bool throw_detect = (stage > Throw_Detecting) || throw_detected();
         const bool attitude_ok = (stage > Throw_Uprighting) || throw_attitude_good();
         const bool height_ok = (stage > Throw_HgtStabilise) || throw_height_good();
@@ -261,22 +266,25 @@ void ModeThrow::run()
 
         AP::logger().WriteStreaming(
             "THRO",
-            "TimeUS,Stage,Vel,VelZ,Acc,AccEfZ,Throw,AttOk,HgtOk,PosOk",
-            "s-nnoo----",
-            "F-0000----",
-            "QBffffbbbb",
+            "TimeUS,Stage,Vel,VelZ,Acc,AccEfZ,EfZavg,Throw,AttOk,HgtOk,PosOk",
+            "s-nnooo----",
+            "F-00000----",
+            "QBfffffbbbb",
             AP_HAL::micros64(),
             (uint8_t)stage,
             (double)velocity,
             (double)velocity_z,
             (double)accel,
             (double)ef_accel_z,
+            (double)ef_accel_z_avg,
             throw_detect,
             attitude_ok,
             height_ok,
             pos_ok);
     }
 #endif  // HAL_LOGGING_ENABLED
+
+    copter.throw_ef_accel_z_avg.push(ahrs.get_accel_ef().z);
 }
 
 bool ModeThrow::throw_detected()
@@ -291,7 +299,7 @@ bool ModeThrow::throw_detected()
     bool high_speed = false;
 
     if (g2.throw_type == ThrowType::Drop) {
-        high_speed = inertial_nav.get_velocity_z_up_cms() < -THROW_HIGH_SPEED;
+        high_speed = false;
     } else {
         high_speed = inertial_nav.get_velocity_neu_cms().length_squared() > (THROW_HIGH_SPEED * THROW_HIGH_SPEED);
     }
@@ -299,13 +307,19 @@ bool ModeThrow::throw_detected()
     // check for upwards or downwards trajectory (airdrop) of 50cm/s
     bool changing_height;
     if (g2.throw_type == ThrowType::Drop) {
-        changing_height = inertial_nav.get_velocity_z_up_cms() < -THROW_VERTICAL_SPEED;
+        changing_height = inertial_nav.get_velocity_z_up_cms() < -MAX(copter.g2.throw_velz_max.get() , THROW_VERTICAL_SPEED);
     } else {
         changing_height = inertial_nav.get_velocity_z_up_cms() > THROW_VERTICAL_SPEED;
     }
 
     // Check the vertical acceleraton is greater than 0.25g
-    bool free_falling = ahrs.get_accel_ef().z > -0.25 * GRAVITY_MSS;
+    // bool free_falling = ahrs.get_accel_ef().z > -0.25 * GRAVITY_MSS;
+
+    float accel_z_avg = copter.throw_ef_accel_z_avg.get();
+    bool free_falling = accel_z_avg > -0.25 * GRAVITY_MSS;
+    if (is_zero(accel_z_avg)) {
+        free_falling = false;
+    }
 
     // Check if the accel length is < 1.0g indicating that any throw action is complete and the copter has been released
     bool no_throw_action = copter.ins.get_accel().length() < 1.0f * GRAVITY_MSS;
@@ -325,11 +339,11 @@ bool ModeThrow::throw_detected()
     // High velocity or free-fall combined with increasing height indicate a possible air-drop or throw release  
     bool possible_throw_detected = (free_falling || high_speed) && changing_height && no_throw_action && height_within_params;
 
-
     // Record time and vertical velocity when we detect the possible throw
     if (possible_throw_detected && ((AP_HAL::millis() - free_fall_start_ms) > 500)) {
         free_fall_start_ms = AP_HAL::millis();
         free_fall_start_velz = inertial_nav.get_velocity_z_up_cms();
+        gcs().send_text(MAV_SEVERITY_INFO, "Throw %.0f m/s at accel_z_avg %0.1f m/s/s", inertial_nav.get_velocity_z_up_cms(), accel_z_avg);
     }
 
     if (g2.throw_type == ThrowType::Drop) {

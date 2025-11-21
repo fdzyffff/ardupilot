@@ -180,6 +180,7 @@
 #include "UMav.h"
 #include "UPayload.h"
 #include "UAttack.h"
+#include "User_shiftaverage.h"
 
 class Copter : public AP_Vehicle {
 public:
@@ -246,6 +247,8 @@ public:
     friend class UPayload;
 
     friend class UAttack;
+
+    friend class User_shiftaverage;
 
     Copter(void);
 
@@ -1096,6 +1099,8 @@ private:
     UPayload upayload;
 
     UAttack uattack;
+
+    User_shiftaverage throw_ef_accel_z_avg;
 
 public:
     void failsafe_check();      // failsafe.cpp

@@ -385,6 +385,7 @@ public:
         k_param_vehicle = 257, // vehicle common block of parameters
         k_param_throw_altitude_min,
         k_param_throw_altitude_max,
+        k_param_throw_time_window,
 
         // the k_param_* space is 9-bits in size
         // 511: reserved
@@ -523,6 +524,9 @@ public:
     // Throw mode parameters
     AP_Int8 throw_nextmode;
     AP_Enum<ModeThrow::ThrowType> throw_type;
+    AP_Float  throw_time_ms;
+    AP_Int8   throw_data_max;
+    AP_Float  throw_velz_max;
 #endif
 
     // ground effect compensation enable/disable

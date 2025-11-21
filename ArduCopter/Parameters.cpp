@@ -1258,6 +1258,14 @@ const AP_Param::GroupInfo ParametersG2::var_info2[] = {
     AP_GROUPINFO("THROW_UP_CM", 9, ParametersG2, throw_up_cm, 100),
 #endif
 
+#if MODE_THROW_ENABLED == ENABLED
+    AP_GROUPINFO("THROW_TSTEP_MS", 10, ParametersG2, throw_time_ms, 50.f),
+
+    AP_GROUPINFO("THROW_TDATA_MAX", 11, ParametersG2, throw_data_max, 20),
+
+    AP_GROUPINFO("THROW_VELD_MAX", 12, ParametersG2, throw_velz_max, 500.f),
+#endif
+
     AP_GROUPEND
 };
 
