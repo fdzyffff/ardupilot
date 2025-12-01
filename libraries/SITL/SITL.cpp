@@ -255,7 +255,6 @@ const AP_Param::GroupInfo SIM::var_info[] = {
 #endif
     AP_SUBGROUPEXTENSION("",      62, SIM,  var_info3),
     AP_SUBGROUPEXTENSION("",      63, SIM,  var_info2),
-    AP_SUBGROUPEXTENSION("FW_",   1, SIM,  var_infosimparam),
     AP_GROUPEND
 };
 
@@ -720,6 +719,9 @@ const AP_Param::GroupInfo SIM::var_info3[] = {
 #ifdef SFML_JOYSTICK
     AP_SUBGROUPEXTENSION("",      63, SIM,  var_sfml_joystick),
 #endif // SFML_JOYSTICK
+
+    AP_GROUPINFO("FRAME_TYPE",    55, SIM,  sim_frame_type, 0),
+    AP_SUBGROUPEXTENSION("FW_",   56, SIM,  var_infosimparam),
 
     AP_GROUPEND
 };
