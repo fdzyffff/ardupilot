@@ -522,7 +522,8 @@ static const ap_message STREAM_EXTENDED_STATUS_msgs[] = {
 };
 static const ap_message STREAM_POSITION_msgs[] = {
     MSG_LOCATION,
-    MSG_LOCAL_POSITION
+    MSG_LOCAL_POSITION,
+    MSG_ZFJL_GCS,
 };
 static const ap_message STREAM_RC_CHANNELS_msgs[] = {
     MSG_SERVO_OUTPUT_RAW,
@@ -581,6 +582,8 @@ static const ap_message STREAM_EXTRA3_msgs[] = {
 #if HAL_EFI_ENABLED
     MSG_EFI_STATUS,
 #endif
+    MSG_ZFJL_SN,
+    MSG_ZFJL_GCS,
 };
 static const ap_message STREAM_PARAMS_msgs[] = {
     MSG_NEXT_PARAM
@@ -636,6 +639,7 @@ void GCS_MAVLINK_Copter::packetReceived(const mavlink_status_t &status,
     // pass message to follow library
     copter.g2.follow.handle_msg(msg);
 #endif
+    AP::fd_data().handle_message(msg);
     GCS_MAVLINK::packetReceived(status, msg);
 }
 

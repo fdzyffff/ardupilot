@@ -92,5 +92,8 @@ enum ap_message : uint8_t {
     MSG_RELAY_STATUS,
     MSG_ZF6666_STATUS,
     MSG_ZF8888_STATUS,
+    MSG_ZFJL_SN,
+    MSG_ZFJL_UAS,
+    MSG_ZFJL_GCS,
     MSG_LAST // MSG_LAST must be the last entry in this enum
 };

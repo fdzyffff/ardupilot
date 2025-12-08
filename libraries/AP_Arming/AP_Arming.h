@@ -263,6 +263,7 @@ protected:
     void Log_Write_Arm(bool forced, AP_Arming::Method method);
     void Log_Write_Disarm(bool forced, AP_Arming::Method method);
 
+    bool zfjl_checks(bool report);
 private:
 
     static AP_Arming *_singleton;

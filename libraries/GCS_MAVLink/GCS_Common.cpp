@@ -6236,6 +6236,21 @@ bool GCS_MAVLINK::try_send_message(const enum ap_message id)
         send_zf8888_status();
         break;
 
+    case MSG_ZFJL_SN:
+        CHECK_PAYLOAD_SIZE(ZFJL_SN);
+        AP::fd_data().send_zfjl_sn(chan);
+        break;
+
+    case MSG_ZFJL_UAS:
+        CHECK_PAYLOAD_SIZE(ZFJL_UAS);
+        AP::fd_data().send_zfjl_uas(chan);
+        break;
+
+    case MSG_ZFJL_GCS:
+        CHECK_PAYLOAD_SIZE(ZFJL_GCS_HEARTBEAT);
+        AP::fd_data().send_zfjl_gcs_heartbeat(chan);
+        break;
+
     default:
         // try_send_message must always at some stage return true for
         // a message, or we will attempt to infinitely retry the
