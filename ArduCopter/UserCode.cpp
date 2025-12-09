@@ -6,6 +6,7 @@ void Copter::userhook_init()
     // put your initialisation code here
     // this will be called once at start-up
     useruartfwd.init();
+    uengine.init();
     SRV_Channels::set_range(SRV_Channel::k_yaw_out_left, 100);
     SRV_Channels::set_range(SRV_Channel::k_yaw_out_right, 100);
 }
@@ -14,6 +15,7 @@ void Copter::userhook_init()
 #ifdef USERHOOK_FASTLOOP
 void Copter::userhook_FastLoop()
 {
+    uengine.update();
     // put your 100Hz code here
 //     float temp_yaw_out_left  = 0.0f;
 //     float temp_yaw_out_right = 0.0f;
@@ -71,15 +73,27 @@ void Copter::userhook_SuperSlowLoop()
 void Copter::userhook_auxSwitch1(const RC_Channel::AuxSwitchPos ch_flag)
 {
     // put your aux switch #1 handler here (CHx_OPT = 47)
+    if (ch_flag == RC_Channel::AuxSwitchPos::HIGH) {
+        copter.uengine.do_engine_start();
+    }
 }
 
 void Copter::userhook_auxSwitch2(const RC_Channel::AuxSwitchPos ch_flag)
 {
     // put your aux switch #2 handler here (CHx_OPT = 48)
+    if (ch_flag == RC_Channel::AuxSwitchPos::HIGH) {
+        copter.uengine.do_engine_stop();
+    }
 }
 
 void Copter::userhook_auxSwitch3(const RC_Channel::AuxSwitchPos ch_flag)
 {
     // put your aux switch #3 handler here (CHx_OPT = 49)
+    if (ch_flag == RC_Channel::AuxSwitchPos::MIDDLE) {
+        copter.uengine.do_engine_standby();
+    }
+    if (ch_flag == RC_Channel::AuxSwitchPos::HIGH) {
+        copter.uengine.do_engine_work();
+    }
 }
 #endif

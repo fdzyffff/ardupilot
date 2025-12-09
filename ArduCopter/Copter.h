@@ -182,6 +182,8 @@
 
 #include "UserUartFWD.h"
 
+#include "UEngine.h"
+
 class Copter : public AP_Vehicle {
 public:
     friend class GCS_MAVLINK_Copter;
@@ -231,6 +233,7 @@ public:
     friend class ModeMLand;
 
     friend class UserUartFWD;
+    friend class UEngine;
     Copter(void);
 
 private:
@@ -1029,6 +1032,8 @@ private:
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);
 
     UserUartFWD useruartfwd{AP_SerialManager::SerialProtocol_Uart_Forward};
+    UEngine uengine;
+
 public:
     void failsafe_check();      // failsafe.cpp
 };

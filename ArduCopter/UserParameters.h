@@ -11,5 +11,7 @@ public:
     // Put your parameter variable definitions here
     AP_Int8 _print;
     AP_Float _spin_yaw;
+    AP_Int16 _target_rpm1;
+    AP_Int16 _target_rpm2;
 
 };

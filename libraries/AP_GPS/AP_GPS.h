@@ -598,6 +598,7 @@ protected:
 #if GPS_MOVING_BASELINE
     MovingBase mb_params[GPS_MAX_RECEIVERS];
 #endif // GPS_MOVING_BASELINE
+    AP_Float _yaw_offset;
 
     uint32_t _log_gps_bit = -1;
 

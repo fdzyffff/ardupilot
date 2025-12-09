@@ -7,6 +7,8 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     // Note the maximum length of parameter name is 13 chars
     AP_GROUPINFO("_PRINT", 0, UserParameters, _print, 0),
     AP_GROUPINFO("_YAW_SPIN", 1, UserParameters, _spin_yaw, 0.4f),
+    AP_GROUPINFO("_TGT_RPM1", 2, UserParameters, _target_rpm1, 3000),
+    AP_GROUPINFO("_TGT_RPM2", 3, UserParameters, _target_rpm2, 60000),
     
     AP_GROUPEND
 };
