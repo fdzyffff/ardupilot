@@ -38,15 +38,15 @@ void FD_Target_QD::update() {
     FD_QD_ptr->read();
     FD_msg_QD_S11 &tmp_msg = FD_QD_ptr->get_msg_QD_S11();
     if (tmp_msg._msg_1.updated) {
-
-            bool do_print = false;
-            if (millis() - last_print_ms > 1000) {
-                if (cam_debug.get()) {
-                    do_print = true;
-                }
-                last_print_ms = millis();
+        bool do_print = false;
+        if (millis() - last_print_ms > 1000) {
+            if (cam_debug.get()) {
+                do_print = true;
             }
-        // if (tmp_msg._msg_1.content.msg.track_status == 0x02) {
+            last_print_ms = millis();
+        }
+
+        if (tmp_msg._msg_1.content.msg.track_status & 0x0F == 2) {
             _last_ms = millis();
             float theta1 =  cal_frame_angle_left_up(cam_width.get(), cam_angle_x.get(), tmp_msg._msg_1.content.msg.target_x); // x-axis, degree
             float theta2 = -cal_frame_angle_left_up(cam_height.get(), cam_angle_y.get(), tmp_msg._msg_1.content.msg.target_y); // y-axis, degree
@@ -91,7 +91,7 @@ void FD_Target_QD::update() {
             }
 
             handle_info(p1, p2);
-        // }
+        }
 
         tmp_msg._msg_1.updated = false;   
     }
