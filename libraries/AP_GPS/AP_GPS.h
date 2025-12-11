@@ -140,6 +140,7 @@ public:
 #if GPS_MOVING_BASELINE
         MovingBase mb_params;
 #endif // GPS_MOVING_BASELINE
+        AP_Float _yaw_offset;
 
         static const struct AP_Param::GroupInfo var_info[];
     };

@@ -10,7 +10,10 @@ const AP_Param::GroupInfo FD_Target_QD::var_info[] = {
     AP_GROUPINFO("ANG_X",  3, FD_Target_QD, cam_angle_x,           60.0f),
     AP_GROUPINFO("ANG_Y",  4, FD_Target_QD, cam_angle_y,           60.0f),
     AP_GROUPINFO("USEXY",  5, FD_Target_QD, cam_use_xy,            0),
-    AP_GROUPINFO("DEBUG",  6, FD_Target_QD, cam_debug,             0),
+    AP_GROUPINFO("OFF_PTH",6, FD_Target_QD, cam_offset_pitch,      0),
+    AP_GROUPINFO("OFF_RLL",7, FD_Target_QD, cam_offset_roll,       0),
+    AP_GROUPINFO("OFF_YAW",8, FD_Target_QD, cam_offset_yaw,        0),
+    AP_GROUPINFO("DEBUG",  9, FD_Target_QD, cam_debug,             0),
 
     AP_GROUPEND
 };
@@ -69,7 +72,9 @@ void FD_Target_QD::update() {
 
             Vector3f cam_unit = Vector3f(1.0f, 0.0f, 0.0f);
             Matrix3f tmp_target_cam_m;
-            tmp_target_cam_m.from_euler(0.0f, radians(tgt_p2), radians(tgt_p1));
+            tmp_target_cam_m.from_euler(radians(cam_offset_roll.get()), 
+                                        radians(cam_offset_pitch.get() + tgt_p2), 
+                                        radians(cam_offset_yaw.get() + tgt_p1));
 
             float LSB = 360.f/65536.f;
             float cam_yaw = (float)(tmp_msg._msg_1.content.msg.cam_yaw)*LSB;

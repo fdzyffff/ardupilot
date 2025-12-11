@@ -52,6 +52,9 @@ private:
     AP_Float cam_angle_y;
     AP_Int8  cam_use_xy;
     AP_Int8  cam_debug;
+    AP_Float cam_offset_pitch;
+    AP_Float cam_offset_roll;
+    AP_Float cam_offset_yaw;
 
     FD_QD* FD_QD_ptr;
 };
