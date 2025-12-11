@@ -113,6 +113,8 @@ const AP_Param::GroupInfo AP_GPS::Params::var_info[] = {
     AP_GROUPINFO("CAN_OVRIDE", 9, AP_GPS::Params, override_node_id, 0),
 #endif
 
+    AP_GROUPINFO("_YAW_OFFSET", 10, AP_GPS::Params, _yaw_offset, 0),
+
     AP_GROUPEND
 };
 
