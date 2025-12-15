@@ -32,6 +32,7 @@
 #include "AP_Proximity_LD06.h"
 #include "AP_Proximity_MR72_CAN.h"
 #include "AP_Proximity_LidarN10P.h"
+#include "AP_Proximity_LidarM10P.h"
 
 
 #include <AP_Logger/AP_Logger.h>
@@ -259,6 +260,15 @@ void AP_Proximity::init()
             if (AP_Proximity_LidarN10P::detect(serial_instance)) {
                 state[instance].instance = instance;
                 drivers[instance] = new AP_Proximity_LidarN10P(*this, state[instance], params[instance], serial_instance);
+                serial_instance++;
+            }
+            break;
+#endif
+#if AP_PROXIMITY_LIDARM10P_ENABLED
+        case Type::LIDARM10P:
+            if (AP_Proximity_LidarM10P::detect(serial_instance)) {
+                state[instance].instance = instance;
+                drivers[instance] = new AP_Proximity_LidarM10P(*this, state[instance], params[instance], serial_instance);
                 serial_instance++;
             }
             break;

@@ -93,6 +93,9 @@ public:
 #if AP_PROXIMITY_LIDARN10P_ENABLED
         LIDARN10P = 18,
 #endif
+#if AP_PROXIMITY_LIDARM10P_ENABLED
+        LIDARM10P = 19,
+#endif
     };
 
     enum class Status {
