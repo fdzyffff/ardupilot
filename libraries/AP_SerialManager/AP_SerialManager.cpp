@@ -586,6 +586,11 @@ void AP_SerialManager::init()
                 case SerialProtocol_PPP:
                     break;
 #endif
+                case SerialProtocol_FDSERVO:
+                    uart->begin(state[i].baudrate(),
+                                256,
+                                256);
+                    break;
                     
                 default:
                     uart->begin(state[i].baudrate());

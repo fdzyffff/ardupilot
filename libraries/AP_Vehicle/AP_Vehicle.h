@@ -82,6 +82,8 @@
 
 #include <AP_IBus_Telem/AP_IBus_Telem.h>
 
+#include <FD_SERVOS/FD_SERVOS.h>
+
 class AP_DDS_Client;
 
 class AP_Vehicle : public AP_HAL::HAL::Callbacks {
@@ -565,6 +567,8 @@ private:
 
     // Bitmask of modes to disable from gcs
     AP_Int32 flight_mode_GCS_block;
+
+    FD_SERVOS fd_servos;
 };
 
 namespace AP {

@@ -286,6 +286,7 @@ const AP_Param::GroupInfo AP_Vehicle::var_info[] = {
     AP_SUBGROUPINFO(serial_manager, "SERIAL", 31, AP_Vehicle, AP_SerialManager),
 #endif
 
+    AP_SUBGROUPINFO(fd_servos, "USVO", 32, AP_Vehicle, FD_SERVOS),
     AP_GROUPEND
 };
 
