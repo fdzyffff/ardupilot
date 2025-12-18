@@ -2110,5 +2110,6 @@ protected:
     void set_state(Mission_State state_in);
 
     uint32_t state_ms;
+    uint32_t _last_track_ms;
 };
 #endif
