@@ -2094,6 +2094,8 @@ public:
 
     Mission_State get_state() {return mission_state;}
     void do_final_track();
+    bool init_track();
+    void update_track();
 
 protected:
 
