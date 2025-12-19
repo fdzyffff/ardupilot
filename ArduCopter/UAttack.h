@@ -27,6 +27,7 @@ public:
     void update_attack_angle_target();
     const Vector2f& get_ef_gun_info();
     const Vector2f& get_ef_cam_info();
+    void set_yaw_off(float yaw_off);
 
     float get_target_vel_x() {return _target_vel_x;}
     float get_target_vel_y() {return _target_vel_y;}
@@ -82,6 +83,7 @@ private:
     AP_Float        filt_pithc_hz;
     AP_Float        gun_pitch;
     AP_Float        aim_pitch;
+    AP_Float        aim_yaw;
 
     // AC_PID          attack_velx_pid{0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.0f};
     AC_PID          attack_velz_pid{0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.0f};
@@ -95,6 +97,7 @@ private:
     bool _reset;
     bool _running;
     int8_t current_idx;
+    float _yaw_off;
 
     LowPassFilterFloat _yaw_sample_filter;
     LowPassFilterFloat _pitch_sample_filter;

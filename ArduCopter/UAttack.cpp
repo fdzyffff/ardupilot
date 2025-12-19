@@ -9,6 +9,7 @@ const AP_Param::GroupInfo UAttack::var_info[] = {
     AP_GROUPINFO("FILT_P_HZ",  4, UAttack, filt_pithc_hz,           5.0f),
     AP_GROUPINFO("GUN_PITCH",  5, UAttack, gun_pitch,               10.0f),
     AP_GROUPINFO("AIM_PITCH",  6, UAttack, aim_pitch,               10.0f),
+    AP_GROUPINFO("AIM_YAW",    7, UAttack, aim_yaw,                 3.0f),
 
     AP_SUBGROUPPTR(_Target_ptr_cam_QD,   "TQD_",  7, UAttack,  FD_Target_QD),
     AP_GROUPEND
@@ -55,6 +56,7 @@ void UAttack::init()
     _last_log_ms = 0;
     _reset = true;
     _running = false;
+    _yaw_off = 0.0f;
     init_target();
 
     // float sample_freq = 30.0f;
@@ -294,6 +296,12 @@ void UAttack::update_target_vel_y() {
     ;
 }
 
+void UAttack::set_yaw_off(float yaw_off)
+{
+    _yaw_off = yaw_off;
+    gcs().send_text(MAV_SEVERITY_INFO, "UATK: YAW off: %0.1f", _yaw_off);
+}
+
 // m/s
 void UAttack::update_target_vel_z() {
     float dt = (millis() - _last_control_ms);
@@ -320,7 +328,7 @@ void UAttack::update_target_angle_yaw() {
     // dt = dt * 0.001f;
     // if (dt > 0.05f) {dt = 0.05f;}
 
-    _target_angle_yaw = wrap_360(degrees(AP::ahrs().get_yaw()) + wrap_180(ef_cam_info.x - ef_gun_info.x));
+    _target_angle_yaw = wrap_360(_yaw_off + degrees(AP::ahrs().get_yaw()) + wrap_180(ef_cam_info.x - ef_gun_info.x));
 }
 
 
