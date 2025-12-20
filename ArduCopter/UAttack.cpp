@@ -11,7 +11,7 @@ const AP_Param::GroupInfo UAttack::var_info[] = {
     AP_GROUPINFO("AIM_PITCH",  6, UAttack, aim_pitch,               10.0f),
     AP_GROUPINFO("AIM_YAW",    7, UAttack, aim_yaw,                 3.0f),
 
-    AP_SUBGROUPPTR(_Target_ptr_cam_QD,   "TQD_",  7, UAttack,  FD_Target_QD),
+    AP_SUBGROUPPTR(_Target_ptr_cam_QD,   "TQD_",  8, UAttack,  FD_Target_QD),
     AP_GROUPEND
 };
 
