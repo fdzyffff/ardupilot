@@ -589,6 +589,8 @@ void AP_SerialManager::init()
 #endif
                 case SerialProtocol_UART:
                 case SerialProtocol_CAM:
+                case SerialProtocol_ENGINE:
+                case SerialProtocol_WEIGHT:
                     uart->begin(state[i].baudrate(),
                                          128,
                                          128);

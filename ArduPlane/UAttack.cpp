@@ -42,7 +42,7 @@ UAttack::UAttack()
 // initialise
 void UAttack::init()
 {
-    udelay.init();
+    // udelay.init();
     _active = false;
     bf_info.x = 0.0f;
     bf_info.y = 0.0f;
@@ -412,7 +412,7 @@ void UAttack::update_target_yaw_rate() {
     display_info.p11 = angle_err;
     display_info.p12 = k2_yaw;
     display_info.p13 = _target_yaw_rate;
-    display_info.p14 = plane.uattack.get_target_yaw_rate();
+    display_info.p14 = plane.get_target_yaw_rate();
 }
 
 void UAttack::handle_attack_msg(const mavlink_message_t &msg) {
@@ -421,5 +421,32 @@ void UAttack::handle_attack_msg(const mavlink_message_t &msg) {
     }
     if (_Target_ptr_cam != nullptr) {
         _Target_ptr_cam->handle_msg(msg);
+    }
+}
+
+void UAttack::do_print()
+{
+    // put your 1Hz code here
+    if ((print.get() & (1<<0)) && display_info.new_data) { // 1
+        gcs().send_text(MAV_SEVERITY_WARNING, "[%d] %0.0f , %0.0f , %0.0f , %0.0f", display_info.count_log, display_info.p1, display_info.p2, display_info.p3, display_info.p4);
+        display_info.new_data = false;
+    }
+    if (print.get() & (1<<1)) { // 2
+        gcs().send_text(MAV_SEVERITY_WARNING, "ef_angle (%0.2f , %0.2f) on:%d", get_ef_info().x,get_ef_info().y, is_active());
+    }
+    if (print.get() & (1<<2)) { // 4
+        gcs().send_text(MAV_SEVERITY_WARNING, "ef_rate (%0.2f , %0.2f) on:%d", get_ef_rate_info().x,get_ef_rate_info().y, is_active());
+    }
+    if (print.get() & (1<<3)) { // 8
+        gcs().send_text(MAV_SEVERITY_WARNING, "ar (%0.1f , %0.1f , %0.2f , %0.2f)", _attack_angle_target, _attack_angle_measure, _attack_angle_rate_target, _attack_angle_rate_measure);
+    }
+    if (print.get() & (1<<4)) { // 16
+        gcs().send_text(MAV_SEVERITY_WARNING, "rpyt (%0.1f , %0.1f , %0.1f , %0.2f)", get_target_roll_angle(), get_target_pitch_rate(), get_target_yaw_rate(), attack_throttle.get());
+    }
+    // if (print.get() & (1<<5)) { // 32
+    //     gcs().send_text(MAV_SEVERITY_WARNING, "apid (%0.1f , %0.1f , %0.1f , %0.2f)", _attack_throttle_pid, _attack_throttle_p, _attack_throttle_i, _attack_throttle_d);
+    // }
+    if (print.get() & (1<<6)) { // 364
+        gcs().send_text(MAV_SEVERITY_WARNING, "%0.0f , %0.0f , %0.0f , %0.0f", display_info.p11, display_info.p12, display_info.p13, display_info.p14);
     }
 }

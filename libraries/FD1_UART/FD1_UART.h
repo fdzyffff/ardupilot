@@ -27,3 +27,8 @@
 #include "FD1_msg_0919_p4.h" //飞行控制成功事件（0x7D）描述：飞行控制回执事件。
 // #include "FD1_msg_0919_p5.h" //无人机心跳。
 
+
+#include "FD1_msg_engine_request.h"
+#include "FD1_msg_engine_response.h"
+
+#include "FD1_msg_weight.h"

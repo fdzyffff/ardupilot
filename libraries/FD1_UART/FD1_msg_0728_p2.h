@@ -67,7 +67,7 @@ public:
     FD1_msg_0728_p2(const FD1_msg_0728_p2 &other) = delete;
     FD1_msg_0728_p2 &operator=(const FD1_msg_0728_p2&) = delete;
 
-    static const uint8_t PREAMBLE1 = 0xEB;
+    static const uint8_t PREAMBLE1 = 0xBB;
     static const uint8_t PREAMBLE2 = 0x7E;
 
     void process_message(void) override;

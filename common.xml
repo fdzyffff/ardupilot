@@ -1165,9 +1165,9 @@
       </entry>
       <entry value="189" name="MAV_CMD_DO_LAND_START" hasLocation="true" isDestination="false">
         <description>Mission command to perform a landing. This is used as a marker in a mission to tell the autopilot where a sequence of mission items that represents a landing starts.
-	  It may also be sent via a COMMAND_LONG to trigger a landing, in which case the nearest (geographically) landing sequence in the mission will be used.
-	  The Latitude/Longitude/Altitude is optional, and may be set to 0 if not needed. If specified then it will be used to help find the closest landing sequence.
-	</description>
+    It may also be sent via a COMMAND_LONG to trigger a landing, in which case the nearest (geographically) landing sequence in the mission will be used.
+    The Latitude/Longitude/Altitude is optional, and may be set to 0 if not needed. If specified then it will be used to help find the closest landing sequence.
+  </description>
         <param index="1">Empty</param>
         <param index="2">Empty</param>
         <param index="3">Empty</param>
@@ -4197,7 +4197,7 @@
     </enum>
     <enum name="SAFETY_SWITCH_STATE">
       <description>
-	Possible safety switch states.
+  Possible safety switch states.
       </description>
       <entry value="0" name="SAFETY_SWITCH_STATE_SAFE">
         <description>Safety switch is engaged and vehicle should be safe to approach.</description>
@@ -6120,17 +6120,17 @@
     </message>
     <message id="284" name="GIMBAL_DEVICE_SET_ATTITUDE">
       <description>Low level message to control a gimbal device's attitude.
-	  This message is to be sent from the gimbal manager to the gimbal device component.
-	  The quaternion and angular velocities can be set to NaN according to use case.
-	  For the angles encoded in the quaternion and the angular velocities holds:
-	  If the flag GIMBAL_DEVICE_FLAGS_YAW_IN_VEHICLE_FRAME is set, then they are relative to the vehicle heading (vehicle frame).
-	  If the flag GIMBAL_DEVICE_FLAGS_YAW_IN_EARTH_FRAME is set, then they are relative to absolute North (earth frame).
-	  If neither of these flags are set, then (for backwards compatibility) it holds:
-	  If the flag GIMBAL_DEVICE_FLAGS_YAW_LOCK is set, then they are relative to absolute North (earth frame),
-	  else they are relative to the vehicle heading (vehicle frame).
-	  Setting both GIMBAL_DEVICE_FLAGS_YAW_IN_VEHICLE_FRAME and GIMBAL_DEVICE_FLAGS_YAW_IN_EARTH_FRAME is not allowed.
-	  These rules are to ensure backwards compatibility.
-	  New implementations should always set either GIMBAL_DEVICE_FLAGS_YAW_IN_VEHICLE_FRAME or GIMBAL_DEVICE_FLAGS_YAW_IN_EARTH_FRAME.</description>
+    This message is to be sent from the gimbal manager to the gimbal device component.
+    The quaternion and angular velocities can be set to NaN according to use case.
+    For the angles encoded in the quaternion and the angular velocities holds:
+    If the flag GIMBAL_DEVICE_FLAGS_YAW_IN_VEHICLE_FRAME is set, then they are relative to the vehicle heading (vehicle frame).
+    If the flag GIMBAL_DEVICE_FLAGS_YAW_IN_EARTH_FRAME is set, then they are relative to absolute North (earth frame).
+    If neither of these flags are set, then (for backwards compatibility) it holds:
+    If the flag GIMBAL_DEVICE_FLAGS_YAW_LOCK is set, then they are relative to absolute North (earth frame),
+    else they are relative to the vehicle heading (vehicle frame).
+    Setting both GIMBAL_DEVICE_FLAGS_YAW_IN_VEHICLE_FRAME and GIMBAL_DEVICE_FLAGS_YAW_IN_EARTH_FRAME is not allowed.
+    These rules are to ensure backwards compatibility.
+    New implementations should always set either GIMBAL_DEVICE_FLAGS_YAW_IN_VEHICLE_FRAME or GIMBAL_DEVICE_FLAGS_YAW_IN_EARTH_FRAME.</description>
       <field type="uint8_t" name="target_system">System ID</field>
       <field type="uint8_t" name="target_component">Component ID</field>
       <field type="uint16_t" name="flags" enum="GIMBAL_DEVICE_FLAGS" display="bitmask">Low level gimbal flags.</field>
@@ -6141,20 +6141,20 @@
     </message>
     <message id="285" name="GIMBAL_DEVICE_ATTITUDE_STATUS">
       <description>Message reporting the status of a gimbal device.
-	  This message should be broadcast by a gimbal device component at a low regular rate (e.g. 5 Hz).
-	  For the angles encoded in the quaternion and the angular velocities holds:
-	  If the flag GIMBAL_DEVICE_FLAGS_YAW_IN_VEHICLE_FRAME is set, then they are relative to the vehicle heading (vehicle frame).
-	  If the flag GIMBAL_DEVICE_FLAGS_YAW_IN_EARTH_FRAME is set, then they are relative to absolute North (earth frame).
-	  If neither of these flags are set, then (for backwards compatibility) it holds:
-	  If the flag GIMBAL_DEVICE_FLAGS_YAW_LOCK is set, then they are relative to absolute North (earth frame),
-	  else they are relative to the vehicle heading (vehicle frame).
-	  Other conditions of the flags are not allowed.
-	  The quaternion and angular velocities in the other frame can be calculated from delta_yaw and delta_yaw_velocity as
-	  q_earth = q_delta_yaw * q_vehicle and w_earth = w_delta_yaw_velocity + w_vehicle (if not NaN).
-	  If neither the GIMBAL_DEVICE_FLAGS_YAW_IN_VEHICLE_FRAME nor the GIMBAL_DEVICE_FLAGS_YAW_IN_EARTH_FRAME flag is set,
-	  then (for backwards compatibility) the data in the delta_yaw and delta_yaw_velocity fields are to be ignored.
-	  New implementations should always set either GIMBAL_DEVICE_FLAGS_YAW_IN_VEHICLE_FRAME or GIMBAL_DEVICE_FLAGS_YAW_IN_EARTH_FRAME,
-	  and always should set delta_yaw and delta_yaw_velocity either to the proper value or NaN.</description>
+    This message should be broadcast by a gimbal device component at a low regular rate (e.g. 5 Hz).
+    For the angles encoded in the quaternion and the angular velocities holds:
+    If the flag GIMBAL_DEVICE_FLAGS_YAW_IN_VEHICLE_FRAME is set, then they are relative to the vehicle heading (vehicle frame).
+    If the flag GIMBAL_DEVICE_FLAGS_YAW_IN_EARTH_FRAME is set, then they are relative to absolute North (earth frame).
+    If neither of these flags are set, then (for backwards compatibility) it holds:
+    If the flag GIMBAL_DEVICE_FLAGS_YAW_LOCK is set, then they are relative to absolute North (earth frame),
+    else they are relative to the vehicle heading (vehicle frame).
+    Other conditions of the flags are not allowed.
+    The quaternion and angular velocities in the other frame can be calculated from delta_yaw and delta_yaw_velocity as
+    q_earth = q_delta_yaw * q_vehicle and w_earth = w_delta_yaw_velocity + w_vehicle (if not NaN).
+    If neither the GIMBAL_DEVICE_FLAGS_YAW_IN_VEHICLE_FRAME nor the GIMBAL_DEVICE_FLAGS_YAW_IN_EARTH_FRAME flag is set,
+    then (for backwards compatibility) the data in the delta_yaw and delta_yaw_velocity fields are to be ignored.
+    New implementations should always set either GIMBAL_DEVICE_FLAGS_YAW_IN_VEHICLE_FRAME or GIMBAL_DEVICE_FLAGS_YAW_IN_EARTH_FRAME,
+    and always should set delta_yaw and delta_yaw_velocity either to the proper value or NaN.</description>
       <field type="uint8_t" name="target_system">System ID</field>
       <field type="uint8_t" name="target_component">Component ID</field>
       <field type="uint32_t" name="time_boot_ms" units="ms">Timestamp (time since system boot).</field>
@@ -6490,6 +6490,52 @@
       <field type="uint32_t" name="runtime">runtime flying</field>
     </message>
 
+    <message id="41020" name="HXTS_HY_BMS_C1">
+      <description>HXTS BMS post 1</description>
+      <field type="uint8_t" name="SOC">SOC.</field>
+      <field type="uint8_t" name="SOH">SOH.</field>
+      <field type="uint16_t" name="Volt">Volt.</field>
+      <field type="uint16_t" name="Current">Current.</field>
+      <field type="uint16_t" name="HighestVolt">HighestVolt.</field>
+      <field type="uint16_t" name="HighestCell">HighestCell.</field>
+      <field type="uint16_t" name="LowestVolt">LowestVolt.</field>
+      <field type="uint16_t" name="LowestCell">LowestCell.</field>
+    </message>
+
+    <message id="41021" name="HXTS_HY_BMS_C2">
+      <description>HXTS BMS post 1</description>
+      <field type="uint8_t" name="ChargeFlag">ChargeFlag.</field>
+      <field type="uint8_t" name="DischargeFlag">DischargeFlag.</field>
+      <field type="uint8_t" name="ChargeError">ChargeError.</field>
+      <field type="uint8_t" name="ChargeECode">ChargeECode.</field>
+      <field type="uint8_t" name="DischargeError">DischargeError.</field>
+      <field type="uint8_t" name="DischargeECode">DischargeECode.</field>
+      <field type="uint8_t" name="ChargeStatus">ChargeStatus.</field>
+      <field type="uint8_t" name="ErrorCode">ErrorCode.</field>
+    </message>
+
+    <message id="41022" name="HXTS_HY_BMS_C3">
+      <description>HXTS BMS post 2</description>
+      <field type="uint16_t[8]" name="Volt">Volt.</field>
+      <field type="uint16_t[8]" name="Current">Current.</field>
+    </message>
+
+    <message id="41030" name="HXTS_HY_ENGINE">
+      <description>HXTS ENGINE post</description>
+      <field type="uint8_t" name="Instance">instance.</field>
+      <field type="uint8_t" name="Flag">Flag.</field>
+      <field type="uint16_t" name="Seconds">Seconds.</field>
+      <field type="uint16_t" name="RPM">RPM.</field>
+      <field type="uint16_t" name="Coolant">Coolant.</field>
+      <field type="uint16_t" name="BattVolt">BattVolt.</field>
+    </message>
+
+    <message id="41040" name="HXTS_HY_WEIGHT">
+      <description>HXTS WEIGHT post</description>
+      <field type="uint16_t" name="Front">Front.</field>
+      <field type="uint16_t" name="LEFT">LEFT.</field>
+      <field type="uint16_t" name="RIGHT">RIGHT.</field>
+    </message>
 
     <!-- Rover specific messages -->
     <message id="9000" name="WHEEL_DISTANCE">

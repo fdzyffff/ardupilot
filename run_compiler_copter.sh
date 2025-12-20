@@ -12,4 +12,34 @@ echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
 ./waf copter
 # mkdir firmare/TH-2
 cp build/TH-2-sim/bin/arducopter.apj firmare/$current_datetime\_TH-2_sim_arducopter.apj
+echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
+./waf configure --board APzH7
+./waf copter
+# mkdir firmare/APzH7
+cp build/APzH7/bin/arducopter.apj firmare/$current_datetime\_APzH7_arducopter.apj
+echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
+./waf configure --board APzH7
+./waf copter
+# mkdir firmare/APzH7
+cp build/APzH7/bin/arducopter.apj firmare/$current_datetime\_APzH7_arducopter.apj
+echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
+./waf configure --board APzH7-sim
+./waf copter
+# mkdir firmare/APzH7
+cp build/APzH7-sim/bin/arducopter.apj firmare/$current_datetime\_APzH7_sim_arducopter.apj
+echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
+./waf configure --board APzF4
+./waf copter
+# mkdir firmare/APzF4
+cp build/APzF4/bin/arducopter.apj firmare/$current_datetime\_APzF4_arducopter.apj
+echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
+./waf configure --board APzF4-sim
+./waf copter
+# mkdir firmare/APzF4
+cp build/APzF4-sim/bin/arducopter.apj firmare/$current_datetime\_APzF4_sim_arducopter.apj
+echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
+./waf configure --board APzF4
+./waf copter
+# mkdir firmare/APzF4
+cp build/APzF4/bin/arducopter.apj firmare/$current_datetime\_APzF4_arducopter.apj
 echo "~~~~~~~~~~~~~~~ done ~~~~~~~~~~~~~~~"

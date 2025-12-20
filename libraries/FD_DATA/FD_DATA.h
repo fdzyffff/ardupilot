@@ -36,9 +36,21 @@ public:
     bool reset_runtime_flying();
 
     void handle_message(const mavlink_message_t &msg);
+    void handle_message_sn(const mavlink_message_t &msg);
+    void handle_message_rt(const mavlink_message_t &msg);
+    void handle_message_command_long_sn(const mavlink_message_t &msg);
+    void handle_message_command_long_rt(const mavlink_message_t &msg);
+
     void send_mav_serial_number(uint32_t serial_number);
     void send_mav_serial_number_get();
     void send_mav_runtime_flying(uint32_t runtime_flying);
+    void send_hxts_hy_bms_c1(mavlink_channel_t chan);
+    void send_hxts_hy_bms_c2(mavlink_channel_t chan);
+    void send_hxts_hy_bms_c3(mavlink_channel_t chan);
+
+    mavlink_hxts_hy_bms_c1_t hxts_hy_bms_c1_packet;
+    mavlink_hxts_hy_bms_c2_t hxts_hy_bms_c2_packet;
+    mavlink_hxts_hy_bms_c3_t hxts_hy_bms_c3_packet;
 
 private:
     static FD_DATA *_singleton;

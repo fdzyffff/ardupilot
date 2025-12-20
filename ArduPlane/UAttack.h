@@ -2,7 +2,7 @@
 
 #include <AP_HAL/AP_HAL.h>
 #include <FD_Target/FD_Target.h>
-#include "UDelay.h"
+// #include "UDelay.h"
 
 class UAttack {
 
@@ -40,6 +40,8 @@ public:
     void update_target_yaw_rate();
     void update_log();
 
+    void do_print();
+
     struct {
         float p1;
         float p2;
@@ -70,7 +72,7 @@ public:
     float _attack_angle_rate_target;
     float _attack_angle_rate_measure;
 
-    UDelay udelay;
+    // UDelay udelay;
 
 private:
 

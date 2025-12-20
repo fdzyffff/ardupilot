@@ -31,7 +31,8 @@ const AP_Param::GroupInfo FD_CAN::var_info[] = {
     AP_GROUPINFO("PRINT", 1, FD_CAN, _print, 0),
 
     // No use, reserved
-    AP_GROUPINFO("OUT", 2, FD_CAN, _out, 0),
+    AP_GROUPINFO("BATT", 2, FD_CAN, _batt_enable, 0),
+    AP_GROUPINFO("BMS", 3, FD_CAN, _bms_enable, 0),
 
     AP_GROUPEND};
 
@@ -39,6 +40,8 @@ FD_CAN::FD_CAN() {
     AP_Param::setup_object_defaults(this, var_info);
 
     _batt_ptr = new FD_BATT(this);
+
+    _bms_ptr = new FD_BMS(this);
 
     debug_can(AP_CANManager::LOG_INFO, "CAN_FD: constructed\n\r");
 }
@@ -112,7 +115,6 @@ void FD_CAN::init(uint8_t driver_index, bool enable_filters) {
 void FD_CAN::loop() {
     AP_HAL::CANFrame txFrame{};
     AP_HAL::CANFrame rxFrame{};
-    uint32_t last_log_ms = AP_HAL::millis();
 
     while (true) {
         if (!_initialized) {
@@ -130,41 +132,11 @@ void FD_CAN::loop() {
             if (_batt_ptr != nullptr) {
                 _batt_ptr->handle_info(rxFrame, _print.get());
             }
-            // if (rxFrame.id == 0xFF) {
-            //     txFrame.id = 0xEE;
-            //     txFrame.data[0] = 0x11;
-            //     for (uint8_t i = 0; i<sizeof(txFrame.data); i++) {
-            //         // gcs().send_text(MAV_SEVERITY_INFO, "%d, %x", i, rxFrame.data[i]);
-            //         txFrame.data[i] = i;
-            //     }
-            //     txFrame.dlc = 8;//txFrame.dataLengthToDlc(64);
-            //     if (write_frame(txFrame, 0)) {
-            //         gcs().send_text(MAV_SEVERITY_INFO, "Send %d", sizeof(txFrame.data));
-            //     } else {
-            //         gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
-            //     }
-            // }
-        }
-            
-        // 测试数据，10Hz
-        if (AP_HAL::millis() -  last_log_ms >= 100) {
-            last_log_ms = AP_HAL::millis();
-            log_status();
-            if (_out.get() > 0) {
-                txFrame.id = 0xEE;
-                txFrame.data[0] = 0x11;
-                for (uint8_t i = 0; i<sizeof(txFrame.data); i++) {
-                    // gcs().send_text(MAV_SEVERITY_INFO, "%d, %x", i, rxFrame.data[i]);
-                    txFrame.data[i] = i;
-                }
-                txFrame.dlc = 8;//txFrame.dataLengthToDlc(64);
-                if (write_frame(txFrame, 0)) {
-                    gcs().send_text(MAV_SEVERITY_INFO, "Send %d", int(sizeof(txFrame.data)));
-                } else {
-                    gcs().send_text(MAV_SEVERITY_INFO, "Send Fail");
-                }
+            if (_bms_ptr != nullptr) {
+                _bms_ptr->handle_info(rxFrame, _print.get());
             }
         }
+            
 
         // 1ms loop delay
         hal.scheduler->delay_microseconds(1000);  // 延时1ms，从而此线程以1KHz的频率执行

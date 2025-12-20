@@ -129,6 +129,9 @@
 #include "Uart.h"
 #include "UDelay.h"
 #include "UAttack.h"
+#include "UEngine.h"
+#include "UWeight.h"
+
 
 /*
   main APM:Plane class
@@ -189,6 +192,9 @@ public:
     friend class Uart;
     friend class UAttack;
     friend class UDelay;
+
+    friend class UEngines;
+    friend class UWeight;
 
     Plane(void);
 
@@ -1304,6 +1310,8 @@ private:
     Uart uart;
     UAttack uattack;
     UDelay udelay;
+    UEngines uengines;
+    UWeight uweight;
 
 public:
     void failsafe_check(void);

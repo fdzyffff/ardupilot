@@ -70,7 +70,7 @@ void Uart::write_uart()
 {
     if (copter.flightmode->mode_number() == Mode::Number::MISSION) {
         send_0728_p1();
-        send_0728_p2();
+        // send_0728_p2();
     }
 }
 
@@ -79,7 +79,7 @@ void Uart::send_0728_p1()
     // check send condition
     static uint32_t last_ms = millis();
     uint32_t now = millis();
-    if (now - last_ms < 200) {
+    if (now - last_ms < 833) {
         return;
     }
     last_ms = now;
@@ -92,10 +92,10 @@ void Uart::send_0728_p1()
     uart_msg_0728_p1._msg_1.content.msg.recieve_id = copter.g.sysid_this_mav.get();
     uart_msg_0728_p1._msg_1.content.msg.command_id = 0x04;
 
-    uart_msg_0728_p1._msg_1.content.msg.wp_lng = copter.mode_mission.get_target_loc().lng;
-    uart_msg_0728_p1._msg_1.content.msg.wp_lat = copter.mode_mission.get_target_loc().lat;
-    uart_msg_0728_p1._msg_1.content.msg.wp_alt = (uint16_t)(copter.mode_mission.get_target_loc().alt/100);
-    uart_msg_0728_p1._msg_1.content.msg.wp_alt = (uint16_t)(copter.mode_mission.get_target_speed());
+    uart_msg_0728_p1._msg_1.content.msg.wp_lng = copter.current_loc.lng;
+    uart_msg_0728_p1._msg_1.content.msg.wp_lat = copter.current_loc.lat;
+    uart_msg_0728_p1._msg_1.content.msg.wp_alt = (uint16_t)(copter.current_loc.alt/100);
+    uart_msg_0728_p1._msg_1.content.msg.wp_alt = (uint16_t)(AP::ahrs().groundspeed());
 
     uart_msg_0728_p1._msg_1.content.msg.pitch = (int32_t)(wrap_180_cd(degrees(AP::ahrs().get_pitch())*100.f));
     uart_msg_0728_p1._msg_1.content.msg.roll = (int32_t)(wrap_180_cd(degrees(AP::ahrs().get_roll())*100.f));
@@ -110,7 +110,7 @@ void Uart::send_0728_p2()
     // check send condition
     static uint32_t last_ms = millis();
     uint32_t now = millis();
-    if (now - last_ms < 200) {
+    if (now - last_ms < 500) {
         return;
     }
     last_ms = now;
@@ -118,7 +118,7 @@ void Uart::send_0728_p2()
     if (get_port() == nullptr) {return;}
     uart_msg_0728_p2._msg_1.content.msg.header.head_1 = uart_msg_0728_p2.PREAMBLE1;
     uart_msg_0728_p2._msg_1.content.msg.header.head_2 = uart_msg_0728_p2.PREAMBLE2;
-    uart_msg_0728_p2._msg_1.content.msg.length = 0x1F;
+    uart_msg_0728_p2._msg_1.content.msg.length = 0x17;
     uart_msg_0728_p2._msg_1.content.msg.recieve_id = copter.g.sysid_this_mav.get();
     uart_msg_0728_p2._msg_1.content.msg.command_id = 0x03;
 

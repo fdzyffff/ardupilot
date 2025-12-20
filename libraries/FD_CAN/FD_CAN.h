@@ -6,13 +6,18 @@
 #include <AP_Param/AP_Param.h>
 
 #include <FD_CAN/FD_BATT.h>
+#include <FD_CAN/FD_BMS.h>
+#include <FD_DATA/FD_DATA.h>
+
 
 class FD_BATT;
+class FD_BMS;
 
 class FD_CAN : public AP_CANDriver
 {
 public:
     friend class FD_BATT;
+    friend class FD_BMS;
 
     FD_CAN();
     ~FD_CAN();
@@ -37,9 +42,11 @@ public:
     bool pre_arm_check(char* reason, uint8_t reason_len);
 
     FD_BATT *_batt_ptr;
+    FD_BMS*_bms_ptr;
 
     AP_Int32 _print;       
-    AP_Int16 _out;       
+    AP_Int8 _batt_enable;  
+    AP_Int8 _bms_enable;       
 
 private:
 
