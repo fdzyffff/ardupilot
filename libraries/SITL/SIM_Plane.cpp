@@ -27,8 +27,58 @@ using namespace SITL;
 Plane::Plane(const char *frame_str) :
     Aircraft(frame_str)
 {
-    mass = 2.0f;
-
+    AP_Param::load_object_from_eeprom(sitl, sitl->var_infosimparam);
+    if (sitl) {
+        coefficient.s = sitl->s;
+        coefficient.b = sitl->b;
+        coefficient.c = sitl->c;
+        coefficient.Ixx = sitl->Ixx;
+        coefficient.Iyy = sitl->Iyy;
+        coefficient.Izz = sitl->Izz;
+        coefficient.c_lift_0 = sitl->c_lift_0;
+        coefficient.c_lift_deltae = sitl->c_lift_deltae;
+        coefficient.c_lift_a = sitl->c_lift_a;
+        coefficient.c_lift_q = sitl->c_lift_q;
+        coefficient.mcoeff = sitl->mcoeff;
+        coefficient.oswald = sitl->oswald;
+        coefficient.alpha_stall = sitl->alpha_stall;
+        coefficient.c_drag_q = sitl->c_drag_q;
+        coefficient.c_drag_deltae = sitl->c_drag_deltae;
+        coefficient.c_drag_p = sitl->c_drag_p;
+        coefficient.c_y_0 = sitl->c_y_0;
+        coefficient.c_y_b = sitl->c_y_b;
+        coefficient.c_y_p = sitl->c_y_p;
+        coefficient.c_y_r = sitl->c_y_r;
+        coefficient.c_y_deltaa = sitl->c_y_deltaa;
+        coefficient.c_y_deltar = sitl->c_y_deltar;
+        coefficient.c_l_0 = sitl->c_l_0;
+        coefficient.c_l_p = sitl->c_l_p;
+        coefficient.c_l_b = sitl->c_l_b;
+        coefficient.c_l_r = sitl->c_l_r;
+        coefficient.c_l_deltaa = sitl->c_l_deltaa;
+        coefficient.c_l_deltar = sitl->c_l_deltar;
+        coefficient.c_m_0 = sitl->c_m_0;
+        coefficient.c_m_a = sitl->c_m_a;
+        coefficient.c_m_q = sitl->c_m_q;
+        coefficient.c_m_deltae = sitl->c_m_deltae;
+        coefficient.c_n_0 = sitl->c_n_0;
+        coefficient.c_n_b = sitl->c_n_b;
+        coefficient.c_n_p = sitl->c_n_p;
+        coefficient.c_n_r = sitl->c_n_r;
+        coefficient.c_n_deltaa = sitl->c_n_deltaa;
+        coefficient.c_n_deltar = sitl->c_n_deltar;
+        coefficient.deltaa_max = sitl->deltaa_max;
+        coefficient.deltae_max = sitl->deltae_max;
+        coefficient.deltar_max = sitl->deltar_max;
+        coefficient.CGOffset.x = sitl->CGOffset_x;
+        coefficient.CGOffset.y = sitl->CGOffset_y;
+        coefficient.CGOffset.z = sitl->CGOffset_z;
+        mass = sitl->mass;
+        hover_throttle = sitl->hover_throttle;
+        ::printf("Load plane sim param, mass %f\n", sitl->mass.get());
+    } else {
+        mass = 2.0f;
+    }
     /*
        scaling from motor power to Newtons. Allows the plane to hold
        vertically against gravity when the motor is at hover_throttle
@@ -102,54 +152,6 @@ Plane::Plane(const char *frame_str) :
         mass = 2.0;
         coefficient.c_drag_p = 0.05;
     }
-
-    sitl = AP::sitl();
-    if (sitl) {
-        coefficient.s = sitl->s;
-        coefficient.b = sitl->b;
-        coefficient.c = sitl->c;
-        coefficient.c_lift_0 = sitl->c_lift_0;
-        coefficient.c_lift_deltae = sitl->c_lift_deltae;
-        coefficient.c_lift_a = sitl->c_lift_a;
-        coefficient.c_lift_q = sitl->c_lift_q;
-        coefficient.mcoeff = sitl->mcoeff;
-        coefficient.oswald = sitl->oswald;
-        coefficient.alpha_stall = sitl->alpha_stall;
-        coefficient.c_drag_q = sitl->c_drag_q;
-        coefficient.c_drag_deltae = sitl->c_drag_deltae;
-        coefficient.c_drag_p = sitl->c_drag_p;
-        coefficient.c_y_0 = sitl->c_y_0;
-        coefficient.c_y_b = sitl->c_y_b;
-        coefficient.c_y_p = sitl->c_y_p;
-        coefficient.c_y_r = sitl->c_y_r;
-        coefficient.c_y_deltaa = sitl->c_y_deltaa;
-        coefficient.c_y_deltar = sitl->c_y_deltar;
-        coefficient.c_l_0 = sitl->c_l_0;
-        coefficient.c_l_p = sitl->c_l_p;
-        coefficient.c_l_b = sitl->c_l_b;
-        coefficient.c_l_r = sitl->c_l_r;
-        coefficient.c_l_deltaa = sitl->c_l_deltaa;
-        coefficient.c_l_deltar = sitl->c_l_deltar;
-        coefficient.c_m_0 = sitl->c_m_0;
-        coefficient.c_m_a = sitl->c_m_a;
-        coefficient.c_m_q = sitl->c_m_q;
-        coefficient.c_m_deltae = sitl->c_m_deltae;
-        coefficient.c_n_0 = sitl->c_n_0;
-        coefficient.c_n_b = sitl->c_n_b;
-        coefficient.c_n_p = sitl->c_n_p;
-        coefficient.c_n_r = sitl->c_n_r;
-        coefficient.c_n_deltaa = sitl->c_n_deltaa;
-        coefficient.c_n_deltar = sitl->c_n_deltar;
-        coefficient.deltaa_max = sitl->deltaa_max;
-        coefficient.deltae_max = sitl->deltae_max;
-        coefficient.deltar_max = sitl->deltar_max;
-        coefficient.CGOffset.x = sitl->CGOffset_x;
-        coefficient.CGOffset.y = sitl->CGOffset_y;
-        coefficient.CGOffset.z = sitl->CGOffset_z;
-        mass = sitl->mass;
-        thrust_scale = sitl->thrust_scale;
-        ::printf("Load plane sim param\n");
-    }
 }
 
 /*
@@ -215,6 +217,11 @@ Vector3f Plane::getTorque(float inputAileron, float inputElevator, float inputRu
     const float s = coefficient.s;
     const float c = coefficient.c;
     const float b = coefficient.b;
+
+    const float Ixx = coefficient.Ixx;//增加转动惯量的影响
+    const float Iyy = coefficient.Iyy;
+    const float Izz = coefficient.Izz;
+
     const float c_l_0 = coefficient.c_l_0;
     const float c_l_b = coefficient.c_l_b;
     const float c_l_p = coefficient.c_l_p;
@@ -261,6 +268,10 @@ Vector3f Plane::getTorque(float inputAileron, float inputElevator, float inputRu
 	la +=  CGOffset.y * force.z - CGOffset.z * force.y;
 	ma += -CGOffset.x * force.z + CGOffset.z * force.x;
 	na += -CGOffset.y * force.x + CGOffset.x * force.y;
+
+    la /= Ixx;
+    ma /= Iyy;
+    na /= Izz;
 
 	return Vector3f(la, ma, na);
 }
@@ -466,4 +477,5 @@ void Plane::update(const struct sitl_input &input)
 
     // update magnetic field
     update_mag_field_bf();
+
 }

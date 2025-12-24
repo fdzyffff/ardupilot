@@ -272,6 +272,9 @@ public:
     AP_Float s;
     AP_Float b;
     AP_Float c;
+    AP_Float Ixx;
+    AP_Float Iyy;
+    AP_Float Izz;
     AP_Float c_lift_0;
     AP_Float c_lift_deltae;
     AP_Float c_lift_a;
@@ -311,7 +314,7 @@ public:
     AP_Float CGOffset_y;
     AP_Float CGOffset_z;
     AP_Float mass;
-    AP_Float thrust_scale;
+    AP_Float hover_throttle;
 
     // baro parameters
     class BaroParm {
