@@ -41,7 +41,7 @@ AP_Proximity_LidarM10P::AP_Proximity_LidarM10P(AP_Proximity &_frontend,
         local_face[i_face]._last_min_dist = 0.0f;
         local_face[i_face]._dist_pushed =false;
     }
-    gcs().send_text(MAV_SEVERITY_INFO, "M10 Plus Initialized");
+    gcs().send_text(MAV_SEVERITY_INFO, "M10 P Initialized");
 }
 
 // update the state of the sensor
@@ -96,9 +96,10 @@ bool AP_Proximity_LidarM10P::read_sensor_data()
 
 void AP_Proximity_LidarM10P::push_to_ring()
 {
-    float temp_start_angle = 0.01f * (float)(UINT16_VALUE(_msg_M10P._msg_1.content.data[4], _msg_M10P._msg_1.content.data[5]));
+    float temp_start_angle = 0.01f * (float)(_msg_M10P._msg_1.content.msg.angle);
     float valid_point = 0;
-    for (uint8_t i_dist = 0; i_dist < 70; i_dist++) {
+    uint16_t point_num = (_msg_M10P._msg_1.content.msg.length - 20 / 2);
+    for (uint8_t i_dist = 0; i_dist < point_num; i_dist++) {
         uint8_t i_dist_idx = 8 + 2 * i_dist;
         if (UINT16_VALUE(_msg_M10P._msg_1.content.data[i_dist_idx], _msg_M10P._msg_1.content.data[i_dist_idx + 1]) != 0XFF) {
             valid_point += 1.0f;
@@ -106,7 +107,7 @@ void AP_Proximity_LidarM10P::push_to_ring()
     }
 
     valid_point = constrain_float(valid_point, 1.0f, 100.f);
-    for (uint8_t i_dist = 0; i_dist < 70; i_dist++) {
+    for (uint8_t i_dist = 0; i_dist < point_num; i_dist++) {
         uint8_t i_dist_idx = 8 + 2 * i_dist;
         float temp_dist = (float)(UINT16_VALUE(_msg_M10P._msg_1.content.data[i_dist_idx], _msg_M10P._msg_1.content.data[i_dist_idx + 1]));
 
