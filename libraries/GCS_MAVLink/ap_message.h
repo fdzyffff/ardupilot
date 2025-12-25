@@ -91,5 +91,10 @@ enum ap_message : uint8_t {
     MSG_AUTOPILOT_STATE_FOR_GIMBAL_DEVICE,
     MSG_RELAY_STATUS,
     MSG_HXTS_BAT_CAN_STATUS,
+    MSG_HXTS_HYWEIGHT,
+    MSG_HXTS_HYENGINE,
+    MSG_HXTS_HY_BMS_C1,
+    MSG_HXTS_HY_BMS_C2,
+    MSG_HXTS_HY_BMS_C3,
     MSG_LAST // MSG_LAST must be the last entry in this enum
 };

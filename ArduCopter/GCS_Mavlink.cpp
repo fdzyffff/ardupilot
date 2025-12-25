@@ -383,6 +383,19 @@ bool GCS_MAVLINK_Copter::try_send_message(enum ap_message id)
         break;
     }
 
+    case MSG_HXTS_HY_BMS_C1:
+        CHECK_PAYLOAD_SIZE(HXTS_HY_BMS_C1);
+        AP::fd_data().send_hxts_hy_bms_c1(chan);
+        break;
+    case MSG_HXTS_HY_BMS_C2:
+        CHECK_PAYLOAD_SIZE(HXTS_HY_BMS_C2);
+        AP::fd_data().send_hxts_hy_bms_c2(chan);
+        break;
+    case MSG_HXTS_HY_BMS_C3:
+        CHECK_PAYLOAD_SIZE(HXTS_HY_BMS_C3);
+        AP::fd_data().send_hxts_hy_bms_c3(chan);
+        break;
+
     default:
         return GCS_MAVLINK::try_send_message(id);
     }
@@ -539,7 +552,10 @@ static const ap_message STREAM_EXTRA1_msgs[] = {
     MSG_PID_TUNING // Up to four PID_TUNING messages are sent, depending on GCS_PID_MASK parameter
 };
 static const ap_message STREAM_EXTRA2_msgs[] = {
-    MSG_VFR_HUD
+    MSG_VFR_HUD,
+    MSG_HXTS_HY_BMS_C1,
+    MSG_HXTS_HY_BMS_C2,
+    MSG_HXTS_HY_BMS_C3,
 };
 static const ap_message STREAM_EXTRA3_msgs[] = {
     MSG_AHRS,

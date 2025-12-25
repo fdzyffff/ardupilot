@@ -15,6 +15,7 @@ public:
     void write_uart();
     void set_rpm(uint16_t rpm_in);
     void send_request();
+    void send_mavlink_msg(mavlink_channel_t chan);
 
     AP_HAL::UARTDriver* get_port(void) {return _port;}
 

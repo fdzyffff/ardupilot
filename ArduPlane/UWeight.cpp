@@ -60,7 +60,7 @@ void UWeight::write_uart()
     ;
 }
 
-void UEngine::send_mavlink_msg(mavlink_channel_t chan)
+void UWeight::send_mavlink_msg(mavlink_channel_t chan)
 {
     mavlink_msg_hxts_hy_weight_send_struct(chan, &hxts_hy_weight_packet);
 }

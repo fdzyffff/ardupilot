@@ -142,6 +142,8 @@ void ModeMission::set_loc(Location& dest_1, Location& dest_2)
     loc2 = dest_2;
     if (mission_state == MISSION_State::Wait) {
         set_state(MISSION_State::Fly);
+    } else if (mission_state == MISSION_State::Fly) {
+        do_next();
     }
 }
 

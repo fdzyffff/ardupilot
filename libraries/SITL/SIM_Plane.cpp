@@ -100,7 +100,7 @@ Plane::Plane(const char *frame_str) :
         coefficient.c_drag_p = 0.05;
     }
 
-    sitl = AP::sitl();
+    AP_Param::load_object_from_eeprom(sitl, sitl->var_infosimparam);
     if (sitl) {
         coefficient.s = sitl->s;
         coefficient.b = sitl->b;

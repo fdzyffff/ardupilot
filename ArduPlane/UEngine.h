@@ -32,7 +32,7 @@ private:
 
     mavlink_hxts_hy_engine_t hxts_hy_engine_packet;
     // message structure
-    FD1_msg_engine_send uart_engine_send;
+    FD1_msg_engine_request uart_engine_request;
     FD1_msg_engine_response uart_engine_response;
 };
 
@@ -41,12 +41,13 @@ class UEngines {
 public:
 
     // constructor, destructor
-    UEngine();
+    UEngines();
 
     void init();
     void update();
     void set_rpm(uint8_t id_in, uint16_t rpm_in);
+    void send_mavlink_msg(mavlink_channel_t chan);
 
-    UEngine engines[UENGINE_MAX_NUM];
+    UEngine *engines[UENGINE_MAX_NUM];
 
 };

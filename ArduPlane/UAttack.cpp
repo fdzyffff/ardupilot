@@ -412,7 +412,7 @@ void UAttack::update_target_yaw_rate() {
     display_info.p11 = angle_err;
     display_info.p12 = k2_yaw;
     display_info.p13 = _target_yaw_rate;
-    display_info.p14 = plane.get_target_yaw_rate();
+    display_info.p14 = get_target_yaw_rate();
 }
 
 void UAttack::handle_attack_msg(const mavlink_message_t &msg) {

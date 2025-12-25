@@ -62,6 +62,8 @@ void Uart::read_uart()
             } else {
                 gcs().send_text(MAV_SEVERITY_INFO, "-> Err, Not in MISSION Mode <-");
             }
+                // gcs().send_text(MAV_SEVERITY_INFO, "loc1 %d, %d, %d", (int)temp_loc_1.lat, (int)temp_loc_1.lng, (int)temp_loc_1.alt);
+                // gcs().send_text(MAV_SEVERITY_INFO, "loc2 %d, %d, %d", (int)temp_loc_2.lat, (int)temp_loc_2.lng, (int)temp_loc_2.alt);
         }
     }
 }

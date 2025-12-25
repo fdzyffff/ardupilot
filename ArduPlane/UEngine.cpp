@@ -99,7 +99,7 @@ void UEngine::read_uart()
             hxts_hy_engine_packet.Seconds = uart_engine_response._msg_1.content.msg.seconds;
             hxts_hy_engine_packet.RPM = uart_engine_response._msg_1.content.msg.rpm;
             hxts_hy_engine_packet.Coolant = uart_engine_response._msg_1.content.msg.coolant;
-            hxts_hy_engine_packet.BattVolt = uart_engine_response._msg_1.content.msg.battVolt;
+            hxts_hy_engine_packet.BattVolt = uart_engine_response._msg_1.content.msg.batteryvoltage;
         }
     }
 }
@@ -120,9 +120,9 @@ void UEngine::send_request()
     last_ms = now;
 
     if (get_port() == nullptr) {return;}
-    uart_engine_send.make_sum();
+    uart_engine_request.make_sum();
 
-    get_port()->write(uart_engine_send._msg_1.content.data, sizeof(uart_engine_send._msg_1.content.data));
+    get_port()->write(uart_engine_request._msg_1.content.data, sizeof(uart_engine_request._msg_1.content.data));
 }
 
 void UEngine::send_mavlink_msg(mavlink_channel_t chan)
