@@ -129,14 +129,14 @@ void UAttack::init_target()
     if (use_cam) {
          // 1:QD
         if (use_target_cam_type.get() == 1) {
-            _Target_ptr_cam_QD= new FD_Target_QD();
+            _Target_ptr_cam_QD = new FD_Target_QD();
             if (_Target_ptr_cam_QD->init()) {
                 gcs().send_text(MAV_SEVERITY_WARNING, "Target QD init");
                 _Target_ptr_cam = _Target_ptr_cam_QD;
                 AP_Param::load_object_from_eeprom(_Target_ptr_cam_QD, FD_Target_QD::var_info);
             } else {
                 gcs().send_text(MAV_SEVERITY_WARNING, "Target QD Fail");
-                _Target_ptr_cam_QD= nullptr;
+                _Target_ptr_cam_QD = nullptr;
             }
         }
         else {

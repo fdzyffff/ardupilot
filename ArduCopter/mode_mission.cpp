@@ -105,11 +105,11 @@ void ModeMission::update_track()
 
         if (dist_ok && (dist_max > (dist_min + 200.f))) {
             if (current_dist < dist_min) {
-                vel_xy_body.x = 0.0f;
+                vel_xy_body.x = MIN(0.0f, vel_xy_body.x);
             } else if (current_dist > dist_max) {
                 ;
             } else {
-                vel_xy_body.x = MIN(vel_xy_body.x, sqrt_controller((current_dist - dist_min), kp_xy, accel_cmss, 0.1f));
+                vel_xy_body.x = MIN(vel_xy_body.x + 50.f, sqrt_controller((current_dist - dist_min), kp_xy, accel_cmss, 0.1f));
             }
         }
 
