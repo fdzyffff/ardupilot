@@ -32,7 +32,8 @@ const AP_Param::GroupInfo FD_CAN::var_info[] = {
 
     // No use, reserved
     AP_GROUPINFO("BATT", 2, FD_CAN, _batt_enable, 0),
-    AP_GROUPINFO("BMS", 3, FD_CAN, _bms_enable, 0),
+    AP_GROUPINFO("MOT",  3, FD_CAN, _mot_enable,  0),
+    AP_GROUPINFO("BMS",  4, FD_CAN, _bms_enable,  0),
 
     AP_GROUPEND};
 
@@ -40,6 +41,15 @@ FD_CAN::FD_CAN() {
     AP_Param::setup_object_defaults(this, var_info);
 
     _batt_ptr = new FD_BATT(this);
+
+    for (uint8_t i_mot = 0; i_mot < FD_CAN_MAX_MOT_NUM; i_mot++)
+    {
+        _mot_ptr[i_mot] = new FD_MOT(this);
+        if (_mot_ptr[i_mot] != nullptr)
+        {
+            _mot_ptr[i_mot]->set_id(i_mot+1);
+        }
+    }
 
     _bms_ptr = new FD_BMS(this);
 
@@ -132,8 +142,24 @@ void FD_CAN::loop() {
             if (_batt_ptr != nullptr) {
                 _batt_ptr->handle_info(rxFrame, _print.get());
             }
+
+            for (uint8_t i_mot = 0; i_mot < FD_CAN_MAX_MOT_NUM; i_mot++)
+            {
+                if (_mot_ptr[i_mot] != nullptr)
+                {
+                    _mot_ptr[i_mot]->handle_info(rxFrame, _print.get());    //.调用电机的 handle_info 处理接收帧
+                }
+            }
+
             if (_bms_ptr != nullptr) {
                 _bms_ptr->handle_info(rxFrame, _print.get());
+            }
+
+            if (_mot_enable.get()) {   
+                for (uint8_t i_mot = 0; i_mot < FD_CAN_MAX_MOT_NUM; i_mot++) { 
+                    float mot_output = SRV_Channels::get_output_scaled(SRV_Channels::get_motor_function(i_mot)); // 0~1000  
+                    _mot_ptr[i_mot]->set_thr(mot_output);
+                }
             }
         }
             
