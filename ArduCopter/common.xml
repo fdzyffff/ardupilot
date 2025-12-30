@@ -1888,6 +1888,26 @@
         <param index="5" label="Latitude">Target latitude of center of circle in CIRCLE_MODE</param>
         <param index="6" label="Longitude">Target longitude of center of circle in CIRCLE_MODE</param>
       </entry>
+      <entry value="4016" name="MAV_CMD_NAV_NEW_WAYPOINT" hasLocation="true" isDestination="true">
+        <description>Navigate to waypoint.</description>
+        <param index="1" label="Turn type" minValue="0">Turn type</param>
+        <param index="2" label="Vel xy" units="m/s" minValue="0">Vel xy</param>
+        <param index="3" label="Vel z" units="m/s" minValue="0">Vel z</param>
+        <param index="4" label="Yaw" units="cdeg" minValue="0">Yaw</param>
+        <param index="5" label="Latitude">Latitude</param>
+        <param index="6" label="Longitude">Longitude</param>
+        <param index="7" label="Altitude" units="m">Altitude</param>
+      </entry>
+      <entry value="4021" name="MAV_CMD_NAV_NEW_END" hasLocation="false" isDestination="false">
+        <description>Navigate to waypoint.</description>
+        <param index="1" label="End type" minValue="0">End type</param>
+        <param index="2" label="p2" minValue="0">p2</param>
+        <param index="3" label="p3" minValue="0">p3</param>
+        <param index="4" label="p4" minValue="0">p4</param>
+        <param index="5" label="p5" minValue="0">p5</param>
+        <param index="6" label="p6" minValue="0">p6</param>
+        <param index="7" label="p7" minValue="0">p7</param>
+      </entry>
       <entry value="5000" name="MAV_CMD_NAV_FENCE_RETURN_POINT" hasLocation="true" isDestination="true">
         <description>Fence return point (there can only be one such point in a geofence definition). If rally points are supported they should be used instead.</description>
         <param index="1">Reserved</param>
