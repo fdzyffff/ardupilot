@@ -1869,8 +1869,9 @@ void QuadPlane::update(void)
         motors_output();
 
         transition->VTOL_update();
-
     }
+
+    set_assit_motor();
 
     // disable throttle_wait when throttle rises above 10%
     if (throttle_wait &&
@@ -2023,6 +2024,42 @@ void QuadPlane::update_throttle_hover()
 #endif
     }
 }
+
+// update yaw motor in multicopter frame
+void QuadPlane::set_assit_motor(void)
+{
+    if (!in_vtol_mode() && !in_vtol_airbrake()) {
+        SRV_Channels::set_output_scaled(SRV_Channel::k_fwd_out_left, 0.0f);
+        SRV_Channels::set_output_scaled(SRV_Channel::k_fwd_out_right, 0.0f);
+        return;
+    }
+
+    float fwd_out_left = 0.0f;
+    float fwd_out_right = 0.0f;
+    float yaw_factor = 0.5f;
+    float yaw_scale = 2.0f;
+    float yaw_spin_min = 0.2f;//constrain_float(g2._spin_yaw.get(), 0.1f, 0.9f);
+
+    if (motors->armed()) {
+        float temp_yaw_out = constrain_float((motors->get_yaw() + motors->get_yaw_ff()) * yaw_scale, -0.1f, 0.1f);
+        float temp_yaw_left  = constrain_float(( temp_yaw_out*0.5f + 0.5f) * yaw_factor, yaw_spin_min, 1.f)*100.f;
+        float temp_yaw_right = constrain_float((-temp_yaw_out*0.5f + 0.5f) * yaw_factor, yaw_spin_min, 1.f)*100.f;
+
+        float fwd_thr = 0;
+        float thr_factor = 0.5f;
+        // if enabled ask quadplane code for forward throttle
+        if (allow_forward_throttle_in_vtol_mode()) {
+            fwd_thr = forward_throttle_pct() * thr_factor;
+        }
+
+        fwd_out_left  = constrain_float(temp_yaw_left + fwd_thr, 0.0f, 100.f);
+        fwd_out_right = constrain_float(temp_yaw_right + fwd_thr, 0.0f, 100.f);
+    }
+    
+    SRV_Channels::set_output_scaled(SRV_Channel::k_fwd_out_left, fwd_out_left);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_fwd_out_right, fwd_out_right);
+}
+
 /*
   output motors and do any copter needed
  */
