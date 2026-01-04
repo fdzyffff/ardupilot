@@ -792,6 +792,7 @@ bool AP_Mission::read_cmd_from_storage(uint16_t index, Mission_Command& cmd) con
     cmd.p2 = _storage.read_uint16(pos_in_storage+4);
     cmd.p3 = _storage.read_uint16(pos_in_storage+6);
     cmd.p4 = _storage.read_uint16(pos_in_storage+8);
+    _storage.read_block(packed_content.bytes, pos_in_storage+10, 12);
 
     if (stored_in_location(cmd.id)) {
 

@@ -24,7 +24,7 @@
 
 // definitions
 #define AP_MISSION_EEPROM_VERSION           0x65AE  // version number stored in first four bytes of eeprom.  increment this by one when eeprom format is changed
-#define AP_MISSION_EEPROM_COMMAND_SIZE      21      // size in bytes of all mission commands
+#define AP_MISSION_EEPROM_COMMAND_SIZE      22      // size in bytes of all mission commands
 
 #ifndef AP_MISSION_MAX_NUM_DO_JUMP_COMMANDS
 #if HAL_MEM_CLASS >= HAL_MEM_CLASS_500
