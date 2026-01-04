@@ -49,7 +49,7 @@ void FD_Target_QD::update() {
             last_print_ms = millis();
         }
 
-        if ((tmp_msg._msg_1.content.msg.track_status & 0x0F) == 2) {
+        // if ((tmp_msg._msg_1.content.msg.track_status & 0x0F) == 2) {
             _last_ms = millis();
             float theta1 =  cal_frame_angle_left_up(cam_width.get(), cam_angle_x.get(), tmp_msg._msg_1.content.msg.target_x); // x-axis, degree
             float theta2 = -cal_frame_angle_left_up(cam_height.get(), cam_angle_y.get(), tmp_msg._msg_1.content.msg.target_y); // y-axis, degree
@@ -96,7 +96,7 @@ void FD_Target_QD::update() {
             }
 
             handle_info(p1, p2);
-        }
+        // }
 
         tmp_msg._msg_1.updated = false;   
     }

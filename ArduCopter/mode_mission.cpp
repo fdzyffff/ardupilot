@@ -12,6 +12,7 @@ bool ModeMission::init(bool ignore_checks)
             set_state(Mission_State::Init);
         }
         gcs().send_text(MAV_SEVERITY_INFO, "In Mis MODE");
+        _last_print_ms = millis();
         return true;
     }
     return false;
@@ -73,10 +74,10 @@ bool ModeMission::init_track()
         return false;
     }
 
-    float dist_min = 1000.0f;
+    float dist_edge = 1000.0f;
     float dist_max = copter.rangefinder.max_distance_cm_orient(ROTATION_NONE);
-    if (dist_max < (dist_min + 200.f)) {
-        gcs().send_text(MAV_SEVERITY_INFO, "bad dist min: %0.1f, max: %0.1f", dist_min, dist_max);
+    if (dist_max < (dist_edge + 200.f)) {
+        gcs().send_text(MAV_SEVERITY_INFO, "bad dist edge: %0.1f, max: %0.1f", dist_edge, dist_max);
     }
     return true;
 }
@@ -88,6 +89,14 @@ void ModeMission::update_track()
     }
     _last_track_ms = millis();
 
+    bool do_print = false;
+    if (millis() - _last_print_ms > 1000) {
+        _last_print_ms = millis();
+        if (copter.uattack.print.get() & (1<<4)) {
+            do_print = true;
+        }
+    }
+
     float target_vel_x = 0.0f;
     float target_vel_y = 0.0f;
     float target_vel_z = copter.uattack.get_target_vel_z() * 100.f;
@@ -96,21 +105,33 @@ void ModeMission::update_track()
     if (!copter.failsafe.radio) {
         Vector3f vel_xy_body = Vector3f(-channel_pitch->norm_input(), channel_roll->norm_input(), 0.0f);
         vel_xy_body = vel_xy_body * 100.f;
-        float dist_min = 1000.0f;
+        float dist_edge = 1000.0f;
         float accel_cmss = pos_control->get_max_accel_xy_cmss();
         float kp_xy = pos_control->get_pos_xy_p().kP().get();
         float dist_max = copter.rangefinder.max_distance_cm_orient(ROTATION_NONE);
         float current_dist = copter.rangefinder.distance_orient(ROTATION_NONE) * 100.f * cosf(AP::ahrs().get_pitch());
         bool dist_ok = (RangeFinder::Status::Good == copter.rangefinder.status_orient(ROTATION_NONE));
 
-        if (dist_ok && (dist_max > (dist_min + 200.f))) {
-            if (current_dist < dist_min) {
+        if (do_print) {
+            if (dist_ok) {
+                gcs().send_text(MAV_SEVERITY_INFO, "OK, current_dist: %0.1f, max dist :%0.1f", current_dist, dist_max);
+            } else {
+                gcs().send_text(MAV_SEVERITY_INFO, "Err rngfnd status %d", (uint8_t)copter.rangefinder.status_orient(ROTATION_NONE));
+            }
+        }
+
+        if (dist_ok && (dist_max > (dist_edge + 200.f))) {
+            if (current_dist < dist_edge) {
                 vel_xy_body.x = MIN(0.0f, vel_xy_body.x);
             } else if (current_dist > dist_max) {
                 ;
             } else {
-                vel_xy_body.x = MIN(vel_xy_body.x + 50.f, sqrt_controller((current_dist - dist_min), kp_xy, accel_cmss, 0.1f));
+                vel_xy_body.x = MIN(vel_xy_body.x + 50.f, sqrt_controller((current_dist - dist_edge), kp_xy, accel_cmss, 0.1f));
             }
+        }
+
+        if (do_print) {
+            gcs().send_text(MAV_SEVERITY_INFO, "vel_b_x: %0.1f", vel_xy_body.x);
         }
 
         Matrix3f tmp_earth_body_m;
@@ -119,6 +140,7 @@ void ModeMission::update_track()
         target_vel_x = vel_xy.x;
         target_vel_y = vel_xy.y;
     }
+
     Vector3f velocity = Vector3f(target_vel_x, target_vel_y, target_vel_z);
     const Vector3f& acceleration = Vector3f(0.0f, 0.0f, 0.0f);
     bool use_yaw = true;

@@ -10,6 +10,7 @@ public:
 
     friend class Copter;
     friend class ModeAttack;
+    friend class ModeMission;
 
     // constructor, destructor
     UAttack();

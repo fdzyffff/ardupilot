@@ -2111,5 +2111,6 @@ protected:
 
     uint32_t state_ms;
     uint32_t _last_track_ms;
+    uint32_t _last_print_ms;
 };
 #endif

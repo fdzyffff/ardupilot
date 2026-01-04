@@ -55,7 +55,7 @@ void Copter::userhook_SuperSlowLoop()
     if (uattack.print.get() & (1<<3)) { // 8
         gcs().send_text(MAV_SEVERITY_WARNING, "y|xyz (%0.1f , %0.1f , %0.1f , %0.1f)", uattack.get_target_angle_yaw(), uattack.get_target_vel_x(), uattack.get_target_vel_y(), uattack.get_target_vel_z());
     }
-    // if (uattack.print.get() & (1<<4)) { // 16
+    // if (uattack.print.get() & (1<<4)) { // 16, in mission_mode
     //     gcs().send_text(MAV_SEVERITY_WARNING, "vzpid (%0.1f , %0.1f , %0.1f , %0.2f)", uattack.get_target_roll_angle(), uattack.get_target_pitch_rate(), uattack.get_target_yaw_rate(), uattack._attack_throttle);
     // }
     // if (uattack.print.get() & (1<<5)) { // 32
