@@ -1561,15 +1561,17 @@ void ModeAuto::do_nav_new_wp(const AP_Mission::Mission_Command& cmd)
     uint16_t yaw_type = (cmd.p4 & 0b1110000000000000) >> 13;
     float yaw_d = wrap_360((float)(cmd.p4 & 0b0001111111111111));
 
+    gcs().send_text(MAV_SEVERITY_INFO, "yaw type %d", yaw_type);
+    gcs().send_text(MAV_SEVERITY_INFO, "yaw yaw_d %f", yaw_d);
     switch (yaw_type) {
         default:
             break;
-        case 0:
+        case 1:
             auto_yaw.set_rate(0.0f);
             break;
-        case 1:
-            break;
         case 2:
+            break;
+        case 3:
             auto_yaw.set_yaw_angle_rate(yaw_d, 0.0f);
             break;
     }
@@ -1581,12 +1583,16 @@ void ModeAuto::do_nav_new_wp(const AP_Mission::Mission_Command& cmd)
         copter.wp_nav->set_speed_xy(copter.wp_nav->get_default_speed_xy());
     }
 
+
+    gcs().send_text(MAV_SEVERITY_INFO, "speed_xy_dms %d", speed_xy_dms);
+
     uint16_t speed_up_dms = (cmd.p3 & 0xF0)>>8;
     if (speed_up_dms != 0) {
         copter.wp_nav->set_speed_up((float)speed_up_dms * 10.0f);
     } else {
         copter.wp_nav->set_speed_up(copter.wp_nav->get_default_speed_up());
     }
+    gcs().send_text(MAV_SEVERITY_INFO, "speed_up_dms %d", speed_up_dms);
 
     uint16_t speed_down_dms = (cmd.p3 & 0x0F);
     if (speed_down_dms != 0) {
@@ -1594,6 +1600,7 @@ void ModeAuto::do_nav_new_wp(const AP_Mission::Mission_Command& cmd)
     } else {
         copter.wp_nav->set_speed_down(copter.wp_nav->get_default_speed_down());
     }
+    gcs().send_text(MAV_SEVERITY_INFO, "speed_down_dms %d", speed_down_dms);
 
     // set next destination if necessary
     if (!set_next_wp(cmd, target_loc)) {
@@ -1611,7 +1618,7 @@ void ModeAuto::do_nav_new_wp(const AP_Mission::Mission_Command& cmd)
 bool ModeAuto::set_next_wp(const AP_Mission::Mission_Command& current_cmd, const Location &default_loc)
 {
     // do not add next wp if current command has a delay meaning the vehicle will stop at the destination
-    if (current_cmd.p1 > 0) {
+    if (current_cmd.id != MAV_CMD_NAV_NEW_WAYPOINT && current_cmd.p1 > 0) {
         return true;
     }
 
