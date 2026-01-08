@@ -633,6 +633,7 @@ private:
 #endif
     void do_payload_place(const AP_Mission::Mission_Command& cmd);
     void do_RTL(void);
+    void do_end(const AP_Mission::Mission_Command& cmd);
 #if AP_SCRIPTING_ENABLED
     void do_nav_script_time(const AP_Mission::Mission_Command& cmd);
 #endif
@@ -656,6 +657,7 @@ private:
     bool verify_nav_guided_enable(const AP_Mission::Mission_Command& cmd);
 #endif
     bool verify_nav_delay(const AP_Mission::Mission_Command& cmd);
+    bool verify_end(const AP_Mission::Mission_Command& cmd);
 #if AP_SCRIPTING_ENABLED
     bool verify_nav_script_time();
 #endif

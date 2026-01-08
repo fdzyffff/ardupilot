@@ -765,6 +765,10 @@ bool ModeAuto::start_command(const AP_Mission::Mission_Command& cmd)
     case MAV_CMD_DO_LAND_START:
         break;
 
+    case MAV_CMD_NAV_NEW_END:                          // 4021 do end
+        do_end(cmd);
+        break;
+
     default:
         // unable to use the command, allow the vehicle to try the next command
         return false;
@@ -974,6 +978,10 @@ bool ModeAuto::verify_command(const AP_Mission::Mission_Command& cmd)
     case MAV_CMD_DO_WINCH:
     case MAV_CMD_DO_LAND_START:
         cmd_complete = true;
+        break;
+
+    case MAV_CMD_NAV_NEW_END:
+        cmd_complete = verify_end(cmd);
         break;
 
     default:
@@ -1558,6 +1566,9 @@ void ModeAuto::do_nav_new_wp(const AP_Mission::Mission_Command& cmd)
         loiter_time_max = wp_delay;
     }
 
+    gcs().send_text(MAV_SEVERITY_INFO, "wp_type %d", wp_type);
+    gcs().send_text(MAV_SEVERITY_INFO, "wp delay %d", (int)loiter_time_max);
+
     uint16_t yaw_type = (cmd.p4 & 0b1110000000000000) >> 13;
     float yaw_d = wrap_360((float)(cmd.p4 & 0b0001111111111111));
 
@@ -1618,8 +1629,16 @@ void ModeAuto::do_nav_new_wp(const AP_Mission::Mission_Command& cmd)
 bool ModeAuto::set_next_wp(const AP_Mission::Mission_Command& current_cmd, const Location &default_loc)
 {
     // do not add next wp if current command has a delay meaning the vehicle will stop at the destination
-    if (current_cmd.id != MAV_CMD_NAV_NEW_WAYPOINT && current_cmd.p1 > 0) {
-        return true;
+    if (current_cmd.id == MAV_CMD_NAV_NEW_WAYPOINT) {
+        uint16_t wp_type = (current_cmd.p1 & 0b1111110000000000) >> 10;
+        if (wp_type == 2)
+        {
+            return true;
+        }
+    } else {
+        if (current_cmd.p1 > 0) {
+            return true;
+        }
     }
 
     // do not add next wp if there are no more navigation commands
@@ -2084,6 +2103,23 @@ void ModeAuto::do_RTL(void)
     rtl_start();
 }
 
+void ModeAuto::do_end(const AP_Mission::Mission_Command& cmd)
+{
+    // Note: we ignore the gripper num parameter because we only support one gripper
+    switch (cmd.p1) {
+        default:
+            break;
+        case 1:
+            break;
+        case 2:
+            do_RTL();
+            break;
+        case 3:
+            do_land(cmd);
+            break;
+    }
+}
+
 /********************************************************************************/
 // Verify Nav (Must) commands
 /********************************************************************************/
@@ -2399,6 +2435,20 @@ bool ModeAuto::verify_nav_script_time()
 bool ModeAuto::verify_nav_attitude_time(const AP_Mission::Mission_Command& cmd)
 {
     return ((AP_HAL::millis() - nav_attitude_time.start_ms) > (cmd.content.nav_attitude_time.time_sec * 1000));
+}
+
+bool ModeAuto::verify_end(const AP_Mission::Mission_Command& cmd)
+{
+    switch (cmd.p1) {
+        default:
+            return true;
+        case 1:
+            return true;
+        case 2:
+            return verify_RTL();
+        case 3:
+            return verify_land();
+    }
 }
 
 // pause - Prevent aircraft from progressing along the track
