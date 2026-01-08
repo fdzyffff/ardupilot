@@ -1589,9 +1589,9 @@ void ModeAuto::do_nav_new_wp(const AP_Mission::Mission_Command& cmd)
 
     uint16_t speed_xy_dms = cmd.p2;
     if (speed_xy_dms != 0) {
-        copter.wp_nav->set_speed_xy((float)speed_xy_dms * 10.0f);
+        set_speed_xy((float)speed_xy_dms * 10.0f);
     } else {
-        copter.wp_nav->set_speed_xy(copter.wp_nav->get_default_speed_xy());
+        set_speed_xy(copter.wp_nav->get_default_speed_xy());
     }
 
 
@@ -1599,17 +1599,17 @@ void ModeAuto::do_nav_new_wp(const AP_Mission::Mission_Command& cmd)
 
     uint16_t speed_up_dms = (cmd.p3 & 0xF0)>>8;
     if (speed_up_dms != 0) {
-        copter.wp_nav->set_speed_up((float)speed_up_dms * 10.0f);
+        set_speed_up((float)speed_up_dms * 10.0f);
     } else {
-        copter.wp_nav->set_speed_up(copter.wp_nav->get_default_speed_up());
+        set_speed_up(copter.wp_nav->get_default_speed_up());
     }
     gcs().send_text(MAV_SEVERITY_INFO, "speed_up_dms %d", speed_up_dms);
 
     uint16_t speed_down_dms = (cmd.p3 & 0x0F);
     if (speed_down_dms != 0) {
-        copter.wp_nav->set_speed_down((float)speed_down_dms * 10.0f);
+        set_speed_down((float)speed_down_dms * 10.0f);
     } else {
-        copter.wp_nav->set_speed_down(copter.wp_nav->get_default_speed_down());
+        set_speed_down(copter.wp_nav->get_default_speed_down());
     }
     gcs().send_text(MAV_SEVERITY_INFO, "speed_down_dms %d", speed_down_dms);
 
@@ -2320,6 +2320,9 @@ bool ModeAuto::verify_nav_new_wp(const AP_Mission::Mission_Command& cmd)
         return false;
     }
 
+
+    bool yaw_ok = true;
+
     // start timer if necessary
     if (loiter_time == 0) {
         loiter_time = millis();
@@ -2334,19 +2337,30 @@ bool ModeAuto::verify_nav_new_wp(const AP_Mission::Mission_Command& cmd)
         switch (yaw_type) {
             default:
                 break;
-            case 1:
+            case 2:
+            case 3:
                 auto_yaw.set_yaw_angle_rate(yaw_d, 0.0f);
+
+                // make sure still in fixed yaw mode, the waypoint controller often retakes control of yaw as it executes a new waypoint command
+                auto_yaw.set_mode(AutoYaw::Mode::FIXED);
+
+                // check if we have reached the target heading
+                yaw_ok = auto_yaw.reached_fixed_yaw_target();
                 break;
         }
 
     }
 
+    bool wp_ok = ((millis() - loiter_time) / 1000) >= loiter_time_max;
     // check if timer has run out
-    if (((millis() - loiter_time) / 1000) >= loiter_time_max) {
+    if (wp_ok) {
         if (loiter_time_max == 0) {
             // play a tone
             AP_Notify::events.waypoint_complete = 1;
         }
+    }
+
+    if (wp_ok && yaw_ok) {
         gcs().send_text(MAV_SEVERITY_INFO, "Reached command #%i",cmd.index);
         return true;
     }
