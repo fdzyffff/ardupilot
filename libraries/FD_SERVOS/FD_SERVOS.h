@@ -55,6 +55,9 @@ private:
     bool _initialized;
     bool _enable;
 
+    uint8_t i_servo_left_current;
+    uint8_t i_servo_right_current;
+
     AP_Float servo_vel;
 
     // 状态回复
@@ -79,6 +82,12 @@ public:
     void do_reset();
     void do_speed();
 
+    bool get_turned() {return _turned;}
+    bool get_running() {return _running;}
+    void cal_servo_angle(float value_in);
+    void new_turn();
+    void do_print();
+
 private:
     FD_SERVOS *_fronted;
     uint8_t _id;
@@ -88,6 +97,11 @@ private:
     uint32_t last_reset_ms;
     float _servo_vel;
     uint8_t stop_count;
+    uint8_t _turned = false;
+    uint8_t _running = false;
+    float _angle = 0.0f;
+    float _current_angle = 0.0f;
+    uint32_t _last_angle_update_ms;
 
     // 设置ID等的写入指令
     // FD_msg_SERVO_4  _msg_SERVO_4;

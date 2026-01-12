@@ -80,6 +80,17 @@ void FD_SERVOS::update_control()
 
 void FD_SERVOS::set_speed(float speed_norm_in, float turn_norm_in)
 {
+    // static uint32_t _last_pp_ms = AP_HAL::millis();
+    // if (AP_HAL::millis() - _last_pp_ms > 1000) {
+    //     _last_pp_ms = AP_HAL::millis();
+    //     for (uint8_t i_servo = 0; i_servo < 2; i_servo++) {
+    //         if (servo_instance[i_servo] != nullptr) {
+    //             servo_instance[i_servo]->do_print();
+    //         }
+    //     }
+    //     gcs().send_text(MAV_SEVERITY_INFO, "i_servo_left_current %d", i_servo_left_current);
+    // }
+
     for (uint8_t i_servo = 0; i_servo < FD_SERVO_MAX_NUM; i_servo++) {
         float speed_servo_norm_in = 0.0f;
         if (i_servo < (FD_SERVO_MAX_NUM/2)) {
@@ -91,6 +102,61 @@ void FD_SERVOS::set_speed(float speed_norm_in, float turn_norm_in)
         if (servo_instance[i_servo] != nullptr) {
             servo_instance[i_servo]->set_vel(servo_vel);
             servo_instance[i_servo]->set_value(speed_servo_norm_in);
+        }
+    }
+
+    uint8_t i_servo_left_odd = 0;
+    uint8_t i_servo_left_even = i_servo_left_odd + 1;
+
+    uint8_t i_servo_right_odd = (uint8_t)(FD_SERVO_MAX_NUM/2);
+    uint8_t i_servo_right_even = i_servo_right_odd + 1;
+
+    if (i_servo_left_even >= i_servo_right_odd) {
+        i_servo_left_even = i_servo_left_odd;
+    }
+    if (i_servo_right_even >= FD_SERVO_MAX_NUM) {
+        i_servo_right_even = i_servo_right_odd;
+    }
+    if ( (servo_instance[i_servo_left_odd] != nullptr) &&
+         (servo_instance[i_servo_left_even] != nullptr) )
+    {
+        bool push_left = false;
+        if (servo_instance[i_servo_left_current]->get_turned()) {
+            if (i_servo_left_current == i_servo_left_odd) {
+                i_servo_left_current = i_servo_left_even;
+            } else {
+                i_servo_left_current = i_servo_left_odd;
+            }
+            push_left = true;
+        }
+        if (push_left) {
+            for (uint8_t i_servo = i_servo_left_current; i_servo < i_servo_right_odd; i_servo += 2) {
+                if (servo_instance[i_servo] != nullptr) {
+                    servo_instance[i_servo]->new_turn();
+                }
+            }
+        }
+    }
+
+    if ( (servo_instance[i_servo_right_odd] != nullptr) &&
+         (servo_instance[i_servo_right_even] != nullptr) && 
+         (FD_SERVO_MAX_NUM > 1) )
+    {
+        bool push_right = false;
+        if (servo_instance[i_servo_right_current]->get_turned()) {
+            if (i_servo_right_current == i_servo_right_odd) {
+                i_servo_right_current = i_servo_right_even;
+            } else {
+                i_servo_right_current = i_servo_right_odd;
+            }
+            push_right = true;
+        }
+        if (push_right) {
+            for (uint8_t i_servo = i_servo_right_current; i_servo < FD_SERVO_MAX_NUM; i_servo += 2) {
+                if (servo_instance[i_servo] != nullptr) {
+                    servo_instance[i_servo]->new_turn();
+                }
+            }
         }
     }
 }
