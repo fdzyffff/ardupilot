@@ -155,14 +155,27 @@ void FD_CAN::loop() {
                 _bms_ptr->handle_info(rxFrame, _print.get());
             }
 
-            if (_mot_enable.get()) {   
-                for (uint8_t i_mot = 0; i_mot < FD_CAN_MAX_MOT_NUM; i_mot++) { 
-                    float mot_output = SRV_Channels::get_output_scaled(SRV_Channels::get_motor_function(i_mot)); // 0~1000  
-                    _mot_ptr[i_mot]->set_thr(mot_output);
+            for (uint8_t i_mot = 0; i_mot < FD_CAN_MAX_MOT_NUM; i_mot++)
+            {
+                if (_mot_ptr[i_mot] != nullptr)
+                {
+                    _mot_ptr[i_mot]->handle_info(rxFrame, _print.get());    // 调用电机的 handle_info 处理接收帧
                 }
             }
         }
-            
+
+
+        if (_mot_enable.get()) {   
+            for (uint8_t i_mot = 0; i_mot < FD_CAN_MAX_MOT_NUM; i_mot++) { 
+                uint16_t mot_output = 0;
+                if (SRV_Channels::get_output_pwm(SRV_Channel::k_motor1, mot_output)) {
+                    // gcs().send_text(MAV_SEVERITY_INFO, "motor 1 : %d",mot_output);
+                    ;
+                }
+                _mot_ptr[i_mot]->set_pwm(mot_output);
+                _mot_ptr[i_mot]->update();
+            }
+        }
 
         // 1ms loop delay
         hal.scheduler->delay_microseconds(1000);  // 延时1ms，从而此线程以1KHz的频率执行

@@ -52,6 +52,7 @@ public:
     mavlink_hxts_hy_bms_c2_t hxts_hy_bms_c2_packet;
     mavlink_hxts_hy_bms_c3_t hxts_hy_bms_c3_packet;
 
+    void do_switch(bool switch_on);
 private:
     static FD_DATA *_singleton;
 

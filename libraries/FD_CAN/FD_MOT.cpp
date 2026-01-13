@@ -96,14 +96,25 @@ void FD_MOT::set_id(uint8_t id_in)
     }
 }
 
-void FD_MOT::set_thr(int16_t thr_in) // 1000~2000
+void FD_MOT::set_pwm(uint16_t pwm_in) // 1000~2000
 {
-    status.thr_in = thr_in + 1000;
+    status.thr_in = pwm_in;
 }
 
 void FD_MOT::update()
 {
     update_cmd();
+    update_status();
+}
+
+void FD_MOT::update_status()
+{
+    // send mot cmd
+    {
+        if (AP_HAL::millis() - status.last_status_ms > 500) {
+            status.last_status_ms = AP_HAL::millis();
+        }
+    }
 }
 
 void FD_MOT::update_cmd()
