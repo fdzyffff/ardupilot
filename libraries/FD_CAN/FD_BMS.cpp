@@ -99,11 +99,11 @@ void FD_BMS::set_switch(uint8_t switch_in)
 
 void FD_BMS::send_cmd(uint32_t id, uint8_t *data) {
     if (_frotend_ptr == nullptr) {return;}
-    const uint8_t data_length = 8;
+    const uint8_t data_length = 2;
     AP_HAL::CANFrame txFrame{};
     memcpy(txFrame.data, data, data_length);
     txFrame.id = id;
-    txFrame.dlc = 8;
+    txFrame.dlc = 2;
     uint64_t timeout = AP_HAL::micros64() + 10000ULL;
     _frotend_ptr->write_frame(txFrame, timeout);
 }
