@@ -62,6 +62,7 @@ public:
 #if HAL_QUADPLANE_ENABLED
         LOITER_ALT_QLAND = 25,
 #endif
+        ATTACK_LOC    = 30,
     };
 
     // Constructor
@@ -911,3 +912,47 @@ protected:
 };
 
 #endif
+
+
+class ModeAttackLoc : public Mode
+{
+public:
+    friend class UAttack;
+
+    Mode::Number mode_number() const override { return Mode::Number::ATTACK_LOC; }
+    const char *name() const override { return "ATTACK_LOC"; }
+    const char *name4() const override { return "ATTACK_LOC"; }
+
+    enum class stage_class{
+        APPROACH,
+        ATTACK,
+        AWAY,
+        RECOVER,
+    };
+
+    // methods that affect movement of the vehicle in this mode
+    void update() override;
+
+    void navigate() override;
+
+    void run() override;
+
+    bool does_auto_navigation() const override { return (stage == stage_class::APPROACH); }
+
+    bool does_auto_throttle() const override { return (stage == stage_class::APPROACH); }
+
+
+    void build_path();
+    void update_approach();
+    void update_attack();
+    bool check_approach();
+    void set_stage(ModeAttackLoc::stage_class stage_in);
+    float get_cmd_throttle();
+    Location target_loc;
+
+protected:
+
+    bool _enter() override;
+    float _cmd_throttle;
+    stage_class stage;
+};
