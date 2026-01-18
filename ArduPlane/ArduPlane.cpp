@@ -142,6 +142,10 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
 #if AP_QUICKTUNE_ENABLED
     SCHED_TASK(update_quicktune, 40, 100, 163),
 #endif
+    SCHED_TASK_CLASS(Uart,         &plane.uart,      update,         50,  200, 166),
+
+    SCHED_TASK(userhook_100Hz,           100,    100,  168),
+    SCHED_TASK(userhook_1Hz,               1,    100,  170),
 };
 
 void Plane::get_scheduler_tasks(const AP_Scheduler::Task *&tasks,

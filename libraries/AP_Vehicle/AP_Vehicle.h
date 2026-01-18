@@ -81,6 +81,8 @@
 #endif
 
 #include <AP_IBus_Telem/AP_IBus_Telem.h>
+#include <FD_DATA/FD_DATA.h>
+
 
 class AP_DDS_Client;
 
@@ -565,6 +567,8 @@ private:
 
     // Bitmask of modes to disable from gcs
     AP_Int32 flight_mode_GCS_block;
+
+    FD_DATA fd_data;
 };
 
 namespace AP {

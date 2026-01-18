@@ -63,6 +63,7 @@ MAV_MODE GCS_MAVLINK_Plane::base_mode() const
     case Mode::Number::QRTL:
     case Mode::Number::LOITER_ALT_QLAND:
 #endif
+    case Mode::Number::ATTACK_LOC:
         _base_mode = MAV_MODE_FLAG_GUIDED_ENABLED |
                      MAV_MODE_FLAG_STABILIZE_ENABLED;
         // note that MAV_MODE_FLAG_AUTO_ENABLED does not match what
@@ -792,6 +793,7 @@ void GCS_MAVLINK_Plane::packetReceived(const mavlink_status_t &status,
     // pass message to follow library
     plane.g2.follow.handle_msg(msg);
 #endif
+    plane.uattack.handle_attack_msg(msg);
     GCS_MAVLINK::packetReceived(status, msg);
 }
 

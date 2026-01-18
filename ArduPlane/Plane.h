@@ -123,6 +123,9 @@
 #include "AP_Arming.h"
 #include "pullup.h"
 #include "systemid.h"
+#include "Uart.h"
+#include "UDelay.h"
+#include "UAttack.h"
 
 /*
   main APM:Plane class
@@ -173,6 +176,8 @@ public:
     friend class ModeTakeoff;
     friend class ModeThermal;
     friend class ModeLoiterAltQLand;
+    // friend class ModeAttackCam;
+    friend class ModeAttackLoc;
 
 #if AP_EXTERNAL_CONTROL_ENABLED
     friend class AP_ExternalControl_Plane;
@@ -183,6 +188,10 @@ public:
 #if AP_PLANE_SYSTEMID_ENABLED
     friend class AP_SystemID;
 #endif
+
+    friend class Uart;
+    friend class UAttack;
+    friend class UDelay;
 
     Plane(void);
 
@@ -338,6 +347,8 @@ private:
 #if AP_QUICKTUNE_ENABLED
     AP_Quicktune quicktune;
 #endif
+
+    ModeAttackLoc mode_attack_loc;
     
     // This is the state of the flight control system
     // There are multiple states defined such as MANUAL, FBW-A, AUTO
@@ -929,6 +940,7 @@ private:
     void rangefinder_terrain_correction(float &height);
 #endif
     void stabilize();
+    void stabilize_attack();
     void calc_throttle();
     void calc_nav_roll();
     void calc_nav_pitch();
@@ -1312,6 +1324,14 @@ private:
 
     // last target alt we passed to tecs
     int32_t tecs_target_alt_cm;
+
+    void userhook_init();
+    void userhook_100Hz();
+    void userhook_1Hz();
+ 
+    Uart uart;
+    UAttack uattack;
+    UDelay udelay;
 
 public:
     void failsafe_check(void);

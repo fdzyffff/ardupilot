@@ -94,6 +94,13 @@ Mode *Plane::mode_from_mode_num(const enum Mode::Number num)
         break;
 #endif  // HAL_QUADPLANE_ENABLED
 
+    // case Mode::Number::ATTACK_CAM:
+    //     ret = &mode_attack_cam;
+    //     break;
+    case Mode::Number::ATTACK_LOC:
+        ret = &mode_attack_loc;
+        break;
+
     }
     return ret;
 }
