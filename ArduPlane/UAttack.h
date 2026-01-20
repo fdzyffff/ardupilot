@@ -11,6 +11,7 @@ public:
     friend class Plane;
     friend class ModeAttackCam;
     friend class ModeAttackLoc;
+    friend class Uart;
 
     // constructor, destructor
     UAttack();
@@ -33,7 +34,7 @@ public:
     float get_target_yaw_rate() {return _target_yaw_rate;}
 
     void handle_attack_msg(const mavlink_message_t &msg);
-    void handle_info(float p1, float p2);
+    void handle_info(float p1, float p2, uint8_t cam_type);
 
     void update_target_pitch_rate();
     void update_target_roll_angle();
@@ -99,7 +100,7 @@ private:
 
     FD_Target_Base*       _Target_ptr_cam;
     FD_Target_Loc*        _Target_ptr_loc;
-    FD_Target_FP847*      _Target_ptr_cam_FP847;
+    FD_Target_DYT*      _Target_ptr_cam_DYT;
 
 
     uint32_t _last_ms;

@@ -1,14 +1,14 @@
-#include "FD1_msg_0728_p2.h"
+#include "FD1_msg_DYT_telem.h"
 // #include <GCS_MAVLink/GCS.h>
 
-FD1_msg_0728_p2::FD1_msg_0728_p2(void)
+FD1_msg_DYT_telem::FD1_msg_DYT_telem(void)
 {
     _enable = false;
     _msg_1.need_send = false;
     _msg_1.updated = false;
 }
 
-void FD1_msg_0728_p2::parse(uint8_t temp)
+void FD1_msg_DYT_telem::parse(uint8_t temp)
 {
     switch (_msg.msg_state)
     {
@@ -28,8 +28,8 @@ void FD1_msg_0728_p2::parse(uint8_t temp)
             {
                 _msg.data[_msg.read] = temp;// 1
                 _msg.read++;
-                _msg.sum = 0;
-                _msg.length = FD1_MSG_0728_P2_LEN;
+                _msg.sum += temp;
+                _msg.length = FD1_MSG_DYT_TELEM_LEN;
                 _msg.msg_state = FD1UART_msg_parser::FD1UART_DATA;
             }
             else
@@ -64,7 +64,7 @@ void FD1_msg_0728_p2::parse(uint8_t temp)
     }
 }
 
-void FD1_msg_0728_p2::process_message(void)
+void FD1_msg_DYT_telem::process_message(void)
 {
     int16_t i = 0;
 
@@ -78,17 +78,17 @@ void FD1_msg_0728_p2::process_message(void)
     _msg_1.print = true;
 }
 
-void FD1_msg_0728_p2::make_sum()
+void FD1_msg_DYT_telem::make_sum()
 {
-    _msg_1.content.msg.header.head_1 = FD1_msg_0728_p2::PREAMBLE1;
-    _msg_1.content.msg.header.head_2 = FD1_msg_0728_p2::PREAMBLE2;
+    _msg_1.content.msg.header.head_1 = FD1_msg_DYT_telem::PREAMBLE1;
+    _msg_1.content.msg.header.head_2 = FD1_msg_DYT_telem::PREAMBLE2;
     _msg_1.content.msg.sum = 0;
-    for (int8_t i = 2; i < _msg_1.length - 1; i++) {
+    for (int8_t i = 0; i < _msg_1.length - 1; i++) {
         _msg_1.content.msg.sum = (_msg_1.content.msg.sum + _msg_1.content.data[i]);
     }
 }
 
-void FD1_msg_0728_p2::swap_message(void)
+void FD1_msg_DYT_telem::swap_message(void)
 {
     ;
 }

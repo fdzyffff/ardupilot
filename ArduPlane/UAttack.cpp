@@ -23,8 +23,8 @@ const AP_Param::GroupInfo UAttack::var_info[] = {
     AP_GROUPINFO("FILT_Y_HZ",  18, UAttack, filt_yaw_hz,             2.0f),
     AP_GROUPINFO("FILT_P_HZ",  19, UAttack, filt_pithc_hz,           2.0f),
 
-    AP_SUBGROUPPTR(_Target_ptr_loc,           "TL_",    20, UAttack,  FD_Target_Loc),
-    AP_SUBGROUPPTR(_Target_ptr_cam_FP847,     "TC_",    21, UAttack,  FD_Target_FP847),
+    AP_SUBGROUPPTR(_Target_ptr_loc,         "TL_",    20, UAttack,  FD_Target_Loc),
+    AP_SUBGROUPPTR(_Target_ptr_cam_DYT,     "TC_",    21, UAttack,  FD_Target_DYT),
     AP_GROUPEND
 };
 
@@ -147,14 +147,14 @@ void UAttack::init_target()
     if (use_cam) {
          // 1:mav
         if (use_target_cam_type.get() == 1) {
-            _Target_ptr_cam_FP847 = new FD_Target_FP847();
-            if (_Target_ptr_cam_FP847->init()) {
+            _Target_ptr_cam_DYT = new FD_Target_DYT();
+            if (_Target_ptr_cam_DYT->init()) {
                 gcs().send_text(MAV_SEVERITY_WARNING, "Target FP847 init");
-                _Target_ptr_cam = _Target_ptr_cam_FP847;
-                AP_Param::load_object_from_eeprom(_Target_ptr_cam, FD_Target_FP847::var_info);
+                _Target_ptr_cam = _Target_ptr_cam_DYT;
+                AP_Param::load_object_from_eeprom(_Target_ptr_cam, FD_Target_DYT::var_info);
             } else {
                 gcs().send_text(MAV_SEVERITY_WARNING, "Target FP847 Fail");
-                _Target_ptr_cam_FP847 = nullptr;
+                _Target_ptr_cam_DYT = nullptr;
             }
         } 
         else {
@@ -215,12 +215,12 @@ void UAttack::update()
     float p2 = 0;
     if (current_idx == 1) {
         if (_Target_ptr_cam->get_info(p1, p2)) {
-            handle_info(p1, p2);
+            handle_info(p1, p2, _Target_ptr_cam->get_type());
             udpate_control_value();
         }
     } else if (current_idx == 2) {
         if (_Target_ptr_loc->get_info(p1, p2)) {
-            handle_info(p1, p2);
+            handle_info(p1, p2, _Target_ptr_loc->get_type());
             udpate_control_value();
         }
     } else {
@@ -231,10 +231,10 @@ void UAttack::update()
 
 }
 
-void UAttack::handle_info(float p1, float p2) {
+void UAttack::handle_info(float p1, float p2, uint8_t cam_type) {
 
-    display_info.p3 = p1;
-    display_info.p4 = p2;
+    display_info.p1 = p1;
+    display_info.p2 = p2;
 
     float _roll = AP::ahrs().get_roll();
     float _pitch = AP::ahrs().get_pitch();
@@ -244,48 +244,37 @@ void UAttack::handle_info(float p1, float p2) {
     //     _pitch = copter.ahrs_view->pitch;
     //     _yaw = copter.ahrs_view->yaw;
     // }
+    float angle_pitch = 0.0f;
+    float angle_yaw = 0.0f;
+    if (cam_type == 0) {
+        // body fixed cam
+        bf_info.x = p1; // yaw degree
+        bf_info.y = p2; // pitch degree
 
-    bf_info.x = p1; // yaw degree
-    bf_info.y = p2; // pitch degree
+        Vector3f target_unit = Vector3f(1.0f, 0.0f, 0.0f);
+        Matrix3f tmp_target_cam_m;
+        tmp_target_cam_m.from_euler(0.0f, radians(p2), radians(p1));
+        Matrix3f tmp_cam_body_m;
+        tmp_cam_body_m.from_euler(0.0f, radians(0.0f), radians(0.0f));
+        Matrix3f tmp_body_earth_m;
+        tmp_body_earth_m.from_euler(_roll, _pitch, _yaw);
+        Matrix3f tmp_target_earth_m = tmp_body_earth_m*tmp_cam_body_m*tmp_target_cam_m;
+        Vector3f ef_unit = tmp_target_earth_m*target_unit;
 
-    if (p2 < -90.f) {
-        p2 = -180.0f - p2;
-    } else if (p2 > 90.0f) {
-        p2 = 180.0f - p2;
+        // static uint32_t last_info_ms = millis();
+        // if (millis() - last_info_ms > 1000) {
+        //     last_info_ms = millis();
+        //     gcs().send_text(MAV_SEVERITY_INFO, "KKKKKK (%f, %f, %f)", ef_unit.x, ef_unit.y, ef_unit.z);
+        //     gcs().send_text(MAV_SEVERITY_INFO, "VVVVVV (%f, %f, %f)", degrees(_roll), degrees(_pitch), degrees(_yaw));
+        // }
+
+        angle_pitch = wrap_180(degrees(atan2f(-ef_unit.z, ef_unit.xy().length())));
+        angle_yaw =   wrap_180(degrees(atan2f( ef_unit.y, ef_unit.x)));
+    } else {
+        // frame with gimbal cam
+        angle_pitch = wrap_180(p2);
+        angle_yaw =   wrap_180(p1 + degrees(_yaw));
     }
-
-    Matrix3f tmp_target_cam_m;
-    tmp_target_cam_m.from_euler(0.0f, radians(p2), radians(p1));
-    Matrix3f tmp_cam_body_m;
-    tmp_cam_body_m.from_euler(0.0f, radians(0.0f), radians(0.0f));
-    Matrix3f tmp_body_earth_m;
-    tmp_body_earth_m.from_euler(_roll, _pitch, _yaw);
-    Matrix3f tmp_target_earth_m = tmp_body_earth_m*tmp_cam_body_m*tmp_target_cam_m;
-
-    float tmp_roll = 0.0f;
-    float tmp_pitch = 0.0f;
-    float tmp_yaw = 0.0f;
-
-    tmp_target_earth_m.to_euler(&tmp_roll, &tmp_pitch, &tmp_yaw);
-
-    float angle_pitch = wrap_180(degrees(tmp_pitch));
-    float angle_yaw =   wrap_180(degrees(tmp_yaw));
-
-    // Vector3f target_unit = Vector3f(1.0f, 0.0f, 0.0f);
-    // Matrix3f tmp_target_cam_m;
-    // tmp_target_cam_m.from_euler(0.0f, radians(p2), radians(p1));
-    // Vector3f cam_unit = tmp_target_cam_m*target_unit;
-
-    // Matrix3f tmp_cam_body_m;
-    // tmp_cam_body_m.from_euler(0.0f, radians(0.0f), radians(0.0f));
-    // Vector3f bf_unit = tmp_cam_body_m*cam_unit;
-
-    // Matrix3f tmp_body_earth_m;
-    // tmp_body_earth_m.from_euler(_roll, _pitch, _yaw);
-    // Vector3f ef_unit = tmp_body_earth_m*bf_unit;
-
-    // float angle_pitch = wrap_180(degrees(atan2f(-ef_unit.z, ef_unit.xy().length())));
-    // float angle_yaw =   wrap_180(degrees(atan2f( ef_unit.y, ef_unit.x)));
 
     ef_info.x = angle_yaw;
     ef_info.y = angle_pitch;
