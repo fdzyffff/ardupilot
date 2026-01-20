@@ -86,6 +86,9 @@ void ModeAttackLoc::update()
             if (check_approach()) {
                 set_stage(stage_class::HOVER);
             }
+            if (plane.uattack.is_active_cam()) {
+                set_stage(stage_class::ATTACK);
+            }
             break;
         case stage_class::ATTACK:
             if (plane.uattack.is_active_loc()) {
