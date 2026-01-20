@@ -1,34 +1,35 @@
 #include "FD1_message.h"
 
-#define FD1_MSG_0728_P3_LEN 31
-class FD1_msg_0728_p3 : public FD1_message{
+#define FD1_MSG_WAIBU_LEN 122
+class FD1_msg_waibu_single : public FD1_message{
 public:
-    struct PACKED FD1_msg_header {
-        uint8_t head_1;
-        uint8_t head_2;
+
+    struct PACKED Target_base_t {
+        uint32_t R;
+        int16_t A;
+        int16_t E;
+        int16_t Vx;
+        int16_t Vy;
+        int16_t Vz;
     };
     
     struct PACKED MSG_Collection {
         FD1_msg_header header;
-        uint8_t length;
+        uint16_t length;
         uint8_t count;
-        uint8_t send_id;
-        uint8_t command_id;
-        uint32_t wp_lng_1; // 1e7
-        uint32_t wp_lat_1;
-        uint16_t wp_alt_1;
-        uint16_t speed_1;
-        uint32_t wp_lng_2; // 1e7
-        uint32_t wp_lat_2;
-        uint16_t wp_alt_2;
-        uint16_t speed_2;
-        uint8_t sum;
+        Time_t time;
+        uint16_t control_1;
+        uint16_t control_2;
+        Loc_t base_loc;
+        Target_base_t target[6];
+        uint16_t delay_ms;
+        uint8_t reserved[11];
     };
 
     // message structure
     union PACKED Content_1 {
         MSG_Collection msg;
-        uint8_t data[FD1_MSG_0728_P3_LEN];
+        uint8_t data[FD1_MSG_WAIBU_LEN];
     };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -37,7 +38,6 @@ public:
         bool print;
         bool updated;
         bool need_send;
-        uint8_t length = FD1_MSG_0728_P3_LEN;
         Content_1 content;
     };
 
@@ -48,26 +48,26 @@ public:
         {
             FD1UART_PREAMBLE1 = 0,
             FD1UART_PREAMBLE2,
+            FD1UART_PREAMBLE3,
             FD1UART_INFO,
             FD1UART_DATA,
-            FD1UART_SUM,
         } msg_state;
 
         uint16_t read;
-        uint8_t length;
+        uint16_t length;
         uint8_t count;
-        uint8_t sum;
-        uint8_t data[FD1_MSG_0728_P3_LEN];
+        uint8_t data[FD1_MSG_WAIBU_LEN];
     } _msg;
 
-    FD1_msg_0728_p3();
+    FD1_msg_waibu_single();
     
     /* Do not allow copies */
-    FD1_msg_0728_p3(const FD1_msg_0728_p3 &other) = delete;
-    FD1_msg_0728_p3 &operator=(const FD1_msg_0728_p3&) = delete;
+    FD1_msg_waibu_single(const FD1_msg_waibu_single &other) = delete;
+    FD1_msg_waibu_single &operator=(const FD1_msg_waibu_single&) = delete;
 
-    static const uint8_t PREAMBLE1 = 0xAA;
-    static const uint8_t PREAMBLE2 = 0x7E;
+    static const uint8_t PREAMBLE1 = 0xCC;
+    static const uint8_t PREAMBLE2 = 0x05;
+    static const uint8_t PREAMBLE3 = 0xAA;
 
     void process_message(void) override;
     void parse(uint8_t temp) override;

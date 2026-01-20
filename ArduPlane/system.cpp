@@ -175,6 +175,8 @@ void Plane::init_ardupilot()
     g2.ice_control.init();
 #endif
 
+    userhook_init();
+
 }
 
 #if AP_FENCE_ENABLED

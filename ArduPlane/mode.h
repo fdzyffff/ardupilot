@@ -945,7 +945,12 @@ public:
     void build_path();
     void update_approach();
     void update_attack();
+    void update_away();
+    void update_recover();
     bool check_approach();
+    bool check_attack();
+    bool check_away();
+    bool check_target();
     void set_stage(ModeAttackLoc::stage_class stage_in);
     float get_cmd_throttle();
     Location target_loc;
@@ -954,5 +959,10 @@ protected:
 
     bool _enter() override;
     float _cmd_throttle;
+    struct {
+        float target_bearing;
+        Location target_loc;
+    } last_attack_info;
+
     stage_class stage;
 };

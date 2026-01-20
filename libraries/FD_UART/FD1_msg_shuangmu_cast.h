@@ -1,32 +1,25 @@
 #include "FD1_message.h"
 
-#define FD1_MSG_0X31_LEN 26
-class FD1_msg_0x31 : public FD1_message{
+#define FD1_MSG_SHUANGMU_CAST_LEN 34
+class FD1_msg_shuangmu_cast : public FD1_message{
 public:
-    struct PACKED FD1_msg_header {
-        uint8_t head_1;
-        uint8_t head_2;
-    };
-
+    
     struct PACKED MSG_Collection {
         FD1_msg_header header;
         uint16_t length;
-        uint8_t cmd_type;
-        int32_t target_lng;
-        int32_t target_lat;
-        uint16_t target_alt;
-        uint8_t alt_type;
-        int16_t target_speed;
-        uint8_t speed_type;
-        int16_t target_angle;
-        uint32_t target_time2000;
-        uint8_t xorsum;
+        uint8_t count;
+        Time_t time;
+        uint16_t status_1;
+        uint16_t error_1;
+        uint16_t target_dist;
+        Target_t target;
+        uint8_t reserved[10];
     };
 
     // message structure
     union PACKED Content_1 {
         MSG_Collection msg;
-        uint8_t data[FD1_MSG_0X31_LEN];
+        uint8_t data[FD1_MSG_SHUANGMU_CAST_LEN];
     };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -35,7 +28,6 @@ public:
         bool print;
         bool updated;
         bool need_send;
-        uint8_t length = FD1_MSG_0X31_LEN;
         Content_1 content;
     };
 
@@ -46,26 +38,26 @@ public:
         {
             FD1UART_PREAMBLE1 = 0,
             FD1UART_PREAMBLE2,
+            FD1UART_PREAMBLE3,
             FD1UART_INFO,
             FD1UART_DATA,
-            FD1UART_SUM,
         } msg_state;
 
         uint16_t read;
-        uint8_t length;
+        uint16_t length;
         uint8_t count;
-        uint8_t xorsum;
-        uint8_t data[FD1_MSG_0X31_LEN];
+        uint8_t data[FD1_MSG_SHUANGMU_CAST_LEN];
     } _msg;
 
-    FD1_msg_0x31();
+    FD1_msg_shuangmu_cast();
     
     /* Do not allow copies */
-    FD1_msg_0x31(const FD1_msg_0x31 &other) = delete;
-    FD1_msg_0x31 &operator=(const FD1_msg_0x31&) = delete;
+    FD1_msg_shuangmu_cast(const FD1_msg_shuangmu_cast &other) = delete;
+    FD1_msg_shuangmu_cast &operator=(const FD1_msg_shuangmu_cast&) = delete;
 
-    static const uint8_t PREAMBLE1 = 0xEB;
-    static const uint8_t PREAMBLE2 = 0x90;
+    static const uint8_t PREAMBLE1 = 0xCC;
+    static const uint8_t PREAMBLE2 = 0x05;
+    static const uint8_t PREAMBLE3 = 0xAA;
 
     void process_message(void) override;
     void parse(uint8_t temp) override;
@@ -75,6 +67,5 @@ public:
 
     FD1UART_MSG_1 _msg_1;
 
-    const float SF_LNG = 180.f/(float)(powf(2,31)-1);
-    const float SF_LAT = 90.f/(float)(powf(2,31)-1);
+    const float SF_INT16 = 65536.f/360.f;
 };

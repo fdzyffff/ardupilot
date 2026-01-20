@@ -65,16 +65,19 @@ void FD_Target_Loc::handle_msg(const mavlink_message_t &msg)
         mavlink_msg_command_int_decode(&msg, &packet);
         switch(packet.command) {
             case MAV_CMD_USER_1:
+            {
                 gcs().send_text(MAV_SEVERITY_WARNING, "Target mavpkg");
-                target_loc.lat = packet.x;
-                target_loc.lng = packet.y;
-                // target_loc.set_alt_cm(packet.z*100.f, Location::AltFrame::ABOVE_HOME);
-                // target_loc.change_alt_frame(Location::AltFrame::ABSOLUTE);
-                target_loc.set_alt_cm(packet.z*100.f, Location::AltFrame::ABSOLUTE);
-                _have_target = true;
+                Location tmp_loc;
+                tmp_loc.lat = packet.x;
+                tmp_loc.lng = packet.y;
+                // tmp_loc.set_alt_cm(packet.z*100.f, Location::AltFrame::ABOVE_HOME);
+                // tmp_loc.change_alt_frame(Location::AltFrame::ABSOLUTE);
+                tmp_loc.set_alt_cm(packet.z*100.f, Location::AltFrame::ABSOLUTE);
+                set_target_location(tmp_loc);
                 // gcs().send_text(MAV_SEVERITY_INFO,"x %f", (float)packet.x);
                 // gcs().send_text(MAV_SEVERITY_INFO,"y %f", (float)packet.y);
                 // gcs().send_text(MAV_SEVERITY_INFO,"z %f", (float)packet.z);
+            }
                 break;
             default:
                 break;
@@ -85,21 +88,23 @@ void FD_Target_Loc::handle_msg(const mavlink_message_t &msg)
         mavlink_command_long_t packet;
         mavlink_msg_command_long_decode(&msg, &packet);
         switch(packet.command) {
-            case MAV_CMD_USER_1: {
-                    if ((int16_t)packet.param1 == 150 && (int16_t)packet.param2 == 1079 && (int16_t)packet.param3 == 1500 )
-                    {
-                        gcs().send_text(MAV_SEVERITY_WARNING, "Target mavpkg");
-                    }
-                    target_loc.lat = 399778929;
-                    target_loc.lng = 1163409769;
-                    // target_loc.set_alt_cm(packet.z*100.f, Location::AltFrame::ABOVE_HOME);
-                    // target_loc.change_alt_frame(Location::AltFrame::ABSOLUTE);
-                    target_loc.set_alt_cm(5300.f, Location::AltFrame::ABSOLUTE);
-                    _have_target = true;
-                    // gcs().send_text(MAV_SEVERITY_INFO,"x %f", (float)packet.x);
-                    // gcs().send_text(MAV_SEVERITY_INFO,"y %f", (float)packet.y);
+            case MAV_CMD_USER_1: 
+            {
+                if ((int16_t)packet.param1 == 150 && (int16_t)packet.param2 == 1079 && (int16_t)packet.param3 == 1500 )
+                {
+                    gcs().send_text(MAV_SEVERITY_WARNING, "Target mavpkg");
                 }
+                Location tmp_loc;
+                tmp_loc.lat = 399778929;
+                tmp_loc.lng = 1163409769;
+                // tmp_loc.set_alt_cm(packet.z*100.f, Location::AltFrame::ABOVE_HOME);
+                // tmp_loc.change_alt_frame(Location::AltFrame::ABSOLUTE);
+                tmp_loc.set_alt_cm(5300.f, Location::AltFrame::ABSOLUTE);
+                set_target_location(tmp_loc);
+                // gcs().send_text(MAV_SEVERITY_INFO,"x %f", (float)packet.x);
+                // gcs().send_text(MAV_SEVERITY_INFO,"y %f", (float)packet.y);
                 // gcs().send_text(MAV_SEVERITY_INFO,"z %f", (float)packet.z);
+            }
                 break;
             default:
                 break;
@@ -113,4 +118,9 @@ void FD_Target_Loc::handle_info_test(float p1, float p2) {
     // tmp_msg._msg_1.updated = true;
     // tmp_msg._msg_1.content.msg.target_x = (int16_t)(p1/0.005f);
     // tmp_msg._msg_1.content.msg.target_y = (int16_t)(p2/0.005f);
+}
+
+void FD_Target_Loc::set_target_location(Location &loc_in) {
+    target_loc = loc_in;
+    _have_target = true;
 }

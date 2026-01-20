@@ -37,6 +37,16 @@ void ModeAttackLoc::run()
         case stage_class::ATTACK:
             plane.stabilize_attack();
             break;
+        case stage_class::AWAY:
+            plane.stabilize_roll();
+            plane.stabilize_pitch();
+            plane.stabilize_yaw();
+            break;
+        case stage_class::RECOVER:
+            plane.stabilize_roll();
+            plane.stabilize_pitch();
+            plane.stabilize_yaw();
+            break;
         default:
             break;
     }
@@ -88,15 +98,25 @@ void ModeAttackLoc::update()
             break;
         case stage_class::ATTACK:
             update_attack();
+            if (check_attack()) {
+                set_stage(stage_class::AWAY);
+            }
+            break;
+        case stage_class::AWAY:
+            update_away();
+            if (check_away()) {
+                set_stage(stage_class::RECOVER);
+            }
+            break;
+        case stage_class::RECOVER:
+            update_recover();
+            if (check_target()) {
+                set_stage(stage_class::ATTACK);
+            }
             break;
         default:
             break;
     }
-}
-
-bool ModeAttackLoc::check_approach()
-{
-    return (plane.current_loc.get_distance(target_loc) < plane.uattack._Target_ptr_loc->nav_radius.get());
 }
 
 void ModeAttackLoc::update_approach()
@@ -115,6 +135,40 @@ void ModeAttackLoc::update_attack()
     float target_throttle = plane.uattack.attack_throttle;
     _cmd_throttle = _cmd_throttle + constrain_float(target_throttle - _cmd_throttle, -throtle_rate, throtle_rate);
     SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, plane.mode_attack_loc.get_cmd_throttle());
+}
+
+void ModeAttackLoc::update_away()
+{
+    plane.calc_nav_roll();
+    plane.calc_nav_pitch();
+    plane.calc_throttle();
+}
+
+void ModeAttackLoc::update_recover()
+{
+    plane.calc_nav_roll();
+    plane.calc_nav_pitch();
+    plane.calc_throttle();
+}
+
+bool ModeAttackLoc::check_approach()
+{
+    return (plane.current_loc.get_distance(target_loc) < plane.uattack._Target_ptr_loc->nav_radius.get());
+}
+
+bool ModeAttackLoc::check_attack()
+{
+    return false;
+}
+
+bool ModeAttackLoc::check_away()
+{
+    return false;
+}
+
+bool ModeAttackLoc::check_target()
+{
+    return false;
 }
 
 void ModeAttackLoc::navigate()

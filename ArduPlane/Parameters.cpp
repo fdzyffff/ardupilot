@@ -1035,6 +1035,8 @@ const AP_Param::Info Plane::var_info[] = {
     GOBJECT(quicktune, "QWIK_",  AP_Quicktune),
 #endif
 
+    GOBJECT(uattack,      "UATK_", UAttack),
+
     AP_VAREND
 };
 

@@ -10,6 +10,7 @@ void Plane::userhook_init()
 void Plane::userhook_100Hz()
 {
     uattack.update();
+    uart.update();
     udelay.push();
 }
 

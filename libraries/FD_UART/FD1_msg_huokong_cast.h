@@ -1,33 +1,33 @@
 #include "FD1_message.h"
 
-#define FD1_MSG_0728_P1_LEN 31
-class FD1_msg_0728_p1 : public FD1_message{
+#define FD1_MSG_HUOKONG_CAST_LEN 59
+class FD1_msg_huokong_cast : public FD1_message{
 public:
-    struct PACKED FD1_msg_header {
-        uint8_t head_1;
-        uint8_t head_2;
-    };
-    
+
     struct PACKED MSG_Collection {
         FD1_msg_header header;
-        uint8_t length;
+        uint16_t length;
         uint8_t count;
-        uint8_t recieve_id;
-        uint8_t command_id;
-        uint32_t wp_lng; // 1e7
-        uint32_t wp_lat;
-        uint16_t wp_alt;
-        uint16_t speed;
-        int32_t pitch;
-        int32_t roll;
-        int32_t yaw;
-        uint8_t sum;
+        Time_t time;
+        uint16_t status_1;
+        uint16_t control_1;
+        uint8_t error_1;
+        int16_t aim_yaw;
+        int16_t aim_pitch;
+        int16_t approch_speed;
+        int16_t target_ground_speed;
+        uint32_t target_ground_course;
+        int16_t approch_time;
+        Loc_t target_loc;
+        Loc_t target_estimate_loc;
+        uint16_t fired_count;
+        uint8_t reserved[6];
     };
 
     // message structure
     union PACKED Content_1 {
         MSG_Collection msg;
-        uint8_t data[FD1_MSG_0728_P1_LEN];
+        uint8_t data[FD1_MSG_HUOKONG_CAST_LEN];
     };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -36,7 +36,6 @@ public:
         bool print;
         bool updated;
         bool need_send;
-        uint8_t length = FD1_MSG_0728_P1_LEN;
         Content_1 content;
     };
 
@@ -47,26 +46,26 @@ public:
         {
             FD1UART_PREAMBLE1 = 0,
             FD1UART_PREAMBLE2,
+            FD1UART_PREAMBLE3,
             FD1UART_INFO,
             FD1UART_DATA,
-            FD1UART_SUM,
         } msg_state;
 
         uint16_t read;
-        uint8_t length;
+        uint16_t length;
         uint8_t count;
-        uint8_t sum;
-        uint8_t data[FD1_MSG_0728_P1_LEN];
+        uint8_t data[FD1_MSG_HUOKONG_CAST_LEN];
     } _msg;
 
-    FD1_msg_0728_p1();
+    FD1_msg_huokong_cast();
     
     /* Do not allow copies */
-    FD1_msg_0728_p1(const FD1_msg_0728_p1 &other) = delete;
-    FD1_msg_0728_p1 &operator=(const FD1_msg_0728_p1&) = delete;
+    FD1_msg_huokong_cast(const FD1_msg_huokong_cast &other) = delete;
+    FD1_msg_huokong_cast &operator=(const FD1_msg_huokong_cast&) = delete;
 
-    static const uint8_t PREAMBLE1 = 0xBB;
-    static const uint8_t PREAMBLE2 = 0x7E;
+    static const uint8_t PREAMBLE1 = 0xCC;
+    static const uint8_t PREAMBLE2 = 0x05;
+    static const uint8_t PREAMBLE3 = 0xAA;
 
     void process_message(void) override;
     void parse(uint8_t temp) override;

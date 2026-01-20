@@ -10,6 +10,37 @@ public:
     FD1_message(const FD1_message &other) = delete;
     FD1_message &operator=(const FD1_message&) = delete;
 
+    struct PACKED FD1_msg_header {
+        uint8_t head;
+        uint8_t source;
+        uint8_t destination;
+    };
+
+    union PACKED Time_t {
+        struct PACKED FD1_msg_time {
+            uint32_t ms:10;
+            uint32_t sec:6;
+            uint32_t min:6;
+            uint32_t h:5;
+            uint32_t day:5;
+        } bits;
+        uint32_t v;
+    };
+
+    struct PACKED Target_t {
+        int16_t yaw;
+        int16_t pitch;
+        int16_t x;
+        int16_t y;
+    };
+
+    struct PACKED Loc_t {
+        uint8_t quadrant;
+        uint32_t lng;
+        uint32_t lat;
+        uint16_t abs_alt;
+    };
+
     virtual bool enable() {return _enable;}
     virtual void set_enable() {_enable = true;}
     virtual void set_disable() {_enable = false;}
