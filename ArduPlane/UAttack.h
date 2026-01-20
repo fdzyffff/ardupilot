@@ -22,6 +22,7 @@ public:
     void init();
     bool is_active() const { return (current_idx>0); }
     bool is_active_loc() const { return (current_idx == 2); }
+    bool is_active_cam() const { return (current_idx == 1); }
     void udpate_control_value();
     void init_target();
     void update();
