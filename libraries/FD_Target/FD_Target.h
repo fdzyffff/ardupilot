@@ -55,10 +55,10 @@ private:
     bool _have_target;
 };
 
-class FD_Target_FP847: public FD_Target_Base {
+class FD_Target_DYT: public FD_Target_Base {
 public:
-    FD_Target_FP847();
-    ~FD_Target_FP847() {};
+    FD_Target_DYT();
+    ~FD_Target_DYT() {};
 
     static const struct AP_Param::GroupInfo var_info[];
 
@@ -67,6 +67,7 @@ public:
     void handle_msg(const mavlink_message_t &msg) override;
     float cal_frame_angle(float pixel, float angle, float x_in);
     void handle_info_test(float p1, float p2);
+    AP_HAL::UARTDriver* get_port(void) {return _port;}
 
 private:
     AP_Int32 target_timeout;
@@ -74,6 +75,12 @@ private:
     AP_Float cam_height;
     AP_Float cam_angle_x;
     AP_Float cam_angle_y;
+
+    AP_HAL::UARTDriver* _port;
+
+    // FD1_msg_DYT_control uart_msg_DYT_control; 
+    FD1_msg_DYT_telem uart_msg_DYT_telem; 
+    // FD1_msg_DYT_apminfo uart_msg_DYT_apminfo; 
 };
 
 using AP_HAL::millis;

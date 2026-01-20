@@ -720,9 +720,66 @@ const AP_Param::GroupInfo SIM::var_info3[] = {
     AP_SUBGROUPEXTENSION("",      63, SIM,  var_sfml_joystick),
 #endif // SFML_JOYSTICK
 
+    AP_GROUPINFO("FRAME_TYPE",    55, SIM,  sim_frame_type, 0),
+    AP_SUBGROUPEXTENSION("FW_",   56, SIM,  var_infosimparam),
+    AP_GROUPINFO("OPOS_PTH",      57, SIM,  opos.pth, 0.0f),
+
     AP_GROUPEND
 };
 
+// third table of user settable parameters for SITL. 
+const AP_Param::GroupInfo SIM::var_infosimparam[] = {
+    AP_GROUPINFO("S",    1, SIM, s,  0.45),
+    AP_GROUPINFO("B",    2, SIM, b,  1.88),
+    AP_GROUPINFO("C",    3, SIM, c,  0.24),
+    AP_GROUPINFO("IXX",  4, SIM, Ixx,  1.0),
+    AP_GROUPINFO("IYY",  5, SIM, Iyy,  1.0),
+    AP_GROUPINFO("IZZ",  6, SIM, Izz,  1.0),
+    AP_GROUPINFO("LF0",  7, SIM, c_lift_0,  0.56),
+    AP_GROUPINFO("LFD",  8, SIM, c_lift_deltae,  0),
+    AP_GROUPINFO("LFA",  9, SIM, c_lift_a,  6.9),
+    AP_GROUPINFO("LFQ", 10, SIM, c_lift_q,  0),
+    AP_GROUPINFO("MC",  11, SIM, mcoeff,  50),
+    AP_GROUPINFO("OSW", 12, SIM, oswald,  0.9),
+    AP_GROUPINFO("AST", 13, SIM, alpha_stall,  0.4712),
+    AP_GROUPINFO("DQ",  14, SIM, c_drag_q,  0),
+    AP_GROUPINFO("DD",  15, SIM, c_drag_deltae,  0.0),
+    AP_GROUPINFO("DP",  16, SIM, c_drag_p,  0.1),
+    AP_GROUPINFO("Y0",  17, SIM, c_y_0,  0),
+    AP_GROUPINFO("YB",  18, SIM, c_y_b,  -0.98),
+    AP_GROUPINFO("YP",  19, SIM, c_y_p,  0),
+    AP_GROUPINFO("YR",  20, SIM, c_y_r,  0),
+    AP_GROUPINFO("YDA", 21, SIM, c_y_deltaa,  0),
+    AP_GROUPINFO("YDR", 22, SIM, c_y_deltar,  -0.2),
+    AP_GROUPINFO("L0",  23, SIM, c_l_0,  0),
+    AP_GROUPINFO("LP",  24, SIM, c_l_p,  -1.0),
+    AP_GROUPINFO("LB",  25, SIM, c_l_b,  -0.12),
+    AP_GROUPINFO("LR",  26, SIM, c_l_r,  0.14),
+    AP_GROUPINFO("LDA", 27, SIM, c_l_deltaa,  0.25),
+    AP_GROUPINFO("LDR", 28, SIM, c_l_deltar,  -0.037),
+    AP_GROUPINFO("M0",  29, SIM, c_m_0,  0.045),
+    AP_GROUPINFO("MA",  30, SIM, c_m_a,  -0.7),
+    AP_GROUPINFO("MQ",  31, SIM, c_m_q,  -20),
+    AP_GROUPINFO("MDE", 32, SIM, c_m_deltae,  1.0),
+    AP_GROUPINFO("N0",  33, SIM, c_n_0,  0),
+    AP_GROUPINFO("NB",  34, SIM, c_n_b,  0.25),
+    AP_GROUPINFO("BP",  35, SIM, c_n_p,  0.022),
+    AP_GROUPINFO("NR",  36, SIM, c_n_r,  -1),
+    AP_GROUPINFO("NDA", 37, SIM, c_n_deltaa,  0.00),
+    AP_GROUPINFO("NDR", 38, SIM, c_n_deltar,  0.1),
+    AP_GROUPINFO("DAM", 39, SIM, deltaa_max,  0.3491),
+    AP_GROUPINFO("DEM", 40, SIM, deltae_max,  0.3491),
+    AP_GROUPINFO("DRM", 41, SIM, deltar_max,  0.3491),
+    AP_GROUPINFO("CGX", 42, SIM, CGOffset_x,  -0.15),
+    AP_GROUPINFO("CGY", 43, SIM, CGOffset_y,  0.0),
+    AP_GROUPINFO("CGZ", 44, SIM, CGOffset_z,  -0.15),
+    AP_GROUPINFO("MAS", 45, SIM, mass, 2.0),
+    AP_GROUPINFO("THOV", 46, SIM, hover_throttle, 0.7),
+    AP_GROUPINFO("TSC", 47, SIM, thrust_scale, 27),
+    AP_GROUPINFO("DROP", 48, SIM, have_drop, 0),
+
+    AP_GROUPEND
+};
 
 #if HAL_SIM_GPS_ENABLED
 // GPS SITL parameters
@@ -1576,7 +1633,7 @@ void SIM::sim_state_send(mavlink_channel_t chan) const
             state.speedN,
             state.speedE,
             state.speedD,
-	        (int32_t)(state.latitude*1.0e7),
+            (int32_t)(state.latitude*1.0e7),
             (int32_t)(state.longitude*1.0e7));
 }
 

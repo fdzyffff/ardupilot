@@ -79,7 +79,7 @@ Aircraft::Aircraft(const char *frame_str) :
     }
 }
 
-void Aircraft::set_start_location(const Location &start_loc, const float start_yaw)
+void Aircraft::set_start_location(const Location &start_loc, const float start_yaw, float start_pitch)
 {
     home = start_loc;
     origin = home;
@@ -87,11 +87,12 @@ void Aircraft::set_start_location(const Location &start_loc, const float start_y
     home_yaw = start_yaw;
     home_is_set = true;
 
-    ::printf("Home: %f %f alt=%fm hdg=%f\n",
+    ::printf("Home: %f %f alt=%fm hdg=%f pth=%f\n",
              home.lat*1e-7,
              home.lng*1e-7,
              home.alt*0.01,
-             home_yaw);
+             home_yaw,
+             start_pitch);
 
     location = home;
     ground_level = home.alt * 0.01f;
@@ -101,7 +102,7 @@ void Aircraft::set_start_location(const Location &start_loc, const float start_y
     home.offset(-3000*1000, 1800*1000);
 #endif
 
-    dcm.from_euler(0.0f, 0.0f, radians(home_yaw));
+    dcm.from_euler(0.0f, radians(start_pitch), radians(home_yaw));
 }
 
 /*
@@ -661,7 +662,7 @@ void Aircraft::update_home()
         loc.lat = sitl->opos.lat.get() * 1.0e7;
         loc.lng = sitl->opos.lng.get() * 1.0e7;
         loc.alt = sitl->opos.alt.get() * 1.0e2;
-        set_start_location(loc, sitl->opos.hdg.get());
+        set_start_location(loc, sitl->opos.hdg.get(), sitl->opos.pth.get());
     }
 }
 
@@ -779,13 +780,13 @@ void Aircraft::update_dynamics(const Vector3f &rot_accel)
             // zero roll/pitch, but keep yaw
             float r, p, y;
             dcm.to_euler(&r, &p, &y);
-            if (velocity_ef.length() < 5) {
-                // at high speeds don't constrain pitch, otherwise we
-                // can get stuck in takeoff
-                p = 0;
-            } else {
-                p = MAX(p, 0);
-            }
+            // if (velocity_ef.length() < 5) {
+            //     // at high speeds don't constrain pitch, otherwise we
+            //     // can get stuck in takeoff
+            //     p = 0;
+            // } else {
+            //     p = MAX(p, 0);
+            // }
             y = y + yaw_rate * delta_time;
             dcm.from_euler(0.0f, p, y);
             // only fwd movement

@@ -926,8 +926,7 @@ public:
     enum class stage_class{
         APPROACH,
         ATTACK,
-        AWAY,
-        RECOVER,
+        HOVER,
     };
 
     // methods that affect movement of the vehicle in this mode
@@ -945,6 +944,7 @@ public:
     void build_path();
     void update_approach();
     void update_attack();
+    void update_hover();
     bool check_approach();
     void set_stage(ModeAttackLoc::stage_class stage_in);
     float get_cmd_throttle();

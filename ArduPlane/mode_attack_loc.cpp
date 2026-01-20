@@ -6,7 +6,7 @@ bool ModeAttackLoc::_enter()
     if (plane.uattack.is_active_loc()) {
         target_loc = plane.uattack._Target_ptr_loc->target_loc;
         if (check_approach()) {
-            set_stage(stage_class::ATTACK);                
+            set_stage(stage_class::HOVER);                
         } else {
             set_stage(stage_class::APPROACH);
             build_path();
@@ -24,6 +24,7 @@ void ModeAttackLoc::run()
 {
     switch (stage) {
         case stage_class::APPROACH:
+        case stage_class::HOVER:
 
             // Direct stick mixing functionality has been removed, so as not to remove all stick mixing from the user completely
             // the old direct option is now used to enable fbw mixing, this is easier than doing a param conversion.
@@ -83,11 +84,17 @@ void ModeAttackLoc::update()
         case stage_class::APPROACH:
             update_approach();
             if (check_approach()) {
-                set_stage(stage_class::ATTACK);
+                set_stage(stage_class::HOVER);
             }
             break;
         case stage_class::ATTACK:
+            if (plane.uattack.is_active_loc()) {
+                set_stage(stage_class::HOVER);
+            }
             update_attack();
+            break;
+        case stage_class::HOVER:
+            update_hover();
             break;
         default:
             break;
@@ -100,6 +107,13 @@ bool ModeAttackLoc::check_approach()
 }
 
 void ModeAttackLoc::update_approach()
+{
+    plane.calc_nav_roll();
+    plane.calc_nav_pitch();
+    plane.calc_throttle();
+}
+
+void ModeAttackLoc::update_hover()
 {
     plane.calc_nav_roll();
     plane.calc_nav_pitch();
@@ -120,7 +134,12 @@ void ModeAttackLoc::update_attack()
 void ModeAttackLoc::navigate()
 {
     switch (stage) {
+        case stage_class::HOVER:
+            plane.update_loiter(0);
+            break;
         case stage_class::APPROACH:
+            plane.next_WP_loc = target_loc;
+            plane.next_WP_loc.alt = plane.current_loc.alt;
             plane.nav_controller->update_waypoint(plane.prev_WP_loc, plane.next_WP_loc);
             break;
         default:
@@ -132,8 +151,10 @@ void ModeAttackLoc::set_stage(ModeAttackLoc::stage_class stage_in)
 {
     stage = stage_in;
     switch(stage) {
-        case stage_class::APPROACH:
-            gcs().send_text(MAV_SEVERITY_INFO, "In Approach");
+        case stage_class::HOVER:
+            plane.next_WP_loc = target_loc;
+            plane.next_WP_loc.alt = plane.current_loc.alt;
+            gcs().send_text(MAV_SEVERITY_INFO, "In Hover");
             break;
         case stage_class::ATTACK:
             gcs().send_text(MAV_SEVERITY_INFO, "In Attack");

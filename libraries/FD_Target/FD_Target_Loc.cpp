@@ -5,7 +5,7 @@
 const AP_Param::GroupInfo FD_Target_Loc::var_info[] = {
 
     AP_GROUPINFO("TOUT", 0, FD_Target_Loc, target_timeout, 0),
-    AP_GROUPINFO("NRAD", 1, FD_Target_Loc, nav_radius, 1000),
+    AP_GROUPINFO("NRAD", 1, FD_Target_Loc, nav_radius, 30),
 
     AP_GROUPEND
 };

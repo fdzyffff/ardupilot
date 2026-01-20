@@ -1,7 +1,7 @@
 #include "FD1_message.h"
 
-#define FD1_MSG_0728_P3_LEN 31
-class FD1_msg_0728_p3 : public FD1_message{
+#define FD1_MSG_DYT_TELEM_LEN 31
+class FD1_msg_DYT_telem : public FD1_message{
 public:
     struct PACKED FD1_msg_header {
         uint8_t head_1;
@@ -10,25 +10,31 @@ public:
     
     struct PACKED MSG_Collection {
         FD1_msg_header header;
-        uint8_t length;
-        uint8_t count;
-        uint8_t send_id;
-        uint8_t command_id;
-        uint32_t wp_lng_1; // 1e7
-        uint32_t wp_lat_1;
-        uint16_t wp_alt_1;
-        uint16_t speed_1;
-        uint32_t wp_lng_2; // 1e7
-        uint32_t wp_lat_2;
-        uint16_t wp_alt_2;
-        uint16_t speed_2;
+        uint8_t status_1;
+        uint8_t status_2;
+        uint8_t zoom;
+        uint8_t status_3;
+        int16_t target_yaw;
+        int16_t target_pitch;
+        int16_t gimbal_roll;
+        int16_t gimbal_pitch;
+        int16_t gimbal_yaw;
+        uint8_t frame_pixel_x;
+        uint8_t frame_pixel_y;
+        uint8_t reserved_1[2];
+        int16_t roll_rate;
+        int16_t pitch_rate;
+        int16_t yaw_rate;
+        uint16_t dist;
+        uint8_t self_check;
+        uint8_t reserved_2[2];
         uint8_t sum;
     };
 
     // message structure
     union PACKED Content_1 {
         MSG_Collection msg;
-        uint8_t data[FD1_MSG_0728_P3_LEN];
+        uint8_t data[FD1_MSG_DYT_TELEM_LEN];
     };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -37,7 +43,7 @@ public:
         bool print;
         bool updated;
         bool need_send;
-        uint8_t length = FD1_MSG_0728_P3_LEN;
+        uint16_t length = FD1_MSG_DYT_TELEM_LEN;
         Content_1 content;
     };
 
@@ -54,20 +60,20 @@ public:
         } msg_state;
 
         uint16_t read;
-        uint8_t length;
+        uint16_t length;
         uint8_t count;
         uint8_t sum;
-        uint8_t data[FD1_MSG_0728_P3_LEN];
+        uint8_t data[FD1_MSG_DYT_TELEM_LEN];
     } _msg;
 
-    FD1_msg_0728_p3();
+    FD1_msg_DYT_telem();
     
     /* Do not allow copies */
-    FD1_msg_0728_p3(const FD1_msg_0728_p3 &other) = delete;
-    FD1_msg_0728_p3 &operator=(const FD1_msg_0728_p3&) = delete;
+    FD1_msg_DYT_telem(const FD1_msg_DYT_telem &other) = delete;
+    FD1_msg_DYT_telem &operator=(const FD1_msg_DYT_telem&) = delete;
 
-    static const uint8_t PREAMBLE1 = 0xAA;
-    static const uint8_t PREAMBLE2 = 0x7E;
+    static const uint8_t PREAMBLE1 = 0xEE;
+    static const uint8_t PREAMBLE2 = 0x16;
 
     void process_message(void) override;
     void parse(uint8_t temp) override;
