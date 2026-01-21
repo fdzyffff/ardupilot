@@ -145,7 +145,7 @@ void QuadPlane::update(const struct sitl_input &input)
     // assume 20A at full fwd throttle
     throttle = fabsf(throttle);
     battery_current += 20 * throttle;
-    
+
     rot_accel += quad_rot_accel;
     accel_body += quad_accel_body;
 
