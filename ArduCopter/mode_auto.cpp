@@ -1594,7 +1594,6 @@ void ModeAuto::do_nav_new_wp(const AP_Mission::Mission_Command& cmd)
         set_speed_xy(copter.wp_nav->get_default_speed_xy());
     }
 
-
     gcs().send_text(MAV_SEVERITY_INFO, "speed_xy_dms %d", speed_xy_dms);
 
     uint16_t speed_up_dms = (cmd.p3 & 0xF0)>>8;
@@ -2323,32 +2322,31 @@ bool ModeAuto::verify_nav_new_wp(const AP_Mission::Mission_Command& cmd)
 
     bool yaw_ok = true;
 
+    uint16_t yaw_type = (cmd.p4 & 0b1110000000000000) >> 13;
+    float yaw_d = wrap_360((float)(cmd.p4 & 0b0001111111111111));
+
+    switch (yaw_type) {
+        default:
+            break;
+        case 2:
+        case 3:
+            auto_yaw.set_yaw_angle_rate(yaw_d, 0.0f);
+
+            // make sure still in fixed yaw mode, the waypoint controller often retakes control of yaw as it executes a new waypoint command
+            auto_yaw.set_mode(AutoYaw::Mode::FIXED);
+
+            // check if we have reached the target heading
+            yaw_ok = auto_yaw.reached_fixed_yaw_target();
+            break;
+    }
+
     // start timer if necessary
-    if (loiter_time == 0) {
+    if (loiter_time == 0 && yaw_ok) {
         loiter_time = millis();
         if (loiter_time_max > 0) {
             // play a tone
             AP_Notify::events.waypoint_complete = 1;
         }
-
-        uint16_t yaw_type = (cmd.p4 & 0b1110000000000000) >> 13;
-        float yaw_d = wrap_360((float)(cmd.p4 & 0b0001111111111111));
-
-        switch (yaw_type) {
-            default:
-                break;
-            case 2:
-            case 3:
-                auto_yaw.set_yaw_angle_rate(yaw_d, 0.0f);
-
-                // make sure still in fixed yaw mode, the waypoint controller often retakes control of yaw as it executes a new waypoint command
-                auto_yaw.set_mode(AutoYaw::Mode::FIXED);
-
-                // check if we have reached the target heading
-                yaw_ok = auto_yaw.reached_fixed_yaw_target();
-                break;
-        }
-
     }
 
     bool wp_ok = ((millis() - loiter_time) / 1000) >= loiter_time_max;

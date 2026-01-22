@@ -62,6 +62,8 @@ void Copter::userhook_SuperSlowLoop()
     AP::fd_data().set_is_flying(copter.motors->armed() && (!ap.land_complete));
     AP::fd_data().update();
 
+    AP::fd_data().set_uav_status(user_get_uav_status());
+
 }
 #endif
 
@@ -82,7 +84,21 @@ void Copter::userhook_auxSwitch3(const RC_Channel::AuxSwitchPos ch_flag)
 }
 #endif
 
-bool Copter::user_arm_switch_count() {
+uint8_t Copter::user_get_uav_status()
+{
+    uint8_t status = 0;
+    if (ap.land_complete) {
+        status = 1;
+    } else if (((flightmode->requires_GPS() && !position_ok()) || AP_Notify::flags.ekf_bad) && motors->armed()) {
+        status = 3;
+    } else {
+        status = 2;
+    }
+    return status;
+}
+
+bool Copter::user_arm_switch_count()
+{
     static uint32_t last_ms = millis();
     static uint8_t last_count = 0;
     uint32_t now_ms = millis();

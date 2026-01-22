@@ -978,6 +978,7 @@ private:
     void userhook_auxSwitch1(const RC_Channel::AuxSwitchPos ch_flag);
     void userhook_auxSwitch2(const RC_Channel::AuxSwitchPos ch_flag);
     void userhook_auxSwitch3(const RC_Channel::AuxSwitchPos ch_flag);
+    uint8_t user_get_uav_status();
     bool user_arm_switch_count();
     void user_update_assit(float &target_roll, float &target_pitch);
 

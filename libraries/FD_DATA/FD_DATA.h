@@ -30,30 +30,46 @@ public:
     void update();
     bool get_serial_number(char* serial_number);
     bool set_serial_number(char* serial_number);
+    bool read_serial_number();
     bool get_uas_number(char* uas_number);
     bool set_uas_number(char* uas_number);
+    bool read_uas_number();
 
     void update_flying_s();
     void update_allow_arm();
-    void set_is_flying(bool in);
+    void update_sn_uas_check();
     bool get_runtime_flying(uint32_t& runtime_flying);
     bool reset_runtime_flying();
+    bool set_flying_s(uint32_t dt_s);
 
     void handle_message(const mavlink_message_t &msg);
+    void handle_message_sn(const mavlink_message_t &msg);
+    void handle_message_uas(const mavlink_message_t &msg);
+    void handle_message_rt(const mavlink_message_t &msg);
+    void handle_message_gcs_heartbeat(const mavlink_message_t &msg);
+    void handle_message_command_long(const mavlink_message_t &msg);
     void send_mav_serial_number();
     void send_mav_uas_number();
     void send_mav_runtime_flying();
-
     void send_zfjl_sn(mavlink_channel_t chan);
     void send_zfjl_uas(mavlink_channel_t chan);
     void send_zfjl_gcs_heartbeat(mavlink_channel_t chan);
+    void send_zfjl_uav_heartbeat(mavlink_channel_t chan);
 
     bool pre_arm_checks(bool display_failure);
+
+    void set_is_flying(bool in);
+    void set_uav_status(uint8_t status_in);
 
 private:
     static FD_DATA *_singleton;
 
     static StorageAccess _storage;
+
+    bool sn_updated = false;
+    bool uas_updated = false;
+    uint32_t _last_update_flying_ms;
+    uint32_t last_check_sn_uas_ms;
 
     bool _is_flying;
     uint32_t _last_flying_ms;
@@ -61,10 +77,12 @@ private:
     uint32_t _last_gcs_heartbeat_ms;
 
     mavlink_zfjl_gcs_heartbeat_t zfjl_gcs_heartbeat_packet;
+    mavlink_zfjl_uav_heartbeat_t zfjl_uav_heartbeat_packet;
 
     FD_DATA_T local_data;
 
     AP_Int8 use_gcs_lock;
+    AP_Int8 uav_type;
 };
 
 

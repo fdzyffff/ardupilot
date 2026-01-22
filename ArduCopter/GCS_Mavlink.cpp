@@ -584,6 +584,7 @@ static const ap_message STREAM_EXTRA3_msgs[] = {
 #endif
     MSG_ZFJL_SN,
     MSG_ZFJL_GCS,
+    MSG_ZFJL_UAV,
 };
 static const ap_message STREAM_PARAMS_msgs[] = {
     MSG_NEXT_PARAM

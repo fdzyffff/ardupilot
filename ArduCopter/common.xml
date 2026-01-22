@@ -6659,5 +6659,16 @@
       <field type="int32_t" name="altitude">altitude</field>
     </message>
 
+    <message id="41014" name="ZFJL_UAV_HEARTBEAT">
+      <description>ZFJL UAV status and RC position</description>
+      <field type="uint8_t" name="type"></field>
+      <field type="uint8_t" name="status"></field>
+      <field type="uint8_t" name="u1"></field>
+      <field type="uint8_t" name="u2"></field>
+      <field type="int32_t" name="rc_latitude">latitude</field>
+      <field type="int32_t" name="rc_longitude">longitude</field>
+      <field type="int32_t" name="rc_altitude">altitude</field>
+    </message>
+
   </messages>
 </mavlink>
