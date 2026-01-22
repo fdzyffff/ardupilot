@@ -1,7 +1,7 @@
 #include "FD1_message.h"
 
-#define FD1_MSG_DYT_TELEM_LEN 32
-class FD1_msg_DYT_telem : public FD1_message{
+#define FD1_MSG_DYT_CONTROL_LEN 16
+class FD1_msg_DYT_control : public FD1_message{
 public:
     struct PACKED FD1_msg_header {
         uint8_t head_1;
@@ -10,31 +10,19 @@ public:
     
     struct PACKED MSG_Collection {
         FD1_msg_header header;
-        uint8_t status_1;
-        uint8_t status_2;
-        uint8_t zoom;
-        uint8_t status_3;
-        int16_t target_yaw;
-        int16_t target_pitch;
-        int16_t gimbal_roll;
-        int16_t gimbal_pitch;
-        int16_t gimbal_yaw;
-        uint8_t frame_pixel_x;
-        uint8_t frame_pixel_y;
-        uint8_t reserved_1[2];
-        int16_t roll_rate;
-        int16_t pitch_rate;
-        int16_t yaw_rate;
-        uint16_t dist;
-        uint8_t self_check;
-        uint8_t reserved_2[2];
+        uint8_t control;
+        uint16_t param_x;
+        uint16_t param_y;
+        uint8_t param_3;
+        uint8_t zoom_rate;
+        uint8_t reserved[6];
         uint8_t sum;
     };
 
     // message structure
     union PACKED Content_1 {
         MSG_Collection msg;
-        uint8_t data[FD1_MSG_DYT_TELEM_LEN];
+        uint8_t data[FD1_MSG_DYT_CONTROL_LEN];
     };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -43,7 +31,7 @@ public:
         bool print;
         bool updated;
         bool need_send;
-        uint16_t length = FD1_MSG_DYT_TELEM_LEN;
+        uint16_t length = FD1_MSG_DYT_CONTROL_LEN;
         Content_1 content;
     };
 
@@ -63,21 +51,24 @@ public:
         uint16_t length;
         uint8_t count;
         uint8_t sum;
-        uint8_t data[FD1_MSG_DYT_TELEM_LEN];
+        uint8_t data[FD1_MSG_DYT_CONTROL_LEN];
     } _msg;
 
-    FD1_msg_DYT_telem();
+    FD1_msg_DYT_control();
     
     /* Do not allow copies */
-    FD1_msg_DYT_telem(const FD1_msg_DYT_telem &other) = delete;
-    FD1_msg_DYT_telem &operator=(const FD1_msg_DYT_telem&) = delete;
+    FD1_msg_DYT_control(const FD1_msg_DYT_control &other) = delete;
+    FD1_msg_DYT_control &operator=(const FD1_msg_DYT_control&) = delete;
 
-    static const uint8_t PREAMBLE1 = 0xEE;
-    static const uint8_t PREAMBLE2 = 0x16;
+    static const uint8_t PREAMBLE1 = 0xEB;
+    static const uint8_t PREAMBLE2 = 0x90;
 
     void process_message(void) override;
     void parse(uint8_t temp) override;
     void swap_message() override;
+
+    void pack_center();
+    void pack_track();
 
     void make_sum();
 

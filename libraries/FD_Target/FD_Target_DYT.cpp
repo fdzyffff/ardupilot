@@ -22,7 +22,7 @@ FD_Target_DYT::FD_Target_DYT()
 bool FD_Target_DYT::init() {
     _last_ms = 0;
     _valid = false;
-    set_type(1);
+    set_type(0);
     _port = nullptr;
     const AP_SerialManager &serial_manager = AP::serialmanager();
 
@@ -36,26 +36,25 @@ bool FD_Target_DYT::init() {
 }
 
 void FD_Target_DYT::update() {
-    static uint32_t last_update_ms = millis();
-
     if (get_port() == nullptr) {return;}
     while (get_port()->available()>0) {
         uint8_t temp = get_port()->read();
         uart_msg_DYT_telem.parse(temp);
         if (uart_msg_DYT_telem._msg_1.updated) {
+                // gcs().send_text(MAV_SEVERITY_INFO, "uart_msg_DYT_telem._msg_1.content.msg.status_1: %x", uart_msg_DYT_telem._msg_1.content.msg.status_1);
             if (uart_msg_DYT_telem._msg_1.content.msg.status_1 & 0x04) {
                 _last_ms = millis();
 
-                float gimbal_yaw = (float)(uart_msg_DYT_telem._msg_1.content.msg.gimbal_yaw) * 100.f;
-                float gimbal_pitch = (float)(uart_msg_DYT_telem._msg_1.content.msg.gimbal_pitch) * 100.f;
-                float target_yaw = (float)(uart_msg_DYT_telem._msg_1.content.msg.target_yaw) * 20.f;
-                float target_pitch = (float)(uart_msg_DYT_telem._msg_1.content.msg.target_pitch) * 20.f;
+                float gimbal_yaw = (float)(uart_msg_DYT_telem._msg_1.content.msg.gimbal_yaw) * 0.01f;
+                float gimbal_pitch = (float)(uart_msg_DYT_telem._msg_1.content.msg.gimbal_pitch) * 0.01f;
+                float target_yaw = (float)(uart_msg_DYT_telem._msg_1.content.msg.target_yaw) * 0.05f;
+                float target_pitch = (float)(uart_msg_DYT_telem._msg_1.content.msg.target_pitch) * 0.05f;
 
                 Vector3f target_unit = Vector3f(1.0f, 0.0f, 0.0f);
                 Matrix3f tmp_target_cam_m;
                 tmp_target_cam_m.from_euler(0.0f, radians(target_pitch), radians(target_yaw));
                 Matrix3f tmp_cam_frame_m;
-                tmp_cam_frame_m.from_euler(radians(0.0f), gimbal_pitch, gimbal_yaw);
+                tmp_cam_frame_m.from_euler(radians(0.0f), radians(gimbal_pitch), radians(gimbal_yaw));
                 Matrix3f tmp_target_frame_m = tmp_cam_frame_m*tmp_target_cam_m;
                 Vector3f ef_unit = tmp_target_frame_m*target_unit;
 
@@ -63,6 +62,8 @@ void FD_Target_DYT::update() {
                 float angle_pitch = wrap_180(degrees(atan2f(-ef_unit.z, ef_unit.xy().length())));
 
                 handle_info(angle_yaw, angle_pitch);
+
+                // gcs().send_text(MAV_SEVERITY_INFO, "angle_yaw: %f, angle_pitch: %f", angle_yaw, angle_pitch);
             }
             uart_msg_DYT_telem._msg_1.updated = false;
         }
@@ -76,10 +77,31 @@ void FD_Target_DYT::update() {
         _valid = false;
     }
 
+    if (!_valid) {
+        if (millis() - last_center_ms > 2000) {
+            uart_msg_DYT_control.pack_center();
+            last_center_ms = millis();
+            get_port()->write(uart_msg_DYT_control._msg_1.content.data, sizeof(uart_msg_DYT_control._msg_1.content.data));
+        }
+
+        if (millis() - last_track_ms > 200) {
+            uart_msg_DYT_control.pack_track();
+            last_track_ms = millis();
+            get_port()->write(uart_msg_DYT_control._msg_1.content.data, sizeof(uart_msg_DYT_control._msg_1.content.data));
+        }
+    }
+
     // for print purpose
     if (tnow - last_update_ms > 1000) {
         //gcs().send_text(MAV_SEVERITY_INFO, "raw: %d, att: %d, arspd: %d", pk0_count, pk1_count, pk2_count);
         last_update_ms = tnow;
+
+                // float gimbal_yaw = (float)(uart_msg_DYT_telem._msg_1.content.msg.gimbal_yaw) * 0.01f;
+                // float gimbal_pitch = (float)(uart_msg_DYT_telem._msg_1.content.msg.gimbal_pitch) * 0.01f;
+                // float target_yaw = (float)(uart_msg_DYT_telem._msg_1.content.msg.target_yaw) * 0.05f;
+                // float target_pitch = (float)(uart_msg_DYT_telem._msg_1.content.msg.target_pitch) * 0.05f;
+                // gcs().send_text(MAV_SEVERITY_INFO, "gimbal_yaw: %f, gimbal_pitch: %f", gimbal_yaw, gimbal_pitch);
+                // gcs().send_text(MAV_SEVERITY_INFO, "target_yaw: %f, target_pitch: %f", target_yaw, target_pitch);
     }
 }
 

@@ -14,7 +14,14 @@ bool ModeAttackLoc::_enter()
         }
         _cmd_throttle = MAX(SRV_Channels::get_output_scaled(SRV_Channel::k_throttle), plane.aparm.throttle_cruise);
         return true;
-    } else {
+    } else if (plane.uattack.is_active_cam()) {
+        target_loc = plane.current_loc;
+        // target_loc.offset_bearing(AP::ahrs().get_yaw(), 200.f);
+        set_stage(stage_class::ATTACK);
+        _cmd_throttle = MAX(SRV_Channels::get_output_scaled(SRV_Channel::k_throttle), plane.aparm.throttle_cruise);
+        return true;
+    } 
+    else {
         gcs().send_text(MAV_SEVERITY_INFO, "No target, Can NOT attack!");
     }
     return false;
@@ -91,7 +98,7 @@ void ModeAttackLoc::update()
             }
             break;
         case stage_class::ATTACK:
-            if (plane.uattack.is_active_loc()) {
+            if (!plane.uattack.is_active_cam()) {
                 set_stage(stage_class::HOVER);
             }
             update_attack();
