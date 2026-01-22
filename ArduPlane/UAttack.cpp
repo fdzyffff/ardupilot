@@ -271,6 +271,10 @@ void UAttack::handle_info(float p1, float p2, uint8_t cam_type) {
         angle_pitch = wrap_180(degrees(atan2f(-ef_unit.z, ef_unit.xy().length())));
         angle_yaw =   wrap_180(degrees(atan2f( ef_unit.y, ef_unit.x)));
     } else {
+        // body fixed cam
+        bf_info.x = p1; // yaw degree
+        bf_info.y = p2; // pitch degree
+
         // frame with gimbal cam
         angle_pitch = wrap_180(p2);
         angle_yaw =   wrap_180(p1 + degrees(_yaw));

@@ -78,9 +78,13 @@ private:
 
     AP_HAL::UARTDriver* _port;
 
-    // FD1_msg_DYT_control uart_msg_DYT_control; 
+    FD1_msg_DYT_control uart_msg_DYT_control; 
     FD1_msg_DYT_telem uart_msg_DYT_telem; 
-    // FD1_msg_DYT_apminfo uart_msg_DYT_apminfo; 
+    // FD1_msg_DYT_apminfo uart_msg_DYT_apminfo;
+
+    uint32_t last_update_ms;
+    uint32_t last_center_ms;
+    uint32_t last_track_ms; 
 };
 
 using AP_HAL::millis;

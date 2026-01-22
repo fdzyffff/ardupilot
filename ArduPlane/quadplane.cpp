@@ -1457,6 +1457,13 @@ float QuadPlane::desired_auto_yaw_rate_cds(void) const
         aspeed = 1;
     }
     float yaw_rate = degrees(GRAVITY_MSS * tanf(radians(plane.nav_roll_cd*0.01f))/aspeed) * 100;
+    if (plane.control_mode == &plane.mode_attack_loc) {
+        if (plane.mode_attack_loc.get_stage() == ModeAttackLoc::stage_class::ATTACK) {
+            yaw_rate = plane.uattack.get_target_yaw_rate() * 100.f;
+        } else {
+            yaw_rate = 0.0f;
+        }
+    }
     return yaw_rate;
 }
 

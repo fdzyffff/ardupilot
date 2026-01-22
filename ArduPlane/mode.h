@@ -947,6 +947,7 @@ public:
     void update_hover();
     bool check_approach();
     void set_stage(ModeAttackLoc::stage_class stage_in);
+    ModeAttackLoc::stage_class get_stage() {return stage;}
     float get_cmd_throttle();
     Location target_loc;
 
