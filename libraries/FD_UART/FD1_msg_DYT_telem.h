@@ -82,6 +82,4 @@ public:
     void make_sum();
 
     FD1UART_MSG_1 _msg_1;
-
-    const float SF_INT16 = 65536.f/360.f;
 };

@@ -1328,7 +1328,9 @@ private:
     void userhook_init();
     void userhook_100Hz();
     void userhook_1Hz();
- 
+
+    bool position_ok() const;
+
     Uart uart;
     UAttack uattack;
     UDelay udelay;

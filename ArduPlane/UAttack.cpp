@@ -11,7 +11,7 @@ const AP_Param::GroupInfo UAttack::var_info[] = {
     AP_GROUPINFO("K_ANGLE",     6, UAttack, attack_k_angle,          1.0f),
     AP_GROUPINFO("THR",         7, UAttack, attack_throttle,        75.0f),
     AP_GROUPINFO("THR_RATE",    8, UAttack, attack_throttle_rate,    1.0f),
-    AP_GROUPINFO("OUTMS",       9, UAttack, attack_timeout,       1000),
+    AP_GROUPINFO("ATKTYPE",     9, UAttack, attack_type,          1000),
     AP_GROUPINFO("ANGLE",      10, UAttack, attack_angle,            0.f),
     AP_GROUPINFO("PTH_LIM",    11, UAttack, pitch_limit,            30.f),
     AP_GROUPINFO("PTH_RLIM",   12, UAttack, pitch_rate_limit,       30.f),
@@ -74,7 +74,7 @@ void UAttack::init()
     gcs().send_text(MAV_SEVERITY_WARNING, "Target FILT HZ [%0.0f, %0.0f]", filt_yaw_hz.get(), filt_pithc_hz.get());
 }
 
-void UAttack::udpate_control_value(){
+void UAttack::udpate_control_value() {
     update_target_pitch_rate();
     update_target_yaw_rate();
     update_target_roll_angle();
@@ -100,11 +100,12 @@ void UAttack::update_log() {
                                 (float)_target_yaw_rate);
 
     AP::logger().WriteStreaming("UAT2",
-                                "TimeUS,angt,angm,agrt,agrm",
-                                "s----",
-                                "F----",
-                                "Qffff",
+                                "TimeUS,type, angt,angm,agrt,agrm",
+                                "s-----",
+                                "F-----",
+                                "Qfffff",
                                 AP_HAL::micros64(),
+                                (float)get_attack_type(),
                                 (float)_attack_angle_target,
                                 (float)_attack_angle_measure,
                                 (float)_attack_angle_rate_target,
@@ -167,6 +168,7 @@ void UAttack::init_target()
         _Target_ptr_loc = new FD_Target_Loc();
         if (_Target_ptr_loc->init()) {
             gcs().send_text(MAV_SEVERITY_WARNING, "Target Loc init");
+            AP_Param::load_object_from_eeprom(_Target_ptr_loc, FD_Target_Loc::var_info);
         } else {
             gcs().send_text(MAV_SEVERITY_WARNING, "Target Loc Fail");
             _Target_ptr_loc = nullptr;
@@ -191,6 +193,17 @@ void UAttack::update()
         _Target_ptr_cam->update();
     }
     if (_Target_ptr_loc != nullptr) {
+        if (_Target_ptr_loc->use_external_loc.get() == 1) {
+            if (plane.g2.follow.have_target()) {
+                Location tmp_loc;
+                Vector3f tmp_vel;
+                if (plane.g2.follow.get_target_location_and_velocity(tmp_loc, tmp_vel)) {
+                    Vector3p tmp_off = Vector3p(tmp_vel.x * 2.0f, tmp_vel.y * 2.0f, tmp_vel.z * 2.0f);
+                    tmp_loc.offset(tmp_off);
+                    _Target_ptr_loc->set_target_loc(tmp_loc);
+                }
+            }
+        }
         _Target_ptr_loc->update();
     }
 
@@ -199,6 +212,9 @@ void UAttack::update()
             gcs().send_text(MAV_SEVERITY_INFO, "Change to CAM");
         }
         current_idx = 1;
+        if (_Target_ptr_loc != nullptr && _Target_ptr_loc->is_valid()) {
+            _Target_ptr_loc->set_valid(false);
+        }
     } else if (_Target_ptr_loc != nullptr && _Target_ptr_loc->is_valid()) {
         if (current_idx != 2) {
             gcs().send_text(MAV_SEVERITY_INFO, "Change to LOC");
@@ -369,6 +385,21 @@ void UAttack::handle_attack_msg(const mavlink_message_t &msg) {
     }
 }
 
+void UAttack::set_external_cmd(float cmd_speed, float cmd_pitch, float cmd_roll)
+{
+    _external_cmd._target_speed = cmd_speed;
+    _external_cmd._target_pitch = cmd_pitch;
+    _external_cmd._target_roll = cmd_roll;
+    _external_cmd.last_cmd_ms = millis();
+}
+
+uint8_t UAttack::get_attack_type() {
+    if ((attack_type.get() == 1) && (millis() - _external_cmd.last_cmd_ms < 1000)) {
+        return 1;
+    }
+    return 0;
+}
+
 void UAttack::do_print()
 {
     // put your 1Hz code here
@@ -388,9 +419,9 @@ void UAttack::do_print()
     if (print.get() & (1<<4)) { // 16
         gcs().send_text(MAV_SEVERITY_WARNING, "rpyt (%0.1f , %0.1f , %0.1f , %0.2f)", get_target_roll_angle(), get_target_pitch_rate(), get_target_yaw_rate(), attack_throttle.get());
     }
-    // if (print.get() & (1<<5)) { // 32
-    //     gcs().send_text(MAV_SEVERITY_WARNING, "apid (%0.1f , %0.1f , %0.1f , %0.2f)", _attack_throttle_pid, _attack_throttle_p, _attack_throttle_i, _attack_throttle_d);
-    // }
+    if (print.get() & (1<<5)) { // 32
+        gcs().send_text(MAV_SEVERITY_WARNING, "srp (%0.1f , %0.1f , %0.1f)", _external_cmd._target_speed, _external_cmd._target_pitch, _external_cmd._target_roll);
+    }
     if (print.get() & (1<<6)) { // 364
         gcs().send_text(MAV_SEVERITY_WARNING, "%0.0f , %0.0f , %0.0f , %0.0f", display_info.p11, display_info.p12, display_info.p13, display_info.p14);
     }
