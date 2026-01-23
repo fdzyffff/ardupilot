@@ -69,6 +69,8 @@ public:
 
     void pack_center();
     void pack_track();
+    void pack_cancel();
+    void pack_open_recognition();
 
     void make_sum();
 

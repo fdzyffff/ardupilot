@@ -85,6 +85,7 @@ private:
     uint32_t last_update_ms;
     uint32_t last_center_ms;
     uint32_t last_track_ms; 
+    uint32_t last_cancel_ms;
 };
 
 using AP_HAL::millis;

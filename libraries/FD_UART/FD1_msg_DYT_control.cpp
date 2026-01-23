@@ -90,6 +90,17 @@ void FD1_msg_DYT_control:: pack_track()
     make_sum();
 }
 
+void FD1_msg_DYT_control::pack_cancel()
+{
+    _msg_1.content.msg.control = 0x0E;
+    make_sum();
+}
+
+void FD1_msg_DYT_control::pack_open_recognition()
+{
+    _msg_1.content.msg.control = 0x07;
+    make_sum();
+}
 
 void FD1_msg_DYT_control::make_sum()
 {

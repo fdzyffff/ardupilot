@@ -11,3 +11,7 @@ echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
 ./waf plane
 cp build/0LDX7-sim/bin/arduplane.apj firmware/$current_datetime\_0LDX7-sim_arduplane.apj
 echo "~~~~~~~~~~~~~~~ done ~~~~~~~~~~~~~~~"
+./waf configure --board CUAVv5Nano
+./waf plane
+cp build/CUAVv5Nano/bin/arduplane.apj firmware/$current_datetime\_CUAVv5Nano_arduplane.apj
+echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
