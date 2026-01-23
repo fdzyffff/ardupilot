@@ -64,6 +64,7 @@ void FD_Target_DYT::update() {
                 handle_info(angle_yaw, angle_pitch);
 
                 // gcs().send_text(MAV_SEVERITY_INFO, "angle_yaw: %f, angle_pitch: %f", angle_yaw, angle_pitch);
+                // gcs().send_text(MAV_SEVERITY_INFO, "target_yaw: %f, target_pitch: %f", target_yaw, target_pitch);
             }
             uart_msg_DYT_telem._msg_1.updated = false;
         }
@@ -78,16 +79,32 @@ void FD_Target_DYT::update() {
     }
 
     if (!_valid) {
-        if (millis() - last_center_ms > 2000) {
+        if (millis() - last_center_ms > 3000) {
             uart_msg_DYT_control.pack_center();
             last_center_ms = millis();
             get_port()->write(uart_msg_DYT_control._msg_1.content.data, sizeof(uart_msg_DYT_control._msg_1.content.data));
+            uart_msg_DYT_control.pack_open_recognition();
+            get_port()->write(uart_msg_DYT_control._msg_1.content.data, sizeof(uart_msg_DYT_control._msg_1.content.data));
         }
 
-        if (millis() - last_track_ms > 200) {
+        if (millis() - last_track_ms > 200 && millis() - last_cancel_ms > 2000) {
             uart_msg_DYT_control.pack_track();
             last_track_ms = millis();
             get_port()->write(uart_msg_DYT_control._msg_1.content.data, sizeof(uart_msg_DYT_control._msg_1.content.data));
+        }
+    } else {
+        float gimbal_yaw = (float)(uart_msg_DYT_telem._msg_1.content.msg.gimbal_yaw) * 0.01f;
+        float gimbal_pitch = (float)(uart_msg_DYT_telem._msg_1.content.msg.gimbal_pitch) * 0.01f;
+        float target_yaw = (float)(uart_msg_DYT_telem._msg_1.content.msg.target_yaw) * 0.05f;
+        float target_pitch = (float)(uart_msg_DYT_telem._msg_1.content.msg.target_pitch) * 0.05f;
+
+        if (millis() - last_cancel_ms > 500) {
+            if ((fabsf(gimbal_yaw) > 120.f || fabsf(gimbal_pitch) > 40) || (fabsf(target_yaw) > 8.f && fabsf(target_pitch) > 5.0f) ) {
+                uart_msg_DYT_control.pack_cancel();
+                get_port()->write(uart_msg_DYT_control._msg_1.content.data, sizeof(uart_msg_DYT_control._msg_1.content.data));
+                _valid = false;
+                last_cancel_ms = millis();
+            }
         }
     }
 

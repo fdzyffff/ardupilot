@@ -97,11 +97,17 @@ void ModeAttackLoc::update()
                 set_stage(stage_class::ATTACK);
             }
             break;
-        case stage_class::ATTACK:
-            if (!plane.uattack.is_active_cam()) {
-                set_stage(stage_class::HOVER);
+        case stage_class::ATTACK: {
+                if (!plane.uattack.is_active_cam()) {
+                    set_stage(stage_class::HOVER);
+                }
+                float vel_d = 0.0f;
+                if (AP::ahrs().get_vert_pos_rate_D(vel_d) && (vel_d > 10.0f)) {
+                    gcs().send_text(MAV_SEVERITY_INFO, "ATK: CLB_rate high, Hover");
+                    set_stage(stage_class::HOVER);
+                }
+                update_attack();
             }
-            update_attack();
             break;
         case stage_class::HOVER:
             update_hover();
@@ -126,8 +132,12 @@ void ModeAttackLoc::update_approach()
 void ModeAttackLoc::update_hover()
 {
     plane.calc_nav_roll();
-    plane.calc_nav_pitch();
-    plane.calc_throttle();
+    if (plane.stick_mixing_enabled() && plane.flight_option_enabled(FlightOptions::ENABLE_LOITER_ALT_CONTROL)) {
+        plane.update_fbwb_speed_height();
+    } else {
+        plane.calc_nav_pitch();
+        plane.calc_throttle();
+    }
 }
 
 void ModeAttackLoc::update_attack()
