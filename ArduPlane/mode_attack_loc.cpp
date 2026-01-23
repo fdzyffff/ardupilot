@@ -6,7 +6,7 @@ bool ModeAttackLoc::_enter()
     if (plane.uattack.is_active_loc()) {
         target_loc = plane.uattack._Target_ptr_loc->target_loc;
         if (check_approach()) {
-            set_stage(stage_class::HOVER);                
+            set_stage(stage_class::ATTACK);                
         } else {
             set_stage(stage_class::APPROACH);
             build_path();
@@ -43,7 +43,17 @@ void ModeAttackLoc::run()
             plane.stabilize_yaw();
             break;
         case stage_class::ATTACK:
-            plane.stabilize_attack();
+            {
+                if (plane.uattack.get_attack_type() == 1) {
+                    plane.nav_roll_cd = (int32_t)(plane.uattack._external_cmd._target_roll * 100.f);
+                    plane.nav_pitch_cd = (int32_t)(plane.uattack._external_cmd._target_pitch * 100.f);
+                    plane.stabilize_roll();
+                    plane.stabilize_pitch();
+                    plane.stabilize_yaw();
+                } else {
+                    plane.stabilize_attack();
+                }
+            }
             break;
         default:
             break;
@@ -89,16 +99,16 @@ void ModeAttackLoc::update()
 {
     switch (stage) {
         case stage_class::APPROACH:
-            update_approach();
-            if (check_approach()) {
+            if (!plane.uattack.is_active()) {
                 set_stage(stage_class::HOVER);
             }
-            if (plane.uattack.is_active_cam()) {
-                set_stage(stage_class::ATTACK);
-            }
+            if (check_approach() || plane.uattack.is_active_cam()) {
+                set_stage(stage_class::ATTACK);                
+            } 
+            update_approach();
             break;
         case stage_class::ATTACK: {
-                if (!plane.uattack.is_active_cam()) {
+                if (!plane.uattack.is_active()) {
                     set_stage(stage_class::HOVER);
                 }
                 float vel_d = 0.0f;
@@ -158,6 +168,7 @@ void ModeAttackLoc::navigate()
             plane.update_loiter(0);
             break;
         case stage_class::APPROACH:
+            target_loc = plane.uattack._Target_ptr_loc->target_loc;
             plane.next_WP_loc = target_loc;
             plane.next_WP_loc.alt = plane.current_loc.alt;
             plane.nav_controller->update_waypoint(plane.prev_WP_loc, plane.next_WP_loc);

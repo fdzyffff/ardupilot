@@ -42,6 +42,8 @@ public:
     void update_target_yaw_rate();
     void update_log();
 
+    void set_external_cmd(float cmd_speed, float cmd_pitch, float cmd_roll);
+    uint8_t get_attack_type();
     void do_print();
 
     struct {
@@ -74,6 +76,13 @@ public:
     float _attack_angle_rate_target;
     float _attack_angle_rate_measure;
 
+    struct {
+        uint32_t last_cmd_ms;
+        float _target_speed;
+        float _target_pitch;
+        float _target_roll;
+    } _external_cmd;
+
     // UDelay udelay;
 
 private:
@@ -86,7 +95,7 @@ private:
     AP_Float        attack_k_angle;
     AP_Float        attack_throttle;
     AP_Float        attack_throttle_rate;
-    AP_Int16        attack_timeout;
+    AP_Int8         attack_type;
     AP_Float        attack_angle;
     AP_Float        pitch_limit;
     AP_Float        pitch_rate_limit;
@@ -101,7 +110,7 @@ private:
 
     FD_Target_Base*       _Target_ptr_cam;
     FD_Target_Loc*        _Target_ptr_loc;
-    FD_Target_DYT*      _Target_ptr_cam_DYT;
+    FD_Target_DYT*        _Target_ptr_cam_DYT;
 
 
     uint32_t _last_ms;

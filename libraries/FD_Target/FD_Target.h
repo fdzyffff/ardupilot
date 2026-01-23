@@ -24,6 +24,7 @@ public:
     bool get_info(float &p1, float &p2);
     uint8_t get_type();
     void set_type(uint8_t type_in);
+    void set_valid(bool valid_in);
     virtual void handle_msg(const mavlink_message_t &msg);
     uint32_t _last_ms;
     bool _new_data;
@@ -44,15 +45,18 @@ public:
     void update() override;
     void handle_msg(const mavlink_message_t &msg) override;
     void handle_info_test(float p1, float p2);
+    void set_target_loc(Location &loc_in);
 
     Location current_loc;
     Location target_loc;
 
     AP_Int32 target_timeout;
+    AP_Float target_distout;
     AP_Float nav_radius;
+    AP_Int8 use_external_loc;
 
 private:
-    bool _have_target;
+    uint32_t _last_cal_ms;
 };
 
 class FD_Target_DYT: public FD_Target_Base {
@@ -69,6 +73,9 @@ public:
     void handle_info_test(float p1, float p2);
     AP_HAL::UARTDriver* get_port(void) {return _port;}
 
+    FD1_msg_DYT_control uart_msg_DYT_control; 
+    FD1_msg_DYT_telem uart_msg_DYT_telem; 
+
 private:
     AP_Int32 target_timeout;
     AP_Float cam_width;
@@ -77,9 +84,6 @@ private:
     AP_Float cam_angle_y;
 
     AP_HAL::UARTDriver* _port;
-
-    FD1_msg_DYT_control uart_msg_DYT_control; 
-    FD1_msg_DYT_telem uart_msg_DYT_telem; 
     // FD1_msg_DYT_apminfo uart_msg_DYT_apminfo;
 
     uint32_t last_update_ms;

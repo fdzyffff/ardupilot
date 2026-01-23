@@ -29,3 +29,7 @@ uint8_t FD_Target_Base::get_type() {
 void FD_Target_Base::set_type(uint8_t type_in) {
     _type = type_in;
 }
+
+void FD_Target_Base::set_valid(bool valid_in) {
+    _valid = valid_in;
+}

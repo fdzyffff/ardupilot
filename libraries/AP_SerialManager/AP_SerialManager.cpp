@@ -587,6 +587,7 @@ void AP_SerialManager::init()
                     break;
 #endif
                 case SerialProtocol_NET:
+                case SerialProtocol_MISSION:
                     uart->begin(state[i].baudrate(), 256, 256);
                     break;
                     

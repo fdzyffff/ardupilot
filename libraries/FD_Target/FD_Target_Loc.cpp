@@ -5,7 +5,9 @@
 const AP_Param::GroupInfo FD_Target_Loc::var_info[] = {
 
     AP_GROUPINFO("TOUT", 0, FD_Target_Loc, target_timeout, 0),
-    AP_GROUPINFO("NRAD", 1, FD_Target_Loc, nav_radius, 30),
+    AP_GROUPINFO("DOUT", 1, FD_Target_Loc, target_distout, 30),
+    AP_GROUPINFO("NRAD", 2, FD_Target_Loc, nav_radius, 300),
+    AP_GROUPINFO("ELOC", 3, FD_Target_Loc, use_external_loc, 0),
 
     AP_GROUPEND
 };
@@ -17,15 +19,16 @@ FD_Target_Loc::FD_Target_Loc()
 }
 
 bool FD_Target_Loc::init() {
-    _have_target = false;
-    set_type(1);
+    _valid = false;
+    set_type(0);
     return true;
 }
 
 void FD_Target_Loc::update() {
     static uint32_t last_update_ms = millis();
 
-    if (_have_target && (millis() - _last_ms) > 33) {
+    if (_valid && (millis() - _last_cal_ms) > 16) {
+        _last_cal_ms = millis();
         bool have_position = AP::ahrs().get_location(current_loc);
         if (!have_position) {
             return;
@@ -33,7 +36,7 @@ void FD_Target_Loc::update() {
         Vector3f off_ef = current_loc.get_distance_NED(target_loc);
 
         Matrix3f tmp_earth_m;
-        tmp_earth_m.from_euler(0.0f, 0.0f, AP::ahrs().get_yaw());
+        tmp_earth_m.from_euler(AP::ahrs().get_roll(), AP::ahrs().get_pitch(), AP::ahrs().get_yaw());
         tmp_earth_m.transpose();
         Vector3f off_bf = tmp_earth_m*off_ef;
         off_bf.normalized();
@@ -45,7 +48,11 @@ void FD_Target_Loc::update() {
     }
 
     uint32_t tnow = millis(); // 只能放这里，handle_info会更新_last_ms的值，如果tnow赋值在其之前，则会小于_last_ms。SITL仿不出来，它周期是50Hz太低了
-    if ((target_timeout > 0) && (tnow - _last_ms > (uint32_t)target_timeout)) {
+    if ((target_timeout.get() > 0) && (tnow - _last_ms > (uint32_t)target_timeout.get())) {
+        _valid = false;
+    }
+
+    if (_valid && AP::ahrs().get_location(current_loc) && (current_loc.get_distance(target_loc) < target_distout.get())) {
         _valid = false;
     }
 
@@ -59,6 +66,7 @@ void FD_Target_Loc::update() {
 
 void FD_Target_Loc::handle_msg(const mavlink_message_t &msg)
 {
+    Location temp_loc;
     if (msg.msgid == MAVLINK_MSG_ID_COMMAND_INT) {
         // decode packet
         mavlink_command_int_t packet;
@@ -66,12 +74,12 @@ void FD_Target_Loc::handle_msg(const mavlink_message_t &msg)
         switch(packet.command) {
             case MAV_CMD_USER_1:
                 gcs().send_text(MAV_SEVERITY_WARNING, "Target mavpkg");
-                target_loc.lat = packet.x;
-                target_loc.lng = packet.y;
-                // target_loc.set_alt_cm(packet.z*100.f, Location::AltFrame::ABOVE_HOME);
-                // target_loc.change_alt_frame(Location::AltFrame::ABSOLUTE);
-                target_loc.set_alt_cm(packet.z*100.f, Location::AltFrame::ABSOLUTE);
-                _have_target = true;
+                temp_loc.lat = packet.x;
+                temp_loc.lng = packet.y;
+                // temp_loc.set_alt_cm(packet.z*100.f, Location::AltFrame::ABOVE_HOME);
+                // temp_loc.change_alt_frame(Location::AltFrame::ABSOLUTE);
+                temp_loc.set_alt_cm(packet.z*100.f, Location::AltFrame::ABSOLUTE);
+                set_target_loc(temp_loc);
                 // gcs().send_text(MAV_SEVERITY_INFO,"x %f", (float)packet.x);
                 // gcs().send_text(MAV_SEVERITY_INFO,"y %f", (float)packet.y);
                 // gcs().send_text(MAV_SEVERITY_INFO,"z %f", (float)packet.z);
@@ -90,12 +98,12 @@ void FD_Target_Loc::handle_msg(const mavlink_message_t &msg)
                     {
                         gcs().send_text(MAV_SEVERITY_WARNING, "Target mavpkg");
                     }
-                    target_loc.lat = 399778929;
-                    target_loc.lng = 1163409769;
-                    // target_loc.set_alt_cm(packet.z*100.f, Location::AltFrame::ABOVE_HOME);
-                    // target_loc.change_alt_frame(Location::AltFrame::ABSOLUTE);
-                    target_loc.set_alt_cm(5300.f, Location::AltFrame::ABSOLUTE);
-                    _have_target = true;
+                    temp_loc.lat = 399778929;
+                    temp_loc.lng = 1163409769;
+                    // temp_loc.set_alt_cm(packet.z*100.f, Location::AltFrame::ABOVE_HOME);
+                    // temp_loc.change_alt_frame(Location::AltFrame::ABSOLUTE);
+                    temp_loc.set_alt_cm(5300.f, Location::AltFrame::ABSOLUTE);
+                    set_target_loc(temp_loc);
                     // gcs().send_text(MAV_SEVERITY_INFO,"x %f", (float)packet.x);
                     // gcs().send_text(MAV_SEVERITY_INFO,"y %f", (float)packet.y);
                 }
@@ -105,7 +113,13 @@ void FD_Target_Loc::handle_msg(const mavlink_message_t &msg)
                 break;
         }
     }
+}
 
+void FD_Target_Loc::set_target_loc(Location &loc_in)
+{
+    target_loc = loc_in;
+    _valid = true;
+    _last_ms = millis();
 }
 
 void FD_Target_Loc::handle_info_test(float p1, float p2) {
