@@ -3,8 +3,13 @@ echo $current_datetime
 mkdir firmware
 rm -fr firmware/*
 echo "~~~~~~~~~~~~~~~ start ~~~~~~~~~~~~~~~"
-./waf configure --board APzF4
+./waf configure --board APzH7
 ./waf copter
-# mkdir firmware/APzF4
-cp build/APzF4/bin/arducopter.apj firmware/$current_datetime\_APzF4_arducopter.apj
+# mkdir firmware/APzH7
+cp build/APzH7/bin/arducopter.apj firmware/$current_datetime\_APzH7_arducopter.apj
+echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
+./waf configure --board CUAVv5-sim
+./waf copter
+# mkdir firmware/CUAVv5-sim
+cp build/CUAVv5-sim/bin/arducopter.apj firmware/$current_datetime\_CUAVv5-sim_arducopter.apj
 echo "~~~~~~~~~~~~~~~ done ~~~~~~~~~~~~~~~"
