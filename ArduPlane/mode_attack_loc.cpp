@@ -111,15 +111,34 @@ void ModeAttackLoc::update()
                 if (!plane.uattack.is_active()) {
                     set_stage(stage_class::HOVER);
                 }
-                float vel_d = 0.0f;
-                if (AP::ahrs().get_vert_pos_rate_D(vel_d) && (vel_d > 10.0f)) {
-                    gcs().send_text(MAV_SEVERITY_INFO, "ATK: CLB_rate high, Hover");
-                    set_stage(stage_class::HOVER);
-                }
+                // float vel_d = 0.0f;
+                // if (AP::ahrs().get_vert_pos_rate_D(vel_d) && (vel_d > 10.0f)) {
+                //     gcs().send_text(MAV_SEVERITY_INFO, "ATK: CLB_rate high, Hover");
+                //     set_stage(stage_class::HOVER);
+                // }
                 update_attack();
             }
             break;
         case stage_class::HOVER:
+            if (plane.uattack.is_active_cam()) {
+                gcs().send_text(MAV_SEVERITY_INFO, "ATK: recover");
+                set_stage(stage_class::ATTACK);                
+            } 
+            // if (plane.uattack.is_active_loc()) {
+            //     target_loc = plane.uattack._Target_ptr_loc->target_loc;
+            //     if (check_approach()) {
+            //         set_stage(stage_class::ATTACK);                
+            //     } else {
+            //         set_stage(stage_class::APPROACH);
+            //         build_path();
+            //         gcs().send_text(MAV_SEVERITY_INFO, "Attack LOC!");
+            //     }
+            // }
+
+            if (plane.uattack.atk_time_out.get() != 0 && (millis() - _hover_start_ms > plane.uattack.atk_time_out.get())) {
+                gcs().send_text(MAV_SEVERITY_INFO, "ATK: Return");
+                plane.set_mode(plane.mode_rtl, ModeReason::ATK_FAILSAFE);
+            }
             update_hover();
             break;
         default:
@@ -155,7 +174,7 @@ void ModeAttackLoc::update_attack()
     // plane.nav_roll_cd = 0;//plane.ahrs.roll_sensor;
     plane.nav_pitch_cd = plane.ahrs.pitch_sensor;
 
-    float throtle_rate = plane.uattack.attack_throttle_rate*plane.G_Dt;
+    float throtle_rate = 3.0f*plane.G_Dt;
     float target_throttle = plane.uattack.attack_throttle;
     _cmd_throttle = _cmd_throttle + constrain_float(target_throttle - _cmd_throttle, -throtle_rate, throtle_rate);
     SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, plane.mode_attack_loc.get_cmd_throttle());
@@ -185,6 +204,7 @@ void ModeAttackLoc::set_stage(ModeAttackLoc::stage_class stage_in)
         case stage_class::HOVER:
             plane.next_WP_loc = target_loc;
             plane.next_WP_loc.alt = plane.current_loc.alt;
+            _hover_start_ms = millis();
             gcs().send_text(MAV_SEVERITY_INFO, "In Hover");
             break;
         case stage_class::ATTACK:

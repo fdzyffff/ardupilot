@@ -956,4 +956,6 @@ protected:
     bool _enter() override;
     float _cmd_throttle;
     stage_class stage;
+
+    uint32_t _hover_start_ms;
 };

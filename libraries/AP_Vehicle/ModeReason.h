@@ -72,4 +72,5 @@ enum class ModeReason : uint8_t {
   DDS_COMMAND = 52,
   AUX_FUNCTION = 53,
   FENCE_REENABLE = 55,
+  ATK_FAILSAFE = 4,
 };

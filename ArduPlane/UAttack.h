@@ -94,7 +94,7 @@ private:
     AP_Float        attack_k2_roll;
     AP_Float        attack_k_angle;
     AP_Float        attack_throttle;
-    AP_Float        attack_throttle_rate;
+    AP_Int32        atk_time_out;
     AP_Int8         attack_type;
     AP_Float        attack_angle;
     AP_Float        pitch_limit;
