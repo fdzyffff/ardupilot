@@ -135,7 +135,7 @@ void ModeAttackLoc::update()
             //     }
             // }
 
-            if (plane.uattack.atk_time_out.get() != 0 && (millis() - _hover_start_ms > plane.uattack.atk_time_out.get())) {
+            if (plane.uattack.atk_time_out.get() != 0 && (millis() - _hover_start_ms > (uint32_t)plane.uattack.atk_time_out.get())) {
                 gcs().send_text(MAV_SEVERITY_INFO, "ATK: Return");
                 plane.set_mode(plane.mode_rtl, ModeReason::ATK_FAILSAFE);
             }
