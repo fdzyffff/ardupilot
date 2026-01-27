@@ -6,10 +6,12 @@ void Plane::user_init()
     // this will be called once at start-up
 
     uk230.init();
+    AP::fd_uartmav().init();
 }
 
 void Plane::user_100Hz() {
     uk230.update();
+    AP::fd_uartmav().update();
 }
 
 void Plane::user_50Hz() {

@@ -519,6 +519,8 @@ private:
         // are we doing loiter mode as a VTOL?
         bool vtol_loiter;
 
+        bool pass_wp;
+
         // how much correction have we added for terrain data
         float terrain_correction;
 

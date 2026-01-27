@@ -491,6 +491,7 @@ public:
     //MAVLink Status Sending
     void send_mavlink_gps_raw(mavlink_channel_t chan);
     void send_mavlink_gps2_raw(mavlink_channel_t chan);
+    void pack_mavlink_gps_raw(uint8_t system_id, uint8_t component_id, mavlink_message_t& msg);
 
     void send_mavlink_gps_rtk(mavlink_channel_t chan, uint8_t inst);
 

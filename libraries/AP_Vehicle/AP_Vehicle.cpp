@@ -251,6 +251,7 @@ const AP_Param::GroupInfo AP_Vehicle::var_info[] = {
     // @Path: ../Filter/AP_Filter.cpp
     AP_SUBGROUPINFO(filters, "FILT", 26, AP_Vehicle, AP_Filters),
 #endif
+    AP_SUBGROUPINFO(fd_uartmav, "UMAV", 27, AP_Vehicle, FD_UartMAV),
     AP_GROUPEND
 };
 

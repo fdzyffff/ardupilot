@@ -457,9 +457,10 @@ GPS_Data GPS::interpolate_data(const GPS_Data &d, uint32_t delay_ms)
     return _gps_history[N-1];
 }
 
-float GPS_Data::ground_track_rad() const
+float GPS_Data::heading() const
 {
-    return atan2f(speedE, speedN);
+    const auto velocity = Vector2d{speedE, speedN};
+    return velocity.angle();
 }
 
 float GPS_Data::speed_2d() const

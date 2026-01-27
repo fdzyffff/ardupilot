@@ -99,6 +99,54 @@ Plane::Plane(const char *frame_str) :
         mass = 2.0;
         coefficient.c_drag_p = 0.05;
     }
+
+    sitl = AP::sitl();
+    if (sitl) {
+        coefficient.s = sitl->s;
+        coefficient.b = sitl->b;
+        coefficient.c = sitl->c;
+        coefficient.c_lift_0 = sitl->c_lift_0;
+        coefficient.c_lift_deltae = sitl->c_lift_deltae;
+        coefficient.c_lift_a = sitl->c_lift_a;
+        coefficient.c_lift_q = sitl->c_lift_q;
+        coefficient.mcoeff = sitl->mcoeff;
+        coefficient.oswald = sitl->oswald;
+        coefficient.alpha_stall = sitl->alpha_stall;
+        coefficient.c_drag_q = sitl->c_drag_q;
+        coefficient.c_drag_deltae = sitl->c_drag_deltae;
+        coefficient.c_drag_p = sitl->c_drag_p;
+        coefficient.c_y_0 = sitl->c_y_0;
+        coefficient.c_y_b = sitl->c_y_b;
+        coefficient.c_y_p = sitl->c_y_p;
+        coefficient.c_y_r = sitl->c_y_r;
+        coefficient.c_y_deltaa = sitl->c_y_deltaa;
+        coefficient.c_y_deltar = sitl->c_y_deltar;
+        coefficient.c_l_0 = sitl->c_l_0;
+        coefficient.c_l_p = sitl->c_l_p;
+        coefficient.c_l_b = sitl->c_l_b;
+        coefficient.c_l_r = sitl->c_l_r;
+        coefficient.c_l_deltaa = sitl->c_l_deltaa;
+        coefficient.c_l_deltar = sitl->c_l_deltar;
+        coefficient.c_m_0 = sitl->c_m_0;
+        coefficient.c_m_a = sitl->c_m_a;
+        coefficient.c_m_q = sitl->c_m_q;
+        coefficient.c_m_deltae = sitl->c_m_deltae;
+        coefficient.c_n_0 = sitl->c_n_0;
+        coefficient.c_n_b = sitl->c_n_b;
+        coefficient.c_n_p = sitl->c_n_p;
+        coefficient.c_n_r = sitl->c_n_r;
+        coefficient.c_n_deltaa = sitl->c_n_deltaa;
+        coefficient.c_n_deltar = sitl->c_n_deltar;
+        coefficient.deltaa_max = sitl->deltaa_max;
+        coefficient.deltae_max = sitl->deltae_max;
+        coefficient.deltar_max = sitl->deltar_max;
+        coefficient.CGOffset.x = sitl->CGOffset_x;
+        coefficient.CGOffset.y = sitl->CGOffset_y;
+        coefficient.CGOffset.z = sitl->CGOffset_z;
+        mass = sitl->mass;
+        thrust_scale = sitl->thrust_scale;
+        ::printf("Load plane sim param\n");
+    }
 }
 
 /*
@@ -274,7 +322,8 @@ void Plane::calculate_forces(const struct sitl_input &input, Vector3f &rot_accel
     float aileron  = filtered_servo_angle(input, 0);
     float elevator = filtered_servo_angle(input, 1);
     float rudder   = filtered_servo_angle(input, 3);
-    bool launch_triggered = input.servos[6] > 1700;
+    bool launch_triggered = input.servos[15] > 1700;
+    bool drop_triggered = input.servos[14] > 1700;
     float throttle;
     if (reverse_elevator_rudder) {
         elevator = -elevator;
@@ -357,7 +406,29 @@ void Plane::calculate_forces(const struct sitl_input &input, Vector3f &rot_accel
             }
         } else {
             // allow reset of catapult
-            launch_start_ms = 0;
+            // launch_start_ms = 0;
+        }
+    }
+
+    if (have_drop) {
+        /*
+          simple simulation of a launcher
+         */
+        if (drop_triggered) {
+            uint64_t now = AP_HAL::millis64();
+            if (drop_start_ms == 0) {
+                printf("Trigger\n");
+                drop_start_ms = now;
+                set_ground_level(get_ground_level() - 100);
+            }
+            if (now - drop_start_ms < drop_time*1000) {
+                rot_accel.x += 2;
+                rot_accel.y += 2;
+                rot_accel.z += 2;
+            }
+        } else {
+            // allow reset of catapult
+            // drop_start_ms = 0;
         }
     }
     
@@ -390,9 +461,15 @@ void Plane::update(const struct sitl_input &input)
 {
     Vector3f rot_accel;
 
-    update_wind(input);
-    
-    calculate_forces(input, rot_accel);
+    if (flag_stop_on_ground) {
+        accel_body.zero();
+        rot_accel.zero();
+        velocity_ef.zero();
+        gyro.zero();
+    } else {
+        update_wind(input);
+        calculate_forces(input, rot_accel);
+    }
     
     update_dynamics(rot_accel);
     update_external_payload(input);

@@ -58,6 +58,7 @@
 #if AP_GPS_RTCM_DECODE_ENABLED
 #include "RTCM3_Parser.h"
 #endif
+#include <FD_UartMAV/FD_UartMAV.h>
 
 #define GPS_RTK_INJECT_TO_ALL 127
 #ifndef GPS_MAX_RATE_MS
@@ -1463,6 +1464,9 @@ uint16_t AP_GPS::gps_yaw_cdeg(uint8_t instance) const
 
 void AP_GPS::send_mavlink_gps_raw(mavlink_channel_t chan)
 {
+    if (AP::fd_uartmav().initialized() && ((uint8_t)chan == AP::fd_uartmav().port_num.get())) {
+        return;
+    }
     const Location &loc = location(0);
     float hacc = 0.0f;
     float vacc = 0.0f;
@@ -1477,6 +1481,41 @@ void AP_GPS::send_mavlink_gps_raw(mavlink_channel_t chan)
     speed_accuracy(0, sacc);
     mavlink_msg_gps_raw_int_send(
         chan,
+        last_fix_time_ms(0)*(uint64_t)1000,
+        status(0),
+        loc.lat,        // in 1E7 degrees
+        loc.lng,        // in 1E7 degrees
+        loc.alt * 10UL, // in mm
+        get_hdop(0),
+        get_vdop(0),
+        ground_speed(0)*100,  // cm/s
+        ground_course(0)*100, // 1/100 degrees,
+        num_sats(0),
+        height_elipsoid_mm,   // Ellipsoid height in mm
+        hacc * 1000,          // one-sigma standard deviation in mm
+        vacc * 1000,          // one-sigma standard deviation in mm
+        sacc * 1000,          // one-sigma standard deviation in mm/s
+        0,                    // TODO one-sigma heading accuracy standard deviation
+        gps_yaw_cdeg(0));
+}
+
+void AP_GPS::pack_mavlink_gps_raw(uint8_t system_id, uint8_t component_id, mavlink_message_t& msg) {
+    const Location &loc = location(0);
+    float hacc = 0.0f;
+    float vacc = 0.0f;
+    float sacc = 0.0f;
+    float undulation = 0.0;
+    int32_t height_elipsoid_mm = 0;
+    if (get_undulation(0, undulation)) {
+        height_elipsoid_mm = loc.alt*10 - undulation*1000;
+    }
+    horizontal_accuracy(0, hacc);
+    vertical_accuracy(0, vacc);
+    speed_accuracy(0, sacc);
+    mavlink_msg_gps_raw_int_pack(
+        system_id,
+        component_id,
+        &msg,
         last_fix_time_ms(0)*(uint64_t)1000,
         status(0),
         loc.lat,        // in 1E7 degrees
