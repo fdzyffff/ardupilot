@@ -9,16 +9,25 @@ void Plane::userhook_init()
 
 void Plane::userhook_100Hz()
 {
-    uart.update();
     uattack.update();
+    // uart.update();
     udelay.push();
 }
 
 void Plane::userhook_1Hz()
 {
+    uart.update();
     AP::fd_data().update();
 
     uattack.do_print();
+
+    // static uint8_t tt = 0;
+    // if (uart.get_port() != nullptr) {
+    //     // get_port()->write(uart_msg_LS_status._msg_1.content.data, sizeof(uart_msg_LS_status._msg_1.content.data));
+    //     uart.get_port()->write(tt++);
+    //     gcs().send_text(MAV_SEVERITY_WARNING, "Uart send");
+    // }
+    
 }
 
 // position_ok - returns true if the horizontal absolute position is ok and home position is set
