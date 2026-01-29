@@ -54,9 +54,6 @@ void Uart::read_uart()
 void Uart::write_uart()
 {
     pack_status();
-    if (get_port() != nullptr) {
-        get_port()->write(uart_msg_LS_status._msg_1.content.data, sizeof(uart_msg_LS_status._msg_1.content.data));
-    }
 }
 
 void Uart::handle_LS_control_receive()
@@ -146,4 +143,11 @@ void Uart::pack_status()
     uart_msg_LS_status._msg_1.content.msg.pos_y = pos_ned.y;
     uart_msg_LS_status._msg_1.content.msg.pos_z = pos_ned.z;
     uart_msg_LS_status._msg_1.content.msg.current_alt = current_alt;
+
+    uart_msg_LS_status.make_sum();
+
+    if (get_port() != nullptr) {
+        get_port()->write(uart_msg_LS_status._msg_1.content.data, sizeof(uart_msg_LS_status._msg_1.content.data));
+        // get_port()->write(0xBE);
+    }
 }

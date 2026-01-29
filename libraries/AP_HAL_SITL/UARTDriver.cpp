@@ -565,13 +565,13 @@ void UARTDriver::_udp_start_multicast(const char *address, uint16_t port)
     // close on exec, to allow reboot
     fcntl(_mc_fd, F_SETFD, FD_CLOEXEC);
 
-#if defined(__CYGWIN__) || defined(__CYGWIN64__) || defined(CYGWIN_BUILD)
+// #if defined(__CYGWIN__) || defined(__CYGWIN64__) || defined(CYGWIN_BUILD)
     /*
       on cygwin you need to bind to INADDR_ANY then use the multicast
       IP_ADD_MEMBERSHIP to get on the right address
      */
     sockaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-#endif
+// #endif
     
     ret = bind(_mc_fd, (struct sockaddr *)&sockaddr, sizeof(sockaddr));
     if (ret == -1) {
@@ -840,11 +840,11 @@ void UARTDriver::handle_writing_from_writebuffer_to_device()
     if (_packetise) {
         uint16_t n = _writebuffer.available();
         n = MIN(n, max_bytes);
-#if HAL_GCS_ENABLED
-        if (n > 0) {
-            n = mavlink_packetise(_writebuffer, n);
-        }
-#endif
+// #if HAL_GCS_ENABLED
+//         if (n > 0) {
+//             n = mavlink_packetise(_writebuffer, n);
+//         }
+// #endif
         if (n > 0) {
             // keep as a single UDP packet
             uint8_t tmpbuf[n];
