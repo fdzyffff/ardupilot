@@ -26,6 +26,7 @@
 #include "AP_ExternalAHRS_MicroStrain5.h"
 #include "AP_ExternalAHRS_MicroStrain7.h"
 #include "AP_ExternalAHRS_InertialLabs.h"
+#include "AP_ExternalAHRS_MINS.h"
 
 #include <GCS_MAVLink/GCS.h>
 #include <AP_AHRS/AP_AHRS.h>
@@ -67,7 +68,7 @@ const AP_Param::GroupInfo AP_ExternalAHRS::var_info[] = {
     // @Description: Requested rate for AHRS device
     // @Units: Hz
     // @User: Standard
-    AP_GROUPINFO("_RATE", 2, AP_ExternalAHRS, rate, 50),
+    AP_GROUPINFO("_RATE", 2, AP_ExternalAHRS, rate, 200),
 
     // @Param: _OPTIONS
     // @DisplayName: External AHRS options
@@ -89,6 +90,10 @@ const AP_Param::GroupInfo AP_ExternalAHRS::var_info[] = {
     // @Units: Hz
     // @User: Standard
     AP_GROUPINFO("_LOG_RATE", 5, AP_ExternalAHRS, log_rate, 10),
+    
+    AP_GROUPINFO("_DEBUG", 6, AP_ExternalAHRS, debug_print, 0),
+    
+    AP_GROUPINFO("_MAG_CAL", 7, AP_ExternalAHRS, mag_cal, 0),
     
     AP_GROUPEND
 };
@@ -127,6 +132,12 @@ void AP_ExternalAHRS::init(void)
 #if AP_EXTERNAL_AHRS_INERTIALLABS_ENABLED
     case DevType::InertialLabs:
         backend = NEW_NOTHROW AP_ExternalAHRS_InertialLabs(this, state);
+        return;
+#endif
+
+#if AP_EXTERNAL_AHRS_MINS_ENABLED
+    case DevType::MINS:
+        backend = NEW_NOTHROW AP_ExternalAHRS_MINS(this, state);
         return;
 #endif
 

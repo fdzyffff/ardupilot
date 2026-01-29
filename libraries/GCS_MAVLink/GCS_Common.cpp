@@ -2252,6 +2252,34 @@ void GCS_MAVLINK::send_highres_imu()
 
 void GCS_MAVLINK::send_scaled_imu(uint8_t instance, void (*send_fn)(mavlink_channel_t chan, uint32_t time_ms, int16_t xacc, int16_t yacc, int16_t zacc, int16_t xgyro, int16_t ygyro, int16_t zgyro, int16_t xmag, int16_t ymag, int16_t zmag, int16_t temperature))
 {
+    if (instance == 2 && AP::externalAHRS().get_debug_print() & (1<<0)) {
+        bool have_data = false;
+        Vector3f accel{};
+        Vector3f gyro{};
+        Vector3f mag{};
+        int16_t _temperature = 0;
+        if (AP::externalAHRS().healthy()) {
+            accel = AP::externalAHRS().imu_data.accel;
+            gyro = AP::externalAHRS().imu_data.gyro;
+            have_data = true;
+        }
+        if (!have_data) {
+            return;
+        }
+        send_fn(
+            chan,
+            AP_HAL::millis(),
+            accel.x * 1000.0f / GRAVITY_MSS,
+            accel.y * 1000.0f / GRAVITY_MSS,
+            accel.z * 1000.0f / GRAVITY_MSS,
+            gyro.x * 1000.0f,
+            gyro.y * 1000.0f,
+            gyro.z * 1000.0f,
+            mag.x,
+            mag.y,
+            mag.z,
+            _temperature);
+    } else {
 #if AP_INERTIALSENSOR_ENABLED
     const AP_InertialSensor &ins = AP::ins();
     int16_t _temperature = 0;
@@ -2293,6 +2321,7 @@ void GCS_MAVLINK::send_scaled_imu(uint8_t instance, void (*send_fn)(mavlink_chan
         mag.z,
         _temperature);
 #endif
+    }
 }
 
 

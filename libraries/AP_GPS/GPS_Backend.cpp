@@ -305,6 +305,12 @@ void AP_GPS_Backend::check_new_itow(uint32_t itow, uint32_t msg_length)
             float lag_s = (now - (state.last_corrected_gps_time_us/1000U)) * 0.001;
             if (lag_s > expected_lag+0.05) {
                 // more than 50ms over expected lag, increment lag counter
+        static uint32_t last_tt_ms = 0;
+        if (AP_HAL::millis() - last_tt_ms > 2000) {
+            gcs().send_text(MAV_SEVERITY_INFO, "lag_s %f", lag_s);
+            gcs().send_text(MAV_SEVERITY_INFO, "expected_lag %f", expected_lag);
+            last_tt_ms = AP_HAL::millis();
+        }
                 state.lagged_sample_count++;
             } else {
                 state.lagged_sample_count = 0;

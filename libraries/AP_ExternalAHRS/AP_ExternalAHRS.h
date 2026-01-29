@@ -35,6 +35,7 @@ class AP_ExternalAHRS {
 public:
     friend class AP_ExternalAHRS_backend;
     friend class AP_ExternalAHRS_VectorNav;
+    friend class AP_ExternalAHRS_MINS;
 
     AP_ExternalAHRS();
 
@@ -62,6 +63,10 @@ public:
         // 8 reserved for SBG
         // 9 reserved for EulerNav
         // 10 reserved for Aeron
+
+#if AP_EXTERNAL_AHRS_MINS_ENABLED
+        MINS = 15,
+#endif
     };
 
     static AP_ExternalAHRS *get_singleton(void) {
@@ -154,6 +159,14 @@ public:
         float  ned_vel_north;
         float  ned_vel_east;
         float  ned_vel_down;
+        float gps_yaw;                      ///< GPS derived yaw information, if available (degrees)
+        uint32_t gps_yaw_time_ms;           ///< timestamp of last GPS yaw reading
+        bool  gps_yaw_configured;           ///< GPS is configured to provide yaw
+        float gps_yaw_accuracy;             ///< heading accuracy of the GPS in degrees
+        bool have_gps_yaw;                  ///< does GPS give yaw? Set to true only once available.
+        bool have_gps_yaw_accuracy;         ///< does the GPS give a heading accuracy estimate? Set to true only once available
+        float ground_speed;                 ///< ground speed in m/s
+        float ground_course;                ///< ground course in degrees, wrapped 0-360
     } gps_data_message_t;
 
     typedef struct {
@@ -165,12 +178,18 @@ public:
     typedef struct {
         float differential_pressure; // Pa
         float temperature; // degC
+        float airspeed;
     } airspeed_data_message_t;
 
     // set GNSS disable for auxillary function GPS_DISABLE
     void set_gnss_disable(bool disable) {
         gnss_is_disabled = disable;
     }
+
+    AP_ExternalAHRS::gps_data_message_t gps_data;
+    AP_ExternalAHRS::ins_data_message_t imu_data;
+
+    uint8_t get_debug_print() {return debug_print.get();}
 
 protected:
 
@@ -187,6 +206,8 @@ private:
     AP_Int16         log_rate;
     AP_Int16         options;
     AP_Int16         sensors;
+    AP_Int8          debug_print;
+    AP_Int8          mag_cal;
 
     static AP_ExternalAHRS *_singleton;
 
