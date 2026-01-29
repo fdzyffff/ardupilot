@@ -194,6 +194,7 @@ public:
 
     void Log_Write_AttRate();
 
+    void tuning_update(float spd_f);
 private:
     AP_AHRS &ahrs;
 
@@ -397,6 +398,11 @@ private:
 
     // limit applied to back pitch to prevent wing producing excessive lift
     AP_Float q_bck_pitch_lim;
+
+    AP_Float tuning_ptch_p_min;
+    AP_Float tuning_ptch_p_max;
+    AP_Float tuning_ptch_d_min;
+    AP_Float tuning_ptch_d_max;
 
     // which fwd throttle handling method is active
     enum class ActiveFwdThr : uint8_t {
