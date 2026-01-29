@@ -555,6 +555,11 @@ const AP_Param::GroupInfo QuadPlane::var_info2[] = {
     // @User: Standard
     AP_GROUPINFO("APPROACH_DIST", 39, QuadPlane, approach_distance, 0),
     
+
+    AP_GROUPINFO("TUNEPTCH_PMIN", 40, QuadPlane, tuning_ptch_p_min, 0.0f),
+    AP_GROUPINFO("TUNEPTCH_PMAX", 41, QuadPlane, tuning_ptch_p_max, 0.0f),
+    AP_GROUPINFO("TUNEPTCH_DMIN", 42, QuadPlane, tuning_ptch_d_min, 0.0f),
+    AP_GROUPINFO("TUNEPTCH_DMAX", 43, QuadPlane, tuning_ptch_d_max, 0.0f),
     AP_GROUPEND
 };
 
@@ -921,6 +926,7 @@ void QuadPlane::multicopter_attitude_rate_update(float yaw_rate_cds)
     // tailsitter in transition to VTOL flight is not really in a VTOL mode yet
     if (use_multicopter_control) {
 
+        tuning_update(0.0f);
         // Pilot input, use yaw rate time constant
         set_pilot_yaw_rate_time_constant();
 
@@ -990,9 +996,10 @@ void QuadPlane::multicopter_attitude_rate_update(float yaw_rate_cds)
                                                                           yaw_rate_cds + offset_deg.z*100);
         }
     } else {
+        float scaler_f = 1.0f / constrain_float(plane.get_speed_scaler(), 0.2f, 2.0f);
         // use the fixed wing desired rates
-        Vector3f bf_input_cd { plane.rollController.get_pid_info().target * 100.0f,
-                               plane.pitchController.get_pid_info().target * 100.0f,
+        Vector3f bf_input_cd { plane.rollController.get_pid_info().target * 100.0f * scaler_f * scaler_f,
+                               plane.pitchController.get_pid_info().target * 100.0f * scaler_f * scaler_f,
                                yaw_rate_cds };
 
         // rotate into multicopter attitude refence frame
@@ -1002,6 +1009,9 @@ void QuadPlane::multicopter_attitude_rate_update(float yaw_rate_cds)
         disable_yaw_rate_time_constant();
 
         attitude_control->input_rate_bf_roll_pitch_yaw_no_shaping(bf_input_cd.x, bf_input_cd.y, bf_input_cd.z);
+
+        // float spd_f = constrain_float(scaler_f, 0.5f, 1.5f) - 0.5f; // 0 for min and 1 for max;
+        tuning_update(1.0f);
     }
 }
 
@@ -4844,6 +4854,34 @@ void QuadPlane::Log_Write_AttRate()
     attitude_control->Write_ANG();
     attitude_control->Write_Rate(*pos_control);
 
+}
+
+void QuadPlane::tuning_update(float spd_f) {
+    static uint32_t _last_update_ms = millis();
+    static uint32_t _last_spd_f = spd_f;
+    if (millis() - _last_update_ms > 333) {
+        _last_update_ms = millis();
+        _last_spd_f = (spd_f - _last_spd_f)*0.5 + _last_spd_f*0.5;
+
+        float ptch_p_min = tuning_ptch_p_min.get();
+        float ptch_p_max = tuning_ptch_p_max.get();
+        if (!is_zero(ptch_p_min) && !is_zero(ptch_p_max)) {
+            const float tuning_ptch_p_value = linear_interpolate(tuning_ptch_p_min, tuning_ptch_p_max, _last_spd_f, 0.0f, 1.0f);
+            attitude_control->get_rate_pitch_pid().set_kP(tuning_ptch_p_value);
+        }
+        float ptch_d_min = tuning_ptch_d_min.get();
+        float ptch_d_max = tuning_ptch_d_max.get();
+        if (!is_zero(ptch_d_min) && !is_zero(ptch_d_max)) {
+            const float tuning_ptch_d_value = linear_interpolate(tuning_ptch_d_min, tuning_ptch_d_max, _last_spd_f, 0.0f, 1.0f);
+            attitude_control->get_rate_pitch_pid().set_kD(tuning_ptch_d_value);
+        }
+    }
+
+    static uint32_t _last_print_ms = millis();
+    if (millis() - _last_print_ms > 1000) {
+        _last_print_ms = millis();
+        // gcs().send_text(MAV_SEVERITY_INFO, "P|D: %0.2f | %0.2f [%0.2f]", attitude_control->get_rate_pitch_pid().kP().get(), attitude_control->get_rate_pitch_pid().kD().get(), spd_f);
+    }
 }
 
 #endif  // HAL_QUADPLANE_ENABLED
