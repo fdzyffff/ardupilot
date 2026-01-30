@@ -10,13 +10,12 @@ void Plane::userhook_init()
 void Plane::userhook_100Hz()
 {
     uattack.update();
-    // uart.update();
+    uart.update();
     udelay.push();
 }
 
 void Plane::userhook_1Hz()
 {
-    uart.update();
     AP::fd_data().update();
 
     uattack.do_print();

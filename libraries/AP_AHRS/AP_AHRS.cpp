@@ -2027,7 +2027,7 @@ AP_AHRS::EKFType AP_AHRS::_active_EKF_type(void) const
 #if AP_AHRS_EXTERNAL_ENABLED
         case EKFType::EXTERNAL:
             get_filter_status(filt_state);
-            should_use_gps = true;
+            should_use_gps = false;
             break;
 #endif
         }
