@@ -1992,7 +1992,11 @@ AP_AHRS::EKFType AP_AHRS::_active_EKF_type(void) const
 #endif
 #if AP_AHRS_EXTERNAL_ENABLED
     case EKFType::EXTERNAL:
-        ret = EKFType::EXTERNAL;
+        if (external.healthy()) {
+            ret = EKFType::EXTERNAL;
+        } else if (EKF3.healthy()) {
+            ret = EKFType::THREE;
+        }
         break;
 #endif
     }
@@ -2027,7 +2031,7 @@ AP_AHRS::EKFType AP_AHRS::_active_EKF_type(void) const
 #if AP_AHRS_EXTERNAL_ENABLED
         case EKFType::EXTERNAL:
             get_filter_status(filt_state);
-            should_use_gps = false;
+            should_use_gps = true;
             break;
 #endif
         }
@@ -2065,7 +2069,7 @@ AP_AHRS::EKFType AP_AHRS::_active_EKF_type(void) const
                Note: When operating in a VTOL flight mode that actively controls height such as QHOVER,
                the EKF gives better vertical velocity and position estimates and height control characteristics.
             */
-            return EKFType::DCM;
+            // return EKFType::DCM;
         }
 
         // Handle complete loss of navigation
