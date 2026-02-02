@@ -20,39 +20,40 @@ FD_Target_Loc::FD_Target_Loc()
 
 bool FD_Target_Loc::init() {
     _valid = false;
-    set_type(0);
+    set_type(1);
     return true;
 }
 
 void FD_Target_Loc::update() {
-    static uint32_t last_update_ms = millis();
+    bool have_position = AP::ahrs().get_location(_current_loc);
+    if (!have_position) {
+        _valid = false;
+        return;
+    }
 
-    if (_valid && (millis() - _last_cal_ms) > 16) {
-        _last_cal_ms = millis();
-        bool have_position = AP::ahrs().get_location(current_loc);
-        if (!have_position) {
-            return;
-        }
-        Vector3f off_ef = current_loc.get_distance_NED(target_loc);
+    if (_valid && (AP_HAL::millis() - _last_ms) > 16) {
+        Vector3f off_ef = _current_loc.get_distance_NED(_target_loc);
 
-        Matrix3f tmp_earth_m;
-        tmp_earth_m.from_euler(AP::ahrs().get_roll(), AP::ahrs().get_pitch(), AP::ahrs().get_yaw());
-        tmp_earth_m.transpose();
-        Vector3f off_bf = tmp_earth_m*off_ef;
-        off_bf.normalized();
+        Matrix3f tmp_earth_yaw_m;
+        tmp_earth_yaw_m.from_euler(radians(0.0f), radians(0.0f), AP::ahrs().get_yaw());
+        // tmp_earth_yaw_m.from_euler(radians(0.0f), radians(0.0f), radians(0.0f));
+        tmp_earth_yaw_m.transpose();
+        Vector3f off_eyf = tmp_earth_yaw_m*off_ef;
+        off_eyf.normalized();
 
-        float p1 = degrees(wrap_180(atan2f( off_bf.y, off_bf.x))); // x-axis, degrees
-        float p2 = degrees(wrap_180(atan2f(-off_bf.z, off_bf.xy().length()))); // y-axis, degrees
+        float p1 = degrees(wrap_180(atan2f( off_eyf.y, off_eyf.x))); // x-axis, degrees
+        float p2 = degrees(wrap_180(atan2f(-off_eyf.z, off_eyf.xy().length()))); // y-axis, degrees
 
         handle_info(p1, p2);
     }
 
-    uint32_t tnow = millis(); // 只能放这里，handle_info会更新_last_ms的值，如果tnow赋值在其之前，则会小于_last_ms。SITL仿不出来，它周期是50Hz太低了
-    if ((target_timeout.get() > 0) && (tnow - _last_ms > (uint32_t)target_timeout.get())) {
+    uint32_t tnow = AP_HAL::millis(); // 只能放这里，handle_info会更新_last_ms的值，如果tnow赋值在其之前，则会小于_last_ms。SITL仿不出来，它周期是50Hz太低了
+    if ((target_timeout.get() > 0) && (tnow - _last_target_ms > (uint32_t)target_timeout.get())) {
         _valid = false;
     }
 
-    if (_valid && AP::ahrs().get_location(current_loc) && (current_loc.get_distance(target_loc) < target_distout.get())) {
+
+    if (_valid && AP::ahrs().get_location(_current_loc) && (_current_loc.get_distance(_target_loc) < target_distout.get())) {
         _valid = false;
     }
 
@@ -117,10 +118,15 @@ void FD_Target_Loc::handle_msg(const mavlink_message_t &msg)
 
 void FD_Target_Loc::set_target_loc(Location &loc_in)
 {
-    target_loc = loc_in;
+    _target_loc = loc_in;
     _valid = true;
-    _last_ms = millis();
+    _last_target_ms = AP_HAL::millis();
 }
+
+Location& FD_Target_Loc::get_target_loc() {
+    return _target_loc;
+}
+
 
 void FD_Target_Loc::handle_info_test(float p1, float p2) {
     // FD_DYT_NEW_msg_DYTTELEM &tmp_msg = FD1_uart_ptr->get_msg_DYTTELEM();

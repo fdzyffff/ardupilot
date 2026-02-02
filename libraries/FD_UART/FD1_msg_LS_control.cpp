@@ -90,5 +90,7 @@ void FD1_msg_LS_control::make_sum()
 
 void FD1_msg_LS_control::swap_message(void)
 {
-    ;
+    // _msg_1.content.msg.cmd_speed = swap_message_float(_msg_1.content.msg.cmd_speed);
+    // _msg_1.content.msg.cmd_pitch = swap_message_float(_msg_1.content.msg.cmd_pitch);
+    // _msg_1.content.msg.cmd_roll = swap_message_float(_msg_1.content.msg.cmd_roll);
 }

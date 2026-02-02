@@ -15,14 +15,9 @@ public:
     void write_uart();
     AP_HAL::UARTDriver* get_port(void) {return _port;}
 
-    void pack_status();
-    void handle_LS_control_receive();
-
 private:
 
     AP_HAL::UARTDriver* _port;
 
     // message structure
-    FD1_msg_LS_control uart_msg_LS_control;
-    FD1_msg_LS_status uart_msg_LS_status;
 };

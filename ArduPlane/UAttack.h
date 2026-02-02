@@ -21,9 +21,10 @@ public:
 
     void init();
     bool is_active() const { return (current_idx>0); }
-    bool is_active_loc() const { return (current_idx == 2); }
     bool is_active_cam() const { return (current_idx == 1); }
-    void udpate_control_value();
+    bool is_active_loc() const { return (current_idx == 2); }
+    bool is_active_external() const { return (current_idx == 3); }
+    void update_control_value();
     void init_target();
     void update();
     const Vector2f& get_bf_info();
@@ -35,15 +36,12 @@ public:
     float get_target_yaw_rate() {return _target_yaw_rate;}
 
     void handle_attack_msg(const mavlink_message_t &msg);
-    void handle_info(float p1, float p2, uint8_t cam_type);
+    void handle_info(float p1, float p2);
 
     void update_target_pitch_rate();
     void update_target_roll_angle();
     void update_target_yaw_rate();
     void update_log();
-
-    void set_external_cmd(float cmd_speed, float cmd_pitch, float cmd_roll);
-    uint8_t get_attack_type();
     void do_print();
 
     struct {
@@ -95,7 +93,7 @@ private:
     AP_Float        attack_k_angle;
     AP_Float        attack_throttle;
     AP_Int32        atk_time_out;
-    AP_Int8         attack_type;
+    AP_Int8         use_target_external;
     AP_Float        attack_angle;
     AP_Float        pitch_limit;
     AP_Float        pitch_rate_limit;
@@ -111,6 +109,7 @@ private:
     FD_Target_Base*       _Target_ptr_cam;
     FD_Target_Loc*        _Target_ptr_loc;
     FD_Target_DYT*        _Target_ptr_cam_DYT;
+    FD_Target_External*   _Target_ptr_external;
 
 
     uint32_t _last_ms;

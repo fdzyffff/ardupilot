@@ -4,7 +4,7 @@
 bool ModeAttackLoc::_enter()
 {
     if (plane.uattack.is_active_loc()) {
-        target_loc = plane.uattack._Target_ptr_loc->target_loc;
+        target_loc = plane.uattack._Target_ptr_loc->get_target_loc();
         if (check_approach()) {
             set_stage(stage_class::ATTACK);                
         } else {
@@ -14,7 +14,7 @@ bool ModeAttackLoc::_enter()
         }
         _cmd_throttle = MAX(SRV_Channels::get_output_scaled(SRV_Channel::k_throttle), plane.aparm.throttle_cruise);
         return true;
-    } else if (plane.uattack.is_active_cam()) {
+    } else if (plane.uattack.is_active_cam() || plane.uattack.is_active_external() ) {
         target_loc = plane.current_loc;
         // target_loc.offset_bearing(AP::ahrs().get_yaw(), 200.f);
         set_stage(stage_class::ATTACK);
@@ -44,7 +44,7 @@ void ModeAttackLoc::run()
             break;
         case stage_class::ATTACK:
             {
-                if (plane.uattack.get_attack_type() == 1) {
+                if (plane.uattack.is_active_external()) {
                     plane.nav_roll_cd = (int32_t)(plane.uattack._external_cmd._target_roll * 100.f);
                     plane.nav_pitch_cd = (int32_t)(plane.uattack._external_cmd._target_pitch * 100.f);
                     plane.stabilize_roll();
@@ -102,7 +102,7 @@ void ModeAttackLoc::update()
             if (!plane.uattack.is_active()) {
                 set_stage(stage_class::HOVER);
             }
-            if (check_approach() || plane.uattack.is_active_cam()) {
+            if (check_approach() || plane.uattack.is_active_cam() || plane.uattack.is_active_external()) {
                 set_stage(stage_class::ATTACK);                
             } 
             update_approach();
@@ -120,7 +120,7 @@ void ModeAttackLoc::update()
             }
             break;
         case stage_class::HOVER:
-            if (plane.uattack.is_active_cam()) {
+            if (plane.uattack.is_active_cam() || plane.uattack.is_active_external()) {
                 gcs().send_text(MAV_SEVERITY_INFO, "ATK: recover");
                 set_stage(stage_class::ATTACK);                
             } 
@@ -187,7 +187,7 @@ void ModeAttackLoc::navigate()
             plane.update_loiter(0);
             break;
         case stage_class::APPROACH:
-            target_loc = plane.uattack._Target_ptr_loc->target_loc;
+            target_loc = plane.uattack._Target_ptr_loc->get_target_loc();
             plane.next_WP_loc = target_loc;
             plane.next_WP_loc.alt = plane.current_loc.alt;
             plane.nav_controller->update_waypoint(plane.prev_WP_loc, plane.next_WP_loc);
