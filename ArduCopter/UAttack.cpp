@@ -297,7 +297,7 @@ void UAttack::update()
     update_cam();
     update_control();
     update_attack_angle_target();
-    update_log();
+    // update_log();
 }
 
 void UAttack::update_cam()
@@ -517,7 +517,10 @@ void UAttack::update_target_roll_angle() {
         tmp_body_earth_m.transpose();
         Vector3f vel_bf_xy = tmp_body_earth_m*vel_ef_xy;
 
-        _target_roll_angle = attack_vely_pid.update_all(0.0f, vel_bf_xy.y, dt);
+        float angle_err = constrain_float(wrap_180(ef_info.x - degrees(AP::ahrs().get_yaw())), -30.0f, 30.0f);
+        float target_vy = vel_bf_xy.x * tanf(radians(angle_err));
+
+        _target_roll_angle = attack_vely_pid.update_all(target_vy, vel_bf_xy.y, dt);
         attack_roll_pid.reset_I();
         attack_roll_pid.reset_filter();
     } else {
