@@ -22,16 +22,19 @@ public:
     bool is_valid() {return _valid;}
     void handle_info(float p1, float p2);
     bool get_info(float &p1, float &p2);
+    void recover_info();
     uint8_t get_type();
     void set_type(uint8_t type_in);
     void set_valid(bool valid_in);
     virtual void handle_msg(const mavlink_message_t &msg);
+    virtual Location& get_target_loc();
     uint32_t _last_ms;
     bool _new_data;
     bool _valid;
     float _p1;
     float _p2;
     uint8_t _type;
+    Location _target_loc;
 };
 
 class FD_Target_Loc: public FD_Target_Base {
@@ -47,8 +50,9 @@ public:
     void handle_info_test(float p1, float p2);
     void set_target_loc(Location &loc_in);
 
-    Location current_loc;
-    Location target_loc;
+    Location& get_target_loc() override;
+
+    Location _current_loc;
 
     AP_Int32 target_timeout;
     AP_Float target_distout;
@@ -56,7 +60,8 @@ public:
     AP_Int8 use_external_loc;
 
 private:
-    uint32_t _last_cal_ms;
+    uint32_t _last_target_ms;
+    uint32_t last_update_ms;
 };
 
 class FD_Target_DYT: public FD_Target_Base {
@@ -90,6 +95,44 @@ private:
     uint32_t last_center_ms;
     uint32_t last_track_ms; 
     uint32_t last_cancel_ms;
+};
+
+class FD_Target_External: public FD_Target_Base {
+public:
+    FD_Target_External();
+    ~FD_Target_External() {};
+
+    static const struct AP_Param::GroupInfo var_info[];
+
+    bool init() override;
+    void update() override;
+    void handle_msg(const mavlink_message_t &msg) override;
+    void handle_info_test(float p1, float p2);
+    AP_HAL::UARTDriver* get_port(void) {return _port;}
+
+    float get_target_speed() {return _target_speed;}
+    float get_target_pitch() {return _target_pitch;}
+    float get_target_roll() {return _target_roll;}
+    
+    void set_target_angle(float gimbal_yaw, float gimbal_pitch);
+    void set_target_loc(Location& loc_in);
+    void pack_status();
+
+    FD1_msg_LS_control uart_msg_LS_control;
+    FD1_msg_LS_status uart_msg_LS_status;
+
+private:
+    AP_Int32 target_timeout;
+
+    AP_HAL::UARTDriver* _port;
+    // FD1_msg_DYT_apminfo uart_msg_DYT_apminfo;
+
+    uint32_t last_update_ms;
+    float _gimbal_yaw;
+    float _gimbal_pitch;
+    float _target_speed;
+    float _target_pitch;
+    float _target_roll;
 };
 
 using AP_HAL::millis;

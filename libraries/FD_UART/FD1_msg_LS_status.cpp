@@ -92,5 +92,12 @@ void FD1_msg_LS_status::make_sum()
 
 void FD1_msg_LS_status::swap_message(void)
 {
-    ;
+    _msg_1.content.msg.gimbal_pitch = swap_message_float(_msg_1.content.msg.gimbal_pitch);
+    _msg_1.content.msg.gimbal_yaw = swap_message_float(_msg_1.content.msg.gimbal_yaw);
+    _msg_1.content.msg.roll = swap_message_float(_msg_1.content.msg.roll);
+    _msg_1.content.msg.pitch = swap_message_float(_msg_1.content.msg.pitch);
+    _msg_1.content.msg.yaw = swap_message_float(_msg_1.content.msg.yaw);
+    _msg_1.content.msg.vel_n = swap_message_float(_msg_1.content.msg.vel_n);
+    _msg_1.content.msg.vel_e = swap_message_float(_msg_1.content.msg.vel_e);
+    _msg_1.content.msg.vel_d = swap_message_float(_msg_1.content.msg.vel_d);
 }
