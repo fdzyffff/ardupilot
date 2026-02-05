@@ -65,7 +65,9 @@ void FD_Target_DYT::update() {
 
                 // gcs().send_text(MAV_SEVERITY_INFO, "angle_yaw: %f, angle_pitch: %f", angle_yaw, angle_pitch);
                 // gcs().send_text(MAV_SEVERITY_INFO, "target_yaw: %f, target_pitch: %f", target_yaw, target_pitch);
+                update_log();
             }
+
             uart_msg_DYT_telem._msg_1.updated = false;
         }
     }
@@ -142,6 +144,47 @@ void FD_Target_DYT::handle_info_test(float p1, float p2) {
     // tmp_msg._msg_1.content.msg.target_x = (int16_t)(p1);
     // tmp_msg._msg_1.content.msg.target_y = (int16_t)(p2);
     // tmp_msg._msg_1.content.msg.status = 1;
+}
+
+void FD_Target_DYT::update_log() {
+
+    float roll_rate = (float)(uart_msg_DYT_telem._msg_1.content.msg.roll_rate) * 0.01f;
+    float pitch_rate = (float)(uart_msg_DYT_telem._msg_1.content.msg.pitch_rate) * 0.01f;
+    float yaw_rate = (float)(uart_msg_DYT_telem._msg_1.content.msg.yaw_rate) * 0.01f;
+    float gimbal_yaw = (float)(uart_msg_DYT_telem._msg_1.content.msg.gimbal_yaw) * 0.01f;
+    float gimbal_pitch = (float)(uart_msg_DYT_telem._msg_1.content.msg.gimbal_pitch) * 0.01f;
+    float target_yaw = (float)(uart_msg_DYT_telem._msg_1.content.msg.target_yaw) * 0.05f;
+    float target_pitch = (float)(uart_msg_DYT_telem._msg_1.content.msg.target_pitch) * 0.05f;
+
+    AP::logger().WriteStreaming("DYT1",
+                                "TimeUS,rr,pr,yr,gy,gp,ty,tp",
+                                "s-------",
+                                "F-------",
+                                "Qfffffff",
+                                AP_HAL::micros64(),
+                                (float)roll_rate,
+                                (float)pitch_rate,
+                                (float)yaw_rate,
+                                (float)gimbal_yaw,
+                                (float)gimbal_pitch,
+                                (float)target_yaw,
+                                (float)target_pitch);
+
+    uint8_t status_1 = (uint8_t)(uart_msg_DYT_telem._msg_1.content.msg.status_1);
+    uint8_t status_2 = (uint8_t)(uart_msg_DYT_telem._msg_1.content.msg.status_2);
+    uint8_t status_3 = (uint8_t)(uart_msg_DYT_telem._msg_1.content.msg.status_3);
+    uint8_t self_check = (uint8_t)(uart_msg_DYT_telem._msg_1.content.msg.self_check);
+
+    AP::logger().WriteStreaming("DYT2",
+                                "TimeUS,st1,st2,st3,sfck",
+                                "s----",
+                                "F----",
+                                "QBBBB",
+                                AP_HAL::micros64(),
+                                status_1,
+                                status_2,
+                                status_3,
+                                self_check);
 }
 
 void FD_Target_DYT::handle_msg(const mavlink_message_t &msg)
