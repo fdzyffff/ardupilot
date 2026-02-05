@@ -34,6 +34,7 @@ void FD_Target_Loc::update() {
     if (_valid && (AP_HAL::millis() - _last_ms) > 16) {
         Vector3f off_ef = _current_loc.get_distance_NED(_target_loc);
 
+        off_ef.normalized();
         Matrix3f tmp_earth_yaw_m;
         tmp_earth_yaw_m.from_euler(radians(0.0f), radians(0.0f), AP::ahrs().get_yaw());
         // tmp_earth_yaw_m.from_euler(radians(0.0f), radians(0.0f), radians(0.0f));
