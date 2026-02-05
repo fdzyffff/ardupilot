@@ -76,6 +76,7 @@ public:
     void handle_msg(const mavlink_message_t &msg) override;
     float cal_frame_angle(float pixel, float angle, float x_in);
     void handle_info_test(float p1, float p2);
+    void update_log();
     AP_HAL::UARTDriver* get_port(void) {return _port;}
 
     FD1_msg_DYT_control uart_msg_DYT_control; 
