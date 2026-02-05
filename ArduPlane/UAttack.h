@@ -2,7 +2,7 @@
 
 #include <AP_HAL/AP_HAL.h>
 #include <FD_Target/FD_Target.h>
-// #include "UDelay.h"
+#include "UDelay.h"
 
 class UAttack {
 
@@ -81,7 +81,7 @@ public:
         float _target_roll;
     } _external_cmd;
 
-    // UDelay udelay;
+    UDelay udelay;
 
 private:
 
@@ -105,6 +105,7 @@ private:
     AP_Float        filt_yaw_hz;
     AP_Float        filt_pithc_hz;
     AC_PID          attack_roll_pid{0.5f, 0.1f, 0.01f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.5f};
+    AC_PID          attack_pitch_pid{0.5f, 0.1f, 0.01f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.5f};
 
     FD_Target_Base*       _Target_ptr_cam;
     FD_Target_Loc*        _Target_ptr_loc;

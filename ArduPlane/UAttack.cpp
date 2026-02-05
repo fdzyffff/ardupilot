@@ -22,6 +22,7 @@ const AP_Param::GroupInfo UAttack::var_info[] = {
     AP_GROUPINFO("CAM_TYPE",   17, UAttack, use_target_cam_type,     1),
     AP_GROUPINFO("FILT_Y_HZ",  18, UAttack, filt_yaw_hz,             2.0f),
     AP_GROUPINFO("FILT_P_HZ",  19, UAttack, filt_pithc_hz,           2.0f),
+    AP_SUBGROUPINFO(attack_pitch_pid       , "ATKPTH_", 23, UAttack, AC_PID),
 
     AP_SUBGROUPPTR(_Target_ptr_loc,         "TL_",    20, UAttack,  FD_Target_Loc),
     AP_SUBGROUPPTR(_Target_ptr_cam_DYT,     "TC_",    21, UAttack,  FD_Target_DYT),
@@ -40,7 +41,7 @@ UAttack::UAttack()
 // initialise
 void UAttack::init()
 {
-    // udelay.init();
+    udelay.init();
     _active = false;
     bf_info.x = 0.0f;
     bf_info.y = 0.0f;
@@ -71,8 +72,8 @@ void UAttack::init()
     _last_ms = millis();
     init_target();
 
-    _yaw_sample_filter.set_cutoff_frequency(30.f, filt_yaw_hz.get());
-    _pitch_sample_filter.set_cutoff_frequency(30.f, filt_pithc_hz.get());
+    _yaw_sample_filter.set_cutoff_frequency(60.f, filt_yaw_hz.get());
+    _pitch_sample_filter.set_cutoff_frequency(60.f, filt_pithc_hz.get());
     gcs().send_text(MAV_SEVERITY_WARNING, "Target FILT HZ [%0.0f, %0.0f]", filt_yaw_hz.get(), filt_pithc_hz.get());
 }
 
@@ -113,20 +114,20 @@ void UAttack::update_log() {
                                 (float)_attack_angle_rate_target,
                                 (float)_attack_angle_rate_measure);
 
-    AP::logger().WriteStreaming("UARL",
+    AP::logger().WriteStreaming("UAPH",
                                 "TimeUS,target,actual,ff,P,I,D,srate,dmod",
                                 "s--------",
                                 "F--------",
                                 "Qffffffff",
                                 AP_HAL::micros64(),
-                                (float)attack_roll_pid.get_pid_info().target,
-                                (float)attack_roll_pid.get_pid_info().actual,
-                                (float)attack_roll_pid.get_pid_info().FF,
-                                (float)attack_roll_pid.get_pid_info().P,
-                                (float)attack_roll_pid.get_pid_info().I,
-                                (float)attack_roll_pid.get_pid_info().D,
-                                (float)attack_roll_pid.get_pid_info().slew_rate,
-                                (float)attack_roll_pid.get_pid_info().Dmod);
+                                (float)attack_pitch_pid.get_pid_info().target,
+                                (float)attack_pitch_pid.get_pid_info().actual,
+                                (float)attack_pitch_pid.get_pid_info().FF,
+                                (float)attack_pitch_pid.get_pid_info().P,
+                                (float)attack_pitch_pid.get_pid_info().I,
+                                (float)attack_pitch_pid.get_pid_info().D,
+                                (float)attack_pitch_pid.get_pid_info().slew_rate,
+                                (float)attack_pitch_pid.get_pid_info().Dmod);
 
 }
 
@@ -194,6 +195,7 @@ void UAttack::init_target()
 
 void UAttack::update()
 {
+    udelay.push();
     // for log purpose
     static uint32_t last_count_ms = millis();
     uint32_t tnow_ms = millis();
@@ -305,20 +307,20 @@ void UAttack::handle_info(float p1, float p2) {
     display_info.p1 = p1;
     display_info.p2 = p2;
 
-    float _roll = AP::ahrs().get_roll();
-    float _pitch = AP::ahrs().get_pitch();
-    float _yaw = AP::ahrs().get_yaw();
-    // if (!copter.udelay.get_idx(5-1, _roll, _pitch, _yaw)) {
-    //     _roll = copter.ahrs_view->roll;
-    //     _pitch = copter.ahrs_view->pitch;
-    //     _yaw = copter.ahrs_view->yaw;
-    // }
-    float angle_pitch = 0.0f;
-    float angle_yaw = 0.0f;
-
     // body fixed cam
     bf_info.x = p1; // yaw degree
     bf_info.y = p2; // pitch degree
+
+    float _roll = AP::ahrs().get_roll();
+    float _pitch = AP::ahrs().get_pitch();
+    float _yaw = AP::ahrs().get_yaw();
+    // if (!udelay.get_idx(3-1, _roll, _pitch, _yaw)) {
+    //     _roll = AP::ahrs().get_roll();
+    //     _pitch = AP::ahrs().get_pitch();
+    //     _yaw = AP::ahrs().get_yaw();
+    // }
+    float angle_pitch = 0.0f;
+    float angle_yaw = 0.0f;
 
     Vector3f target_unit = Vector3f(1.0f, 0.0f, 0.0f);
     Matrix3f tmp_target_cam_m;
@@ -363,10 +365,18 @@ void UAttack::handle_info(float p1, float p2) {
 
 // degree/second
 void UAttack::update_target_pitch_rate() {
-    float k1_pitch = attack_k1_pitch.get();
+    // float k1_pitch = attack_k1_pitch.get();
     float k2_pitch = attack_k2_pitch.get();
     float pitch_off = attack_pitch_off.get();
     float p = attack_k_angle.get();
+
+    float dt = (millis() - _last_ms);
+    dt = dt * 0.001f;
+    if (dt > 0.2f) {dt = 0.2f;}
+
+    if (fabsf(bf_info.x) > 30.f) {
+        _target_pitch_rate = 0.0f;
+    }
     // float boost_factor = constrain_float(fabsf(bf_info.y)/15.0f, 0.0f, 1.0f) * 2.0f;
     float angle_err = constrain_float(bf_info.y + pitch_off, -30.0f, 30.0f);
 
@@ -375,11 +385,13 @@ void UAttack::update_target_pitch_rate() {
     _attack_angle_rate_target = (_attack_angle_target - _attack_angle_measure) * p;
     _attack_angle_rate_measure = -ef_rate_info.y;
 
-    float attack_angle_rate_err = _attack_angle_rate_target - _attack_angle_rate_measure;
+    // float attack_angle_rate_err = _attack_angle_rate_target - _attack_angle_rate_measure;
 
-    attack_angle_rate_err = constrain_float(attack_angle_rate_err, -30.0f, 30.0f);
+    // attack_angle_rate_err = constrain_float(attack_angle_rate_err, -30.0f, 30.0f);
 
-    _target_pitch_rate = k1_pitch * attack_angle_rate_err + k2_pitch * angle_err; // degrees/s
+    // _target_pitch_rate = k1_pitch * attack_angle_rate_err + k2_pitch * angle_err; // degrees/s
+
+    _target_pitch_rate = attack_pitch_pid.update_all(_attack_angle_rate_target, _attack_angle_rate_measure, dt) + k2_pitch * angle_err;
 
     //Limit pitch rate
     float limit_pitch_rate = pitch_rate_limit;

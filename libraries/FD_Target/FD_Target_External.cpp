@@ -148,6 +148,7 @@ void FD_Target_External::pack_status()
     double target_lng = 0.0;
     double target_lat = 0.0;
     float target_alt = 0.0;
+
     if (get_target_loc().lng != 0 && get_target_loc().lat != 0) {
         target_lng = ((double)get_target_loc().lng) * 1e-7;
         target_lat = ((double)get_target_loc().lat) * 1e-7;
