@@ -26,7 +26,7 @@ void UWeight::init()
     const AP_SerialManager &serial_manager = AP::serialmanager();
 
     // check for protocol configured for a serial port - only the first serial port with one of these protocols will then run (cannot have FrSky on multiple serial ports)
-    _port = serial_manager.find_serial(AP_SerialManager::SerialProtocol_UART, 0);
+    _port = serial_manager.find_serial(AP_SerialManager::SerialProtocol_WEIGHT, 0);
     if (_port != nullptr) {
         gcs().send_text(MAV_SEVERITY_WARNING, "UWeight init");
         return;

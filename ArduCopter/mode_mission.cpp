@@ -138,6 +138,10 @@ void ModeMission::set_state(MISSION_State state_in)
 
 void ModeMission::set_loc(Location& dest_1, Location& dest_2) 
 {
+    if (mission_state == MISSION_State::Fly && loc1.lat == dest_1.lat && loc1.lng == dest_1.lng && loc2.lat == dest_2.lat && loc2.lng == dest_2.lng) {
+        return;
+    }
+
     loc1 = dest_1;
     loc2 = dest_2;
     if (mission_state == MISSION_State::Wait) {
