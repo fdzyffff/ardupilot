@@ -140,8 +140,7 @@ void Plane::init_redundancy_control()
         gcs().send_text(MAV_SEVERITY_WARNING, "Redundancy: Serial6 not available");
         return;
     }
-    // 配置串口参数
-    redundancy_uart_to_FPGA->begin(460800, 256, 256);
+    // 配置串口参数（串口应该已经在SerialManager中初始化，这里只设置流控）
     redundancy_uart_to_FPGA->set_flow_control(AP_HAL::UARTDriver::FLOW_CONTROL_DISABLE);
 
     // 获取serial7串口驱动，用于与FMUa通信
@@ -150,8 +149,7 @@ void Plane::init_redundancy_control()
         gcs().send_text(MAV_SEVERITY_WARNING, "Redundancy: Serial7 not available");
         return;
     }
-    // 配置串口参数
-    redundancy_uart_to_FMUa->begin(460800, 256, 256);
+    // 配置串口参数（串口应该已经在SerialManager中初始化，这里只设置流控）
     redundancy_uart_to_FMUa->set_flow_control(AP_HAL::UARTDriver::FLOW_CONTROL_DISABLE);
 
     // 获取serial8串口驱动，用于与FMUb通信
@@ -160,8 +158,7 @@ void Plane::init_redundancy_control()
         gcs().send_text(MAV_SEVERITY_WARNING, "Redundancy: Serial8 not available");
         return;
     }
-    // 配置串口参数
-    redundancy_uart_to_FMUb->begin(460800, 256, 256);
+    // 配置串口参数（串口应该已经在SerialManager中初始化，这里只设置流控）
     redundancy_uart_to_FMUb->set_flow_control(AP_HAL::UARTDriver::FLOW_CONTROL_DISABLE);
 
     // 标记初始化完成
@@ -275,10 +272,16 @@ void Plane::update_redundancy_control()
     // 余度健康度评价值
     uint8_t all_redundancy_health = evaluate_redundancy_health();
     
+    // 检查 control_mode 是否有效，如果为空则使用默认值
+    uint8_t current_mode_number = (uint8_t)Mode::Number::INITIALISING;
+    if (control_mode != nullptr) {
+        current_mode_number = (uint8_t)control_mode->mode_number();
+    }
+    
     pack_redundancy_comm_frame(frame_to_FPGA_FMUa_FMUb,
                                last_heartbeat_from_FPGA_ms,
                                all_redundancy_health,         // 余度健康度评价值（临时为0）
-                               (uint8_t)control_mode->mode_number(),  // 当前飞行模式编号
+                               current_mode_number,            // 当前飞行模式编号
                                (uint8_t)arming.is_armed(),        // 解锁状态
                                degrees(ahrs.get_roll()),       // 横滚角
                                degrees(ahrs.get_pitch()),      // 俯仰角

@@ -19,7 +19,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 // 编译功能开关
-#define ENABLE_REDUNDANCY_CONTROL 0    // 余度切换控制功能开关，1：开启，0：关闭
+#define ENABLE_REDUNDANCY_CONTROL 1    // 余度切换控制功能开关，1：开启，0：关闭
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -747,6 +747,10 @@ private:
 #endif // AP_SCRIPTING_ENABLED
     bool is_landing() const override;
     bool is_taking_off() const override;
+#if ENABLE_REDUNDANCY_CONTROL
+    // 注意：不再是虚函数，避免虚函数表问题
+    bool is_redundancy_in_control() const;
+#endif
     void rc_loop();
     void throttle_loop();
     void update_batt_compass(void);

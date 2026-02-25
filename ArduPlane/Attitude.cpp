@@ -333,6 +333,9 @@ void Plane::stabilize_yaw()
     if (landing.is_flaring()) {
         // in flaring then enable ground steering
         ground_steering = true;
+    } else if (auto_state.ground_taxi_active) {
+        // force ground steering when in ground taxi mode
+        ground_steering = true;
     } else {
         // otherwise use ground steering when no input control and we
         // are below the GROUND_STEER_ALT
@@ -353,7 +356,9 @@ void Plane::stabilize_yaw()
      */
     float steering_output = 0.0;
     if (landing.is_flaring() ||
-        (steer_state.hold_course_cd != -1 && ground_steering)) {
+        (steer_state.hold_course_cd != -1 && ground_steering) ||
+        auto_state.ground_taxi_active) {
+        // Use course control for ground taxi mode
         steering_output = calc_nav_yaw_course();
     } else if (ground_steering) {
         steering_output = calc_nav_yaw_ground();
@@ -488,6 +493,81 @@ void Plane::calc_throttle()
     }
 
     float commanded_throttle = TECS_controller.get_throttle_demand();
+    SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, commanded_throttle);
+}
+
+/*
+  calculate throttle for ground taxi mode
+  Limits throttle based on TAXI_THR_MAX and TAXI_SPEED_MAX parameters
+  Generates throttle output directly based on waypoint distance, not relying on TECS
+*/
+void Plane::calc_throttle_taxi()
+{
+    if (aparm.throttle_cruise <= 1) {
+        SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, 0.0);
+        return;
+    }
+
+    // Get throttle limit from TAXI_THR_MAX parameter
+    float throttle_max_pct = g2.taxi_throttle_max;
+    if (throttle_max_pct < 10) {
+        throttle_max_pct = 10; // minimum 10%
+    }
+    if (throttle_max_pct > 100) {
+        throttle_max_pct = 100; // maximum 100%
+    }
+    
+    // Get waypoint distance
+    float wp_distance = auto_state.wp_distance;
+    
+    // Generate throttle based on waypoint distance
+    // Don't rely on TECS controller which may output zero on ground
+    float commanded_throttle = 0.0f;
+    
+    // If wp_distance is 0 or invalid, use default throttle to start movement
+    // This can happen when first entering AUTO mode before waypoint is calculated
+    if (wp_distance <= 0.0f || !is_positive(wp_distance)) {
+        // Use a reasonable default throttle to start movement (at least 15% or 50% of max)
+        commanded_throttle = MAX(15.0f, throttle_max_pct * 0.5f);
+    } else if (wp_distance > 5.0f) {
+        // Waypoint is far away, use maximum allowed throttle
+        commanded_throttle = throttle_max_pct;
+        // Ensure minimum throttle
+        if (commanded_throttle < 15.0f) {
+            commanded_throttle = 15.0f;
+        }
+    } else if (wp_distance > 2.0f) {
+        // Medium distance: scale throttle linearly from max to 30%
+        float factor = (wp_distance - 2.0f) / 3.0f; // 0 to 1 as distance goes from 2 to 5
+        commanded_throttle = throttle_max_pct * 0.3f + throttle_max_pct * 0.7f * factor;
+    } else if (wp_distance > 0.5f) {
+        // Close to waypoint: scale throttle from 30% to 10%
+        float factor = (wp_distance - 0.5f) / 1.5f; // 0 to 1 as distance goes from 0.5 to 2
+        commanded_throttle = throttle_max_pct * 0.1f + throttle_max_pct * 0.2f * factor;
+    } else {
+        // Very close to waypoint: reduce throttle to near zero
+        commanded_throttle = throttle_max_pct * 0.1f * (wp_distance / 0.5f);
+    }
+    
+    // Speed limiting: reduce throttle if ground speed exceeds TAXI_SPEED_MAX
+    float taxi_speed_max = g2.taxi_speed_max;
+    if (taxi_speed_max > 0.1f && gps.status() >= AP_GPS::GPS_OK_FIX_3D) {
+        float current_speed = gps.ground_speed();
+        if (current_speed > taxi_speed_max) {
+            // Aggressively reduce throttle when exceeding max speed
+            // Calculate throttle reduction based on speed excess ratio
+            float speed_ratio = current_speed / taxi_speed_max;
+            // When speed exceeds limit, reduce throttle proportionally
+            // If speed is 2x the limit, throttle should be near zero
+            float max_allowed_throttle = throttle_max_pct / (speed_ratio * speed_ratio);
+            commanded_throttle = MIN(commanded_throttle, max_allowed_throttle);
+            commanded_throttle = MAX(0, commanded_throttle);
+        }
+    }
+    
+    // Final safety check: ensure throttle is within valid range
+    commanded_throttle = constrain_float(commanded_throttle, 0.0f, throttle_max_pct);
+    
     SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, commanded_throttle);
 }
 

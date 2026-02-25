@@ -547,6 +547,11 @@ public:
     AP_Int8 crow_flap_options;
     AP_Int8 crow_flap_aileron_matching;
 
+    // Ground taxi control parameters
+    AP_Int8 taxi_enable;
+    AP_Int8 taxi_throttle_max;
+    AP_Float taxi_speed_max;
+
     // Forward throttle battery voltage compensation
     class FWD_BATT_CMP {
     public:

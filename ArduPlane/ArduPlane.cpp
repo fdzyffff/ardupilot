@@ -919,6 +919,18 @@ bool Plane::set_land_descent_rate(float descent_rate)
 #endif // AP_SCRIPTING_ENABLED
 
 // returns true if vehicle is landing.
+#if ENABLE_REDUNDANCY_CONTROL
+bool Plane::is_redundancy_in_control() const
+{
+    // 如果启动了三余度控制，检查当前余度是否处于控制状态
+    if (this_redundancy_num != 0 && last_ctrl_redundancy_num != 0) {
+        // 当前余度处于控制状态时，才允许发送控制帧
+        return (last_ctrl_redundancy_num == this_redundancy_num);
+    }
+    // 如果三余度控制未初始化或状态未知，默认允许发送控制帧
+    return true;
+}
+#endif
 bool Plane::is_landing() const
 {
 #if HAL_QUADPLANE_ENABLED

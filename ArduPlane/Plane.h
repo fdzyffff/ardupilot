@@ -23,7 +23,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 // 编译功能开关
-#define ENABLE_REDUNDANCY_CONTROL 0    // 余度切换控制功能开关，1：开启，0：关闭
+#define ENABLE_REDUNDANCY_CONTROL 1    // 余度切换控制功能开关，1：开启，0：关闭
 
 ////////////////////////////////////////////////////////////////////////////////
 // Header includes
@@ -525,6 +525,9 @@ private:
         // time stamp of when we start flying while in auto mode in milliseconds
         uint32_t started_flying_in_auto_ms;
 
+        // ground taxi mode flag
+        bool ground_taxi_active;
+
         // barometric altitude at start of takeoff
         float baro_takeoff_alt;
 
@@ -931,6 +934,7 @@ private:
     void rangefinder_terrain_correction(float &height);
     void stabilize();
     void calc_throttle();
+    void calc_throttle_taxi();
     void calc_nav_roll();
     void calc_nav_pitch();
     float calc_speed_scaler(void);
@@ -1317,6 +1321,10 @@ public:
     void failsafe_check(void);
     bool is_landing() const override;
     bool is_taking_off() const override;
+#if ENABLE_REDUNDANCY_CONTROL
+    // 注意：不再是虚函数，避免虚函数表问题
+    bool is_redundancy_in_control() const;
+#endif
 #if AP_SCRIPTING_ENABLED || AP_EXTERNAL_CONTROL_ENABLED
     bool set_target_location(const Location& target_loc) override;
 #endif //AP_SCRIPTING_ENABLED || AP_EXTERNAL_CONTROL_ENABLED

@@ -30,6 +30,7 @@
   #include <AP_CANManager/AP_CANManager.h>
   #include <AP_DroneCAN/AP_DroneCAN.h>
   #include <AP_PiccoloCAN/AP_PiccoloCAN.h>
+  #include <AP_CANopen/AP_CANopen.h>
 #endif
 
 #if NUM_SERVO_CHANNELS == 0
@@ -568,6 +569,14 @@ void SRV_Channels::push()
                 break;
             }
 #endif
+            case AP_CAN::Protocol::CANopen: {
+                AP_CANopen *ap_canopen = AP_CANopen::get_canopen(i);
+                if (ap_canopen == nullptr) {
+                    continue;
+                }
+                ap_canopen->update();
+                break;
+            }
             case AP_CAN::Protocol::None:
             default:
                 break;

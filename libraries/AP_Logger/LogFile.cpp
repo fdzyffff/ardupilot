@@ -423,6 +423,35 @@ void AP_Logger::Write_Compass_instance(const uint64_t time_us, const uint8_t mag
     WriteBlock(&pkt, sizeof(pkt));
 }
 
+void AP_Logger::Write_CAN_ServoStatus(uint64_t time_us, uint8_t id, float real_angle_deg, float target_angle_deg, float real_current_A, float real_temperature_dc)
+{
+    const struct log_CANSRV pkt {
+        LOG_PACKET_HEADER_INIT(LOG_CANSRV_MSG),
+        time_us     : time_us,
+        id          : id,
+        real_angle_deg       : real_angle_deg,
+        target_angle_deg     : target_angle_deg,
+        real_current_A       : real_current_A,
+        real_temperature_dc  : real_temperature_dc
+    };
+    WriteBlock(&pkt, sizeof(pkt));
+}
+
+void AP_Logger::Write_CAN_ESC_Status(uint64_t time_us, uint8_t id, uint16_t target_throttle, float feedback_voltage_V, float feedback_current_A, uint16_t feedback_rpm, float feedback_temperature_dc)
+{
+    const struct log_CANESC pkt {
+        LOG_PACKET_HEADER_INIT(LOG_CANESC_MSG),
+        time_us     : time_us,
+        id          : id,
+        target_throttle      : target_throttle,
+        feedback_voltage_V   : feedback_voltage_V,
+        feedback_current_A   : feedback_current_A,
+        feedback_rpm         : feedback_rpm,
+        feedback_temperature_dc : feedback_temperature_dc
+    };
+    WriteBlock(&pkt, sizeof(pkt));
+}
+
 // Write a Compass packet
 void AP_Logger::Write_Compass()
 {

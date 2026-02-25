@@ -1168,7 +1168,6 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("DSPOILER_AILMTCH", 21, ParametersG2, crow_flap_aileron_matching, 100),
 
-
     // 22 was EFI
 
     // @Param: FWD_BAT_VOLT_MAX
@@ -1284,6 +1283,31 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
 
 
     AP_GROUPINFO("TKOFF_COURSE", 38, ParametersG2, takeoff_course, -1),
+
+    // @Param: TAXI_ENABLE
+    // @DisplayName: Ground taxi enable
+    // @Description: Enable ground taxi mode in AUTO mode. When enabled, aircraft will follow waypoints on ground using steering control instead of roll control.
+    // @Values: 0:Disabled,1:Enabled
+    // @User: Standard
+    AP_GROUPINFO("TAXI_ENABLE", 39, ParametersG2, taxi_enable, 0),
+
+    // @Param: TAXI_THR_MAX
+    // @DisplayName: Ground taxi max throttle
+    // @Description: Maximum throttle percentage for ground taxi mode. This limits the throttle output when taxiing on ground.
+    // @Units: %
+    // @Range: 10 100
+    // @Increment: 1
+    // @User: Standard
+    AP_GROUPINFO("TAXI_THR_MAX", 40, ParametersG2, taxi_throttle_max, 50),
+
+    // @Param: TAXI_SPEED_MAX
+    // @DisplayName: Ground taxi max speed
+    // @Description: Maximum ground speed for ground taxi mode in m/s. Throttle will be reduced if speed exceeds this limit.
+    // @Units: m/s
+    // @Range: 1 20
+    // @Increment: 0.1
+    // @User: Standard
+    AP_GROUPINFO("TAXI_SPEED_MAX", 41, ParametersG2, taxi_speed_max, 5.0f),
 
     AP_GROUPEND
 };

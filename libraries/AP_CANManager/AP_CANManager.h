@@ -149,6 +149,7 @@ private:
         AP_Int8 _driver_type_11bit;
         AP_CANDriver* _uavcan;
         AP_CANDriver* _piccolocan;
+        AP_CANDriver* _canopen; // Added _canopen member
         AP_CANDriver* _fdcan;
     };
 

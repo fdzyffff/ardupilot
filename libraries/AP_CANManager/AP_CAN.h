@@ -30,5 +30,6 @@ public:
         TOFSenseP = 13,
         NanoRadar = 14,
         FDCAN = 15,
+        CANopen = 16, // Added CANopen protocol type
     };
 };

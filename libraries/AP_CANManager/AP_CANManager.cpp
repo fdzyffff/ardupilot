@@ -28,6 +28,7 @@
 #include <AP_KDECAN/AP_KDECAN.h>
 #include <AP_SerialManager/AP_SerialManager.h>
 #include <AP_PiccoloCAN/AP_PiccoloCAN.h>
+#include <AP_CANopen/AP_CANopen.h>
 #include <FD_CAN/FD_CAN.h>
 #include <AP_EFI/AP_EFI_NWPMU.h>
 #include <GCS_MAVLink/GCS.h>
@@ -234,6 +235,16 @@ void AP_CANManager::init()
             AP_Param::load_object_from_eeprom((AP_PiccoloCAN*)_drivers[drv_num], AP_PiccoloCAN::var_info);
         } else
 #endif
+        if (drv_type[drv_num] == AP_CAN::Protocol::CANopen) {
+            _drivers[drv_num] = _drv_param[drv_num]._canopen = new AP_CANopen;
+
+            if (_drivers[drv_num] == nullptr) {
+                AP_BoardConfig::allocation_error("CANopen %d", drv_num + 1);
+                continue;
+            }
+
+            AP_Param::load_object_from_eeprom((AP_CANopen*)_drivers[drv_num], AP_CANopen::var_info);
+        } else
         if (drv_type[drv_num] == AP_CAN::Protocol::FDCAN) {
             printf("AP_CAN::Protocol::FDCAN\n");
             _drivers[drv_num] = _drv_param[drv_num]._fdcan = new FD_CAN;

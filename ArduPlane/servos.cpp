@@ -85,6 +85,11 @@ bool Plane::suppress_throttle(void)
         return true;
     }
 
+    // Don't suppress throttle in ground taxi mode
+    if (auto_state.ground_taxi_active) {
+        return false;
+    }
+
     if (!throttle_suppressed) {
         // we've previously met a condition for unsupressing the throttle
         return false;
@@ -581,6 +586,21 @@ void Plane::set_throttle(void)
 
     // Update voltage scaling
     g2.fwd_batt_cmp.update();
+
+    // In AUTO mode, if ground taxi is active, throttle is already set by calc_throttle_taxi()
+    // Don't override it here
+    if (control_mode == &mode_auto && auto_state.ground_taxi_active) {
+        // Throttle already set by calc_throttle_taxi(), just apply limits and compensation
+        if (control_mode->use_battery_compensation()) {
+            const float throttle = g2.fwd_batt_cmp.apply_throttle(SRV_Channels::get_output_scaled(SRV_Channel::k_throttle));
+            SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, throttle);
+        }
+        if (control_mode->use_throttle_limits()) {
+            const float limited_throttle = apply_throttle_limits(SRV_Channels::get_output_scaled(SRV_Channel::k_throttle));
+            SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, limited_throttle);
+        }
+        return;
+    }
 
 #if AP_SCRIPTING_ENABLED
     if (nav_scripting_active()) {

@@ -64,6 +64,7 @@
 
   #include <AP_PiccoloCAN/AP_PiccoloCAN.h>
   #include <AP_DroneCAN/AP_DroneCAN.h>
+  #include <AP_CANopen/AP_CANopen.h>
 #endif
 
 #include <AP_Logger/AP_Logger.h>
@@ -1256,6 +1257,15 @@ bool AP_Arming::can_checks(bool report)
                     check_failed(ARMING_CHECK_SYSTEM, report, "PiccoloCAN not enabled");
                     return false;
 #endif
+                    break;
+                }
+                case AP_CAN::Protocol::CANopen: {
+                    AP_CANopen *ap_canopen = AP_CANopen::get_canopen(i);
+
+                    if (ap_canopen != nullptr && !ap_canopen->pre_arm_check(fail_msg, ARRAY_SIZE(fail_msg))) {
+                        check_failed(ARMING_CHECK_SYSTEM, report, "CANopen: %s", fail_msg);
+                        return false;
+                    }
                     break;
                 }
                 case AP_CAN::Protocol::DroneCAN:

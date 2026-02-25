@@ -26,6 +26,9 @@ bool ModeAuto::_enter()
     plane.next_WP_loc = plane.prev_WP_loc = plane.current_loc;
     // start or resume the mission, based on MIS_AUTORESET
     plane.mission.start_or_resume();
+    
+    // Initialize ground taxi state
+    plane.auto_state.ground_taxi_active = false;
 
     if (hal.util->was_watchdog_armed()) {
         if (hal.util->persistent_data.waypoint_num != 0) {
@@ -58,6 +61,7 @@ void ModeAuto::_exit()
         }
     }
     plane.auto_state.started_flying_in_auto_ms = 0;
+    plane.auto_state.ground_taxi_active = false;
 }
 
 void ModeAuto::update()
@@ -107,8 +111,46 @@ void ModeAuto::update()
     } else {
         // we are doing normal AUTO flight, the special cases
         // are for takeoff and landing
-        if (nav_cmd_id != MAV_CMD_NAV_CONTINUE_AND_CHANGE_ALT) {
-            plane.steer_state.hold_course_cd = -1;
+        
+        // Check if ground taxi mode should be active
+        bool should_taxi = (plane.g2.taxi_enable > 0) && 
+                           !plane.is_flying() && 
+                           plane.arming.is_armed() &&
+                           (nav_cmd_id == MAV_CMD_NAV_WAYPOINT || 
+                            nav_cmd_id == MAV_CMD_NAV_LOITER_UNLIM ||
+                            nav_cmd_id == MAV_CMD_NAV_LOITER_TIME ||
+                            nav_cmd_id == MAV_CMD_NAV_LOITER_TURNS ||
+                            nav_cmd_id == MAV_CMD_NAV_LOITER_TO_ALT);
+        
+        if (should_taxi) {
+            // Ground taxi mode: use steering control instead of roll control
+            plane.auto_state.ground_taxi_active = true;
+            
+            // Set hold_course for ground steering
+            if (nav_cmd_id != MAV_CMD_NAV_CONTINUE_AND_CHANGE_ALT) {
+                // Calculate desired course to waypoint
+                int32_t bearing_to_wp_cd = plane.current_loc.get_bearing_to(plane.next_WP_loc) * 100;
+                plane.steer_state.hold_course_cd = bearing_to_wp_cd;
+            }
+            
+            // Keep wings level during ground taxi
+            plane.nav_roll_cd = 0;
+            
+            // Keep pitch level during ground taxi
+            plane.nav_pitch_cd = 0;
+            
+            // Use ground taxi throttle control
+            plane.calc_throttle_taxi();
+        } else {
+            // Normal flight mode
+            plane.auto_state.ground_taxi_active = false;
+            
+            if (nav_cmd_id != MAV_CMD_NAV_CONTINUE_AND_CHANGE_ALT) {
+                plane.steer_state.hold_course_cd = -1;
+            }
+            plane.calc_nav_roll();
+            plane.calc_nav_pitch();
+            plane.calc_throttle();
         }
         plane.calc_nav_roll();
         plane.calc_nav_pitch();

@@ -257,6 +257,8 @@ public:
     void Write_MessageF(const char *fmt, ...);
     void Write_ServoStatus(uint64_t time_us, uint8_t id, float position, float force, float speed, uint8_t power_pct,
                            float pos_cmd, float voltage, float current, float mot_temp, float pcb_temp, uint8_t error);
+    void Write_CAN_ServoStatus(uint64_t time_us, uint8_t id, float real_angle_deg, float target_angle_deg, float real_current_A, float real_temperature_dc);
+    void Write_CAN_ESC_Status(uint64_t time_us, uint8_t id, uint16_t target_throttle, float feedback_voltage_V, float feedback_current_A, uint16_t feedback_rpm, float feedback_temperature_dc);
     void Write_Compass();
     void Write_Mode(uint8_t mode, const ModeReason reason);
 
