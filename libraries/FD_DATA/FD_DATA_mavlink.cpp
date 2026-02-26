@@ -1,5 +1,7 @@
 #include <AP_Math/AP_Math.h>
 #include "FD_DATA.h"
+#include <AP_HAL/AP_HAL.h>
+#include <cstdio>
 
 extern const AP_HAL::HAL& hal;
 
@@ -151,7 +153,7 @@ void FD_DATA::handle_message_command_long(const mavlink_message_t &msg)
                     }
                     if (int16_t(packet.param1) == 2 && int16_t(packet.param5) == 150 && int16_t(packet.param6) == 1079 && int16_t(packet.param7) == 1500) {
                         char sn[20];
-                        hal.util->snprintf(sn, sizeof(local_data.serial_number), "TEST SN %d", int16_t(packet.param2));
+                        hal.util->snprintf(sn, sizeof(local_data.serial_number), "TEST SN %d abcdefghij", int16_t(packet.param2));
                         if (set_serial_number(sn)) 
                         {
                             gcs().send_text(MAV_SEVERITY_INFO, "SN: %s Set", sn);
@@ -182,7 +184,7 @@ void FD_DATA::handle_message_command_long(const mavlink_message_t &msg)
                     }
                     if (int16_t(packet.param1) == 2 && int16_t(packet.param5) == 150 && int16_t(packet.param6) == 1079 && int16_t(packet.param7) == 1500) {
                         char uas[20];
-                        hal.util->snprintf(uas, sizeof(local_data.uas_number), "TEST UAS %d", int16_t(packet.param2));
+                        hal.util->snprintf(uas, sizeof(local_data.uas_number), "TEST UAS %d ABCDEFGHI", int16_t(packet.param2));
                         if (set_uas_number(uas)) 
                         {
                             gcs().send_text(MAV_SEVERITY_INFO, "UAS: %s Set", uas);

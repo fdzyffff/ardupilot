@@ -1,9 +1,11 @@
+#pragma once
+
 #include "FD1_message.h"
 
-#define FD1_MSG_LS_UOM_LEN 203
-#define FD1_MSG_LS_UOM_MSG_NUM 21
-#define FD1_MSG_LS_UOM_MSG_LENGT_MAX 20
-class FD1_msg_LS_UOM : public FD1_message{
+#define FD1_MSG_UOM_LEN 203
+#define FD1_MSG_UOM_MSG_NUM 21
+#define FD1_MSG_UOM_MSG_LENGT_MAX 20
+class FD1_msg_UOM : public FD1_message{
 public:
     
     struct PACKED MSG_Collection {
@@ -16,7 +18,7 @@ public:
     // message structure
     union PACKED Content_1 {
         MSG_Collection msg;
-        uint8_t data[FD1_MSG_LS_UOM_LEN];
+        uint8_t data[FD1_MSG_UOM_LEN];
     };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -28,11 +30,11 @@ public:
         Content_1 content;
     };
 
-    FD1_msg_LS_UOM();
+    FD1_msg_UOM();
     
     /* Do not allow copies */
-    FD1_msg_LS_UOM(const FD1_msg_LS_UOM &other) = delete;
-    FD1_msg_LS_UOM &operator=(const FD1_msg_LS_UOM&) = delete;
+    FD1_msg_UOM(const FD1_msg_UOM &other) = delete;
+    FD1_msg_UOM &operator=(const FD1_msg_UOM&) = delete;
 
     void process_message(void) override;
     void parse(uint8_t temp) override;
@@ -68,9 +70,12 @@ public:
     //0x04 020 M 时间戳
     //0x02 021 M 时间戳精度
     //0x01       扩展标志位
-
     void make_init();
-    void insert_msg(uint8_t id, uint8_t &data[20], uint8_t valid_length);
+    bool have_msg_id(uint8_t msg_id, uint8_t (&msg_mask)[4]);
+    bool have_msg_mask(uint8_t (&msg_mask)[4], uint8_t (&current_mask)[4]);
+    void get_msg_mask(uint8_t msg_id, uint8_t (&msg_mask)[4]);
+    uint8_t get_msg_length(uint8_t msg_id);
+    void insert_msg(uint8_t id, uint8_t (&msg_data)[20]);
     void make_sum();
 
     FD1UART_MSG_1 _msg_1;

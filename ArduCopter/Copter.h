@@ -178,6 +178,7 @@
 #include "Parameters.h"
 #include "mode.h"
 #include "UFence.h"
+#include "Uart.h"
 
 class Copter : public AP_Vehicle {
 public:
@@ -234,6 +235,7 @@ public:
     friend class PayloadPlace;
 
     friend class UFence;
+    friend class Uart;
 
     Copter(void);
 
@@ -1069,6 +1071,7 @@ private:
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);
 
     UFence ufence;
+    Uart uart;
 
 public:
     void failsafe_check();      // failsafe.cpp
