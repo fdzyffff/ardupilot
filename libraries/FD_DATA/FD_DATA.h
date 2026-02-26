@@ -61,6 +61,8 @@ public:
     void set_is_flying(bool in);
     void set_uav_status(uint8_t status_in);
 
+    mavlink_zfjl_gcs_heartbeat_t& get_gcs_heartbeat_msg() {return zfjl_gcs_heartbeat_packet;}
+
 private:
     static FD_DATA *_singleton;
 
