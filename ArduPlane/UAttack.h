@@ -25,6 +25,7 @@ public:
     bool is_active_loc() const { return (current_idx == 2); }
     bool is_active_external() const { return (current_idx == 3); }
     void update_control_value();
+    void update_vel_bf_info();
     void init_target();
     void update();
     const Vector2f& get_bf_info();
@@ -63,6 +64,7 @@ public:
     } display_info;
 
     Vector2f bf_info;
+    Vector2f vel_bf_info;
     Vector2f ef_info;
     Vector2f ef_rate_info;
     bool _active;
@@ -85,10 +87,11 @@ public:
 
 private:
 
-    AP_Float        attack_k1_pitch;
     AP_Float        attack_k2_pitch;
+    AP_Float        attack_k3_pitch;
     AP_Float        attack_k1_yaw;
     AP_Float        attack_k2_yaw;
+    AP_Float        attack_k3_yaw;
     AP_Float        attack_k2_roll;
     AP_Float        attack_k_angle;
     AP_Float        attack_throttle;
@@ -104,8 +107,8 @@ private:
     AP_Int8         use_target_cam_type;
     AP_Float        filt_yaw_hz;
     AP_Float        filt_pithc_hz;
-    AC_PID          attack_roll_pid{0.5f, 0.1f, 0.01f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.5f};
-    AC_PID          attack_pitch_pid{0.5f, 0.1f, 0.01f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.5f};
+    AC_PID          attack_roll_pid{0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 5.0f, 5.0f, 5.0f, 0.0f};
+    AC_PID          attack_pitch_pid{0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 5.0f, 5.0f, 5.0f, 0.0f};
 
     FD_Target_Base*       _Target_ptr_cam;
     FD_Target_Loc*        _Target_ptr_loc;
