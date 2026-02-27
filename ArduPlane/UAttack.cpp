@@ -2,31 +2,32 @@
 
 const AP_Param::GroupInfo UAttack::var_info[] = {
 
-    AP_SUBGROUPINFO(attack_roll_pid       , "ATKRLL_", 0, UAttack, AC_PID),
-    AP_GROUPINFO("K1_PTH",      1, UAttack, attack_k1_pitch,         0.0f),
-    AP_GROUPINFO("K2_PTH",      2, UAttack, attack_k2_pitch,         1.0f),
-    AP_GROUPINFO("K1_YAW",      3, UAttack, attack_k1_yaw,           0.0f),
-    AP_GROUPINFO("K2_YAW",      4, UAttack, attack_k2_yaw,           1.0f),
-    AP_GROUPINFO("K2_ROLL",     5, UAttack, attack_k2_roll,          0.5f),
-    AP_GROUPINFO("K_ANGLE",     6, UAttack, attack_k_angle,          1.0f),
-    AP_GROUPINFO("THR",         7, UAttack, attack_throttle,        75.0f),
-    AP_GROUPINFO("RTL_TOUT",    8, UAttack, atk_time_out,        20000),
-    AP_GROUPINFO("EXT_USE",     9, UAttack, use_target_external,     0),
-    AP_GROUPINFO("ANGLE",      10, UAttack, attack_angle,            0.f),
-    AP_GROUPINFO("PTH_LIM",    11, UAttack, pitch_limit,            30.f),
-    AP_GROUPINFO("PTH_RLIM",   12, UAttack, pitch_rate_limit,       30.f),
-    AP_GROUPINFO("OFF_PTH",    13, UAttack, attack_pitch_off,        0.0f),
-    AP_GROUPINFO("UPRINT",     14, UAttack, print,                   0),
-    AP_GROUPINFO("TCAM_USE",   15, UAttack, use_target_cam,          0),
-    AP_GROUPINFO("TLOC_USE",   16, UAttack, use_target_loc,          0),
-    AP_GROUPINFO("CAM_TYPE",   17, UAttack, use_target_cam_type,     1),
-    AP_GROUPINFO("FILT_Y_HZ",  18, UAttack, filt_yaw_hz,             2.0f),
-    AP_GROUPINFO("FILT_P_HZ",  19, UAttack, filt_pithc_hz,           2.0f),
-    AP_SUBGROUPINFO(attack_pitch_pid       , "ATKPTH_", 23, UAttack, AC_PID),
+    AP_SUBGROUPINFO(attack_pitch_pid      , "PTH_K1_", 0, UAttack, AC_PID),
+    AP_GROUPINFO("PTH_K2",      1, UAttack, attack_k2_pitch,         1.0f),
+    AP_GROUPINFO("PTH_K3",      2, UAttack, attack_k3_pitch,         1.0f),
+    AP_GROUPINFO("PTH_LIM",     3, UAttack, pitch_limit,            30.f),
+    AP_GROUPINFO("PTH_RLIM",    4, UAttack, pitch_rate_limit,       30.f),
+    AP_GROUPINFO("PTH_OFF",     5, UAttack, attack_pitch_off,        0.0f),
+    AP_GROUPINFO("YAW_K1",      6, UAttack, attack_k1_yaw,           0.0f),
+    AP_GROUPINFO("YAW_K2",      7, UAttack, attack_k2_yaw,           1.0f),
+    AP_GROUPINFO("YAW_K3",      8, UAttack, attack_k3_yaw,           1.0f),
+    AP_SUBGROUPINFO(attack_roll_pid       , "RLL_K1_", 9, UAttack, AC_PID),
+    AP_GROUPINFO("RLL_K2",     10, UAttack, attack_k2_roll,          0.5f),
+    AP_GROUPINFO("ANGLE",      11, UAttack, attack_angle,            0.f),
+    AP_GROUPINFO("ANGLE_K",    12, UAttack, attack_k_angle,          1.0f),
+    AP_GROUPINFO("THR",        13, UAttack, attack_throttle,        75.0f),
+    AP_GROUPINFO("RTL_TOUT",   14, UAttack, atk_time_out,        20000),
+    AP_GROUPINFO("UPRINT",     15, UAttack, print,                   0),
+    AP_GROUPINFO("TCAM_USE",   16, UAttack, use_target_cam,          0),
+    AP_GROUPINFO("TCAM_TYPE",  17, UAttack, use_target_cam_type,     1),
+    AP_GROUPINFO("TLOC_USE",   18, UAttack, use_target_loc,          0),
+    AP_GROUPINFO("TEXT_USE",   19, UAttack, use_target_external,     0),
+    AP_GROUPINFO("FILT_Y_HZ",  20, UAttack, filt_yaw_hz,             2.0f),
+    AP_GROUPINFO("FILT_P_HZ",  21, UAttack, filt_pithc_hz,           2.0f),
 
-    AP_SUBGROUPPTR(_Target_ptr_loc,         "TL_",    20, UAttack,  FD_Target_Loc),
-    AP_SUBGROUPPTR(_Target_ptr_cam_DYT,     "TC_",    21, UAttack,  FD_Target_DYT),
-    AP_SUBGROUPPTR(_Target_ptr_external,    "TE_",    22, UAttack,  FD_Target_External),
+    AP_SUBGROUPPTR(_Target_ptr_loc,         "TL_",    23, UAttack,  FD_Target_Loc),
+    AP_SUBGROUPPTR(_Target_ptr_cam_DYT,     "TC_",    24, UAttack,  FD_Target_DYT),
+    AP_SUBGROUPPTR(_Target_ptr_external,    "TE_",    25, UAttack,  FD_Target_External),
     AP_GROUPEND
 };
 
@@ -45,6 +46,8 @@ void UAttack::init()
     _active = false;
     bf_info.x = 0.0f;
     bf_info.y = 0.0f;
+    vel_bf_info.x = 0.0f;
+    vel_bf_info.y = 0.0f;
     ef_info.x = 0.0f;
     ef_info.y = 0.0f;
     ef_rate_info.x = 0.0f;
@@ -300,6 +303,25 @@ void UAttack::update()
         _external_cmd.last_cmd_ms = millis();
     }
 
+    update_vel_bf_info();
+}
+
+void UAttack::update_vel_bf_info()
+{
+    Vector3f tmp_vel;
+    float _roll = AP::ahrs().get_roll();
+    float _pitch = AP::ahrs().get_pitch();
+    float _yaw = AP::ahrs().get_yaw();
+    if (plane.position_ok() && AP::ahrs().get_velocity_NED(tmp_vel)) {
+        Matrix3f tmp_body_earth_m;
+        tmp_body_earth_m.from_euler(_roll, _pitch, _yaw);
+        Matrix3f tmp_earth_body_m = tmp_body_earth_m.transposed();
+        Vector3f ef_unit = tmp_earth_body_m*tmp_vel;
+        vel_bf_info.y = wrap_180(degrees(atan2f(-ef_unit.z, ef_unit.xy().length())));
+        vel_bf_info.x = wrap_180(degrees(atan2f( ef_unit.y, ef_unit.x)));
+    } else {
+        vel_bf_info.zero();
+    }
 }
 
 void UAttack::handle_info(float p1, float p2) {
@@ -393,6 +415,12 @@ void UAttack::update_target_pitch_rate() {
 
     _target_pitch_rate = attack_pitch_pid.update_all(_attack_angle_rate_target, _attack_angle_rate_measure, dt) + k2_pitch * angle_err;
 
+    if (plane.position_ok()) {
+        float k3_pitch = attack_k3_pitch.get();
+        float vel_angle_err = wrap_180(bf_info.y - vel_bf_info.y);
+        _target_pitch_rate += vel_angle_err * k3_pitch;
+    }
+
     //Limit pitch rate
     float limit_pitch_rate = pitch_rate_limit;
     _target_pitch_rate = constrain_float(_target_pitch_rate, -limit_pitch_rate, limit_pitch_rate);
@@ -427,6 +455,13 @@ void UAttack::update_target_yaw_rate() {
     // float boost_factor = constrain_float(fabsf(bf_info.x)/15.0f, 0.0f, 1.0f) * 2.0f;
     float angle_err = constrain_float(bf_info.x, -30.0f, 30.0f);
     _target_yaw_rate = k1_yaw * ef_rate_info.x + k2_yaw * angle_err;
+
+    if (plane.position_ok()) {
+        float k3_yaw = attack_k3_yaw.get();
+        float vel_angle_err = wrap_180(bf_info.x - vel_bf_info.x);
+        _target_yaw_rate += vel_angle_err * k3_yaw;
+    }
+
     display_info.p11 = angle_err;
     display_info.p12 = k2_yaw;
     display_info.p13 = _target_yaw_rate;
