@@ -459,7 +459,6 @@ void AP_ExternalAHRS_MINS::update_mag_cal()
             mag_calibrating = false;
         }
 
-
         for (uint8_t mag_id = 0; mag_id < 2; mag_id++) {
             if (AP_HAL::millis() - _mag_cal[mag_id].last_cal_ms > 3000) {
                 // gcs().send_text(MAV_SEVERITY_INFO, "No cal progress, cancel");

@@ -375,7 +375,7 @@ public:
 
     // get output value for a specific channel as a pwm value
     static bool get_output_pwm_chan(uint8_t chan, uint16_t &value);
-    
+
     // set output value for a specific function channel as a pwm value for specified override time in ms
     static void set_output_pwm_chan_timeout(uint8_t chan, uint16_t value, uint16_t timeout_ms);
 
@@ -395,6 +395,8 @@ public:
     // get normalised output (-1 to 1 with 0 at mid point of servo_min/servo_max)
     // Value is taken from pwm value.  Returns zero on error.
     static float get_output_norm(SRV_Channel::Aux_servo_function_t function);
+
+    static float get_output_norm(uint8_t chan);
 
     // set normalised output (-1 to 1 with 0 at mid point of servo_min/servo_max) for the given function
     static void set_output_norm(SRV_Channel::Aux_servo_function_t function, float value);
