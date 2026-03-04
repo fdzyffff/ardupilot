@@ -765,6 +765,14 @@ float SRV_Channels::get_output_norm(SRV_Channel::Aux_servo_function_t function)
     return channels[chan].get_output_norm();
 }
 
+float SRV_Channels::get_output_norm(uint8_t chan)
+{
+    if (srv_channel(chan) != nullptr) {
+        return channels[chan].get_output_norm();
+    }
+    return 0.0f;
+}
+
 // set normalised output (-1 to 1 with 0 at mid point of servo_min/servo_max) for the given function
 void SRV_Channels::set_output_norm(SRV_Channel::Aux_servo_function_t function, float value)
 {

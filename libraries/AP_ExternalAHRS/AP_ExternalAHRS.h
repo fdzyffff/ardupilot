@@ -36,6 +36,7 @@ public:
     friend class AP_ExternalAHRS_backend;
     friend class AP_ExternalAHRS_VectorNav;
     friend class AP_ExternalAHRS_MINS;
+    friend class AP_ExternalAHRS_HITL;
 
     AP_ExternalAHRS();
 
@@ -66,6 +67,9 @@ public:
 
 #if AP_EXTERNAL_AHRS_MINS_ENABLED
         MINS = 15,
+#endif
+#if AP_EXTERNAL_AHRS_HITL_ENABLED
+        HITL = 99,
 #endif
     };
 
@@ -186,8 +190,10 @@ public:
         gnss_is_disabled = disable;
     }
 
-    AP_ExternalAHRS::gps_data_message_t gps_data;
-    AP_ExternalAHRS::ins_data_message_t imu_data;
+    AP_ExternalAHRS::baro_data_message_t baro_data;
+    AP_ExternalAHRS::mag_data_message_t  mag_data;
+    AP_ExternalAHRS::gps_data_message_t  gps_data;
+    AP_ExternalAHRS::ins_data_message_t  imu_data;
 
     uint8_t get_debug_print() {return debug_print.get();}
 
