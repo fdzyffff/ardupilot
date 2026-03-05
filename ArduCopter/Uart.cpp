@@ -50,9 +50,9 @@ void Uart::read_uart()
 void Uart::pack_uom_msg()
 {
     uint8_t cmd_mask[4] = {0};
-    cmd_mask[0] = 0b10000000;
-    // cmd_mask[1] = 0b11111111;
-    // cmd_mask[2] = 0b11111111;
+    cmd_mask[0] = 0b11111111;
+    cmd_mask[1] = 0b11111111;
+    cmd_mask[2] = 0b11111111;
     cmd_mask[3] = 0b00000000;
     _msg_UOM.make_init();
     uint8_t insert_data[20];
@@ -144,7 +144,7 @@ void Uart::pack_uom_msg()
     //0x40 009 M 航迹角
     if (_msg_UOM.have_msg_id(9, cmd_mask)) {
         memset(insert_data, 0, sizeof(insert_data));
-        if (AP::gps().status() > AP_GPS::GPS_OK_FIX_3D) {
+        if (AP::gps().status() >= AP_GPS::GPS_OK_FIX_3D) {
             uint16_t out = (uint16_t)(wrap_360(AP::gps().ground_course()) * 10.0f);
             memcpy((uint8_t *)&insert_data[0], (uint8_t *)&out, 2);
         } else {
@@ -191,7 +191,7 @@ void Uart::pack_uom_msg()
             if (AP::ahrs().get_vert_pos_rate_D(vert_d)) {
                 uint8_t out = (uint16_t)(constrain_float(fabsf(vert_d) * 2.0f, 0.0f, 127.f));
                 if (vert_d > 0.0f) {
-                    out += 127;
+                    out += 128;
                 }
                 memcpy((uint8_t *)&insert_data[0], (uint8_t *)&out, 1);
             } else {
@@ -209,7 +209,7 @@ void Uart::pack_uom_msg()
         if (copter.position_ok()) {
             int32_t abs_alt_cm = 0.0f;
             if (copter.current_loc.get_alt_cm(Location::AltFrame::ABSOLUTE, abs_alt_cm)) {
-                uint16_t out = (uint16_t)(((float)abs_alt_cm + 1000.f) * 2.0f);
+                uint16_t out = (uint16_t)((((float)abs_alt_cm)*0.01f + 1000.f) * 2.0f);
                 memcpy((uint8_t *)&insert_data[0], (uint8_t *)&out, 2);
             } else {
                 memset((uint8_t *)&insert_data[0], 0x00, 2);
@@ -226,7 +226,7 @@ void Uart::pack_uom_msg()
         if (copter.position_ok()) {
             int32_t abs_alt_cm = 0.0f;
             if (copter.current_loc.get_alt_cm(Location::AltFrame::ABSOLUTE, abs_alt_cm)) {
-                uint16_t out = (uint16_t)(((float)abs_alt_cm + 1000.f) * 2.0f);
+                uint16_t out = (uint16_t)((((float)abs_alt_cm)*0.01f + 1000.f) * 2.0f);
                 memcpy((uint8_t *)&insert_data[0], (uint8_t *)&out, 2);
             } else {
                 memset((uint8_t *)&insert_data[0], 0x00, 2);
@@ -268,10 +268,10 @@ void Uart::pack_uom_msg()
         memset(insert_data, 0, sizeof(insert_data));
         insert_data[0] = 0;
         if (copter.position_ok()) {
-            if (AP::gps().status() > AP_GPS::GPS_OK_FIX_3D) {
+            if (AP::gps().status() >= AP_GPS::GPS_OK_FIX_3D) {
                 insert_data[0] = 11;
             }
-            if (AP::gps().status() > AP_GPS::GPS_OK_FIX_3D_RTK_FLOAT) {
+            if (AP::gps().status() >= AP_GPS::GPS_OK_FIX_3D_RTK_FLOAT) {
                 insert_data[0] = 12;
             }
         }
@@ -283,10 +283,10 @@ void Uart::pack_uom_msg()
         memset(insert_data, 0, sizeof(insert_data));
         insert_data[0] = 0;
         if (copter.position_ok()) {
-            if (AP::gps().status() > AP_GPS::GPS_OK_FIX_3D) {
+            if (AP::gps().status() >= AP_GPS::GPS_OK_FIX_3D) {
                 insert_data[0] = 4;
             }
-            if (AP::gps().status() > AP_GPS::GPS_OK_FIX_3D_RTK_FLOAT) {
+            if (AP::gps().status() >= AP_GPS::GPS_OK_FIX_3D_RTK_FLOAT) {
                 insert_data[0] = 1;
             }
         }
@@ -298,10 +298,10 @@ void Uart::pack_uom_msg()
         memset(insert_data, 0, sizeof(insert_data));
         insert_data[0] = 0;
         if (copter.position_ok()) {
-            if (AP::gps().status() > AP_GPS::GPS_OK_FIX_3D) {
+            if (AP::gps().status() >= AP_GPS::GPS_OK_FIX_3D) {
                 insert_data[0] = 3;
             }
-            if (AP::gps().status() > AP_GPS::GPS_OK_FIX_3D_RTK_FLOAT) {
+            if (AP::gps().status() >= AP_GPS::GPS_OK_FIX_3D_RTK_FLOAT) {
                 insert_data[0] = 4;
             }
         }
@@ -312,7 +312,7 @@ void Uart::pack_uom_msg()
     if (_msg_UOM.have_msg_id(20, cmd_mask)) {
         memset(insert_data, 0, sizeof(insert_data));
         uint64_t out_ms = 0;
-        if (AP::gps().status() > AP_GPS::GPS_OK_FIX_3D) {
+        if (AP::gps().status() >= AP_GPS::GPS_OK_FIX_3D) {
             out_ms = (uint64_t)AP::gps().time_week() * 86400LLU * 7000LLU + (uint64_t)AP::gps().time_week_ms();
         }
         memcpy((uint8_t *)&insert_data[0], (uint8_t *)&out_ms, 6);
@@ -323,7 +323,7 @@ void Uart::pack_uom_msg()
     if (_msg_UOM.have_msg_id(21, cmd_mask)) {
         memset(insert_data, 0, sizeof(insert_data));
         insert_data[0] = 0;
-        if (AP::gps().status() > AP_GPS::GPS_OK_FIX_3D) {
+        if (AP::gps().status() >= AP_GPS::GPS_OK_FIX_3D) {
             insert_data[0] = 8;
         }
         _msg_UOM.insert_msg(21, insert_data);
