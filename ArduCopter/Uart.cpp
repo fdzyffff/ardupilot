@@ -50,9 +50,9 @@ void Uart::read_uart()
 void Uart::pack_uom_msg()
 {
     uint8_t cmd_mask[4] = {0};
-    cmd_mask[0] = 0b11111111;
-    cmd_mask[1] = 0b11111111;
-    cmd_mask[2] = 0b11111111;
+    cmd_mask[0] = 0b10000000;
+    // cmd_mask[1] = 0b11111111;
+    // cmd_mask[2] = 0b11111111;
     cmd_mask[3] = 0b00000000;
     _msg_UOM.make_init();
     uint8_t insert_data[20];
@@ -347,7 +347,7 @@ void Uart::pack_uom_msg_test()
     //0x80 001 M 唯一产品识别码
     if (_msg_UOM.have_msg_id(1, cmd_mask)) {
         memset(insert_data, 0, sizeof(insert_data));
-        char char_data[20] = "ABCDEFGHIJKLMNPQRST";
+        char char_data[21] = "ABCDEFGHIJKLMNOPQRST";
         memcpy((uint8_t *)&insert_data[0], (uint8_t *)&char_data[0], 20);
         _msg_UOM.insert_msg(1, insert_data);
     }
@@ -355,7 +355,7 @@ void Uart::pack_uom_msg_test()
     //0x40 002 M 实名登记标志
     if (_msg_UOM.have_msg_id(2, cmd_mask)) {
         memset(insert_data, 0, sizeof(insert_data));   
-        char char_data[20] = "abcdefghijklmnopqrs";
+        char char_data[21] = "tsrqponmlkjihgfedcba";
         memcpy((uint8_t *)&insert_data[0], (uint8_t *)&char_data[12], 8);
         _msg_UOM.insert_msg(2, insert_data);
     }
@@ -384,8 +384,8 @@ void Uart::pack_uom_msg_test()
     //0x04 006 M 民用无人驾驶航空器遥控站位置
     if (_msg_UOM.have_msg_id(6, cmd_mask)) {
         memset(insert_data, 0, sizeof(insert_data));
-        int32_t test_lon = _msg_UOM.swap_message_int32_t(1234567890);
-        int32_t test_lat = _msg_UOM.swap_message_int32_t(-1234567890);
+        int32_t test_lon = 1234567890;
+        int32_t test_lat = -1234567890;
         memcpy((uint8_t *)&insert_data[0], (uint8_t *)&test_lon, 4);
         memcpy((uint8_t *)&insert_data[4], (uint8_t *)&test_lat, 4);
         _msg_UOM.insert_msg(6, insert_data);
