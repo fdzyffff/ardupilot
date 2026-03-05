@@ -14,6 +14,7 @@ public:
     void read_uart();
     void write_uart();
     void pack_uom_msg();
+    void pack_uom_msg_test();
     AP_HAL::UARTDriver* get_port(void) {return _port;}
 
 private:

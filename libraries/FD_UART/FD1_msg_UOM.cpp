@@ -31,8 +31,9 @@ void FD1_msg_UOM::make_init()
 {
     _msg_1.content.msg.type = 255;
     _msg_1.content.msg.version = 1;
-    _msg_1.content.msg.length = 4;
+    _msg_1.content.msg.length = 0;
     _msg_1.content.msg.all_msg_data[0] = 0;
+    _msg_1.length = 4;
 }
 
 void FD1_msg_UOM::swap_message(void)
@@ -152,7 +153,7 @@ void FD1_msg_UOM::insert_msg(uint8_t msg_id, uint8_t (&msg_data)[20])
             } else {
                 // get legnth of insert byte
                 uint8_t insert_byte = get_msg_length(i_msg);
-                for (uint8_t i_i = _msg_1.content.msg.length; i_i >= msg_length + 3; i_i--) {
+                for (uint8_t i_i = _msg_1.length; i_i >= msg_length + 3; i_i--) {
                     _msg_1.content.data[i_i + insert_byte] = _msg_1.content.data[i_i];
                 }
 
@@ -161,6 +162,7 @@ void FD1_msg_UOM::insert_msg(uint8_t msg_id, uint8_t (&msg_data)[20])
                     _msg_1.content.data[msg_length + 3 + i_j] = msg_data[i_j];
                 }
 
+                _msg_1.length += insert_byte;
                 _msg_1.content.msg.length += insert_byte;
 
                 // update the mask
@@ -173,14 +175,14 @@ void FD1_msg_UOM::insert_msg(uint8_t msg_id, uint8_t (&msg_data)[20])
 
                 if (insert_mask_byte > 0) {
                     // consider add byte for new mask
-                    for (uint8_t i_k = _msg_1.content.msg.length; i_k >= (3 + msg_length); i_k--) {
+                    for (uint8_t i_k = _msg_1.length; i_k >= (3 + msg_length); i_k--) {
                         _msg_1.content.data[i_k + insert_mask_byte] = _msg_1.content.data[i_k];
                     }
                     for (uint8_t i_l = 0; i_l < insert_mask_byte; i_l++) {
                         _msg_1.content.data[3 + msg_mask_length + i_l] = current_mask[msg_mask_length + i_l];
                         _msg_1.content.data[3 + msg_mask_length + i_l - 1] |= 0x01;
                     }
-                    _msg_1.content.msg.length += insert_mask_byte;
+                    _msg_1.length += insert_mask_byte;
                 } else {
                     _msg_1.content.data[3 + shift_byte] |= current_mask[shift_byte];
                 }
