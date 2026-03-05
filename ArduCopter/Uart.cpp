@@ -540,8 +540,8 @@ void Uart::write_uart()
     if (get_port() == nullptr) {return;}
     if (millis() - _last_uom_ms > 1000) {
         _last_uom_ms = millis();
-        // pack_uom_msg();
-        pack_uom_msg_test();
+        pack_uom_msg();
+        // pack_uom_msg_test();
         get_port()->write(_msg_UOM._msg_1.content.data, _msg_UOM._msg_1.length);
     }
 }
