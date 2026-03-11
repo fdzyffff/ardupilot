@@ -54,6 +54,7 @@ public:
 #if HAL_QUADPLANE_ENABLED
         LOITER_ALT_QLAND = 25,
 #endif
+        FOLLOW        = 30,
     };
 
     // Constructor
@@ -830,3 +831,42 @@ protected:
 };
 
 #endif
+
+class ModeFollow : public Mode
+{
+public:
+
+    Number mode_number() const override { return Number::GUIDED; }
+    const char *name() const override { return "FOLLOW"; }
+    const char *name4() const override { return "FOLL"; }
+
+    // methods that affect movement of the vehicle in this mode
+    void update() override;
+
+    void navigate() override;
+
+    virtual bool is_guided_mode() const override { return true; }
+
+    bool allows_throttle_nudging() const override { return false; }
+
+    bool does_auto_navigation() const override { return true; }
+
+    bool does_auto_throttle() const override { return true; }
+
+    float get_target_speed() {return _target_speed;}
+
+protected:
+
+    bool _enter() override;
+    bool _pre_arm_checks(size_t buflen, char *buffer) const override { return true; }
+
+private:
+
+    void update_follow();
+
+    Location _raw_target_loc;
+    Vector3f _target_vel;
+    float _target_bearing; // degree
+    float _target_speed;
+
+};

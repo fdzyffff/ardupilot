@@ -1275,6 +1275,8 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("USR_CAM_ANG_X", 46, ParametersG2, user_cam_angle_x,         45.0f),
     AP_GROUPINFO("USR_CAM_ANG_Y", 47, ParametersG2, user_cam_angle_y,         45.0f),
 
+    AP_GROUPINFO("UFOLL_KP",      48, ParametersG2, follow_speed_ratio, 0.1f),
+    AP_GROUPINFO("UFOLL_LIM",     49, ParametersG2, follow_speed_range, 10.0f),
 
     AP_GROUPEND
 };

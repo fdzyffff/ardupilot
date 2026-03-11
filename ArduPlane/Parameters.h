@@ -589,6 +589,9 @@ public:
     
     AP_Int8         axis_bitmask; // axes to be autotuned
 
+    AP_Float follow_speed_ratio;
+    AP_Float follow_speed_range;
+
     AP_Int16 user_cam_time_out;
     AP_Int8  user_cam_print;
     AP_Float user_attack_k;
