@@ -11,5 +11,5 @@ echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
 ./waf configure --board ZDYKfmuPro-sim
 ./waf plane
 # mkdir firmware/ZDYKfmuPro
-cp build/ZDYKfmuPro/bin/arduplane.apj firmware/$current_datetime\_ZDYKfmuPro-sim_arduplane.apj
+cp build/ZDYKfmuPro-sim/bin/arduplane.apj firmware/$current_datetime\_ZDYKfmuPro-sim_arduplane.apj
 echo "~~~~~~~~~~~~~~~ done ~~~~~~~~~~~~~~~"
