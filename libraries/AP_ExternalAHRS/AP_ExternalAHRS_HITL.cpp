@@ -15,6 +15,8 @@
 #include <AP_Common/Bitmask.h>
 #include <AP_Vehicle/AP_Vehicle_Type.h>
 #include <SRV_Channel/SRV_Channel.h>
+#include <AP_Compass/AP_Compass.h>
+#include <FD_DATA/FD_DATA.h>
 
 extern const AP_HAL::HAL &hal;
 
@@ -72,6 +74,8 @@ void AP_ExternalAHRS_HITL::update_thread(void)
 
         update_actuator_controls();
 
+        update_heartbeat();
+
         hal.scheduler->delay_microseconds(1000);
     }
 }
@@ -82,7 +86,7 @@ void AP_ExternalAHRS_HITL::build_packet_hitl()
     if (uart_hitl == nullptr) {
         return;
     }
-    
+
     while (uart_hitl->available() > 0) {     //. 检查缓冲区是否有数据
         uint8_t temp = uart_hitl->read();    //. 逐字节读取原始 uint8_t 数据
         //. 传入解析器
@@ -124,6 +128,16 @@ void AP_ExternalAHRS_HITL::handle_sensor(mavlink_hil_sensor_t &in_packet)
         // state.gyro = frontend.imu_data.gyro;
         
         AP::ins().handle_external(frontend.imu_data);
+
+        frontend.mag_data.field = Vector3f(in_packet.xmag, in_packet.ymag, in_packet.zmag);
+        
+        AP::compass().handle_external(frontend.mag_data);
+
+        frontend.baro_data.instance = 0;
+        frontend.baro_data.pressure_pa = in_packet.abs_pressure*100.f;
+        frontend.baro_data.temperature = in_packet.temperature;
+        
+        AP::baro().handle_external(frontend.baro_data);
     }
 
 
@@ -355,7 +369,7 @@ bool AP_ExternalAHRS_HITL::get_variances(float &velVar, float &posVar, float &hg
 
 void AP_ExternalAHRS_HITL::update_actuator_controls()
 {
-    if (AP_HAL::millis() - _last_srv_post_ms > 25) {
+    if (AP_HAL::millis() - _last_srv_post_ms > 10) {
         _last_srv_post_ms = AP_HAL::millis();
     } else {
         return;
@@ -373,6 +387,22 @@ void AP_ExternalAHRS_HITL::update_actuator_controls()
                                         &msg, &hil_actuator_controls_packet));
     send_mavlink_message(&msg);
 }
+
+void AP_ExternalAHRS_HITL::update_heartbeat()
+{
+    if (AP_HAL::millis() - _last_hbt_post_ms > 1000) {
+        _last_hbt_post_ms = AP_HAL::millis();
+    } else {
+        return;
+    }
+
+    mavlink_message_t msg;
+    UNUSED_RESULT(mavlink_msg_heartbeat_encode(gcs().sysid_this_mav(),
+                                        0,
+                                        &msg, &AP::fd_data().heartbeat_packet));
+    send_mavlink_message(&msg);
+}
+
 
 void AP_ExternalAHRS_HITL::send_mavlink_message(mavlink_message_t *msg)
 {
