@@ -34,11 +34,16 @@ AP_ExternalAHRS_HITL::AP_ExternalAHRS_HITL(AP_ExternalAHRS *_frontend,
     baudrate_hitl = sm.find_baudrate(AP_SerialManager::SerialProtocol_AHRS, 0);
     port_num_hitl = sm.find_portnum(AP_SerialManager::SerialProtocol_AHRS, 0);
 
-    if (!hal.scheduler->thread_create(FUNCTOR_BIND_MEMBER(&AP_ExternalAHRS_HITL::update_thread, void), "MINS", 2048, AP_HAL::Scheduler::PRIORITY_SPI, 0)) {
+    if (!hal.scheduler->thread_create(FUNCTOR_BIND_MEMBER(&AP_ExternalAHRS_HITL::update_thread, void), "MINS", 2048, AP_HAL::Scheduler::PRIORITY_UART, 0)) {
         AP_BoardConfig::allocation_error("Failed to allocate ExternalAHRS update thread");
     }
 
     gcs().send_text(MAV_SEVERITY_INFO, "MINS ExternalAHRS initialised");
+}
+
+void AP_ExternalAHRS_HITL::update()
+{
+    ;
 }
 
 void AP_ExternalAHRS_HITL::update_thread(void)
@@ -68,13 +73,15 @@ void AP_ExternalAHRS_HITL::update_thread(void)
             }
         }
 
-        update_log();
+        // update_log();
 
-        update_print();
+        // update_print();
 
         update_actuator_controls();
 
         update_heartbeat();
+
+        update_imu_post();
 
         hal.scheduler->delay_microseconds(1000);
     }
@@ -113,8 +120,6 @@ void AP_ExternalAHRS_HITL::handle_sensor(mavlink_hil_sensor_t &in_packet)
     last_ins_pkt = AP_HAL::millis();
 
     {
-        WITH_SEMAPHORE(state.sem);
-
         frontend.imu_data.accel = Vector3f(in_packet.xacc, in_packet.yacc, in_packet.zacc);
                                         // m/s^2
 
@@ -126,31 +131,32 @@ void AP_ExternalAHRS_HITL::handle_sensor(mavlink_hil_sensor_t &in_packet)
         // only use for externalahrs case, not use for external sensor
         // state.accel = frontend.imu_data.accel;
         // state.gyro = frontend.imu_data.gyro;
-        
-        AP::ins().handle_external(frontend.imu_data);
 
         frontend.mag_data.field = Vector3f(in_packet.xmag, in_packet.ymag, in_packet.zmag);
-        
-        AP::compass().handle_external(frontend.mag_data);
 
         frontend.baro_data.instance = 0;
         frontend.baro_data.pressure_pa = in_packet.abs_pressure*100.f;
         frontend.baro_data.temperature = in_packet.temperature;
-        
-        AP::baro().handle_external(frontend.baro_data);
+
+        // AP::ins().handle_external(frontend.imu_data);
+        // AP::compass().handle_external(frontend.mag_data);
+        // AP::baro().handle_external(frontend.baro_data);
     }
 
 
     ins_frame_count += 1.0f;
-    if (AP_HAL::millis() - _last_ins_print > 5000) {
-        float dt = (float)(AP_HAL::millis() - _last_ins_print) * 0.001f;
+    uint32_t now = AP_HAL::millis();
+    if (now - _last_ins_print > 5000) {
+        float dt = (float)(now - _last_ins_print) * 0.001f;
         _last_ins_print = AP_HAL::millis();
         if (frontend.debug_print.get()>0) {
             // GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS accel : (%f, %f, %f)", _msg_ins._msg_1.content.msg.acc_x_mss, _msg_ins._msg_1.content.msg.acc_y_mss, _msg_ins._msg_1.content.msg.acc_z_mss);
             // GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS gyro : (%f, %f, %f)", _msg_ins._msg_1.content.msg.rate_n_degrees, _msg_ins._msg_1.content.msg.rate_e_degrees, _msg_ins._msg_1.content.msg.rate_u_degrees);
             // GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS ERROR1: %d ", int(_msg_ins._msg_1.content.msg.error_code>>16));
             // GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS ERROR2: %d ", int(_msg_ins._msg_1.content.msg.error_code&0x0000ffff));
-            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS Rate [%0.1f Hz]", ins_frame_count/dt);
+            if (!is_zero(dt)) {
+                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS Rate [%0.1f Hz]", ins_frame_count/dt);
+            }
             ins_frame_count = 0.0f;
         }
     }
@@ -161,8 +167,6 @@ void AP_ExternalAHRS_HITL::handle_hil_gps(mavlink_hil_gps_t &in_packet)
     last_gps_pkt = AP_HAL::millis();
 
     {
-        WITH_SEMAPHORE(state.sem);
-
         // only use for externalahrs case, not use for external sensor
         // state.accel = frontend.imu_data.accel;
         // state.gyro = frontend.imu_data.gyro;
@@ -204,7 +208,6 @@ void AP_ExternalAHRS_HITL::handle_hil_gps(mavlink_hil_gps_t &in_packet)
         frontend.gps_data.have_gps_yaw_accuracy       = (true);
         frontend.gps_data.ground_speed                = (float)(in_packet.vel);
         frontend.gps_data.ground_course               = wrap_360((float)(in_packet.cog)*0.01f);
-
         post_gps();
     }
 
@@ -247,7 +250,11 @@ void AP_ExternalAHRS_HITL::post_gps()
         return;
     }
     _last_gps_post_ms = AP_HAL::millis();
-    AP::gps().handle_external(frontend.gps_data, 0);
+    {
+
+        WITH_SEMAPHORE(state.sem);
+        AP::gps().handle_external(frontend.gps_data, 0);
+    }
 }
 
 // Posts data from an imu packet to `state` and `handle_external` methods
@@ -367,9 +374,31 @@ bool AP_ExternalAHRS_HITL::get_variances(float &velVar, float &posVar, float &hg
     return false;
 }
 
+void AP_ExternalAHRS_HITL::update_imu_post()
+{
+    if (AP_HAL::millis() - _last_imu_post_ms > 10) {
+        _last_imu_post_ms = AP_HAL::millis();
+    } else {
+        return;
+    }
+
+    {
+        // WITH_SEMAPHORE(state.sem);
+        AP::ins().handle_external(frontend.imu_data);
+        AP::compass().handle_external(frontend.mag_data);
+
+        frontend.baro_data.instance = 0;
+        AP::baro().handle_external(frontend.baro_data);
+        frontend.baro_data.instance = 1;
+        AP::baro().handle_external(frontend.baro_data);
+        frontend.baro_data.instance = 2;
+        AP::baro().handle_external(frontend.baro_data);
+    }
+}
+
 void AP_ExternalAHRS_HITL::update_actuator_controls()
 {
-    if (AP_HAL::millis() - _last_srv_post_ms > 10) {
+    if (AP_HAL::millis() - _last_srv_post_ms > 3) {
         _last_srv_post_ms = AP_HAL::millis();
     } else {
         return;

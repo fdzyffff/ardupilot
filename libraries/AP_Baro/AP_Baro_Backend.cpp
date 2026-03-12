@@ -39,6 +39,11 @@ void AP_Baro_Backend::update_healthy_flag(uint8_t instance)
 void AP_Baro_Backend::backend_update(uint8_t instance)
 {
     update();
+    if (_frontend._hil_mode.get() == 1) {
+        for (uint8_t i = 0; i < _frontend._num_sensors; i++) {
+            _frontend.sensors[instance].last_change_ms = AP_HAL::millis();
+        }
+    }
     update_healthy_flag(instance);
 }
 

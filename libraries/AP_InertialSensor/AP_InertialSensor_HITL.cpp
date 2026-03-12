@@ -1,5 +1,5 @@
 #include <AP_HAL/AP_HAL.h>
-#include "AP_InertialSensor_ExternalAHRS.h"
+#include "AP_InertialSensor_HITL.h"
 #include <AP_ExternalAHRS/AP_ExternalAHRS.h>
 #include <stdio.h>
 
@@ -7,13 +7,13 @@
 
 const extern AP_HAL::HAL& hal;
 
-AP_InertialSensor_ExternalAHRS::AP_InertialSensor_ExternalAHRS(AP_InertialSensor &imu, uint8_t _serial_port) :
+AP_InertialSensor_HITL::AP_InertialSensor_HITL(AP_InertialSensor &imu, uint8_t _bus_id) :
     AP_InertialSensor_Backend(imu),
-    serial_port(_serial_port)
+    bus_id(_bus_id)
 {
 }
 
-void AP_InertialSensor_ExternalAHRS::handle_external(const AP_ExternalAHRS::ins_data_message_t &pkt)
+void AP_InertialSensor_HITL::handle_external(const AP_ExternalAHRS::ins_data_message_t &pkt)
 {
     if (!started) {
         return;
@@ -31,7 +31,7 @@ void AP_InertialSensor_ExternalAHRS::handle_external(const AP_ExternalAHRS::ins_
     _notify_new_gyro_raw_sample(gyro_instance, gyro, AP_HAL::micros64());
 }
 
-bool AP_InertialSensor_ExternalAHRS::update(void)
+bool AP_InertialSensor_HITL::update(void)
 {
     if (started) {
         update_accel(accel_instance);
@@ -40,24 +40,24 @@ bool AP_InertialSensor_ExternalAHRS::update(void)
     return started;
 }
 
-void AP_InertialSensor_ExternalAHRS::start()
+void AP_InertialSensor_HITL::start()
 {
     const float rate = AP::externalAHRS().get_IMU_rate();
-    if (_imu.register_gyro(gyro_instance, rate,
-                           AP_HAL::Device::make_bus_id(AP_HAL::Device::BUS_TYPE_SERIAL, serial_port, 1, DEVTYPE_SERIAL)) &&
+    if (_imu.register_gyro(gyro_instance, rate, 
+                            AP_HAL::Device::make_bus_id(AP_HAL::Device::BUS_TYPE_SITL, bus_id, 1, DEVTYPE_SITL)) &&
         _imu.register_accel(accel_instance, rate,
-                            AP_HAL::Device::make_bus_id(AP_HAL::Device::BUS_TYPE_SERIAL, serial_port, 2, DEVTYPE_SERIAL))) {
+                            AP_HAL::Device::make_bus_id(AP_HAL::Device::BUS_TYPE_SITL, bus_id, 2, DEVTYPE_SITL))) {
         started = true;
     }
 }
 
-void AP_InertialSensor_ExternalAHRS::accumulate()
+void AP_InertialSensor_HITL::accumulate()
 {
     // AP::externalAHRS().update();
 }
 
 // get a startup banner to output to the GCS
-bool AP_InertialSensor_ExternalAHRS::get_output_banner(char* banner, uint8_t banner_len)
+bool AP_InertialSensor_HITL::get_output_banner(char* banner, uint8_t banner_len)
 {
     const char* name = AP::externalAHRS().get_name();
     snprintf(banner, banner_len, "IMU%u: External: %s %0.0fHz",

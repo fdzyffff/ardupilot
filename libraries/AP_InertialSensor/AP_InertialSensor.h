@@ -721,6 +721,8 @@ private:
     AP_Int8 _acc_body_aligned;
     AP_Int8 _trim_option;
 
+    AP_Int8 _hil_mode;
+
     static AP_InertialSensor *_singleton;
     AP_AccelCal* _acal;
 
