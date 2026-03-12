@@ -39,6 +39,7 @@
 #include "AP_InertialSensor_Invensensev3.h"
 #include "AP_InertialSensor_NONE.h"
 #include "AP_InertialSensor_SCHA63T.h"
+#include "AP_InertialSensor_HITL.h"
 #include <AP_Scheduler/AP_Scheduler.h>
 
 /* Define INS_TIMING_DEBUG to track down scheduling issues with the main loop.
@@ -684,6 +685,7 @@ const AP_Param::GroupInfo AP_InertialSensor::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("_RAW_LOG_OPT", 56, AP_InertialSensor, raw_logging_options, 0),
 
+    AP_GROUPINFO("_HIL_MODE", 57, AP_InertialSensor, _hil_mode, 0),
     /*
       NOTE: parameter indexes have gaps above. When adding new
       parameters check for conflicts carefully
@@ -766,6 +768,10 @@ bool AP_InertialSensor::register_gyro(uint8_t &instance, uint16_t raw_sample_rat
     }
 #endif
 
+    if (_hil_mode.get() == 1) {
+        _gyro_id(_gyro_count).save();
+        _gyro_cal_ok[_gyro_count] = true;
+    }
     instance = _gyro_count++;
 
     return true;
@@ -837,6 +843,11 @@ bool AP_InertialSensor::register_accel(uint8_t &instance, uint16_t raw_sample_ra
         _accel_id_ok[_accel_count] = true;
         _accel_id(_accel_count).save();
 #endif
+
+    if (_hil_mode.get() == 1) {
+        _accel_id_ok[_accel_count] = true;
+        _accel_id(_accel_count).save();
+    }
 
     instance = _accel_count++;
     return true;
@@ -946,6 +957,10 @@ AP_InertialSensor::init(uint16_t loop_rate)
         notch.params.init();
     }
 #endif
+
+    if (_hil_mode.get() == 1) {
+        GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "INS IN HIL MODE");
+    }
 
     if (_gyro_count == 0 && _accel_count == 0) {
         _start_backends();
@@ -1173,6 +1188,14 @@ AP_InertialSensor::detect_backends(void)
 
 // macro for use by HAL_INS_PROBE_LIST
 #define GET_I2C_DEVICE(bus, address) hal.i2c_mgr->get_device(bus, address)
+
+    // if enabled, make the first IMU the external AHRS
+    if (_hil_mode.get() == 1) {
+        for (uint8_t i=0; i<3; i++) {
+            ADD_BACKEND(NEW_NOTHROW AP_InertialSensor_HITL(*this, i));
+        }
+    }
+
 
 #if HAL_EXTERNAL_AHRS_ENABLED
     // if enabled, make the first IMU the external AHRS
@@ -1665,6 +1688,9 @@ failed:
  */
 bool AP_InertialSensor::accel_calibrated_ok_all() const
 {
+    if (_hil_mode.get() == 1) {
+        return true;
+    }
     // check each accelerometer has offsets saved
     for (uint8_t i=0; i<get_accel_count(); i++) {
         if (!_accel_id_ok[i]) {
@@ -1850,6 +1876,8 @@ AP_InertialSensor::_init_gyro()
             _gyro_offset(k).set(best_avg[k]);
             // flag calibration as failed for this gyro
             _gyro_cal_ok[k] = false;
+
+        printf("_gyro_cal_ok[_gyro_count] = false \n");
         } else {
             _gyro_cal_ok[k] = true;
             _gyro_offset(k).set(new_gyro_offset[k]);

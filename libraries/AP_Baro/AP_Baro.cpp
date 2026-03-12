@@ -254,6 +254,7 @@ const AP_Param::GroupInfo AP_Baro::var_info[] = {
     AP_GROUPINFO("_OPTIONS", 24, AP_Baro, _options, 0),
 #endif
     
+    AP_GROUPINFO("_HIL_MODE", 25, AP_Baro, _hil_mode, 0),
     AP_GROUPEND
 };
 
@@ -557,7 +558,18 @@ void AP_Baro::init(void)
 #if AP_BARO_EXTERNALAHRS_ENABLED
     const int8_t serial_port = AP::externalAHRS().get_port(AP_ExternalAHRS::AvailableSensor::BARO);
     if (serial_port >= 0) {
-        ADD_BACKEND(NEW_NOTHROW AP_Baro_ExternalAHRS(*this, serial_port));
+        if (_hil_mode.get() == 1) {
+            for (uint8_t i = 0; i < BARO_MAX_DRIVERS; i++) {
+                ADD_BACKEND(NEW_NOTHROW AP_Baro_ExternalAHRS(*this, serial_port));
+            }
+            for (uint8_t i=0; i<_num_sensors; i++) {
+                sensors[i].calibrated = true;
+                sensors[i].alt_ok = true;
+            }
+            GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "Baro: IN HIL MODE");
+        } else {
+            ADD_BACKEND(NEW_NOTHROW AP_Baro_ExternalAHRS(*this, serial_port));
+        }
     }
 #endif
 
@@ -1005,12 +1017,12 @@ uint8_t AP_Baro::register_sensor(void)
  */
 bool AP_Baro::all_healthy(void) const
 {
-     for (uint8_t i=0; i<_num_sensors; i++) {
-         if (!healthy(i)) {
-             return false;
-         }
-     }
-     return _num_sensors > 0;
+    for (uint8_t i=0; i<_num_sensors; i++) {
+        if (!healthy(i)) {
+            return false;
+        }
+    }
+    return _num_sensors > 0;
 }
 
 // set a pressure correction from AP_TempCalibration

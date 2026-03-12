@@ -331,6 +331,8 @@ private:
 
     AP_Int16                           _options;
 
+    AP_Int8                            _hil_mode;
+
     // semaphore for API access from threads
     HAL_Semaphore                      _rsem;
 

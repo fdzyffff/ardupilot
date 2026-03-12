@@ -29,10 +29,7 @@ public:
     bool get_variances(float &velVar, float &posVar, float &hgtVar, Vector3f &magVar, float &tasVar) const override;
 
     // check for new data
-    void update() override {
-        ;
-    };
-
+    void update() override ;
     uint8_t num_gps_sensors(void) const override {
         return 1;
     }
@@ -49,6 +46,7 @@ private:
     void update_print();
     void update_actuator_controls();
     void update_heartbeat();
+    void update_imu_post();
     void send_mavlink_message(mavlink_message_t *msg);
 
     HAL_Semaphore sem;
@@ -69,6 +67,7 @@ private:
     uint32_t _last_global_print;
     uint32_t _last_srv_post_ms;
     uint32_t _last_hbt_post_ms;
+    uint32_t _last_imu_post_ms;
 
     mavlink_hil_sensor_t hil_sensor_packet;
     mavlink_hil_gps_t hil_gps_packet;
