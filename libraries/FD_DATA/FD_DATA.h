@@ -13,7 +13,6 @@ struct PACKED FD_DATA_T {
 
 class FD_DATA
 {
-
 public:
     FD_DATA();
 
@@ -52,9 +51,12 @@ public:
     // mavlink_hxts_hy_bms_c2_t hxts_hy_bms_c2_packet;
     // mavlink_hxts_hy_bms_c3_t hxts_hy_bms_c3_packet;
 
+    mavlink_heartbeat_t heartbeat_packet;
+
     void do_switch(bool switch_on);
 private:
     static FD_DATA *_singleton;
+
 
     // static StorageAccess _storage;
 
