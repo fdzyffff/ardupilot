@@ -78,5 +78,5 @@ void UMav::send_raw_imu()
     chan0_status->current_tx_seq = saved_seq;
     chan0_status->flags = saved_flags;
 #endif
-    hal.scheduler->delay_microseconds(5000);
+    hal.scheduler->delay_microseconds(3300);
 }
