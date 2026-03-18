@@ -16,9 +16,11 @@ public:
     void send_raw_imu();
     void send_raw_imu_loop();
     void read_bsq_message();
+    void read_imusc_message();
     void handle_bsq_msg(const mavlink_message_t &msg);
     void send_bsq_message(mavlink_message_t *msg);
     void send_apm_status();
+    void send_mav_message(AP_HAL::UARTDriver* port, mavlink_message_t *msg);
 
     void handle_mission_msg(const mavlink_message_t &msg);
     // void handle_selfcheck(const mavlink_message_t &msg);
@@ -56,6 +58,7 @@ public:
 
     FD_UART FD_uart_imu{AP_SerialManager::SerialProtocol_IMU};
     FD_UART FD_uart_bsq{AP_SerialManager::SerialProtocol_BSQ};
+    FD_UART FD_uart_selfcheck{AP_SerialManager::SerialProtocol_IMUIN};
 
     LowPassFilterVector3f _imu_gyro;
     LowPassFilterVector3f _imu_acc;

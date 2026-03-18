@@ -17,7 +17,8 @@ void Copter::userhook_init()
 void Copter::userhook_SuperLoop()
 {
 #ifdef USERHOOK_FASTLOOP
-    umav.send_raw_imu();
+    // umav.send_raw_imu();
+    umav.update();
 #endif
 }
 
@@ -25,7 +26,6 @@ void Copter::userhook_SuperLoop()
 void Copter::userhook_FastLoop()
 {
     // put your 100Hz code here
-    umav.update();
     upayload.update();
     uattack.update();
 }

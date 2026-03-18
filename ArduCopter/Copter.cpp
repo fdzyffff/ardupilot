@@ -249,25 +249,26 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     SCHED_TASK_CLASS(AP_Winch,             &copter.g2.winch,            update,          50,  50, 150),
 #endif
 #ifdef USERHOOK_FASTLOOP
-    SCHED_TASK(userhook_FastLoop,    100,     75, 153),
+    SCHED_TASK(userhook_SuperLoop,   400,     75, 153),
+    SCHED_TASK(userhook_FastLoop,    100,     75, 156),
 #endif
 #ifdef USERHOOK_50HZLOOP
-    SCHED_TASK(userhook_50Hz,         50,     75, 156),
+    SCHED_TASK(userhook_50Hz,         50,     75, 159),
 #endif
 #ifdef USERHOOK_MEDIUMLOOP
-    SCHED_TASK(userhook_MediumLoop,   10,     75, 159),
+    SCHED_TASK(userhook_MediumLoop,   10,     75, 162),
 #endif
 #ifdef USERHOOK_SLOWLOOP
-    SCHED_TASK(userhook_SlowLoop,      3.3,   75, 162),
+    SCHED_TASK(userhook_SlowLoop,      3.3,   75, 165),
 #endif
 #ifdef USERHOOK_SUPERSLOWLOOP
-    SCHED_TASK(userhook_SuperSlowLoop, 1,     75, 165),
+    SCHED_TASK(userhook_SuperSlowLoop, 1,     75, 168),
 #endif
 #if HAL_BUTTON_ENABLED
-    SCHED_TASK_CLASS(AP_Button,            &copter.button,              update,           5, 100, 168),
+    SCHED_TASK_CLASS(AP_Button,            &copter.button,              update,           5, 100, 171),
 #endif
 #if STATS_ENABLED == ENABLED
-    SCHED_TASK_CLASS(AP_Stats,             &copter.g2.stats,            update,           1, 100, 171),
+    SCHED_TASK_CLASS(AP_Stats,             &copter.g2.stats,            update,           1, 100, 174),
 #endif
 };
 
