@@ -18,17 +18,28 @@ void AP_InertialSensor_HITL::handle_external(const AP_ExternalAHRS::ins_data_mes
     if (!started) {
         return;
     }
-    Vector3f accel = pkt.accel;
-    Vector3f gyro = pkt.gyro;
+    _accel = pkt.accel;
+    _gyro = pkt.gyro;
+    _temperature = pkt.temperature;
+}
 
-    _rotate_and_correct_accel(accel_instance, accel);
-    _notify_new_accel_raw_sample(accel_instance, accel, AP_HAL::micros64());
+void AP_InertialSensor_HITL::post_data()
+{
+    while (true) {
+        if (started) {
+            _rotate_and_correct_accel(accel_instance, _accel);
+            _notify_new_accel_raw_sample(accel_instance, _accel, AP_HAL::micros64());
 
-    _publish_temperature(accel_instance, pkt.temperature);
+            _publish_temperature(accel_instance, _temperature);
 
-    _notify_new_gyro_sensor_rate_sample(gyro_instance, gyro);
-    _rotate_and_correct_gyro(gyro_instance, gyro);
-    _notify_new_gyro_raw_sample(gyro_instance, gyro, AP_HAL::micros64());
+            _notify_new_gyro_sensor_rate_sample(gyro_instance, _gyro);
+            _rotate_and_correct_gyro(gyro_instance, _gyro);
+            _notify_new_gyro_raw_sample(gyro_instance, _gyro, AP_HAL::micros64());
+        }
+
+        hal.scheduler->delay_microseconds(5000);
+    }
+
 }
 
 bool AP_InertialSensor_HITL::update(void)
@@ -48,6 +59,10 @@ void AP_InertialSensor_HITL::start()
         _imu.register_accel(accel_instance, rate,
                             AP_HAL::Device::make_bus_id(AP_HAL::Device::BUS_TYPE_SITL, bus_id, 2, DEVTYPE_SITL))) {
         started = true;
+    }
+
+    if (!hal.scheduler->thread_create(FUNCTOR_BIND_MEMBER(&AP_InertialSensor_HITL::post_data, void), "INSH", 1024, AP_HAL::Scheduler::PRIORITY_SPI, 0)) {
+        printf("Failed to allocate post_data thread\n");
     }
 }
 

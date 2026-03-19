@@ -1877,7 +1877,7 @@ AP_InertialSensor::_init_gyro()
             // flag calibration as failed for this gyro
             _gyro_cal_ok[k] = false;
 
-        printf("_gyro_cal_ok[_gyro_count] = false \n");
+        // printf("_gyro_cal_ok[_gyro_count] = false \n");
         } else {
             _gyro_cal_ok[k] = true;
             _gyro_offset(k).set(new_gyro_offset[k]);

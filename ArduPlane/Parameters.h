@@ -364,6 +364,7 @@ public:
         k_param_quicktune,
 
         k_param_uattack,
+        k_param_uart,
     };
 
     AP_Int16 format_version;

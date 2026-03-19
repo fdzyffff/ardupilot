@@ -21,9 +21,8 @@ public:
 
     void init();
     bool is_active() const { return (current_idx>0); }
-    bool is_active_cam() const { return (current_idx == 1); }
-    bool is_active_loc() const { return (current_idx == 2); }
-    bool is_active_external() const { return (current_idx == 3); }
+    bool is_active_loc() const { return (current_idx == 1); }
+    bool is_active_cam() const { return (current_idx == 2); }
     void update_control_value();
     void update_vel_bf_info();
     void init_target();
@@ -76,13 +75,6 @@ public:
     float _attack_angle_rate_target;
     float _attack_angle_rate_measure;
 
-    struct {
-        uint32_t last_cmd_ms;
-        float _target_speed;
-        float _target_pitch;
-        float _target_roll;
-    } _external_cmd;
-
     UDelay udelay;
 
 private:
@@ -96,7 +88,6 @@ private:
     AP_Float        attack_k_angle;
     AP_Float        attack_throttle;
     AP_Int32        atk_time_out;
-    AP_Int8         use_target_external;
     AP_Float        attack_angle;
     AP_Float        pitch_limit;
     AP_Float        pitch_rate_limit;
@@ -113,7 +104,6 @@ private:
     FD_Target_Base*       _Target_ptr_cam;
     FD_Target_Loc*        _Target_ptr_loc;
     FD_Target_DYT*        _Target_ptr_cam_DYT;
-    FD_Target_External*   _Target_ptr_external;
 
 
     uint32_t _last_ms;
