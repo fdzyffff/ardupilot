@@ -19,6 +19,7 @@ void Plane::userhook_1Hz()
     AP::fd_data().update();
 
     uattack.do_print();
+    uart.do_print();
 
     // static uint8_t tt = 0;
     // if (uart.get_port() != nullptr) {

@@ -21,7 +21,12 @@ public:
     bool get_output_banner(char* banner, uint8_t banner_len) override;
 
 private:
-    const uint8_t bus_id;
+    void post_data();
+
+    uint8_t bus_id;
+    Vector3f _accel;
+    Vector3f _gyro;
+    float _temperature;
     bool started;
 };
 #endif // HAL_EXTERNAL_AHRS_ENABLED

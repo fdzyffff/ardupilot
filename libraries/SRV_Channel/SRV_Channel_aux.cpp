@@ -765,10 +765,13 @@ float SRV_Channels::get_output_norm(SRV_Channel::Aux_servo_function_t function)
     return channels[chan].get_output_norm();
 }
 
-float SRV_Channels::get_output_norm(uint8_t chan)
+float SRV_Channels::get_output_scaled_norm(uint8_t chan)
 {
     if (srv_channel(chan) != nullptr) {
-        return channels[chan].get_output_norm();
+        if (channels[chan].valid_function()) {
+            channels[chan].calc_pwm(functions[channels[chan].get_function()].output_scaled);
+            return channels[chan].get_output_scaled_norm();
+        }
     }
     return 0.0f;
 }

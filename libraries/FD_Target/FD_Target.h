@@ -98,42 +98,4 @@ private:
     uint32_t last_cancel_ms;
 };
 
-class FD_Target_External: public FD_Target_Base {
-public:
-    FD_Target_External();
-    ~FD_Target_External() {};
-
-    static const struct AP_Param::GroupInfo var_info[];
-
-    bool init() override;
-    void update() override;
-    void handle_msg(const mavlink_message_t &msg) override;
-    void handle_info_test(float p1, float p2);
-    AP_HAL::UARTDriver* get_port(void) {return _port;}
-
-    float get_target_speed() {return _target_speed;}
-    float get_target_pitch() {return _target_pitch;}
-    float get_target_roll() {return _target_roll;}
-    
-    void set_target_angle(float gimbal_yaw, float gimbal_pitch);
-    void set_target_loc(Location& loc_in);
-    void pack_status();
-
-    FD1_msg_LS_control uart_msg_LS_control;
-    FD1_msg_LS_status uart_msg_LS_status;
-
-private:
-    AP_Int32 target_timeout;
-
-    AP_HAL::UARTDriver* _port;
-    // FD1_msg_DYT_apminfo uart_msg_DYT_apminfo;
-
-    uint32_t last_update_ms;
-    float _gimbal_yaw;
-    float _gimbal_pitch;
-    float _target_speed;
-    float _target_pitch;
-    float _target_roll;
-};
-
 using AP_HAL::millis;

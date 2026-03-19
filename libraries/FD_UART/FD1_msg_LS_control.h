@@ -12,18 +12,55 @@ public:
         FD1_msg_header header;
         uint8_t type;
         uint16_t length;
-        uint8_t control_type;
-        float cmd_speed;
-        float cmd_pitch;
-        float cmd_roll;
+        uint8_t data[44];
+        uint8_t sum;
+    };
+    
+    struct PACKED MSG_Collection_0x1A {
+        FD1_msg_header header;
+        uint8_t type;
+        uint16_t length;
+        uint8_t rev;
+        float target_speed;
+        float target_pitch;
+        float target_roll;
         float flight_status;
-        uint8_t reserved[29];
+        uint8_t reserved[30];
         uint8_t sum;
     };
 
+    struct PACKED MSG_Collection_0x3C {
+        FD1_msg_header header;
+        uint8_t type;
+        uint16_t length;
+        uint8_t rev;
+        float target_speed;
+        float target_alt;
+        float target_roll;
+        float flight_status;
+        uint8_t reserved[30];
+        uint8_t sum;
+    };
+    
+    struct PACKED MSG_Collection_0x55 {
+        FD1_msg_header header;
+        uint8_t type;
+        uint16_t length;
+        uint8_t rev;
+        double wp_lng;
+        double wp_lat;
+        float wp_alt;
+        float flight_status;
+        uint8_t reserved[22];
+        uint8_t sum;
+    };
+    
     // message structure
     union PACKED Content_1 {
         MSG_Collection msg;
+        MSG_Collection_0x1A msg_0x1A;
+        MSG_Collection_0x3C msg_0x3C;
+        MSG_Collection_0x55 msg_0x55;
         uint8_t data[FD1_MSG_LS_CONTROL_LEN];
     };
 
