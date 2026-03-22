@@ -588,6 +588,10 @@ void AP_SerialManager::init()
                     break;
 #endif
                 case SerialProtocol_IMU:
+                    uart->begin(state[i].baudrate(),
+                                         512,
+                                         512);
+                    break;
                 case SerialProtocol_BSQ:
                 case SerialProtocol_Payload:
                 case SerialProtocol_IMUIN:

@@ -14,4 +14,6 @@ public:
     AP_Float filt_gyro_hz;
     AP_Float filt_acc_hz;
     AC_PI_2D assit_pi_xy{0.2f, 0.3f, 3000, 5, 0.0025f};
+
+    AP_Int8 fast_log;
 };

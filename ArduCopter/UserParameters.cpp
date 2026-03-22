@@ -39,6 +39,7 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     // @User: Advanced
     AP_SUBGROUPINFO(assit_pi_xy, "_AST_",  2, UserParameters, AC_PI_2D),
 
+    AP_GROUPINFO("_FSTIMU", 3, UserParameters, fast_log, 0),
     AP_GROUPEND
 };
 

@@ -16,6 +16,7 @@ void UMav::send_raw_imu()
     }
     static uint32_t _last_log_ms = millis();
     static int16_t count = 0;
+    static uint32_t _last_sned_ms = millis();
 
     float dt = (float)(millis() - _last_log_ms)*0.001f;
     if (dt > 1.0f) {
@@ -32,6 +33,17 @@ void UMav::send_raw_imu()
                                     (float)imu_rate);
     }
 
+    uint32_t dt_ms = (millis() - _last_sned_ms);
+
+    if (copter.g2.user_parameters.fast_log.get() == 1) {
+        AP::logger().WriteStreaming("CIMU",
+                                    "TimeUS,dt",
+                                    "s-",
+                                    "F-",
+                                    "Qf",
+                                    AP_HAL::micros64(),
+                                    (float)dt_ms);
+    }
 
     mavlink_status_t *chan0_status = mavlink_get_channel_status(MAVLINK_COMM_0);
     uint8_t saved_seq = chan0_status->current_tx_seq;
@@ -77,12 +89,13 @@ void UMav::send_raw_imu()
     if (len > 0) {
         send_mav_message(FD_uart_imu.get_port(), &msg);
         count++;
+        _last_sned_ms = millis();
     }
     
     chan0_status->current_tx_seq = saved_seq;
     chan0_status->flags = saved_flags;
 #endif
-    hal.scheduler->delay_microseconds(5000);
+    hal.scheduler->delay_microseconds(3300);
 }
 
 void UMav::send_mav_message(AP_HAL::UARTDriver* port, mavlink_message_t *msg)
