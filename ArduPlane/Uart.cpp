@@ -37,6 +37,7 @@ void Uart::update()
 {
     read_uart();
     write_uart();
+    update_status();
 }
 
 void Uart::read_uart()
@@ -80,14 +81,70 @@ void Uart::write_uart()
     send_hangdong();
 }
 
+void Uart::update_status()
+{
+    if (millis() < 3000) {return;}
+    // update status of diaocang
+    if (millis() - status.last_diaocang_ms > 2000) {
+        if (status.valid_diaocang) {
+            gcs().send_text(MAV_SEVERITY_INFO, "MSG Diaocang Lost");
+        }
+        status.valid_diaocang = false;
+    } else {
+        if (!status.valid_diaocang) {
+            gcs().send_text(MAV_SEVERITY_INFO, "MSG Diaocang Get");
+        }
+        status.valid_diaocang = true;
+    }
+
+    // update status of huokong
+    if (millis() - status.last_huokong_ms > 2000) {
+        if (status.valid_huokong) {
+            gcs().send_text(MAV_SEVERITY_INFO, "MSG Huokong Lost");
+        }
+        status.valid_huokong = false;
+    } else {
+        if (!status.valid_huokong) {
+            gcs().send_text(MAV_SEVERITY_INFO, "MSG Huokong Get");
+        }
+        status.valid_huokong = true;
+    }
+
+    // update status of huokong aim
+    if (millis() - status.last_huokong_ok_ms > 2000) {
+        if (status.valid_huokong_ok) {
+            gcs().send_text(MAV_SEVERITY_INFO, "MSG Huokong BAD");
+        }
+        status.valid_huokong_ok = false;
+    } else {
+        if (!status.valid_huokong_ok) {
+            gcs().send_text(MAV_SEVERITY_INFO, "MSG Huokong AIM");
+        }
+        status.valid_huokong_ok = true;
+    }
+
+    // update status of shuangmu
+    if (millis() - status.last_shuangmu_ms > 2000) {
+        if (status.valid_shuangmu) {
+            gcs().send_text(MAV_SEVERITY_INFO, "MSG Shuangmu Lost");
+        }
+        status.valid_shuangmu = false;
+    } else {
+        if (!status.valid_shuangmu) {
+            gcs().send_text(MAV_SEVERITY_INFO, "MSG Shuangmu Get");
+        }
+        status.valid_shuangmu = true;
+    }
+}
+
 void Uart::handle_info_diaocang()
 {
     for (uint8_t i_target = 1; i_target <=6; i_target++) {
         if (uart_msg_diaocang_cast._msg_1.content.msg.status_1 & (uint16_t)(1<<(6+i_target)))
         // 目标i跟踪好
         {
-            float gimbal_yaw = uart_msg_diaocang_cast._msg_1.content.msg.gimbal_yaw;
-            float gimbal_pitch = uart_msg_diaocang_cast._msg_1.content.msg.gimbal_pitch;
+            float gimbal_yaw = uart_msg_diaocang_cast.get_angle(uart_msg_diaocang_cast._msg_1.content.msg.gimbal_yaw);
+            float gimbal_pitch = uart_msg_diaocang_cast.get_angle(uart_msg_diaocang_cast._msg_1.content.msg.gimbal_pitch);
             float target_yaw = uart_msg_diaocang_cast._msg_1.content.msg.target[i_target-1].yaw;
             float target_pitch = uart_msg_diaocang_cast._msg_1.content.msg.target[i_target-1].pitch;
 
@@ -110,25 +167,47 @@ void Uart::handle_info_diaocang()
             float angle_yaw =   wrap_180(degrees(atan2f( ef_unit.y, ef_unit.x)));
 
             if (plane.uattack._Target_ptr_cam_FP847 != nullptr) {
-                // plane.uattack._Target_ptr_cam_FP847->handle_info(wrap_360(gimbal_yaw + target_yaw), wrap_180(gimbal_pitch + target_pitch));
-                plane.uattack._Target_ptr_cam_FP847->handle_info(angle_yaw, angle_pitch);
+                if (!status.valid_huokong_ok) {
+                    // plane.uattack._Target_ptr_cam_FP847->handle_info(wrap_360(gimbal_yaw + target_yaw), wrap_180(gimbal_pitch + target_pitch));
+                    plane.uattack._Target_ptr_cam_FP847->handle_info(angle_yaw, angle_pitch);
+                }
             }
             break;
         }
     }
 
-    cali_last_ms = millis();
-    cali_last_ms_global = get_time_ms(uart_msg_diaocang_cast._msg_1.content.msg.time);
+    status.last_diaocang_ms = millis();
+    status.count_diaocang++;
 }
 
 void Uart::handle_info_huokong()
 {
+    uint8_t status_ok = uart_msg_huokong_cast._msg_1.content.msg.status_1 & (uint16_t)(1<<1);
+    if (status_ok)
+    // 诸元有效
+    {
+        float angle_pitch = uart_msg_huokong_cast.get_angle(uart_msg_huokong_cast._msg_1.content.msg.aim_pitch);
+        float angle_yaw =   uart_msg_huokong_cast.get_angle(uart_msg_huokong_cast._msg_1.content.msg.aim_yaw);
 
+        if (plane.uattack._Target_ptr_cam_FP847 != nullptr) {
+            // plane.uattack._Target_ptr_cam_FP847->handle_info(wrap_360(gimbal_yaw + target_yaw), wrap_180(gimbal_pitch + target_pitch));
+            plane.uattack._Target_ptr_cam_FP847->handle_info(angle_yaw, angle_pitch);
+        }
+        
+        status.last_huokong_ok_ms = millis();
+    }
+
+    cali_last_ms = millis();
+    cali_last_ms_global = get_time_ms(uart_msg_diaocang_cast._msg_1.content.msg.time);
+
+    status.last_huokong_ms = millis();
+    status.count_huokong++;
 }
 
 void Uart::handle_info_shuangmu()
 {
-
+    status.last_shuangmu_ms = millis();
+    status.count_shuangmu++;
 }
 
 void Uart::handle_info_waibu()
@@ -161,7 +240,6 @@ void Uart::handle_info_waibu()
     }
 }
 
-
 void Uart::send_hangdong()
 {
     // check send condition
@@ -175,9 +253,11 @@ void Uart::send_hangdong()
     if (get_port() == nullptr) {return;}
 
     set_tims_ms(uart_msg_hangdong_cast._msg_1.content.msg.time);
-    uart_msg_hangdong_cast._msg_1.content.msg.status_1 = 0b1111110;
+    uart_msg_hangdong_cast._msg_1.content.msg.status_1 = 0b0011111;
     uart_msg_hangdong_cast._msg_1.content.msg.error_1 = 0;
-    uart_msg_hangdong_cast._msg_1.content.msg.bearing = (uint32_t)(wrap_360(AP::gps().ground_course()) * 10000.f);
+    if (AP::gps().status() >= AP_GPS::GPS_OK_FIX_3D) {
+        uart_msg_hangdong_cast._msg_1.content.msg.bearing = (uint32_t)(wrap_360(AP::gps().ground_course()) * 10000.f);
+    }
     uart_msg_hangdong_cast._msg_1.content.msg.yaw = (int32_t)(degrees(AP::ahrs().get_yaw()) * 10000.f);
     uart_msg_hangdong_cast._msg_1.content.msg.pitch = (int32_t)(degrees(AP::ahrs().get_pitch()) * 10000.f);
     uart_msg_hangdong_cast._msg_1.content.msg.roll = (int32_t)(degrees(AP::ahrs().get_roll()) * 10000.f);
@@ -198,21 +278,17 @@ void Uart::send_hangdong()
         uart_msg_hangdong_cast._msg_1.content.msg.ground_course = (uint32_t)(wrap_360(AP::gps().ground_course()) * 10000.f);
         if (plane.current_loc.lat > 0) {
             uart_msg_hangdong_cast._msg_1.content.msg.current_loc.lat = plane.current_loc.lat/10;
-            uart_msg_hangdong_cast._msg_1.content.msg.current_loc.quadrant &= 0xF0;
-            uart_msg_hangdong_cast._msg_1.content.msg.current_loc.quadrant += 0x01;
+            uart_msg_hangdong_cast._msg_1.content.msg.current_loc.quadrant |= 0x01;
         } else {
             uart_msg_hangdong_cast._msg_1.content.msg.current_loc.lat = -plane.current_loc.lat/10;
-            uart_msg_hangdong_cast._msg_1.content.msg.current_loc.quadrant &= 0xF0;
-            uart_msg_hangdong_cast._msg_1.content.msg.current_loc.quadrant += 0x02;
+            uart_msg_hangdong_cast._msg_1.content.msg.current_loc.quadrant |= 0x02;
         }
         if (plane.current_loc.lng > 0) {
             uart_msg_hangdong_cast._msg_1.content.msg.current_loc.lng = plane.current_loc.lng/10;
-            uart_msg_hangdong_cast._msg_1.content.msg.current_loc.quadrant &= 0x0F;
-            uart_msg_hangdong_cast._msg_1.content.msg.current_loc.quadrant += 0x10;
+            uart_msg_hangdong_cast._msg_1.content.msg.current_loc.quadrant |= 0x10;
         } else {
             uart_msg_hangdong_cast._msg_1.content.msg.current_loc.lng = -plane.current_loc.lng/10;
-            uart_msg_hangdong_cast._msg_1.content.msg.current_loc.quadrant &= 0x0F;
-            uart_msg_hangdong_cast._msg_1.content.msg.current_loc.quadrant += 0x20;
+            uart_msg_hangdong_cast._msg_1.content.msg.current_loc.quadrant |= 0x20;
         }
         int32_t tmp_alt_cm = 0;
         uart_msg_hangdong_cast._msg_1.content.msg.current_loc.abs_alt = 0;
@@ -221,37 +297,48 @@ void Uart::send_hangdong()
                 uart_msg_hangdong_cast._msg_1.content.msg.current_loc.abs_alt = tmp_alt_cm/100;
             }
         }
-        uart_msg_hangdong_cast._msg_1.content.msg.year = 0;
-        uart_msg_hangdong_cast._msg_1.content.msg.month = 0;
-        uart_msg_hangdong_cast._msg_1.content.msg.day = 0;
-        uart_msg_hangdong_cast._msg_1.content.msg.hour = 0;
-        uart_msg_hangdong_cast._msg_1.content.msg.minute = 0;
-        uart_msg_hangdong_cast._msg_1.content.msg.second = 0;
+
+        uint8_t year_out = 0;
+        uint8_t month_out = 0;
+        uint8_t day_out = 0;
+        uint8_t hour_out = 0;
+        uint8_t minute_out = 0;
+        uint8_t second_out = 0;
+        get_Time(year_out, month_out, day_out, hour_out, minute_out, second_out);
+
+        uart_msg_hangdong_cast._msg_1.content.msg.year = year_out + 2000;
+        uart_msg_hangdong_cast._msg_1.content.msg.month = month_out;
+        uart_msg_hangdong_cast._msg_1.content.msg.day = day_out;
+        uart_msg_hangdong_cast._msg_1.content.msg.hour = hour_out;
+        uart_msg_hangdong_cast._msg_1.content.msg.minute = minute_out;
+        uart_msg_hangdong_cast._msg_1.content.msg.second = second_out;
     }
-    uart_msg_hangdong_cast._msg_1.content.msg.yaw_corr = 0;
-    uart_msg_hangdong_cast._msg_1.content.msg.pitch_corr = 0;
+
+    uart_msg_hangdong_cast._msg_1.content.msg.yaw_corr = uart_msg_hangdong_cast.pack_angle(plane.g2.usr_calibration_yaw.get());
+    uart_msg_hangdong_cast._msg_1.content.msg.pitch_corr = uart_msg_hangdong_cast.pack_angle(plane.g2.usr_calibration_pitch.get());
 
     uart_msg_hangdong_cast.make_sum();
     get_port()->write(uart_msg_hangdong_cast._msg_1.content.data, uart_msg_hangdong_cast._msg_1.content.msg.length);
     // gcs().send_text(MAV_SEVERITY_INFO, "r: %0.1f, p: %0.1f, y: %0.1f", degrees(earth_rate.x), degrees(earth_rate.y), degrees(earth_rate.z));
 }
 
-uint32_t Uart::get_time_ms(FD1_message::Time_t time)
+void Uart::do_print()
 {
-    uint32_t now = time.bits.ms;
-    now += time.bits.sec * 1000;
-    now += time.bits.min * 60 * 1000;
-    now += time.bits.h * 60 * 60 * 1000;
-    now += time.bits.day * 24 * 60 * 60 * 1000;
-    return now;
-}
+    if (plane.g2.uart_print.get() > 0) {
+        gcs().send_text(MAV_SEVERITY_WARNING, "|~~~~~~~ MSG ~~~~~~~|");
+    }
+    // put your 1Hz code here
+    if (plane.g2.uart_print.get() & (1<<0)) { // 1
+        gcs().send_text(MAV_SEVERITY_WARNING, "HK status [%d] %d, %0.0f, %0.0f", status.count_huokong, uart_msg_huokong_cast._msg_1.content.msg.status_1, uart_msg_huokong_cast.get_angle(uart_msg_huokong_cast._msg_1.content.msg.aim_yaw), uart_msg_huokong_cast.get_angle(uart_msg_huokong_cast._msg_1.content.msg.aim_pitch));
+    }
+    if (plane.g2.uart_print.get() & (1<<1)) { // 2
+        gcs().send_text(MAV_SEVERITY_WARNING, "DC status [%d] %d, %0.0f, %0.0f", status.count_diaocang, uart_msg_diaocang_cast._msg_1.content.msg.status_1, uart_msg_diaocang_cast.get_angle(uart_msg_diaocang_cast._msg_1.content.msg.gimbal_yaw), uart_msg_diaocang_cast.get_angle(uart_msg_diaocang_cast._msg_1.content.msg.gimbal_pitch));
+    }
+    if (plane.g2.uart_print.get() & (1<<2)) { // 4
+        gcs().send_text(MAV_SEVERITY_WARNING, "SH status [%d] %d, %0.0f, %0.0f", status.count_shuangmu, uart_msg_shuangmu_cast._msg_1.content.msg.status_1, (float)(uart_msg_shuangmu_cast._msg_1.content.msg.target.yaw)*0.001f, (float)(uart_msg_shuangmu_cast._msg_1.content.msg.target.pitch)*0.001f);
+    }
 
-void Uart::set_tims_ms(FD1_message::Time_t &time)
-{
-    uint32_t ms_global = cali_last_ms_global + millis() - cali_last_ms;
-    time.bits.ms = ms_global%(24 * 60 * 60 * 1000);
-    time.bits.sec = (ms_global/1000)%(24 * 60 * 60);
-    time.bits.min = (ms_global/(60 * 1000))%(24 * 60);
-    time.bits.h = (ms_global/(60 * 60 * 1000))%(24);
-    time.bits.day = (ms_global/(24 * 60 * 60 * 1000));
+    status.count_huokong = 0;
+    status.count_diaocang = 0;
+    status.count_shuangmu = 0;
 }

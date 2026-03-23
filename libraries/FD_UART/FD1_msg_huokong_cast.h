@@ -64,7 +64,7 @@ public:
     FD1_msg_huokong_cast &operator=(const FD1_msg_huokong_cast&) = delete;
 
     static const uint8_t PREAMBLE1 = 0xCC;
-    static const uint8_t PREAMBLE2 = 0x05;
+    static const uint8_t PREAMBLE2 = 0x01;
     static const uint8_t PREAMBLE3 = 0xAA;
 
     void process_message(void) override;

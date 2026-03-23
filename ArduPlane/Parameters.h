@@ -538,6 +538,11 @@ public:
     AP_Int8 crow_flap_options;
     AP_Int8 crow_flap_aileron_matching;
 
+    AP_Float usr_calibration_pitch;
+    AP_Float usr_calibration_yaw;
+
+    AP_Int8 uart_print;
+
     // Forward throttle battery voltage compensation
     class FWD_BATT_CMP {
     public:

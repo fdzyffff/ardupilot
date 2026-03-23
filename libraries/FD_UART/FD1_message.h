@@ -56,10 +56,16 @@ public:
         swap_message_sub(p2, p3);
     }
 
+    float get_angle(int16_t angle_in);
+    int16_t pack_angle(float angle_in);
+
     virtual float swap_message_float(float a1);
     virtual int32_t swap_message_int32_t(int32_t a1);
     virtual uint32_t swap_message_uint32_t(uint32_t a1);
     virtual int16_t swap_message_int16_t(int16_t a1);
     virtual uint16_t swap_message_uint16_t(uint16_t a1);
     bool _enable;
+
+
+    const float SF_ANGLE = 180.f/32768.0f;
 };

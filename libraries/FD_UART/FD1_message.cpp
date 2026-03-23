@@ -1,4 +1,5 @@
 #include "FD1_message.h"
+#include <AP_Math/AP_Math.h>
 
 void FD1_message::swap_message_sub(uint8_t &p1, uint8_t &p2) {
     uint8_t tmp;
@@ -89,4 +90,15 @@ uint16_t FD1_message::swap_message_uint16_t(uint16_t a1) {
     a.data[1] = tmp;
     a1 = a.v;
     return a1;
+}
+
+float FD1_message::get_angle(int16_t angle_in) {
+    float ret = ((float)angle_in)*SF_ANGLE;
+    return ret;
+}
+
+int16_t FD1_message::pack_angle(float angle_in) {
+    int16_t ret = (int16_t)(constrain_float(angle_in, -180.f, 180.f) / SF_ANGLE);
+    return ret;
+    // return 100;
 }

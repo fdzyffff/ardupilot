@@ -47,13 +47,13 @@ void FD1_msg_hangdong_cast::parse(uint8_t temp)
             }
             break;
         case FD1UART_msg_parser::FD1UART_DATA:
-            if (_msg.read >= sizeof(_msg.data)-1) {
+            if (_msg.read >= sizeof(_msg.data)) {
                 _msg.msg_state = FD1UART_msg_parser::FD1UART_PREAMBLE1;
                 break;
             }
 
             if (_msg.read == 3) {
-                _msg.length = 0xFF00 | temp;
+                _msg.length = temp;
             }
 
             if (_msg.read == 4) {

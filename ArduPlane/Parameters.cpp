@@ -1304,7 +1304,10 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @Path: systemid.cpp
     AP_SUBGROUPINFO(systemid, "SID", 38, ParametersG2, AP_SystemID),
 #endif
-    
+
+    AP_GROUPINFO("USR_CAL_PTH", 39, ParametersG2, usr_calibration_pitch, 0.0f),
+    AP_GROUPINFO("USR_CAL_YAW", 40, ParametersG2, usr_calibration_yaw, 0.0f),
+    AP_GROUPINFO("USR_PRINT", 41, ParametersG2, uart_print, 0),
     AP_GROUPEND
 };
 
