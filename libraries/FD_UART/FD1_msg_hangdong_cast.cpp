@@ -88,7 +88,7 @@ void FD1_msg_hangdong_cast::make_sum()
 {
     _msg_1.content.msg.header.head = FD1_msg_hangdong_cast::PREAMBLE1;
     _msg_1.content.msg.header.source = FD1_msg_hangdong_cast::PREAMBLE2;
-    _msg_1.content.msg.header.destination = FD1_msg_hangdong_cast::PREAMBLE2;
+    _msg_1.content.msg.header.destination = FD1_msg_hangdong_cast::PREAMBLE3;
     _msg_1.content.msg.count++;
     _msg_1.content.msg.length = FD1_MSG_HANGDONG_CAST_LEN;
 }

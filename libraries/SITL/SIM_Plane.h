@@ -40,13 +40,16 @@ public:
     }
 
 protected:
-    const float hover_throttle = 0.7f;
+    float hover_throttle = 0.7f;
     float angle_of_attack;
     float beta;
 
     struct {
         // from last_letter skywalker_2013/aerodynamics.yaml
         // thanks to Georacer!
+        float Ixx = 1.0;//x方向转动惯量kgm2
+        float Iyy = 1.0;//y方向转动惯量
+        float Izz = 1.0;//z方向转动惯量
         float s = 0.45;
         float b = 1.88;
         float c = 0.24;
@@ -105,6 +108,10 @@ protected:
     float launch_accel;
     float launch_time;
     uint64_t launch_start_ms;
+    bool have_drop;
+    // float drop_accel;
+    float drop_time;
+    uint64_t drop_start_ms;
 
     const uint8_t throttle_servo = 2;
     const int8_t choke_servo = 14;
