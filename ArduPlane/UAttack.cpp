@@ -17,17 +17,15 @@ const AP_Param::GroupInfo UAttack::var_info[] = {
     AP_GROUPINFO("ANGLE_K",    12, UAttack, attack_k_angle,          1.0f),
     AP_GROUPINFO("THR",        13, UAttack, attack_throttle,        75.0f),
     AP_GROUPINFO("RTL_TOUT",   14, UAttack, atk_time_out,        20000),
-    AP_GROUPINFO("UPRINT",     15, UAttack, print,                   0),
+    AP_GROUPINFO("DEBUG",      15, UAttack, print,                   0),
     AP_GROUPINFO("TCAM_USE",   16, UAttack, use_target_cam,          0),
     AP_GROUPINFO("TCAM_TYPE",  17, UAttack, use_target_cam_type,     1),
     AP_GROUPINFO("TLOC_USE",   18, UAttack, use_target_loc,          0),
-    AP_GROUPINFO("TEXT_USE",   19, UAttack, use_target_external,     0),
-    AP_GROUPINFO("FILT_Y_HZ",  20, UAttack, filt_yaw_hz,             2.0f),
-    AP_GROUPINFO("FILT_P_HZ",  21, UAttack, filt_pithc_hz,           2.0f),
+    AP_GROUPINFO("FILT_Y_HZ",  19, UAttack, filt_yaw_hz,             2.0f),
+    AP_GROUPINFO("FILT_P_HZ",  20, UAttack, filt_pithc_hz,           2.0f),
 
-    AP_SUBGROUPPTR(_Target_ptr_loc,         "TL_",    23, UAttack,  FD_Target_Loc),
-    AP_SUBGROUPPTR(_Target_ptr_cam_DYT,     "TC_",    24, UAttack,  FD_Target_DYT),
-    AP_SUBGROUPPTR(_Target_ptr_external,    "TE_",    25, UAttack,  FD_Target_External),
+    AP_SUBGROUPPTR(_Target_ptr_loc,         "TL_",    21, UAttack,  FD_Target_Loc),
+    AP_SUBGROUPPTR(_Target_ptr_cam_DYT,     "TC_",    22, UAttack,  FD_Target_DYT),
     AP_GROUPEND
 };
 
@@ -71,7 +69,6 @@ void UAttack::init()
     _target_roll_angle = 0.0f;
     _Target_ptr_cam = nullptr;
     _Target_ptr_loc = nullptr;
-    _Target_ptr_external = nullptr;
     _last_ms = millis();
     init_target();
 
@@ -150,7 +147,6 @@ void UAttack::init_target()
 {
     bool use_cam = use_target_cam.get();
     bool use_loc = use_target_loc.get();
-    bool use_external = use_target_external.get();
 
     if (use_cam) {
          // 1:mav
@@ -179,17 +175,6 @@ void UAttack::init_target()
         } else {
             gcs().send_text(MAV_SEVERITY_WARNING, "Target Loc Fail");
             _Target_ptr_loc = nullptr;
-        }
-    }
-
-    if (use_external) {
-        _Target_ptr_external = new FD_Target_External();
-        if (_Target_ptr_external->init()) {
-            gcs().send_text(MAV_SEVERITY_WARNING, "Target External init");
-            AP_Param::load_object_from_eeprom(_Target_ptr_external, FD_Target_External::var_info);
-        } else {
-            gcs().send_text(MAV_SEVERITY_WARNING, "Target External Fail");
-            _Target_ptr_external = nullptr;
         }
     }
 }
@@ -227,12 +212,8 @@ void UAttack::update()
         _Target_ptr_loc->update();
     }
 
-    if (_Target_ptr_external != nullptr) {
-        _Target_ptr_external->update();
-    }
 
-    // external is the priority, then cam, rest is loc
-    if (_Target_ptr_external != nullptr) 
+    // push frame angle to mission port
     {
         float gimbal_yaw = 0.0f;
         float gimbal_pitch = 0.0f;
@@ -249,28 +230,20 @@ void UAttack::update()
             tmp_loc = _Target_ptr_loc->get_target_loc();
         }
 
-        _Target_ptr_external->set_target_angle(gimbal_yaw, gimbal_pitch);
-        _Target_ptr_external->set_target_loc(tmp_loc);
+        plane.uart.set_target_angle(gimbal_yaw, gimbal_pitch);
+        plane.uart.set_target_loc(tmp_loc);
     } 
 
-    if (_Target_ptr_external != nullptr && _Target_ptr_external->is_valid()) {
-        if (current_idx != 3) {
-            gcs().send_text(MAV_SEVERITY_INFO, "Change to Exrternal");
-        }
-        current_idx = 3;
-    } else if (_Target_ptr_cam != nullptr && _Target_ptr_cam->is_valid()) {
-        if (current_idx != 1) {
+    if (_Target_ptr_cam != nullptr && _Target_ptr_cam->is_valid()) {
+        if (current_idx < 2) {
             gcs().send_text(MAV_SEVERITY_INFO, "Change to CAM");
         }
-        current_idx = 1;
-        if (_Target_ptr_loc != nullptr && _Target_ptr_loc->is_valid()) {
-            _Target_ptr_loc->set_valid(false);
-        }
+        current_idx = 2;
     } else if (_Target_ptr_loc != nullptr && _Target_ptr_loc->is_valid()) {
-        if (current_idx != 2) {
+        if (current_idx < 1) {
             gcs().send_text(MAV_SEVERITY_INFO, "Change to LOC");
         }
-        current_idx = 2;
+        current_idx = 1;
     } else {
         if (current_idx != 0) {
             gcs().send_text(MAV_SEVERITY_INFO, "No Valid Target");
@@ -285,24 +258,19 @@ void UAttack::update()
     float p1 = 0;
     float p2 = 0;
     if (current_idx == 1) {
-        if (_Target_ptr_cam->get_info(p1, p2)) {
+        if (_Target_ptr_loc->get_info(p1, p2)) {
             handle_info(p1, p2);
-            update_control_value();
         }
     }
     if (current_idx == 2) {
-        if (_Target_ptr_loc->get_info(p1, p2)) {
+        if (_Target_ptr_cam->get_info(p1, p2)) {
             handle_info(p1, p2);
-            update_control_value();
         }
     }
-    if (_Target_ptr_external != nullptr && _Target_ptr_external->is_valid()) {  
-        _external_cmd._target_speed = _Target_ptr_external->get_target_speed();
-        _external_cmd._target_pitch = _Target_ptr_external->get_target_pitch();
-        _external_cmd._target_roll = _Target_ptr_external->get_target_roll();
-        _external_cmd.last_cmd_ms = millis();
+    if (current_idx > 0) {
+        update_control_value();
     }
-
+    
     update_vel_bf_info();
 }
 
@@ -496,10 +464,7 @@ void UAttack::do_print()
     if (print.get() & (1<<4)) { // 16
         gcs().send_text(MAV_SEVERITY_WARNING, "rpyt (%0.1f, %0.1f, %0.1f, %0.2f)", get_target_roll_angle(), get_target_pitch_rate(), get_target_yaw_rate(), attack_throttle.get());
     }
-    if (print.get() & (1<<5)) { // 32
-        gcs().send_text(MAV_SEVERITY_WARNING, "srp (%0.1f, %0.1f, %0.1f)", _external_cmd._target_speed, _external_cmd._target_roll, _external_cmd._target_pitch);
-    }
-    if (print.get() & (1<<6)) { // 64
+    if (print.get() & (1<<5)) { // 64
         gcs().send_text(MAV_SEVERITY_WARNING, "%0.0f, %0.0f, %0.0f, %0.0f", display_info.p11, display_info.p12, display_info.p13, display_info.p14);
     }
 }

@@ -43,7 +43,20 @@ AP_ExternalAHRS_HITL::AP_ExternalAHRS_HITL(AP_ExternalAHRS *_frontend,
 
 void AP_ExternalAHRS_HITL::update()
 {
-    ;
+    // bool do_print = false;
+    // if (port_open_hitl) {
+    //     build_packet_hitl();//.读取并解析
+
+    //     if (do_print) {
+    //         if (frontend.debug_print.get() & (1<<6)) {
+    //             gcs().send_text(MAV_SEVERITY_INFO, "build_packet_hitl");
+    //         }
+    //     }
+    // }
+
+    // update_actuator_controls();
+
+    // update_heartbeat();
 }
 
 void AP_ExternalAHRS_HITL::update_thread(void)
@@ -58,8 +71,23 @@ void AP_ExternalAHRS_HITL::update_thread(void)
     }
 
     // uint32_t _last_post = AP_HAL::millis();
-    bool do_print = false;
+    // uint32_t start_up_count = 10000;
+    // while (start_up_count > 0) {
+    //     AP::ins().handle_external(frontend.imu_data);
+    //     AP::compass().handle_external(frontend.mag_data);
 
+    //     frontend.baro_data.instance = 0;
+    //     AP::baro().handle_external(frontend.baro_data);
+    //     frontend.baro_data.instance = 1;
+    //     AP::baro().handle_external(frontend.baro_data);
+    //     frontend.baro_data.instance = 2;
+    //     AP::baro().handle_external(frontend.baro_data);
+
+    //     hal.scheduler->delay_microseconds(5000);
+    //     start_up_count--;
+    // }
+
+    bool do_print = false;
     while (true) {
         do_print = false;
 
@@ -81,7 +109,7 @@ void AP_ExternalAHRS_HITL::update_thread(void)
 
         update_heartbeat();
 
-        update_imu_post();
+        // update_imu_post();
 
         hal.scheduler->delay_microseconds(1000);
     }
@@ -138,9 +166,20 @@ void AP_ExternalAHRS_HITL::handle_sensor(mavlink_hil_sensor_t &in_packet)
         frontend.baro_data.pressure_pa = in_packet.abs_pressure*100.f;
         frontend.baro_data.temperature = in_packet.temperature;
 
-        // AP::ins().handle_external(frontend.imu_data);
-        // AP::compass().handle_external(frontend.mag_data);
-        // AP::baro().handle_external(frontend.baro_data);
+        {
+            WITH_SEMAPHORE(state.sem);
+            AP::ins().handle_external(frontend.imu_data);
+            AP::compass().handle_external(frontend.mag_data);
+
+            frontend.baro_data.instance = 0;
+            AP::baro().handle_external(frontend.baro_data);
+            frontend.baro_data.instance = 1;
+            AP::baro().handle_external(frontend.baro_data);
+            frontend.baro_data.instance = 2;
+            AP::baro().handle_external(frontend.baro_data);
+        }
+
+
     }
 
 
@@ -189,24 +228,24 @@ void AP_ExternalAHRS_HITL::handle_hil_gps(mavlink_hil_gps_t &in_packet)
         frontend.gps_data.ms_tow                      = gps_week_ms;
         frontend.gps_data.fix_type                    = (AP_GPS_FixType)(in_packet.fix_type);
         frontend.gps_data.satellites_in_view          = (in_packet.satellites_visible);
-        frontend.gps_data.horizontal_pos_accuracy     = (1.0f);
-        frontend.gps_data.vertical_pos_accuracy       = (1.0f);
-        frontend.gps_data.horizontal_vel_accuracy     = (1.0f);
+        frontend.gps_data.horizontal_pos_accuracy     = (0.5f);
+        frontend.gps_data.vertical_pos_accuracy       = (0.5f);
+        frontend.gps_data.horizontal_vel_accuracy     = (0.5f);
         frontend.gps_data.hdop                        = (in_packet.eph);
         frontend.gps_data.vdop                        = (in_packet.epv);
         frontend.gps_data.longitude                   = (in_packet.lon);
         frontend.gps_data.latitude                    = (in_packet.lat);
         frontend.gps_data.msl_altitude                = (in_packet.alt/10);
-        frontend.gps_data.ned_vel_north               = (in_packet.vn);
-        frontend.gps_data.ned_vel_east                = (in_packet.ve);
-        frontend.gps_data.ned_vel_down                = (in_packet.vd);
+        frontend.gps_data.ned_vel_north               = (float)(in_packet.vn)*0.01f;
+        frontend.gps_data.ned_vel_east                = (float)(in_packet.ve)*0.01f;
+        frontend.gps_data.ned_vel_down                = (float)(in_packet.vd)*0.01f;
         frontend.gps_data.gps_yaw                     = ((float)(in_packet.yaw)*0.01f);
         frontend.gps_data.gps_yaw_time_ms             = (AP_HAL::millis());
         frontend.gps_data.gps_yaw_configured          = (true);
         frontend.gps_data.gps_yaw_accuracy            = (1.0f);
         frontend.gps_data.have_gps_yaw                = (true);
         frontend.gps_data.have_gps_yaw_accuracy       = (true);
-        frontend.gps_data.ground_speed                = (float)(in_packet.vel);
+        frontend.gps_data.ground_speed                = (float)(in_packet.vel)*0.01f;
         frontend.gps_data.ground_course               = wrap_360((float)(in_packet.cog)*0.01f);
         post_gps();
     }
@@ -398,7 +437,7 @@ void AP_ExternalAHRS_HITL::update_imu_post()
 
 void AP_ExternalAHRS_HITL::update_actuator_controls()
 {
-    if (AP_HAL::millis() - _last_srv_post_ms > 3) {
+    if (AP_HAL::millis() - _last_srv_post_ms > 2) {
         _last_srv_post_ms = AP_HAL::millis();
     } else {
         return;
@@ -406,7 +445,7 @@ void AP_ExternalAHRS_HITL::update_actuator_controls()
 
     hil_actuator_controls_packet.time_usec = AP_HAL::micros();
     for (uint8_t i_mot = 0; i_mot < 16; i_mot++) {
-        hil_actuator_controls_packet.controls[i_mot] = SRV_Channels::get_output_norm(i_mot);
+        hil_actuator_controls_packet.controls[i_mot] = SRV_Channels::get_output_scaled_norm(i_mot);
     }
     hil_actuator_controls_packet.mode |= MAV_MODE_FLAG_HIL_ENABLED;
 
