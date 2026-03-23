@@ -14,7 +14,7 @@ bool ModeAttackLoc::_enter()
         }
         _cmd_throttle = MAX(SRV_Channels::get_output_scaled(SRV_Channel::k_throttle), plane.aparm.throttle_cruise);
         return true;
-    } else if (plane.uattack.is_active_cam() || plane.uattack.is_active_external() ) {
+    } else if (plane.uattack.is_active_cam()) {
         target_loc = plane.current_loc;
         // target_loc.offset_bearing(AP::ahrs().get_yaw(), 200.f);
         set_stage(stage_class::ATTACK);
@@ -44,15 +44,7 @@ void ModeAttackLoc::run()
             break;
         case stage_class::ATTACK:
             {
-                if (plane.uattack.is_active_external()) {
-                    plane.nav_roll_cd = (int32_t)(plane.uattack._external_cmd._target_roll * 100.f);
-                    plane.nav_pitch_cd = (int32_t)(plane.uattack._external_cmd._target_pitch * 100.f);
-                    plane.stabilize_roll();
-                    plane.stabilize_pitch();
-                    plane.stabilize_yaw();
-                } else {
-                    plane.stabilize_attack();
-                }
+                plane.stabilize_attack();
             }
             break;
         default:
@@ -102,7 +94,7 @@ void ModeAttackLoc::update()
             if (!plane.uattack.is_active()) {
                 set_stage(stage_class::HOVER);
             }
-            if (check_approach() || plane.uattack.is_active_cam() || plane.uattack.is_active_external()) {
+            if (check_approach() || plane.uattack.is_active_cam()) {
                 set_stage(stage_class::ATTACK);                
             } 
             update_approach();
@@ -120,7 +112,7 @@ void ModeAttackLoc::update()
             }
             break;
         case stage_class::HOVER:
-            if (plane.uattack.is_active_cam() || plane.uattack.is_active_external()) {
+            if (plane.uattack.is_active_cam()) {
                 gcs().send_text(MAV_SEVERITY_INFO, "ATK: recover");
                 set_stage(stage_class::ATTACK);                
             } 

@@ -331,6 +331,7 @@ private:
 
     // get normalised output from -1 to 1, assuming 0 at mid point of servo_min/servo_max
     float get_output_norm(void);
+    float get_output_scaled_norm(void);
 
     // a bitmask type wide enough for NUM_SERVO_CHANNELS
     typedef uint32_t servo_mask_t;
@@ -396,7 +397,7 @@ public:
     // Value is taken from pwm value.  Returns zero on error.
     static float get_output_norm(SRV_Channel::Aux_servo_function_t function);
 
-    static float get_output_norm(uint8_t chan);
+    static float get_output_scaled_norm(uint8_t chan);
 
     // set normalised output (-1 to 1 with 0 at mid point of servo_min/servo_max) for the given function
     static void set_output_norm(SRV_Channel::Aux_servo_function_t function, float value);

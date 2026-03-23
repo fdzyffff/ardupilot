@@ -1037,6 +1037,8 @@ const AP_Param::Info Plane::var_info[] = {
 
     GOBJECT(uattack,      "UATK_", UAttack),
 
+    GOBJECT(uart,      "UART_", Uart),
+
     AP_VAREND
 };
 

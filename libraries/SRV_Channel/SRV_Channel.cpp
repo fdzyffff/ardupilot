@@ -287,6 +287,24 @@ float SRV_Channel::get_output_norm(void)
     return ret;
 }
 
+float SRV_Channel::get_output_scaled_norm(void)
+{
+    uint16_t mid = servo_trim;
+    float ret;
+    if (mid <= 1000 && output_pwm<=1000) {
+        return 0;
+    }
+    if (output_pwm < mid) {
+        ret = (float)(output_pwm - mid) / (float)(mid - 1000);
+    } else if (output_pwm > mid) {
+        ret = (float)(output_pwm - mid) / (float)(2000  - mid);
+    } else {
+        ret = 0;
+    }
+
+    return ret;
+}
+
 uint16_t SRV_Channel::get_limit_pwm(Limit limit) const
 {
     switch (limit) {
