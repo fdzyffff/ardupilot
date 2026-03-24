@@ -217,10 +217,13 @@ void ModeLudeng_unhook::set_stage(Stage stage_in) {
             gcs().send_text(MAV_SEVERITY_INFO, "Stage DOWN");
             break;
         case Stage::AWAY:
+            copter.mode_ludeng_hook.set_is_from_unhook();
+            copter.g2.user_parameters.hook_mission_idx.set(copter.g2.user_parameters.hook_mission_idx.get() + 1);
             if (set_mode(Mode::Number::LDHOOK, ModeReason::AUTO_HOOK)) {
-                copter.mode_ludeng_hook.set_is_from_unhook();
                 gcs().send_text(MAV_SEVERITY_INFO, "Stage AWAY");
             } else {
+                // copter.mode_ludeng_hook.set_is_from_unhook();
+                copter.g2.user_parameters.hook_mission_idx.set(copter.g2.user_parameters.hook_mission_idx.get() - 1);
                 gcs().send_text(MAV_SEVERITY_INFO, "No Mission");
                 set_stage(Stage::LAND);
             }

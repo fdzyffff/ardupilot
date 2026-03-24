@@ -46,7 +46,12 @@ void UK230::init()
     // gcs().send_text(MAV_SEVERITY_INFO, "FD1_uart_K230.init()");
 }
 
-void UK230::read_uart()
+void UK230::read_uart_a8()
+{
+    ;
+}
+
+void UK230::read_uart_3588()
 {
     FD1_uart_K230.read();
     FD1_msg_K230 &tmp_msg = FD1_uart_K230.get_msg_K230();
@@ -185,46 +190,6 @@ void UK230::update_valid()
     }
 }
 
-// degree/second
-void UK230::update_target_roll_rate() {
-    float k = copter.g2.user_parameters.attack_k.get();
-    float angle_comp = constrain_float(bf_info.x, -15.0f, 15.0f);
-    _target_roll_rate = k * angle_comp; // degrees/s
-
-    //Limit roll rate
-    float limit_roll_rate = copter.g2.user_parameters.rate_limit.get();
-    _target_roll_rate = constrain_float(_target_roll_rate, -limit_roll_rate, limit_roll_rate);
-
-    //Limit roll
-    float current_roll = degrees(copter.ahrs_view->roll);
-    float limit_roll = MAX(copter.g2.user_parameters.angle_limit.get(), 0.f);
-    if (current_roll > limit_roll) {
-        _target_roll_rate = MAX(_target_roll_rate, 0.0f);
-    } else if (current_roll < -limit_roll) {
-        _target_roll_rate = MIN(_target_roll_rate, 0.0f);
-    }
-}
-
-// degree/second
-void UK230::update_target_pitch_rate() {
-    float k = copter.g2.user_parameters.attack_k.get();
-    float angle_comp = constrain_float(bf_info.y, -15.0f, 15.0f);
-    _target_pitch_rate = k * angle_comp; // degrees/s
-
-    //Limit pitch rate
-    float limit_pitch_rate = copter.g2.user_parameters.rate_limit.get();
-    _target_pitch_rate = constrain_float(_target_pitch_rate, -limit_pitch_rate, limit_pitch_rate);
-
-    //Limit pitch
-    float current_pitch = degrees(copter.ahrs_view->pitch);
-    float limit_pitch = MAX(copter.g2.user_parameters.angle_limit.get(), 0.f);
-    if (current_pitch > limit_pitch) {
-        _target_pitch_rate = MAX(_target_pitch_rate, 0.0f);
-    } else if (current_pitch < -limit_pitch) {
-        _target_pitch_rate = MIN(_target_pitch_rate, 0.0f);
-    }
-    // gcs().send_text(MAV_SEVERITY_INFO, "%f", _target_pitch_rate_cds);
-}
 
 // degree/second
 void UK230::update_target_yaw_rate() {

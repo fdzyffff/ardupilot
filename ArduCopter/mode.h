@@ -2029,13 +2029,15 @@ public:
     bool allows_autotune() const override { return false; }
     bool is_taking_off() const override;
     enum class Stage {
-        AUTO = 0,
-        STANDBY = 1,
-        AIM = 2,
-        UP = 3,
-        LOCK = 4,
-        DOWN = 5,
-        DONE = 6
+        STANDBY = 0,
+        SEARCH = 1,
+        APPROACH = 2,
+        AIM = 3,
+        UP = 4,
+        LOCK = 5,
+        DOWN = 6,
+        DONE = 7,
+        FAIL = 8,
     };
 
     void hook_run();
