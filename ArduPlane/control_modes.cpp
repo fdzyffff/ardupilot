@@ -100,6 +100,9 @@ Mode *Plane::mode_from_mode_num(const enum Mode::Number num)
     case Mode::Number::ATTACK_LOC:
         ret = &mode_attack_loc;
         break;
+    case Mode::Number::EXTERNAL:
+        ret = &mode_external;
+        break;
 
     }
     return ret;
