@@ -43,15 +43,15 @@ private:
         bool valid_huokong;
         bool valid_huokong_ok;
         bool valid_shuangmu;
-        uint32_t count_diaocang;
-        uint32_t count_huokong;
-        uint32_t count_shuangmu;
+        uint16_t count_diaocang;
+        uint16_t count_huokong;
+        uint16_t count_shuangmu;
     } status;
 
     // message structure
-    FD1_msg_diaocang_cast uart_msg_diaocang_cast; //吊舱数据组播发送的报文内容
-    FD1_msg_hangdong_cast uart_msg_hangdong_cast; //航动组播发送的报文内容
-    FD1_msg_huokong_cast uart_msg_huokong_cast; //火控组播发送的报文内容
+    FD1_msg_diaocang_cast uart_msg_diaocang_cast; //吊舱点播发送的报文内容
+    FD1_msg_hangdong_cast uart_msg_hangdong_cast; //航动点播发送的报文内容
+    FD1_msg_huokong_cast uart_msg_huokong_cast;   //火控点播发送的报文内容
     FD1_msg_shuangmu_cast uart_msg_shuangmu_cast; //双目数据组播发送的报文内容
     FD1_msg_waibu_single uart_msg_waibu_single; //地面终端对外接收信息内容
 };

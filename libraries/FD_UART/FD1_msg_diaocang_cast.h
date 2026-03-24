@@ -63,7 +63,7 @@ public:
 
     static const uint8_t PREAMBLE1 = 0xCC;
     static const uint8_t PREAMBLE2 = 0x05;
-    static const uint8_t PREAMBLE3 = 0xAA;
+    static const uint8_t PREAMBLE3 = 0x02;
 
     void process_message(void) override;
     void parse(uint8_t temp) override;
