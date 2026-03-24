@@ -118,6 +118,7 @@ void ModeExternal::navigate()
 
 void ModeExternal::set_stage(ModeExternal::stage_class stage_in)
 {
+    if (stage == stage_in) {return;}
     stage = stage_in;
     switch(stage) {
         case stage_class::HOVER:

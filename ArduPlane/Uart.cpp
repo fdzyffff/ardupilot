@@ -67,6 +67,7 @@ void Uart::write_uart()
 }
 
 void Uart::update_status() {
+    if (millis() < 3000) {return;}
     if (millis() - control_status.last_cmd_ms > 2000) {
         if (control_status.valid) {
             control_status.valid = false;
