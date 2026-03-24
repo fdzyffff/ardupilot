@@ -178,6 +178,7 @@ public:
     friend class ModeLoiterAltQLand;
     // friend class ModeAttackCam;
     friend class ModeAttackLoc;
+    friend class ModeExternal;
 
 #if AP_EXTERNAL_CONTROL_ENABLED
     friend class AP_ExternalControl_Plane;
@@ -349,6 +350,7 @@ private:
 #endif
 
     ModeAttackLoc mode_attack_loc;
+    ModeExternal mode_external;
     
     // This is the state of the flight control system
     // There are multiple states defined such as MANUAL, FBW-A, AUTO

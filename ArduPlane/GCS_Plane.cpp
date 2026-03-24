@@ -53,6 +53,7 @@ void GCS_Plane::update_vehicle_sensor_status_flags(void)
     case Mode::Number::FLY_BY_WIRE_B:
     case Mode::Number::CRUISE:
     case Mode::Number::ATTACK_LOC:
+    case Mode::Number::EXTERNAL:
         rate_controlled = true;
         attitude_stabilized = true;
         break;

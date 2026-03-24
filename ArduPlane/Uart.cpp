@@ -66,6 +66,20 @@ void Uart::write_uart()
     pack_status();
 }
 
+void Uart::update_status() {
+    if (millis() - control_status.last_cmd_ms > 2000) {
+        if (control_status.valid) {
+            control_status.valid = false;
+            gcs().send_text(MAV_SEVERITY_INFO, "Lost External CMD");
+        }
+    } else {
+        if (!control_status.valid) {
+            control_status.valid = true;
+            gcs().send_text(MAV_SEVERITY_INFO, "Get External CMD");
+        }
+    }
+}
+
 void Uart::do_print()
 {
     // put your 1Hz code here

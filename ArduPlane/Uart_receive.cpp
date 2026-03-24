@@ -15,6 +15,10 @@
 #include "Plane.h"
 
 void Uart::handle_LS_control() {
+    bool type_change = false;
+    if (control_status.type != uart_msg_LS_control._msg_1.content.msg.type) {
+        type_change = true;
+    }
     control_status.type = uart_msg_LS_control._msg_1.content.msg.type;
     switch (control_status.type) {
         case 0x1A:
@@ -24,6 +28,9 @@ void Uart::handle_LS_control() {
             control_status.cmd_roll = uart_msg_LS_control._msg_1.content.msg_0x1A.target_roll;
             control_status.cmd = uart_msg_LS_control._msg_1.content.msg_0x1A.flight_status;
             control_status.last_cmd_ms = millis();
+            if (type_change) {
+                gcs().send_text(MAV_SEVERITY_INFO, "Ext CMD Angle");
+            }
             break;
         }
         case 0x3C:
@@ -33,6 +40,9 @@ void Uart::handle_LS_control() {
             control_status.cmd_roll = uart_msg_LS_control._msg_1.content.msg_0x3C.target_roll;
             control_status.cmd = uart_msg_LS_control._msg_1.content.msg_0x3C.flight_status;
             control_status.last_cmd_ms = millis();
+            if (type_change) {
+                gcs().send_text(MAV_SEVERITY_INFO, "Ext CMD Spd-Hgt");
+            }
             break;
         }
         case 0x55:
@@ -42,22 +52,10 @@ void Uart::handle_LS_control() {
             control_status.cmd_loc.alt = uart_msg_LS_control._msg_1.content.msg_0x55.wp_alt * 100.f;
             control_status.cmd = uart_msg_LS_control._msg_1.content.msg_0x55.flight_status;
             control_status.last_cmd_ms = millis();
+            if (type_change) {
+                gcs().send_text(MAV_SEVERITY_INFO, "Ext CMD Waypoint");
+            }
             break;
         }
     }
 }
-
-void Uart::update_status() {
-    if (millis() - control_status.last_cmd_ms > 2000) {
-        if (control_status.valid) {
-            control_status.valid = false;
-            gcs().send_text(MAV_SEVERITY_INFO, "Lost External CMD");
-        }
-    } else {
-        if (!control_status.valid) {
-            control_status.valid = true;
-            gcs().send_text(MAV_SEVERITY_INFO, "Get External CMD");
-        }
-    }
-}
-

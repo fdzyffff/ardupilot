@@ -63,6 +63,7 @@ public:
         LOITER_ALT_QLAND = 25,
 #endif
         ATTACK_LOC    = 30,
+        EXTERNAL      = 50,
     };
 
     // Constructor
@@ -958,4 +959,40 @@ protected:
     stage_class stage;
 
     uint32_t _hover_start_ms;
+};
+
+class ModeExternal : public Mode
+{
+public:
+
+    Mode::Number mode_number() const override { return Mode::Number::EXTERNAL; }
+    const char *name() const override { return "External"; }
+    const char *name4() const override { return "Extn"; }
+
+    enum class stage_class{
+        HOVER,
+        ANGLE,
+        FBWB,
+        WP,
+    };
+
+    // methods that affect movement of the vehicle in this mode
+    void update() override;
+    void navigate() override;
+    void run() override;
+    bool does_auto_navigation() const override { return (stage == stage_class::HOVER || stage == stage_class::WP); }
+    bool does_auto_throttle() const override { return (stage != stage_class::ANGLE); }
+
+    void update_stage();
+    void update_hover();
+    void update_angle();
+    void update_fbwb();
+    void update_wp();
+    void set_stage(stage_class stage_in);
+    stage_class get_stage() {return stage;}
+
+protected:
+
+    bool _enter() override;
+    stage_class stage;
 };

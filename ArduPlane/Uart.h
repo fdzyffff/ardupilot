@@ -25,12 +25,6 @@ public:
     void set_target_loc(Location& loc_in);
     void pack_status();
 
-private:
-
-    AP_Int16        print;
-
-    AP_HAL::UARTDriver* _port;
-
     struct {
         bool valid;
         uint8_t type;
@@ -42,6 +36,12 @@ private:
         float cmd_pitch;
         float cmd_roll;
     } control_status;
+
+private:
+
+    AP_Int16        print;
+
+    AP_HAL::UARTDriver* _port;
 
     struct {
         uint32_t last_status_send_ms;
