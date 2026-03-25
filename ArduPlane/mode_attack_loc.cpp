@@ -166,7 +166,7 @@ void ModeAttackLoc::update_attack()
     // plane.nav_roll_cd = 0;//plane.ahrs.roll_sensor;
     plane.nav_pitch_cd = plane.ahrs.pitch_sensor;
 
-    float throtle_rate = 3.0f*plane.G_Dt;
+    float throtle_rate = 33.0f*plane.G_Dt;
     float target_throttle = plane.uattack.attack_throttle;
     _cmd_throttle = _cmd_throttle + constrain_float(target_throttle - _cmd_throttle, -throtle_rate, throtle_rate);
     SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, plane.mode_attack_loc.get_cmd_throttle());
