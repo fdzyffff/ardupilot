@@ -30,6 +30,7 @@ public:
     const Vector2f& get_bf_info();
     const Vector2f& get_ef_info();
     const Vector2f& get_ef_rate_info();
+    const Vector2f& get_bfe_info();
 
     float get_target_pitch_rate() {return _target_pitch_rate;}
     float get_target_roll_angle() {return _target_roll_angle;}
@@ -63,6 +64,7 @@ public:
     } display_info;
 
     Vector2f bf_info;
+    Vector2f bfe_info; // in body frame without pitch and roll
     Vector2f vel_bf_info;
     Vector2f ef_info;
     Vector2f ef_rate_info;

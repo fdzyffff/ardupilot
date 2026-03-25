@@ -103,16 +103,20 @@ void UAttack::update_log() {
                                 (float)_target_yaw_rate);
 
     AP::logger().WriteStreaming("UAT2",
-                                "TimeUS,type, angt,angm,agrt,agrm",
-                                "s-----",
-                                "F-----",
-                                "Qfffff",
+                                "TimeUS,type, angt,angm,agrt,agrm,vbfx,vbfy,bfex,bfey",
+                                "s---------",
+                                "F---------",
+                                "Qfffffffff",
                                 AP_HAL::micros64(),
                                 (float)current_idx,
                                 (float)_attack_angle_target,
                                 (float)_attack_angle_measure,
                                 (float)_attack_angle_rate_target,
-                                (float)_attack_angle_rate_measure);
+                                (float)_attack_angle_rate_measure,
+                                (float)vel_bf_info.x,
+                                (float)vel_bf_info.y,
+                                (float)bfe_info.x,
+                                (float)bfe_info.y);
 
     AP::logger().WriteStreaming("UAPH",
                                 "TimeUS,target,actual,ff,P,I,D,srate,dmod",
@@ -141,6 +145,10 @@ const Vector2f& UAttack::get_ef_info() {
 
 const Vector2f& UAttack::get_ef_rate_info() {
     return ef_rate_info;
+}
+
+const Vector2f& UAttack::get_bfe_info() {
+    return bfe_info;
 }
 
 void UAttack::init_target()
@@ -309,6 +317,26 @@ void UAttack::handle_info(float p1, float p2) {
     //     _pitch = AP::ahrs().get_pitch();
     //     _yaw = AP::ahrs().get_yaw();
     // }
+
+    {
+        Vector3f target_unit = Vector3f(1.0f, 0.0f, 0.0f);
+        Matrix3f tmp_target_cam_m;
+        tmp_target_cam_m.from_euler(0.0f, radians(p2), radians(p1));
+        Matrix3f tmp_cam_body_m;
+        tmp_cam_body_m.from_euler(0.0f, radians(0.0f), radians(0.0f));
+        Matrix3f tmp_body_earthbody_m;
+        tmp_body_earthbody_m.from_euler(_roll, _pitch, 0.0f);
+        Matrix3f tmp_target_earth_m = tmp_body_earthbody_m*tmp_cam_body_m*tmp_target_cam_m;
+        Vector3f ef_unit = tmp_target_earth_m*target_unit;
+
+        float angle_pitch = wrap_180(degrees(atan2f(-ef_unit.z, ef_unit.xy().length())));
+        float angle_yaw =   wrap_180(degrees(atan2f( ef_unit.y, ef_unit.x)));
+        bfe_info.x = angle_yaw;
+        bfe_info.y = angle_pitch;
+    }
+
+
+
     float angle_pitch = 0.0f;
     float angle_yaw = 0.0f;
 
@@ -321,6 +349,7 @@ void UAttack::handle_info(float p1, float p2) {
     tmp_body_earth_m.from_euler(_roll, _pitch, _yaw);
     Matrix3f tmp_target_earth_m = tmp_body_earth_m*tmp_cam_body_m*tmp_target_cam_m;
     Vector3f ef_unit = tmp_target_earth_m*target_unit;
+
 
     // static uint32_t last_info_ms = millis();
     // if (millis() - last_info_ms > 1000) {
@@ -409,11 +438,12 @@ void UAttack::update_target_roll_angle() {
     // _target_roll_angle = constrain_float(attack_roll_factor.get() * ef_rate_info.x, -15.f, 15.f);
     
     float k2_roll = attack_k2_roll.get();
+    float angle_err = constrain_float(bfe_info.x, -30.0f, 30.0f);
 
     float dt = (millis() - _last_ms);
     dt = dt * 0.001f;
     if (dt > 0.2f) {dt = 0.2f;}
-    _target_roll_angle = attack_roll_pid.update_all(0.0f, -ef_rate_info.x, dt) + k2_roll * _target_yaw_rate;
+    _target_roll_angle = attack_roll_pid.update_all(0.0f, -ef_rate_info.x, dt) + k2_roll * angle_err;
 }
 
 // degree/second
@@ -459,12 +489,15 @@ void UAttack::do_print()
         gcs().send_text(MAV_SEVERITY_WARNING, "ef_rate (%0.2f, %0.2f) on:%d", get_ef_rate_info().x,get_ef_rate_info().y, is_active());
     }
     if (print.get() & (1<<3)) { // 8
-        gcs().send_text(MAV_SEVERITY_WARNING, "ar (%0.1f, %0.1f, %0.2f, %0.2f)", _attack_angle_target, _attack_angle_measure, _attack_angle_rate_target, _attack_angle_rate_measure);
+        gcs().send_text(MAV_SEVERITY_WARNING, "bfe_angle (%0.2f, %0.2f) on:%d", get_bfe_info().x,get_bfe_info().y, is_active());
     }
     if (print.get() & (1<<4)) { // 16
+        gcs().send_text(MAV_SEVERITY_WARNING, "ar (%0.1f, %0.1f, %0.2f, %0.2f)", _attack_angle_target, _attack_angle_measure, _attack_angle_rate_target, _attack_angle_rate_measure);
+    }
+    if (print.get() & (1<<5)) { // 32
         gcs().send_text(MAV_SEVERITY_WARNING, "rpyt (%0.1f, %0.1f, %0.1f, %0.2f)", get_target_roll_angle(), get_target_pitch_rate(), get_target_yaw_rate(), attack_throttle.get());
     }
-    if (print.get() & (1<<5)) { // 64
+    if (print.get() & (1<<6)) { // 64
         gcs().send_text(MAV_SEVERITY_WARNING, "%0.0f, %0.0f, %0.0f, %0.0f", display_info.p11, display_info.p12, display_info.p13, display_info.p14);
     }
 }
