@@ -133,6 +133,21 @@ void UAttack::update_log() {
                                 (float)attack_pitch_pid.get_pid_info().slew_rate,
                                 (float)attack_pitch_pid.get_pid_info().Dmod);
 
+    AP::logger().WriteStreaming("UARL",
+                                "TimeUS,target,actual,ff,P,I,D,srate,dmod",
+                                "s--------",
+                                "F--------",
+                                "Qffffffff",
+                                AP_HAL::micros64(),
+                                (float)attack_pitch_pid.get_pid_info().target,
+                                (float)attack_pitch_pid.get_pid_info().actual,
+                                (float)attack_pitch_pid.get_pid_info().FF,
+                                (float)attack_pitch_pid.get_pid_info().P,
+                                (float)attack_pitch_pid.get_pid_info().I,
+                                (float)attack_pitch_pid.get_pid_info().D,
+                                (float)attack_pitch_pid.get_pid_info().slew_rate,
+                                (float)attack_pitch_pid.get_pid_info().Dmod);
+
 }
 
 const Vector2f& UAttack::get_bf_info() {
@@ -443,7 +458,7 @@ void UAttack::update_target_roll_angle() {
     float dt = (millis() - _last_ms);
     dt = dt * 0.001f;
     if (dt > 0.2f) {dt = 0.2f;}
-    _target_roll_angle = attack_roll_pid.update_all(0.0f, -ef_rate_info.x, dt) + k2_roll * angle_err;
+    _target_roll_angle = attack_roll_pid.update_all(angle_err, -ef_rate_info.x, dt) + k2_roll * angle_err;
 }
 
 // degree/second
