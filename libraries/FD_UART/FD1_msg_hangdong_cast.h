@@ -17,7 +17,7 @@ public:
         int32_t pitch;
         int16_t pitch_rate;
         int32_t roll;
-        int32_t roll_rate;
+        int16_t roll_rate;
         uint16_t airspeed;
         uint16_t ground_speed;
         uint32_t ground_course;

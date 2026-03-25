@@ -195,15 +195,15 @@ void UAttack::update()
     }
 
     if (_Target_ptr_cam != nullptr && _Target_ptr_cam->is_valid()) {
-        if (current_idx != 1) {
+        if (current_idx != 2) {
             gcs().send_text(MAV_SEVERITY_INFO, "Change to CAM");
         }
-        current_idx = 1;
+        current_idx = 2;
     } else if (_Target_ptr_loc != nullptr && _Target_ptr_loc->is_valid()) {
-        if (current_idx != 2) {
+        if (current_idx != 1) {
             gcs().send_text(MAV_SEVERITY_INFO, "Change to LOC");
         }
-        current_idx = 2;
+        current_idx = 1;
     } else {
         if (current_idx != 0) {
             gcs().send_text(MAV_SEVERITY_INFO, "No Valid Target");
@@ -213,12 +213,12 @@ void UAttack::update()
 
     float p1 = 0;
     float p2 = 0;
-    if (current_idx == 1) {
+    if (current_idx == 2) {
         if (_Target_ptr_cam->get_info(p1, p2)) {
             handle_info(p1, p2, _Target_ptr_cam->get_type());
             udpate_control_value();
         }
-    } else if (current_idx == 2) {
+    } else if (current_idx == 1) {
         if (_Target_ptr_loc->get_info(p1, p2)) {
             handle_info(p1, p2, _Target_ptr_loc->get_type());
             udpate_control_value();

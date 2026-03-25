@@ -22,7 +22,7 @@ FD_Target_FP847::FD_Target_FP847()
 bool FD_Target_FP847::init() {
     _last_ms = 0;
     _valid = false;
-    set_type(1);
+    set_type(0);
     return true;
 }
 

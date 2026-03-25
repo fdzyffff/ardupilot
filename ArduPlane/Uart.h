@@ -46,6 +46,7 @@ private:
         uint16_t count_diaocang;
         uint16_t count_huokong;
         uint16_t count_shuangmu;
+        uint8_t target_diaocang;
     } status;
 
     // message structure

@@ -3,7 +3,12 @@
 
 bool ModeAttackLoc::_enter()
 {
-    if (plane.uattack.is_active_loc()) {
+    if (plane.uattack.is_active_cam()) {
+        set_stage(stage_class::ATTACK); 
+        _cmd_throttle = MAX(SRV_Channels::get_output_scaled(SRV_Channel::k_throttle), plane.aparm.throttle_cruise);
+        gcs().send_text(MAV_SEVERITY_INFO, "Attack CAM!");
+        return true;
+    } else if (plane.uattack.is_active_loc()) {
         target_loc = plane.uattack._Target_ptr_loc->target_loc;
         if (check_approach()) {
             set_stage(stage_class::ATTACK);                

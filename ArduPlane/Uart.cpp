@@ -38,6 +38,18 @@ void Uart::update()
     read_uart();
     write_uart();
     update_status();
+
+    bool auto_switch0 = plane.uattack.is_active_cam();
+    bool auto_switch1 = plane.control_mode == &plane.mode_auto;
+    bool auto_switch2 = (status.valid_diaocang) && (status.target_diaocang>0);
+    bool auto_switch3 = status.valid_huokong_ok;
+
+    bool auto_switch_flight = auto_switch0 && auto_switch1;
+    bool auto_switch_target = auto_switch2 || auto_switch3;
+
+    if (auto_switch_flight && auto_switch_target) {
+        plane.set_mode(plane.mode_attack_loc, ModeReason::AUTO_ATTACK);
+    }
 }
 
 void Uart::read_uart()
@@ -90,6 +102,7 @@ void Uart::update_status()
             gcs().send_text(MAV_SEVERITY_INFO, "MSG Diaocang Lost");
         }
         status.valid_diaocang = false;
+        status.target_diaocang = 0;
     } else {
         if (!status.valid_diaocang) {
             gcs().send_text(MAV_SEVERITY_INFO, "MSG Diaocang Get");
@@ -139,20 +152,23 @@ void Uart::update_status()
 
 void Uart::handle_info_diaocang()
 {
+    status.target_diaocang = 0;
     for (uint8_t i_target = 1; i_target <=6; i_target++) {
         if (uart_msg_diaocang_cast._msg_1.content.msg.status_1 & (uint16_t)(1<<(6+i_target)))
         // 目标i跟踪好
         {
+            status.target_diaocang++;
+
             float gimbal_yaw = uart_msg_diaocang_cast.get_angle(uart_msg_diaocang_cast._msg_1.content.msg.gimbal_yaw);
             float gimbal_pitch = uart_msg_diaocang_cast.get_angle(uart_msg_diaocang_cast._msg_1.content.msg.gimbal_pitch);
-            float target_yaw = uart_msg_diaocang_cast._msg_1.content.msg.target[i_target-1].yaw;
-            float target_pitch = uart_msg_diaocang_cast._msg_1.content.msg.target[i_target-1].pitch;
+            float target_yaw = (float)(uart_msg_diaocang_cast._msg_1.content.msg.target[i_target-1].yaw) * 0.001f;
+            float target_pitch = (float)(uart_msg_diaocang_cast._msg_1.content.msg.target[i_target-1].pitch) * 0.001f;
 
             Vector3f target_unit = Vector3f(1.0f, 0.0f, 0.0f);
             Matrix3f tmp_target_cam_m;
             tmp_target_cam_m.from_euler(0.0f, radians(target_pitch), radians(target_yaw));
             Matrix3f tmp_cam_frame_m;
-            tmp_cam_frame_m.from_euler(radians(0.0f), gimbal_pitch, gimbal_yaw);
+            tmp_cam_frame_m.from_euler(radians(0.0f), radians(gimbal_pitch), radians(gimbal_yaw));
             Matrix3f tmp_target_frame_m = tmp_cam_frame_m*tmp_target_cam_m;
             Vector3f ef_unit = tmp_target_frame_m*target_unit;
 
@@ -276,6 +292,7 @@ void Uart::send_hangdong()
     if (AP::gps().status() >= AP_GPS::GPS_OK_FIX_3D) {
         uart_msg_hangdong_cast._msg_1.content.msg.ground_speed = (uint16_t)(AP::gps().ground_speed());
         uart_msg_hangdong_cast._msg_1.content.msg.ground_course = (uint32_t)(wrap_360(AP::gps().ground_course()) * 10000.f);
+        uart_msg_hangdong_cast._msg_1.content.msg.current_loc.quadrant = 0;
         if (plane.current_loc.lat > 0) {
             uart_msg_hangdong_cast._msg_1.content.msg.current_loc.lat = plane.current_loc.lat/10;
             uart_msg_hangdong_cast._msg_1.content.msg.current_loc.quadrant |= 0x01;
