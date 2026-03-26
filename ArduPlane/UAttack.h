@@ -77,6 +77,8 @@ public:
     float _attack_angle_rate_target;
     float _attack_angle_rate_measure;
 
+    float _delta_course;
+
     UDelay udelay;
 
 private:
