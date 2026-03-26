@@ -103,10 +103,10 @@ void UAttack::update_log() {
                                 (float)_target_yaw_rate);
 
     AP::logger().WriteStreaming("UAT2",
-                                "TimeUS,type, angt,angm,agrt,agrm,vbfx,vbfy,bfex,bfey",
-                                "s---------",
-                                "F---------",
-                                "Qfffffffff",
+                                "TimeUS,type, angt,angm,agrt,agrm,vbfx,vbfy,bfex,bfey,dc",
+                                "s----------",
+                                "F----------",
+                                "Qffffffffff",
                                 AP_HAL::micros64(),
                                 (float)current_idx,
                                 (float)_attack_angle_target,
@@ -116,7 +116,8 @@ void UAttack::update_log() {
                                 (float)vel_bf_info.x,
                                 (float)vel_bf_info.y,
                                 (float)bfe_info.x,
-                                (float)bfe_info.y);
+                                (float)bfe_info.y,
+                                (float)_delta_course);
 
     AP::logger().WriteStreaming("UAPH",
                                 "TimeUS,target,actual,ff,P,I,D,srate,dmod",
@@ -313,6 +314,12 @@ void UAttack::update_vel_bf_info()
     } else {
         vel_bf_info.zero();
     }
+
+    if (plane.position_ok()) {
+        _delta_course = wrap_180(AP::gps().ground_course() - degrees(AP::ahrs().get_yaw()));
+    } else {
+        _delta_course = 0.0f;
+    }
 }
 
 void UAttack::handle_info(float p1, float p2) {
@@ -453,7 +460,7 @@ void UAttack::update_target_roll_angle() {
     // _target_roll_angle = constrain_float(attack_roll_factor.get() * ef_rate_info.x, -15.f, 15.f);
     
     float k2_roll = attack_k2_roll.get();
-    float angle_err = constrain_float(bfe_info.x, -30.0f, 30.0f);
+    float angle_err = constrain_float(bfe_info.x - _delta_course, -30.0f, 30.0f);
 
     float dt = (millis() - _last_ms);
     dt = dt * 0.001f;
@@ -466,7 +473,7 @@ void UAttack::update_target_yaw_rate() {
     float k1_yaw = attack_k1_yaw.get();
     float k2_yaw = attack_k2_yaw.get();
     // float boost_factor = constrain_float(fabsf(bf_info.x)/15.0f, 0.0f, 1.0f) * 2.0f;
-    float angle_err = constrain_float(bf_info.x, -30.0f, 30.0f);
+    float angle_err = constrain_float(bf_info.x - _delta_course, -30.0f, 30.0f);
     _target_yaw_rate = k1_yaw * ef_rate_info.x + k2_yaw * angle_err;
 
     if (plane.position_ok()) {
@@ -504,7 +511,7 @@ void UAttack::do_print()
         gcs().send_text(MAV_SEVERITY_WARNING, "ef_rate (%0.2f, %0.2f) on:%d", get_ef_rate_info().x,get_ef_rate_info().y, is_active());
     }
     if (print.get() & (1<<3)) { // 8
-        gcs().send_text(MAV_SEVERITY_WARNING, "bfe_angle (%0.2f, %0.2f) on:%d", get_bfe_info().x,get_bfe_info().y, is_active());
+        gcs().send_text(MAV_SEVERITY_WARNING, "bfe_angle (%0.2f, %0.2f, %0.2f) on:%d", get_bfe_info().x,get_bfe_info().y, _delta_course, is_active());
     }
     if (print.get() & (1<<4)) { // 16
         gcs().send_text(MAV_SEVERITY_WARNING, "ar (%0.1f, %0.1f, %0.2f, %0.2f)", _attack_angle_target, _attack_angle_measure, _attack_angle_rate_target, _attack_angle_rate_measure);
