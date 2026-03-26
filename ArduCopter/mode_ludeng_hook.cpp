@@ -171,7 +171,7 @@ void ModeLudeng_hook::update_stage()
         case Stage::APPROACH:
             {
                 copter.ua8.set_gimbal_front();
-                if (copter.ua8.get_front_vel_xy() < 0.1f) {
+                if (copter.ua8.get_front_vel_xy().length() < 0.1f) {
                     set_stage(Stage::STANDBY);
                 }
             }

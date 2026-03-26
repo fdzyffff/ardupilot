@@ -178,7 +178,7 @@
 #include "Parameters.h"
 #include "mode.h"
 
-#include "UK230.h"
+#include "UA8.h"
 
 class Copter : public AP_Vehicle {
 public:
@@ -229,14 +229,13 @@ public:
     friend class ModeZigZag;
     friend class ModeAutorotate;
     friend class ModeTurtle;
-    friend class ModeLudeng_manual;
     friend class ModeLudeng_hook;
     friend class ModeLudeng_unhook;
 
     friend class _AutoTakeoff;
 
     friend class PayloadPlace;
-    friend class UK230;
+    friend class UA8;
 
     Copter(void);
 
@@ -1060,7 +1059,6 @@ private:
 #if MODE_TURTLE_ENABLED == ENABLED
     ModeTurtle mode_turtle;
 #endif
-    ModeLudeng_manual mode_ludeng_manual;
     ModeLudeng_hook mode_ludeng_hook;
     ModeLudeng_unhook mode_ludeng_unhook;
 
@@ -1068,7 +1066,7 @@ private:
     Mode *mode_from_mode_num(const Mode::Number mode);
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);
 
-    UK230 uk230;
+    UA8 ua8;
 public:
     void failsafe_check();      // failsafe.cpp
 };

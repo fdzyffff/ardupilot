@@ -2051,8 +2051,9 @@ public:
         UP = 0,
         UNLOCK = 1,
         DOWN = 2,
-        AWAY = 3,
-        LAND = 4,
+        WAIT = 3,
+        AWAY = 4,
+        LAND = 5,
     };
 
     void unhook_run();

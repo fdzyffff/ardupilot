@@ -2,40 +2,38 @@
 
 #include <FD1_UART/FD1_UART.h>
 
-class UK230 {
+class UA8 {
 
 public:
 
     // constructor, destructor
-    UK230();
+    UA8();
 
     // initialise
     void init();
 
-    bool is_valid() const { return _valid; }
-    bool new_data() {return display_info.new_data;}
-
     void read_uart();
     float cal_frame_angle(float pixel, float angle, float x_in);
-    void handle_info(float p1, float p2, float p3);
+    void handle_front_info(float p1, float p2, float p3, float dist);
+    void handle_up_info(float p1, float p2, float p3, float dist);
 
-    void update_front_pitch_rate();
-    void update_front_roll_rate();
+    void update_front_vel();
     void update_front_yaw_rate();
     void update_up_yaw_rate();
     void update_up_bf_vel_x_ms();
     void update_up_bf_vel_y_ms();
 
-    float set_gimbal_up();
-    float set_gimbal_front();
-    float have_target_up();
-    float have_target_front();
-    float get_front_yaw_rate() {return _front_pitch_rate;}
-    float get_front_vel_x() {return _front_pitch_rate;}
-    float get_front_vel_y() {return _front_pitch_rate;}
-    float get_up_yaw_rate() {return _up_yaw_rate;}
-    float get_up_bf_vel_x() {return _front_pitch_rate;}
-    float get_up_bf_vel_y() {return _front_pitch_rate;}
+    void set_gimbal_front();
+    void set_gimbal_up();
+    bool have_target_front();
+    bool have_target_up();
+    float get_front_yaw_rate() {return front_status.yaw_rate;}
+    float get_front_vel_x() {return front_status.vel.x;}
+    float get_front_vel_y() {return front_status.vel.y;}
+    float get_up_yaw_rate() {return up_status.yaw_rate;}
+    float get_up_bf_vel_x() {return up_status.bf_vel.x;}
+    float get_up_bf_vel_y() {return up_status.bf_vel.y;}
+    Vector2f& get_front_vel_xy() {return front_status.vel;}
 
     void update();
     void update_valid();
@@ -51,8 +49,6 @@ public:
         float p21;
         float p22;
         float p23;
-        uint16_t count;
-        bool new_data;
     } display_info;
 
     FD1_UART FD1_uart_RK3588{AP_SerialManager::SerialProtocol_RK3588};
@@ -69,15 +65,25 @@ private:
 
     Vector3f bf_info;
     Vector3f efb_info;
-    float _target_pitch_rate;
-    float _target_roll_rate;
-    float _target_yaw_rate;
-    float _target_dist_cm;
-    float _target_bf_vel_x;
-    float _target_bf_vel_y;
-    uint32_t _last_ms;
-    bool _valid;
-
-    LowPassFilterVector3f efb_info_filt;
+    struct {
+        float dist_cm;
+        Vector3f bf_info;
+        float yaw_rate;
+        Vector2f vel;
+        uint32_t last_ms;
+        bool valid;
+        uint16_t count;
+    } front_status;
+    struct {
+        float dist_cm;
+        Vector3f bf_info;
+        Vector3f efb_info;
+        LowPassFilterVector3f efb_info_filt;
+        float yaw_rate;
+        Vector2f bf_vel;
+        uint32_t last_ms;
+        bool valid;
+        uint16_t count;
+    } up_status;
 
 };
