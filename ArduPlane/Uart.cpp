@@ -261,7 +261,7 @@ void Uart::send_hangdong()
     // check send condition
     static uint32_t last_ms = millis();
     uint32_t now = millis();
-    if (now - last_ms < 50) {
+    if (now - last_ms < 20) {
         return;
     }
     last_ms = now;
@@ -349,7 +349,7 @@ void Uart::do_print()
         gcs().send_text(MAV_SEVERITY_WARNING, "HK status [%d] %d, %0.0f, %0.0f", status.count_huokong, uart_msg_huokong_cast._msg_1.content.msg.status_1, uart_msg_huokong_cast.get_angle(uart_msg_huokong_cast._msg_1.content.msg.aim_yaw), uart_msg_huokong_cast.get_angle(uart_msg_huokong_cast._msg_1.content.msg.aim_pitch));
     }
     if (plane.g2.uart_print.get() & (1<<1)) { // 2
-        gcs().send_text(MAV_SEVERITY_WARNING, "DC status [%d] %d, %0.0f, %0.0f", status.count_diaocang, uart_msg_diaocang_cast._msg_1.content.msg.status_1, uart_msg_diaocang_cast.get_angle(uart_msg_diaocang_cast._msg_1.content.msg.gimbal_yaw), uart_msg_diaocang_cast.get_angle(uart_msg_diaocang_cast._msg_1.content.msg.gimbal_pitch));
+        gcs().send_text(MAV_SEVERITY_WARNING, "DC status [%d] %d, %0.0f, %0.0f, %d", status.count_diaocang, uart_msg_diaocang_cast._msg_1.content.msg.status_1, uart_msg_diaocang_cast.get_angle(uart_msg_diaocang_cast._msg_1.content.msg.gimbal_yaw), uart_msg_diaocang_cast.get_angle(uart_msg_diaocang_cast._msg_1.content.msg.gimbal_pitch), uart_msg_diaocang_cast._msg_1.content.msg.target_dist);
     }
     if (plane.g2.uart_print.get() & (1<<2)) { // 4
         gcs().send_text(MAV_SEVERITY_WARNING, "SH status [%d] %d, %0.0f, %0.0f", status.count_shuangmu, uart_msg_shuangmu_cast._msg_1.content.msg.status_1, (float)(uart_msg_shuangmu_cast._msg_1.content.msg.target.yaw)*0.001f, (float)(uart_msg_shuangmu_cast._msg_1.content.msg.target.pitch)*0.001f);
