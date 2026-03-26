@@ -1,6 +1,6 @@
 #include "FD1_message.h"
 
-#define FD1_MSG_RK3588_LEN 23
+#define FD1_MSG_RK3588_LEN 27
 class FD1_msg_RK3588 : public FD1_message{
 public:
     struct PACKED FD1_msg_header {
@@ -16,6 +16,7 @@ public:
         float     tag_y;
         float     tag_heading;
         float     tag_d;
+        uint32_t  tag_id;
         uint8_t   end;
     };
 

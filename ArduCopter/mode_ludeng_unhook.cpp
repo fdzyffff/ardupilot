@@ -61,8 +61,8 @@ void ModeLudeng_unhook::unhook_run()
 
     float target_yaw_rate = 0.0f;
     float target_climb_rate = 0.0f;
-    float target_roll = 0.0f;
-    float target_pitch = 0.0f;
+    // float target_roll = 0.0f;
+    // float target_pitch = 0.0f;
 
     bool use_posctrl = true;
     static bool old_use_posctrl = true;

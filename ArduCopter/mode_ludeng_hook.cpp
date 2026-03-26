@@ -73,7 +73,7 @@ void ModeLudeng_hook::hook_run()
         {
             _vel_target_cms.zero();
             set_approach_vel();
-            target_climb_rate = get_front_vel_up();
+            target_climb_rate = copter.ua8.get_front_vel_z();
             target_yaw_rate = copter.ua8.get_front_yaw_rate()*100.0f;
             break;
         }
@@ -81,7 +81,7 @@ void ModeLudeng_hook::hook_run()
         {
             _vel_target_cms.zero();
             target_yaw_rate = 0.0f;
-            target_climb_rate = get_surface_vel(60.f);
+            target_climb_rate = 0.0f;//get_surface_vel();
             break;
         }
         case Stage::AIM:
@@ -231,7 +231,7 @@ void ModeLudeng_hook::set_approach_vel()
 void ModeLudeng_hook::set_hook_vel()
 {
     Matrix3f tmp_body_m;
-    Vector3f tmp_vel_input = Vector3f(copter.ua8.get_up_bf_vel_x() * 100.f copter.ua8.get_up_bf_vel_y()*100.f, 0.0f);
+    Vector3f tmp_vel_input = Vector3f(copter.ua8.get_up_bf_vel_x() * 100.f, copter.ua8.get_up_bf_vel_y()*100.f, 0.0f);
     tmp_body_m.from_euler(0.0f, 0.0f, copter.ahrs_view->yaw);
     _vel_target_cms = tmp_body_m*tmp_vel_input;
 }
@@ -271,6 +271,24 @@ bool ModeLudeng_hook::check_done()
     return ret;
 }
 
+float ModeLudeng_hook::get_surface_vel()
+{
+    bool rngfnd_ok = (!copter.rangefinder_alt_ok() || (copter.rangefinder_alt_ok() && copter.rangefinder_state.alt_cm_filt.get() > 20.f));
+    if (!rngfnd_ok) {
+        return 0.0f;
+    }
+    float current_rng_alt = copter.rangefinder_state.alt_cm_filt.get();
+    float K_P = copter.pos_control->get_pos_z_p().kP();
+    float accel_cmss = copter.pos_control->get_max_accel_z_cmss();
+    float rate_min = -50.f;
+    float alt_min = 120.f;
+    if (is_zero(K_P)) {
+        rate_min = MAX(rate_min, safe_sqrt(2.0f * (alt_min - current_rng_alt) * accel_cmss));
+    } else {
+        rate_min = MAX(rate_min, sqrt_controller((alt_min - current_rng_alt), K_P, accel_cmss, copter.G_Dt));
+    }
+    return rate_min;
+}
 
 void ModeLudeng_hook::set_stage(Stage stage_in) {
     _stage = stage_in;
@@ -284,9 +302,6 @@ void ModeLudeng_hook::set_stage(Stage stage_in) {
             break;
         case Stage::APPROACH:
             gcs().send_text(MAV_SEVERITY_INFO, "Hook APPROACH");
-            break;
-        case Stage::STANDBY:
-            gcs().send_text(MAV_SEVERITY_INFO, "Hook STANDBY");
             break;
         case Stage::AIM:
             gcs().send_text(MAV_SEVERITY_INFO, "Hook AIM");

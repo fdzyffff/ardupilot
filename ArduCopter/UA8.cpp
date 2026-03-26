@@ -22,9 +22,9 @@ UA8::UA8()
 // initialise
 void UA8::init()
 {
-    _last_ms = 0;
-    _valid = false;
-    // _filter_target_cm.set_cutoff_frequency(30.0f, 20.f);
+    FD1_uart_RK3588.init();
+    FD1_uart_SIYIA8.init();
+
     display_info.p1 = 0.0f;
     display_info.p2 = 0.0f;
     display_info.p3 = 0.0f;
@@ -32,17 +32,23 @@ void UA8::init()
     display_info.p11 = 0.0f;
     display_info.p12 = 0.0f;
     display_info.p13 = 0.0f;
+    display_info.p14 = 0.0f;
     display_info.p21 = 0.0f;
     display_info.p22 = 0.0f;
     display_info.p23 = 0.0f;
-    display_info.count = 0;
-    display_info.new_data = false;
-    _target_pitch_rate = 0.0f;
-    _target_roll_rate = 0.0f;
-    _target_yaw_rate = 0.0f;
-    FD1_uart_RK3588.init();
-    uart_msg_SIYIA8mini.init();
-    efb_info_filt.set_cutoff_frequency(20.f, copter.g2.user_parameters.filt_hz.get());
+
+    front_status.dist_cm = 0.0f;
+    front_status.bf_info.zero();
+    front_status.yaw_rate = 0.0f;
+    front_status.vel.zero();
+    front_status.count = 0;
+    up_status.dist_cm = 0.0f;
+    up_status.bf_info.zero();
+    up_status.efb_info.zero();
+    up_status.efb_info_filt.set_cutoff_frequency(20.f, copter.g2.user_parameters.filt_hz.get());
+    up_status.yaw_rate = 0.0f;
+    up_status.bf_vel.zero();
+    up_status.count = 0;
     // gcs().send_text(MAV_SEVERITY_INFO, "FD1_uart_RK3588.init()");
 }
 
@@ -57,14 +63,12 @@ void UA8::read_uart()
         if (uart_msg_SIYIA8mini._msg_1.updated) {
             handle_SIYIA8mini();
         }
+    }
 }
 
 void UA8::handle_RK3588()
 {
-    display_info.new_data = true;
-
     if (uart_msg_RK3588._msg_1.content.msg.tag_ok) {
-        _last_ms = millis();
         float p1 =  cal_frame_angle(copter.g2.user_parameters.cam_width.get(), copter.g2.user_parameters.cam_angle_x.get(), uart_msg_RK3588._msg_1.content.msg.tag_x); // x-axis, degree
         float p2 = -cal_frame_angle(copter.g2.user_parameters.cam_height.get(), copter.g2.user_parameters.cam_angle_y.get(), uart_msg_RK3588._msg_1.content.msg.tag_y); // y-axis, degree
         float p3 = uart_msg_RK3588._msg_1.content.msg.tag_heading;
@@ -177,11 +181,11 @@ void UA8::handle_up_info(float p1, float p2, float p3, float dist) {
     tmp_efb.x = degrees(tmp_efb.x);
     tmp_efb.y = degrees(tmp_efb.y);
     tmp_efb.z = up_status.bf_info.z;
-    up_status.efb_up_info_filt.apply(tmp_efb);
-    up_status.efb_up_info = up_status.efb_up_info_filt.get();
+    up_status.efb_info_filt.apply(tmp_efb);
+    up_status.efb_info = up_status.efb_info_filt.get();
     // efb_info = tmp_body_m*up_status.bf_info;
-    update_target_bf_vel_x_ms();
-    update_target_bf_vel_y_ms();
+    update_up_bf_vel_x_ms();
+    update_up_bf_vel_y_ms();
     // display_info.p31 = get_target_vel_x_ms();
     // display_info.p32 = get_target_vel_y_ms();
 }
@@ -237,11 +241,14 @@ void UA8::update_valid()
 // m/s
 void UA8::update_front_vel()
 {
-    front_status.vel_x = front_status.dist_cm * 1.0f;
+    front_status.vel.x = front_status.dist_cm * 1.0f * 0.01f;
+
+    float angle_comp = constrain_float(front_status.bf_info.y, 30.0f, 30.0f);
+    front_status.vel.z = sinf(radians(angle_comp)) * front_status.dist_cm * 0.01f;
 }
 
 // degree/second
-void UA8::update_up_yaw_rate()
+void UA8::update_front_yaw_rate()
 {
     float k2 = copter.g2.user_parameters.attack_k2.get();
     float angle_comp = constrain_float(front_status.bf_info.x, -15.0f, 15.0f);
@@ -252,7 +259,7 @@ void UA8::update_up_yaw_rate()
 void UA8::update_up_yaw_rate()
 {
     float k2 = copter.g2.user_parameters.attack_k2.get();
-    float angle_comp = constrain_float(bf_info.z, -15.0f, 15.0f);
+    float angle_comp = constrain_float(up_status.bf_info.z, -15.0f, 15.0f);
     up_status.yaw_rate = k2 * angle_comp; // degrees/s
 }
 
@@ -261,7 +268,7 @@ void UA8::update_up_bf_vel_x_ms()
 {
     float k = copter.g2.user_parameters.attack_k.get();
     float dist_r = constrain_float(up_status.dist_cm*0.01f, 0.0f, 1.0f);
-    float dist = dist_r*tanf(radians(constrain_float(-up_status.efb_up_info.y, -15.0f, 15.0f)));
+    float dist = dist_r*tanf(radians(constrain_float(-up_status.efb_info.y, -15.0f, 15.0f)));
     // float dist = dist_r*tanf(radians(constrain_float(-bf_info.y, -15.0f, 15.0f)));
     up_status.bf_vel.x = k * dist; // degrees/s
 }
@@ -271,25 +278,25 @@ void UA8::update_up_bf_vel_y_ms()
 {
     float k = copter.g2.user_parameters.attack_k.get();
     float dist_r = constrain_float(up_status.dist_cm*0.01f, 0.0f, 1.0f);
-    float dist = dist_r*tanf(radians(constrain_float(up_status.efb_up_info.x, -15.0f, 15.0f)));
+    float dist = dist_r*tanf(radians(constrain_float(up_status.efb_info.x, -15.0f, 15.0f)));
     // float dist = dist_r*tanf(radians(constrain_float(bf_info.x, -15.0f, 15.0f)));
     up_status.bf_vel.y = k * dist; // degrees/s
 }
 
 void UA8::set_gimbal_front()
 {
-    if (uart_msg_RK3588.get_port() == nullptr) {
+    if (FD1_uart_RK3588.get_port() == nullptr) {
         return;
     }
-    uart_msg_RK3588.get_port()->write(0xFF);
+    FD1_uart_RK3588.get_port()->write(0xFF);
 }
 
 void UA8::set_gimbal_up()
 {
-    if (uart_msg_RK3588.get_port() == nullptr) {
+    if (FD1_uart_RK3588.get_port() == nullptr) {
         return;
     }
-    uart_msg_RK3588.get_port()->write(0xFF);
+    FD1_uart_RK3588.get_port()->write(0xFF);
 }
 
 bool UA8::have_target_front()

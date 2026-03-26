@@ -13,6 +13,8 @@ public:
     void init();
 
     void read_uart();
+    void handle_RK3588();
+    void handle_SIYIA8mini();
     float cal_frame_angle(float pixel, float angle, float x_in);
     void handle_front_info(float p1, float p2, float p3, float dist);
     void handle_up_info(float p1, float p2, float p3, float dist);
@@ -30,13 +32,16 @@ public:
     float get_front_yaw_rate() {return front_status.yaw_rate;}
     float get_front_vel_x() {return front_status.vel.x;}
     float get_front_vel_y() {return front_status.vel.y;}
+    float get_front_vel_z() {return front_status.vel.z;}
     float get_up_yaw_rate() {return up_status.yaw_rate;}
     float get_up_bf_vel_x() {return up_status.bf_vel.x;}
     float get_up_bf_vel_y() {return up_status.bf_vel.y;}
-    Vector2f& get_front_vel_xy() {return front_status.vel;}
+    Vector2f& get_front_vel_xy() {return front_status.vel.xy();}
 
     void update();
     void update_valid();
+
+    void do_print();
 
     struct {
         float p1;
@@ -46,6 +51,7 @@ public:
         float p11;
         float p12;
         float p13;
+        float p14;
         float p21;
         float p22;
         float p23;
@@ -69,7 +75,7 @@ private:
         float dist_cm;
         Vector3f bf_info;
         float yaw_rate;
-        Vector2f vel;
+        Vector3f vel;
         uint32_t last_ms;
         bool valid;
         uint16_t count;

@@ -1996,7 +1996,6 @@ public:
     bool is_autopilot() const override { return false; }
     bool has_user_takeoff(bool must_navigate) const override { return false; }
     bool allows_autotune() const override { return false; }
-    bool is_taking_off() const override;
     enum class Stage {
         STANDBY = 0,
         SEARCH = 1,
@@ -2014,7 +2013,9 @@ public:
     bool check_done();
     void set_stage(Stage stage_in);
     void update_stage();
-    void set_is_from_unhook();
+    float get_surface_vel();
+    void set_approach_vel();
+    void set_hook_vel();
 
     Stage _stage;
     uint32_t _stage_time;
@@ -2025,7 +2026,6 @@ protected:
 
     Vector3f _vel_target_cms;
     Vector3f _accel_target_cmss;
-    bool _is_from_unhook;
     Location unhook_loc;
 };
 
