@@ -20,7 +20,7 @@ UK230::UK230()
 }
 
 // initialise
-void UK230::init()
+void UA8::init()
 {
     _last_ms = 0;
     _valid = false;
@@ -40,48 +40,56 @@ void UK230::init()
     _target_pitch_rate = 0.0f;
     _target_roll_rate = 0.0f;
     _target_yaw_rate = 0.0f;
-    FD1_uart_K230.init();
-    FD1_uart_K230.get_msg_K230().set_enable();
+    FD1_uart_RK3588.init();
     efb_info_filt.set_cutoff_frequency(20.f, copter.g2.user_parameters.filt_hz.get());
-    // gcs().send_text(MAV_SEVERITY_INFO, "FD1_uart_K230.init()");
+    // gcs().send_text(MAV_SEVERITY_INFO, "FD1_uart_RK3588.init()");
 }
 
-void UK230::read_uart_a8()
+void UA8::read_uart()
 {
-    ;
-}
-
-void UK230::read_uart_3588()
-{
-    FD1_uart_K230.read();
-    FD1_msg_K230 &tmp_msg = FD1_uart_K230.get_msg_K230();
-    if (tmp_msg._msg_1.updated) {
-        display_info.new_data = true;
-
-        if (tmp_msg._msg_1.content.msg.tag_ok) {
-            _last_ms = millis();
-            float p1 =  cal_frame_angle(copter.g2.user_parameters.cam_width.get(), copter.g2.user_parameters.cam_angle_x.get(), tmp_msg._msg_1.content.msg.tag_x); // x-axis, degree
-            float p2 = -cal_frame_angle(copter.g2.user_parameters.cam_height.get(), copter.g2.user_parameters.cam_angle_y.get(), tmp_msg._msg_1.content.msg.tag_y); // y-axis, degree
-            float p3 = tmp_msg._msg_1.content.msg.tag_heading;
-            _target_dist_cm = tmp_msg._msg_1.content.msg.tag_d;
-
-            display_info.p1 = tmp_msg._msg_1.content.msg.tag_x;
-            display_info.p2 = tmp_msg._msg_1.content.msg.tag_y;
-            display_info.p3 = tmp_msg._msg_1.content.msg.tag_heading;
-            display_info.p4 = tmp_msg._msg_1.content.msg.tag_d;
-
-            display_info.p1 = p1;
-            display_info.p2 = p2;
-            display_info.p3 = p3;
-            display_info.p4 = _target_dist_cm;
-            handle_info(p1, p2, p3);
+    while (FD1_uart_RK3588.get_port()->available()>0) {
+        uint8_t temp = FD1_uart_RK3588.get_port()->read();
+        uart_msg_RK3588.parse(temp);
+        if (uart_msg_RK3588._msg_1.updated) {
+            handle_RK3588();
         }
-
-        tmp_msg._msg_1.updated = false;   
-    }
+        if (uart_msg_SIYIA8mini._msg_1.updated) {
+            handle_SIYIA8mini();
+        }
 }
 
-float UK230::cal_frame_angle(float pixel, float angle, float x_in)
+void UA8::handle_RK3588()
+{
+    display_info.new_data = true;
+
+    if (uart_msg_RK3588._msg_1.content.msg.tag_ok) {
+        _last_ms = millis();
+        float p1 =  cal_frame_angle(copter.g2.user_parameters.cam_width.get(), copter.g2.user_parameters.cam_angle_x.get(), uart_msg_RK3588._msg_1.content.msg.tag_x); // x-axis, degree
+        float p2 = -cal_frame_angle(copter.g2.user_parameters.cam_height.get(), copter.g2.user_parameters.cam_angle_y.get(), uart_msg_RK3588._msg_1.content.msg.tag_y); // y-axis, degree
+        float p3 = uart_msg_RK3588._msg_1.content.msg.tag_heading;
+        _target_dist_cm = uart_msg_RK3588._msg_1.content.msg.tag_d;
+
+        display_info.p1 = uart_msg_RK3588._msg_1.content.msg.tag_x;
+        display_info.p2 = uart_msg_RK3588._msg_1.content.msg.tag_y;
+        display_info.p3 = uart_msg_RK3588._msg_1.content.msg.tag_heading;
+        display_info.p4 = uart_msg_RK3588._msg_1.content.msg.tag_d;
+
+        display_info.p1 = p1;
+        display_info.p2 = p2;
+        display_info.p3 = p3;
+        display_info.p4 = _target_dist_cm;
+        handle_info(p1, p2, p3);
+    }
+
+    uart_msg_RK3588._msg_1.updated = false;   
+}
+
+void UA8::handle_SIYIA8mini()
+{
+    uart_msg_SIYIA8mini._msg_1.updated = false; 
+}
+
+float UA8::cal_frame_angle(float pixel, float angle, float x_in)
 {
     // pixel, eg: 1080
     // angle, eg: 54°
@@ -94,7 +102,7 @@ float UK230::cal_frame_angle(float pixel, float angle, float x_in)
     return degrees(ret);
 }
 
-void UK230::handle_info(float p1, float p2, float p3) {
+void UA8::handle_info(float p1, float p2, float p3) {
         // if (!_valid) {
         //     gcs().send_text(MAV_SEVERITY_INFO, "IIvalid %ld|%ld", millis(), _last_ms);
         // }
@@ -157,13 +165,13 @@ void UK230::handle_info(float p1, float p2, float p3) {
 }
 
 // update 
-void UK230::update()
+void UA8::update()
 {
     read_uart();
     update_valid();
 }
 
-void UK230::update_valid()
+void UA8::update_valid()
 {
     const uint32_t now = millis();
     uint32_t _time_out = (uint32_t)copter.g2.user_parameters.cam_time_out.get();
@@ -192,14 +200,14 @@ void UK230::update_valid()
 
 
 // degree/second
-void UK230::update_target_yaw_rate() {
+void UA8::update_target_yaw_rate() {
     float k2 = copter.g2.user_parameters.attack_k2.get();
     float angle_comp = constrain_float(bf_info.z, -15.0f, 15.0f);
     _target_yaw_rate = k2 * angle_comp; // degrees/s
 }
 
 // m/s
-void UK230::update_target_bf_vel_x_ms() {
+void UA8::update_target_bf_vel_x_ms() {
     float k = copter.g2.user_parameters.attack_k.get();
     float dist_r = constrain_float(_target_dist_cm*0.01f, 0.0f, 1.0f);
     float dist = dist_r*tanf(radians(constrain_float(-efb_info.y, -15.0f, 15.0f)));
@@ -208,7 +216,7 @@ void UK230::update_target_bf_vel_x_ms() {
 }
 
 // m/s
-void UK230::update_target_bf_vel_y_ms() {
+void UA8::update_target_bf_vel_y_ms() {
     float k = copter.g2.user_parameters.attack_k.get();
     float dist_r = constrain_float(_target_dist_cm*0.01f, 0.0f, 1.0f);
     float dist = dist_r*tanf(radians(constrain_float(efb_info.x, -15.0f, 15.0f)));

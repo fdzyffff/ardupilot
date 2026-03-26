@@ -88,7 +88,15 @@ void ModeLudeng_unhook::unhook_run()
             _vel_target_cms.zero();
             target_yaw_rate = 0.f;
             target_climb_rate = -25.0f;
-            copter.user_update_assit(target_roll, target_pitch);
+            // copter.user_update_assit(target_roll, target_pitch);
+            // target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
+            // target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
+            break;
+        case Stage::WAIT:
+            _vel_target_cms.zero();
+            target_yaw_rate = 0.f;
+            target_climb_rate = 0.0f;
+            // copter.user_update_assit(target_roll, target_pitch);
             // target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
             // target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
             break;
@@ -134,29 +142,31 @@ void ModeLudeng_unhook::unhook_run()
 
 void ModeLudeng_unhook::update_stage()
 {
-    uint32_t dt = millis() - _stage_time;
+    float dt = (float)(millis() - _stage_time) * 0.001f;
     switch (_stage) {
         case Stage::UP:
-            if ((dt > 5000 && check_touch()) || ((dt > 5000) && (motors->get_throttle() > MIN(motors->get_throttle_hover()*1.5f, motors->get_throttle_hover()+0.15f))) || (dt > 10000)) {
+            if ((dt > 5.0f && check_touch()) || ((dt > 5.0f) && (motors->get_throttle() > MIN(motors->get_throttle_hover()*1.5f, motors->get_throttle_hover()+0.15f))) || (dt > 10000)) {
                 set_stage(Stage::UNLOCK);
             }
             break;
         case Stage::UNLOCK:
-            if (dt > 5000) {
+            if (dt > 5.0f) {
                 set_stage(Stage::DOWN);
             }
             break;
         case Stage::DOWN:
             if (check_down()) {
                 set_home_to_current_alt();
-                set_stage(Stage::AWAY);
+                set_stage(Stage::WAIT);
             }
-            if (dt > 10000) {
+            if (dt > 10.0f) {
                 set_stage(Stage::UP);
             }
             break;
-        case Stage::AWAY:
-            ;
+        case Stage::WAIT:
+            if (dt > 100.0f) {
+                set_stage(Stage::LAND);
+            }
             break;
         case Stage::LAND:
             break;
@@ -216,17 +226,8 @@ void ModeLudeng_unhook::set_stage(Stage stage_in) {
         case Stage::DOWN:
             gcs().send_text(MAV_SEVERITY_INFO, "Stage DOWN");
             break;
-        case Stage::AWAY:
-            copter.mode_ludeng_hook.set_is_from_unhook();
-            copter.g2.user_parameters.hook_mission_idx.set(copter.g2.user_parameters.hook_mission_idx.get() + 1);
-            if (set_mode(Mode::Number::LDHOOK, ModeReason::AUTO_HOOK)) {
-                gcs().send_text(MAV_SEVERITY_INFO, "Stage AWAY");
-            } else {
-                // copter.mode_ludeng_hook.set_is_from_unhook();
-                copter.g2.user_parameters.hook_mission_idx.set(copter.g2.user_parameters.hook_mission_idx.get() - 1);
-                gcs().send_text(MAV_SEVERITY_INFO, "No Mission");
-                set_stage(Stage::LAND);
-            }
+        case Stage::WAIT:
+            gcs().send_text(MAV_SEVERITY_INFO, "Stage WAIT");
             break;
         case Stage::LAND:
             gcs().send_text(MAV_SEVERITY_INFO, "Stage LAND");

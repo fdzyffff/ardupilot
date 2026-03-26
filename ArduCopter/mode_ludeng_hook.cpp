@@ -24,7 +24,7 @@ bool ModeLudeng_hook::init(bool ignore_checks)
         pos_control->init_z_controller();
     }
 
-    set_stage(Stage::AUTO);
+    set_stage(Stage::STANDBY);
 
     return true;
 }
@@ -74,7 +74,7 @@ void ModeLudeng_hook::hook_run()
             _vel_target_cms.zero();
             set_approach_vel();
             target_climb_rate = get_front_vel_up();
-            target_yaw_rate = copter.uk230.get_front_yaw_rate()*100.0f;
+            target_yaw_rate = copter.ua8.get_front_yaw_rate()*100.0f;
             break;
         }
         case Stage::STANDBY:
@@ -86,12 +86,12 @@ void ModeLudeng_hook::hook_run()
         }
         case Stage::AIM:
             target_climb_rate = 0.0f;
-            target_yaw_rate = copter.uk230.get_target_yaw_rate()*100.0f;
+            target_yaw_rate = copter.ua8.get_up_yaw_rate()*100.0f;
             set_hook_vel();
             break;
         case Stage::UP:
             target_climb_rate = 15.0f;
-            target_yaw_rate = copter.uk230.get_target_yaw_rate()*100.0f;
+            target_yaw_rate = copter.ua8.get_up_yaw_rate()*100.0f;
             set_hook_vel();
             break;
         case Stage::LOCK:
@@ -149,7 +149,7 @@ void ModeLudeng_hook::update_stage()
     float dt = (float)(millis() - _stage_time) * 0.001f;
     switch (_stage) {
         case Stage::STANDBY:
-            copter.ua8.set_angle_up();
+            copter.ua8.set_gimbal_up();
             if (copter.ua8.have_target_up()) {
                 set_stage(Stage::AIM);
             }
@@ -159,7 +159,7 @@ void ModeLudeng_hook::update_stage()
             break;
         case Stage::SEARCH:
             {
-                copter.ua8.set_angle_front();
+                copter.ua8.set_gimbal_front();
                 if (copter.ua8.have_target_front()) {
                     set_stage(Stage::STANDBY);
                 }
@@ -170,12 +170,14 @@ void ModeLudeng_hook::update_stage()
             break;
         case Stage::APPROACH:
             {
+                copter.ua8.set_gimbal_front();
                 if (copter.ua8.get_front_vel_xy() < 0.1f) {
                     set_stage(Stage::STANDBY);
                 }
             }
             break;
         case Stage::AIM:
+            copter.ua8.set_gimbal_up();
             if (!copter.ua8.have_target_up()) {
                 set_stage(Stage::STANDBY);
             }
@@ -184,6 +186,7 @@ void ModeLudeng_hook::update_stage()
             }
             break;
         case Stage::UP:
+            copter.ua8.set_gimbal_up();
             if (!copter.ua8.have_target_up()) {
                 set_stage(Stage::STANDBY);
             }
@@ -192,11 +195,13 @@ void ModeLudeng_hook::update_stage()
             }
             break;
         case Stage::LOCK:
+            copter.ua8.set_gimbal_up();
             if (dt > 2.5f) {
                 set_stage(Stage::DOWN);
             }
             break;
         case Stage::DOWN:
+            copter.ua8.set_gimbal_up();
             if (check_done()) {
                 set_stage(Stage::DONE);
             } else {
@@ -226,7 +231,7 @@ void ModeLudeng_hook::set_approach_vel()
 void ModeLudeng_hook::set_hook_vel()
 {
     Matrix3f tmp_body_m;
-    Vector3f tmp_vel_input = Vector3f(copter.ua8.get_target_bf_vel_x() * 100.f copter.ua8.get_target_bf_vel_y()*100.f, 0.0f);
+    Vector3f tmp_vel_input = Vector3f(copter.ua8.get_up_bf_vel_x() * 100.f copter.ua8.get_up_bf_vel_y()*100.f, 0.0f);
     tmp_body_m.from_euler(0.0f, 0.0f, copter.ahrs_view->yaw);
     _vel_target_cms = tmp_body_m*tmp_vel_input;
 }

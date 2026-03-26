@@ -4,7 +4,7 @@
 class FD1_message {
 public:
 
-    FD1_message() {_enable = false;}
+    FD1_message() {_enable = true;}
     
     /* Do not allow copies */
     FD1_message(const FD1_message &other) = delete;

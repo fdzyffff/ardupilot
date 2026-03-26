@@ -19,18 +19,23 @@ public:
     float cal_frame_angle(float pixel, float angle, float x_in);
     void handle_info(float p1, float p2, float p3);
 
-    void update_target_pitch_rate();
-    void update_target_roll_rate();
-    void update_target_yaw_rate();
-    void update_target_bf_vel_x_ms();
-    void update_target_bf_vel_y_ms();
+    void update_front_pitch_rate();
+    void update_front_roll_rate();
+    void update_front_yaw_rate();
+    void update_up_yaw_rate();
+    void update_up_bf_vel_x_ms();
+    void update_up_bf_vel_y_ms();
 
-    float get_target_pitch_rate() {return _target_pitch_rate;}
-    float get_target_roll_rate() {return _target_roll_rate;}
-    float get_target_yaw_rate() {return _target_yaw_rate;}
-    float get_target_dist_cm() {return _target_dist_cm;}
-    float get_target_bf_vel_x() {return _target_bf_vel_x;}
-    float get_target_bf_vel_y() {return _target_bf_vel_y;}
+    float set_gimbal_up();
+    float set_gimbal_front();
+    float have_target_up();
+    float have_target_front();
+    float get_front_yaw_rate() {return _front_pitch_rate;}
+    float get_front_vel_x() {return _front_pitch_rate;}
+    float get_front_vel_y() {return _front_pitch_rate;}
+    float get_up_yaw_rate() {return _up_yaw_rate;}
+    float get_up_bf_vel_x() {return _front_pitch_rate;}
+    float get_up_bf_vel_y() {return _front_pitch_rate;}
 
     void update();
     void update_valid();
@@ -50,7 +55,12 @@ public:
         bool new_data;
     } display_info;
 
-    FD1_UART FD1_uart_K230{AP_SerialManager::SerialProtocol_K230};
+    FD1_UART FD1_uart_RK3588{AP_SerialManager::SerialProtocol_RK3588};
+    FD1_UART FD1_uart_SIYIA8{AP_SerialManager::SerialProtocol_SIYIA8};
+
+    FD1_msg_RK3588      uart_msg_RK3588;
+    FD1_msg_SIYIA8mini  uart_msg_SIYIA8mini;
+
 private:
 
     // LowPassFilterVector3f _filter_target_cm;

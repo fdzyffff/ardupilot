@@ -4,6 +4,8 @@
 #include <AP_SerialManager/AP_SerialManager.h>
 
 #include "FD1_msg_K230.h"
+#include "FD1_msg_RK3588.h"
+#include "FD1_msg_SIYIA8mini.h"
 
 class FD1_UART {
 public:
@@ -13,7 +15,6 @@ public:
     {
         _port = NULL;
         _initialized = false;
-        init();
     }
 
     FD1_UART(AP_HAL::UARTDriver *port_in)
@@ -29,20 +30,12 @@ public:
     // init - perform required initialisation
     bool init();
     bool initialized() {return _initialized;}
-    void read();
-    void read(uint8_t temp);
-    void write();
-    void write(uint8_t temp);
 
-    uint32_t port_avaliable();
-
-    FD1_msg_K230& get_msg_K230()   { return _msg_K230; }
+    AP_HAL::UARTDriver* get_port() {return _port;}
 
 private:
 
     AP_HAL::UARTDriver *_port;                  // UART used to handle and send data
     AP_SerialManager::SerialProtocol _protocol; // protocol used - detected using SerialManager's SERIAL#_PROTOCOL parameter
     bool _initialized;
-
-    FD1_msg_K230 _msg_K230;
 };
