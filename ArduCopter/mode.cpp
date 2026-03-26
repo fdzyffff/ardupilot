@@ -184,6 +184,12 @@ Mode *Copter::mode_from_mode_num(const Mode::Number mode)
             ret = &mode_mland;
             break;
 #endif
+
+#if MODE_GUIDED_ENABLED == ENABLED
+        case Mode::Number::TAKEOFF:
+            ret = &mode_takeoff;
+            break;
+#endif
         default:
             break;
     }

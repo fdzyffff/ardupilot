@@ -198,8 +198,8 @@ void UK230::update_target_ef_vel_ms() {
 void UK230::update_log() {
     AP::logger().WriteStreaming("UCAM",
                                 "TimeUS,Ax,Ay,heading,dist,valid",
-                                "s---------",
-                                "F---------",
+                                "s-----",
+                                "F-----",
                                 "Qfffff",
                                 AP_HAL::micros64(),
                                 (float)display_info.p1,
@@ -210,9 +210,9 @@ void UK230::update_log() {
 
     AP::logger().WriteStreaming("UATK",
                                 "TimeUS,tbvx, tbvy, tevx, tevy",
-                                "s---------",
-                                "F---------",
-                                "Qfffffffff",
+                                "s----",
+                                "F----",
+                                "Qffff",
                                 AP_HAL::micros64(),
                                 (float)_target_bf_vel_x,
                                 (float)_target_bf_vel_y,

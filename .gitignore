@@ -166,3 +166,6 @@ ENV/
 env.bak/
 venv.bak/
 autotest_result_*_junit.xml
+
+/firmware
+/multi_sitl_test

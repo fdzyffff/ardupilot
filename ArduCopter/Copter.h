@@ -229,6 +229,7 @@ public:
     friend class ModeZigZag;
     friend class ModeAutorotate;
     friend class ModeTurtle;
+    friend class ModeTakeoff;
     friend class ModeMLand;
 
     friend class _AutoTakeoff;
@@ -1062,6 +1063,10 @@ private:
 #if MODE_FOLLOW_ENABLED == ENABLED
     ModeMLand mode_mland;
 #endif
+#if MODE_GUIDED_ENABLED == ENABLED
+    ModeTakeoff mode_takeoff;
+#endif
+
 
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);

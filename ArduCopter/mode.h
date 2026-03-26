@@ -95,6 +95,7 @@ public:
         AUTOROTATE =   26,  // Autonomous autorotation
         AUTO_RTL =     27,  // Auto RTL, this is not a true mode, AUTO will report as this mode if entered to perform a DO_LAND_START Landing sequence
         TURTLE =       28,  // Flip over after crash
+        TAKEOFF =      29,
         MLAND =        30,
 
         // Mode number 127 reserved for the "drone show mode" in the Skybrush
@@ -1007,6 +1008,7 @@ public:
 #if AP_EXTERNAL_CONTROL_ENABLED
     friend class AP_ExternalControl_Copter;
 #endif
+    friend class ModeTakeoff;
 
     // inherit constructor
     using Mode::Mode;
@@ -2008,3 +2010,52 @@ protected:
     uint8_t _stage;
 };
 
+#if MODE_GUIDED_ENABLED && MODE_AUTO_ENABLED
+class ModeTakeoff : public Mode {
+
+public:
+    // inherit constructor
+    using Mode::Mode;
+    Number mode_number() const override { return Number::TAKEOFF; }
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    bool requires_GPS() const override { return true; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(AP_Arming::Method method) const override { return true; }
+    bool is_autopilot() const override { return true; }
+    bool has_user_takeoff(bool must_navigate) const override { return true; }
+
+    bool requires_terrain_failsafe() const override { return true; }
+
+    bool is_taking_off() const override;
+
+    enum class Mission_State {
+        Init = 0,
+        Takeoff,
+        Wait,
+        Althold,
+    };
+
+    Mission_State get_state() {return mission_state;}
+    void althold_init();
+    void althold_run();
+
+protected:
+
+    const char *name() const override { return "TAKEOFF"; }
+    const char *name4() const override { return "TKOF"; }
+
+    uint32_t wp_distance() const override;
+    int32_t wp_bearing() const override;
+    float crosstrack_error() const override;
+    Mission_State mission_state;
+    void update_state();
+    void set_state(Mission_State state_in);
+
+    uint32_t state_ms;
+    uint32_t _last_track_ms;
+    uint32_t _last_print_ms;
+};
+#endif
