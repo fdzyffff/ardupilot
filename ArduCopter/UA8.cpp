@@ -154,50 +154,16 @@ void UA8::handle_up_info(float p1, float p2, float p3, float dist) {
     up_status.bf_info.x = p1; // yaw degree
     up_status.bf_info.y = p2; // pitch degree
 
-    up_status.dist_cm = dist;
-
-    if (p2 < -90.f) {
-        p2 = -180.0f - p2;
-    } else if (p2 > 90.0f) {
-        p2 = 180.0f - p2;
-    }
-
-    Matrix3f tmp_extra1_m;
-    tmp_extra1_m.from_euler(0.0f, radians(-90.0f), 0.0f);
-    Matrix3f tmp_target_cam_m;
-    tmp_target_cam_m.from_euler(0.0f, radians(p2), radians(p1));
-    Matrix3f tmp_cam_body_m;
-
-    Vector3f tmp_cam = Vector3f(radians(p1), radians(p2), 0.0f);
-    tmp_cam_body_m.from_euler(0.0f, 0.0f, radians(-90.0f));
-    up_status.bf_info = tmp_cam_body_m*tmp_cam;
-
-    up_status.bf_info.x = wrap_180(degrees(up_status.bf_info.x)+copter.g2.user_parameters.cam_roll_off.get());
-    up_status.bf_info.y = wrap_180(degrees(up_status.bf_info.y)+copter.g2.user_parameters.cam_pitch_off.get());
     up_status.bf_info.z = wrap_180(p3 + gimbal_status.yaw);
 
     display_info.p11 = up_status.bf_info.x;
     display_info.p12 = up_status.bf_info.y;
     display_info.p13 = up_status.bf_info.z;
 
+    up_status.dist_cm = dist;
+
     update_up_yaw_rate();
 
-    display_info.p14 = get_up_yaw_rate();
-
-    Matrix3f tmp_target_body_m;
-    tmp_target_body_m.from_euler(radians(up_status.bf_info.x), radians(up_status.bf_info.y), 0.0f);
-    Matrix3f tmp_earthb_m;
-    tmp_earthb_m.from_euler(copter.ahrs_view->roll, copter.ahrs_view->pitch, 0.0f);
-    Matrix3f tmp_efbf_m = tmp_earthb_m*tmp_target_body_m;
-
-    Vector3f tmp_efb;
-    tmp_efbf_m.to_euler(&tmp_efb.x, &tmp_efb.y, &tmp_efb.z);
-    tmp_efb.x = degrees(tmp_efb.x);
-    tmp_efb.y = degrees(tmp_efb.y);
-    tmp_efb.z = up_status.bf_info.z;
-    up_status.efb_info_filt.apply(tmp_efb);
-    up_status.efb_info = up_status.efb_info_filt.get();
-    // efb_info = tmp_body_m*up_status.bf_info;
     update_up_bf_vel_x_ms();
     update_up_bf_vel_y_ms();
     // display_info.p31 = get_target_vel_x_ms();
@@ -311,7 +277,7 @@ void UA8::update_up_bf_vel_x_ms()
 {
     float k = copter.g2.user_parameters.attack_k.get();
     float dist_r = constrain_float(up_status.dist_cm*0.01f, 0.0f, 1.0f);
-    float dist = dist_r*tanf(radians(constrain_float(-up_status.efb_info.y, -15.0f, 15.0f)));
+    float dist = dist_r*tanf(radians(constrain_float(-up_status.bf_info.y, -15.0f, 15.0f)));
     // float dist = dist_r*tanf(radians(constrain_float(-bf_info.y, -15.0f, 15.0f)));
     up_status.bf_vel.x = k * dist; // degrees/s
 }
@@ -321,7 +287,7 @@ void UA8::update_up_bf_vel_y_ms()
 {
     float k = copter.g2.user_parameters.attack_k.get();
     float dist_r = constrain_float(up_status.dist_cm*0.01f, 0.0f, 1.0f);
-    float dist = dist_r*tanf(radians(constrain_float(up_status.efb_info.x, -15.0f, 15.0f)));
+    float dist = dist_r*tanf(radians(constrain_float(up_status.bf_info.x, -15.0f, 15.0f)));
     // float dist = dist_r*tanf(radians(constrain_float(bf_info.x, -15.0f, 15.0f)));
     up_status.bf_vel.y = k * dist; // degrees/s
 }
