@@ -44,6 +44,7 @@ void Copter::userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
     ua8.do_print();
+    ua8.test();
 }
 #endif
 

@@ -54,14 +54,22 @@ void UA8::init()
 
 void UA8::read_uart()
 {
-    while (FD1_uart_RK3588.get_port()->available()>0) {
-        uint8_t temp = FD1_uart_RK3588.get_port()->read();
-        uart_msg_RK3588.parse(temp);
-        if (uart_msg_RK3588._msg_1.updated) {
-            handle_RK3588();
+    if (FD1_uart_RK3588.get_port() != nullptr) {
+        while (FD1_uart_RK3588.get_port()->available()>0) {
+            uint8_t temp = FD1_uart_RK3588.get_port()->read();
+            uart_msg_RK3588.parse(temp);
+            if (uart_msg_RK3588._msg_1.updated) {
+                handle_RK3588();
+            }
         }
-        if (uart_msg_SIYIA8mini._msg_1.updated) {
-            handle_SIYIA8mini();
+    }
+    if (FD1_uart_SIYIA8.get_port() != nullptr) {
+        while (FD1_uart_SIYIA8.get_port()->available()>0) {
+            uint8_t temp = FD1_uart_SIYIA8.get_port()->read();
+            uart_msg_SIYIA8mini.parse(temp);
+            if (uart_msg_SIYIA8mini._msg_1.updated) {
+                handle_SIYIA8mini();
+            }
         }
     }
 }
@@ -96,6 +104,12 @@ void UA8::handle_RK3588()
 
 void UA8::handle_SIYIA8mini()
 {
+    if (uart_msg_SIYIA8mini._msg_1.content.msg.cmd_id == 0x0D) {
+        gimbal_status.last_ms = millis();
+        gimbal_status.yaw = (float)uart_msg_SIYIA8mini._msg_1.content.msg_0x0D.yaw * 0.1f;
+        gimbal_status.pitch = (float)uart_msg_SIYIA8mini._msg_1.content.msg_0x0D.pitch * 0.1f;
+        gimbal_status.roll = (float)uart_msg_SIYIA8mini._msg_1.content.msg_0x0D.roll * 0.1f;
+    }
     uart_msg_SIYIA8mini._msg_1.updated = false; 
 }
 
@@ -117,7 +131,7 @@ void UA8::handle_front_info(float p1, float p2, float p3, float dist) {
     front_status.last_ms = millis();
     front_status.count++;
 
-    front_status.bf_info.x = p1; // yaw degree
+    front_status.bf_info.x = p1 + gimbal_status.yaw; // yaw degree
     front_status.bf_info.y = p2; // pitch degree
     front_status.dist_cm = dist;
 
@@ -160,7 +174,7 @@ void UA8::handle_up_info(float p1, float p2, float p3, float dist) {
 
     up_status.bf_info.x = wrap_180(degrees(up_status.bf_info.x)+copter.g2.user_parameters.cam_roll_off.get());
     up_status.bf_info.y = wrap_180(degrees(up_status.bf_info.y)+copter.g2.user_parameters.cam_pitch_off.get());
-    up_status.bf_info.z = wrap_180(p3-90.f);
+    up_status.bf_info.z = wrap_180(p3 + gimbal_status.yaw);
 
     display_info.p11 = up_status.bf_info.x;
     display_info.p12 = up_status.bf_info.y;
@@ -203,16 +217,18 @@ void UA8::update_valid()
     uint32_t _time_out = (uint32_t)copter.g2.user_parameters.cam_time_out.get();
     if (_time_out != 0 && ( ((now - front_status.last_ms) > _time_out)||(front_status.last_ms == 0) ) )  {
         if (front_status.valid) {
-            gcs().send_text(MAV_SEVERITY_WARNING, "Front lost");
+            gcs().send_text(MAV_SEVERITY_INFO, "Front lost");
         }
         front_status.dist_cm = 0.0f;
         front_status.bf_info.zero();
         front_status.yaw_rate = 0.0f;
         front_status.vel.zero();
         front_status.count = 0;
+
+        front_status.valid = false;
     } else {
         if (!front_status.valid) {
-            gcs().send_text(MAV_SEVERITY_WARNING, "Front aquire");
+            gcs().send_text(MAV_SEVERITY_INFO, "Front aquire");
             //copter.set_mode(Mode::Number::GIMBALFOLLOW, ModeReason::MISSION_END);
         }
         front_status.valid = true;
@@ -220,7 +236,7 @@ void UA8::update_valid()
 
     if (_time_out != 0 && ( ((now - up_status.last_ms) > _time_out)||(up_status.last_ms == 0) ) )  {
         if (up_status.valid) {
-            gcs().send_text(MAV_SEVERITY_WARNING, "Up lost");
+            gcs().send_text(MAV_SEVERITY_INFO, "Up lost");
         }
         up_status.dist_cm = 0.0f;
         up_status.bf_info.zero();
@@ -229,12 +245,39 @@ void UA8::update_valid()
         up_status.yaw_rate = 0.0f;
         up_status.bf_vel.zero();
         up_status.count = 0;
+
+        up_status.valid = false;
     } else {
         if (!up_status.valid) {
-            gcs().send_text(MAV_SEVERITY_WARNING, "Up aquire");
+            gcs().send_text(MAV_SEVERITY_INFO, "Up aquire");
             //copter.set_mode(Mode::Number::GIMBALFOLLOW, ModeReason::MISSION_END);
         }
         up_status.valid = true;
+    }
+
+    if (_time_out != 0 && ( ((now - gimbal_status.last_ms) > _time_out)||(gimbal_status.last_ms == 0) ) )  {
+        if (gimbal_status.valid) {
+            gcs().send_text(MAV_SEVERITY_INFO, "Gimbal lost");
+        }
+        gimbal_status.zoom = 0;
+        gimbal_status.roll = 0;
+        gimbal_status.pitch = 0;
+        gimbal_status.yaw = 0;
+        gimbal_status.count = 0;
+
+        gimbal_status.valid = false;
+    } else {
+        if (!gimbal_status.valid) {
+            gcs().send_text(MAV_SEVERITY_INFO, "Gimbal aquire");
+            //copter.set_mode(Mode::Number::GIMBALFOLLOW, ModeReason::MISSION_END);
+        }
+        gimbal_status.valid = true;
+    }
+    if (gimbal_status.valid == false) {
+        if (now - gimbal_status.last_send_ms > 1000) {
+            gimbal_status.last_send_ms = now;
+            set_attitude_hz();
+        }
     }
 }
 
@@ -285,18 +328,33 @@ void UA8::update_up_bf_vel_y_ms()
 
 void UA8::set_gimbal_front()
 {
-    if (FD1_uart_RK3588.get_port() == nullptr) {
+    if (FD1_uart_SIYIA8.get_port() == nullptr) {
         return;
     }
-    FD1_uart_RK3588.get_port()->write(0xFF);
+    uart_msg_SIYIA8mini.pack_stabilize_mode();
+    FD1_uart_SIYIA8.get_port()->write(uart_msg_SIYIA8mini._msg_1.content.data, uart_msg_SIYIA8mini._msg_1.content.msg.data_length+10);
+    uart_msg_SIYIA8mini.pack_center();
+    FD1_uart_SIYIA8.get_port()->write(uart_msg_SIYIA8mini._msg_1.content.data, uart_msg_SIYIA8mini._msg_1.content.msg.data_length+10);
 }
 
 void UA8::set_gimbal_up()
 {
-    if (FD1_uart_RK3588.get_port() == nullptr) {
+    if (FD1_uart_SIYIA8.get_port() == nullptr) {
         return;
     }
-    FD1_uart_RK3588.get_port()->write(0xFF);
+    uart_msg_SIYIA8mini.pack_stabilize_mode();
+    FD1_uart_SIYIA8.get_port()->write(uart_msg_SIYIA8mini._msg_1.content.data, uart_msg_SIYIA8mini._msg_1.content.msg.data_length+10);
+    uart_msg_SIYIA8mini.pack_angle(0.0f, -90.f);
+    FD1_uart_SIYIA8.get_port()->write(uart_msg_SIYIA8mini._msg_1.content.data, uart_msg_SIYIA8mini._msg_1.content.msg.data_length+10);
+}
+
+void UA8::set_attitude_hz()
+{
+    if (FD1_uart_SIYIA8.get_port() == nullptr) {
+        return;
+    }
+    uart_msg_SIYIA8mini.pack_attitude_hz();
+    FD1_uart_SIYIA8.get_port()->write(uart_msg_SIYIA8mini._msg_1.content.data, uart_msg_SIYIA8mini._msg_1.content.msg.data_length+10);
 }
 
 bool UA8::have_target_front()
@@ -309,21 +367,37 @@ bool UA8::have_target_up()
     return up_status.valid;
 }
 
+void UA8::test()
+{
+    static uint32_t test_count = 0;
+    if ((test_count%5)==0 && (test_count/5)%2 == 0) {
+        set_gimbal_front();
+    }
+
+    if ((test_count%5)==0 && (test_count/5)%2 == 1) {
+        set_gimbal_up();
+    }
+
+    test_count++;
+}
 
 void UA8::do_print()
 {
-    // if ((copter.g2.user_parameters.cam_print.get() & (1<<0)) && uk230.display_info.new_data) { // 1
-    //     gcs().send_text(MAV_SEVERITY_WARNING, "[%d] %0.0f,%0.0f,%0.0f,%0.0f", uk230.display_info.count, uk230.display_info.p1, uk230.display_info.p2, uk230.display_info.p3, uk230.display_info.p4);
-    //     uk230.display_info.new_data = false;
-    //     uk230.display_info.count = 0;
+    // if ((copter.g2.user_parameters.cam_print.get() & (1<<0)) && display_info.new_data) { // 1
+    //     gcs().send_text(MAV_SEVERITY_INFO, "[%d] %0.0f,%0.0f,%0.0f,%0.0f", display_info.count, display_info.p1, display_info.p2, display_info.p3, display_info.p4);
+    //     display_info.new_data = false;
+    //     display_info.count = 0;
     // }
-    // if (g2.user_parameters.cam_print.get() & (1<<1)) { // 2
-    //     gcs().send_text(MAV_SEVERITY_WARNING, "Corr (%0.0f,%0.0f,%0.0f) on:%d", uk230.display_info.p11, uk230.display_info.p12, uk230.display_info.p13, uk230.is_valid());
+    // if (copter.g2.user_parameters.cam_print.get() & (1<<1)) { // 2
+    //     gcs().send_text(MAV_SEVERITY_INFO, "Corr (%0.0f,%0.0f,%0.0f) on:%d", display_info.p11, display_info.p12, display_info.p13, is_valid());
     // }
-    // if (g2.user_parameters.cam_print.get() & (1<<2)) { // 4
-    //     gcs().send_text(MAV_SEVERITY_WARNING, "rpy (%0.1f,%0.1f,%0.1f)", uk230.get_target_roll_rate(), uk230.get_target_pitch_rate(), uk230.get_target_yaw_rate());
+    // if (copter.g2.user_parameters.cam_print.get() & (1<<2)) { // 4
+    //     gcs().send_text(MAV_SEVERITY_INFO, "rpy (%0.1f,%0.1f,%0.1f)", get_target_roll_rate(), get_target_pitch_rate(), get_target_yaw_rate());
     // }
-    // if (g2.user_parameters.cam_print.get() & (1<<3)) { // 8
-    //     gcs().send_text(MAV_SEVERITY_WARNING, "xyd (%0.1f,%0.1f,%0.1f)", uk230.get_target_bf_vel_x(), uk230.get_target_bf_vel_y(), uk230.get_target_dist_cm());
+    // if (copter.g2.user_parameters.cam_print.get() & (1<<3)) { // 8
+    //     gcs().send_text(MAV_SEVERITY_INFO, "xyd (%0.1f,%0.1f,%0.1f)", get_target_bf_vel_x(), get_target_bf_vel_y(), get_target_dist_cm());
     // }
+    if (copter.g2.user_parameters.cam_print.get() & (1<<4)) { // 16
+        gcs().send_text(MAV_SEVERITY_INFO, "G_rpy (%0.1f,%0.1f,%0.1f)", gimbal_status.roll, gimbal_status.pitch, gimbal_status.yaw);
+    }
 }

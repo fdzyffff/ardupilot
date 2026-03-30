@@ -20,12 +20,16 @@ public:
 
     virtual void sum_check() = 0;
 
-    void swap_message_sub(uint8_t &p1, uint8_t &p2) ;
-    void swap_message_sub(uint8_t &p1, uint8_t &p2, uint8_t &p3, uint8_t &p4) ;
-    void swap_message_sub2(int16_t &bytes_in) ;
-    void swap_message_sub2(uint16_t &bytes_in) ;
-    void swap_message_sub4(int32_t &bytes_in) ;
-    void swap_message_sub4(uint32_t &bytes_in) ;
-    void swap_message_sub4(float &bytes_in) ;
+    float swap_message_float(float a1);
+    int32_t swap_message_int32_t(int32_t a1);
+    uint32_t swap_message_uint32_t(uint32_t a1);
+    int16_t swap_message_int16_t(int16_t a1);
+    uint16_t swap_message_uint16_t(uint16_t a1);
+
+    void fill_int16_t(uint8_t* data, int16_t a1);
+    void fill_uint16_t(uint8_t* data, uint16_t a1);
+    void fill_int32_t(uint8_t* data, int32_t a1);
+    void fill_uint32_t(uint8_t* data, uint32_t a1);
+    void fill_float(uint8_t* data, float a1);
     bool _enable;
 };

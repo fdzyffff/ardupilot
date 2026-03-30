@@ -27,6 +27,7 @@ public:
 
     void set_gimbal_front();
     void set_gimbal_up();
+    void set_attitude_hz();
     bool have_target_front();
     bool have_target_up();
     float get_front_yaw_rate() {return front_status.yaw_rate;}
@@ -40,6 +41,8 @@ public:
 
     void update();
     void update_valid();
+
+    void test();
 
     void do_print();
 
@@ -91,5 +94,15 @@ private:
         bool valid;
         uint16_t count;
     } up_status;
+    struct {
+        float zoom;
+        float roll;
+        float pitch;
+        float yaw;
+        uint32_t last_ms;
+        uint32_t last_send_ms;
+        bool valid;
+        uint16_t count;
+    } gimbal_status;
 
 };
