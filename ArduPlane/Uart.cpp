@@ -269,10 +269,14 @@ void Uart::send_hangdong()
     if (get_port() == nullptr) {return;}
 
     set_tims_ms(uart_msg_hangdong_cast._msg_1.content.msg.time);
-    uart_msg_hangdong_cast._msg_1.content.msg.status_1 = 0b0011111;
+    uart_msg_hangdong_cast._msg_1.content.msg.status_1 = 0b0010111;
     uart_msg_hangdong_cast._msg_1.content.msg.error_1 = 0;
-    if (AP::gps().status() >= AP_GPS::GPS_OK_FIX_3D) {
+    if (AP::gps().status() >= AP_GPS::GPS_OK_FIX_3D && AP::gps().ground_speed() > 3.f) {
         uart_msg_hangdong_cast._msg_1.content.msg.bearing = (uint32_t)(wrap_360(AP::gps().ground_course()) * 10000.f);
+    } else {
+        uart_msg_hangdong_cast._msg_1.content.msg.bearing = (int32_t)(wrap_360(degrees(AP::ahrs().get_yaw())) * 10000.f);
+        // gcs().send_text(MAV_SEVERITY_INFO, "msg.bearing %x", uart_msg_hangdong_cast._msg_1.content.msg.bearing);
+        // gcs().send_text(MAV_SEVERITY_INFO, "msg.bearing %d", int(uart_msg_hangdong_cast._msg_1.content.msg.bearing));
     }
     uart_msg_hangdong_cast._msg_1.content.msg.yaw = (int32_t)(degrees(AP::ahrs().get_yaw()) * 10000.f);
     uart_msg_hangdong_cast._msg_1.content.msg.pitch = (int32_t)(degrees(AP::ahrs().get_pitch()) * 10000.f);
@@ -281,7 +285,7 @@ void Uart::send_hangdong()
     Matrix3f tmp_body_yaw_m;
     tmp_body_yaw_m.from_euler(AP::ahrs().get_roll(), AP::ahrs().get_pitch(), 0.0f);
     Vector3f earth_rate = tmp_body_yaw_m * AP::ahrs().get_gyro();
-    uart_msg_hangdong_cast._msg_1.content.msg.yaw_rate = (int16_t)(degrees(earth_rate.z) * 100.f);
+    uart_msg_hangdong_cast._msg_1.content.msg.yaw_rate = (int16_t)(wrap_360(degrees(earth_rate.z)) * 100.f);
     uart_msg_hangdong_cast._msg_1.content.msg.pitch_rate = (int16_t)(degrees(earth_rate.y) * 100.f);
     uart_msg_hangdong_cast._msg_1.content.msg.roll_rate = (int16_t)(degrees(earth_rate.x) * 100.f);
     if (plane.airspeed.get_airspeed() > 0) {
@@ -290,6 +294,7 @@ void Uart::send_hangdong()
         uart_msg_hangdong_cast._msg_1.content.msg.airspeed = 0;
     }
     if (AP::gps().status() >= AP_GPS::GPS_OK_FIX_3D) {
+        uart_msg_hangdong_cast._msg_1.content.msg.status_1 |= 0b1000;
         uart_msg_hangdong_cast._msg_1.content.msg.ground_speed = (uint16_t)(AP::gps().ground_speed());
         uart_msg_hangdong_cast._msg_1.content.msg.ground_course = (uint32_t)(wrap_360(AP::gps().ground_course()) * 10000.f);
         uart_msg_hangdong_cast._msg_1.content.msg.current_loc.quadrant = 0;
