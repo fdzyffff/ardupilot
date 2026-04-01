@@ -15,7 +15,7 @@ public:
     void read_uart();
     void handle_RK3588();
     void handle_SIYIA8mini();
-    float cal_frame_angle(float pixel, float angle, float x_in);
+    float cal_frame_angle(float angle, float x_in);
     void handle_front_info(float p1, float p2, float p3, float dist);
     void handle_up_info(float p1, float p2, float p3, float dist);
 
@@ -30,6 +30,7 @@ public:
     void set_attitude_hz();
     bool have_target_front();
     bool have_target_up();
+    uint8_t is_valid();
     float get_front_yaw_rate() {return front_status.yaw_rate;}
     float get_front_vel_x() {return front_status.vel.x;}
     float get_front_vel_y() {return front_status.vel.y;}
@@ -58,6 +59,7 @@ public:
         float p21;
         float p22;
         float p23;
+        uint16_t count;
     } display_info;
 
     FD1_UART FD1_uart_RK3588{AP_SerialManager::SerialProtocol_RK3588};
@@ -72,8 +74,6 @@ private:
 
     // Vector3f _raw_target_cm;
 
-    Vector3f bf_info;
-    Vector3f efb_info;
     struct {
         float dist_cm;
         Vector3f bf_info;

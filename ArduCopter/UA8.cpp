@@ -77,10 +77,11 @@ void UA8::read_uart()
 void UA8::handle_RK3588()
 {
     if (uart_msg_RK3588._msg_1.content.msg.tag_ok) {
-        float p1 =  cal_frame_angle(copter.g2.user_parameters.cam_width.get(), copter.g2.user_parameters.cam_angle_x.get(), uart_msg_RK3588._msg_1.content.msg.tag_x); // x-axis, degree
-        float p2 = -cal_frame_angle(copter.g2.user_parameters.cam_height.get(), copter.g2.user_parameters.cam_angle_y.get(), uart_msg_RK3588._msg_1.content.msg.tag_y); // y-axis, degree
-        float p3 = uart_msg_RK3588._msg_1.content.msg.tag_heading;
-        float dist = uart_msg_RK3588._msg_1.content.msg.tag_d;
+        float p1 = cal_frame_angle(copter.g2.user_parameters.cam_angle_x.get(), uart_msg_RK3588._msg_1.content.msg.norm_x); // x-axis, degree
+        float p2 = cal_frame_angle(copter.g2.user_parameters.cam_angle_y.get(), uart_msg_RK3588._msg_1.content.msg.norm_y); // y-axis, degree
+        float p3 = uart_msg_RK3588._msg_1.content.msg.att_yaw;
+        Vector3f dist_vec = Vector3f(uart_msg_RK3588._msg_1.content.msg.dist_x, uart_msg_RK3588._msg_1.content.msg.dist_y, uart_msg_RK3588._msg_1.content.msg.dist_z);
+        float dist = dist_vec.length();
 
         display_info.p1 = p1;
         display_info.p2 = p2;
@@ -88,7 +89,7 @@ void UA8::handle_RK3588()
         display_info.p4 = dist;
 
         uint8_t type = 0;
-        if (uart_msg_RK3588._msg_1.content.msg.tag_id < 1000) {
+        if (uart_msg_RK3588._msg_1.content.msg.tag_id < 100) {
             type = 1;
         }
         if (type == 0) {
@@ -113,16 +114,15 @@ void UA8::handle_SIYIA8mini()
     uart_msg_SIYIA8mini._msg_1.updated = false; 
 }
 
-float UA8::cal_frame_angle(float pixel, float angle, float x_in)
+float UA8::cal_frame_angle(float angle, float x_in)
 {
     // pixel, eg: 1080
     // angle, eg: 54°
     // x_in, eg: 540
     // ret, eg: 0°
-    pixel = constrain_float(pixel, 100.0f, 8000.f);
     angle = constrain_float(radians(angle), radians(10.0f), radians(150.0f));
-    x_in = constrain_float(x_in, 0.f, pixel);
-    float ret = atanf(2.0f*(x_in-pixel*0.5f)/pixel*tanf(angle*0.5f));
+    x_in = constrain_float(x_in, -1.0f, 1.0f);
+    float ret = atanf(x_in*tanf(angle*0.5f));
     return degrees(ret);
 }
 
@@ -153,8 +153,7 @@ void UA8::handle_up_info(float p1, float p2, float p3, float dist) {
 
     up_status.bf_info.x = p1; // yaw degree
     up_status.bf_info.y = p2; // pitch degree
-
-    up_status.bf_info.z = wrap_180(p3 + gimbal_status.yaw);
+    up_status.bf_info.z = wrap_180(-p3 + gimbal_status.yaw);
 
     display_info.p11 = up_status.bf_info.x;
     display_info.p12 = up_status.bf_info.y;
@@ -333,14 +332,26 @@ bool UA8::have_target_up()
     return up_status.valid;
 }
 
+uint8_t UA8::is_valid()
+{
+    uint8_t ret = 0;
+    if (front_status.valid) {
+        ret = 1;
+    }
+    if (up_status.valid) {
+        ret = 1;
+    }
+    return ret;
+}
+
 void UA8::test()
 {
     static uint32_t test_count = 0;
-    if ((test_count%5)==0 && (test_count/5)%2 == 0) {
+    if ((test_count%30)==0 && (test_count/30)%2 == 0) {
         set_gimbal_front();
     }
 
-    if ((test_count%5)==0 && (test_count/5)%2 == 1) {
+    if ((test_count%30)==0 && (test_count/30)%2 == 1) {
         set_gimbal_up();
     }
 
@@ -349,21 +360,26 @@ void UA8::test()
 
 void UA8::do_print()
 {
-    // if ((copter.g2.user_parameters.cam_print.get() & (1<<0)) && display_info.new_data) { // 1
-    //     gcs().send_text(MAV_SEVERITY_INFO, "[%d] %0.0f,%0.0f,%0.0f,%0.0f", display_info.count, display_info.p1, display_info.p2, display_info.p3, display_info.p4);
-    //     display_info.new_data = false;
-    //     display_info.count = 0;
-    // }
-    // if (copter.g2.user_parameters.cam_print.get() & (1<<1)) { // 2
-    //     gcs().send_text(MAV_SEVERITY_INFO, "Corr (%0.0f,%0.0f,%0.0f) on:%d", display_info.p11, display_info.p12, display_info.p13, is_valid());
-    // }
+    if ((copter.g2.user_parameters.cam_print.get() & (1<<0)) && (front_status.count + up_status.count)) { // 1
+        gcs().send_text(MAV_SEVERITY_INFO, "[%d] %0.0f,%0.0f,%0.0f,%0.0f", (front_status.count + up_status.count), display_info.p1, display_info.p2, display_info.p3, display_info.p4);
+        front_status.count = 0;
+        up_status.count = 0;
+    }
+    if (copter.g2.user_parameters.cam_print.get() & (1<<1)) { // 2
+        if (have_target_front()) {
+            gcs().send_text(MAV_SEVERITY_INFO, "f_bf (%0.0f,%0.0f,%0.0f)", front_status.bf_info.x, front_status.bf_info.y, front_status.bf_info.z);
+        }
+        if (have_target_up()) {
+            gcs().send_text(MAV_SEVERITY_INFO, "u_bf (%0.0f,%0.0f,%0.0f)", up_status.bf_info.x, up_status.bf_info.y, up_status.bf_info.z);
+        }
+    }
     // if (copter.g2.user_parameters.cam_print.get() & (1<<2)) { // 4
     //     gcs().send_text(MAV_SEVERITY_INFO, "rpy (%0.1f,%0.1f,%0.1f)", get_target_roll_rate(), get_target_pitch_rate(), get_target_yaw_rate());
     // }
     // if (copter.g2.user_parameters.cam_print.get() & (1<<3)) { // 8
     //     gcs().send_text(MAV_SEVERITY_INFO, "xyd (%0.1f,%0.1f,%0.1f)", get_target_bf_vel_x(), get_target_bf_vel_y(), get_target_dist_cm());
     // }
-    if (copter.g2.user_parameters.cam_print.get() & (1<<4)) { // 16
-        gcs().send_text(MAV_SEVERITY_INFO, "G_rpy (%0.1f,%0.1f,%0.1f)", gimbal_status.roll, gimbal_status.pitch, gimbal_status.yaw);
-    }
+    // if (copter.g2.user_parameters.cam_print.get() & (1<<4)) { // 16
+    //     gcs().send_text(MAV_SEVERITY_INFO, "G_rpy (%0.1f,%0.1f,%0.1f)", gimbal_status.roll, gimbal_status.pitch, gimbal_status.yaw);
+    // }
 }

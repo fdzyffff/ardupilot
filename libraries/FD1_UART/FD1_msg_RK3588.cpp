@@ -26,7 +26,7 @@ void FD1_msg_RK3588::parse(uint8_t temp)
         case FD1UART_msg_parser::FD1UART_PREAMBLE2:
             if (temp == PREAMBLE2)
             {
-                _msg.length = _msg_1.length;
+                _msg.length = FD1_MSG_RK3588_LEN;
                 _msg.read = 2;
                 _msg.sum_check += temp;
                 _msg.msg_state = FD1UART_msg_parser::FD1UART_DATA;
@@ -68,7 +68,7 @@ void FD1_msg_RK3588::process_message(void)
 {
     int16_t i = 0;
 
-    for (i = 0; i < _msg_1.length; i ++) {
+    for (i = 0; i < _msg.length; i ++) {
         _msg_1.content.data[i] = _msg.data[i];
     }
     swap_message();

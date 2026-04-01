@@ -1,6 +1,6 @@
 #include "FD1_message.h"
 
-#define FD1_MSG_RK3588_LEN 27
+#define FD1_MSG_RK3588_LEN 40
 class FD1_msg_RK3588 : public FD1_message{
 public:
     struct PACKED FD1_msg_header {
@@ -11,12 +11,16 @@ public:
     // message structure
     struct PACKED MSG_Command_1 {
         FD1_msg_header header;
-        uint32_t  tag_ok;
-        float     tag_x;
-        float     tag_y;
-        float     tag_heading;
-        float     tag_d;
+        uint8_t   tag_ok;
         uint32_t  tag_id;
+        float     norm_x;
+        float     norm_y;
+        float     dist_x;
+        float     dist_y;
+        float     dist_z;
+        float     att_roll;
+        float     att_pitch;
+        float     att_yaw;
         uint8_t   end;
     };
 
@@ -31,7 +35,6 @@ public:
         bool print;
         bool updated;
         bool need_send;
-        const uint16_t length = FD1_MSG_RK3588_LEN;
         Content_1 content;
     };
 
@@ -46,7 +49,7 @@ public:
             FD1UART_SUM,
         } msg_state;
 
-        uint16_t length;
+        uint16_t length = FD1_MSG_RK3588_LEN;
         uint16_t read;
         uint8_t sum_check;
         uint8_t data[FD1_MSG_RK3588_LEN];
