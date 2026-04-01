@@ -81,7 +81,8 @@ void UA8::handle_RK3588()
         float p2 = cal_frame_angle(copter.g2.user_parameters.cam_angle_y.get(), uart_msg_RK3588._msg_1.content.msg.norm_y); // y-axis, degree
         float p3 = uart_msg_RK3588._msg_1.content.msg.att_yaw;
         Vector3f dist_vec = Vector3f(uart_msg_RK3588._msg_1.content.msg.dist_x, uart_msg_RK3588._msg_1.content.msg.dist_y, uart_msg_RK3588._msg_1.content.msg.dist_z);
-        float dist = dist_vec.length();
+        uint32_t tag_id = uart_msg_RK3588._msg_1.content.msg.tag_id;
+        float dist = dist_vec.length() * sclae_factor_by_id(tag_id);
 
         display_info.p1 = p1;
         display_info.p2 = p2;
@@ -89,7 +90,7 @@ void UA8::handle_RK3588()
         display_info.p4 = dist;
 
         uint8_t type = 0;
-        if (uart_msg_RK3588._msg_1.content.msg.tag_id < 100) {
+        if (tag_id < 100) {
             type = 1;
         }
         if (type == 0) {
@@ -101,6 +102,24 @@ void UA8::handle_RK3588()
     }
 
     uart_msg_RK3588._msg_1.updated = false;   
+}
+
+float UA8::sclae_factor_by_id(uint32_t id)
+{
+    float ret = 1.0f;
+    if (id<=50) {
+        ret = copter.g2.user_parameters.tag_scale_f_big.get();
+    }
+    if (51<=id && id<=100) {
+        ret = copter.g2.user_parameters.tag_scale_f_small.get();
+    }
+    if (101<=id && id<=150) {
+        ret = copter.g2.user_parameters.tag_scale_u_big.get();
+    }
+    if (151<=id && id<=200) {
+        ret = copter.g2.user_parameters.tag_scale_u_small.get();
+    }
+    return ret;
 }
 
 void UA8::handle_SIYIA8mini()

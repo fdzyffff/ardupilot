@@ -40,6 +40,7 @@ public:
     float get_up_bf_vel_y() {return up_status.bf_vel.y;}
     Vector2f& get_front_vel_xy() {return front_status.vel.xy();}
 
+    float sclae_factor_by_id(uint32_t id);
     void update();
     void update_valid();
 
