@@ -77,6 +77,8 @@ void ModeMLand::run()
         // dist_vec.z += home_alt_diff;
         // dist_vec_offs.z += home_alt_diff;
         // convert dist_vec_offs to cm in NEU
+
+        // gcs().send_text(MAV_SEVERITY_INFO, "t_alt %f, offs.x %f, offs.y %f", (float)t_alt, dist_vec_offs.x, dist_vec_offs.y);
         if (_stage == 1) {
             dist_vec_offs.z = (float)copter.g.rtl_altitude.get()*0.01f - (dist_vec_offs.z);
         } else {
