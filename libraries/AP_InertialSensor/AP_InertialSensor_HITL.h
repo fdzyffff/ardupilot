@@ -26,6 +26,8 @@ private:
     uint8_t bus_id;
     Vector3f _accel;
     Vector3f _gyro;
+    Vector3f _in_accel;
+    Vector3f _in_gyro;
     float _temperature;
     bool started;
 };

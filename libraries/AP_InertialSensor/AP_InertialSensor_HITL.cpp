@@ -18,8 +18,8 @@ void AP_InertialSensor_HITL::handle_external(const AP_ExternalAHRS::ins_data_mes
     if (!started) {
         return;
     }
-    _accel = pkt.accel;
-    _gyro = pkt.gyro;
+    _in_accel = pkt.accel;
+    _in_gyro = pkt.gyro;
     _temperature = pkt.temperature;
 }
 
@@ -27,6 +27,10 @@ void AP_InertialSensor_HITL::post_data()
 {
     while (true) {
         if (started) {
+            Vector3f rnd1 = rand_vec3f()*0.001f;
+            Vector3f rnd2 = rand_vec3f()*0.0005f;
+            _accel = _in_accel + rnd1;
+            _gyro = _in_gyro + rnd2;
             _rotate_and_correct_accel(accel_instance, _accel);
             _notify_new_accel_raw_sample(accel_instance, _accel, AP_HAL::micros64());
 
@@ -37,7 +41,7 @@ void AP_InertialSensor_HITL::post_data()
             _notify_new_gyro_raw_sample(gyro_instance, _gyro, AP_HAL::micros64());
         }
 
-        hal.scheduler->delay_microseconds(5000);
+        hal.scheduler->delay_microseconds(1000);
     }
 
 }
@@ -59,6 +63,7 @@ void AP_InertialSensor_HITL::start()
         _imu.register_accel(accel_instance, rate,
                             AP_HAL::Device::make_bus_id(AP_HAL::Device::BUS_TYPE_SITL, bus_id, 2, DEVTYPE_SITL))) {
         started = true;
+        _in_accel.z = -9.8;
     }
 
     if (!hal.scheduler->thread_create(FUNCTOR_BIND_MEMBER(&AP_InertialSensor_HITL::post_data, void), "INSH", 1024, AP_HAL::Scheduler::PRIORITY_SPI, 0)) {

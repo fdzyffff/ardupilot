@@ -146,6 +146,7 @@ void AP_ExternalAHRS_HITL::build_packet_hitl()
 void AP_ExternalAHRS_HITL::handle_sensor(mavlink_hil_sensor_t &in_packet)
 {
     last_ins_pkt = AP_HAL::millis();
+    // if (last_ins_pkt < 100000) {return;}
 
     {
         frontend.imu_data.accel = Vector3f(in_packet.xacc, in_packet.yacc, in_packet.zacc);
@@ -166,6 +167,18 @@ void AP_ExternalAHRS_HITL::handle_sensor(mavlink_hil_sensor_t &in_packet)
         frontend.baro_data.pressure_pa = in_packet.abs_pressure*100.f;
         frontend.baro_data.temperature = in_packet.temperature;
 
+        bool find_error = false;
+
+        find_error |= fabsf(frontend.imu_data.accel.x) > 200.0f
+                   || fabsf(frontend.imu_data.accel.y) > 200.0f
+                   || fabsf(frontend.imu_data.accel.z) > 200.0f;
+
+        find_error |= fabsf(frontend.imu_data.gyro.x) > 100.0f
+                   || fabsf(frontend.imu_data.gyro.y) > 100.0f
+                   || fabsf(frontend.imu_data.gyro.z) > 100.0f;
+
+        find_error |= fabsf(frontend.baro_data.pressure_pa) > 100000000.0f;
+
         {
             WITH_SEMAPHORE(state.sem);
             AP::ins().handle_external(frontend.imu_data);
@@ -177,9 +190,15 @@ void AP_ExternalAHRS_HITL::handle_sensor(mavlink_hil_sensor_t &in_packet)
             AP::baro().handle_external(frontend.baro_data);
             frontend.baro_data.instance = 2;
             AP::baro().handle_external(frontend.baro_data);
+        } 
+
+        if (find_error)
+        {
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS accel : (%f, %f, %f)", frontend.imu_data.accel.x, frontend.imu_data.accel.y, frontend.imu_data.accel.z);
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS gyro : (%f, %f, %f)", frontend.imu_data.gyro.x, frontend.imu_data.gyro.y, frontend.imu_data.gyro.z);
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS mag : (%f, %f, %f)", frontend.mag_data.field.x, frontend.mag_data.field.y, frontend.mag_data.field.z);
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS baro : (%f, %f)", frontend.baro_data.pressure_pa, frontend.baro_data.temperature);
         }
-
-
     }
 
 
@@ -189,10 +208,10 @@ void AP_ExternalAHRS_HITL::handle_sensor(mavlink_hil_sensor_t &in_packet)
         float dt = (float)(now - _last_ins_print) * 0.001f;
         _last_ins_print = AP_HAL::millis();
         if (frontend.debug_print.get()>0) {
-            // GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS accel : (%f, %f, %f)", _msg_ins._msg_1.content.msg.acc_x_mss, _msg_ins._msg_1.content.msg.acc_y_mss, _msg_ins._msg_1.content.msg.acc_z_mss);
-            // GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS gyro : (%f, %f, %f)", _msg_ins._msg_1.content.msg.rate_n_degrees, _msg_ins._msg_1.content.msg.rate_e_degrees, _msg_ins._msg_1.content.msg.rate_u_degrees);
-            // GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS ERROR1: %d ", int(_msg_ins._msg_1.content.msg.error_code>>16));
-            // GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS ERROR2: %d ", int(_msg_ins._msg_1.content.msg.error_code&0x0000ffff));
+            // GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS accel : (%f, %f, %f)", frontend.imu_data.accel.x, frontend.imu_data.accel.y, frontend.imu_data.accel.z);
+            // GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS gyro : (%f, %f, %f)", frontend.imu_data.gyro.x, frontend.imu_data.gyro.y, frontend.imu_data.gyro.z);
+            // GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS mag : (%f, %f, %f)", frontend.mag_data.field.x, frontend.mag_data.field.y, frontend.mag_data.field.z);
+            // GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS baro : (%f, %f)", frontend.baro_data.pressure_pa, frontend.baro_data.temperature);
             if (!is_zero(dt)) {
                 GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS Rate [%0.1f Hz]", ins_frame_count/dt);
             }
