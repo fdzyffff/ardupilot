@@ -78,6 +78,8 @@ void ModeAuto::exit()
 #endif  // HAL_MOUNT_ENABLED
 
     auto_RTL = false;
+
+    copter.ua8.set_gimbal_front();
 }
 
 // auto_run - runs the auto controller
@@ -160,6 +162,14 @@ void ModeAuto::run()
 
     case SubMode::NAV_ATTITUDE_TIME:
         nav_attitude_time_run();
+        break;
+
+    case SubMode::HOOK:
+        hook_run();
+        break;
+
+    case SubMode::UNHOOK:
+        unhook_run();
         break;
     }
 
@@ -761,6 +771,14 @@ bool ModeAuto::start_command(const AP_Mission::Mission_Command& cmd)
     case MAV_CMD_DO_LAND_START:
         break;
 
+    case MAV_CMD_CUSTOM_DOCK:
+        do_hook(cmd);
+        break;
+
+    case MAV_CMD_CUSTOM_LEAVE:
+        do_unhook(cmd);
+        break;
+
     default:
         // unable to use the command, allow the vehicle to try the next command
         return false;
@@ -868,7 +886,7 @@ Return true if we do not recognize the command so that we move on to the next co
 //      we double check that the flight mode is AUTO to avoid the possibility of ap-mission triggering actions while we're not in AUTO mode
 bool ModeAuto::verify_command(const AP_Mission::Mission_Command& cmd)
 {
-    if (copter.flightmode != &copter.mode_auto && copter.flightmode != &copter.mode_ludeng_hook && copter.flightmode != &copter.mode_ludeng_unhook) {
+    if (copter.flightmode != &copter.mode_auto) {
         return false;
     }
 
@@ -966,6 +984,14 @@ bool ModeAuto::verify_command(const AP_Mission::Mission_Command& cmd)
     case MAV_CMD_DO_WINCH:
     case MAV_CMD_DO_LAND_START:
         cmd_complete = true;
+        break;
+
+    case MAV_CMD_CUSTOM_DOCK:
+        cmd_complete = verify_hook();
+        break;
+
+    case MAV_CMD_CUSTOM_LEAVE:
+        cmd_complete = verify_unhook();
         break;
 
     default:
@@ -1185,6 +1211,18 @@ void ModeAuto::nav_attitude_time_run()
     pos_control->set_pos_target_z_from_climb_rate_cm(target_climb_rate_cms);
 
     pos_control->update_z_controller();
+}
+
+// maintain an hook task
+void ModeAuto::hook_run()
+{
+    copter.mode_ludeng_hook.run();
+}
+
+// maintain an unhook task
+void ModeAuto::unhook_run()
+{
+    copter.mode_ludeng_unhook.run();
 }
 
 #if AC_PAYLOAD_PLACE_ENABLED
@@ -1985,6 +2023,35 @@ void ModeAuto::do_RTL(void)
     rtl_start();
 }
 
+
+// enter hook mode on mission command
+void ModeAuto::do_hook(const AP_Mission::Mission_Command& cmd)
+{
+    // call regular rtl flight mode initialisation and ask it to ignore checks
+    if (copter.mode_ludeng_hook.init(false)) {
+        set_submode(SubMode::HOOK);
+        gcs().send_text(MAV_SEVERITY_INFO, "AUTO HOOK");
+    } else {
+        // this should never happen because RTL never fails init if argument is true
+        gcs().send_text(MAV_SEVERITY_INFO, "No hook, land");
+        set_mode(Mode::Number::LAND, ModeReason::MISSION_END);
+    }
+}
+
+// enter unhook mode on mission command
+void ModeAuto::do_unhook(const AP_Mission::Mission_Command& cmd)
+{
+    // call regular rtl flight mode initialisation and ask it to ignore checks
+    if (copter.mode_ludeng_unhook.init(false)) {
+        set_submode(SubMode::UNHOOK);
+        gcs().send_text(MAV_SEVERITY_INFO, "AUTO UNHOOK");
+    } else {
+        // this should never happen because RTL never fails init if argument is true
+        gcs().send_text(MAV_SEVERITY_INFO, "No unhook, land");
+        set_mode(Mode::Number::LAND, ModeReason::MISSION_END);
+    }
+}
+
 /********************************************************************************/
 // Verify Nav (Must) commands
 /********************************************************************************/
@@ -2258,6 +2325,16 @@ bool ModeAuto::verify_nav_script_time()
 bool ModeAuto::verify_nav_attitude_time(const AP_Mission::Mission_Command& cmd)
 {
     return ((AP_HAL::millis() - nav_attitude_time.start_ms) > (cmd.content.nav_attitude_time.time_sec * 1000));
+}
+
+bool ModeAuto::verify_hook()
+{
+    return copter.mode_ludeng_hook.finished();
+}
+
+bool ModeAuto::verify_unhook()
+{
+    return copter.mode_ludeng_unhook.finished();
 }
 
 // pause - Prevent aircraft from progressing along the track

@@ -22,6 +22,8 @@ const AP_Param::GroupInfo UserParameters::var_info[] = {
     AP_GROUPINFO("_CAM_ROFF",  12, UserParameters, cam_roll_off,           0.0f),
     AP_GROUPINFO("_CAM_POFF",  13, UserParameters, cam_pitch_off,          0.0f),
     AP_GROUPINFO("_UHK_ALT",   14, UserParameters, hook_mission_alt,       2.0f),
+    AP_GROUPINFO("_APCH_CM",   15, UserParameters, approach_cm,            200.0f),
+    AP_GROUPINFO("_TESTCAM",   16, UserParameters, test_cam,               0),
     AP_GROUPEND
 };
 

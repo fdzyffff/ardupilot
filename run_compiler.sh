@@ -8,8 +8,8 @@ echo "~~~~~~~~~~~~~~~ start ~~~~~~~~~~~~~~~"
 # mkdir firmware/APzH7
 cp build/APzH7/bin/arducopter.apj firmware/$current_datetime\_APzH7_arducopter.apj
 echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
-./waf configure --board CUAVv5-sim
+./waf configure --board Pixhawk6X
 ./waf copter
-# mkdir firmware/CUAVv5-sim
-cp build/CUAVv5-sim/bin/arducopter.apj firmware/$current_datetime\_CUAVv5-sim_arducopter.apj
+# mkdir firmware/Pixhawk6X
+cp build/Pixhawk6X/bin/arducopter.apj firmware/$current_datetime\_Pixhawk6X_arducopter.apj
 echo "~~~~~~~~~~~~~~~ done ~~~~~~~~~~~~~~~"

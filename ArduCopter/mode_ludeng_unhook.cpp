@@ -34,11 +34,12 @@ bool ModeLudeng_unhook::init(bool ignore_checks)
 void ModeLudeng_unhook::run()
 {
     update_stage();
-    if (_stage == Stage::AWAY) {
-        copter.mode_auto.run();
-    } else {
-        unhook_run();
-    }
+    unhook_run();
+}
+
+bool ModeLudeng_unhook::finished()
+{
+    return (_stage == Stage::WAIT || _stage == Stage::LAND);
 }
 
 void ModeLudeng_unhook::unhook_run() 
@@ -231,7 +232,7 @@ void ModeLudeng_unhook::set_stage(Stage stage_in) {
             break;
         case Stage::LAND:
             gcs().send_text(MAV_SEVERITY_INFO, "Stage LAND");
-            set_mode(Mode::Number::LAND, ModeReason::AUTO_HOOK);
+            set_mode(Mode::Number::LAND, ModeReason::AUTO_UNHOOK);
             break;
         default:
             gcs().send_text(MAV_SEVERITY_INFO, "Stage UNKNOWN");

@@ -179,6 +179,7 @@
 #include "mode.h"
 
 #include "UA8.h"
+#include "User_shiftaverage.h"
 
 class Copter : public AP_Vehicle {
 public:
@@ -236,6 +237,7 @@ public:
 
     friend class PayloadPlace;
     friend class UA8;
+    friend class User_shiftaverage;
 
     Copter(void);
 

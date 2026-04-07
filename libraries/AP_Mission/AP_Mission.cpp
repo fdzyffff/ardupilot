@@ -501,7 +501,9 @@ bool AP_Mission::is_nav_cmd(const Mission_Command& cmd)
     return (cmd.id <= MAV_CMD_NAV_LAST ||
             cmd.id == MAV_CMD_NAV_SET_YAW_SPEED ||
             cmd.id == MAV_CMD_NAV_SCRIPT_TIME ||
-            cmd.id == MAV_CMD_NAV_ATTITUDE_TIME);
+            cmd.id == MAV_CMD_NAV_ATTITUDE_TIME ||
+            cmd.id == MAV_CMD_CUSTOM_DOCK ||
+            cmd.id == MAV_CMD_CUSTOM_LEAVE);
 }
 
 /// get_next_nav_cmd - gets next "navigation" command found at or after start_index
@@ -1378,6 +1380,16 @@ MAV_MISSION_RESULT AP_Mission::mavlink_int_to_mission_cmd(const mavlink_mission_
         cmd.content.video_stop_capture.video_stream_id = packet.param1;
         break;
 
+    case MAV_CMD_CUSTOM_DOCK:
+        cmd.p1 = packet.param1;
+        gcs().send_text(MAV_SEVERITY_INFO, "GET DOCK CMD");
+        break;
+
+    case MAV_CMD_CUSTOM_LEAVE:
+        cmd.p1 = packet.param1;
+        gcs().send_text(MAV_SEVERITY_INFO, "GET LEAVE CMD");
+        break;
+
     default:
         // unrecognised command
         return MAV_MISSION_UNSUPPORTED;
@@ -1894,6 +1906,14 @@ bool AP_Mission::mission_cmd_to_mavlink_int(const AP_Mission::Mission_Command& c
         packet.param1 = cmd.content.video_stop_capture.video_stream_id;
         break;
 
+    case MAV_CMD_CUSTOM_DOCK:
+        packet.param1 = cmd.p1;
+        break;
+
+    case MAV_CMD_CUSTOM_LEAVE:
+        packet.param1 = cmd.p1;
+        break;
+
     default:
         // unrecognised command
         return false;
@@ -1950,6 +1970,8 @@ void AP_Mission::complete()
 
     // callback to main program's mission complete function
     _mission_complete_fn();
+
+    gcs().send_text(MAV_SEVERITY_INFO, "MIS COMPLETE k");
 }
 
 /// advance_current_nav_cmd - moves current nav command forward
@@ -2711,6 +2733,10 @@ const char *AP_Mission::Mission_Command::type() const
         return "VideoStartCapture";
     case MAV_CMD_VIDEO_STOP_CAPTURE:
         return "VideoStopCapture";
+    case MAV_CMD_CUSTOM_DOCK:
+        return "Dock";
+    case MAV_CMD_CUSTOM_LEAVE:
+        return "Leave";
     default:
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
         AP_HAL::panic("Mission command with ID %u has no string", id);

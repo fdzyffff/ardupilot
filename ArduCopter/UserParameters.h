@@ -23,4 +23,6 @@ public:
     AP_Float cam_roll_off;
     AP_Float cam_pitch_off;
     AP_Float hook_mission_alt;
+    AP_Float approach_cm;
+    AP_Int8  test_cam;
 };

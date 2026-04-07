@@ -42,14 +42,71 @@ void UA8::init()
     front_status.yaw_rate = 0.0f;
     front_status.vel.zero();
     front_status.count = 0;
+    front_status.approached = false;
     up_status.dist_cm = 0.0f;
     up_status.bf_info.zero();
-    up_status.efb_info.zero();
-    up_status.efb_info_filt.set_cutoff_frequency(20.f, copter.g2.user_parameters.filt_hz.get());
+    // up_status.efb_info.zero();
+    // up_status.efb_info_filt.set_cutoff_frequency(20.f, copter.g2.user_parameters.filt_hz.get());
     up_status.yaw_rate = 0.0f;
     up_status.bf_vel.zero();
     up_status.count = 0;
+
+    up_status.bf_wind_x_filter.init(50, 50);
+    up_status.bf_wind_y_filter.init(50, 50);
     // gcs().send_text(MAV_SEVERITY_INFO, "FD1_uart_RK3588.init()");
+}
+
+void UA8::update_log() {
+    AP::logger().WriteStreaming("UTU1",
+                                "TimeUS,bfx,bfy,bwx,bwy,dist,yawr,bfvx,bfvy,fps",
+                                "s---------",
+                                "F---------",
+                                "Qfffffffff",
+                                AP_HAL::micros64(),
+                                (float)up_status.bf_info.x,
+                                (float)up_status.bf_info.y,
+                                (float)up_status.bf_wind.x,
+                                (float)up_status.bf_wind.y,
+                                (float)up_status.dist_cm,
+                                (float)up_status.yaw_rate,
+                                (float)up_status.bf_vel.x,
+                                (float)up_status.bf_vel.y,
+                                (float)up_status.fps);
+
+    AP::logger().WriteStreaming("UTU2",
+                                "TimeUS,bwxr,bwyr",
+                                "s--",
+                                "F--",
+                                "Qff",
+                                AP_HAL::micros64(),
+                                (float)up_status.bf_wind_raw.x,
+                                (float)up_status.bf_wind_raw.y);
+
+    AP::logger().WriteStreaming("UTF1",
+                                "TimeUS,bfx,bfy,dist,yawr,bfvx,bfvy,bfvz,fps",
+                                "s--------",
+                                "F--------",
+                                "Qffffffff",
+                                AP_HAL::micros64(),
+                                (float)front_status.bf_info.x,
+                                (float)front_status.bf_info.y,
+                                (float)front_status.dist_cm,
+                                (float)front_status.yaw_rate,
+                                (float)front_status.vel.x,
+                                (float)front_status.vel.y,
+                                (float)front_status.vel.z,
+                                (float)front_status.fps);
+
+    AP::logger().WriteStreaming("UTG1",
+                                "TimeUS,roll,pitch,yaw,fps",
+                                "s----",
+                                "F----",
+                                "Qffff",
+                                AP_HAL::micros64(),
+                                (float)gimbal_status.roll,
+                                (float)gimbal_status.pitch,
+                                (float)gimbal_status.yaw,
+                                (float)gimbal_status.fps);
 }
 
 void UA8::read_uart()
@@ -60,6 +117,7 @@ void UA8::read_uart()
             uart_msg_RK3588.parse(temp);
             if (uart_msg_RK3588._msg_1.updated) {
                 handle_RK3588();
+                update_log();
             }
         }
     }
@@ -111,13 +169,13 @@ float UA8::sclae_factor_by_id(uint32_t id)
         ret = copter.g2.user_parameters.tag_scale_f_big.get();
     }
     if (51<=id && id<=100) {
-        ret = copter.g2.user_parameters.tag_scale_f_small.get();
+        ret = copter.g2.user_parameters.tag_scale_f_big.get() * copter.g2.user_parameters.tag_scale_f_small.get();
     }
     if (101<=id && id<=150) {
         ret = copter.g2.user_parameters.tag_scale_u_big.get();
     }
     if (151<=id && id<=200) {
-        ret = copter.g2.user_parameters.tag_scale_u_small.get();
+        ret = copter.g2.user_parameters.tag_scale_u_big.get() * copter.g2.user_parameters.tag_scale_u_small.get();
     }
     return ret;
 }
@@ -129,6 +187,7 @@ void UA8::handle_SIYIA8mini()
         gimbal_status.yaw = (float)uart_msg_SIYIA8mini._msg_1.content.msg_0x0D.yaw * 0.1f;
         gimbal_status.pitch = (float)uart_msg_SIYIA8mini._msg_1.content.msg_0x0D.pitch * 0.1f;
         gimbal_status.roll = (float)uart_msg_SIYIA8mini._msg_1.content.msg_0x0D.roll * 0.1f;
+        gimbal_status.count++;
     }
     uart_msg_SIYIA8mini._msg_1.updated = false; 
 }
@@ -152,10 +211,10 @@ void UA8::handle_front_info(float p1, float p2, float p3, float dist) {
 
     front_status.bf_info.x = p1 + gimbal_status.yaw; // yaw degree
     front_status.bf_info.y = p2; // pitch degree
-    front_status.dist_cm = dist;
+    front_status.dist_cm = dist * 100.f;
 
     update_front_vel();
-    update_up_yaw_rate();
+    update_front_yaw_rate();
     display_info.p11 = front_status.bf_info.x;
     display_info.p12 = front_status.bf_info.y;
     display_info.p13 = get_front_vel_xy().length();
@@ -170,18 +229,23 @@ void UA8::handle_up_info(float p1, float p2, float p3, float dist) {
     up_status.last_ms = millis();
     up_status.count++;
 
-    up_status.bf_info.x = p1; // yaw degree
-    up_status.bf_info.y = p2; // pitch degree
-    up_status.bf_info.z = wrap_180(-p3 + gimbal_status.yaw);
+    float gimbal_yaw = 90.f;
+    Vector3f tmp_gimbal_info = Vector3f(p1, p2, wrap_180(-p3 + gimbal_status.yaw + gimbal_yaw));
+    Matrix3f tmp_gimbal_m;
+    tmp_gimbal_m.from_euler(0.0f, 0.0f, radians(90.0f));// gimbal 90 rotate in yaw
+    up_status.bf_info = tmp_gimbal_m * tmp_gimbal_info;
+
+    up_status.bf_info.z = wrap_180(-p3 + gimbal_status.yaw + gimbal_yaw);
 
     display_info.p11 = up_status.bf_info.x;
     display_info.p12 = up_status.bf_info.y;
     display_info.p13 = up_status.bf_info.z;
 
-    up_status.dist_cm = dist;
+    up_status.dist_cm = dist * 100.f;
 
     update_up_yaw_rate();
 
+    update_wind_comp();
     update_up_bf_vel_x_ms();
     update_up_bf_vel_y_ms();
     // display_info.p31 = get_target_vel_x_ms();
@@ -193,6 +257,8 @@ void UA8::update()
 {
     read_uart();
     update_valid();
+    update_init();
+
 }
 
 void UA8::update_valid()
@@ -208,6 +274,7 @@ void UA8::update_valid()
         front_status.yaw_rate = 0.0f;
         front_status.vel.zero();
         front_status.count = 0;
+        front_status.approached = false;
 
         front_status.valid = false;
     } else {
@@ -224,8 +291,7 @@ void UA8::update_valid()
         }
         up_status.dist_cm = 0.0f;
         up_status.bf_info.zero();
-        up_status.efb_info.zero();
-        up_status.efb_info_filt.reset();
+        up_status.bf_wind.zero();
         up_status.yaw_rate = 0.0f;
         up_status.bf_vel.zero();
         up_status.count = 0;
@@ -265,20 +331,43 @@ void UA8::update_valid()
     }
 }
 
+void UA8::update_init()
+{
+    uint32_t now = millis();
+    if ((gimbal_status.last_init_count < 3) && (now - gimbal_status.last_init_ms > 1000)) {
+        gimbal_status.last_init_ms = now;
+        gimbal_status.last_init_count++;
+        set_attitude_hz();
+        set_gimbal_front();
+    }
+}
+
 // m/s
 void UA8::update_front_vel()
 {
-    front_status.vel.x = front_status.dist_cm * 1.0f * 0.01f;
+    float k = copter.g2.user_parameters.attack_k.get();
+    Vector3f tmp_vel = Vector3f((front_status.dist_cm - copter.g2.user_parameters.approach_cm.get()) * 0.01f * k, 0.0f, 0.0f);
+    Matrix3f tmp_gimbal_m;
+    tmp_gimbal_m.from_euler(0.0f, 0.0f, radians(90.0f));// gimbal 90 rotate in yaw
+    Vector3f bf_vel = tmp_gimbal_m * tmp_vel;
 
-    float angle_comp = constrain_float(front_status.bf_info.y, 30.0f, 30.0f);
-    front_status.vel.z = sinf(radians(angle_comp)) * front_status.dist_cm * 0.01f;
+    front_status.vel.x = constrain_float(bf_vel.x, -0.3f, 0.3f);
+    front_status.vel.y = constrain_float(bf_vel.y, -0.3f, 0.3f);
+
+    float angle_comp = constrain_float(front_status.bf_info.y, -30.0f, 30.0f);
+    front_status.vel.z = constrain_float(sinf(radians(angle_comp)) * front_status.dist_cm * 0.01f, -0.3f, 0.3f);
+
+    bool ret1 = fabsf(front_status.dist_cm - copter.g2.user_parameters.approach_cm.get()) < 30.f;
+    bool ret2 = front_status.valid;
+    front_status.approached = ret1&&ret2;
+    // gcs().send_text(MAV_SEVERITY_INFO, "(%f)front_vel_xy().length() %f|%f", k, copter.ua8.get_front_vel_xy().length(), front_status.vel.xy().length());
 }
 
 // degree/second
 void UA8::update_front_yaw_rate()
 {
     float k2 = copter.g2.user_parameters.attack_k2.get();
-    float angle_comp = constrain_float(front_status.bf_info.x, -15.0f, 15.0f);
+    float angle_comp = constrain_float(wrap_180(front_status.bf_info.x + gimbal_status.yaw), -15.0f, 15.0f);
     front_status.yaw_rate = k2 * angle_comp; // degrees/s
 }
 
@@ -295,7 +384,7 @@ void UA8::update_up_bf_vel_x_ms()
 {
     float k = copter.g2.user_parameters.attack_k.get();
     float dist_r = constrain_float(up_status.dist_cm*0.01f, 0.0f, 1.0f);
-    float dist = dist_r*tanf(radians(constrain_float(-up_status.bf_info.y, -15.0f, 15.0f)));
+    float dist = dist_r*tanf(radians(constrain_float(-(up_status.bf_info.y - up_status.bf_wind.y + copter.g2.user_parameters.cam_pitch_off), -15.0f, 15.0f)));
     // float dist = dist_r*tanf(radians(constrain_float(-bf_info.y, -15.0f, 15.0f)));
     up_status.bf_vel.x = k * dist; // degrees/s
 }
@@ -305,9 +394,28 @@ void UA8::update_up_bf_vel_y_ms()
 {
     float k = copter.g2.user_parameters.attack_k.get();
     float dist_r = constrain_float(up_status.dist_cm*0.01f, 0.0f, 1.0f);
-    float dist = dist_r*tanf(radians(constrain_float(up_status.bf_info.x, -15.0f, 15.0f)));
+    float dist = dist_r*tanf(radians(constrain_float(copter.g2.user_parameters.cam_roll_off + up_status.bf_info.x - up_status.bf_wind.x, -15.0f, 15.0f)));
     // float dist = dist_r*tanf(radians(constrain_float(bf_info.x, -15.0f, 15.0f)));
     up_status.bf_vel.y = k * dist; // degrees/s
+}
+
+void UA8::update_wind_comp()
+{
+    Matrix3f tmp_ef_m;
+    Vector3f tmp_input = Vector3f(copter.pos_control->get_vel_xy_pid().get_pid_info_x().I, copter.pos_control->get_vel_xy_pid().get_pid_info_y().I, 0.0f);
+    tmp_ef_m.from_euler(0.0f, 0.0f, copter.ahrs_view->yaw);
+    tmp_ef_m.transpose();
+    Vector3f tmp_output = tmp_ef_m*tmp_input;
+
+   //x of wind is in y direction of body cam
+    up_status.bf_wind_raw.y = -degrees(atanf(tmp_output.x*0.001f));
+    up_status.bf_wind_raw.x =  degrees(atanf(tmp_output.y*0.001f));
+
+    up_status.bf_wind_x_filter.push(up_status.bf_wind_raw.x);
+    up_status.bf_wind_y_filter.push(up_status.bf_wind_raw.y);
+
+    up_status.bf_wind.x = up_status.bf_wind_x_filter.get() * 0.5f;
+    up_status.bf_wind.y = up_status.bf_wind_y_filter.get() * 0.5f;
 }
 
 void UA8::set_gimbal_front()
@@ -365,12 +473,18 @@ uint8_t UA8::is_valid()
 
 void UA8::test()
 {
+    // gcs().send_text(MAV_SEVERITY_INFO, "vel_x_I %f", copter.pos_control->get_vel_xy_pid().get_pid_info_x().I);
+    // gcs().send_text(MAV_SEVERITY_INFO, "vel_y_I %f", copter.pos_control->get_vel_xy_pid().get_pid_info_y().I);
+
+    if (copter.g2.user_parameters.test_cam.get() == 0) {
+        return;
+    }
     static uint32_t test_count = 0;
-    if ((test_count%30)==0 && (test_count/30)%2 == 0) {
+    if ((test_count%10)==0 && (test_count/10)%2 == 0) {
         set_gimbal_front();
     }
 
-    if ((test_count%30)==0 && (test_count/30)%2 == 1) {
+    if ((test_count%10)==0 && (test_count/10)%2 == 1) {
         set_gimbal_up();
     }
 
@@ -381,24 +495,29 @@ void UA8::do_print()
 {
     if ((copter.g2.user_parameters.cam_print.get() & (1<<0)) && (front_status.count + up_status.count)) { // 1
         gcs().send_text(MAV_SEVERITY_INFO, "[%d] %0.0f,%0.0f,%0.0f,%0.0f", (front_status.count + up_status.count), display_info.p1, display_info.p2, display_info.p3, display_info.p4);
-        front_status.count = 0;
-        up_status.count = 0;
     }
     if (copter.g2.user_parameters.cam_print.get() & (1<<1)) { // 2
         if (have_target_front()) {
-            gcs().send_text(MAV_SEVERITY_INFO, "f_bf (%0.0f,%0.0f,%0.0f)", front_status.bf_info.x, front_status.bf_info.y, front_status.bf_info.z);
+            gcs().send_text(MAV_SEVERITY_INFO, "f_bf [%0.1f](%0.0f,%0.0f,%0.0f)", front_status.dist_cm, front_status.bf_info.x, front_status.bf_info.y, front_status.bf_info.z);
         }
         if (have_target_up()) {
-            gcs().send_text(MAV_SEVERITY_INFO, "u_bf (%0.0f,%0.0f,%0.0f)", up_status.bf_info.x, up_status.bf_info.y, up_status.bf_info.z);
+            gcs().send_text(MAV_SEVERITY_INFO, "u_bf [%0.1f](%0.0f,%0.0f,%0.0f)", up_status.dist_cm, up_status.bf_info.x, up_status.bf_info.y, up_status.bf_info.z);
         }
     }
-    // if (copter.g2.user_parameters.cam_print.get() & (1<<2)) { // 4
-    //     gcs().send_text(MAV_SEVERITY_INFO, "rpy (%0.1f,%0.1f,%0.1f)", get_target_roll_rate(), get_target_pitch_rate(), get_target_yaw_rate());
-    // }
+    if (copter.g2.user_parameters.cam_print.get() & (1<<2)) { // 4
+        gcs().send_text(MAV_SEVERITY_INFO, "cam [%d](%0.1f,%0.1f,%0.1f)", gimbal_status.count, gimbal_status.roll, gimbal_status.pitch, gimbal_status.yaw);
+    }
     // if (copter.g2.user_parameters.cam_print.get() & (1<<3)) { // 8
     //     gcs().send_text(MAV_SEVERITY_INFO, "xyd (%0.1f,%0.1f,%0.1f)", get_target_bf_vel_x(), get_target_bf_vel_y(), get_target_dist_cm());
     // }
     // if (copter.g2.user_parameters.cam_print.get() & (1<<4)) { // 16
     //     gcs().send_text(MAV_SEVERITY_INFO, "G_rpy (%0.1f,%0.1f,%0.1f)", gimbal_status.roll, gimbal_status.pitch, gimbal_status.yaw);
     // }
+
+    up_status.fps = up_status.count;
+    front_status.fps = front_status.count;
+    gimbal_status.fps = gimbal_status.count;
+    front_status.count = 0;
+    up_status.count = 0;
+    gimbal_status.count = 0;
 }

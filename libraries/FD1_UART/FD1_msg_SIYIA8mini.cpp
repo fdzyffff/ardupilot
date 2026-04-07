@@ -166,12 +166,12 @@ void FD1_msg_SIYIA8mini::pack_attitude_hz()
 {
     _msg_1.content.msg.header.head_1 = PREAMBLE1;
     _msg_1.content.msg.header.head_2 = PREAMBLE2;
-    _msg_1.content.msg.ctrl = 0x25;
+    _msg_1.content.msg.ctrl = 1;
     _msg_1.content.msg.data_length = 2;
     _msg_1.content.msg.seq += 1;
-    _msg_1.content.msg.cmd_id = 0x0C;
+    _msg_1.content.msg.cmd_id = 0x25;
     _msg_1.content.msg.data_region[0] = 1;
-    _msg_1.content.msg.data_region[01] = 5;
+    _msg_1.content.msg.data_region[01] = 6;
 
     sum_check();
 }

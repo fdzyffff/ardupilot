@@ -1,6 +1,7 @@
 #pragma once
 
 #include <FD1_UART/FD1_UART.h>
+#include "User_shiftaverage.h"
 
 class UA8 {
 
@@ -24,6 +25,7 @@ public:
     void update_up_yaw_rate();
     void update_up_bf_vel_x_ms();
     void update_up_bf_vel_y_ms();
+    void update_wind_comp();
 
     void set_gimbal_front();
     void set_gimbal_up();
@@ -38,11 +40,14 @@ public:
     float get_up_yaw_rate() {return up_status.yaw_rate;}
     float get_up_bf_vel_x() {return up_status.bf_vel.x;}
     float get_up_bf_vel_y() {return up_status.bf_vel.y;}
+    float get_up_dist_cm() {return up_status.dist_cm;}
     Vector2f& get_front_vel_xy() {return front_status.vel.xy();}
 
     float sclae_factor_by_id(uint32_t id);
     void update();
     void update_valid();
+    void update_init();
+    void update_log();
 
     void test();
 
@@ -83,17 +88,24 @@ private:
         uint32_t last_ms;
         bool valid;
         uint16_t count;
+        uint16_t fps;
+        bool approached;
     } front_status;
     struct {
         float dist_cm;
         Vector3f bf_info;
-        Vector3f efb_info;
-        LowPassFilterVector3f efb_info_filt;
+        Vector2f bf_wind_raw;
+        Vector2f bf_wind;
+        User_shiftaverage bf_wind_x_filter;
+        User_shiftaverage bf_wind_y_filter;
+        // Vector3f efb_info;
+        // LowPassFilterVector3f efb_info_filt;
         float yaw_rate;
         Vector2f bf_vel;
         uint32_t last_ms;
         bool valid;
         uint16_t count;
+        uint16_t fps;
     } up_status;
     struct {
         float zoom;
@@ -104,6 +116,9 @@ private:
         uint32_t last_send_ms;
         bool valid;
         uint16_t count;
+        uint32_t last_init_ms;
+        uint16_t last_init_count;
+        uint16_t fps;
     } gimbal_status;
 
 };

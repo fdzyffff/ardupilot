@@ -509,6 +509,8 @@ public:
 #endif
         NAV_SCRIPT_TIME,
         NAV_ATTITUDE_TIME,
+        HOOK,
+        UNHOOK,
     };
 
     // set submode.  returns true on success, false on failure
@@ -598,6 +600,8 @@ private:
     void loiter_run();
     void loiter_to_alt_run();
     void nav_attitude_time_run();
+    void hook_run();
+    void unhook_run();
 
     Location loc_from_cmd(const AP_Mission::Mission_Command& cmd, const Location& default_loc) const;
 
@@ -639,6 +643,8 @@ private:
     void do_nav_script_time(const AP_Mission::Mission_Command& cmd);
 #endif
     void do_nav_attitude_time(const AP_Mission::Mission_Command& cmd);
+    void do_hook(const AP_Mission::Mission_Command& cmd);
+    void do_unhook(const AP_Mission::Mission_Command& cmd);
 
     bool verify_takeoff();
     bool verify_land();
@@ -661,6 +667,8 @@ private:
     bool verify_nav_script_time();
 #endif
     bool verify_nav_attitude_time(const AP_Mission::Mission_Command& cmd);
+    bool verify_hook();
+    bool verify_unhook();
 
     // Loiter control
     uint16_t loiter_time_max;                // How long we should stay in Loiter Mode for mission scripting (time in seconds)
@@ -1989,6 +1997,7 @@ public:
 
     bool init(bool ignore_checks) override;
     void run() override;
+    void exit() override;
 
     bool requires_GPS() const override { return true; }
     bool has_manual_throttle() const override { return false; }
@@ -1998,18 +2007,23 @@ public:
     bool allows_autotune() const override { return false; }
     enum class Stage {
         STANDBY = 0,
-        SEARCH = 1,
-        APPROACH = 2,
-        AIM = 3,
-        UP = 4,
-        LOCK = 5,
-        DOWN = 6,
-        DONE = 7,
-        FAIL = 8,
+        SEARCH1 = 1,
+        SEARCH2 = 2,
+        APPROACH = 3,
+        AIM = 4,
+        UP1 = 5,
+        UP2 = 6,
+        UP3 = 7,
+        LOCK = 8,
+        DOWN = 9,
+        DONE = 10,
+        FAIL = 11,
     };
 
     void hook_run();
+    bool finished();
     bool check_touch();
+    bool check_vel_small();
     bool check_done();
     void set_stage(Stage stage_in);
     void update_stage();
@@ -2052,11 +2066,11 @@ public:
         UNLOCK = 1,
         DOWN = 2,
         WAIT = 3,
-        AWAY = 4,
-        LAND = 5,
+        LAND = 4,
     };
 
     void unhook_run();
+    bool finished();
     bool check_touch();
     bool check_down();
     void set_stage(Stage stage_in);
