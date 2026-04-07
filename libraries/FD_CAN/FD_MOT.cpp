@@ -15,8 +15,13 @@ FD_MOT::FD_MOT(FD_CAN *frotend) {
 
 void FD_MOT::handle_info(AP_HAL::CANFrame &in_frame, bool do_print) {
     bool have_rpm = false;
-    if (in_frame.id == ((0x189D271C + ((status.group - 1) * 0x10000))| AP_HAL::CANFrame::FlagEFF)) {
-        switch(status.order) {
+    uint16_t group = 0;
+    uint16_t order = 0;
+    if (!get_rpm_group(group, order)) {
+        return;
+    }
+    if (in_frame.id == ((0x189D271C + ((group - 1) * 0x10000))| AP_HAL::CANFrame::FlagEFF)) {
+        switch(order) {
         case 1:
             status.rpm = (uint16_t)in_frame.data[1] | (uint16_t)in_frame.data[0] << 8 ; // 0~2000
             have_rpm = true;
@@ -44,8 +49,8 @@ void FD_MOT::handle_info(AP_HAL::CANFrame &in_frame, bool do_print) {
     }
 
     bool have_temp = false;
-    if (in_frame.id == ((0x18A1271C + ((status.group - 1) * 0x10000))| AP_HAL::CANFrame::FlagEFF)) {
-        switch(status.order) {
+    if (in_frame.id == ((0x18A1271C + ((group - 1) * 0x10000))| AP_HAL::CANFrame::FlagEFF)) {
+        switch(order) {
         case 1:
             status.temp = (uint16_t)in_frame.data[1] | (uint16_t)in_frame.data[0] << 8 ; // 0~2000
             have_temp = true;
@@ -74,25 +79,93 @@ void FD_MOT::handle_info(AP_HAL::CANFrame &in_frame, bool do_print) {
 
 }
 
+bool FD_MOT::get_rpm_group(uint16_t &group, uint16_t &order)
+{
+    bool ret = false;
+    if ((1<=status.id) && (status.id<=4)) {
+        group = 1;
+        ret = true;
+    }
+    if ((5<=status.id) && (status.id<=8)) {
+        group = 2;
+        ret = true;
+    }
+    if ((9<=status.id) && (status.id<=12)) {
+        group = 3;
+        ret = true;
+    }
+    if ((13<=status.id) && (status.id<=16)) {
+        group = 4;
+        ret = true;
+    }
+
+    order = status.id % 4;
+    if (order == 0) {
+        order = 4;
+    }
+
+    return ret;
+}
+
+bool FD_MOT::get_temp_group(uint16_t &group, uint16_t &order)
+{
+    return get_rpm_group(group, order);
+}
+
+bool FD_MOT::get_throttle_group(uint16_t &group, uint16_t &order)
+{
+    bool ret = false;
+    if ((1<=status.id) && (status.id<=2)) {
+        group = 1;
+        ret = true;
+    }
+    if ((3<=status.id) && (status.id<=4)) {
+        group = 2;
+        ret = true;
+    }
+    if ((5<=status.id) && (status.id<=6)) {
+        group = 3;
+        ret = true;
+    }
+    if ((7<=status.id) && (status.id<=8)) {
+        group = 4;
+        ret = true;
+    }
+    if ((9<=status.id) && (status.id<=10)) {
+        group = 5;
+        ret = true;
+    }
+    if ((11<=status.id) && (status.id<=12)) {
+        group = 6;
+        ret = true;
+    }
+    if ((13<=status.id) && (status.id<=14)) {
+        group = 7;
+        ret = true;
+    }
+    if ((15<=status.id) && (status.id<=16)) {
+        group = 8;
+        ret = true;
+    }
+
+    order = status.id % 2;
+    if (order == 0) {
+        order = 2;
+    }
+
+    return ret;
+}
+
 void FD_MOT::set_id(uint8_t id_in)
 {
     status.id = id_in;
-    if ((1<=status.id) && (status.id<=4)) {
-        status.group = 1;
+    uint16_t group = 0;
+    uint16_t order = 0;
+    if (!get_throttle_group(group, order)) {
+        gcs().send_text(MAV_SEVERITY_INFO, "CAN MOT: no thr group/order for id %d", status.id);
     }
-    if ((5<=status.id) && (status.id<=8)) {
-        status.group = 2;
-    }
-    if ((9<=status.id) && (status.id<=12)) {
-        status.group = 3;
-    }
-    if ((13<=status.id) && (status.id<=16)) {
-        status.group = 4;
-    }
-
-    status.order = status.id % 4;
-    if (status.order == 0) {
-        status.order = 4;
+    if (!get_rpm_group(group, order)) {
+        gcs().send_text(MAV_SEVERITY_INFO, "CAN MOT: no rpm group/order for id %d", status.id);
     }
 }
 
@@ -134,7 +207,13 @@ void FD_MOT::update_cmd()
             _data[6] = 0xFF;
             _data[7] = 0xFF;
 
-            switch(status.order) {
+            uint16_t group = 0;
+            uint16_t order = 0;
+            if (!get_throttle_group(group, order)) {
+                return;
+            }
+
+            switch(order) {
             case 1:
                 _data[0] = (uint8_t)((tmp_thr>>8)&0xff);
                 _data[1] = (uint8_t)(tmp_thr&0xff);
@@ -155,7 +234,7 @@ void FD_MOT::update_cmd()
                 break;
             }
 
-            uint32_t target_addr = 0x14661C27 + ((status.group - 1) * 0x10000);
+            uint32_t target_addr = 0x14651C27 + (group * 0x10000);
             send_cmd(target_addr | AP_HAL::CANFrame::FlagEFF, _data);
         }
     }

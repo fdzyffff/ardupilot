@@ -19,6 +19,9 @@ public:
     void handle_info(AP_HAL::CANFrame &in_frame, bool do_print = false);
     void set_id(uint8_t id_in);
     void set_pwm(uint16_t pwm_in);
+    bool get_rpm_group(uint16_t &group, uint16_t &order);
+    bool get_temp_group(uint16_t &group, uint16_t &order);
+    bool get_throttle_group(uint16_t &group, uint16_t &order);
     void update();
     void update_cmd();
     void update_status();
