@@ -143,6 +143,7 @@ private:
     AP_Int8     _alt_type;          // altitude source for follow mode
     AC_P        _p_pos;             // position error P controller
     AP_Int16    _options;           // options for mount behaviour follow mode
+    AP_Float    _offset_max;
 
     // local variables
     uint32_t _last_location_update_ms;  // system time of last position update

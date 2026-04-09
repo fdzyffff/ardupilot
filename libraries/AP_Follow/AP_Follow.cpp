@@ -141,6 +141,8 @@ const AP_Param::GroupInfo AP_Follow::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("_OPTIONS", 11, AP_Follow, _options, 0),
 
+    AP_GROUPINFO("_OFF_MAX", 12, AP_Follow, _offset_max, 0),
+
     AP_GROUPEND
 };
 
@@ -308,6 +310,25 @@ void AP_Follow::handle_msg(const mavlink_message_t &msg)
         // ignore message if lat and lon are (exactly) zero
         if ((packet.lat == 0 && packet.lon == 0)) {
             return;
+        }
+
+        Location tmp_target_location;
+        tmp_target_location.lat = packet.lat;
+        tmp_target_location.lng = packet.lon;
+
+        // select altitude source based on FOLL_ALT_TYPE param 
+        if (_alt_type == AP_FOLLOW_ALTITUDE_TYPE_RELATIVE) {
+            // above home alt
+            tmp_target_location.set_alt_cm(packet.relative_alt / 10, Location::AltFrame::ABOVE_HOME);
+        } else {
+            // absolute altitude
+            tmp_target_location.set_alt_cm(packet.alt / 10, Location::AltFrame::ABSOLUTE);
+        }
+
+        if (have_target() && !is_zero(_offset_max.get())) {
+            if (_target_location.get_distance_NED(tmp_target_location).length() > _offset_max.get()) {
+                break;
+            }
         }
 
         _target_location.lat = packet.lat;
