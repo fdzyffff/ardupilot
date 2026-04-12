@@ -2016,8 +2016,9 @@ public:
         UP3 = 7,
         LOCK = 8,
         DOWN = 9,
-        DONE = 10,
-        FAIL = 11,
+        DONE1 = 10,
+        DONE2 = 11,
+        FAIL = 12,
     };
 
     void hook_run();
@@ -2064,9 +2065,10 @@ public:
     enum class Stage {
         UP = 0,
         UNLOCK = 1,
-        DOWN = 2,
-        WAIT = 3,
-        LAND = 4,
+        DOWN1 = 2,
+        DOWN2 = 3,
+        WAIT = 4,
+        LAND = 5,
     };
 
     void unhook_run();

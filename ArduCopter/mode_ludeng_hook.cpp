@@ -129,9 +129,14 @@ void ModeLudeng_hook::hook_run()
             target_climb_rate = -20.0f;
             target_yaw_rate = 0.0f;
             break;
-        case Stage::DONE:
+        case Stage::DONE1:
             _vel_target_cms.zero();
-            target_climb_rate = -20.0f;
+            target_climb_rate = -30.0f;
+            target_yaw_rate = 0.0f;
+            break;
+        case Stage::DONE2:
+            _vel_target_cms.zero();
+            target_climb_rate = -30.0f;
             target_yaw_rate = 0.0f;
             break;
         default:
@@ -283,14 +288,19 @@ void ModeLudeng_hook::update_stage()
         case Stage::DOWN:
             copter.ua8.set_gimbal_up();
             if (check_done()) {
-                set_stage(Stage::DONE);
+                set_stage(Stage::DONE1);
             } else {
                 if (dt > 5.0f) {
                     set_stage(Stage::STANDBY);
                 }
             }
             break;
-        case Stage::DONE:
+        case Stage::DONE1:
+            if (dt > 5.0f) {
+                set_stage(Stage::DONE2);
+            }
+            break;
+        case Stage::DONE2:
             break;
         case Stage::FAIL:
             break;
@@ -302,7 +312,7 @@ void ModeLudeng_hook::update_stage()
 
 bool ModeLudeng_hook::finished()
 {
-    return (_stage == Stage::DONE || _stage == Stage::FAIL);
+    return (_stage == Stage::DONE2 || _stage == Stage::FAIL);
 }
 
 void ModeLudeng_hook::set_approach_vel()
@@ -425,8 +435,11 @@ void ModeLudeng_hook::set_stage(Stage stage_in) {
         case Stage::DOWN:
             gcs().send_text(MAV_SEVERITY_INFO, "Hook DOWN");
             break;
-        case Stage::DONE:
-            gcs().send_text(MAV_SEVERITY_INFO, "Hook DONE");
+        case Stage::DONE1:
+            gcs().send_text(MAV_SEVERITY_INFO, "Hook DONE1");
+            break;
+        case Stage::DONE2:
+            gcs().send_text(MAV_SEVERITY_INFO, "Hook DONE2");
             break;
         case Stage::FAIL:
             gcs().send_text(MAV_SEVERITY_INFO, "Hook FAIL");

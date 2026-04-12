@@ -85,7 +85,16 @@ void ModeLudeng_unhook::unhook_run()
             // target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
             // target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
             break;
-        case Stage::DOWN:
+        case Stage::DOWN1:
+            _vel_target_cms.zero();
+            target_yaw_rate = 0.f;
+            target_climb_rate = -25.0f;
+            use_posctrl = false;
+            // copter.user_update_assit(target_roll, target_pitch);
+            // target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
+            // target_climb_rate = constrain_float(target_climb_rate, -get_pilot_speed_dn(), g.pilot_speed_up);
+            break;
+        case Stage::DOWN2:
             _vel_target_cms.zero();
             target_yaw_rate = 0.f;
             target_climb_rate = -25.0f;
@@ -152,10 +161,15 @@ void ModeLudeng_unhook::update_stage()
             break;
         case Stage::UNLOCK:
             if (dt > 5.0f) {
-                set_stage(Stage::DOWN);
+                set_stage(Stage::DOWN1);
             }
             break;
-        case Stage::DOWN:
+        case Stage::DOWN1:
+            if (dt > 1.5f) {
+                set_stage(Stage::DOWN2);
+            }
+            break;
+        case Stage::DOWN2:
             if (check_down()) {
                 set_home_to_current_alt();
                 set_stage(Stage::WAIT);
@@ -224,8 +238,11 @@ void ModeLudeng_unhook::set_stage(Stage stage_in) {
         case Stage::UNLOCK:
             gcs().send_text(MAV_SEVERITY_INFO, "Stage UNLOCK");
             break;
-        case Stage::DOWN:
-            gcs().send_text(MAV_SEVERITY_INFO, "Stage DOWN");
+        case Stage::DOWN1:
+            gcs().send_text(MAV_SEVERITY_INFO, "Stage DOWN1");
+            break;
+        case Stage::DOWN2:
+            gcs().send_text(MAV_SEVERITY_INFO, "Stage DOWN2");
             break;
         case Stage::WAIT:
             gcs().send_text(MAV_SEVERITY_INFO, "Stage WAIT");
