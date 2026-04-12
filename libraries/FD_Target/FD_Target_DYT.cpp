@@ -5,10 +5,8 @@
 const AP_Param::GroupInfo FD_Target_DYT::var_info[] = {
 
     AP_GROUPINFO("TOUT",   0, FD_Target_DYT, target_timeout,        2000),
-    AP_GROUPINFO("PIX_W",  1, FD_Target_DYT, cam_width,             360),
-    AP_GROUPINFO("PIX_H",  2, FD_Target_DYT, cam_height,            360),
-    AP_GROUPINFO("ANG_X",  3, FD_Target_DYT, cam_angle_x,           60.0f),
-    AP_GROUPINFO("ANG_Y",  4, FD_Target_DYT, cam_angle_y,           60.0f),
+    AP_GROUPINFO("CENT",   1, FD_Target_DYT, center_time,           3000),
+    AP_GROUPINFO("TRKT",   2, FD_Target_DYT, track_time,            200),
 
     AP_GROUPEND
 };
@@ -81,7 +79,7 @@ void FD_Target_DYT::update() {
     }
 
     if (!_valid) {
-        if (millis() - last_center_ms > 3000) {
+        if (millis() - last_center_ms > center_time.get()) {
             uart_msg_DYT_control.pack_center();
             last_center_ms = millis();
             get_port()->write(uart_msg_DYT_control._msg_1.content.data, sizeof(uart_msg_DYT_control._msg_1.content.data));
@@ -89,7 +87,7 @@ void FD_Target_DYT::update() {
             get_port()->write(uart_msg_DYT_control._msg_1.content.data, sizeof(uart_msg_DYT_control._msg_1.content.data));
         }
 
-        if (millis() - last_track_ms > 200 && millis() - last_cancel_ms > 2000) {
+        if (millis() - last_track_ms > track_time.get() && millis() - last_cancel_ms > 2000) {
             uart_msg_DYT_control.pack_track();
             last_track_ms = millis();
             get_port()->write(uart_msg_DYT_control._msg_1.content.data, sizeof(uart_msg_DYT_control._msg_1.content.data));

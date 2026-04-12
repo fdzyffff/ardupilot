@@ -84,10 +84,8 @@ public:
 
 private:
     AP_Int32 target_timeout;
-    AP_Float cam_width;
-    AP_Float cam_height;
-    AP_Float cam_angle_x;
-    AP_Float cam_angle_y;
+    AP_Int32 center_time;
+    AP_Int32 track_time;
 
     AP_HAL::UARTDriver* _port;
     // FD1_msg_DYT_apminfo uart_msg_DYT_apminfo;
