@@ -179,7 +179,26 @@ void AP_ExternalAHRS_HITL::handle_sensor(mavlink_hil_sensor_t &in_packet)
 
         find_error |= fabsf(frontend.baro_data.pressure_pa) > 100000000.0f;
 
+        // {
+        //     WITH_SEMAPHORE(state.sem);
+        //     AP::ins().handle_external(frontend.imu_data);
+        //     AP::compass().handle_external(frontend.mag_data);
+
+        //     frontend.baro_data.instance = 0;
+        //     AP::baro().handle_external(frontend.baro_data);
+        //     frontend.baro_data.instance = 1;
+        //     AP::baro().handle_external(frontend.baro_data);
+        //     frontend.baro_data.instance = 2;
+        //     AP::baro().handle_external(frontend.baro_data);
+        // } 
+
+        if (find_error)
         {
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS accel : (%f, %f, %f)", frontend.imu_data.accel.x, frontend.imu_data.accel.y, frontend.imu_data.accel.z);
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS gyro : (%f, %f, %f)", frontend.imu_data.gyro.x, frontend.imu_data.gyro.y, frontend.imu_data.gyro.z);
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS mag : (%f, %f, %f)", frontend.mag_data.field.x, frontend.mag_data.field.y, frontend.mag_data.field.z);
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS baro : (%f, %f)", frontend.baro_data.pressure_pa, frontend.baro_data.temperature);
+        } else {
             WITH_SEMAPHORE(state.sem);
             AP::ins().handle_external(frontend.imu_data);
             AP::compass().handle_external(frontend.mag_data);
@@ -190,14 +209,6 @@ void AP_ExternalAHRS_HITL::handle_sensor(mavlink_hil_sensor_t &in_packet)
             AP::baro().handle_external(frontend.baro_data);
             frontend.baro_data.instance = 2;
             AP::baro().handle_external(frontend.baro_data);
-        } 
-
-        if (find_error)
-        {
-            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS accel : (%f, %f, %f)", frontend.imu_data.accel.x, frontend.imu_data.accel.y, frontend.imu_data.accel.z);
-            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS gyro : (%f, %f, %f)", frontend.imu_data.gyro.x, frontend.imu_data.gyro.y, frontend.imu_data.gyro.z);
-            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS mag : (%f, %f, %f)", frontend.mag_data.field.x, frontend.mag_data.field.y, frontend.mag_data.field.z);
-            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS baro : (%f, %f)", frontend.baro_data.pressure_pa, frontend.baro_data.temperature);
         }
     }
 

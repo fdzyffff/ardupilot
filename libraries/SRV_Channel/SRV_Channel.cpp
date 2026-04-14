@@ -289,10 +289,14 @@ float SRV_Channel::get_output_norm(void)
 
 float SRV_Channel::get_output_scaled_norm(void)
 {
-    uint16_t mid = servo_trim;
+    uint16_t mid = constrain_uint16(servo_trim, 1000, 2000);
     float ret;
+
     if (mid <= 1000 && output_pwm<=1000) {
-        return 0;
+        return 0.0f;
+    }
+    if (mid >= 2000 && output_pwm>=2000) {
+        return 1.0f;
     }
     if (output_pwm < mid) {
         ret = (float)(output_pwm - mid) / (float)(mid - 1000);

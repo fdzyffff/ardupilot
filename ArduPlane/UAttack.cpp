@@ -482,6 +482,7 @@ void UAttack::update_target_yaw_rate() {
         _target_yaw_rate += vel_angle_err * k3_yaw;
     }
 
+    _target_yaw_rate = constrain_float(_target_yaw_rate, -30.0f, 30.0f);
     display_info.p11 = angle_err;
     display_info.p12 = k2_yaw;
     display_info.p13 = _target_yaw_rate;
