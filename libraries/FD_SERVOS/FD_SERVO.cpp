@@ -88,6 +88,14 @@ void FD_SERVO::new_turn()
     _angle = _angle + 180.f;
 }
 
+void FD_SERVO::big_new_turn()
+{
+    _turned = false;
+    _running = true;
+    _current_angle = _angle;
+    _angle = _angle + 1800.f;
+}
+
 void FD_SERVO::do_speed()
 {
     _msg_SERVO_15._msg_1.content.msg.id = _id;

@@ -45,6 +45,7 @@ public:
     void set_enable(bool enable_in);
 
     FD_SERVO* servo_instance[FD_SERVO_MAX_NUM];
+    FD_SERVO* servo_instance_sb;
 
     FD_msg_SERVO_receive& get_msg_SERVO_receive()   { return _msg_SERVO_receive; }
 private:
@@ -59,6 +60,7 @@ private:
     uint8_t i_servo_right_current;
 
     AP_Float servo_vel;
+    AP_Int8  sb_mode;
 
     // 状态回复
     FD_msg_SERVO_receive _msg_SERVO_receive;
@@ -86,6 +88,7 @@ public:
     bool get_running() {return _running;}
     void cal_servo_angle(float value_in);
     void new_turn();
+    void big_new_turn();
     void do_print();
 
 private:
