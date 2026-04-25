@@ -14,7 +14,7 @@ public:
     struct PACKED MSG_Command_1 {
         FD_msg_header header;
         uint8_t id;
-        uint32_t angle;
+        int32_t angle;
         uint16_t targetVelocity;
         uint16_t accInterval;
         uint16_t decInterval;

@@ -8,7 +8,7 @@ void FD_SERVO::update()
     last_update_ms = AP_HAL::millis();
     // gcs().send_text(MAV_SEVERITY_INFO, "%d update", _id);
 
-    if (is_zero(value)) {
+    if (is_zero(value) || fabsf(value) < 0.05f) {
         if (stop_count < 3) {
             stop_count++;
             do_stop();
@@ -24,6 +24,15 @@ void FD_SERVO::update()
     }
 
     cal_servo_angle(value);
+}
+
+void FD_SERVO::set_rev(int16_t rev_in)
+{
+    if (rev_in == 1) {
+        rev = -1;
+    } else {
+        rev = 1;
+    }
 }
 
 void FD_SERVO::set_vel(float servo_vel_in)
@@ -99,7 +108,7 @@ void FD_SERVO::big_new_turn()
 void FD_SERVO::do_speed()
 {
     _msg_SERVO_15._msg_1.content.msg.id = _id;
-    _msg_SERVO_15._msg_1.content.msg.angle = (uint32_t)((_angle) * 10);
+    _msg_SERVO_15._msg_1.content.msg.angle = (int32_t)(rev * (_angle) * 10);
     _msg_SERVO_15._msg_1.content.msg.targetVelocity = (uint16_t)(value * _servo_vel * 10.f);
     _msg_SERVO_15._msg_1.content.msg.accInterval = 300;
     _msg_SERVO_15._msg_1.content.msg.decInterval = 300;

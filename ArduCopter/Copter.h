@@ -228,6 +228,8 @@ public:
 
     friend class PayloadPlace;
 
+    friend class ModeDive;
+
     Copter(void);
 
 private:
@@ -1075,6 +1077,7 @@ private:
 #if MODE_TURTLE_ENABLED
     ModeTurtle mode_turtle;
 #endif
+    ModeDive mode_dive;
 
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);

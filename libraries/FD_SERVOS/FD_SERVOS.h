@@ -61,7 +61,13 @@ private:
 
     AP_Float servo_vel;
     AP_Int8  sb_mode;
-
+    AP_Int8  sb_rev;
+    AP_Int8  servo_rev_1;
+    AP_Int8  servo_rev_2;
+    AP_Int8  servo_rev_3;
+    AP_Int8  servo_rev_4;
+    AP_Int8  servo_rev_5;
+    AP_Int8  servo_rev_6;
     // 状态回复
     FD_msg_SERVO_receive _msg_SERVO_receive;
 };
@@ -78,6 +84,7 @@ public:
     }
 
     void update();
+    void set_rev(int16_t rev_in);
     void set_vel(float servo_vel_in);
     void set_value(float value_in);
     void do_stop();
@@ -105,6 +112,7 @@ private:
     float _angle = 0.0f;
     float _current_angle = 0.0f;
     uint32_t _last_angle_update_ms;
+    int16_t rev;
 
     // 设置ID等的写入指令
     // FD_msg_SERVO_4  _msg_SERVO_4;

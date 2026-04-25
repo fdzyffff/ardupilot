@@ -8,6 +8,13 @@ const AP_Param::GroupInfo FD_SERVOS::var_info[] = {
 
     AP_GROUPINFO("_VEL",  1, FD_SERVOS, servo_vel,         30.f),
     AP_GROUPINFO("_SB",   2, FD_SERVOS, sb_mode,            0),
+    AP_GROUPINFO("_SBREV",3, FD_SERVOS, sb_rev,             0),
+    AP_GROUPINFO("_REV1", 4, FD_SERVOS, servo_rev_1,        0),
+    AP_GROUPINFO("_REV2", 5, FD_SERVOS, servo_rev_2,        0),
+    AP_GROUPINFO("_REV3", 6, FD_SERVOS, servo_rev_3,        0),
+    AP_GROUPINFO("_REV4", 7, FD_SERVOS, servo_rev_4,        0),
+    AP_GROUPINFO("_REV5", 8, FD_SERVOS, servo_rev_5,        0),
+    AP_GROUPINFO("_REV6", 9, FD_SERVOS, servo_rev_6,        0),
 
     AP_GROUPEND
 };
@@ -88,6 +95,33 @@ void FD_SERVOS::update_control()
     } else {
         set_speed(0.0f, 0.0f);
     }
+    for (uint8_t i_servo = 0; i_servo < FD_SERVO_MAX_NUM; i_servo++) {
+        if (servo_instance[i_servo] != nullptr) {
+            switch (i_servo) {
+                case 0:
+                    servo_instance[i_servo]->set_rev(servo_rev_1.get());
+                    break;
+                case 1:
+                    servo_instance[i_servo]->set_rev(servo_rev_2.get());
+                    break;
+                case 2:
+                    servo_instance[i_servo]->set_rev(servo_rev_3.get());
+                    break;
+                case 3:
+                    servo_instance[i_servo]->set_rev(servo_rev_4.get());
+                    break;
+                case 4:
+                    servo_instance[i_servo]->set_rev(servo_rev_5.get());
+                    break;
+                case 5:
+                    servo_instance[i_servo]->set_rev(servo_rev_6.get());
+                    break;
+            }
+        }
+    }
+    if (servo_instance_sb != nullptr) {
+        servo_instance_sb->set_rev(sb_rev.get());
+    }
 }
 
 void FD_SERVOS::set_speed(float speed_norm_in, float turn_norm_in)
@@ -108,7 +142,25 @@ void FD_SERVOS::set_speed(float speed_norm_in, float turn_norm_in)
             servo_instance_sb->set_vel(servo_vel);
             servo_instance_sb->set_value(speed_norm_in);
             if (servo_instance_sb->get_turned()) {
-                servo_instance_sb->big_new_turn();
+                servo_instance_sb->new_turn();
+            }
+        }
+    } else if (sb_mode.get() == 2) {
+
+        bool new_turn = false;
+        if (servo_instance[0] != nullptr) {
+            if (servo_instance[0]->get_turned()) {
+                new_turn = true;
+            }
+        }
+
+        for (uint8_t i_servo = 0; i_servo < FD_SERVO_MAX_NUM; i_servo++) {
+            if (servo_instance[i_servo] != nullptr) {
+                servo_instance[i_servo]->set_vel(servo_vel);
+                servo_instance[i_servo]->set_value(speed_norm_in);
+                if (new_turn) {
+                    servo_instance[i_servo]->new_turn();
+                }
             }
         }
     } else {

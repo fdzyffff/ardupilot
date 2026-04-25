@@ -1,4 +1,5 @@
-current_datetime=$(date +'%Y%m%d_%H%M%S')
+prefix=$"SANQI"
+current_datetime=$prefix"_"$(date +'%Y%m%d_%H%M%S')
 echo $current_datetime
 mkdir firmware
 rm -fr firmware/*
