@@ -91,6 +91,7 @@ public:
         SerialProtocol_redundancy_FMUb = 54,
         SerialProtocol_ENGINE = 55,
         SerialProtocol_WEIGHT = 56,
+        SerialProtocol_YOLO = 57,
         SerialProtocol_NumProtocols                    // must be the last value
     };
 

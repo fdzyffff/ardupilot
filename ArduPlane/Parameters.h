@@ -471,6 +471,8 @@ public:
     AP_Int16 gcs_pid_mask;
 };
 
+class AP_Redundancy;
+
 /*
   2nd block of parameters, to avoid going past 256 top level keys
  */
@@ -599,6 +601,7 @@ public:
 #if ENABLE_REDUNDANCY_CONTROL
     AP_Float        batt1_voltage_mult;
     AP_Float        batt2_voltage_mult;
+    AP_Redundancy  *redundancy_ptr;
 #endif
 
     AP_Int16        takeoff_course;

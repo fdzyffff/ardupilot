@@ -5631,11 +5631,13 @@
     </message>
     <!-- MESSAGE IDs 180 - 229: Space for custom messages in individual projectname_messages.xml files -->
     <message id="227" name="CAN_SERVO_STATUS">
-      <description>CAN bus servo status feedback. Contains target angle, real angle, current, and temperature for 16 servos.</description>
-      <field type="int16_t[16]" name="target_angle_deg" units="ddeg">Target angle for each servo (0.1 degrees, range ±100 degrees).</field>
-      <field type="int16_t[16]" name="real_angle_deg" units="ddeg">Real angle feedback from each servo (0.1 degrees, range ±100 degrees).</field>
-      <field type="uint16_t[16]" name="real_current_A" units="cA">Real current feedback from each servo (0.01 Amperes, range 0-20A).</field>
-      <field type="int8_t[16]" name="real_temperature_dc" units="degC">Real temperature feedback from each servo (degrees Celsius).</field>
+      <description>CAN bus servo status feedback for a group of 4 servos. Up to 4 groups (16 servos total) are sent as separate messages, identified by group_id.</description>
+      <field type="uint8_t" name="group_id">Servo group index (0=servo 1-4, 1=servo 5-8, 2=servo 9-12, 3=servo 13-16).</field>
+      <field type="uint8_t" name="servo_mask">Bitmask of active servos in this group (bit0=first, bit3=fourth).</field>
+      <field type="int16_t[4]" name="target_angle_deg" units="ddeg">Target angle for each servo in this group (0.1 degrees).</field>
+      <field type="int16_t[4]" name="real_angle_deg" units="ddeg">Real angle feedback for each servo in this group (0.1 degrees).</field>
+      <field type="uint16_t[4]" name="real_current_A" units="cA">Real current feedback for each servo in this group (0.01 Amperes).</field>
+      <field type="int8_t[4]" name="real_temperature_dc" units="degC">Real temperature for each servo in this group (degrees Celsius).</field>
     </message>
     <message id="230" name="ESTIMATOR_STATUS">
       <description>Estimator status message including flags, innovation test ratios and estimated accuracies. The flags message is an integer bitmask containing information on which EKF outputs are valid. See the ESTIMATOR_STATUS_FLAGS enum definition for further information. The innovation test ratios show the magnitude of the sensor innovation divided by the innovation check threshold. Under normal operation the innovation test ratios should be below 0.5 with occasional values up to 1.0. Values greater than 1.0 should be rare under normal operation and indicate that a measurement has been rejected by the filter. The user should be notified if an innovation test ratio greater than 1.0 is recorded. Notifications for values in the range between 0.5 and 1.0 should be optional and controllable by the user.</description>

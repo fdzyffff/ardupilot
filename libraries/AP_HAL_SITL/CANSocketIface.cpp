@@ -216,6 +216,7 @@ bool CANIface::init(const uint32_t bitrate, const OperatingMode mode)
     switch (can_type) {
     case SITL::SIM::CANTransport::MulticastUDP:
         transport = new CAN_Multicast();
+        printf("new CAN_Multicast();\n");
         break;
     case SITL::SIM::CANTransport::SocketCAN:
 #if HAL_CAN_WITH_SOCKETCAN
@@ -223,12 +224,15 @@ bool CANIface::init(const uint32_t bitrate, const OperatingMode mode)
 #endif
         break;
     }
+        printf("can_type %d\n",(int16_t)can_type);
     if (transport == nullptr) {
         return false;
+        printf("False: transport == nullptr\n");
     }
     if (!transport->init(_self_index)) {
         delete transport;
         transport = nullptr;
+        printf("False: !transport->init(_self_index)\n");
         return false;
     }
     if (sem_handle != nullptr) {

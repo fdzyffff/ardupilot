@@ -394,6 +394,17 @@ void AP_Relay::set(const AP_Relay_Params::FUNCTION function, const bool value) {
 // this is an internal helper, instance must have already been validated to be in range
 void AP_Relay::set_pin_by_instance(uint8_t instance, bool value)
 {
+    // Sync desired-state cache FIRST, unconditional of pin validity or SIM gating.
+    // This keeps _desired_state meaningful even when the physical write is skipped
+    // (pin==-1, SIM mask off, etc.).
+    if (instance < AP_RELAY_NUM_RELAYS) {
+        if (value) {
+            _desired_state |= (uint16_t)(1U << instance);
+        } else {
+            _desired_state &= (uint16_t)~(1U << instance);
+        }
+    }
+
     const int16_t pin = _params[instance].pin;
     if (pin == -1) {
         // no valid pin to set it on, skip it
@@ -686,6 +697,65 @@ AP_Relay *relay()
     return AP_Relay::get_singleton();
 }
 
+}
+
+void AP_Relay::get_servo_channel_relay_masks(uint16_t &mode_mask,
+                                             uint16_t &state_mask) const
+{
+    // FUNCTIONs that drive a local GPIO pin as a stable digital level.
+    // Excludes NONE (0) and DroneCAN_HARDPOINT_* (virtual pins, not on a servo channel).
+    using F = AP_Relay_Params::FUNCTION;
+    static const F digital_local_funcs[] = {
+        F::RELAY,
+        F::IGNITION,
+        F::PARACHUTE,
+        F::CAMERA,
+        F::BRUSHED_REVERSE_1,
+        F::BRUSHED_REVERSE_2,
+        F::BRUSHED_REVERSE_3,
+        F::BRUSHED_REVERSE_4,
+        F::ICE_STARTER,
+    };
+
+    // FPGA redundancy path covers servo channels 0..13 (14 total).
+    static const uint8_t MAX_REDUNDANCY_CHANNEL = 14;
+
+    for (uint8_t i = 0; i < AP_RELAY_NUM_RELAYS; i++) {
+        const F fn = (F)_params[i].function;
+
+        bool accepted = false;
+        for (uint8_t k = 0; k < ARRAY_SIZE(digital_local_funcs); k++) {
+            if (fn == digital_local_funcs[k]) {
+                accepted = true;
+                break;
+            }
+        }
+        if (!accepted) {
+            continue;
+        }
+
+        const int16_t pin = _params[i].pin;
+        if (pin < 0 || pin > 255) {
+            // pin<0 ¡ú unconfigured. pin>255 ¡ú DroneCAN virtual pin (1000+) or similar;
+            // conservatively skip before narrowing to uint8_t.
+            continue;
+        }
+
+        uint8_t servo_ch;
+        if (!hal.gpio->pin_to_servo_channel((uint8_t)pin, servo_ch)) {
+            // Pin is a pure GPIO (e.g. LED), not a servo channel ¡ª AP_Relay handles it
+            // directly via GPIO write; FPGA path does not apply.
+            continue;
+        }
+        if (servo_ch >= MAX_REDUNDANCY_CHANNEL) {
+            continue;
+        }
+
+        mode_mask |= (uint16_t)(1U << servo_ch);
+        if (_desired_state & (uint16_t)(1U << i)) {
+            state_mask |= (uint16_t)(1U << servo_ch);
+        }
+    }
 }
 
 #endif  // AP_RELAY_ENABLED

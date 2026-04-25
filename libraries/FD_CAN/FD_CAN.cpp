@@ -95,7 +95,7 @@ bool FD_CAN::add_interface(AP_HAL::CANIface *can_iface) {
 
 // initialize CAN_FD bus
 void FD_CAN::init(uint8_t driver_index, bool enable_filters) {
-    gcs().send_text(MAV_SEVERITY_INFO, "CAN_FD: starting init\n\r");
+    gcs().send_text(MAV_SEVERITY_INFO, "CAN_FD: starting init");
     _driver_index = driver_index;
 
     debug_can(AP_CANManager::LOG_DEBUG, "CAN_FD: starting init\n\r");
@@ -118,7 +118,7 @@ void FD_CAN::init(uint8_t driver_index, bool enable_filters) {
     _initialized = true;
 
     debug_can(AP_CANManager::LOG_DEBUG, "CAN_FD: init done\n\r");
-    gcs().send_text(MAV_SEVERITY_INFO, "CAN_FD: init done\n\r");
+    gcs().send_text(MAV_SEVERITY_INFO, "CAN_FD: init done");
 }
 
 // loop to send output to CAN devices in background thread
@@ -168,12 +168,12 @@ void FD_CAN::loop() {
         if (_mot_enable.get()) {   
             for (uint8_t i_mot = 0; i_mot < FD_CAN_MAX_MOT_NUM; i_mot++) { 
                 uint16_t mot_output = 0;
-                if (SRV_Channels::get_output_pwm(SRV_Channel::k_motor1, mot_output)) {
-                    // gcs().send_text(MAV_SEVERITY_INFO, "motor 1 : %d",mot_output);
-                    ;
+                if (SRV_Channels::get_output_pwm(SRV_Channels::get_motor_function(i_mot), mot_output)) {
+                    // gcs().send_text(MAV_SEVERITY_INFO, "motor %d : %d",i_mot,mot_output);
+                    // ;
+                    _mot_ptr[i_mot]->set_pwm(mot_output);
+                    _mot_ptr[i_mot]->update();
                 }
-                _mot_ptr[i_mot]->set_pwm(mot_output);
-                _mot_ptr[i_mot]->update();
             }
         }
 

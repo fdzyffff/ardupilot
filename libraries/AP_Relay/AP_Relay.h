@@ -73,10 +73,36 @@ public:
     // see if the relay is enabled
     bool enabled(AP_Relay_Params::FUNCTION function) const;
 
+    // Populate 14-bit masks of servo channels that should be driven as stable
+    // digital levels by the FPGA redundancy controller.
+    //
+    // - Bit n of mode_mask  = 1 ¡ú channel n is in relay mode
+    // - Bit n of state_mask = 1 ¡ú channel n target state is HIGH
+    //
+    // OR-only: the caller must initialise both masks to zero (or their desired
+    // starting values). This method never clears bits.
+    //
+    // Only relay instances whose FUNCTION is a local-GPIO digital output
+    // (RELAY, IGNITION, PARACHUTE, CAMERA, BRUSHED_REVERSE_1..4, ICE_STARTER)
+    // AND whose pin maps to servo channel 0..13 are considered. DroneCAN
+    // virtual pins and non-servo GPIO pins are ignored.
+    //
+    // Threading: reads _desired_state (populated in set_pin_by_instance).
+    // Both reader and writer are expected to run on the main thread; no
+    // atomicity is provided.
+    void get_servo_channel_relay_masks(uint16_t &mode_mask,
+                                       uint16_t &state_mask) const;
+
 private:
     static AP_Relay *singleton;
 
     AP_Relay_Params _params[AP_RELAY_NUM_RELAYS];
+
+    // Desired-state cache, bit i = 1 if instance i is currently commanded ON.
+    // Synchronised inside set_pin_by_instance() ¡ª every public/private write
+    // path (on/off/toggle/set/init) funnels through that helper.
+    // AP_RELAY_NUM_RELAYS is static_asserted <= 16, so uint16_t fits.
+    uint16_t _desired_state = 0;
 
     // Return true is function is valid
     bool function_valid(AP_Relay_Params::FUNCTION function) const;

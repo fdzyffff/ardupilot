@@ -35,17 +35,6 @@
 #include <AP_CANManager/AP_CANManager.h>
 #include <AP_Vehicle/AP_Vehicle.h>
 
-// 前向声明和包含，用于类型转换调用 is_redundancy_in_control()
-#if defined(ENABLE_REDUNDANCY_CONTROL) && ENABLE_REDUNDANCY_CONTROL
-// 使用条件编译包含正确的头文件
-#if defined(APM_BUILD_ArduPlane) || APM_BUILD_TYPE(APM_BUILD_ArduPlane)
-#include "Plane.h"
-#elif defined(APM_BUILD_ArduCopter) || APM_BUILD_TYPE(APM_BUILD_ArduCopter)
-#include "Copter.h"
-#endif
-#endif
-#include <AP_Vehicle/AP_Vehicle.h>
-
 #include <AP_EFI/AP_EFI_Currawong_ECU.h>
 
 #include <stdio.h>
@@ -492,28 +481,14 @@ void AP_PiccoloCAN::send_esc_telemetry_mavlink(uint8_t mav_chan)
 }
 #endif
 
-/// @brief 检查当前余度是否处于控制状态
-/// @return true表示当前余度处于控制状态，应该发送控制帧；false表示不应该发送控制帧
+/// @brief ??鵱??????????????
+/// @return true?????????????????????÷?????????false???????÷???????
 static bool is_redundancy_in_control()
 {
-#if defined(ENABLE_REDUNDANCY_CONTROL) && ENABLE_REDUNDANCY_CONTROL
     AP_Vehicle* vehicle = AP::vehicle();
     if (vehicle != nullptr) {
-        // 注意：is_redundancy_in_control() 不再是虚函数，需要通过类型转换调用
-#if defined(APM_BUILD_ArduPlane) || APM_BUILD_TYPE(APM_BUILD_ArduPlane)
-        Plane* plane_ptr = static_cast<Plane*>(vehicle);
-        if (plane_ptr != nullptr) {
-            return plane_ptr->is_redundancy_in_control();
-        }
-#elif defined(APM_BUILD_ArduCopter) || APM_BUILD_TYPE(APM_BUILD_ArduCopter)
-        Copter* copter_ptr = static_cast<Copter*>(vehicle);
-        if (copter_ptr != nullptr) {
-            return copter_ptr->is_redundancy_in_control();
-        }
-#endif
+        return vehicle->is_redundancy_in_control();
     }
-#endif
-    // 如果三余度控制未启用或无法获取车辆实例，默认允许发送控制帧
     return true;
 }
 
@@ -529,7 +504,7 @@ void AP_PiccoloCAN::send_servo_messages(void)
         return;
     }
 
-    // 对于多旋翼和固定翼固件，如果启动了三余度控制，当当前余度没有处于控制状态时，则不发送控制帧
+    // ????????????????????????????????????????????????д????????????????????
     if (!is_redundancy_in_control()) {
         return;
     }

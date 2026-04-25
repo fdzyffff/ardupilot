@@ -17,6 +17,10 @@
 #include <AR_Motors/AP_MotorsUGV.h>
 #include <AP_CheckFirmware/AP_CheckFirmware.h>
 #include <GCS_MAVLink/GCS.h>
+#include <AP_Redundancy/AP_Redundancy_config.h>
+#if ENABLE_REDUNDANCY_CONTROL
+#include <AP_Redundancy/AP_Redundancy.h>
+#endif
 #if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
 #include <AP_HAL_ChibiOS/sdcard.h>
 #include <AP_HAL_ChibiOS/hwdef/common/stm32_util.h>
@@ -1022,6 +1026,27 @@ bool AP_Vehicle::block_GCS_mode_change(uint8_t mode_num, const uint8_t *mode_lis
     return false;
 }
 #endif
+
+// Redundancy control methods that delegate to AP_Redundancy singleton
+bool AP_Vehicle::is_redundancy_in_control() const
+{
+#if ENABLE_REDUNDANCY_CONTROL
+    auto *red = AP_Redundancy::get_singleton();
+    return red ? red->is_in_control() : true;
+#else
+    return true;
+#endif
+}
+
+uint8_t AP_Vehicle::get_redundancy_num() const
+{
+#if ENABLE_REDUNDANCY_CONTROL
+    auto *red = AP_Redundancy::get_singleton();
+    return red ? red->get_this_redundancy_num() : 0;
+#else
+    return 0;
+#endif
+}
 
 AP_Vehicle *AP_Vehicle::_singleton = nullptr;
 

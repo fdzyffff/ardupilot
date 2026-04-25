@@ -7,6 +7,7 @@ void Copter::userhook_init()
     // this will be called once at start-up
     uart.init();
     uattack.init();
+    yolo_drop.init();
 }
 #endif
 
@@ -16,6 +17,7 @@ void Copter::userhook_FastLoop()
     // put your 100Hz code here
     uart.update();
     uattack.update();
+    yolo_drop.update();
 }
 #endif
 
@@ -71,6 +73,7 @@ void Copter::userhook_SuperSlowLoop()
     if (uattack.print.get() & (1<<6)) { // 364
         gcs().send_text(MAV_SEVERITY_WARNING, "%0.0f , %0.0f , %0.0f , %0.0f", uattack.display_info.p11, uattack.display_info.p12, uattack.display_info.p13, uattack.display_info.p14);
     }
+    yolo_drop.print_debug();
 }
 #endif
 

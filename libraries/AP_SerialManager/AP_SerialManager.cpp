@@ -595,6 +595,9 @@ void AP_SerialManager::init()
                                          128,
                                          128);
                     break;
+                case SerialProtocol_YOLO:
+                    uart->begin(115200, 128, 128);
+                    break;
 
                 default:
                     uart->begin(state[i].baudrate());

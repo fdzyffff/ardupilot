@@ -96,5 +96,6 @@ enum ap_message : uint8_t {
     MSG_HXTS_HY_BMS_C1,
     MSG_HXTS_HY_BMS_C2,
     MSG_HXTS_HY_BMS_C3,
+    MSG_CAN_SERVO_STATUS,
     MSG_LAST // MSG_LAST must be the last entry in this enum
 };

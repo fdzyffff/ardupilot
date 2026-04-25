@@ -213,29 +213,34 @@ void FD_MOT::update_cmd()
                 return;
             }
 
-            switch(order) {
-            case 1:
-                _data[0] = (uint8_t)((tmp_thr>>8)&0xff);
-                _data[1] = (uint8_t)(tmp_thr&0xff);
-                break;
-            case 2:
-                _data[2] = (uint8_t)((tmp_thr>>8)&0xff);
-                _data[3] = (uint8_t)(tmp_thr&0xff);
-                break;
-            case 3:
-                _data[4] = (uint8_t)((tmp_thr>>8)&0xff);
-                _data[5] = (uint8_t)(tmp_thr&0xff);
-                break;
-            case 4:
-                _data[6] = (uint8_t)((tmp_thr>>8)&0xff);
-                _data[7] = (uint8_t)(tmp_thr&0xff);
-                break;
-            default:
-                break;
-            }
+            _data[0] = (uint8_t)((tmp_thr>>8)&0xff);
+            _data[1] = (uint8_t)(tmp_thr&0xff);
+            _data[2] = (uint8_t)((tmp_thr>>8)&0xff);
+            _data[3] = (uint8_t)(tmp_thr&0xff);
+            // switch(order) {
+            // case 1:
+            //     _data[0] = (uint8_t)((tmp_thr>>8)&0xff);
+            //     _data[1] = (uint8_t)(tmp_thr&0xff);
+            //     break;
+            // case 2:
+            //     _data[2] = (uint8_t)((tmp_thr>>8)&0xff);
+            //     _data[3] = (uint8_t)(tmp_thr&0xff);
+            //     break;
+            // case 3:
+            //     _data[4] = (uint8_t)((tmp_thr>>8)&0xff);
+            //     _data[5] = (uint8_t)(tmp_thr&0xff);
+            //     break;
+            // case 4:
+            //     _data[6] = (uint8_t)((tmp_thr>>8)&0xff);
+            //     _data[7] = (uint8_t)(tmp_thr&0xff);
+            //     break;
+            // default:
+            //     break;
+            // }
 
             uint32_t target_addr = 0x14651C27 + (group * 0x10000);
             send_cmd(target_addr | AP_HAL::CANFrame::FlagEFF, _data);
+            // send_cmd(target_addr, _data);
         }
     }
 }

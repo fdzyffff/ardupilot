@@ -18,6 +18,7 @@
 
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Networking/AP_Networking_Config.h>
+#include <stdio.h>
 #if AP_NETWORKING_SOCKETS_ENABLED
 
 #ifndef SOCKET_CLASS_NAME
@@ -128,13 +129,13 @@ bool SOCKET_CLASS_NAME::connect(const char *address, uint16_t port)
 #endif
         IGNORE_RETURN(CALL_PREFIX(setsockopt)(fd_in, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one)));
 
-#if defined(__CYGWIN__) || defined(__CYGWIN64__) || defined(CYGWIN_BUILD)
+// #if defined(__CYGWIN__) || defined(__CYGWIN64__) || defined(CYGWIN_BUILD)
         /*
           on cygwin you need to bind to INADDR_ANY then use the multicast
           IP_ADD_MEMBERSHIP to get on the right address
         */
         sockaddr_mc.sin_addr.s_addr = htonl(INADDR_ANY);
-#endif
+// #endif
     
         ret = CALL_PREFIX(bind)(fd_in, (struct sockaddr *)&sockaddr_mc, sizeof(sockaddr));
         if (ret == -1) {

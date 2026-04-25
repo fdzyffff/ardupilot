@@ -75,6 +75,7 @@
  */
 
 #include "Copter.h"
+#include <AP_Redundancy/AP_Redundancy.h>
 
 #define FORCE_VERSION_H_INCLUDE
 #include "version.h"
@@ -459,13 +460,14 @@ bool Copter::has_ekf_failsafed() const
 #if ENABLE_REDUNDANCY_CONTROL
 bool Copter::is_redundancy_in_control() const
 {
-    // 如果启动了三余度控制，检查当前余度是否处于控制状态
-    if (this_redundancy_num != 0 && last_ctrl_redundancy_num != 0) {
-        // 当前余度处于控制状态时，才允许发送控制帧
-        return (last_ctrl_redundancy_num == this_redundancy_num);
-    }
-    // 如果三余度控制未初始化或状态未知，默认允许发送控制帧
-    return true;
+    auto *red = AP_Redundancy::get_singleton();
+    return red ? red->is_in_control() : false;
+}
+
+uint8_t Copter::get_redundancy_num() const
+{
+    auto *red = AP_Redundancy::get_singleton();
+    return red ? red->get_this_redundancy_num() : 0;
 }
 #endif
 

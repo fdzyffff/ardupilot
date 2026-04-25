@@ -398,6 +398,7 @@ public:
     void send_uavionix_adsb_out_status() const;
     void send_autopilot_state_for_gimbal_device() const;
     void send_hxts_bat_can_status() const;
+    void send_can_servo_status() const;
 
     // lock a channel, preventing use by MAVLink
     void lock(bool _lock) {

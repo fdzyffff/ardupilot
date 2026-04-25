@@ -682,6 +682,7 @@ void SITL_State::multicast_state_send(void)
         return;
     }
     if (mc_out_fd == -1) {
+        ::printf("multicast_state_open();\n");
         multicast_state_open();
     }
     const auto &sfdm = _sitl->state;

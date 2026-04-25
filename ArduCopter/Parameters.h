@@ -390,6 +390,7 @@ public:
         // 511: reserved
 
         k_param_uattack,
+        k_param_yolo_drop,
     };
 
     AP_Int16        format_version;
@@ -490,6 +491,8 @@ public:
     {
     }
 };
+
+class AP_Redundancy;
 
 /*
   2nd block of parameters, to avoid going past 256 top level keys
@@ -708,6 +711,7 @@ public:
 #if ENABLE_REDUNDANCY_CONTROL
     AP_Float batt1_voltage_mult;
     AP_Float batt2_voltage_mult;
+    AP_Redundancy  *redundancy_ptr;
 #endif
 };
 

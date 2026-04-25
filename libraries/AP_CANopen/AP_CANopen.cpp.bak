@@ -39,29 +39,6 @@
 // 前向声明
 static bool is_redundancy_in_control();
 
-// 舵机是否处于 save 后 flash 写入等待窗口。窗口期间对该舵机不发 SDO 读请求，
-// 避免 KST MCU 忙于写 flash 时返回过渡值或丢失请求。使用有符号差值兼容 millis() 回绕。
-static inline bool is_servo_flash_writing(const Servo_t &s)
-{
-    return (s.flash_write_end_ms != 0) &&
-           ((int32_t)(AP_HAL::millis() - s.flash_write_end_ms) < 0);
-}
-
-// 计算硬件行程目标：统一为对称 ±max(|N|, |P|)，绕开 KST 反向语义下
-// "修改负向限位时正向限位跟变"的歧义（对称时两侧数值相等，任何视角下读回都一致）。
-// 软件层 update() 仍按 param_neg/param_pos 做非对称 constrain_float，
-// 硬件对称只做物理兜底。最终限值钳到 KST 协议 §2.15 规定的 ±100° 物理上限。
-static inline void calc_hw_range(float param_neg, float param_pos,
-                                 float &hw_neg, float &hw_pos)
-{
-    float hw_limit = fmaxf(fabsf(param_neg), fabsf(param_pos));
-    if (hw_limit > 100.0f) {
-        hw_limit = 100.0f;
-    }
-    hw_neg = -hw_limit;
-    hw_pos =  hw_limit;
-}
-
 extern const AP_HAL::HAL &hal;
 
 #if HAL_CANMANAGER_ENABLED
@@ -143,13 +120,8 @@ AP_CANopen::AP_CANopen() {
         _servos[i].last_real_pos_feedback_timestamp_us = 0;
         _servos[i].got_range_min_setting = false;
         _servos[i].got_range_max_setting = false;
-        _servos[i].got_enable_byte = false;
-        _servos[i].enable_byte = 0;
         _servos[i].was_online = false;
         _servos[i].range_setup_state = RANGE_SETUP_IDLE;
-        _servos[i].flash_write_end_ms = 0;
-        _servos[i].reverse_clear_retries = 0;
-        _servos[i].reverse_clear_failed = false;
         _servos[i].range_min_deg = 0.0f;
         _servos[i].range_max_deg = 0.0f;
         _servos[i].target_angle_deg = 0;
@@ -234,7 +206,6 @@ void AP_CANopen::loop() {
     uint64_t last_servo_tx_us = 0;
     uint32_t last_range_min_ms = 0;
     uint32_t last_range_max_ms = 0;
-    uint32_t last_enable_ms = 0;
     uint32_t last_feedback_ms = 0;
     uint32_t last_config_range_ms = 0;
     uint32_t last_query_status_ms = 0;
@@ -360,12 +331,6 @@ void AP_CANopen::loop() {
                 query_servos_range_max();
             }
 
-            // 读取舵机功能使能字节（含反向位），用于 configure_servos_range 中强制清零
-            if (now_ms - last_enable_ms >= QUERY_SERVO_RANGE_PERIOD_MS) {
-                last_enable_ms = now_ms;
-                query_servos_enable_byte();
-            }
-
             // 定时重新初始化离线舵机
             if (now_ms - last_feedback_ms >= SET_ENABLE_SERVO_FEEDBACK_PERIOD_MS) {
                 last_feedback_ms = now_ms;
@@ -444,7 +409,6 @@ void AP_CANopen::process_SDO_reply(AP_HAL::CANFrame &frame) {
             _servos[servo_index].range_setup_state = RANGE_SETUP_IDLE;
             _servos[servo_index].got_range_min_setting = false;
             _servos[servo_index].got_range_max_setting = false;
-            _servos[servo_index].got_enable_byte = false;
             if (_config_target == (int8_t)servo_index) {
                 _config_target = -1;
             }
@@ -467,12 +431,6 @@ void AP_CANopen::process_SDO_reply(AP_HAL::CANFrame &frame) {
             case CANOPEN_INDEX_KST_SERVO_READ_RANGE_MAX:
                 if (_servos[servo_index].range_setup_state == RANGE_SETUP_SET_MAX) {
                     _servos[servo_index].range_setup_state = RANGE_SETUP_SAVE;
-                }
-                break;
-            case CANOPEN_INDEX_KST_SERVO_ENABLE_BYTE:
-                if (_servos[servo_index].range_setup_state == RANGE_SETUP_CLEAR_REVERSE) {
-                    _servos[servo_index].range_setup_state = RANGE_SETUP_SAVE_REVERSE;
-                    _servos[servo_index].range_setup_start_ms = AP_HAL::millis();
                 }
                 break;
             default:
@@ -508,13 +466,6 @@ void AP_CANopen::process_SDO_reply(AP_HAL::CANFrame &frame) {
                 int16_t angle_deg_x10 = (frame.data[5] << 8) + frame.data[4];
                 _servos[servo_index].range_max_deg = angle_deg_x10 * 0.1f;
                 _servos[servo_index].got_range_max_setting = true;
-            }
-            break;
-
-        case CANOPEN_INDEX_KST_SERVO_ENABLE_BYTE:
-            if (subindex == CANOPEN_SUBINDEX_KST_SERVO_ENABLE_BYTE) {
-                _servos[servo_index].enable_byte = frame.data[4];
-                _servos[servo_index].got_enable_byte = true;
             }
             break;
 
@@ -589,18 +540,6 @@ void AP_CANopen::update() {
             SRV_Channel::Aux_servo_function_t function = SRV_Channels::channel_function(ii);
             float norm = SRV_Channels::get_output_norm(function);
 
-            // get_output_norm(function) 内部会对 PWM 先算 norm 再用首匹配通道的
-            // reversed 去反向，返回的是"未反向的逻辑信号"（与 SERVOx_REVERSED 无关）。
-            // CANopen 按角度下发，没有 PWM 通路二次处理，必须在这里用本通道自己
-            // 的 SERVOx_REVERSED 重新施加一次方向，否则：
-            //   1) SERVOx_REVERSED 对 CAN 舵机完全不起作用；
-            //   2) 多通道共享同一 function 时（如 SERVO2/SERVO6 同为升降舵）
-            //      所有通道永远同向，无法独立反向。
-            SRV_Channel *c = SRV_Channels::srv_channel(ii);
-            if (c != nullptr && c->get_reversed()) {
-                norm = -norm;
-            }
-
             float angn = _ang_neg[ii].get();   // 负向行程限位（度，负值）
             float angp = _ang_pos[ii].get();   // 正向行程限位（度，正值）
             float trim = _ang_trim[ii].get();  // 中位偏移（度）
@@ -659,8 +598,7 @@ void AP_CANopen::query_servos_range_min(void) {
     for (uint8_t n = 0; n < CANOPEN_MAX_NUM_SERVO; n++) {
         uint8_t i = _rr_range_min_idx;
         _rr_range_min_idx = (_rr_range_min_idx + 1) % CANOPEN_MAX_NUM_SERVO;
-        if (is_servo_channel_active(i) && !_servos[i].got_range_min_setting &&
-            !is_servo_flash_writing(_servos[i])) {
+        if (is_servo_channel_active(i) && !_servos[i].got_range_min_setting) {
             CANopen_read_by_SDO(&_servos[i].node,
                                 CANOPEN_INDEX_KST_SERVO_READ_RANGE_MIN,
                                 CANOPEN_SUBINDEX_KST_SERVO_READ_RANGE_MIN, 0, 4);
@@ -684,36 +622,10 @@ void AP_CANopen::query_servos_range_max(void) {
     for (uint8_t n = 0; n < CANOPEN_MAX_NUM_SERVO; n++) {
         uint8_t i = _rr_range_max_idx;
         _rr_range_max_idx = (_rr_range_max_idx + 1) % CANOPEN_MAX_NUM_SERVO;
-        if (is_servo_channel_active(i) && _servos[i].got_range_min_setting &&
-            !_servos[i].got_range_max_setting && !is_servo_flash_writing(_servos[i])) {
+        if (is_servo_channel_active(i) && _servos[i].got_range_min_setting && !_servos[i].got_range_max_setting) {
             CANopen_read_by_SDO(&_servos[i].node,
                                 CANOPEN_INDEX_KST_SERVO_READ_RANGE_MAX,
                                 CANOPEN_SUBINDEX_KST_SERVO_READ_RANGE_MAX, 0, 4);
-            if (++sent >= CANOPEN_SERVOS_PER_QUERY) break;
-        }
-    }
-}
-
-/// @brief 查询舵机的功能使能字节（含反向位，§2.14 协议），仅在未取到时读取
-/// @note  读回的 bit 5 若为 1，则 configure_servos_range() 会触发 CLEAR_REVERSE 流程强制清零
-void AP_CANopen::query_servos_enable_byte(void) {
-    if (_srv_bm == 0x00) {
-        return;
-    }
-
-    if (!is_redundancy_in_control()) {
-        return;
-    }
-
-    uint8_t sent = 0;
-    for (uint8_t n = 0; n < CANOPEN_MAX_NUM_SERVO; n++) {
-        uint8_t i = _rr_enable_idx;
-        _rr_enable_idx = (_rr_enable_idx + 1) % CANOPEN_MAX_NUM_SERVO;
-        if (is_servo_channel_active(i) && !_servos[i].got_enable_byte &&
-            !is_servo_flash_writing(_servos[i])) {
-            CANopen_read_by_SDO(&_servos[i].node,
-                                CANOPEN_INDEX_KST_SERVO_ENABLE_BYTE,
-                                CANOPEN_SUBINDEX_KST_SERVO_ENABLE_BYTE, 0, 1);
             if (++sent >= CANOPEN_SERVOS_PER_QUERY) break;
         }
     }
@@ -742,12 +654,7 @@ void AP_CANopen::enable_servos_feedback(void)
         if (_servos[i].was_online && !online) {
             _servos[i].got_range_min_setting = false;
             _servos[i].got_range_max_setting = false;
-            _servos[i].got_enable_byte = false;
             _servos[i].range_setup_state = RANGE_SETUP_IDLE;
-            // 重连后应重新尝试反向清除（上次失败可能是临时原因，重启舵机后可能恢复）
-            _servos[i].reverse_clear_retries = 0;
-            _servos[i].reverse_clear_failed = false;
-            _servos[i].flash_write_end_ms = 0;
             gcs().send_text(MAV_SEVERITY_WARNING,
                 "CANopen: Servo %u offline, will re-init", i + 1);
         }
@@ -789,9 +696,6 @@ void AP_CANopen::configure_servos_range(void) {
             // 处理当前目标舵机的配置步骤
             float param_neg = _ang_neg[i].get();
             float param_pos = _ang_pos[i].get();
-            // 硬件行程统一写对称 ±max(|N|,|P|)（见 calc_hw_range 注释）
-            float hw_neg, hw_pos;
-            calc_hw_range(param_neg, param_pos, hw_neg, hw_pos);
 
             switch (_servos[i].range_setup_state) {
                 case RANGE_SETUP_SET_MIN: {
@@ -804,7 +708,7 @@ void AP_CANopen::configure_servos_range(void) {
                             "CANopen: Servo %u range SET_MIN timeout", i + 1);
                         return;
                     }
-                    int16_t val = (int16_t)(hw_neg * 10.0f);
+                    int16_t val = (int16_t)(param_neg * 10.0f);
                     uint32_t data = (uint32_t)val & 0x0000FFFF;
                     CANopen_write_by_SDO(&_servos[i].node,
                             CANOPEN_INDEX_KST_SERVO_READ_RANGE_MIN,
@@ -823,7 +727,7 @@ void AP_CANopen::configure_servos_range(void) {
                             "CANopen: Servo %u range SET_MAX timeout", i + 1);
                         return;
                     }
-                    int16_t val = (int16_t)(hw_pos * 10.0f);
+                    int16_t val = (int16_t)(param_pos * 10.0f);
                     uint32_t data = (uint32_t)val & 0x0000FFFF;
                     CANopen_write_by_SDO(&_servos[i].node,
                             CANOPEN_INDEX_KST_SERVO_READ_RANGE_MAX,
@@ -838,54 +742,12 @@ void AP_CANopen::configure_servos_range(void) {
                         CANOPEN_SUBINDEX_KST_SERVO_SAVE,
                         CANOPEN_SAVE_MAGIC, false);
                     _servos[i].range_setup_state = RANGE_SETUP_DONE;
-                    _servos[i].range_min_deg = hw_neg;
-                    _servos[i].range_max_deg = hw_pos;
-                    // save 无应答 + KST 内部 flash 写入期间 SDO 不可靠，设等待窗口
-                    _servos[i].flash_write_end_ms = AP_HAL::millis() + KST_SAVE_FLASH_WAIT_MS;
+                    _servos[i].range_min_deg = param_neg;
+                    _servos[i].range_max_deg = param_pos;
                     _config_target = -1;
                     gcs().send_text(MAV_SEVERITY_INFO,
-                        "CANopen: Servo %u hw range set sym[%.1f, %.1f] (param[%.1f,%.1f]), saved (flash wait %ums)",
-                        i + 1, hw_neg, hw_pos, param_neg, param_pos, (unsigned)KST_SAVE_FLASH_WAIT_MS);
-                    return;
-
-                case RANGE_SETUP_CLEAR_REVERSE: {
-                    if (AP_HAL::millis() - _servos[i].range_setup_start_ms > RANGE_SETUP_STEP_TIMEOUT_MS) {
-                        _servos[i].range_setup_state = RANGE_SETUP_IDLE;
-                        _servos[i].got_enable_byte = false;
-                        _config_target = -1;
-                        gcs().send_text(MAV_SEVERITY_WARNING,
-                            "CANopen: Servo %u clear reverse timeout", i + 1);
-                        return;
-                    }
-                    uint8_t new_byte = _servos[i].enable_byte & ~CANOPEN_KST_ENABLE_BIT_REVERSE;
-                    uint32_t data = (uint32_t)new_byte & 0xFFu;
-                    CANopen_write_by_SDO(&_servos[i].node,
-                            CANOPEN_INDEX_KST_SERVO_ENABLE_BYTE,
-                            CANOPEN_SUBINDEX_KST_SERVO_ENABLE_BYTE,
-                            data, true);
-                    return;
-                }
-
-                case RANGE_SETUP_SAVE_REVERSE:
-                    // 持久化反向清除：save 命令无需回复（协议 §2.10）
-                    CANopen_write_by_SDO(&_servos[i].node,
-                        CANOPEN_INDEX_KST_SERVO_SAVE,
-                        CANOPEN_SUBINDEX_KST_SERVO_SAVE,
-                        CANOPEN_SAVE_MAGIC, false);
-                    // 不再乐观写本地 enable_byte——清掉 got_enable_byte 强制下一轮重读验证 bit5
-                    // 真的被清零（协议 §2.14 改写后立刻生效，但 KST 实测可能存在写失败/flash 未固化
-                    // 重启回滚等情况）
-                    _servos[i].got_enable_byte = false;
-                    // 反向语义变化后，此前读到的 0x300A/0x300B 可能在旧约定下，强制重读
-                    _servos[i].got_range_min_setting = false;
-                    _servos[i].got_range_max_setting = false;
-                    // save 无应答 + KST 内部 flash 写入期间 SDO 不可靠，设等待窗口
-                    _servos[i].flash_write_end_ms = AP_HAL::millis() + KST_SAVE_FLASH_WAIT_MS;
-                    _servos[i].range_setup_state = RANGE_SETUP_IDLE;
-                    _config_target = -1;
-                    gcs().send_text(MAV_SEVERITY_INFO,
-                        "CANopen: Servo %u reverse clear sent, verifying after flash wait",
-                        i + 1);
+                        "CANopen: Servo %u range set [%.1f, %.1f], saved",
+                        i + 1, param_neg, param_pos);
                     return;
 
                 default:
@@ -907,60 +769,20 @@ void AP_CANopen::configure_servos_range(void) {
 
         float param_neg = _ang_neg[i].get();
         float param_pos = _ang_pos[i].get();
-        // 硬件行程期望值：对称 ±max(|N|,|P|)，硬件读回与之对比
-        float hw_neg, hw_pos;
-        calc_hw_range(param_neg, param_pos, hw_neg, hw_pos);
 
         if (_servos[i].range_setup_state == RANGE_SETUP_IDLE) {
-            // flash 写入窗口期跳过本舵机（save 后等 KST 内部 flash 写完再动）
-            if (is_servo_flash_writing(_servos[i])) {
-                continue;
-            }
-            // 前置：必须先取到功能使能字节，否则无法判断反向状态
-            if (!_servos[i].got_enable_byte) {
-                continue;
-            }
-            // 优先清除 KST 内部反向位：反向语义下 0x300A/0x300B 的约定与飞控假设不一致，
-            // 必须先清零再处理行程；用户如需反向请使用 ArduPilot 的 SERVOx_REVERSED
-            if (_servos[i].enable_byte & CANOPEN_KST_ENABLE_BIT_REVERSE) {
-                // 前次已判定失败则不再重试，等在线→离线重连再试
-                if (_servos[i].reverse_clear_failed) {
-                    continue;
-                }
-                // 读回仍是 1：要么写未生效，要么重启后回滚。超上限则放弃并拒绝 pre-arm
-                if (_servos[i].reverse_clear_retries >= KST_REVERSE_CLEAR_MAX_RETRIES) {
-                    _servos[i].reverse_clear_failed = true;
-                    gcs().send_text(MAV_SEVERITY_CRITICAL,
-                        "CANopen: Servo %u reverse clear FAILED after %u retries, pre-arm blocked",
-                        i + 1, (unsigned)KST_REVERSE_CLEAR_MAX_RETRIES);
-                    continue;
-                }
-                _servos[i].reverse_clear_retries++;
-                _servos[i].range_setup_state = RANGE_SETUP_CLEAR_REVERSE;
-                _servos[i].range_setup_start_ms = AP_HAL::millis();
-                _config_target = (int8_t)i;
-                gcs().send_text(MAV_SEVERITY_INFO,
-                    "CANopen: Servo %u internal reverse detected (enable=0x%02X), clear attempt %u/%u",
-                    i + 1, _servos[i].enable_byte,
-                    (unsigned)_servos[i].reverse_clear_retries,
-                    (unsigned)KST_REVERSE_CLEAR_MAX_RETRIES);
-                return;
-            }
-            // 读回 bit5=0：验证成功，重置计数供后续可能的误触发重新计数
-            _servos[i].reverse_clear_retries = 0;
             if (!_servos[i].got_range_min_setting || !_servos[i].got_range_max_setting) {
                 continue;
             }
-            // 与期望的硬件对称值对比，不匹配则触发重写（容差 0.15°）
-            if (fabsf(_servos[i].range_min_deg - hw_neg) > 0.15f ||
-                fabsf(_servos[i].range_max_deg - hw_pos) > 0.15f) {
+            if (fabsf(_servos[i].range_min_deg - param_neg) > 0.15f ||
+                fabsf(_servos[i].range_max_deg - param_pos) > 0.15f) {
                 _servos[i].range_setup_state = RANGE_SETUP_SET_MIN;
                 _servos[i].range_setup_start_ms = AP_HAL::millis();
                 _config_target = (int8_t)i;
                 gcs().send_text(MAV_SEVERITY_INFO,
-                    "CANopen: Servo %u range mismatch hw[%.1f,%.1f] expect sym[%.1f,%.1f] (param[%.1f,%.1f])",
+                    "CANopen: Servo %u range mismatch hw[%.1f,%.1f] param[%.1f,%.1f]",
                     i + 1, _servos[i].range_min_deg, _servos[i].range_max_deg,
-                    hw_neg, hw_pos, param_neg, param_pos);
+                    param_neg, param_pos);
                 return;
             }
             _servos[i].range_setup_state = RANGE_SETUP_DONE;
@@ -968,9 +790,9 @@ void AP_CANopen::configure_servos_range(void) {
         }
 
         if (_servos[i].range_setup_state == RANGE_SETUP_DONE) {
-            // 检查参数是否在运行中被修改（仍以硬件对称值为基准）
-            if (fabsf(_servos[i].range_min_deg - hw_neg) > 0.15f ||
-                fabsf(_servos[i].range_max_deg - hw_pos) > 0.15f) {
+            // 检查参数是否在运行中被修改
+            if (fabsf(_servos[i].range_min_deg - param_neg) > 0.15f ||
+                fabsf(_servos[i].range_max_deg - param_pos) > 0.15f) {
                 _servos[i].range_setup_state = RANGE_SETUP_SET_MIN;
                 _servos[i].range_setup_start_ms = AP_HAL::millis();
                 _config_target = (int8_t)i;
@@ -1129,12 +951,6 @@ bool AP_CANopen::pre_arm_check(char *reason, uint8_t reason_len) {
         if (is_servo_channel_active(ii)) {
             if (!is_servo_online(ii)) {
                 snprintf(reason, reason_len, "Servo %u not detected", ii + 1);
-                return false;
-            }
-            // 反向清除重试耗尽仍失败：KST 内部 0x300F bit5 没法稳定清零，
-            // 若放行，SERVOx_REVERSED 与 KST 内部反向双重作用，方向不可预测
-            if (_servos[ii].reverse_clear_failed) {
-                snprintf(reason, reason_len, "Servo %u reverse clear failed", ii + 1);
                 return false;
             }
         }

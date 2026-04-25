@@ -1309,6 +1309,12 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("TAXI_SPEED_MAX", 41, ParametersG2, taxi_speed_max, 5.0f),
 
+#if ENABLE_REDUNDANCY_CONTROL
+    // @Group: RDN_
+    // @Path: ../libraries/AP_Redundancy/AP_Redundancy.cpp
+    AP_SUBGROUPPTR(redundancy_ptr, "RDN_", 42, ParametersG2, AP_Redundancy),
+#endif
+
     AP_GROUPEND
 };
 
@@ -1319,6 +1325,9 @@ ParametersG2::ParametersG2(void) :
 #endif
 #if HAL_BUTTON_ENABLED
     ,button_ptr(&plane.button)
+#endif
+#if ENABLE_REDUNDANCY_CONTROL
+    ,redundancy_ptr(nullptr)
 #endif
 {
     AP_Param::setup_object_defaults(this, var_info);

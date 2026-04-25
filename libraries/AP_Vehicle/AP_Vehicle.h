@@ -229,6 +229,13 @@ public:
 
 #endif // AP_SCRIPTING_ENABLED
 
+    // returns true if this redundancy unit is currently in control (for TMR systems)
+    // non-controlling units must not send CAN frames to avoid bus conflicts
+    virtual bool is_redundancy_in_control() const;
+
+    // returns the redundancy unit number (1/2/3) for TMR systems, 0 if not assigned
+    virtual uint8_t get_redundancy_num() const;
+
     // returns true if vehicle is in the process of landing
     virtual bool is_landing() const { return false; }
 

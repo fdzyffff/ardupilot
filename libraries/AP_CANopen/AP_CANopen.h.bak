@@ -48,13 +48,6 @@
 #define CANOPEN_SUBINDEX_KST_SERVO_SAVE 0x01
 #define CANOPEN_SAVE_MAGIC 0x65766173         // "save" ASCII 小端序
 
-// 功能使能字节（§2.14 协议）：bit 5 = 逻辑反向。
-// 飞控强制清除 bit 5，统一由 ArduPilot 层 SERVOx_REVERSED 实现反向，
-// 以避开 KST 固件在反向状态下 0x300A/0x300B 的语义约定差异（两者会相互影响）。
-#define CANOPEN_INDEX_KST_SERVO_ENABLE_BYTE 0x300F
-#define CANOPEN_SUBINDEX_KST_SERVO_ENABLE_BYTE 0x00
-#define CANOPEN_KST_ENABLE_BIT_REVERSE (1U << 5)
-
 #define SERVO_ONLINE_TIMEOUT_US 500000ULL  // 舵机掉线超时时间，此值为500ms，超过此值时间依然没有收到舵机发来的CAN帧，则认为其掉线
 #define SERVO_STATUS_LOG_PERIOD_MS 100  // 舵机状态保存到日志中的周期
 #define QUERY_SERVO_STATUS_PERIOD_MS 1000  // 定时查询舵机状态（温度、电流）的周期
@@ -64,22 +57,12 @@
 #define RANGE_SETUP_STEP_TIMEOUT_MS 3000       // 行程配置每步 SDO 超时（ms），超时则重置为 IDLE 重试
 #define CANOPEN_TX_STATS_PERIOD_MS 5000  // 发送统计日志输出周期
 
-// KST 0x1010 "save" 命令无应答（协议 §2.10），save 后 MCU 写 flash 期间对 SDO 请求可能
-// 被忽略或返回过渡值。发送 save 后对该舵机的 SDO 读请求延迟 KST_SAVE_FLASH_WAIT_MS
-// 再恢复；150ms 覆盖常见 KST 内部 flash 写入时长且留余量。位置控制帧不受此限制。
-#define KST_SAVE_FLASH_WAIT_MS 150
-// 反向清除（0x300F bit5）写后需读回确认；若读回仍为 1 最多重试 KST_REVERSE_CLEAR_MAX_RETRIES
-// 次，超过则置 reverse_clear_failed 并拒绝 pre-arm。
-#define KST_REVERSE_CLEAR_MAX_RETRIES 3
-
 // 舵机行程配置状态机
-#define RANGE_SETUP_IDLE          0  // 等待读取硬件行程
-#define RANGE_SETUP_SET_MIN       1  // 需要写入负向行程
-#define RANGE_SETUP_SET_MAX       2  // 需要写入正向行程
-#define RANGE_SETUP_SAVE          3  // 需要发送保存命令
-#define RANGE_SETUP_DONE          4  // 配置完成
-#define RANGE_SETUP_CLEAR_REVERSE 5  // 写入清零反向位后的使能字节（优先于 SET_MIN）
-#define RANGE_SETUP_SAVE_REVERSE  6  // 保存反向清除，使其持久化
+#define RANGE_SETUP_IDLE     0  // 等待读取硬件行程
+#define RANGE_SETUP_SET_MIN  1  // 需要写入负向行程
+#define RANGE_SETUP_SET_MAX  2  // 需要写入正向行程
+#define RANGE_SETUP_SAVE     3  // 需要发送保存命令
+#define RANGE_SETUP_DONE     4  // 配置完成
 
 // 轮询式发送：每次迭代只处理部分舵机，避免CAN TX邮箱溢出（BxCAN仅3个TX邮箱，无软件队列）
 #define CANOPEN_SERVOS_PER_SEND 4       // send_servo_target_angle 每次处理的舵机数
@@ -98,14 +81,9 @@ typedef struct _Servo_t
     uint64_t last_real_pos_feedback_timestamp_us;  // 最后一次收到舵机发来的位置反馈信息的时间
     bool got_range_min_setting;  // 已经取得位置范围最小值的设置值
     bool got_range_max_setting;  // 已经取得位置范围最大值的设置值
-    bool got_enable_byte;        // 已取得功能使能字节（含反向位）
-    uint8_t enable_byte;         // 功能使能字节当前值（bit 5 = 反向）
     bool was_online;  // 上一次检查时舵机是否在线（用于检测在线→离线切换并重置初始化状态）
     uint8_t range_setup_state;  // 行程配置状态机（RANGE_SETUP_*）
     uint32_t range_setup_start_ms;  // 进入 SET_MIN 状态的时间戳，用于超时检测
-    uint32_t flash_write_end_ms;    // save 后 flash 写入窗口结束时刻（millis），期间跳过此舵机的 SDO 读
-    uint8_t reverse_clear_retries;  // 反向清除（0x300F bit5）重试计数；读回仍为 1 时 +1
-    bool reverse_clear_failed;      // 反向清除重试耗尽 → pre-arm 拒绝解锁
     float range_min_deg;  // 从硬件读回的负向行程值（度），用于与参数对比
     float range_max_deg;  // 从硬件读回的正向行程值（度），用于与参数对比
     float real_angle_deg;  // 舵机反馈过来的当前的实际角度值，单位：度
@@ -182,8 +160,6 @@ private:
 
     void query_servos_range_max(void);
 
-    void query_servos_enable_byte(void);  // 读取功能使能字节（含反向位）
-
     void enable_servos_feedback(void);
 
     void rebuild_online_list(void);
@@ -223,7 +199,6 @@ private:
     uint8_t _rr_query_idx = 0;
     uint8_t _rr_range_min_idx = 0;
     uint8_t _rr_range_max_idx = 0;
-    uint8_t _rr_enable_idx = 0;
     uint8_t _rr_feedback_idx = 0;
     uint8_t _rr_config_idx = 0;  // 行程配置轮询索引（仅在当前目标完成/IDLE后推进）
     int8_t  _config_target = -1; // 当前正在配置行程的舵机索引，-1=无

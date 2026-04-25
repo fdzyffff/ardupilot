@@ -24,6 +24,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 // 编译功能开关
 #define ENABLE_REDUNDANCY_CONTROL 1    // 余度切换控制功能开关，1：开启，0：关闭
+#if ENABLE_REDUNDANCY_CONTROL
+#include <AP_Redundancy/AP_Redundancy.h>
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // Header includes
@@ -139,6 +142,9 @@
 class Plane : public AP_Vehicle {
 public:
     friend class GCS_MAVLINK_Plane;
+#if ENABLE_REDUNDANCY_CONTROL
+    friend class PlaneRedundancy;
+#endif
     friend class Parameters;
     friend class ParametersG2;
     friend class AP_Arming_Plane;
@@ -267,31 +273,9 @@ private:
     AP_Navigation *nav_controller = &L1_controller;
 
 #if ENABLE_REDUNDANCY_CONTROL
-    // 余度切换控制相关成员变量
-    AP_HAL::UARTDriver* redundancy_uart_to_FPGA = nullptr;
-    AP_HAL::UARTDriver* redundancy_uart_to_FMUa = nullptr;
-    AP_HAL::UARTDriver* redundancy_uart_to_FMUb = nullptr;
-    bool redundancy_initialized = false;
-    uint32_t last_heartbeat_from_FPGA_ms = 0;
-    uint8_t redundancy_status = 0;
-    uint8_t last_ctrl_redundancy_num = 0;
-    uint8_t this_redundancy_num = 0;  // 当前余度编号，0: 未获取，1：余度1，2：余度2，3：余度3
-    uint32_t fmu_a_last_fpga_timestamp = 0;
-    uint32_t fmu_b_last_fpga_timestamp = 0;
-    
-    // ADC值存储（7路24位ADC转换后的浮点数值）
-    float adc_value_from_FPGA[7] = {0.0f};  // 存储转换后的ADC浮点数值，单位为V（电压通道）或mA（电流通道）
-
-    // 余度切换控制相关函数
+    AP_Redundancy *redundancy = nullptr;
     void init_redundancy_control();
     void update_redundancy_control();
-    uint8_t evaluate_redundancy_health();
-    void read_redundancy_data_from_FPGA();
-    void read_redundancy_data_from_FMUa();
-    void read_redundancy_data_from_FMUb();
-    void process_redundancy_frame_from_FPGA();
-    void process_redundancy_frame_from_FMUa();
-    void process_redundancy_frame_from_FMUb();    
 #endif
 
     // Camera
@@ -1322,8 +1306,8 @@ public:
     bool is_landing() const override;
     bool is_taking_off() const override;
 #if ENABLE_REDUNDANCY_CONTROL
-    // 注意：不再是虚函数，避免虚函数表问题
-    bool is_redundancy_in_control() const;
+    bool is_redundancy_in_control() const override;
+    uint8_t get_redundancy_num() const override;
 #endif
 #if AP_SCRIPTING_ENABLED || AP_EXTERNAL_CONTROL_ENABLED
     bool set_target_location(const Location& target_loc) override;
