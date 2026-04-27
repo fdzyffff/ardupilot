@@ -15,12 +15,12 @@ FD_MOT::FD_MOT(FD_CAN *frotend) {
 
 void FD_MOT::handle_info(AP_HAL::CANFrame &in_frame, bool do_print) {
     bool have_rpm = false;
-    uint16_t group = 0;
+    uint32_t address = 0;
     uint16_t order = 0;
-    if (!get_rpm_group(group, order)) {
+    if (!get_rpm_address(address, order)) {
         return;
     }
-    if (in_frame.id == ((0x189D271C + ((group - 1) * 0x10000))| AP_HAL::CANFrame::FlagEFF)) {
+    if (in_frame.id == (address | AP_HAL::CANFrame::FlagEFF)) {
         switch(order) {
         case 1:
             status.rpm = (uint16_t)in_frame.data[1] | (uint16_t)in_frame.data[0] << 8 ; // 0~2000
@@ -49,7 +49,7 @@ void FD_MOT::handle_info(AP_HAL::CANFrame &in_frame, bool do_print) {
     }
 
     bool have_temp = false;
-    if (in_frame.id == ((0x18A1271C + ((group - 1) * 0x10000))| AP_HAL::CANFrame::FlagEFF)) {
+    if (in_frame.id == (address | AP_HAL::CANFrame::FlagEFF)) {
         switch(order) {
         case 1:
             status.temp = (uint16_t)in_frame.data[1] | (uint16_t)in_frame.data[0] << 8 ; // 0~2000
@@ -79,23 +79,23 @@ void FD_MOT::handle_info(AP_HAL::CANFrame &in_frame, bool do_print) {
 
 }
 
-bool FD_MOT::get_rpm_group(uint16_t &group, uint16_t &order)
+bool FD_MOT::get_rpm_address(uint32_t &address, uint16_t &order)
 {
     bool ret = false;
     if ((1<=status.id) && (status.id<=4)) {
-        group = 1;
+        address = 1;
         ret = true;
     }
     if ((5<=status.id) && (status.id<=8)) {
-        group = 2;
+        address = 2;
         ret = true;
     }
     if ((9<=status.id) && (status.id<=12)) {
-        group = 3;
+        address = 3;
         ret = true;
     }
     if ((13<=status.id) && (status.id<=16)) {
-        group = 4;
+        address = 4;
         ret = true;
     }
 
@@ -107,51 +107,85 @@ bool FD_MOT::get_rpm_group(uint16_t &group, uint16_t &order)
     return ret;
 }
 
-bool FD_MOT::get_temp_group(uint16_t &group, uint16_t &order)
+bool FD_MOT::get_temp_address(uint32_t &address, uint16_t &order)
 {
-    return get_rpm_group(group, order);
+    return get_rpm_address(address, order);
 }
 
-bool FD_MOT::get_throttle_group(uint16_t &group, uint16_t &order)
+bool FD_MOT::get_throttle_address(uint32_t &address, uint16_t &order)
 {
     bool ret = false;
-    if ((1<=status.id) && (status.id<=2)) {
-        group = 1;
-        ret = true;
-    }
-    if ((3<=status.id) && (status.id<=4)) {
-        group = 2;
-        ret = true;
-    }
-    if ((5<=status.id) && (status.id<=6)) {
-        group = 3;
-        ret = true;
-    }
-    if ((7<=status.id) && (status.id<=8)) {
-        group = 4;
-        ret = true;
-    }
-    if ((9<=status.id) && (status.id<=10)) {
-        group = 5;
-        ret = true;
-    }
-    if ((11<=status.id) && (status.id<=12)) {
-        group = 6;
-        ret = true;
-    }
-    if ((13<=status.id) && (status.id<=14)) {
-        group = 7;
-        ret = true;
-    }
-    if ((15<=status.id) && (status.id<=16)) {
-        group = 8;
+    if ((1<=status.id) && (status.id<=16)) {
+        address = status.id;
         ret = true;
     }
 
-    order = status.id % 2;
-    if (order == 0) {
-        order = 2;
+    switch (status.id) {
+        case 1:
+            address = 0x14661C27;
+            break;
+        case 2:
+            address = 0x14671C27;
+            break;
+        case 3:
+            address = 0x14681C27;
+            break;
+        case 4:
+            address = 0x14691C27;
+            break;
+        case 5:
+            address = 0x14761C27;
+            break;
+        case 6:
+            address = 0x14771C27;
+            break;
+        case 7:
+            address = 0x14781C27;
+            break;
+        case 8:
+            address = 0x14791C27;
+            break;
     }
+
+    order = 0;
+
+    // if ((1<=status.id) && (status.id<=2)) {
+    //     address = 1;
+    //     ret = true;
+    // }
+    // if ((3<=status.id) && (status.id<=4)) {
+    //     address = 2;
+    //     ret = true;
+    // }
+    // if ((5<=status.id) && (status.id<=6)) {
+    //     address = 3;
+    //     ret = true;
+    // }
+    // if ((7<=status.id) && (status.id<=8)) {
+    //     address = 4;
+    //     ret = true;
+    // }
+    // if ((9<=status.id) && (status.id<=10)) {
+    //     address = 5;
+    //     ret = true;
+    // }
+    // if ((11<=status.id) && (status.id<=12)) {
+    //     address = 6;
+    //     ret = true;
+    // }
+    // if ((13<=status.id) && (status.id<=14)) {
+    //     address = 7;
+    //     ret = true;
+    // }
+    // if ((15<=status.id) && (status.id<=16)) {
+    //     address = 8;
+    //     ret = true;
+    // }
+
+    // order = status.id % 2;
+    // if (order == 0) {
+    //     order = 2;
+    // }
 
     return ret;
 }
@@ -159,13 +193,13 @@ bool FD_MOT::get_throttle_group(uint16_t &group, uint16_t &order)
 void FD_MOT::set_id(uint8_t id_in)
 {
     status.id = id_in;
-    uint16_t group = 0;
+    uint32_t address = 0;
     uint16_t order = 0;
-    if (!get_throttle_group(group, order)) {
-        gcs().send_text(MAV_SEVERITY_INFO, "CAN MOT: no thr group/order for id %d", status.id);
+    if (!get_throttle_address(address, order)) {
+        gcs().send_text(MAV_SEVERITY_INFO, "CAN MOT: no thr address/order for id %d", status.id);
     }
-    if (!get_rpm_group(group, order)) {
-        gcs().send_text(MAV_SEVERITY_INFO, "CAN MOT: no rpm group/order for id %d", status.id);
+    if (!get_rpm_address(address, order)) {
+        gcs().send_text(MAV_SEVERITY_INFO, "CAN MOT: no rpm address/order for id %d", status.id);
     }
 }
 
@@ -207,9 +241,9 @@ void FD_MOT::update_cmd()
             _data[6] = 0xFF;
             _data[7] = 0xFF;
 
-            uint16_t group = 0;
+            uint32_t address = 0;
             uint16_t order = 0;
-            if (!get_throttle_group(group, order)) {
+            if (!get_throttle_address(address, order)) {
                 return;
             }
 
@@ -238,8 +272,8 @@ void FD_MOT::update_cmd()
             //     break;
             // }
 
-            uint32_t target_addr = 0x14651C27 + (group * 0x10000);
-            send_cmd(target_addr | AP_HAL::CANFrame::FlagEFF, _data);
+            uint32_t target_addr = address | AP_HAL::CANFrame::FlagEFF;
+            send_cmd(target_addr, _data);
             // send_cmd(target_addr, _data);
         }
     }

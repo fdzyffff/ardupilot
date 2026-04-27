@@ -19,9 +19,9 @@ public:
     void handle_info(AP_HAL::CANFrame &in_frame, bool do_print = false);
     void set_id(uint8_t id_in);
     void set_pwm(uint16_t pwm_in);
-    bool get_rpm_group(uint16_t &group, uint16_t &order);
-    bool get_temp_group(uint16_t &group, uint16_t &order);
-    bool get_throttle_group(uint16_t &group, uint16_t &order);
+    bool get_rpm_address(uint32_t &address, uint16_t &order);
+    bool get_temp_address(uint32_t &address, uint16_t &order);
+    bool get_throttle_address(uint32_t &address, uint16_t &order);
     void update();
     void update_cmd();
     void update_status();
@@ -31,7 +31,7 @@ public:
     struct status_t {
         uint8_t id;
         uint8_t order;
-        uint8_t group;
+        uint8_t address;
         uint16_t thr_in;
         uint16_t rpm;
         uint16_t temp;
