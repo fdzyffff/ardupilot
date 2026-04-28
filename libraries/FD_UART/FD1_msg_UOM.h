@@ -27,6 +27,7 @@ public:
         bool print;
         bool updated;
         bool need_send;
+        uint8_t length;
         Content_1 content;
     };
 
