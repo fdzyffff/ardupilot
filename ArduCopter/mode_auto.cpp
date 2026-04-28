@@ -1590,27 +1590,27 @@ void ModeAuto::do_nav_new_wp(const AP_Mission::Mission_Command& cmd)
     uint16_t speed_xy_dms = cmd.p2;
     if (speed_xy_dms != 0) {
         set_speed_xy((float)speed_xy_dms * 10.0f);
+        gcs().send_text(MAV_SEVERITY_INFO, "speed_xy_dms %d", speed_xy_dms);
     } else {
         set_speed_xy(copter.wp_nav->get_default_speed_xy());
     }
 
-    gcs().send_text(MAV_SEVERITY_INFO, "speed_xy_dms %d", speed_xy_dms);
 
     uint16_t speed_up_dms = (cmd.p3 & 0xF0)>>8;
     if (speed_up_dms != 0) {
         set_speed_up((float)speed_up_dms * 10.0f);
+        gcs().send_text(MAV_SEVERITY_INFO, "speed_up_dms %d", speed_up_dms);
     } else {
         set_speed_up(copter.wp_nav->get_default_speed_up());
     }
-    gcs().send_text(MAV_SEVERITY_INFO, "speed_up_dms %d", speed_up_dms);
 
     uint16_t speed_down_dms = (cmd.p3 & 0x0F);
     if (speed_down_dms != 0) {
         set_speed_down((float)speed_down_dms * 10.0f);
+        gcs().send_text(MAV_SEVERITY_INFO, "speed_down_dms %d", speed_down_dms);
     } else {
         set_speed_down(copter.wp_nav->get_default_speed_down());
     }
-    gcs().send_text(MAV_SEVERITY_INFO, "speed_down_dms %d", speed_down_dms);
 
     // set next destination if necessary
     if (!set_next_wp(cmd, target_loc)) {

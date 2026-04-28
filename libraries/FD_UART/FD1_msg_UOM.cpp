@@ -32,8 +32,8 @@ void FD1_msg_UOM::make_init()
     _msg_1.content.msg.type = 255;
     _msg_1.content.msg.version = 1;
     _msg_1.content.msg.length = 0;
-    _msg_1.length = 4;
     _msg_1.content.msg.all_msg_data[0] = 0;
+    _msg_1.length = 4;
 }
 
 void FD1_msg_UOM::swap_message(void)
@@ -140,26 +140,29 @@ void FD1_msg_UOM::insert_msg(uint8_t msg_id, uint8_t (&msg_data)[20])
 
     memcpy((uint8_t *)&msg_mask, (uint8_t *)&_msg_1.content.msg.all_msg_data[0], msg_mask_length);  
 
-    uint8_t msg_length = msg_mask_length;
+    uint8_t msg_current_length = msg_mask_length;
 
     for (uint8_t i_msg = 1; i_msg < 22; i_msg++) {
         if (i_msg == msg_id) {
             if (have_msg_id(i_msg, msg_mask)) {
                 // get legnth of insert byte
-                uint8_t insert_byte = get_msg_length(i_msg);
+                uint8_t insert_byte = get_msg_length(msg_id);
+                // printf("%d insert_byte %d ",i_msg, insert_byte);
                 for (uint8_t i_i = 0; i_i < insert_byte; i_i++) {
-                    _msg_1.content.data[3 + msg_length + i_i] = msg_data[i_i];
+                    _msg_1.content.data[3 + msg_current_length + i_i] = msg_data[i_i];
                 }
             } else {
                 // get legnth of insert byte
-                uint8_t insert_byte = get_msg_length(i_msg);
-                for (uint8_t i_i = _msg_1.length; i_i >= msg_length + 3; i_i--) {
+                uint8_t insert_byte = get_msg_length(msg_id);
+
+                // shift back current buffer for next step
+                for (uint8_t i_i = _msg_1.length - 1; i_i >= 3 + msg_current_length - 1; i_i--) {
                     _msg_1.content.data[i_i + insert_byte] = _msg_1.content.data[i_i];
                 }
 
-                // shift back current buffer for next step
+                // insert new message to buffer
                 for (uint8_t i_j = 0; i_j < insert_byte; i_j++) {
-                    _msg_1.content.data[msg_length + 3 + i_j] = msg_data[i_j];
+                    _msg_1.content.data[3 + msg_current_length + i_j] = msg_data[i_j];
                 }
 
                 _msg_1.length += insert_byte;
@@ -175,7 +178,7 @@ void FD1_msg_UOM::insert_msg(uint8_t msg_id, uint8_t (&msg_data)[20])
 
                 if (insert_mask_byte > 0) {
                     // consider add byte for new mask
-                    for (uint8_t i_k = _msg_1.length; i_k >= (3 + msg_length); i_k--) {
+                    for (uint8_t i_k = _msg_1.length - 1; i_k >= (3 + msg_mask_length); i_k--) {
                         _msg_1.content.data[i_k + insert_mask_byte] = _msg_1.content.data[i_k];
                     }
                     for (uint8_t i_l = 0; i_l < insert_mask_byte; i_l++) {
@@ -191,7 +194,7 @@ void FD1_msg_UOM::insert_msg(uint8_t msg_id, uint8_t (&msg_data)[20])
         }
 
         if (have_msg_id(i_msg, msg_mask)) {
-            msg_length += get_msg_length(i_msg);
+            msg_current_length += get_msg_length(i_msg);
         }
     }
     // printf("_msg_1.content.msg.length %d\n", _msg_1.content.msg.length);
