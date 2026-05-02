@@ -1198,6 +1198,8 @@ public:
 
     void set_land_pause(bool new_value) { land_pause = new_value; }
 
+    void set_control_position(bool control_position_in) {control_position = control_position_in;}
+
 protected:
 
     const char *name() const override { return "LAND"; }

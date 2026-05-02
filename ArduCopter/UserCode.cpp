@@ -15,6 +15,13 @@ void Copter::userhook_FastLoop()
 {
     // put your 100Hz code here
     uart.update();
+
+    if (motors->get_thrust_boost()) {
+        if (flightmode->mode_number() != Mode::Number::LAND) {
+            set_mode(Mode::Number::LAND, ModeReason::MOT_FAIL);
+            mode_land.set_control_position(false);
+        }
+    }
 }
 #endif
 
