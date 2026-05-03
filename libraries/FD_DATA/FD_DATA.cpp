@@ -6,7 +6,7 @@ extern const AP_HAL::HAL& hal;
 // storage object
 StorageAccess FD_DATA::_storage(StorageManager::StorageFDData);
 
-assert_storage_size<FD_DATA_T, 8> _assert_storage_size_FD_DATA_T;
+assert_storage_size<FD_DATA_T, 32> _assert_storage_size_FD_DATA_T;
 /*
  * init - perform required initialisation
  */

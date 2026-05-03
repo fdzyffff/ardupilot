@@ -6489,7 +6489,8 @@
       <description>HXTS serial number</description>
       <field type="uint8_t" name="target_system">System ID.</field>
       <field type="uint16_t" name="cmd">1:read, 2:set, 3:reply</field>
-      <field type="uint32_t" name="serialnumber">serial number</field>
+      <field type="char[20]" name="serial_number">serial number</field>
+      <field type="char[8]" name="uas_number">serial number</field>
     </message>
 
     <message id="41011" name="HXTS_RT">
@@ -6527,6 +6528,12 @@
       <description>HXTS BMS post 2</description>
       <field type="uint16_t[8]" name="Volt">Volt.</field>
       <field type="uint16_t[8]" name="Current">Current.</field>
+    </message>
+
+    <message id="41025" name="HXTS_CAN_MOT_INFO">
+      <description>HXTS MOT RPM post</description>
+      <field type="uint16_t[16]" name="RPM">RPM.</field>
+      <field type="uint16_t[16]" name="TEMP">TEMP.</field>
     </message>
 
     <message id="41030" name="HXTS_HY_ENGINE">

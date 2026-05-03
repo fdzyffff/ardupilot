@@ -42,14 +42,7 @@ FD_CAN::FD_CAN() {
 
     _batt_ptr = new FD_BATT(this);
 
-    for (uint8_t i_mot = 0; i_mot < FD_CAN_MAX_MOT_NUM; i_mot++)
-    {
-        _mot_ptr[i_mot] = new FD_MOT(this);
-        if (_mot_ptr[i_mot] != nullptr)
-        {
-            _mot_ptr[i_mot]->set_id(i_mot+1);
-        }
-    }
+    _mot_ptr = new FD_MOT(this);
 
     _bms_ptr = new FD_BMS(this);
 
@@ -143,24 +136,18 @@ void FD_CAN::loop() {
                 _batt_ptr->handle_info(rxFrame, _print.get());
             }
 
-            for (uint8_t i_mot = 0; i_mot < FD_CAN_MAX_MOT_NUM; i_mot++)
+            if (_mot_ptr != nullptr)
             {
-                if (_mot_ptr[i_mot] != nullptr)
-                {
-                    _mot_ptr[i_mot]->handle_info(rxFrame, _print.get());    //.调用电机的 handle_info 处理接收帧
-                }
+                _mot_ptr->handle_info(rxFrame, _print.get());    //.调用电机的 handle_info 处理接收帧
             }
 
             if (_bms_ptr != nullptr) {
                 _bms_ptr->handle_info(rxFrame, _print.get());
             }
 
-            for (uint8_t i_mot = 0; i_mot < FD_CAN_MAX_MOT_NUM; i_mot++)
+            if (_mot_ptr != nullptr)
             {
-                if (_mot_ptr[i_mot] != nullptr)
-                {
-                    _mot_ptr[i_mot]->handle_info(rxFrame, _print.get());    // 调用电机的 handle_info 处理接收帧
-                }
+                _mot_ptr->handle_info(rxFrame, _print.get());    // 调用电机的 handle_info 处理接收帧
             }
         }
 
@@ -171,10 +158,11 @@ void FD_CAN::loop() {
                 if (SRV_Channels::get_output_pwm(SRV_Channels::get_motor_function(i_mot), mot_output)) {
                     // gcs().send_text(MAV_SEVERITY_INFO, "motor %d : %d",i_mot,mot_output);
                     // ;
-                    _mot_ptr[i_mot]->set_pwm(mot_output);
-                    _mot_ptr[i_mot]->update();
+                    _mot_ptr->set_pwm(i_mot, mot_output);
+                    
                 }
             }
+            _mot_ptr->update();
         }
 
         // 1ms loop delay

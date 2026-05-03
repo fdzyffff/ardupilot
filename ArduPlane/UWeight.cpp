@@ -51,6 +51,7 @@ void UWeight::read_uart()
             hxts_hy_weight_packet.Front = uart_msg_weight._msg_1.content.msg.value1;
             hxts_hy_weight_packet.LEFT = uart_msg_weight._msg_1.content.msg.value2;
             hxts_hy_weight_packet.RIGHT = uart_msg_weight._msg_1.content.msg.value3;
+            _last_update_ms = millis();
         }
     }
 }
@@ -60,7 +61,38 @@ void UWeight::write_uart()
     ;
 }
 
+void UWeight::check_alive()
+{
+    if (millis() - _last_update_ms > 5000) {
+        if (_alive) {
+            gcs().send_text(MAV_SEVERITY_INFO, "Weight lost");
+        }
+        _alive = false;
+    } else {
+        if (!_alive) {
+            gcs().send_text(MAV_SEVERITY_INFO, "Weight connect");
+        }
+        _alive = true;
+    }
+}
+
 void UWeight::send_mavlink_msg(mavlink_channel_t chan)
 {
     mavlink_msg_hxts_hy_weight_send_struct(chan, &hxts_hy_weight_packet);
+}
+
+void UWeight::handle_message(const mavlink_message_t &msg)
+{
+    // only work without uart protocol
+    if (get_port() != nullptr) {return;}
+    if (msg.msgid == MAVLINK_MSG_ID_HXTS_HY_WEIGHT) {
+        // decode packet
+        // gcs().send_text(MAV_SEVERITY_WARNING, "Target mavpkg");
+        // decode packet
+        mavlink_msg_hxts_hy_weight_decode(&msg, &hxts_hy_weight_packet);
+        uart_msg_weight._msg_1.content.msg.value1 = hxts_hy_weight_packet.Front;
+        uart_msg_weight._msg_1.content.msg.value2 = hxts_hy_weight_packet.LEFT;
+        uart_msg_weight._msg_1.content.msg.value3 = hxts_hy_weight_packet.RIGHT;
+        _last_update_ms = millis();
+    }
 }

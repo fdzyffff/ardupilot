@@ -57,6 +57,14 @@ void UEngines::send_mavlink_msg(mavlink_channel_t chan)
     }
 }
 
+void UEngines::handle_message(const mavlink_message_t &msg)
+{
+    for (uint8_t i_engine = 0; i_engine < UENGINE_MAX_NUM; i_engine++) {
+        if (engines[i_engine] != nullptr) {
+            engines[i_engine]->handle_message(msg);
+        }
+    }
+}
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 UEngine::UEngine(UEngines *fronted_in, uint8_t id_in)
@@ -72,10 +80,32 @@ void UEngine::init()
     const AP_SerialManager &serial_manager = AP::serialmanager();
 
     // check for protocol configured for a serial port - only the first serial port with one of these protocols will then run (cannot have FrSky on multiple serial ports)
-    _port = serial_manager.find_serial(AP_SerialManager::SerialProtocol_ENGINE, 0);
+    _port = serial_manager.find_serial(AP_SerialManager::SerialProtocol_ENGINE, _id);
     if (_port != nullptr) {
         gcs().send_text(MAV_SEVERITY_WARNING, "UEngine init");
         return;
+    }
+}
+
+void UEngine::handle_message(const mavlink_message_t &msg)
+{
+    // only work without uart protocol
+    if (get_port() != nullptr) {return;}
+    if (msg.msgid == MAVLINK_MSG_ID_HXTS_HY_ENGINE) {
+        // decode packet
+        // gcs().send_text(MAV_SEVERITY_WARNING, "Target mavpkg");
+        // decode packet
+        mavlink_hxts_hy_engine_t packet;
+        mavlink_msg_hxts_hy_engine_decode(&msg, &packet);
+        if (packet.Instance == _id) {
+            mavlink_msg_hxts_hy_engine_decode(&msg, &hxts_hy_engine_packet);
+            uart_engine_response._msg_1.content.msg.flag = hxts_hy_engine_packet.Flag;
+            uart_engine_response._msg_1.content.msg.seconds = hxts_hy_engine_packet.Seconds;
+            uart_engine_response._msg_1.content.msg.rpm = hxts_hy_engine_packet.RPM;
+            uart_engine_response._msg_1.content.msg.coolant = hxts_hy_engine_packet.Coolant;
+            uart_engine_response._msg_1.content.msg.batteryvoltage = hxts_hy_engine_packet.BattVolt;
+            _last_update_ms = millis();
+        }
     }
 }
 
@@ -83,6 +113,7 @@ void UEngine::update()
 {
     read_uart();
     write_uart();
+    check_alive();
 }
 
 void UEngine::read_uart()
@@ -100,6 +131,7 @@ void UEngine::read_uart()
             hxts_hy_engine_packet.RPM = uart_engine_response._msg_1.content.msg.rpm;
             hxts_hy_engine_packet.Coolant = uart_engine_response._msg_1.content.msg.coolant;
             hxts_hy_engine_packet.BattVolt = uart_engine_response._msg_1.content.msg.batteryvoltage;
+            _last_update_ms = millis();
         }
     }
 }
@@ -107,6 +139,21 @@ void UEngine::read_uart()
 void UEngine::write_uart()
 {
     send_request();
+}
+
+void UEngine::check_alive()
+{
+    if (millis() - _last_update_ms > 5000) {
+        if (_alive) {
+            gcs().send_text(MAV_SEVERITY_INFO, "Engine %d lost", _id);
+        }
+        _alive = false;
+    } else {
+        if (!_alive) {
+            gcs().send_text(MAV_SEVERITY_INFO, "Engine %d connect", _id);
+        }
+        _alive = true;
+    }
 }
 
 void UEngine::send_request()

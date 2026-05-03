@@ -135,6 +135,12 @@ bool MAVLink_routing::check_and_forward(GCS_MAVLINK &in_link, const mavlink_mess
         return true;
     }
 
+    if (msg.msgid == MAVLINK_MSG_ID_HXTS_HY_ENGINE
+        || msg.msgid == MAVLINK_MSG_ID_HXTS_HY_WEIGHT) {
+        // engine and weight packets are not forwarded, they have their own stream rate
+        return true;
+    }
+
     // extract the targets for this packet
     int16_t target_system = -1;
     int16_t target_component = -1;

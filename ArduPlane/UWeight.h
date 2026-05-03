@@ -13,14 +13,19 @@ public:
     void update();
     void read_uart();
     void write_uart();
+    void check_alive();
     void set_rpm(uint16_t rpm_in);
     void send_request();
     void send_mavlink_msg(mavlink_channel_t chan);
+    void handle_message(const mavlink_message_t &msg);
 
     AP_HAL::UARTDriver* get_port(void) {return _port;}
 
 
 private:
+
+    uint32_t _last_update_ms;
+    bool _alive;
 
     AP_HAL::UARTDriver* _port;
 

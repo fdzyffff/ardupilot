@@ -6,8 +6,6 @@
 
 #if ENABLE_REDUNDANCY_CONTROL
 
-#include <string.h>
-
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Math/AP_Math.h>
 #include <AP_Math/crc.h>
@@ -16,8 +14,6 @@
 #include <GCS_MAVLink/GCS.h>
 #include <SRV_Channel/SRV_Channel.h>
 #include <AP_Relay/AP_Relay.h>
-#include <AP_BattMonitor/AP_BattMonitor.h>
-#include <AP_BattMonitor/AP_BattMonitor_Backend.h>
 
 extern const AP_HAL::HAL &hal;
 
@@ -557,37 +553,14 @@ void AP_Redundancy::report_relay_pwm_conflict(uint16_t conflict_now)
 }
 
 // ---- update_battery_from_adc() ----
-// Push the two supply-voltage channels to AP_BattMonitor via the Scripting
-// backend. Multiplier is hardcoded at 7.8 (matches the historical
-// ArduPlane g2.batt1_voltage_mult / batt2_voltage_mult default in
-// pre-refactor ArduPlane/redundancy_control.cpp), so customers do not
-// need to set BATT_VOLT_MULT. The Scripting backend ignores _VOLT_MULT.
-//
-// Required GCS-side configuration for voltage to appear:
-//   BATT_MONITOR  = 29 (Scripting)
-//   BATT2_MONITOR = 29 (Scripting)
-// Defaults for the TMR_FMU board are set in hwdef.dat to make this
-// "work out of the box" on a freshly-flashed FMU.
+// Battery scaling is vehicle-specific (uses vehicle-specific multiplier params).
+// Subclasses override this if they need ADC-based battery monitoring.
 
 void AP_Redundancy::update_battery_from_adc()
 {
-#if AP_BATTERY_SCRIPTING_ENABLED
-    // Hardcoded calibration (V per normalised ADC unit). Sourced from the
-    // pre-refactor ArduPlane parameter default. If the physical divider
-    // changes, customers can fall back to BATT_MONITOR=4 (analog) — but
-    // the FPGA path uses the value below.
-    constexpr float VOLT_MULT = 7.8f;
-
-    BattMonitorScript_State batt_state{};
-    batt_state.healthy    = true;
-    batt_state.cell_count = 0;
-
-    batt_state.voltage = _adc_values[3] * VOLT_MULT;
-    AP::battery().handle_scripting(0, batt_state);
-
-    batt_state.voltage = _adc_values[4] * VOLT_MULT;
-    AP::battery().handle_scripting(1, batt_state);
-#endif
+    // Placeholder: vehicle adapter handles scaling.
+    // _adc_values[3] and _adc_values[4] are the supply voltage channels.
+    // See ArduPlane/redundancy_control.cpp for original AP_BATTERY_SCRIPTING usage.
 }
 
 // ---- validate_uart_map() ----
@@ -867,9 +840,6 @@ void AP_Redundancy::update()
     // 1Hz consolidated diagnostic
     uint32_t now_ms = AP_HAL::millis();
     if (now_ms - _last_diag_ms >= 1000) {
-// 临时关闭：本次任务以油箱传感器标定为主，避免 GCS 消息栏被余度诊断
-// 刷屏，影响 ADC 原始值的可读性。标定完成后将下面的 0 改回 1 即可恢复。
-#if 0
         // Use local evaluate_health() — reflects actual FMU communication state
         uint8_t health = evaluate_health();
         char h1 = (health & 0x01) ? 'Y' : 'N';
@@ -914,23 +884,6 @@ void AP_Redundancy::update()
                 (unsigned)fb->unlock_status,
                 (hb&1)?'Y':'N', (hb&2)?'Y':'N', (hb&4)?'Y':'N');
         }
-#endif
-
-        // ADC raw voltages — for in-field calibration of analog sensors
-        // (fuel level / RPM / range / RSSI etc.) connected to the FPGA's
-        // ZAM5404. Labels match the ZAM5404 hardware channel numbers
-        // printed on the FMU connector silkscreen, so wiring to "ch7"
-        // shows up as `ch7=...` in GCS directly.
-        // 帧索引 → 物理通道：[0]=ch1 [1]=ch2 [2]=ch3 [3]=ch5 [4]=ch6 [5]=ch7 [6]=ch8
-        // ch5 / ch6（即 _adc_values[3]/[4]）已被 BattMonitor 双路使用，
-        // 在 GCS 电池表盘里可以直接读，不再单独打印 raw 值。
-        GCS_SEND_TEXT(MAV_SEVERITY_NOTICE,
-                      "ADC ch1=%.3f ch2=%.3f ch3=%.3f",
-                      (double)_adc_values[0], (double)_adc_values[1],
-                      (double)_adc_values[2]);
-        GCS_SEND_TEXT(MAV_SEVERITY_NOTICE,
-                      "ADC ch7=%.3f ch8=%.3f",
-                      (double)_adc_values[5], (double)_adc_values[6]);
 
         _ctx_fpga.frame_count = 0;
         _ctx_fmu_a.frame_count = 0;

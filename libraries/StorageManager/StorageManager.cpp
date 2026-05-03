@@ -64,14 +64,14 @@ const StorageManager::StorageArea StorageManager::layout[STORAGE_NUM_AREAS] = {
     { StorageParam,   0,     1280}, // 0x500 parameter bytes
     { StorageMission, 1280,  2506},
     { StorageRally,   3786,   150}, // 10 rally points
-    { StorageFence,   3936,   152}, // 19 fence points
-    { StorageFDData,  4088,     8}, // 1 Fd data
+    { StorageFence,   3936,   128}, // 16 fence points
+    { StorageFDData,  4064,    32}, // 1 Fd data
 #else
     { StorageParam,   0,     1536}, // 0x600 param bytes
-    { StorageMission, 1536,  2422},
-    { StorageRally,   3958,    90}, // 6 rally points
-    { StorageFence,   4048,    40}, // 5 fence points
-    { StorageFDData,  4088,     8}, // 1 Fd data
+    { StorageMission, 1536,  2398},
+    { StorageRally,   3934,    90}, // 6 rally points
+    { StorageFence,   4024,    40}, // 5 fence points
+    { StorageFDData,  4064,    32}, // 1 Fd data
 #endif
 #if STORAGE_NUM_AREAS >= 11
     { StorageParam,   4096,  1280},

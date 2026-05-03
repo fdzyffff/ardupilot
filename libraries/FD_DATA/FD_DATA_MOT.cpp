@@ -20,6 +20,11 @@ void FD_DATA::send_hxts_hy_bms_c3(mavlink_channel_t chan)
     mavlink_msg_hxts_hy_bms_c3_send_struct(chan, &hxts_hy_bms_c3_packet);
 }
 
+void FD_DATA::send_hxts_can_mot_info(mavlink_channel_t chan)
+{
+    mavlink_msg_hxts_can_mot_info_send_struct(chan, &hxts_can_mot_info_packet);
+}
+
 void FD_DATA::do_switch(bool switch_on) {
     for (uint8_t i = 0; i < AP::can().get_num_drivers(); i++) {
         if (AP::can().get_driver_type(i) == AP_CAN::Protocol::FDCAN) {

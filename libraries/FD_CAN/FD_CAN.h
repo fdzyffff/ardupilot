@@ -10,9 +10,6 @@
 #include <FD_CAN/FD_BMS.h>
 #include <FD_DATA/FD_DATA.h>
 
-#define FD_CAN_MAX_MOT_NUM 16
-
-
 class FD_BATT;
 class FD_BMS;
 class FD_MOT;
@@ -47,7 +44,7 @@ public:
     bool pre_arm_check(char* reason, uint8_t reason_len);
 
     FD_BATT *_batt_ptr;
-    FD_MOT *_mot_ptr[FD_CAN_MAX_MOT_NUM];
+    FD_MOT *_mot_ptr;
     FD_BMS*_bms_ptr;
 
     AP_Int32 _print;       

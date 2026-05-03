@@ -1,6 +1,9 @@
 #pragma once
 
+#define FD_CAN_MAX_MOT_NUM 8
+
 #include <AP_HAL/AP_HAL.h>
+#include <GCS_MAVLink/GCS.h>
 #include "FD_CAN.h"
 
 class FD_CAN;
@@ -17,11 +20,9 @@ public:
     FD_MOT &operator=(const FD_MOT&) = delete;
 
     void handle_info(AP_HAL::CANFrame &in_frame, bool do_print = false);
-    void set_id(uint8_t id_in);
-    void set_pwm(uint16_t pwm_in);
-    bool get_rpm_address(uint32_t &address, uint16_t &order);
-    bool get_temp_address(uint32_t &address, uint16_t &order);
-    bool get_throttle_address(uint32_t &address, uint16_t &order);
+    void init();
+    void set_pwm(uint8_t id_in, uint16_t pwm_in);
+    bool get_throttle_address(uint8_t i_mot, uint32_t &address);
     void update();
     void update_cmd();
     void update_status();
@@ -29,12 +30,12 @@ public:
     FD_CAN* _frotend_ptr;
 
     struct status_t {
-        uint8_t id;
-        uint8_t order;
-        uint8_t address;
         uint16_t thr_in;
-        uint16_t rpm;
-        uint16_t temp;
+        bool have_thr;
+        uint16_t rpm1;
+        uint16_t rpm2;
+        uint16_t temp1;
+        uint16_t temp2;
         uint32_t last_status_ms;
         uint32_t last_mot_ms;
         uint32_t last_rpm_ms;
@@ -42,6 +43,6 @@ public:
         uint32_t last_print_ms;
     };
 
-    status_t status;
+    status_t status[FD_CAN_MAX_MOT_NUM];
     uint8_t _data[8];
 };

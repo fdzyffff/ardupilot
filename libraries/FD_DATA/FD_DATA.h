@@ -7,7 +7,8 @@
 #include <AP_Param/AP_Param.h>
 
 struct PACKED FD_DATA_T {
-    uint32_t serial_number;
+    char serial_number[20];
+    char uas_number[8];
     uint32_t runtime_flying;
 };
 
@@ -27,8 +28,9 @@ public:
         return _singleton;
     }
     void update();
-    bool get_serial_number(uint32_t& serial_number);
-    bool set_serial_number(uint32_t serial_number);
+    bool get_serial_number(char *serial_number, char *uas_number);
+    bool set_serial_number(char *serial_number, char *uas_number);
+    bool read_serial_number();
 
     void update_flying_s();
     void set_is_flying(bool in);
@@ -41,17 +43,18 @@ public:
     void handle_message_command_long_sn(const mavlink_message_t &msg);
     void handle_message_command_long_rt(const mavlink_message_t &msg);
 
-    void send_mav_serial_number(uint32_t serial_number);
-    void send_mav_serial_number_get();
+    void send_mav_serial_number();
     void send_mav_runtime_flying(uint32_t runtime_flying);
     void send_hxts_hy_bms_c1(mavlink_channel_t chan);
     void send_hxts_hy_bms_c2(mavlink_channel_t chan);
     void send_hxts_hy_bms_c3(mavlink_channel_t chan);
+    void send_hxts_can_mot_info(mavlink_channel_t chan);
 
     mavlink_hxts_hy_bms_c1_t hxts_hy_bms_c1_packet;
     mavlink_hxts_hy_bms_c2_t hxts_hy_bms_c2_packet;
     mavlink_hxts_hy_bms_c3_t hxts_hy_bms_c3_packet;
 
+    mavlink_hxts_can_mot_info_t hxts_can_mot_info_packet;
     void do_switch(bool switch_on);
 private:
     static FD_DATA *_singleton;
@@ -61,7 +64,7 @@ private:
     bool _is_flying;
     uint32_t _last_flying_ms;
 
-    // AP_Int8   test_mode;
+    FD_DATA_T local_data;
 };
 
 
