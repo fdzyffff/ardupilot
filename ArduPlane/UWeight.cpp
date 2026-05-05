@@ -63,6 +63,7 @@ void UWeight::write_uart()
 
 void UWeight::check_alive()
 {
+    if (_last_update_ms < 10000) {return;}
     if (millis() - _last_update_ms > 5000) {
         if (_alive) {
             gcs().send_text(MAV_SEVERITY_INFO, "Weight lost");
@@ -78,6 +79,7 @@ void UWeight::check_alive()
 
 void UWeight::send_mavlink_msg(mavlink_channel_t chan)
 {
+    if (!_alive) {return;}
     mavlink_msg_hxts_hy_weight_send_struct(chan, &hxts_hy_weight_packet);
 }
 

@@ -71,6 +71,7 @@ UEngine::UEngine(UEngines *fronted_in, uint8_t id_in)
 {
     _fronted = fronted_in;
     _id = id_in;
+    hxts_hy_engine_packet.Instance = _id;
 }
 
 // initialise
@@ -82,7 +83,7 @@ void UEngine::init()
     // check for protocol configured for a serial port - only the first serial port with one of these protocols will then run (cannot have FrSky on multiple serial ports)
     _port = serial_manager.find_serial(AP_SerialManager::SerialProtocol_ENGINE, _id);
     if (_port != nullptr) {
-        gcs().send_text(MAV_SEVERITY_WARNING, "UEngine init");
+        gcs().send_text(MAV_SEVERITY_WARNING, "UEngine %d init", _id);
         return;
     }
 }
@@ -143,6 +144,7 @@ void UEngine::write_uart()
 
 void UEngine::check_alive()
 {
+    if (_last_update_ms < 10000) {return;}
     if (millis() - _last_update_ms > 5000) {
         if (_alive) {
             gcs().send_text(MAV_SEVERITY_INFO, "Engine %d lost", _id);
@@ -159,12 +161,11 @@ void UEngine::check_alive()
 void UEngine::send_request()
 {
     // check send condition
-    static uint32_t last_ms = millis();
     uint32_t now = millis();
-    if (now - last_ms < 200) {
+    if (now - _last_request_ms < 200) {
         return;
     }
-    last_ms = now;
+    _last_request_ms = now;
 
     if (get_port() == nullptr) {return;}
     uart_engine_request.make_sum();
@@ -174,5 +175,6 @@ void UEngine::send_request()
 
 void UEngine::send_mavlink_msg(mavlink_channel_t chan)
 {
+    if (!_alive) {return;}
     mavlink_msg_hxts_hy_engine_send_struct(chan, &hxts_hy_engine_packet);
 }

@@ -23,7 +23,9 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 // 编译功能开关
+#ifndef ENABLE_REDUNDANCY_CONTROL
 #define ENABLE_REDUNDANCY_CONTROL 1    // 余度切换控制功能开关，1：开启，0：关闭
+#endif
 #if ENABLE_REDUNDANCY_CONTROL
 #include <AP_Redundancy/AP_Redundancy.h>
 #endif

@@ -30,6 +30,7 @@ private:
     UEngines *_fronted;
     uint8_t _id;
     uint32_t _last_update_ms;
+    uint32_t _last_request_ms;
     bool _alive;
 
     AP_HAL::UARTDriver* _port;
