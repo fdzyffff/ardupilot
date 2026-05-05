@@ -101,10 +101,27 @@ void UEngine::handle_message(const mavlink_message_t &msg)
         if (packet.Instance == _id) {
             mavlink_msg_hxts_hy_engine_decode(&msg, &hxts_hy_engine_packet);
             uart_engine_response._msg_1.content.msg.flag = hxts_hy_engine_packet.Flag;
-            uart_engine_response._msg_1.content.msg.seconds = hxts_hy_engine_packet.Seconds;
-            uart_engine_response._msg_1.content.msg.rpm = hxts_hy_engine_packet.RPM;
-            uart_engine_response._msg_1.content.msg.coolant = hxts_hy_engine_packet.Coolant;
-            uart_engine_response._msg_1.content.msg.batteryvoltage = hxts_hy_engine_packet.BattVolt;
+            uart_engine_response._msg_1.content.msg.seconds = hxts_hy_engine_packet.seconds;
+            uart_engine_response._msg_1.content.msg.pulsewidth1 = hxts_hy_engine_packet.pulsewidth1;
+            uart_engine_response._msg_1.content.msg.pulsewidth2 = hxts_hy_engine_packet.pulsewidth2;
+            uart_engine_response._msg_1.content.msg.rpm = hxts_hy_engine_packet.rpm;
+            uart_engine_response._msg_1.content.msg.advance = hxts_hy_engine_packet.advance;
+            uart_engine_response._msg_1.content.msg.barometer = hxts_hy_engine_packet.barometer;
+            uart_engine_response._msg_1.content.msg.map = hxts_hy_engine_packet.map;
+            uart_engine_response._msg_1.content.msg.mat = hxts_hy_engine_packet.mat;
+            uart_engine_response._msg_1.content.msg.coolant = hxts_hy_engine_packet.coolant;
+            uart_engine_response._msg_1.content.msg.tps = hxts_hy_engine_packet.tps;
+            uart_engine_response._msg_1.content.msg.batteryvoltage = hxts_hy_engine_packet.batteryvoltage;
+            uart_engine_response._msg_1.content.msg.afr1 = hxts_hy_engine_packet.afr1;
+            uart_engine_response._msg_1.content.msg.afr2 = hxts_hy_engine_packet.afr2;
+            uart_engine_response._msg_1.content.msg.barocorrection = hxts_hy_engine_packet.barocorrection;
+            uart_engine_response._msg_1.content.msg.gammaenrich = hxts_hy_engine_packet.gammaenrich;
+            uart_engine_response._msg_1.content.msg.ve1 = hxts_hy_engine_packet.ve1;
+            uart_engine_response._msg_1.content.msg.cold_adv_deg = hxts_hy_engine_packet.cold_adv_deg;
+            uart_engine_response._msg_1.content.msg.tpsdot = hxts_hy_engine_packet.tpsdot;
+            uart_engine_response._msg_1.content.msg.mapdot = hxts_hy_engine_packet.mapdot;
+            uart_engine_response._msg_1.content.msg.egov1 = hxts_hy_engine_packet.egov1;
+            uart_engine_response._msg_1.content.msg.egov2 = hxts_hy_engine_packet.egov2;
             _last_update_ms = millis();
         }
     }
@@ -128,11 +145,34 @@ void UEngine::read_uart()
             uart_engine_response._msg_1.updated = false;
             hxts_hy_engine_packet.Instance = _id;
             hxts_hy_engine_packet.Flag = uart_engine_response._msg_1.content.msg.flag;
-            hxts_hy_engine_packet.Seconds = uart_engine_response._msg_1.content.msg.seconds;
-            hxts_hy_engine_packet.RPM = uart_engine_response._msg_1.content.msg.rpm;
-            hxts_hy_engine_packet.Coolant = uart_engine_response._msg_1.content.msg.coolant;
-            hxts_hy_engine_packet.BattVolt = uart_engine_response._msg_1.content.msg.batteryvoltage;
+            hxts_hy_engine_packet.seconds = uart_engine_response._msg_1.content.msg.seconds;
+            hxts_hy_engine_packet.pulsewidth1 = uart_engine_response._msg_1.content.msg.pulsewidth1;
+            hxts_hy_engine_packet.pulsewidth2 = uart_engine_response._msg_1.content.msg.pulsewidth2;
+            hxts_hy_engine_packet.rpm = uart_engine_response._msg_1.content.msg.rpm;
+            hxts_hy_engine_packet.advance = uart_engine_response._msg_1.content.msg.advance;
+            hxts_hy_engine_packet.barometer = uart_engine_response._msg_1.content.msg.barometer;
+            hxts_hy_engine_packet.map = uart_engine_response._msg_1.content.msg.map;
+            hxts_hy_engine_packet.mat = uart_engine_response._msg_1.content.msg.mat;
+            hxts_hy_engine_packet.coolant = uart_engine_response._msg_1.content.msg.coolant;
+            hxts_hy_engine_packet.tps = uart_engine_response._msg_1.content.msg.tps;
+            hxts_hy_engine_packet.batteryvoltage = uart_engine_response._msg_1.content.msg.batteryvoltage;
+            hxts_hy_engine_packet.afr1 = uart_engine_response._msg_1.content.msg.afr1;
+            hxts_hy_engine_packet.afr2 = uart_engine_response._msg_1.content.msg.afr2;
+            hxts_hy_engine_packet.barocorrection = uart_engine_response._msg_1.content.msg.barocorrection;
+            hxts_hy_engine_packet.gammaenrich = uart_engine_response._msg_1.content.msg.gammaenrich;
+            hxts_hy_engine_packet.ve1 = uart_engine_response._msg_1.content.msg.ve1;
+            hxts_hy_engine_packet.cold_adv_deg = uart_engine_response._msg_1.content.msg.cold_adv_deg;
+            hxts_hy_engine_packet.tpsdot = uart_engine_response._msg_1.content.msg.tpsdot;
+            hxts_hy_engine_packet.mapdot = uart_engine_response._msg_1.content.msg.mapdot;
+            hxts_hy_engine_packet.egov1 = uart_engine_response._msg_1.content.msg.egov1;
+            hxts_hy_engine_packet.egov2 = uart_engine_response._msg_1.content.msg.egov2;
+
             _last_update_ms = millis();
+
+            // gcs().send_text(MAV_SEVERITY_INFO, "Seconds %d",uart_engine_response._msg_1.content.msg.seconds);
+            // gcs().send_text(MAV_SEVERITY_INFO, "Coolant %d",uart_engine_response._msg_1.content.msg.coolant);
+
+            // gcs().send_text(MAV_SEVERITY_INFO, "Baro %d",uart_engine_response._msg_1.content.msg.barometer);
         }
     }
 }

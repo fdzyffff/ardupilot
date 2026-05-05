@@ -6540,10 +6540,27 @@
       <description>HXTS ENGINE post</description>
       <field type="uint8_t" name="Instance">instance.</field>
       <field type="uint8_t" name="Flag">Flag.</field>
-      <field type="uint16_t" name="Seconds">Seconds.</field>
-      <field type="uint16_t" name="RPM">RPM.</field>
-      <field type="uint16_t" name="Coolant">Coolant.</field>
-      <field type="uint16_t" name="BattVolt">BattVolt.</field>
+      <field type="uint16_t" name="seconds">ECU 上电时间 s, 除数1.</field>
+      <field type="uint16_t" name="pulsewidth1">喷油嘴脉宽 ms, 除数1000.</field>
+      <field type="uint16_t" name="pulsewidth2">Main pulsewidth bank 2 ms, 除数1000.</field>
+      <field type="uint16_t" name="rpm">发动机转速 RPM, 除数1.</field>
+      <field type="int16_t" name="advance">Final ignition spark advance deg BTDC, 除数10.</field>
+      <field type="int16_t" name="barometer">大气压力 kPa, 除数10.</field>
+      <field type="int16_t" name="map">进气压力 kPa, 除数10.</field>
+      <field type="int16_t" name="mat">发动机进气温度 deg F, 除数10.</field>
+      <field type="int16_t" name="coolant">发动机气缸温度 deg F, 除数10.</field>
+      <field type="int16_t" name="tps">油门开度 %, 除数10.</field>
+      <field type="int16_t" name="batteryvoltage">ECU 电压 V, 除数10.</field>
+      <field type="int16_t" name="afr1">AFR1 AFR, 除数10.</field>
+      <field type="int16_t" name="afr2">AFR2 AFR, 除数10.</field>
+      <field type="int16_t" name="barocorrection">当前气压下燃油修正率 %, 除数10.</field>
+      <field type="int16_t" name="gammaenrich">总燃油修正 %, 除数10.</field>
+      <field type="int16_t" name="ve1">VE value table/bank 1 %, 除数10.</field>
+      <field type="int16_t" name="cold_adv_deg">Cold advance deg, 除数10.</field>
+      <field type="int16_t" name="tpsdot">油门开度变化率 %/s, 除数10.</field>
+      <field type="int16_t" name="mapdot">进气压力变化率 kPa/s, 除数10.</field>
+      <field type="int16_t" name="egov1">Voltage from O2#1 V, 除数100.</field>
+      <field type="int16_t" name="egov2">Voltage from O2#2 V, 除数100.</field>
     </message>
 
     <message id="41040" name="HXTS_HY_WEIGHT">

@@ -1,6 +1,6 @@
 #include "FD1_message.h"
 
-#define FD1_MSG_ENGINE_RESPONSE_LEN 85
+#define FD1_MSG_ENGINE_RESPONSE_LEN 82
 class FD1_msg_engine_response : public FD1_message{
 public:
     struct PACKED MSG_Collection {
@@ -10,23 +10,27 @@ public:
         uint16_t pulsewidth1;
         uint16_t pulsewidth2;
         uint16_t rpm;
-        uint16_t advance;
-        uint16_t barometer;
-        uint16_t map;
-        uint16_t mat;
-        uint16_t coolant;
-        uint16_t tps;
-        uint16_t batteryvoltage;
-        uint16_t afr1;
-        uint16_t afr2;
-        uint16_t barocorrection;
-        uint16_t gammaenrich;
-        uint16_t ve1;
-        uint16_t cold_adv_deg;
-        uint16_t tpsdot;
-        uint16_t mapdot;
-        uint16_t egov1;
-        uint16_t egov2;
+        int16_t advance;
+        uint8_t empty1[6];
+        int16_t barometer;
+        int16_t map;
+        int16_t mat;
+        int16_t coolant;
+        int16_t tps;
+        int16_t batteryvoltage;
+        int16_t afr1;
+        int16_t afr2;
+        uint8_t empty2[14];
+        int16_t barocorrection;
+        int16_t gammaenrich;
+        int16_t ve1;
+        uint8_t empty3[4];
+        int16_t cold_adv_deg;
+        int16_t tpsdot;
+        int16_t mapdot;
+        uint8_t empty4[12];
+        int16_t egov1;
+        int16_t egov2;
         uint32_t crc32;
     };
 
