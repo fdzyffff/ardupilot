@@ -169,9 +169,8 @@ void UEngine::read_uart()
 
             _last_update_ms = millis();
 
-            // gcs().send_text(MAV_SEVERITY_INFO, "Seconds %d",uart_engine_response._msg_1.content.msg.seconds);
+            gcs().send_text(MAV_SEVERITY_INFO, "[%d] Seconds %d",_id, uart_engine_response._msg_1.content.msg.seconds);
             // gcs().send_text(MAV_SEVERITY_INFO, "Coolant %d",uart_engine_response._msg_1.content.msg.coolant);
-
             // gcs().send_text(MAV_SEVERITY_INFO, "Baro %d",uart_engine_response._msg_1.content.msg.barometer);
         }
     }
