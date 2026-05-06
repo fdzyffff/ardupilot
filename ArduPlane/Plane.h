@@ -23,12 +23,10 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 // 编译功能开关
-#ifndef ENABLE_REDUNDANCY_CONTROL
-#define ENABLE_REDUNDANCY_CONTROL 1    // 余度切换控制功能开关，1：开启，0：关闭
-#endif
-#if ENABLE_REDUNDANCY_CONTROL
-#include <AP_Redundancy/AP_Redundancy.h>
-#endif
+// #ifndef ENABLE_REDUNDANCY_CONTROL
+// #define ENABLE_REDUNDANCY_CONTROL 0    // 余度切换控制功能开关，1：开启，0：关闭
+// #endif
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Header includes
@@ -136,7 +134,9 @@
 #include "UAttack.h"
 #include "UEngine.h"
 #include "UWeight.h"
-
+#if ENABLE_REDUNDANCY_CONTROL
+#include <AP_Redundancy/AP_Redundancy.h>
+#endif
 
 /*
   main APM:Plane class
@@ -202,6 +202,7 @@ public:
     friend class UDelay;
 
     friend class UEngines;
+    friend class UEngine;
     friend class UWeight;
 
     Plane(void);

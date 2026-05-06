@@ -6,9 +6,9 @@
 // This must happen BEFORE the #ifndef fallback below.
 #include <AP_HAL/AP_HAL.h>
 
-#ifndef ENABLE_REDUNDANCY_CONTROL
-#define ENABLE_REDUNDANCY_CONTROL 1
-#endif
+// #ifndef ENABLE_REDUNDANCY_CONTROL
+// #define ENABLE_REDUNDANCY_CONTROL 0
+// #endif
 
 // Frame version (唯一支持的版本，不保留向前兼容)
 #define REDUNDANCY_FRAME_VERSION        3

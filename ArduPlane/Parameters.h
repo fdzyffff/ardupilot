@@ -553,6 +553,7 @@ public:
     AP_Int8 taxi_enable;
     AP_Int8 taxi_throttle_max;
     AP_Float taxi_speed_max;
+    AP_Int8 user_debug_engine;
 
     // Forward throttle battery voltage compensation
     class FWD_BATT_CMP {

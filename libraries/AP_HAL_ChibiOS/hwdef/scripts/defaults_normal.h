@@ -16,3 +16,7 @@
 
 // enable terrain only if there's an SD card available:
 #define AP_TERRAIN_AVAILABLE HAL_OS_FATFS_IO
+
+#ifndef ENABLE_REDUNDANCY_CONTROL
+#define ENABLE_REDUNDANCY_CONTROL 0
+#endif

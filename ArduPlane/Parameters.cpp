@@ -1315,6 +1315,7 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_SUBGROUPPTR(redundancy_ptr, "RDN_", 42, ParametersG2, AP_Redundancy),
 #endif
 
+    AP_GROUPINFO("UDEBUG_ENGINE", 43, ParametersG2, user_debug_engine, 0),
     AP_GROUPEND
 };
 

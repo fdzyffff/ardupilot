@@ -169,8 +169,14 @@ void UEngine::read_uart()
 
             _last_update_ms = millis();
 
-            gcs().send_text(MAV_SEVERITY_INFO, "[%d] Seconds %d",_id, uart_engine_response._msg_1.content.msg.seconds);
+            if (plane.g2.user_debug_engine.get() == 1) {
+                if (millis() - _last_print_ms > 1000) {
+                    gcs().send_text(MAV_SEVERITY_INFO, "[%d]-Seconds %d",_id, uart_engine_response._msg_1.content.msg.seconds);
+                    _last_print_ms = millis();
+                }
+            }
             // gcs().send_text(MAV_SEVERITY_INFO, "Coolant %d",uart_engine_response._msg_1.content.msg.coolant);
+
             // gcs().send_text(MAV_SEVERITY_INFO, "Baro %d",uart_engine_response._msg_1.content.msg.barometer);
         }
     }
