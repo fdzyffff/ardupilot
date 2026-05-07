@@ -25,6 +25,7 @@
 #include <GCS_MAVLink/GCS_MAVLink.h>
 #include <AC_PID/AC_P.h>
 #include <AP_RTC/JitterCorrection.h>
+#include <Filter/DerivativeFilter.h>
 
 class AP_Follow
 {
@@ -83,6 +84,7 @@ public:
     // get position controller.  this controller is not used within this library but it is convenient to hold it here
     const AC_P& get_pos_p() const { return _p_pos; }
 
+    float get_delay() {return _delay_s.get();}
     //
     // yaw/heading related methods
     //
@@ -144,6 +146,8 @@ private:
     AC_P        _p_pos;             // position error P controller
     AP_Int16    _options;           // options for mount behaviour follow mode
     AP_Float    _offset_max;
+    AP_Float    _delay_s;
+    AP_Int8     _vel_type; 
 
     // local variables
     uint32_t _last_location_update_ms;  // system time of last position update
@@ -157,6 +161,8 @@ private:
     float _bearing_to_target;       // latest bearing to target in degrees (for reporting purposes)
     bool _offsets_were_zero;        // true if offsets were originally zero and then initialised to the offset from lead vehicle
 
+    DerivativeFilterFloat_Size5  _filter_x;
+    DerivativeFilterFloat_Size5  _filter_y;
     // setup jitter correction with max transport lag of 3s
     JitterCorrection _jitter{3000};
 };

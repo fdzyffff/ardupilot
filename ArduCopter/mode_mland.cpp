@@ -16,6 +16,10 @@
 // initialise follow mode
 bool ModeMLand::init(const bool ignore_checks)
 {
+
+    // check if we have GPS and decide which LAND we're going to do
+    bool control_position = copter.position_ok();
+
     if (!g2.follow.enabled()) {
         gcs().send_text(MAV_SEVERITY_WARNING, "Set FOLL_ENABLE = 1");
         return false;
@@ -32,6 +36,25 @@ bool ModeMLand::init(const bool ignore_checks)
     }
     _stage = 1;
     gcs().send_text(MAV_SEVERITY_WARNING, "Set MLand [%d]", _stage);
+
+
+    // set horizontal speed and acceleration limits
+    pos_control->set_max_speed_accel_xy(wp_nav->get_default_speed_xy(), wp_nav->get_wp_acceleration());
+    pos_control->set_correction_speed_accel_xy(wp_nav->get_default_speed_xy(), wp_nav->get_wp_acceleration());
+
+    // initialise the horizontal position controller
+    if (control_position && !pos_control->is_active_xy()) {
+        pos_control->init_xy_controller();
+    }
+
+    // set vertical speed and acceleration limits
+    pos_control->set_max_speed_accel_z(wp_nav->get_default_speed_down(), wp_nav->get_default_speed_up(), wp_nav->get_accel_z());
+    pos_control->set_correction_speed_accel_z(wp_nav->get_default_speed_down(), wp_nav->get_default_speed_up(), wp_nav->get_accel_z());
+
+    // initialise the vertical position controller
+    if (!pos_control->is_active_z()) {
+        pos_control->init_z_controller();
+    }
     return true;
 }
 
@@ -79,7 +102,7 @@ void ModeMLand::run()
         // convert dist_vec_offs to cm in NEU
 
         // gcs().send_text(MAV_SEVERITY_INFO, "t_alt %f, offs.x %f, offs.y %f", (float)t_alt, dist_vec_offs.x, dist_vec_offs.y);
-        if (_stage == 1) {
+        if (_stage == 1 && (dist_vec_offs.xy().length_squared() > 50.0f)) {
             dist_vec_offs.z = (float)copter.g.rtl_altitude.get()*0.01f - (dist_vec_offs.z);
         } else {
             dist_vec_offs.z = 0.0f;
@@ -89,9 +112,11 @@ void ModeMLand::run()
 
         // calculate desired velocity vector in cm/s in NEU
         const float kp = g2.follow.get_pos_p().kP();
-        desired_velocity_neu_cms.x = (vel_of_target.x * 100.0f) + (dist_vec_offs_neu.x * kp);
-        desired_velocity_neu_cms.y = (vel_of_target.y * 100.0f) + (dist_vec_offs_neu.y * kp);
-        desired_velocity_neu_cms.z = (-vel_of_target.z * 100.0f) + (dist_vec_offs_neu.z * kp);
+        float delay = g2.follow.get_delay();
+        Vector3f pos_comp = Vector3f(vel_of_target.x * 100.0f * delay, vel_of_target.y * 100.0f * delay, 0.0f);
+        desired_velocity_neu_cms.x = (vel_of_target.x * 100.0f) + ((dist_vec_offs_neu.x + pos_comp.x) * kp);
+        desired_velocity_neu_cms.y = (vel_of_target.y * 100.0f) + ((dist_vec_offs_neu.y + pos_comp.y) * kp);
+        desired_velocity_neu_cms.z = constrain_float(dist_vec_offs_neu.z * kp, -30, 50.f);
 
         // scale desired velocity to stay within horizontal speed limit
         float desired_speed_xy = safe_sqrt(sq(desired_velocity_neu_cms.x) + sq(desired_velocity_neu_cms.y));

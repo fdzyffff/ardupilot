@@ -143,6 +143,9 @@ const AP_Param::GroupInfo AP_Follow::var_info[] = {
 
     AP_GROUPINFO("_OFF_MAX", 12, AP_Follow, _offset_max, 0),
 
+    AP_GROUPINFO("_DELAYS", 13, AP_Follow, _delay_s, 0),
+    AP_GROUPINFO("_VEL_TYPE", 14, AP_Follow, _vel_type, 0),
+
     AP_GROUPEND
 };
 
@@ -343,12 +346,27 @@ void AP_Follow::handle_msg(const mavlink_message_t &msg)
             _target_location.set_alt_cm(packet.alt / 10, Location::AltFrame::ABSOLUTE);
         }
 
-        _target_velocity_ned.x = packet.vx * 0.01f; // velocity north
-        _target_velocity_ned.y = packet.vy * 0.01f; // velocity east
-        _target_velocity_ned.z = packet.vz * 0.01f; // velocity down
+        if (_vel_type.get() == 1) {
+            Vector2f tmp_pos;
+            if (_target_location.get_vector_xy_from_origin_NE(tmp_pos)) {
+                _filter_x.update(tmp_pos.x * 0.01f, AP_HAL::millis());
+                _filter_y.update(tmp_pos.y * 0.01f, AP_HAL::millis());
+                _target_velocity_ned.x = _filter_x.slope() * 1000.f;
+                _target_velocity_ned.y = _filter_y.slope() * 1000.f;
+                _target_velocity_ned.y = 0.0f;
+            } else {
+                _target_velocity_ned.zero();
+            }
+        } else {
+            _target_velocity_ned.x = (float)(packet.vx) * 0.01f; // velocity north
+            _target_velocity_ned.y = (float)(packet.vy) * 0.01f; // velocity east
+            _target_velocity_ned.z = (float)(packet.vz) * 0.01f; // velocity down
+        }
+
 
         // get a local timestamp with correction for transport jitter
-        _last_location_update_ms = _jitter.correct_offboard_timestamp_msec(packet.time_boot_ms, AP_HAL::millis());
+        // _last_location_update_ms = _jitter.correct_offboard_timestamp_msec(packet.time_boot_ms, AP_HAL::millis());
+        _last_location_update_ms = AP_HAL::millis();
         if (packet.hdg <= 36000) {                  // heading (UINT16_MAX if unknown)
             _target_heading = packet.hdg * 0.01f;   // convert centi-degrees to degrees
             _last_heading_update_ms = _last_location_update_ms;
@@ -397,8 +415,8 @@ void AP_Follow::handle_msg(const mavlink_message_t &msg)
         }
 
         // get a local timestamp with correction for transport jitter
-        _last_location_update_ms = _jitter.correct_offboard_timestamp_msec(packet.timestamp, AP_HAL::millis());
-
+        // _last_location_update_ms = _jitter.correct_offboard_timestamp_msec(packet.timestamp, AP_HAL::millis());
+        _last_location_update_ms = AP_HAL::millis();
         if (packet.est_capabilities & (1<<3)) {
             Quaternion q{packet.attitude_q[0], packet.attitude_q[1], packet.attitude_q[2], packet.attitude_q[3]};
             float r, p, y;
