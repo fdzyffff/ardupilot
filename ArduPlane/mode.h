@@ -63,6 +63,7 @@ public:
         LOITER_ALT_QLAND = 25,
 #endif
         ATTACK_LOC    = 30,
+        LOITER_TARGET = 31,
         EXTERNAL      = 50,
     };
 
@@ -995,4 +996,38 @@ protected:
 
     bool _enter() override;
     stage_class stage;
+};
+
+class ModeLoiter_Target : public Mode
+{
+public:
+
+    Number mode_number() const override { return Number::LOITER_TARGET; }
+    const char *name() const override { return "LOITER_TARGET"; }
+    const char *name4() const override { return "LOTL"; }
+
+    // methods that affect movement of the vehicle in this mode
+    void update() override;
+
+    void navigate() override;
+
+    bool isHeadingLinedUp(const Location loiterCenterLoc, const Location targetLoc);
+    bool isHeadingLinedUp_cd(const int32_t bearing_cd, const int32_t heading_cd);
+    bool isHeadingLinedUp_cd(const int32_t bearing_cd);
+
+    bool allows_throttle_nudging() const override { return true; }
+
+    bool does_auto_navigation() const override { return true; }
+
+    bool does_auto_throttle() const override { return true; }
+
+    bool allows_terrain_disable() const override { return true; }
+
+    void update_target_altitude() override;
+    
+    bool mode_allows_autotuning() const override { return true; }
+
+protected:
+
+    bool _enter() override;
 };

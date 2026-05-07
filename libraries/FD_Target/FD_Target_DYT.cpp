@@ -79,7 +79,7 @@ void FD_Target_DYT::update() {
     }
 
     if (!_valid) {
-        if (millis() - last_center_ms > center_time.get()) {
+        if (millis() - last_center_ms > (uint32_t)(center_time.get())) {
             uart_msg_DYT_control.pack_center();
             last_center_ms = millis();
             get_port()->write(uart_msg_DYT_control._msg_1.content.data, sizeof(uart_msg_DYT_control._msg_1.content.data));
@@ -87,7 +87,7 @@ void FD_Target_DYT::update() {
             get_port()->write(uart_msg_DYT_control._msg_1.content.data, sizeof(uart_msg_DYT_control._msg_1.content.data));
         }
 
-        if (millis() - last_track_ms > track_time.get() && millis() - last_cancel_ms > 2000) {
+        if (millis() - last_track_ms > (uint32_t)(track_time.get()) && millis() - last_cancel_ms > 2000) {
             uart_msg_DYT_control.pack_track();
             last_track_ms = millis();
             get_port()->write(uart_msg_DYT_control._msg_1.content.data, sizeof(uart_msg_DYT_control._msg_1.content.data));

@@ -45,6 +45,11 @@ public:
     void update_log();
     void do_print();
 
+    void update_target_loc();
+    void set_target_loc(Location& loc_in); 
+    bool have_target_loc();
+    Location get_target_loc() {return _target_loc;}
+
     struct {
         float p1;
         float p2;
@@ -109,7 +114,6 @@ private:
     FD_Target_Loc*        _Target_ptr_loc;
     FD_Target_DYT*        _Target_ptr_cam_DYT;
 
-
     uint32_t _last_ms;
     int8_t current_idx;
 
@@ -119,4 +123,8 @@ private:
     LowPassFilterConstDtFloat _pitch_sample_filter;
     float _last_yaw;
     float _last_yaw_sample;
+
+    LowPassFilterVector3f _target_pos{1.0};
+    uint32_t _last_target_update_ms;
+    Location _target_loc;
 };

@@ -103,6 +103,9 @@ Mode *Plane::mode_from_mode_num(const enum Mode::Number num)
     case Mode::Number::EXTERNAL:
         ret = &mode_external;
         break;
+    case Mode::Number::LOITER_TARGET:
+        ret = &mode_loiter_target;
+        break;
 
     }
     return ret;

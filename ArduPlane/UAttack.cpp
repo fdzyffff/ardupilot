@@ -293,6 +293,7 @@ void UAttack::update()
     }
     if (current_idx > 0) {
         update_control_value();
+        update_target_loc();
     }
     
     update_vel_bf_info();

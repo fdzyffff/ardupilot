@@ -300,6 +300,11 @@ void Plane::stabilize_stick_mixing_fbw()
         return;
     }
 
+    if ((control_mode == &mode_loiter_target) && (plane.flight_option_enabled(FlightOptions::ENABLE_LOITER_ALT_CONTROL))) {
+        // loiter is using altitude control based on the pitch stick, don't use it again here
+        return;
+    }
+
     float pitch_input = channel_pitch->norm_input_dz();
     if (pitch_input > 0.5f) {
         pitch_input = (3*pitch_input - 1);

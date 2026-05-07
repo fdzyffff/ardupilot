@@ -77,6 +77,7 @@ void Plane::failsafe_short_on_event(enum failsafe_state fstype, ModeReason reaso
     case Mode::Number::AVOID_ADSB:
     case Mode::Number::GUIDED:
     case Mode::Number::LOITER:
+    case Mode::Number::LOITER_TARGET:
     case Mode::Number::THERMAL:
         if (g.fs_action_short != FS_ACTION_SHORT_BESTGUESS) { // if acton = 0(BESTGUESS) this group of modes take no action
             failsafe.saved_mode_number = control_mode->mode_number();
@@ -126,6 +127,7 @@ void Plane::failsafe_long_on_event(enum failsafe_state fstype, ModeReason reason
     case Mode::Number::TRAINING:
     case Mode::Number::CIRCLE:
     case Mode::Number::LOITER:
+    case Mode::Number::LOITER_TARGET:
     case Mode::Number::THERMAL:
     case Mode::Number::TAKEOFF:
     case Mode::Number::ATTACK_LOC:
