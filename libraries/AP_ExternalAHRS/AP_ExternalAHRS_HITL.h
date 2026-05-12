@@ -62,6 +62,7 @@ private:
     float ins_frame_count;
     uint32_t _last_ins_print;
     uint32_t _last_gps_print;
+    uint32_t _last_ins_print_debug;
     uint32_t _last_gps_post_ms;
     uint32_t _last_log_ms;
     uint32_t _last_global_print;

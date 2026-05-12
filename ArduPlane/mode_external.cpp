@@ -71,8 +71,8 @@ void ModeExternal::update_hover()
 void ModeExternal::update_angle()
 {
     plane.nav_roll_cd = plane.uart.control_status.cmd_roll * 100.f;
-    plane.nav_pitch_cd = plane.uart.control_status.cmd_pitch * 100.f;
-    SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, 75);
+    plane.nav_pitch_cd = (plane.uart.control_status.cmd_pitch - plane.g.pitch_trim) * 100.f;
+    SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, plane.aparm.throttle_cruise);
 }
 
 void ModeExternal::update_fbwb()

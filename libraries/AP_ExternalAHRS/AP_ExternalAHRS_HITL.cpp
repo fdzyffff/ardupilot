@@ -139,6 +139,14 @@ void AP_ExternalAHRS_HITL::build_packet_hitl()
                 handle_hil_gps(hil_gps_packet);
             }
         }
+
+        uint32_t now = AP_HAL::millis();
+        if (now - _last_ins_print_debug > 5000) {
+            _last_ins_print_debug = AP_HAL::millis();
+            if (frontend.debug_print.get()>99) {
+                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "This Byte: %x | %d", temp, ret);
+            }
+        }
     }
 }
 
@@ -478,6 +486,7 @@ void AP_ExternalAHRS_HITL::update_actuator_controls()
         hil_actuator_controls_packet.controls[i_mot] = SRV_Channels::get_output_scaled_norm(i_mot);
     }
     hil_actuator_controls_packet.mode |= MAV_MODE_FLAG_HIL_ENABLED;
+    hil_actuator_controls_packet.mode |= MAV_MODE_FLAG_SAFETY_ARMED;
 
     mavlink_message_t msg;
     UNUSED_RESULT(mavlink_msg_hil_actuator_controls_encode(gcs().sysid_this_mav(),
