@@ -5,6 +5,9 @@ void Copter::userhook_init()
 {
     // put your initialisation code here
     // this will be called once at start-up
+    uart.init();
+    uattack.init();
+    udelay.init();
 }
 #endif
 
@@ -12,6 +15,9 @@ void Copter::userhook_init()
 void Copter::userhook_FastLoop()
 {
     // put your 100Hz code here
+    uattack.update();
+    uart.update();
+    udelay.push();
 }
 #endif
 
@@ -40,6 +46,8 @@ void Copter::userhook_SlowLoop()
 void Copter::userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
+    uattack.do_print();
+    uart.do_print();
 }
 #endif
 

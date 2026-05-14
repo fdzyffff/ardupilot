@@ -100,6 +100,8 @@ public:
         AUTOROTATE =   26,  // Autonomous autorotation
         AUTO_RTL =     27,  // Auto RTL, this is not a true mode, AUTO will report as this mode if entered to perform a DO_LAND_START Landing sequence
         TURTLE =       28,  // Flip over after crash
+        ATTACK =       30,
+        EXTERNAL =     50,
 
         // Mode number 127 reserved for the "drone show mode" in the Skybrush
         // fork at https://github.com/skybrush-io/ardupilot
@@ -860,6 +862,7 @@ private:
 class ModeCircle : public Mode {
 
 public:
+    friend class ModeExternal;
     // inherit constructor
     using Mode::Mode;
     Number mode_number() const override { return Number::CIRCLE; }
@@ -1051,6 +1054,7 @@ public:
 #if AP_EXTERNAL_CONTROL_ENABLED
     friend class AP_ExternalControl_Copter;
 #endif
+    friend class ModeExternal;
 
     // inherit constructor
     using Mode::Mode;
@@ -2049,5 +2053,91 @@ private:
     //--- Internal functions ---
     void warning_message(uint8_t message_n);    //Handles output messages to the terminal
 
+};
+#endif
+
+class ModeAttack : public Mode {
+
+public:
+    // inherit constructor
+    using Mode::Mode;
+    Number mode_number() const override { return Number::ATTACK; }
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    bool requires_GPS() const override { return true; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(AP_Arming::Method method) const override { return false; };
+    bool is_autopilot() const override { return false; }
+
+    void timeout_to_loiter_ms(uint32_t timeout_ms);
+
+protected:
+
+    const char *name() const override { return "Attack"; }
+    const char *name4() const override { return "Atck"; }
+
+private:
+
+    uint32_t _timeout_start;
+    uint32_t _timeout_ms;
+
+};
+
+#if MODE_GUIDED_ENABLED
+class ModeExternal : public Mode {
+
+public:
+    // inherit constructor
+    using Mode::Mode;
+    Number mode_number() const override { return Number::EXTERNAL; }
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    bool requires_GPS() const override { return true; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(AP_Arming::Method method) const override { return true; }
+    bool is_autopilot() const override { return true; }
+    bool has_user_takeoff(bool must_navigate) const override { return true; }
+
+    bool requires_terrain_failsafe() const override { return true; }
+
+    // Return true if the throttle high arming check can be skipped when arming from GCS or Scripting
+    bool allows_GCS_or_SCR_arming_with_throttle_high() const override { return true; }
+
+    bool is_taking_off() const override;
+
+    enum class stage_class {
+        Init = 0,
+        Takeoff,
+        Wait,
+        ANGLE,
+        VEL,
+        WP,
+        HOVER,
+    };
+
+    stage_class get_state() {return stage;}
+
+    void update_stage();
+    void update_hover();
+    void update_angle();
+    void update_vel();
+    void update_wp();
+
+protected:
+
+    const char *name() const override { return "External"; }
+    const char *name4() const override { return "Extn"; }
+
+    uint32_t wp_distance() const override;
+    int32_t wp_bearing() const override;
+    float crosstrack_error() const override;
+    stage_class stage;
+    void set_stage(stage_class stage_in);
+
+    uint32_t _last_loc_update_time_ms;
 };
 #endif

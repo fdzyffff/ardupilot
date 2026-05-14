@@ -489,6 +489,26 @@ void Plane::stabilize_attack()
 }
 
 /*
+  this is the EXTERNAL mode (only submode::RATE) function, it does stabilization in roll axes while rate control in pitch and yaw
+ */
+void Plane::stabilize_external_rate()
+{
+    const float speed_scaler = get_speed_scaler();
+    float pitch_rate = plane.uart.control_status.cmd_pitch_rate;
+    if (plane.ahrs.pitch_sensor > 5000) {
+        pitch_rate = MIN(pitch_rate, 0.0f);
+    }
+    if (plane.ahrs.pitch_sensor < -5000) {
+        pitch_rate = MAX(pitch_rate, 0.0f);
+    }
+
+    SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, pitchController.get_rate_out(pitch_rate,  speed_scaler));
+
+    stabilize_roll();
+    stabilize_yaw();
+}
+
+/*
  * Set the throttle output.
  * This is called by TECS-enabled flight modes, e.g. AUTO, GUIDED, etc.
 */

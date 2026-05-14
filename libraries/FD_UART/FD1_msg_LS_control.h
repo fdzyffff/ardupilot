@@ -28,6 +28,19 @@ public:
         uint8_t reserved[30];
         uint8_t sum;
     };
+    
+    struct PACKED MSG_Collection_0xFD {
+        FD1_msg_header header;
+        uint8_t type;
+        uint16_t length;
+        uint8_t rev;
+        float target_speed;
+        float target_pitch_rate;
+        float target_roll;
+        float flight_status;
+        uint8_t reserved[30];
+        uint8_t sum;
+    };
 
     struct PACKED MSG_Collection_0x3C {
         FD1_msg_header header;
@@ -59,6 +72,7 @@ public:
     union PACKED Content_1 {
         MSG_Collection msg;
         MSG_Collection_0x1A msg_0x1A;
+        MSG_Collection_0xFD msg_0xFD;
         MSG_Collection_0x3C msg_0x3C;
         MSG_Collection_0x55 msg_0x55;
         uint8_t data[FD1_MSG_LS_CONTROL_LEN];

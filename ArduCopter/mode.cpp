@@ -179,6 +179,16 @@ Mode *Copter::mode_from_mode_num(const Mode::Number mode)
             break;
 #endif
 
+#if MODE_GUIDED_ENABLED
+        case Mode::Number::EXTERNAL:
+            ret = &mode_external;
+            break;
+#endif
+
+        case Mode::Number::ATTACK:
+            ret = &mode_attack;
+            break;
+
         default:
             break;
     }

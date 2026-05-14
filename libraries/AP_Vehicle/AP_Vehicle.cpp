@@ -677,6 +677,7 @@ const AP_Scheduler::Task AP_Vehicle::scheduler_tasks[] = {
 #if AP_ARMING_ENABLED
     SCHED_TASK(update_arming,          1,     50, 253),
 #endif
+    SCHED_TASK(fd_data_update,         1,     10, 254),
 };
 
 void AP_Vehicle::get_common_scheduler_tasks(const AP_Scheduler::Task*& tasks, uint8_t& num_tasks)
@@ -1043,6 +1044,10 @@ void AP_Vehicle::update_arming()
 }
 #endif
 
+void AP_Vehicle::fd_data_update()
+{
+    AP::fd_data().update();
+}
 /*
   one Hz checks common to all vehicles
  */

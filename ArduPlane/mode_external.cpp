@@ -7,12 +7,6 @@ bool ModeExternal::_enter()
     return true;
 }
 
-void ModeExternal::run()
-{
-    // Run base class function and then output throttle
-    Mode::run();
-}
-
 void ModeExternal::update()
 {
     update_stage();
@@ -22,6 +16,9 @@ void ModeExternal::update()
             break;
         case stage_class::ANGLE:
             update_angle();
+            break;
+        case stage_class::RATE:
+            update_rate();
             break;
         case stage_class::FBWB:
             update_fbwb();
@@ -41,6 +38,11 @@ void ModeExternal::update_stage()
                 set_stage(stage_class::ANGLE);
                 break;
             }
+            case 0xFD:
+            {
+                set_stage(stage_class::RATE);
+                break;
+            }
             case 0x3C:
             {
                 set_stage(stage_class::FBWB);
@@ -49,6 +51,11 @@ void ModeExternal::update_stage()
             case 0x55:
             {
                 set_stage(stage_class::WP);
+                break;
+            }
+            default:
+            {
+                set_stage(stage_class::HOVER);
                 break;
             }
         }
@@ -72,6 +79,13 @@ void ModeExternal::update_angle()
 {
     plane.nav_roll_cd = plane.uart.control_status.cmd_roll * 100.f;
     plane.nav_pitch_cd = (plane.uart.control_status.cmd_pitch - plane.g.pitch_trim) * 100.f;
+    SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, plane.aparm.throttle_cruise);
+}
+
+void ModeExternal::update_rate()
+{
+    plane.nav_roll_cd = plane.uart.control_status.cmd_roll * 100.f;
+    plane.nav_pitch_cd = plane.ahrs.pitch_sensor;
     SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, plane.aparm.throttle_cruise);
 }
 
@@ -100,6 +114,8 @@ void ModeExternal::navigate()
             break;
         case stage_class::ANGLE:
             break;
+        case stage_class::RATE:
+            break;
         case stage_class::FBWB:
             break;
         case stage_class::WP:
@@ -112,6 +128,31 @@ void ModeExternal::navigate()
             break;
         }
         default:
+            break;
+    }
+}
+
+void ModeExternal::run()
+{
+    switch (stage) {
+        case stage_class::HOVER:
+        case stage_class::FBWB:
+        case stage_class::WP:
+        case stage_class::ANGLE:
+        default:
+            // Direct stick mixing functionality has been removed, so as not to remove all stick mixing from the user completely
+            // the old direct option is now used to enable fbw mixing, this is easier than doing a param conversion.
+            if ((plane.g.stick_mixing == StickMixing::FBW) || (plane.g.stick_mixing == StickMixing::DIRECT_REMOVED)) {
+                plane.stabilize_stick_mixing_fbw();
+            }
+            plane.stabilize_roll();
+            plane.stabilize_pitch();
+            plane.stabilize_yaw();
+            break;
+        case stage_class::RATE:
+            {
+                plane.stabilize_external_rate();
+            }
             break;
     }
 }
@@ -133,6 +174,9 @@ void ModeExternal::set_stage(ModeExternal::stage_class stage_in)
         case stage_class::ANGLE:
             gcs().send_text(MAV_SEVERITY_INFO, "In ANGLE");
             break;
+        case stage_class::RATE:
+            gcs().send_text(MAV_SEVERITY_INFO, "In RATE");
+            break;
         case stage_class::FBWB:
             gcs().send_text(MAV_SEVERITY_INFO, "In FBWB");
             break;
@@ -142,6 +186,7 @@ void ModeExternal::set_stage(ModeExternal::stage_class stage_in)
             gcs().send_text(MAV_SEVERITY_INFO, "In WP");
             break;
         default:
+            gcs().send_text(MAV_SEVERITY_INFO, "ERR UNKNOW in 50");
             break;
     }
 }

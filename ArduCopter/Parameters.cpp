@@ -723,6 +723,10 @@ const AP_Param::Info Copter::var_info[] = {
     // @Path: Parameters.cpp
     GOBJECT(g2, "",  ParametersG2),
 
+    GOBJECT(uattack,      "UATK_", UAttack),
+
+    GOBJECT(uart,      "UART_", Uart),
+
     // @Group:
     // @Path: ../libraries/AP_Vehicle/AP_Vehicle.cpp
     PARAM_VEHICLE_INFO,

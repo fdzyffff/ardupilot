@@ -12,7 +12,7 @@
 */
 
 
-#include "Plane.h"
+#include "Copter.h"
 
 void Uart::handle_LS_control() {
     bool type_change = false;

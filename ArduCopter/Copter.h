@@ -168,11 +168,15 @@
 #include "avoidance_adsb.h"
 #endif
 // Local modules
-#include "Parameters.h"
 #if USER_PARAMS_ENABLED
 #include "UserParameters.h"
 #endif
+#include "Parameters.h"
 #include "mode.h"
+
+#include "Uart.h"
+#include "UDelay.h"
+#include "UAttack.h"
 
 class Copter : public AP_Vehicle {
 public:
@@ -223,10 +227,16 @@ public:
     friend class ModeZigZag;
     friend class ModeAutorotate;
     friend class ModeTurtle;
+    friend class ModeAttack;
+    friend class ModeExternal;
 
     friend class _AutoTakeoff;
 
     friend class PayloadPlace;
+
+    friend class Uart;
+    friend class UAttack;
+    friend class UDelay;
 
     Copter(void);
 
@@ -1075,10 +1085,18 @@ private:
 #if MODE_TURTLE_ENABLED
     ModeTurtle mode_turtle;
 #endif
+#if MODE_GUIDED_ENABLED
+    ModeExternal mode_external;
+#endif
+    ModeAttack mode_attack;
 
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);
+
+    Uart uart;
+    UAttack uattack;
+    UDelay udelay;
 
 public:
     void failsafe_check();      // failsafe.cpp

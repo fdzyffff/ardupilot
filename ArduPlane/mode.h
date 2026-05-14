@@ -973,6 +973,7 @@ public:
     enum class stage_class{
         HOVER,
         ANGLE,
+        RATE,
         FBWB,
         WP,
     };
@@ -987,6 +988,7 @@ public:
     void update_stage();
     void update_hover();
     void update_angle();
+    void update_rate();
     void update_fbwb();
     void update_wp();
     void set_stage(stage_class stage_in);

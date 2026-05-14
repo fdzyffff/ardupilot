@@ -945,6 +945,7 @@ private:
 #endif
     void stabilize();
     void stabilize_attack();
+    void stabilize_external_rate();
     void calc_throttle();
     void calc_nav_roll();
     void calc_nav_pitch();

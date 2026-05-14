@@ -16,8 +16,6 @@ void Plane::userhook_100Hz()
 
 void Plane::userhook_1Hz()
 {
-    AP::fd_data().update();
-
     uattack.do_print();
     uart.do_print();
 
