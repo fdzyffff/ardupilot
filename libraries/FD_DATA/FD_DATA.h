@@ -61,6 +61,9 @@ public:
     void set_is_flying(bool in);
     void set_uav_status(uint8_t status_in);
 
+    void set_mot_fail(bool in);
+    bool get_mot_fail(uint8_t mot_id);
+
     mavlink_zfjl_gcs_heartbeat_t& get_gcs_heartbeat_msg() {return zfjl_gcs_heartbeat_packet;}
 
 private:
@@ -78,6 +81,8 @@ private:
     bool _allow_arm;
     uint32_t _last_gcs_heartbeat_ms;
 
+    bool _mot_fail;
+
     mavlink_zfjl_gcs_heartbeat_t zfjl_gcs_heartbeat_packet;
     mavlink_zfjl_uav_heartbeat_t zfjl_uav_heartbeat_packet;
 
@@ -85,6 +90,7 @@ private:
 
     AP_Int8 use_gcs_lock;
     AP_Int8 uav_type;
+    AP_Int8 mot_fail_number;
 };
 
 

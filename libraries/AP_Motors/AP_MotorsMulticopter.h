@@ -101,6 +101,8 @@ public:
     float get_throttle_avg_max() const;
     int16_t get_yaw_headroom() const;
 
+    virtual void        remove_motor_pub(int8_t motor_num) {}
+
     // Thrust Linearization handling
     Thrust_Linearization thr_lin {*this};
 

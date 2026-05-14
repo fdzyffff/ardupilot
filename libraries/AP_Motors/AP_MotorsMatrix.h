@@ -105,6 +105,8 @@ public:
     float get_thrust_rpyt_out(uint8_t i) const;
     bool get_factors(uint8_t i, float &roll, float &pitch, float &yaw, float &throttle, uint8_t &testing_order) const;
 
+    // remove_motor
+    void                remove_motor_pub(int8_t motor_num) override;
 protected:
     // output - sends commands to the motors
     void                output_armed_stabilizing() override;

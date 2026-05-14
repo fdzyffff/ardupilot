@@ -10,6 +10,7 @@ const AP_Param::GroupInfo FD_DATA::var_info[] = {
 
     AP_GROUPINFO("_GCS_LOCK",    0, FD_DATA, use_gcs_lock, 0),
     AP_GROUPINFO("_UAV_TYPE",    1, FD_DATA, uav_type, 0),
+    AP_GROUPINFO("_MOT_FNUM",    2, FD_DATA, mot_fail_number, 0),
 
     AP_GROUPEND
 };

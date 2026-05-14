@@ -34,6 +34,10 @@ MultiCopter::MultiCopter(const char *frame_str) :
 
     frame->init(frame_str, &battery);
 
+    if (strncasecmp(frame_str, "hexa", strlen(frame_str)) == 0) {
+        frame->set_mass(3.0f);
+        printf("Frame '%s' found\n", frame_str);
+    }
     mass = frame->get_mass();
     frame_height = 0.1;
     ground_behavior = GROUND_BEHAVIOR_NO_MOVEMENT;

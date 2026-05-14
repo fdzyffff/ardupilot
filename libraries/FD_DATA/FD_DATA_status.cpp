@@ -21,6 +21,46 @@ void FD_DATA::update_allow_arm()
     }
 }
 
+void FD_DATA::set_mot_fail(bool in)
+{
+    if (mot_fail_number.get() > 0) {
+        _mot_fail = in;
+        if (_mot_fail) {
+            gcs().send_text(MAV_SEVERITY_INFO, "Mot fail %d active", mot_fail_number.get());
+        } else {
+            gcs().send_text(MAV_SEVERITY_INFO, "Mot fail %d deactive", mot_fail_number.get());
+        }
+    } else {
+        gcs().send_text(MAV_SEVERITY_INFO, "Set ZFJL_MOT_FNUM to 1~8");
+    }
+}
+
+bool FD_DATA::get_mot_fail(uint8_t mot_id)
+{
+    if (_mot_fail) {
+        // if (mot_fail_number.get() %2 == 0) {
+        //     if ((mot_id+1) == mot_fail_number.get()) {
+        //         return true;
+        //     }
+        //     if ((mot_id+1) == (mot_fail_number.get()-1)) {
+        //         return true;
+        //     }
+        // } else {
+        //     if ((mot_id+1) == mot_fail_number.get()) {
+        //         return true;
+        //     }
+        //     if ((mot_id+1) == (mot_fail_number.get()+1)) {
+        //         return true;
+        //     }
+        // }
+
+        if ((mot_id+1) == mot_fail_number.get()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void FD_DATA::set_is_flying(bool in)
 {
     _is_flying = in;

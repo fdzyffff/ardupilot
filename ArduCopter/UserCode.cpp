@@ -16,10 +16,12 @@ void Copter::userhook_FastLoop()
     // put your 100Hz code here
     uart.update();
 
-    if (motors->get_thrust_boost()) {
+    static bool last_fs_loss = false;
+    if (motors->get_thrust_boost() && !last_fs_loss) {
         if (flightmode->mode_number() != Mode::Number::LAND) {
             set_mode(Mode::Number::LAND, ModeReason::MOT_FAIL);
-            mode_land.set_control_position(false);
+            // mode_land.set_control_position(false);
+            last_fs_loss = true;
         }
     }
 }
@@ -80,6 +82,15 @@ void Copter::userhook_SuperSlowLoop()
 void Copter::userhook_auxSwitch1(const RC_Channel::AuxSwitchPos ch_flag)
 {
     // put your aux switch #1 handler here (CHx_OPT = 47)
+    switch(ch_flag) {
+    case RC_Channel::AuxSwitchPos::HIGH: {
+        // engage mode (if not possible we remain in current flight mode)
+        AP::fd_data().set_mot_fail(true);
+        break;
+    }
+    default:
+        AP::fd_data().set_mot_fail(false);
+    }
 }
 
 void Copter::userhook_auxSwitch2(const RC_Channel::AuxSwitchPos ch_flag)

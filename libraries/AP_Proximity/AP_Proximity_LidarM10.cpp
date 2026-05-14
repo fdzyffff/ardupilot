@@ -15,9 +15,9 @@
 
 #include "AP_Proximity_config.h"
 
-#if AP_PROXIMITY_LIDARM10P_ENABLED
+#if AP_PROXIMITY_LIDARM10_ENABLED
 
-#include "AP_Proximity_LidarM10P.h"
+#include "AP_Proximity_LidarM10.h"
 
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Math/crc.h>
@@ -27,7 +27,7 @@
 
 extern const AP_HAL::HAL& hal;
 
-AP_Proximity_LidarM10P::AP_Proximity_LidarM10P(AP_Proximity &_frontend,
+AP_Proximity_LidarM10::AP_Proximity_LidarM10(AP_Proximity &_frontend,
                                                          AP_Proximity::Proximity_State &_state,
                                                          AP_Proximity_Params &_params,
                                                          uint8_t serial_instance) :
@@ -45,7 +45,7 @@ AP_Proximity_LidarM10P::AP_Proximity_LidarM10P(AP_Proximity &_frontend,
 }
 
 // update the state of the sensor
-void AP_Proximity_LidarM10P::update(void)
+void AP_Proximity_LidarM10::update(void)
 {
     if (_uart == nullptr) {
         return;
@@ -55,7 +55,7 @@ void AP_Proximity_LidarM10P::update(void)
     read_sensor_data();
 
     // check for timeout and set health status
-    if ((_last_distance_received_ms == 0) || (AP_HAL::millis() - _last_distance_received_ms > PROXIMITY_M10P_TIMEOUT_MS)) {
+    if ((_last_distance_received_ms == 0) || (AP_HAL::millis() - _last_distance_received_ms > PROXIMITY_M10_TIMEOUT_MS)) {
         set_status(AP_Proximity::Status::NoData);
     } else {
         set_status(AP_Proximity::Status::Good);
@@ -63,17 +63,17 @@ void AP_Proximity_LidarM10P::update(void)
 }
 
 // get maximum and minimum distances (in meters) of primary sensor
-float AP_Proximity_LidarM10P::distance_max() const
+float AP_Proximity_LidarM10::distance_max() const
 {
     return 6.5f;
 }
-float AP_Proximity_LidarM10P::distance_min() const
+float AP_Proximity_LidarM10::distance_min() const
 {
     return 0.20f;
 }
 
 // check for replies from sensor, returns true if at least one message was processed
-bool AP_Proximity_LidarM10P::read_sensor_data()
+bool AP_Proximity_LidarM10::read_sensor_data()
 {
     if (_uart == nullptr) {
         return false;
@@ -84,34 +84,41 @@ bool AP_Proximity_LidarM10P::read_sensor_data()
 
     while (nbytes-- > 0) {
         uint8_t temp = _uart->read();    //. 逐字节读取原始 uint8_t 数据
-        _msg_M10P.parse(temp);           //. 传入解析器
+        _msg_M10.parse(temp);           //. 传入解析器
 
-        if (_msg_M10P._msg_1.updated) {
+        if (_msg_M10._msg_1.updated) {
             push_to_ring();
-            _msg_M10P._msg_1.updated = false;
+            _msg_M10._msg_1.updated = false;
         }
     }
     return (message_count > 0);
 }
 
-void AP_Proximity_LidarM10P::push_to_ring()
+void AP_Proximity_LidarM10::push_to_ring()
 {
-    float temp_start_angle = 0.01f * (float)(_msg_M10P._msg_1.content.msg.angle);
+    float temp_start_angle = 0.01f * (float)(_msg_M10._msg_1.content.msg.angle);
     float valid_point = 0;
-    uint16_t point_num = (_msg_M10P._msg_1.content.msg.length - 20 / 2);
+    uint16_t point_num = 42;
     for (uint8_t i_dist = 0; i_dist < point_num; i_dist++) {
-        uint8_t i_dist_idx = 8 + 2 * i_dist;
-        if (UINT16_VALUE(_msg_M10P._msg_1.content.data[i_dist_idx], _msg_M10P._msg_1.content.data[i_dist_idx + 1]) != 0XFFFF) {
+        uint8_t i_dist_idx = 6 + 2 * i_dist;
+        if (UINT16_VALUE(_msg_M10._msg_1.content.data[i_dist_idx], _msg_M10._msg_1.content.data[i_dist_idx + 1]) != 0XFFFF) {
             valid_point += 1.0f;
         }
     }
 
     valid_point = constrain_float(valid_point, 1.0f, 100.f);
+    uint16_t current_i_valid = 0;
     for (uint8_t i_dist = 0; i_dist < point_num; i_dist++) {
-        uint8_t i_dist_idx = 8 + 2 * i_dist;
-        float temp_dist = (float)(UINT16_VALUE(_msg_M10P._msg_1.content.data[i_dist_idx], _msg_M10P._msg_1.content.data[i_dist_idx + 1]));
+        uint8_t i_dist_idx = 6 + 2 * i_dist;
+        if (UINT16_VALUE(_msg_M10._msg_1.content.data[i_dist_idx], _msg_M10._msg_1.content.data[i_dist_idx + 1]) == 0XFFFF) {
+            break;
+        }
 
-        float temp_current_angle = temp_start_angle + ((float)i_dist_idx/valid_point)*15.f;
+        current_i_valid++;
+
+        float temp_dist = (float)(UINT16_VALUE(_msg_M10._msg_1.content.data[i_dist_idx], _msg_M10._msg_1.content.data[i_dist_idx + 1]));
+
+        float temp_current_angle = temp_start_angle + ((float)current_i_valid/valid_point)*15.f;
         temp_current_angle = wrap_360(temp_current_angle);
 
         if (temp_dist < 1.0f) {
@@ -125,7 +132,7 @@ void AP_Proximity_LidarM10P::push_to_ring()
 }
 
 // process reply
-void AP_Proximity_LidarM10P::update_sector_data(int16_t angle_deg, uint16_t distance_mm)
+void AP_Proximity_LidarM10::update_sector_data(int16_t angle_deg, uint16_t distance_mm)
 {
     // Get location on 3-D boundary based on angle to the object
     const AP_Proximity_Boundary_3D::Face face = frontend.boundary.get_face(angle_deg);
@@ -139,7 +146,7 @@ void AP_Proximity_LidarM10P::update_sector_data(int16_t angle_deg, uint16_t dist
     _last_distance_received_ms = AP_HAL::millis();
 }
 
-void AP_Proximity_LidarM10P::Local_face::push_to_ring(float dist, float current_angle)
+void AP_Proximity_LidarM10::Local_face::push_to_ring(float dist, float current_angle)
 {
     // if (peak < 50.f) {return;}
 
@@ -172,4 +179,4 @@ void AP_Proximity_LidarM10P::Local_face::push_to_ring(float dist, float current_
     }
 }
 
-#endif // AP_PROXIMITY_LIDARM10P_ENABLED
+#endif // AP_PROXIMITY_LIDARM10_ENABLED
