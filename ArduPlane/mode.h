@@ -991,6 +991,7 @@ public:
     void update_wp();
     void set_stage(stage_class stage_in);
     stage_class get_stage() {return stage;}
+    bool is_angle_mode();
 
 protected:
 

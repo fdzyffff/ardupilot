@@ -116,6 +116,11 @@ void ModeExternal::navigate()
     }
 }
 
+bool ModeExternal::is_angle_mode()
+{
+    return (stage == stage_class::ANGLE);
+}
+
 void ModeExternal::set_stage(ModeExternal::stage_class stage_in)
 {
     if (stage == stage_in) {return;}

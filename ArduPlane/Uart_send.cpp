@@ -91,9 +91,9 @@ void Uart::pack_status()
     uart_msg_LS_status._msg_1.content.msg.vel_n = vel_ned.x;
     uart_msg_LS_status._msg_1.content.msg.vel_e = vel_ned.y;
     uart_msg_LS_status._msg_1.content.msg.vel_d = vel_ned.z;
-    uart_msg_LS_status._msg_1.content.msg.roll = degrees(AP::ahrs().get_roll());
-    uart_msg_LS_status._msg_1.content.msg.pitch = degrees(AP::ahrs().get_pitch());
-    uart_msg_LS_status._msg_1.content.msg.yaw = degrees(AP::ahrs().get_yaw());
+    uart_msg_LS_status._msg_1.content.msg.roll = ((float)AP::ahrs().roll_sensor * 0.01f);
+    uart_msg_LS_status._msg_1.content.msg.pitch = ((float)AP::ahrs().pitch_sensor * 0.01f);
+    uart_msg_LS_status._msg_1.content.msg.yaw = ((float)AP::ahrs().yaw_sensor * 0.01f);
     uart_msg_LS_status._msg_1.content.msg.air_speed = airspeed;
     uart_msg_LS_status._msg_1.content.msg.yaw_rate = degrees(AP::ahrs().get_yaw_rate_earth());
     uart_msg_LS_status._msg_1.content.msg.pos_x = pos_ned.x;

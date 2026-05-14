@@ -210,6 +210,10 @@ float Plane::stabilize_pitch_get_pitch_out()
 #endif
 
     int32_t demanded_pitch = nav_pitch_cd + int32_t(g.pitch_trim * 100.0) + SRV_Channels::get_output_scaled(SRV_Channel::k_throttle) * g.kff_throttle_to_pitch;
+    if (mode_external.is_angle_mode()) {
+        demanded_pitch = nav_pitch_cd + int32_t(g.pitch_trim * 100.0);
+    }
+
     bool disable_integrator = false;
     if (control_mode == &mode_stabilize && channel_pitch->get_control_in() != 0) {
         disable_integrator = true;
