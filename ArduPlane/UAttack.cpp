@@ -26,6 +26,8 @@ const AP_Param::GroupInfo UAttack::var_info[] = {
 
     AP_SUBGROUPPTR(_Target_ptr_loc,         "TL_",    21, UAttack,  FD_Target_Loc),
     AP_SUBGROUPPTR(_Target_ptr_cam_DYT,     "TC_",    22, UAttack,  FD_Target_DYT),
+
+    AP_SUBGROUPINFO(attack_vely_pid    , "VELY_", 23, UAttack, AC_PID),
     AP_GROUPEND
 };
 
@@ -149,6 +151,20 @@ void UAttack::update_log() {
                                 (float)attack_roll_pid.get_pid_info().slew_rate,
                                 (float)attack_roll_pid.get_pid_info().Dmod);
 
+    AP::logger().WriteStreaming("UVEY",
+                                "TimeUS,target,actual,ff,P,I,D,srate,dmod",
+                                "s--------",
+                                "F--------",
+                                "Qffffffff",
+                                AP_HAL::micros64(),
+                                (float)attack_vely_pid.get_pid_info().target,
+                                (float)attack_vely_pid.get_pid_info().actual,
+                                (float)attack_vely_pid.get_pid_info().FF,
+                                (float)attack_vely_pid.get_pid_info().P,
+                                (float)attack_vely_pid.get_pid_info().I,
+                                (float)attack_vely_pid.get_pid_info().D,
+                                (float)attack_vely_pid.get_pid_info().slew_rate,
+                                (float)attack_vely_pid.get_pid_info().Dmod);
 }
 
 const Vector2f& UAttack::get_bf_info() {
@@ -458,15 +474,30 @@ void UAttack::update_target_pitch_rate() {
 
 // degree
 void UAttack::update_target_roll_angle() {
-    // _target_roll_angle = constrain_float(attack_roll_factor.get() * ef_rate_info.x, -15.f, 15.f);
-    
-    float k2_roll = attack_k2_roll.get();
-    float angle_err = constrain_float(bfe_info.x - _delta_course, -30.0f, 30.0f);
-
     float dt = (millis() - _last_ms);
     dt = dt * 0.001f;
     if (dt > 0.2f) {dt = 0.2f;}
+    // _target_roll_angle = constrain_float(attack_roll_factor.get() * ef_rate_info.x, -15.f, 15.f);
+    float k2_roll = attack_k2_roll.get();
+    float angle_err = constrain_float(bfe_info.x - _delta_course, -30.0f, 30.0f);
     _target_roll_angle = attack_roll_pid.update_all(angle_err, -ef_rate_info.x, dt) + k2_roll * angle_err;
+
+    Vector3f vel_ned;
+    if (plane.position_ok() && (!is_zero(attack_vely_pid.kP())) && plane.ahrs.get_velocity_NED(vel_ned)) {
+        Vector3f vel_ef_xy = Vector3f(vel_ned.x, vel_ned.y, 0.0f);
+        Matrix3f tmp_body_earth_m;
+        tmp_body_earth_m.from_euler(0.0f, radians(0.0f), AP::ahrs().get_yaw() + radians(bfe_info.x));
+        tmp_body_earth_m.transpose();
+        Vector3f vel_bf_xy = tmp_body_earth_m*vel_ef_xy;
+
+        _target_roll_angle += attack_vely_pid.update_all(vel_ned.length() * tanf(radians(angle_err)), vel_bf_xy.y, dt);
+
+        attack_roll_pid.reset_I();
+        attack_roll_pid.reset_filter();
+    } else {
+        attack_vely_pid.reset_I();
+        attack_vely_pid.reset_filter();
+    }
 }
 
 // degree/second

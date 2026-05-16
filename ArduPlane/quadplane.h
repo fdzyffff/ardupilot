@@ -62,6 +62,7 @@ public:
     friend class ModeQAutotune;
     friend class ModeQAcro;
     friend class ModeLoiterAltQLand;
+    friend class ModeQTakeoff;
     friend class AP_SystemID;
 
     QuadPlane(AP_AHRS &_ahrs);
@@ -403,6 +404,8 @@ private:
     AP_Float tuning_ptch_p_max;
     AP_Float tuning_ptch_d_min;
     AP_Float tuning_ptch_d_max;
+
+    AP_Float takeoff_q_alt;
 
     // which fwd throttle handling method is active
     enum class ActiveFwdThr : uint8_t {

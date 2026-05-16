@@ -37,11 +37,11 @@ void Uart::handle_LS_control() {
         {
             control_status.cmd_speed = uart_msg_LS_control._msg_1.content.msg_0xFD.target_speed;
             control_status.cmd_pitch_rate = uart_msg_LS_control._msg_1.content.msg_0xFD.target_pitch_rate;
-            control_status.cmd_roll = uart_msg_LS_control._msg_1.content.msg_0xFD.target_roll;
+            control_status.cmd_yaw_rate = uart_msg_LS_control._msg_1.content.msg_0xFD.target_yaw_rate;
             control_status.cmd = uart_msg_LS_control._msg_1.content.msg_0xFD.flight_status;
             control_status.last_cmd_ms = millis();
             if (type_change) {
-                gcs().send_text(MAV_SEVERITY_INFO, "Ext CMD Angle/Rate");
+                gcs().send_text(MAV_SEVERITY_INFO, "Ext CMD PY-Rate");
             }
             break;
         }

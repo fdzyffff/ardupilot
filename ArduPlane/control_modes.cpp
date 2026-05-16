@@ -106,6 +106,9 @@ Mode *Plane::mode_from_mode_num(const enum Mode::Number num)
     case Mode::Number::LOITER_TARGET:
         ret = &mode_loiter_target;
         break;
+    case Mode::Number::QTAKEOFF:
+        ret = &mode_qtakeoff;
+        break;
 
     }
     return ret;

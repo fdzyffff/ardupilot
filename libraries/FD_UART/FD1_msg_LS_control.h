@@ -36,7 +36,7 @@ public:
         uint8_t rev;
         float target_speed;
         float target_pitch_rate;
-        float target_roll;
+        float target_yaw_rate;
         float flight_status;
         uint8_t reserved[30];
         uint8_t sum;

@@ -109,6 +109,7 @@ private:
     AP_Float        filt_pithc_hz;
     AC_PID          attack_roll_pid{0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 5.0f, 5.0f, 5.0f, 0.0f};
     AC_PID          attack_pitch_pid{0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 5.0f, 5.0f, 5.0f, 0.0f};
+    AC_PID          attack_vely_pid{0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.0f};
 
     FD_Target_Base*       _Target_ptr_cam;
     FD_Target_Loc*        _Target_ptr_loc;

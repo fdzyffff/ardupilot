@@ -560,6 +560,8 @@ const AP_Param::GroupInfo QuadPlane::var_info2[] = {
     AP_GROUPINFO("TUNEPTCH_PMAX", 41, QuadPlane, tuning_ptch_p_max, 0.0f),
     AP_GROUPINFO("TUNEPTCH_DMIN", 42, QuadPlane, tuning_ptch_d_min, 0.0f),
     AP_GROUPINFO("TUNEPTCH_DMAX", 43, QuadPlane, tuning_ptch_d_max, 0.0f),
+
+    AP_GROUPINFO("TKOFF_ALT_M", 44, QuadPlane, takeoff_q_alt, 1.0f),
     AP_GROUPEND
 };
 
@@ -1908,6 +1910,11 @@ void QuadPlane::update_throttle_suppression(void)
         return;
     }
 
+    // allow for takeoff
+    if (plane.control_mode == &plane.mode_qtakeoff) {
+        return;
+    }
+
 idle_state:
     // motors should be in the spin when armed state to warn user they could become active
     set_desired_spool_state(AP_Motors::DesiredSpoolState::GROUND_IDLE);
@@ -3185,6 +3192,20 @@ void QuadPlane::takeoff_controller(void)
 
     float vel_z = wp_nav->get_default_speed_up();
     if (plane.control_mode == &plane.mode_guided && guided_takeoff) {
+        // for guided takeoff we aim for a specific height with zero
+        // velocity at that height
+        Location origin;
+        if (ahrs.get_origin(origin)) {
+            // a small margin to ensure we do move to the next takeoff
+            // stage
+            const int32_t margin_cm = 5;
+            float pos_z = margin_cm + plane.next_WP_loc.alt - origin.alt;
+            vel_z = 0;
+            pos_control->input_pos_vel_accel_z(pos_z, vel_z, 0);
+        } else {
+            set_climb_rate_cms(vel_z);
+        }
+    } else if (plane.control_mode == &plane.mode_qtakeoff) {
         // for guided takeoff we aim for a specific height with zero
         // velocity at that height
         Location origin;

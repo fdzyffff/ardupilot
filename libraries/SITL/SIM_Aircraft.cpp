@@ -830,9 +830,9 @@ void Aircraft::update_dynamics(const Vector3f &rot_accel)
             // X, Y movement tracks ground movement
             velocity_ef.x = gnd_movement.x;
             velocity_ef.y = gnd_movement.y;
-            if (velocity_ef.z > 0.0f) {
-                velocity_ef.z = 0.0f;
-            }
+            // if (velocity_ef.z > 0.0f) {
+            //     velocity_ef.z = 0.0f;
+            // }
             gyro.zero();
             gyro.x = yaw_rate;
             use_smoothing = true;

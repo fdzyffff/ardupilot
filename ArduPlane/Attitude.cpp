@@ -504,8 +504,15 @@ void Plane::stabilize_external_rate()
 
     SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, pitchController.get_rate_out(pitch_rate,  speed_scaler));
 
+    plane.nav_roll_cd = 0;
     stabilize_roll();
-    stabilize_yaw();
+
+    float yaw_rate = plane.uart.control_status.cmd_yaw_rate;
+    int16_t rudder_output = yawController.get_rate_out(yaw_rate,  speed_scaler, false);
+    rudder_output = constrain_int16(rudder_output, -4500, 4500);
+    // Not doing ground steering, output rudder on steering channel
+    SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, rudder_output);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_steering, rudder_output);
 }
 
 /*

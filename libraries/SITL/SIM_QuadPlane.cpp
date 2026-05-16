@@ -77,7 +77,7 @@ QuadPlane::QuadPlane(const char *frame_str) :
         frame_type = "+";
         copter_tailsitter = true;
         ground_behavior = GROUND_BEHAVIOR_TAILSITTER;
-        thrust_scale *= 1.5;
+        thrust_scale *= 2.5;
     }
     frame = Frame::find_frame(frame_type);
     if (frame == nullptr) {
