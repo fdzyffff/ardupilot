@@ -140,14 +140,14 @@ void UAttack::update_log() {
                                 "F--------",
                                 "Qffffffff",
                                 AP_HAL::micros64(),
-                                (float)attack_pitch_pid.get_pid_info().target,
-                                (float)attack_pitch_pid.get_pid_info().actual,
-                                (float)attack_pitch_pid.get_pid_info().FF,
-                                (float)attack_pitch_pid.get_pid_info().P,
-                                (float)attack_pitch_pid.get_pid_info().I,
-                                (float)attack_pitch_pid.get_pid_info().D,
-                                (float)attack_pitch_pid.get_pid_info().slew_rate,
-                                (float)attack_pitch_pid.get_pid_info().Dmod);
+                                (float)attack_roll_pid.get_pid_info().target,
+                                (float)attack_roll_pid.get_pid_info().actual,
+                                (float)attack_roll_pid.get_pid_info().FF,
+                                (float)attack_roll_pid.get_pid_info().P,
+                                (float)attack_roll_pid.get_pid_info().I,
+                                (float)attack_roll_pid.get_pid_info().D,
+                                (float)attack_roll_pid.get_pid_info().slew_rate,
+                                (float)attack_roll_pid.get_pid_info().Dmod);
 
 }
 

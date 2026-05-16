@@ -16,6 +16,7 @@ echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
 ./waf plane
 cp build/CUAVv5/bin/arduplane.apj firmware/$pre_fix$current_datetime\_CUAVv5_arduplane.apj
 echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
+pre_fix=$"MT-"
 ./waf configure --board APzH7
 ./waf plane
 cp build/APzH7/bin/arduplane.apj firmware/$pre_fix$current_datetime\_APzH7_arduplane.apj

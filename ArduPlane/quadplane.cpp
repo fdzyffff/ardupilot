@@ -1198,12 +1198,15 @@ bool QuadPlane::is_flying(void)
         return false;
     }
     if (plane.control_mode == &plane.mode_guided && guided_takeoff) {
+        printf ("lower limit 1 \n");
         return true;
     }
     if (motors->get_throttle() > 0.01f && !motors->limit.throttle_lower) {
+        printf ("lower limit 2 \n");
         return true;
     }
     if (tailsitter.in_vtol_transition()) {
+        printf ("lower limit 3 \n");
         return true;
     }
     return false;
