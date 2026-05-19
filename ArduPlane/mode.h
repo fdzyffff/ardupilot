@@ -64,7 +64,9 @@ public:
 #endif
         ATTACK_LOC    = 30,
         LOITER_TARGET = 31,
-        QTAKEOFF      = 32,
+#if HAL_QUADPLANE_ENABLED
+        QGUIDED       = 32,
+#endif
         EXTERNAL      = 50,
     };
 
@@ -963,25 +965,37 @@ protected:
     uint32_t _hover_start_ms;
 };
 
-class ModeQTakeoff : public Mode
+class ModeQGuided : public Mode
 {
 public:
 
-    Number mode_number() const override { return Number::QTAKEOFF; }
-    const char *name() const override { return "QTKF"; }
-    const char *name4() const override { return "QTKF"; }
+    Number mode_number() const override { return Number::QGUIDED; }
+    const char *name() const override { return "QGUIDED"; }
+    const char *name4() const override { return "QGUD"; }
 
     bool is_vtol_mode() const override { return true; }
     virtual bool is_vtol_man_mode() const override { return false; }
 
     // methods that affect movement of the vehicle in this mode
     void update() override;
-
+    void run() override;
     void navigate() override;
+
+    void takeoff_run();
+    void wp_run();
+
+    void do_takeoff(float alt_m, float yaw_cd);
+
+    void do_guide(Location &loc_in, float yaw_cd);
+
+    float get_yaw_cd() {return _yaw_cd;}
+
+    bool is_takeoff;
 
 protected:
 
-    AP_Mission::Mission_Command _cmd;
+    AP_Mission::Mission_Command _tkoff_cmd;
+    float _yaw_cd;
 
     bool _enter() override;
     void _exit() override;

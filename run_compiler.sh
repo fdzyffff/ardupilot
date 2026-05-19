@@ -24,4 +24,8 @@ echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
 ./waf configure --board APzH7-sim
 ./waf plane
 cp build/APzH7-sim/bin/arduplane.apj firmware/$pre_fix$current_datetime\_APzH7-sim_arduplane.apj
+echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
+./waf configure --board APzF4-sim
+./waf plane
+cp build/APzF4-sim/bin/arduplane.apj firmware/$pre_fix$current_datetime\_APzF4-sim_arduplane.apj
 echo "~~~~~~~~~~~~~~~ done ~~~~~~~~~~~~~~~"

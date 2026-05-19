@@ -180,7 +180,7 @@ public:
     friend class ModeAttackLoc;
     friend class ModeExternal;
     friend class ModeLoiter_Target;
-    friend class ModeQTakeoff;
+    friend class ModeQGuided;
 
 #if AP_EXTERNAL_CONTROL_ENABLED
     friend class AP_ExternalControl_Plane;
@@ -354,7 +354,9 @@ private:
     ModeAttackLoc mode_attack_loc;
     ModeExternal mode_external;
     ModeLoiter_Target mode_loiter_target;
-    ModeQTakeoff mode_qtakeoff;
+#if HAL_QUADPLANE_ENABLED
+    ModeQGuided mode_qguided;
+#endif
     
     // This is the state of the flight control system
     // There are multiple states defined such as MANUAL, FBW-A, AUTO
@@ -1337,6 +1339,7 @@ private:
     void userhook_1Hz();
 
     bool position_ok() const;
+    void user_handle_msg(const mavlink_message_t &msg);
 
     Uart uart;
     UAttack uattack;

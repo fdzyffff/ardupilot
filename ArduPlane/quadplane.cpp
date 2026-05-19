@@ -1200,15 +1200,12 @@ bool QuadPlane::is_flying(void)
         return false;
     }
     if (plane.control_mode == &plane.mode_guided && guided_takeoff) {
-        printf ("lower limit 1 \n");
         return true;
     }
     if (motors->get_throttle() > 0.01f && !motors->limit.throttle_lower) {
-        printf ("lower limit 2 \n");
         return true;
     }
     if (tailsitter.in_vtol_transition()) {
-        printf ("lower limit 3 \n");
         return true;
     }
     return false;
@@ -1911,7 +1908,7 @@ void QuadPlane::update_throttle_suppression(void)
     }
 
     // allow for takeoff
-    if (plane.control_mode == &plane.mode_qtakeoff) {
+    if (plane.control_mode == &plane.mode_qguided && plane.mode_qguided.is_takeoff) {
         return;
     }
 
@@ -2380,6 +2377,7 @@ void QuadPlane::vtol_position_controller(void)
 
     case QPOS_NONE:
         poscontrol.set_state(QPOS_POSITION1);
+        gcs().send_text(MAV_SEVERITY_INFO,"VTOL QPOS_NONE nvtol");
         INTERNAL_ERROR(AP_InternalError::error_t::flow_of_control);
         break;
 
@@ -2811,6 +2809,7 @@ void QuadPlane::vtol_position_controller(void)
     switch (poscontrol.get_state()) {
     case QPOS_NONE:
         poscontrol.set_state(QPOS_POSITION1);
+        gcs().send_text(MAV_SEVERITY_INFO,"VTOL QPOS_NONE zvtol");
         INTERNAL_ERROR(AP_InternalError::error_t::flow_of_control);
         break;
 
@@ -3186,9 +3185,14 @@ void QuadPlane::takeoff_controller(void)
     run_xy_controller();
 
     set_pilot_yaw_rate_time_constant();
-    attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(plane.nav_roll_cd,
-                                                                  plane.nav_pitch_cd,
-                                                                  get_pilot_input_yaw_rate_cds() + get_weathervane_yaw_rate_cds());
+
+    if ((plane.control_mode == &plane.mode_qguided) && (plane.mode_qguided.is_takeoff)) {
+        attitude_control->input_euler_angle_roll_pitch_yaw(plane.nav_roll_cd, plane.nav_pitch_cd, plane.mode_qguided.get_yaw_cd(), true);
+    } else {
+        attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(plane.nav_roll_cd,
+                                                                      plane.nav_pitch_cd,
+                                                                      get_pilot_input_yaw_rate_cds() + get_weathervane_yaw_rate_cds());
+    }
 
     float vel_z = wp_nav->get_default_speed_up();
     if (plane.control_mode == &plane.mode_guided && guided_takeoff) {
@@ -3205,7 +3209,7 @@ void QuadPlane::takeoff_controller(void)
         } else {
             set_climb_rate_cms(vel_z);
         }
-    } else if (plane.control_mode == &plane.mode_qtakeoff) {
+    } else if ((plane.control_mode == &plane.mode_qguided) && (plane.mode_qguided.is_takeoff)) {
         // for guided takeoff we aim for a specific height with zero
         // velocity at that height
         Location origin;
