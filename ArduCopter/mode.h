@@ -1468,6 +1468,9 @@ public:
     };
     ModeRTL::RTLAltType get_alt_type() const;
 
+    void set_return_loc(Location &loc_in);
+
+
 protected:
 
     const char *name() const override { return "RTL"; }
@@ -1525,6 +1528,8 @@ private:
         IgnorePilotYaw    = (1U << 2),
     };
 
+    bool use_exter_loc;
+    Location exter_loc;
 };
 
 
@@ -2110,12 +2115,11 @@ public:
     bool is_taking_off() const override;
 
     enum class stage_class {
-        Init = 0,
-        Takeoff,
-        Wait,
+        Wait = 0,
         ANGLE,
         VEL,
         WP,
+        ATK,
         HOVER,
     };
 
@@ -2126,6 +2130,7 @@ public:
     void update_angle();
     void update_vel();
     void update_wp();
+    void update_attack();
 
 protected:
 

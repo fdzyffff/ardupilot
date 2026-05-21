@@ -1094,6 +1094,8 @@ private:
     Mode *mode_from_mode_num(const Mode::Number mode);
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);
 
+    void user_handle_msg(const mavlink_message_t &msg);
+
     Uart uart;
     UAttack uattack;
     UDelay udelay;

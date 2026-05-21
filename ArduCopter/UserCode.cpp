@@ -67,3 +67,101 @@ void Copter::userhook_auxSwitch3(const RC_Channel::AuxSwitchPos ch_flag)
     // put your aux switch #3 handler here (CHx_OPT = 49)
 }
 #endif
+
+void Copter::user_handle_msg(const mavlink_message_t &msg)
+{
+    if (msg.msgid == MAVLINK_MSG_ID_LS_CMD) {
+        mavlink_ls_cmd_t packet;
+        mavlink_msg_ls_cmd_decode(&msg, &packet);
+        bool use_alt = packet.flag & (1<<0);
+        bool use_latlng = packet.flag & (1<<1);
+        bool use_yaw = packet.flag & (1<<2);
+        // bool use_radius = packet.flag & (1<<3);
+        switch(packet.type) {
+        case 1:
+            {
+                if (copter.set_mode(Mode::Number::GUIDED, ModeReason::GCS_COMMAND)) {
+                    Location target_loc{copter.current_loc};
+                    if (!copter.ap.land_complete) {
+                        target_loc.offset_bearing(degrees(ahrs.groundspeed_vector().angle()), ahrs.groundspeed_vector().length());
+                    }
+                    float target_yaw_cd = 0.0f;
+                    if (use_yaw) {
+                        target_yaw_cd = packet.yaw_cd;
+                    } else {
+                        target_yaw_cd = degrees(AP::ahrs().get_yaw()) * 100;
+                    }
+
+                    if (use_alt && copter.ap.land_complete) {
+                        target_loc.alt = packet.alt;
+                    }
+                    if (use_latlng && copter.ap.land_complete) {
+                        target_loc.lat = packet.lat;
+                        target_loc.lng = packet.lng;
+                    }
+                    mode_guided.set_destination(target_loc, true, target_yaw_cd, false, 0.0f, false);
+                }
+            }
+            break;
+        case 2:
+            {
+                if (copter.set_mode(Mode::Number::CIRCLE, ModeReason::GCS_COMMAND)) {
+                    Location target_loc{copter.current_loc};
+                    target_loc.change_alt_frame(Location::AltFrame::ABSOLUTE);
+                    if (use_alt) {
+                        target_loc.alt = packet.alt;
+                    }
+                    if (use_latlng) {
+                        target_loc.lat = packet.lat;
+                        target_loc.lng = packet.lng;
+                    }
+                    copter.circle_nav->set_center(target_loc);
+                }
+            }
+            break;
+        case 3:
+            {
+                if (copter.set_mode(Mode::Number::GUIDED, ModeReason::GCS_COMMAND)) {
+                    float target_yaw_cd = 0.0f;
+                    if (use_yaw) {
+                        target_yaw_cd = packet.yaw_cd;
+                    } else {
+                        target_yaw_cd = degrees(AP::ahrs().get_yaw()) * 100;
+                    }
+
+                    float target_alt_m = 1.0f;
+                    if (use_alt) {
+                        target_alt_m = (float)packet.alt * 0.01f;
+                    }
+
+                    if (mode_guided.do_user_takeoff_start(target_alt_m * 100.0f)) {
+                        copter.set_auto_armed(true);
+                        mode_guided.auto_yaw.set_fixed_yaw(target_yaw_cd*0.01f, 0.0f, 0, false);
+                    }
+                }
+            }
+            break;
+        case 4:
+            {
+                if (copter.set_mode(Mode::Number::RTL, ModeReason::GCS_COMMAND)) {
+                    Location target_loc{AP::ahrs().get_home()};
+                    if (use_latlng) {
+                        target_loc.lat = packet.lat;
+                        target_loc.lng = packet.lng;
+                    }
+                    copter.mode_rtl.set_return_loc(target_loc);
+                }
+            }
+            break;
+        case 5:
+            {
+                if (copter.set_mode(Mode::Number::LAND, ModeReason::GCS_COMMAND)) {
+                    ;
+                }
+            }
+            break;
+        default:
+            gcs().send_text(MAV_SEVERITY_INFO, "Unknow ls cmd [%d]", packet.type);
+        }
+    }
+}

@@ -36,6 +36,10 @@ public:
         float cmd_pitch;
         float cmd_roll;
         float cmd_pitch_rate;
+        float cmd_yaw_rate;
+        float cmd_vel_x;
+        float cmd_vel_y;
+        float cmd_vel_z;
     } control_status;
 
 private:

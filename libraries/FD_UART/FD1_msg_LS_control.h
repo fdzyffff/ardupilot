@@ -41,6 +41,20 @@ public:
         uint8_t reserved[30];
         uint8_t sum;
     };
+    
+    struct PACKED MSG_Collection_0xFE {
+        FD1_msg_header header;
+        uint8_t type;
+        uint16_t length;
+        uint8_t rev;
+        float cmd_vel_x;
+        float cmd_vel_y;
+        float cmd_vel_z;
+        float flight_status;
+        uint8_t reserved[30];
+        uint8_t sum;
+    };
+
 
     struct PACKED MSG_Collection_0x3C {
         FD1_msg_header header;
@@ -73,6 +87,7 @@ public:
         MSG_Collection msg;
         MSG_Collection_0x1A msg_0x1A;
         MSG_Collection_0xFD msg_0xFD;
+        MSG_Collection_0xFE msg_0xFE;
         MSG_Collection_0x3C msg_0x3C;
         MSG_Collection_0x55 msg_0x55;
         uint8_t data[FD1_MSG_LS_CONTROL_LEN];

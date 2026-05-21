@@ -32,6 +32,7 @@ bool ModeRTL::init(bool ignore_checks)
     // initialise precland state machine
     copter.precland_statemachine.init();
 #endif
+    use_exter_loc = false;
 
     return true;
 }
@@ -405,6 +406,12 @@ void ModeRTL::compute_return_target()
     rtl_path.return_target = ahrs.get_home();
 #endif
 
+    if (use_exter_loc) {
+        use_exter_loc = false;
+        rtl_path.return_target.lat = exter_loc.lat;
+        rtl_path.return_target.lng = exter_loc.lng;
+    }
+
     // get position controller Z-axis offset in cm above EKF origin
     int32_t pos_offset_z = pos_control->get_pos_offset_z_cm();
 
@@ -567,4 +574,9 @@ bool ModeRTL::set_speed_down(float speed_down_cms)
     return true;
 }
 
+void ModeRTL::set_return_loc(Location &loc_in)
+{
+    use_exter_loc = false;
+    exter_loc = loc_in;
+}
 #endif

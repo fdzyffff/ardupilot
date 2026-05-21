@@ -37,7 +37,7 @@ bool ModeCircle::init(bool ignore_checks)
 #endif
 
     // set auto yaw circle mode
-    auto_yaw.set_mode(AutoYaw::Mode::CIRCLE);
+    auto_yaw.set_mode(AutoYaw::Mode::LOOK_AHEAD);
 
     return true;
 }
@@ -100,7 +100,7 @@ void ModeCircle::run()
     }
 
     // get pilot desired climb rate (or zero if in radio failsafe)
-    float target_climb_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
+    float target_climb_rate = 0.0f;//get_pilot_desired_climb_rate(channel_throttle->get_control_in());
 
     // get avoidance adjusted climb rate
     target_climb_rate = get_avoidance_adjusted_climbrate(target_climb_rate);
@@ -120,6 +120,7 @@ void ModeCircle::run()
 #endif
 
     copter.failsafe_terrain_set_status(copter.circle_nav->update(target_climb_rate));
+    pos_control->set_pos_desired_z_cm(copter.circle_nav->get_center().z);
     pos_control->update_z_controller();
 
     // call attitude controller with auto yaw

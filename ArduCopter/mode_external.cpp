@@ -6,11 +6,7 @@
 bool ModeExternal::init(bool ignore_checks)
 {
     if (copter.mode_guided.init(ignore_checks)) {
-        if (copter.motors->armed() && !copter.ap.land_complete) {
-            set_stage(stage_class::Wait);
-        } else {
-            set_stage(stage_class::Init);
-        }
+        set_stage(stage_class::Wait);
         gcs().send_text(MAV_SEVERITY_INFO, "In Ext MODE");
         return true;
     }
@@ -24,16 +20,6 @@ void ModeExternal::run()
     update_stage();
 
     switch (stage) {
-        case stage_class::Init:
-        {
-            copter.mode_guided.run();
-        }
-        break;
-        case stage_class::Takeoff:
-        {
-            copter.mode_guided.run();
-        }
-        break;
         case stage_class::Wait:
         {
             copter.mode_guided.run();
@@ -57,6 +43,12 @@ void ModeExternal::run()
             copter.mode_guided.run();
         }
         break;
+        case stage_class::ATK:
+        {
+            update_attack();
+            copter.mode_guided.run();
+        }
+        break;
         case stage_class::HOVER:
         {
             update_hover();
@@ -68,30 +60,6 @@ void ModeExternal::run()
 
 void ModeExternal::update_stage()
 {
-    switch (stage) {
-        case stage_class::Init:
-        {
-            if (copter.motors->armed() && copter.ap.land_complete) {
-                set_stage(stage_class::Takeoff);
-            }
-            return;
-        }
-        break;
-        case stage_class::Takeoff:
-        {
-            if (copter.mode_guided.submode() != ModeGuided::SubMode::TakeOff) {
-                set_stage(stage_class::Wait);
-            }
-            if (copter.mode_guided.takeoff_complete) {
-                set_stage(stage_class::Wait);
-            }
-            return;
-        }
-        break;
-        default:
-        break;
-    }
-
     if (copter.uart.control_status.valid) {
         switch (copter.uart.control_status.type) {
             case 0x1A:
@@ -107,6 +75,11 @@ void ModeExternal::update_stage()
             case 0x55:
             {
                 set_stage(stage_class::WP);
+                break;
+            }
+            case 0xFE:
+            {
+                set_stage(stage_class::ATK);
                 break;
             }
             default:
@@ -128,10 +101,15 @@ void ModeExternal::update_angle()
 
 void ModeExternal::update_vel()
 {
+
+}
+
+void ModeExternal::update_attack()
+{
     Vector3f vel;
-    vel.x = 0.0f;
-    vel.y = 0.0f;
-    vel.z = 0.0f;
+    vel.x = copter.uart.control_status.cmd_vel_x * 100.f;
+    vel.y = copter.uart.control_status.cmd_vel_y * 100.f;
+    vel.z = copter.uart.control_status.cmd_vel_z * 100.f;
 
     bool use_yaw = false;
     float yaw_cd = 0.0f;
@@ -171,23 +149,6 @@ void ModeExternal::set_stage(stage_class stage_in)
     }
 
     switch (stage_in) {
-        case stage_class::Init:
-        {
-            stage = stage_in;
-            gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: Init");
-        }
-        break;
-        case stage_class::Takeoff:
-        {
-            if (copter.mode_guided.do_user_takeoff_start(200.f)) {
-                copter.set_auto_armed(true);
-                stage = stage_in;
-                gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: Takeoff");
-            } else {
-                gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: Takeoff Fail");
-            }
-        }
-        break;
         case stage_class::Wait:
         {
             copter.mode_guided.velaccel_control_start();
@@ -226,6 +187,13 @@ void ModeExternal::set_stage(stage_class stage_in)
             }
         }
         break;
+        case stage_class::ATK:
+        {
+            copter.mode_guided.velaccel_control_start();
+            stage = stage_in;
+            gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: ATK");
+        }
+        break;
         default:
         break;
     }
@@ -233,16 +201,15 @@ void ModeExternal::set_stage(stage_class stage_in)
 
 bool ModeExternal::is_taking_off() const
 {
-    return stage == stage_class::Takeoff;
+    return false;
 }
 
 uint32_t ModeExternal::wp_distance() const
 {
     switch(stage) {
-        case stage_class::Init:
-        case stage_class::Takeoff:
         case stage_class::Wait:
         case stage_class::WP:
+        case stage_class::ATK:
             return copter.mode_guided.wp_distance();
             break;
         case stage_class::HOVER:
@@ -258,11 +225,10 @@ uint32_t ModeExternal::wp_distance() const
 int32_t ModeExternal::wp_bearing() const
 {
     switch(stage) {
-        case stage_class::Init:
-        case stage_class::Takeoff:
         case stage_class::Wait:
         case stage_class::VEL:
         case stage_class::ANGLE:
+        case stage_class::ATK:
         case stage_class::WP:
             return copter.mode_guided.wp_bearing();
             break;
@@ -279,10 +245,9 @@ int32_t ModeExternal::wp_bearing() const
 float ModeExternal::crosstrack_error() const
 {
     switch(stage) {
-        case stage_class::Init:
-        case stage_class::Takeoff:
         case stage_class::Wait:
         case stage_class::VEL:
+        case stage_class::ATK:
         case stage_class::WP:
             return copter.mode_guided.crosstrack_error();
             break;

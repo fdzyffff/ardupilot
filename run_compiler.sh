@@ -29,3 +29,13 @@ echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
 ./waf plane
 cp build/APzF4-sim/bin/arduplane.apj firmware/$pre_fix$current_datetime\_APzF4-sim_arduplane.apj
 echo "~~~~~~~~~~~~~~~ done ~~~~~~~~~~~~~~~"
+
+pre_fix=$"COPTER-LS-"
+echo "~~~~~~~~~~~~~~~ start ~~~~~~~~~~~~~~~"
+./waf configure --board 0LDX7
+./waf copter
+cp build/0LDX7/bin/arducopter.apj firmware/$pre_fix$current_datetime\_0LDX7_arducopter.apj
+echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
+./waf configure --board 0LDX7-sim
+./waf copter
+cp build/0LDX7-sim/bin/arducopter.apj firmware/$pre_fix$current_datetime\_0LDX7-sim_arducopter.apj
