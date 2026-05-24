@@ -3,6 +3,7 @@
 
 bool ModeExternal::_enter()
 {
+    plane.next_WP_loc = plane.current_loc;
     update_stage();
     return true;
 }
@@ -160,6 +161,11 @@ void ModeExternal::run()
 bool ModeExternal::is_angle_mode()
 {
     return (stage == stage_class::ANGLE);
+}
+
+bool ModeExternal::is_rate_mode()
+{
+    return (stage == stage_class::RATE);
 }
 
 void ModeExternal::set_stage(ModeExternal::stage_class stage_in)

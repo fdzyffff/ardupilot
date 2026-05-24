@@ -96,4 +96,7 @@ void Uart::do_print()
     if (print.get() & (1<<3)) { // 8
         gcs().send_text(MAV_SEVERITY_WARNING, "0x55 (%0.2f, %0.2f, %0.2f) cmd:%d",((float)control_status.cmd_loc.lng * 1e-7), ((float)control_status.cmd_loc.lat * 1e-7), ((float)control_status.cmd_loc.alt * 1e-2), control_status.cmd);
     }
+    if (print.get() & (1<<4)) { // 16
+        gcs().send_text(MAV_SEVERITY_WARNING, "0xFD (%0.2f, %0.2f, %0.2f) cmd:%d",control_status.cmd_speed, control_status.cmd_pitch_rate, control_status.cmd_yaw_rate, control_status.cmd);
+    }
 }

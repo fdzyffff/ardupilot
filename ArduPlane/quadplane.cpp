@@ -1476,6 +1476,13 @@ float QuadPlane::desired_auto_yaw_rate_cds(void) const
             yaw_rate = 0.0f;
         }
     }
+    if (plane.control_mode == &plane.mode_external) {
+        if (plane.mode_external.is_rate_mode()) {
+            yaw_rate = plane.uart.control_status.cmd_yaw_rate * 100.f;
+        } else {
+            yaw_rate = 0.0f;
+        }
+    }
     return yaw_rate;
 }
 
