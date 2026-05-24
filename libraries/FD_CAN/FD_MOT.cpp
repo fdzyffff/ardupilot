@@ -157,7 +157,7 @@ bool FD_MOT::get_throttle_address(uint8_t i_mot, uint32_t &address)
 
 void FD_MOT::set_pwm(uint8_t id_in, uint16_t pwm_in) // 1000~2000
 {
-    if (1 <= id_in && id_in <= FD_CAN_MAX_MOT_NUM) {
+    if (id_in < FD_CAN_MAX_MOT_NUM) {
         status[id_in].thr_in = pwm_in;
         status[id_in].have_thr = true;
     }

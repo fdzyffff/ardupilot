@@ -39,14 +39,14 @@ void UEngines::update()
     }
 }
 
-void UEngines::set_rpm(uint8_t id_in, uint16_t rpm_in) 
-{
-    if (id_in < UENGINE_MAX_NUM) {
-        if (engines[id_in] != nullptr) {
-            engines[id_in]->set_rpm(rpm_in);
-        }
-    }
-}
+// void UEngines::set_rpm(uint8_t id_in, uint16_t rpm_in) 
+// {
+//     if (id_in < UENGINE_MAX_NUM) {
+//         if (engines[id_in] != nullptr) {
+//             engines[id_in]->set_rpm(rpm_in);
+//         }
+//     }
+// }
 
 void UEngines::send_mavlink_msg(mavlink_channel_t chan)
 {
