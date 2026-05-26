@@ -267,6 +267,9 @@ public:
     AP_Float s;
     AP_Float b;
     AP_Float c;
+    AP_Float ixx;
+    AP_Float iyy;
+    AP_Float izz;
     AP_Float c_lift_0;
     AP_Float c_lift_deltae;
     AP_Float c_lift_a;

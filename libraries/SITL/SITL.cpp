@@ -569,7 +569,7 @@ const AP_Param::GroupInfo SIM::var_infosimparam[] = {
     AP_GROUPINFO("MDE", 29, SIM, c_m_deltae,  1.0),
     AP_GROUPINFO("N0",  30, SIM, c_n_0,  0),
     AP_GROUPINFO("NB",  31, SIM, c_n_b,  0.25),
-    AP_GROUPINFO("BP",  32, SIM, c_n_p,  0.022),
+    AP_GROUPINFO("NP",  32, SIM, c_n_p,  0.022),
     AP_GROUPINFO("NR",  33, SIM, c_n_r,  -1),
     AP_GROUPINFO("NDA", 34, SIM, c_n_deltaa,  0.00),
     AP_GROUPINFO("NDR", 35, SIM, c_n_deltar,  0.1),
@@ -578,9 +578,12 @@ const AP_Param::GroupInfo SIM::var_infosimparam[] = {
     AP_GROUPINFO("DRM", 38, SIM, deltar_max,  0.3491),
     AP_GROUPINFO("CGX", 39, SIM, CGOffset_x,  -0.15),
     AP_GROUPINFO("CGY", 40, SIM, CGOffset_y,  0.0),
-    AP_GROUPINFO("CGZ", 41, SIM, CGOffset_z,  -0.15),
+    AP_GROUPINFO("CGZ", 41, SIM, CGOffset_z,  -0.05),
     AP_GROUPINFO("MAS", 42, SIM, mass, 2.0),
     AP_GROUPINFO("TSC", 43, SIM, thrust_scale, 27),
+    AP_GROUPINFO("IXX", 44, SIM, ixx,  1.0),
+    AP_GROUPINFO("IYY", 45, SIM, iyy,  1.0),
+    AP_GROUPINFO("IZZ", 46, SIM, izz,  1.0),
 
     AP_GROUPEND
 };

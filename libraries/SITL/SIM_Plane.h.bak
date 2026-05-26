@@ -86,60 +86,9 @@ protected:
         float deltaa_max = 0.3491;
         float deltae_max = 0.3491;
         float deltar_max = 0.3491;
-
-        float Ixx = 1.0f;//x方向转动惯量kgm2
-        float Iyy = 1.0f;//y方向转动惯量
-        float Izz = 1.0f;//z方向转动惯量
         // the X CoG offset should be -0.02, but that makes the plane too tail heavy
         // in manual flight. Adjusted to -0.15 gives reasonable flight
         Vector3f CGOffset{-0.15, 0, -0.05};
-
-        // float s = 16.968;//0.45;
-        // float b = 11.444;//1.88;
-        // float c = 1.5;//0.24;
-
-        // float Ixx = 100;//x方向转动惯量kgm2
-        // float Iyy = 2000;//y方向转动惯量
-        // float Izz = 2800;//z方向转动惯量
-
-        // float c_lift_0 = 0.5244;//0.56;
-        // float c_lift_deltae = 0.30942;//0;
-        // float c_lift_a = 4.67568;//6.9;
-        // float c_lift_q = 0;
-        // float mcoeff = 20;//50;
-        // float oswald = 0.9;
-        // float alpha_stall = 0.349;//0.4712;
-        // float c_drag_q = 0;
-        // float c_drag_deltae = 0.0573;//0.0;
-        // float c_drag_p = 0.1;
-        // float c_y_0 = 0;
-        // float c_y_b = -0.41256;//-0.98;
-        // float c_y_p = 0;
-        // float c_y_r = 0;
-        // float c_y_deltaa = 0;
-        // float c_y_deltar = -0.126;//-0.2;
-        // float c_l_0 = 0;
-        // float c_l_p = -1.0;
-        // float c_l_b = -0.24639;//-0.12;
-        // float c_l_r = 0.14;
-        // float c_l_deltaa = 0.07449;//0.25;偏小，且气动计算问题大。
-        // float c_l_deltar = -0.037;
-        // float c_m_0 = 0.0535;//0.045;
-        // float c_m_a = -1.52991;//-0.7;偏大
-        // float c_m_q = -20;
-        // float c_m_deltae = 0.76209;//1.0;
-        // float c_n_0 = 0;
-        // float c_n_b = 0.04584;//0.25;偏小
-        // float c_n_p = 0.022;
-        // float c_n_r = -1;
-        // float c_n_deltaa = 0.00;
-        // float c_n_deltar = 0.126;//0.1;
-        // float deltaa_max = 0.3491;
-        // float deltae_max = 0.3491;
-        // float deltar_max = 0.3491;
-        // // the X CoG offset should be -0.02, but that makes the plane too tail heavy
-        // // in manual flight. Adjusted to -0.15 gives reasonable flight
-        // Vector3f CGOffset{-0.15, 0, 0};//CGOffset{-0.15, 0, -0.05}; 飞机稳定裕度过大。
     } coefficient;
 
     float thrust_scale;
