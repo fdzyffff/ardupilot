@@ -101,6 +101,7 @@ void Copter::user_handle_msg(const mavlink_message_t &msg)
                     }
                     mode_guided.set_destination(target_loc, true, target_yaw_cd, false, 0.0f, false);
                 }
+                if (uart.print.get() & (1<<4)) {gcs().send_text(MAV_SEVERITY_INFO, "ls cmd t1");}
             }
             break;
         case 2:
@@ -117,6 +118,7 @@ void Copter::user_handle_msg(const mavlink_message_t &msg)
                     }
                     copter.circle_nav->set_center(target_loc);
                 }
+                if (uart.print.get() & (1<<4)) {gcs().send_text(MAV_SEVERITY_INFO, "ls cmd t2");}
             }
             break;
         case 3:
@@ -138,7 +140,12 @@ void Copter::user_handle_msg(const mavlink_message_t &msg)
                         copter.set_auto_armed(true);
                         mode_guided.auto_yaw.set_fixed_yaw(target_yaw_cd*0.01f, 0.0f, 0, false);
                     }
+
+
+                if (uart.print.get() & (1<<4)) {gcs().send_text(MAV_SEVERITY_INFO, "target_alt_cm %f ", target_alt_m * 100.f);}
                 }
+
+                if (uart.print.get() & (1<<4)) {gcs().send_text(MAV_SEVERITY_INFO, "ls cmd t3");}
             }
             break;
         case 4:
@@ -151,6 +158,7 @@ void Copter::user_handle_msg(const mavlink_message_t &msg)
                     }
                     copter.mode_rtl.set_return_loc(target_loc);
                 }
+                if (uart.print.get() & (1<<4)) {gcs().send_text(MAV_SEVERITY_INFO, "ls cmd t4");}
             }
             break;
         case 5:
@@ -158,6 +166,8 @@ void Copter::user_handle_msg(const mavlink_message_t &msg)
                 if (copter.set_mode(Mode::Number::LAND, ModeReason::GCS_COMMAND)) {
                     ;
                 }
+
+                if (uart.print.get() & (1<<4)) {gcs().send_text(MAV_SEVERITY_INFO, "ls cmd t5");}
             }
             break;
         default:

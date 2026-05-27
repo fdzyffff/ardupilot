@@ -42,9 +42,9 @@ public:
         float cmd_vel_z;
     } control_status;
 
-private:
-
     AP_Int16        print;
+
+private:
 
     AP_HAL::UARTDriver* _port;
 

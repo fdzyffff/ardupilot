@@ -576,7 +576,7 @@ bool ModeRTL::set_speed_down(float speed_down_cms)
 
 void ModeRTL::set_return_loc(Location &loc_in)
 {
-    use_exter_loc = false;
+    use_exter_loc = true;
     exter_loc = loc_in;
 }
 #endif
