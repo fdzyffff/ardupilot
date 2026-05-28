@@ -85,7 +85,7 @@ void ModeExternal::update_angle()
 
 void ModeExternal::update_rate()
 {
-    plane.nav_roll_cd = plane.uart.control_status.cmd_roll * 100.f;
+    // plane.nav_roll_cd = plane.uart.control_status.cmd_roll * 100.f;
     plane.nav_pitch_cd = plane.ahrs.pitch_sensor;
     SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, plane.aparm.throttle_cruise);
 }
