@@ -23,6 +23,7 @@ void FD_BMS::handle_info(AP_HAL::CANFrame &in_frame, bool do_print) {
         AP::fd_data().hxts_hy_bms_c1_packet.SOH = status.SOH;
         AP::fd_data().hxts_hy_bms_c1_packet.Volt = (uint16_t)(status.Volt*10.0f);
         AP::fd_data().hxts_hy_bms_c1_packet.Current = (uint16_t)(status.Curr*10.0f);
+        AP::fd_data().status.bms_c1_updated = true;
     }
 
     if (in_frame.id == (0x18112701| AP_HAL::CANFrame::FlagEFF)) {
@@ -35,6 +36,7 @@ void FD_BMS::handle_info(AP_HAL::CANFrame &in_frame, bool do_print) {
         AP::fd_data().hxts_hy_bms_c1_packet.HighestCell = (uint16_t)in_frame.data[2] << 8 | (uint16_t)in_frame.data[3];
         AP::fd_data().hxts_hy_bms_c1_packet.LowestVolt = (uint16_t)in_frame.data[4] << 8 | (uint16_t)in_frame.data[5];
         AP::fd_data().hxts_hy_bms_c1_packet.LowestCell = (uint16_t)in_frame.data[6] << 8 | (uint16_t)in_frame.data[7];
+        AP::fd_data().status.bms_c1_updated = true;
     }
 
     if (in_frame.id == (0x18152701| AP_HAL::CANFrame::FlagEFF)) {
@@ -55,6 +57,7 @@ void FD_BMS::handle_info(AP_HAL::CANFrame &in_frame, bool do_print) {
         AP::fd_data().hxts_hy_bms_c2_packet.DischargeECode  = status.error_discharge_code;
         AP::fd_data().hxts_hy_bms_c2_packet.ChargeStatus    = status.batter_status;
         AP::fd_data().hxts_hy_bms_c2_packet.ErrorCode       = status.other_error_code;
+        AP::fd_data().status.bms_c2_updated = true;
     }
 }
 

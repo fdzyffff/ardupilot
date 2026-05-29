@@ -479,6 +479,10 @@ bool GCS_MAVLINK_Plane::try_send_message(enum ap_message id)
         CHECK_PAYLOAD_SIZE(HXTS_HY_BMS_C3);
         AP::fd_data().send_hxts_hy_bms_c3(chan);
         break;
+    case MSG_HXTS_GPS:
+        CHECK_PAYLOAD_SIZE(GPS_RAW_INT);
+        AP::gps().send_mavlink_hil_gps(chan);
+        break;
     default:
         return GCS_MAVLINK::try_send_message(id);
     }
@@ -698,6 +702,7 @@ static const ap_message STREAM_EXTRA2_msgs[] = {
     MSG_HXTS_HY_BMS_C1,
     MSG_HXTS_HY_BMS_C2,
     MSG_HXTS_HY_BMS_C3,
+    MSG_HXTS_GPS,
 };
 static const ap_message STREAM_EXTRA3_msgs[] = {
     MSG_AHRS,

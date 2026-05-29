@@ -7,22 +7,34 @@ extern const AP_HAL::HAL& hal;
 
 void FD_DATA::send_hxts_hy_bms_c1(mavlink_channel_t chan)
 {
-    mavlink_msg_hxts_hy_bms_c1_send_struct(chan, &hxts_hy_bms_c1_packet);
+    if (status.bms_c1_updated) {
+        mavlink_msg_hxts_hy_bms_c1_send_struct(chan, &hxts_hy_bms_c1_packet);
+        status.bms_c1_updated = false;
+    }
 }
 
 void FD_DATA::send_hxts_hy_bms_c2(mavlink_channel_t chan)
 {
-    mavlink_msg_hxts_hy_bms_c2_send_struct(chan, &hxts_hy_bms_c2_packet);
+    if (status.bms_c2_updated) {
+        mavlink_msg_hxts_hy_bms_c2_send_struct(chan, &hxts_hy_bms_c2_packet);
+        status.bms_c2_updated = false;
+    }
 }
 
 void FD_DATA::send_hxts_hy_bms_c3(mavlink_channel_t chan)
 {
-    mavlink_msg_hxts_hy_bms_c3_send_struct(chan, &hxts_hy_bms_c3_packet);
+    if (status.bms_c3_updated) {
+        mavlink_msg_hxts_hy_bms_c3_send_struct(chan, &hxts_hy_bms_c3_packet);
+        status.bms_c3_updated = false;
+    }
 }
 
 void FD_DATA::send_hxts_can_mot_info(mavlink_channel_t chan)
 {
-    mavlink_msg_hxts_can_mot_info_send_struct(chan, &hxts_can_mot_info_packet);
+    if (status.can_mot_updated) {
+        mavlink_msg_hxts_can_mot_info_send_struct(chan, &hxts_can_mot_info_packet);
+        status.can_mot_updated = false;
+    }
 }
 
 void FD_DATA::do_switch(bool switch_on) {

@@ -56,6 +56,14 @@ public:
 
     mavlink_hxts_can_mot_info_t hxts_can_mot_info_packet;
     void do_switch(bool switch_on);
+
+    struct {
+        bool bms_c1_updated = false;
+        bool bms_c2_updated = false;
+        bool bms_c3_updated = false;
+        bool can_mot_updated = false;
+    } status;
+
 private:
     static FD_DATA *_singleton;
 

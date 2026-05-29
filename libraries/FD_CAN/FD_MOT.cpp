@@ -182,6 +182,7 @@ void FD_MOT::update_status()
         if (t_now - status[i_mot].last_rpm_ms < 1000) {
             AP::fd_data().hxts_can_mot_info_packet.RPM[i_mot*2] = status[i_mot].rpm1;
             AP::fd_data().hxts_can_mot_info_packet.RPM[i_mot*2 + 1] = status[i_mot].rpm2;
+            AP::fd_data().status.can_mot_updated = true;
         } else {
             AP::fd_data().hxts_can_mot_info_packet.RPM[i_mot*2] = 0xFFFF;
             AP::fd_data().hxts_can_mot_info_packet.RPM[i_mot*2 + 1] = 0xFFFF;
@@ -190,6 +191,7 @@ void FD_MOT::update_status()
         if (t_now - status[i_mot].last_rpm_ms < 1000) {
             AP::fd_data().hxts_can_mot_info_packet.TEMP[i_mot*2] = status[i_mot].temp1;
             AP::fd_data().hxts_can_mot_info_packet.TEMP[i_mot*2 + 1] = status[i_mot].temp2;
+            AP::fd_data().status.can_mot_updated = true;
         } else {
             AP::fd_data().hxts_can_mot_info_packet.TEMP[i_mot*2] = 0xFFFF;
             AP::fd_data().hxts_can_mot_info_packet.TEMP[i_mot*2 + 1] = 0xFFFF;

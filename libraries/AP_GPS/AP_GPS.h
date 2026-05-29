@@ -491,6 +491,7 @@ public:
     //MAVLink Status Sending
     void send_mavlink_gps_raw(mavlink_channel_t chan);
     void send_mavlink_gps2_raw(mavlink_channel_t chan);
+    void send_mavlink_hil_gps(mavlink_channel_t chan);
 
     void send_mavlink_gps_rtk(mavlink_channel_t chan, uint8_t inst);
 
@@ -616,6 +617,8 @@ protected:
 #if GPS_MOVING_BASELINE
     MovingBase mb_params[GPS_MAX_RECEIVERS];
 #endif // GPS_MOVING_BASELINE
+
+    AP_Int8 _send_hil_gps;
 
     uint32_t _log_gps_bit = -1;
 
