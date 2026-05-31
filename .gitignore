@@ -167,8 +167,10 @@ env.bak/
 venv.bak/
 autotest_result_*_junit.xml
 
-/firmware
 references/
 
 /TMR_FPGA/impl
 /TMR_FPGA/src/example
+
+/firmware
+/multi_sitl_test

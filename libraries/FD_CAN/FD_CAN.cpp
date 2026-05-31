@@ -34,6 +34,7 @@ const AP_Param::GroupInfo FD_CAN::var_info[] = {
     AP_GROUPINFO("BATT", 2, FD_CAN, _batt_enable, 0),
     AP_GROUPINFO("MOT",  3, FD_CAN, _mot_enable,  0),
     AP_GROUPINFO("BMS",  4, FD_CAN, _bms_enable,  0),
+    AP_GROUPINFO("BMS_P",  5, FD_CAN, _bms_print,  0),
 
     AP_GROUPEND};
 
@@ -142,7 +143,7 @@ void FD_CAN::loop() {
             }
 
             if (_bms_ptr != nullptr) {
-                _bms_ptr->handle_info(rxFrame, _print.get());
+                _bms_ptr->handle_info(rxFrame, _bms_print.get());
             }
 
             if (_mot_ptr != nullptr)

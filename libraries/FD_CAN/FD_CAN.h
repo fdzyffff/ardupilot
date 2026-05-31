@@ -45,12 +45,13 @@ public:
 
     FD_BATT *_batt_ptr;
     FD_MOT *_mot_ptr;
-    FD_BMS*_bms_ptr;
+    FD_BMS *_bms_ptr;
 
     AP_Int32 _print;       
     AP_Int8 _batt_enable;   
     AP_Int8 _mot_enable;   
     AP_Int8 _bms_enable;   
+    AP_Int8 _bms_print;
 
 private:
 
