@@ -45,6 +45,7 @@ void FD1_msg_weight::parse(uint8_t temp)
             if (_msg.read >= (_msg.length - 1))
             {
                 _msg.msg_state = FD1UART_msg_parser::FD1UART_PREAMBLE1;
+                process_message();
             }
             break;
     }

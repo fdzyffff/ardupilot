@@ -37,6 +37,7 @@ void UWeight::update()
 {
     read_uart();
     write_uart();
+    check_alive();
 }
 
 void UWeight::read_uart()
