@@ -8,6 +8,11 @@ echo "~~~~~~~~~~~~~~~ start ~~~~~~~~~~~~~~~"
 # mkdir firmware/TH-7
 cp build/TH-7/bin/arduplane.apj firmware/$current_datetime\_TH-7_arduplane.apj
 echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
+./waf configure --board TH-5
+./waf plane
+# mkdir firmware/TH-5
+cp build/TH-5/bin/arduplane.apj firmware/$current_datetime\_TH-5_arduplane.apj
+echo "~~~~~~~~~~~~~~~ next ~~~~~~~~~~~~~~~"
 ./waf configure --board TMR_FMU
 ./waf plane
 # mkdir firmware/TMR_FMU
