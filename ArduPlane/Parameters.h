@@ -594,6 +594,8 @@ public:
 #if AP_PLANE_SYSTEMID_ENABLED
     AP_SystemID systemid;
 #endif
+
+    AP_Int8 user_external_auto_throttle;
 };
 
 extern const AP_Param::Info var_info[];

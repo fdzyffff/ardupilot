@@ -1307,6 +1307,7 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_SUBGROUPINFO(systemid, "SID", 38, ParametersG2, AP_SystemID),
 #endif
     
+    AP_GROUPINFO("UEXT_AUTOTHR", 39, ParametersG2, user_external_auto_throttle, 1),
     AP_GROUPEND
 };
 

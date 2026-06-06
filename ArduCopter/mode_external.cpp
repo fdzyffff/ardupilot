@@ -183,7 +183,7 @@ void ModeExternal::set_stage(stage_class stage_in)
                 stage = stage_in;
                 gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: HOVER");
             } else {
-                gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: HOVER");
+                gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: HOVER Fail");
             }
         }
         break;
@@ -191,6 +191,14 @@ void ModeExternal::set_stage(stage_class stage_in)
         {
             copter.mode_guided.velaccel_control_start();
             stage = stage_in;
+            // initialise horizontal speed, acceleration
+            pos_control->set_max_speed_accel_xy(2000, wp_nav->get_wp_acceleration());
+            pos_control->set_correction_speed_accel_xy(2000, wp_nav->get_wp_acceleration());
+
+            // initialize vertical speeds and acceleration
+            pos_control->set_max_speed_accel_z(500, 500, wp_nav->get_accel_z());
+            pos_control->set_correction_speed_accel_z(500, 500, wp_nav->get_accel_z());
+
             gcs().send_text(MAV_SEVERITY_INFO, "[Mis] State: ATK");
         }
         break;

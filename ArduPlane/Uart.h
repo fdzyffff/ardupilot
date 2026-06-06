@@ -25,6 +25,11 @@ public:
     void set_target_loc(Location& loc_in);
     void pack_status();
 
+    void update_log_angle();
+    void update_log_rate();
+    void update_log_spd_hgt();
+    void update_log_waypoint();
+
     struct {
         bool valid;
         uint8_t type;

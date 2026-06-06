@@ -31,6 +31,7 @@ void Uart::handle_LS_control() {
             if (type_change) {
                 gcs().send_text(MAV_SEVERITY_INFO, "Ext CMD Angle");
             }
+            update_log_angle();
             break;
         }
         case 0xFD:
@@ -43,6 +44,7 @@ void Uart::handle_LS_control() {
             if (type_change) {
                 gcs().send_text(MAV_SEVERITY_INFO, "Ext CMD PY-Rate");
             }
+            update_log_rate();
             break;
         }
         case 0x3C:
@@ -55,6 +57,7 @@ void Uart::handle_LS_control() {
             if (type_change) {
                 gcs().send_text(MAV_SEVERITY_INFO, "Ext CMD Spd-Hgt");
             }
+            update_log_spd_hgt();
             break;
         }
         case 0x55:
@@ -67,7 +70,60 @@ void Uart::handle_LS_control() {
             if (type_change) {
                 gcs().send_text(MAV_SEVERITY_INFO, "Ext CMD Waypoint");
             }
+            update_log_waypoint();
             break;
         }
     }
+}
+
+void Uart::update_log_angle() {
+    AP::logger().WriteStreaming("EANG",
+                                "TimeUS,spd,pth,roll,cmd",
+                                "s----",
+                                "F----",
+                                "Qffff",
+                                AP_HAL::micros64(),
+                                (float)control_status.cmd_speed,
+                                (float)control_status.cmd_pitch,
+                                (float)control_status.cmd_roll,
+                                (float)control_status.cmd);
+}
+
+void Uart::update_log_rate() {
+    AP::logger().WriteStreaming("ERAT",
+                                "TimeUS,spd,prate,yrate,cmd",
+                                "s----",
+                                "F----",
+                                "Qffff",
+                                AP_HAL::micros64(),
+                                (float)control_status.cmd_speed,
+                                (float)control_status.cmd_pitch_rate,
+                                (float)control_status.cmd_yaw_rate,
+                                (float)control_status.cmd);
+}
+
+void Uart::update_log_spd_hgt() {
+    AP::logger().WriteStreaming("ESH",
+                                "TimeUS,spd,alt,roll,cmd",
+                                "s----",
+                                "F----",
+                                "Qffff",
+                                AP_HAL::micros64(),
+                                (float)control_status.cmd_speed,
+                                (float)control_status.cmd_alt,
+                                (float)control_status.cmd_roll,
+                                (float)control_status.cmd);
+}
+
+void Uart::update_log_waypoint() {
+    AP::logger().WriteStreaming("EWP",
+                                "TimeUS,lng,lat,alt,cmd",
+                                "s----",
+                                "F----",
+                                "Qffff",
+                                AP_HAL::micros64(),
+                                (float)control_status.cmd_loc.lng,
+                                (float)control_status.cmd_loc.lat,
+                                (float)control_status.cmd_loc.alt,
+                                (float)control_status.cmd);
 }

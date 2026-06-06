@@ -1023,8 +1023,9 @@ public:
     void navigate() override;
     void run() override;
     bool does_auto_navigation() const override { return (stage == stage_class::HOVER || stage == stage_class::WP); }
-    bool does_auto_throttle() const override { return (stage != stage_class::ANGLE); }
+    bool does_auto_throttle() const override { return (stage != stage_class::ANGLE && stage != stage_class::RATE); }
 
+    float attack_throttle();
     void update_stage();
     void update_hover();
     void update_angle();

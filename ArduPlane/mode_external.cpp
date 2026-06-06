@@ -80,14 +80,22 @@ void ModeExternal::update_angle()
 {
     plane.nav_roll_cd = plane.uart.control_status.cmd_roll * 100.f;
     plane.nav_pitch_cd = (plane.uart.control_status.cmd_pitch - plane.g.pitch_trim) * 100.f;
-    SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, plane.aparm.throttle_cruise);
+    if (plane.g2.user_external_auto_throttle.get() == 1) {
+        SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, attack_throttle());
+    } else {
+        SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, plane.aparm.throttle_cruise);
+    }
 }
 
 void ModeExternal::update_rate()
 {
     // plane.nav_roll_cd = plane.uart.control_status.cmd_roll * 100.f;
     plane.nav_pitch_cd = plane.ahrs.pitch_sensor;
-    SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, plane.aparm.throttle_cruise);
+    if (plane.g2.user_external_auto_throttle.get() == 1) {
+        SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, attack_throttle());
+    } else {
+        SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, plane.aparm.throttle_cruise);
+    }
 }
 
 void ModeExternal::update_fbwb()
@@ -105,6 +113,16 @@ void ModeExternal::update_wp()
     plane.calc_nav_roll();
     plane.calc_nav_pitch();
     plane.calc_throttle();
+}
+
+float ModeExternal::attack_throttle()
+{
+    float quad_hover_throttle = 35.f;
+    float plane_hover_throttle = plane.aparm.throttle_cruise;
+    float pitch_deg = 0.5* (plane.nav_pitch_cd * 0.01f + degrees(AP::ahrs().get_pitch()));
+    pitch_deg = constrain_float(pitch_deg, -30.f, 30.f);
+    float ret = (quad_hover_throttle * sinf(radians(pitch_deg)) + plane_hover_throttle * cosf(radians(pitch_deg)));
+    return ret;
 }
 
 void ModeExternal::navigate()
