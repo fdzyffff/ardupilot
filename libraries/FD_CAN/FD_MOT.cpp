@@ -206,7 +206,7 @@ void FD_MOT::update_log()
         return;
     }
     _allow_log = false;
-    uint32_t now_ms = millis();
+    uint32_t now_ms = AP_HAL::millis();
     if (now_ms - _last_log_ms < 200) {return;}
 
     _last_log_ms = now_ms;

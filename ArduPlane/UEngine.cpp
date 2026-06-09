@@ -245,7 +245,7 @@ void UEngine::update_log()
                                 (uint16_t)hxts_hy_engine_packet.pulsewidth2,
                                 (uint16_t)hxts_hy_engine_packet.rpm,
                                 (int16_t)hxts_hy_engine_packet.advance,
-                                (int16_t)hxts_hy_engine_packet.barometer
+                                (int16_t)hxts_hy_engine_packet.barometer,
                                 (int16_t)hxts_hy_engine_packet.map,
                                 (int16_t)hxts_hy_engine_packet.mat,
                                 (int16_t)hxts_hy_engine_packet.coolant,

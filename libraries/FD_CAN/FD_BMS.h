@@ -21,6 +21,7 @@ public:
     void set_thr(int16_t thr_in);
     void update();
     void update_cmd();
+    void update_log();
     void send_cmd(uint32_t id, uint8_t *data);
     void set_switch(uint8_t switch_in);
     FD_CAN* _frotend_ptr;
@@ -42,4 +43,8 @@ public:
 
     status_t status;
     uint8_t _data[8];
+private:
+    uint32_t _last_log_ms;
+    bool _allow_log_1;
+    bool _allow_log_2;
 };
