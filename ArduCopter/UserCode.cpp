@@ -5,6 +5,10 @@ void Copter::userhook_init()
 {
     // put your initialisation code here
     // this will be called once at start-up
+    useruartfwd.init();
+    uk230.init();
+    ugimbal.init();
+    umission.init();
 }
 #endif
 
@@ -12,6 +16,9 @@ void Copter::userhook_init()
 void Copter::userhook_FastLoop()
 {
     // put your 100Hz code here
+    uk230.update();
+    ugimbal.update();
+    umission.update();
 }
 #endif
 
@@ -19,6 +26,7 @@ void Copter::userhook_FastLoop()
 void Copter::userhook_50Hz()
 {
     // put your 50Hz code here
+    useruartfwd.update();
 }
 #endif
 
@@ -40,6 +48,7 @@ void Copter::userhook_SlowLoop()
 void Copter::userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
+    uk230.update_print();
 }
 #endif
 

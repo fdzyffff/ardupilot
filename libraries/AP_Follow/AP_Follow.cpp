@@ -140,6 +140,8 @@ const AP_Param::GroupInfo AP_Follow::var_info[] = {
     // @Values: 0:None,1: Mount Follows lead vehicle on mode enter
     // @User: Standard
     AP_GROUPINFO("_OPTIONS", 11, AP_Follow, _options, 0),
+    AP_GROUPINFO("_DELAYS", 13, AP_Follow, _delay_s, 0),
+    AP_GROUPINFO("_VEL_TYPE", 14, AP_Follow, _vel_type, 0),
 
     AP_GROUPEND
 };
@@ -353,9 +355,22 @@ bool AP_Follow::handle_global_position_int_message(const mavlink_message_t &msg)
             _target_location.set_alt_cm(packet.alt / 10, Location::AltFrame::ABSOLUTE);
         }
 
-        _target_velocity_ned.x = packet.vx * 0.01f; // velocity north
-        _target_velocity_ned.y = packet.vy * 0.01f; // velocity east
-        _target_velocity_ned.z = packet.vz * 0.01f; // velocity down
+        if (_vel_type.get() == 1) {
+            Vector2f tmp_pos;
+            if (_target_location.get_vector_xy_from_origin_NE(tmp_pos)) {
+                _filter_x.update(tmp_pos.x * 0.01f, AP_HAL::millis());
+                _filter_y.update(tmp_pos.y * 0.01f, AP_HAL::millis());
+                _target_velocity_ned.x = _filter_x.slope() * 1000.f;
+                _target_velocity_ned.y = _filter_y.slope() * 1000.f;
+                _target_velocity_ned.y = 0.0f;
+            } else {
+                _target_velocity_ned.zero();
+            }
+        } else {
+            _target_velocity_ned.x = (float)(packet.vx) * 0.01f; // velocity north
+            _target_velocity_ned.y = (float)(packet.vy) * 0.01f; // velocity east
+            _target_velocity_ned.z = (float)(packet.vz) * 0.01f; // velocity down
+        }
 
         // get a local timestamp with correction for transport jitter
         _last_location_update_ms = _jitter.correct_offboard_timestamp_msec(packet.time_boot_ms, AP_HAL::millis());

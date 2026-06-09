@@ -168,11 +168,15 @@
 #include "avoidance_adsb.h"
 #endif
 // Local modules
-#include "Parameters.h"
 #if USER_PARAMS_ENABLED
 #include "UserParameters.h"
 #endif
+#include "Parameters.h"
 #include "mode.h"
+#include "UserUartFWD.h"
+#include "UK230.h"
+#include "UGimbal.h"
+#include "UMission.h"
 
 class Copter : public AP_Vehicle {
 public:
@@ -223,10 +227,17 @@ public:
     friend class ModeZigZag;
     friend class ModeAutorotate;
     friend class ModeTurtle;
+    friend class ModeMission;
+    friend class ModeMLand;
 
     friend class _AutoTakeoff;
 
     friend class PayloadPlace;
+
+    friend class UserUartFWD;
+    friend class UK230;
+    friend class UGimbal;
+    friend class UMission;
 
     Copter(void);
 
@@ -1075,10 +1086,19 @@ private:
 #if MODE_TURTLE_ENABLED
     ModeTurtle mode_turtle;
 #endif
+#if MODE_GUIDED_ENABLED
+    ModeMission mode_mission;
+#endif
+    ModeMLand mode_mland;
 
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);
+
+    UserUartFWD useruartfwd{AP_SerialManager::SerialProtocol_Uart_Forward};
+    UK230 uk230;
+    UGimbal ugimbal;
+    UMission umission;
 
 public:
     void failsafe_check();      // failsafe.cpp

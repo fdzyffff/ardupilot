@@ -179,6 +179,18 @@ Mode *Copter::mode_from_mode_num(const Mode::Number mode)
             break;
 #endif
 
+#if MODE_FOLLOW_ENABLED
+        case Mode::Number::MLAND:
+            ret = &mode_mland;
+            break;
+#endif
+
+#if MODE_GUIDED_ENABLED
+        case Mode::Number::MISSION:
+            ret = &mode_mission;
+            break;
+#endif
+
         default:
             break;
     }
