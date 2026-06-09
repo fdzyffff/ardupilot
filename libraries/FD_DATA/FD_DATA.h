@@ -57,6 +57,8 @@ public:
     mavlink_hxts_can_mot_info_t hxts_can_mot_info_packet;
     void do_switch(bool switch_on);
 
+    void update_log();
+
     struct {
         bool bms_c1_updated = false;
         bool bms_c2_updated = false;

@@ -223,3 +223,50 @@ void UEngine::send_mavlink_msg(mavlink_channel_t chan)
     if (!_alive) {return;}
     mavlink_msg_hxts_hy_engine_send_struct(chan, &hxts_hy_engine_packet);
 }
+
+void UEngine::update_log()
+{
+    if (!_alive) {return;}
+    uint32_t now_ms = millis();
+    if (now_ms - _last_log_ms < 500) {return;}
+
+    _last_log_ms = now_ms;
+
+    AP::logger().WriteStreaming("UWGT",
+                                "TimeUS,I,Flag,T,PW1,PW2,RPM,ADV,Baro,map,mat,clnt,tps,batv",
+                                "s#------------",
+                                "F-------------",
+                                "QBBHHHHhhhhhhh",
+                                AP_HAL::micros64(),
+                                (uint8_t)hxts_hy_engine_packet.Instance,
+                                (uint16_t)hxts_hy_engine_packet.Flag,
+                                (uint16_t)hxts_hy_engine_packet.seconds,
+                                (uint16_t)hxts_hy_engine_packet.pulsewidth1,
+                                (uint16_t)hxts_hy_engine_packet.pulsewidth2,
+                                (uint16_t)hxts_hy_engine_packet.rpm,
+                                (int16_t)hxts_hy_engine_packet.advance,
+                                (int16_t)hxts_hy_engine_packet.barometer
+                                (int16_t)hxts_hy_engine_packet.map,
+                                (int16_t)hxts_hy_engine_packet.mat,
+                                (int16_t)hxts_hy_engine_packet.coolant,
+                                (int16_t)hxts_hy_engine_packet.tps,
+                                (int16_t)hxts_hy_engine_packet.batteryvoltage);
+
+    AP::logger().WriteStreaming("UWG2",
+                                "TimeUS,I,afr1,afr2,barc,gamh,ve1,cad,tps,mapd,egov1,egov2",
+                                "s#----------",
+                                "F-----------",
+                                "QBhhhhhhhhhh",
+                                AP_HAL::micros64(),
+                                (uint8_t)hxts_hy_engine_packet.Instance,
+                                (int16_t)hxts_hy_engine_packet.afr1,
+                                (int16_t)hxts_hy_engine_packet.afr2,
+                                (int16_t)hxts_hy_engine_packet.barocorrection,
+                                (int16_t)hxts_hy_engine_packet.gammaenrich,
+                                (int16_t)hxts_hy_engine_packet.ve1,
+                                (int16_t)hxts_hy_engine_packet.cold_adv_deg,
+                                (int16_t)hxts_hy_engine_packet.tpsdot,
+                                (int16_t)hxts_hy_engine_packet.mapdot,
+                                (int16_t)hxts_hy_engine_packet.egov1,
+                                (int16_t)hxts_hy_engine_packet.egov2);
+}

@@ -43,6 +43,7 @@ void UWeight::update()
     read_uart();
     write_uart();
     check_alive();
+    update_log();
 }
 
 void UWeight::read_uart()
@@ -114,4 +115,23 @@ void UWeight::do_print()
         gcs().send_text(MAV_SEVERITY_WARNING, "UWgt: %d , %d , %d", uart_msg_weight._msg_1.content.msg.value1, uart_msg_weight._msg_1.content.msg.value2, uart_msg_weight._msg_1.content.msg.value3);
         display_info.new_data = false;
     }
+}
+
+void UWeight::update_log()
+{
+    if (!_alive) {return;}
+    uint32_t now_ms = millis();
+    if (now_ms - _last_log_ms < 500) {return;}
+
+    _last_log_ms = now_ms;
+
+    AP::logger().WriteStreaming("UWGT",
+                                "TimeUS,FRONT,LEFT,RIGHT",
+                                "s---",
+                                "F---",
+                                "Qfff",
+                                AP_HAL::micros64(),
+                                (float)hxts_hy_weight_packet.Front,
+                                (float)hxts_hy_weight_packet.LEFT,
+                                (float)hxts_hy_weight_packet.RIGHT);
 }

@@ -5,6 +5,7 @@
 #include <AP_Logger/AP_Logger.h>
 #include <SRV_Channel/SRV_Channel.h>
 #include <FD_DATA/FD_DATA.h>
+#include <AP_Logger/AP_Logger.h>
 
 extern const AP_HAL::HAL &hal;
 
@@ -175,14 +176,11 @@ void FD_MOT::update_status()
     uint32_t t_now = AP_HAL::millis();
     for (uint8_t i_mot = 0; i_mot < FD_CAN_MAX_MOT_NUM; i_mot++) 
     {
-        if (t_now - status[i_mot].last_status_ms > 500) {
-            status[i_mot].last_status_ms = t_now;
-        }
-
         if (t_now - status[i_mot].last_rpm_ms < 1000) {
             AP::fd_data().hxts_can_mot_info_packet.RPM[i_mot*2] = status[i_mot].rpm1;
             AP::fd_data().hxts_can_mot_info_packet.RPM[i_mot*2 + 1] = status[i_mot].rpm2;
             AP::fd_data().status.can_mot_updated = true;
+            _allow_log = true;
         } else {
             AP::fd_data().hxts_can_mot_info_packet.RPM[i_mot*2] = 0xFFFF;
             AP::fd_data().hxts_can_mot_info_packet.RPM[i_mot*2 + 1] = 0xFFFF;
@@ -192,11 +190,83 @@ void FD_MOT::update_status()
             AP::fd_data().hxts_can_mot_info_packet.TEMP[i_mot*2] = status[i_mot].temp1;
             AP::fd_data().hxts_can_mot_info_packet.TEMP[i_mot*2 + 1] = status[i_mot].temp2;
             AP::fd_data().status.can_mot_updated = true;
+            _allow_log = true;
         } else {
             AP::fd_data().hxts_can_mot_info_packet.TEMP[i_mot*2] = 0xFFFF;
             AP::fd_data().hxts_can_mot_info_packet.TEMP[i_mot*2 + 1] = 0xFFFF;
         }
     }
+
+    update_log();
+}
+
+void FD_MOT::update_log()
+{
+    if (!_allow_log) {
+        return;
+    }
+    _allow_log = false;
+    uint32_t now_ms = millis();
+    if (now_ms - _last_log_ms < 200) {return;}
+
+    _last_log_ms = now_ms;
+
+    AP::logger().WriteStreaming("UMR1",
+                                "TimeUS,rpm1,rpm2,rpm3,rpm4,rpm5,rpm6,rpm7,rpm8",
+                                "s--------",
+                                "F--------",
+                                "QHHHHHHHH",
+                                AP_HAL::micros64(),
+                                AP::fd_data().hxts_can_mot_info_packet.RPM[0],
+                                AP::fd_data().hxts_can_mot_info_packet.RPM[1],
+                                AP::fd_data().hxts_can_mot_info_packet.RPM[2],
+                                AP::fd_data().hxts_can_mot_info_packet.RPM[3],
+                                AP::fd_data().hxts_can_mot_info_packet.RPM[4],
+                                AP::fd_data().hxts_can_mot_info_packet.RPM[5],
+                                AP::fd_data().hxts_can_mot_info_packet.RPM[6],
+                                AP::fd_data().hxts_can_mot_info_packet.RPM[7]);
+    AP::logger().WriteStreaming("UMR2",
+                                "TimeUS,rpm9,rpm10,rpm11,rpm12,rpm13,rpm14,rpm15,rpm16",
+                                "s--------",
+                                "F--------",
+                                "QHHHHHHHH",
+                                AP_HAL::micros64(),
+                                AP::fd_data().hxts_can_mot_info_packet.RPM[8],
+                                AP::fd_data().hxts_can_mot_info_packet.RPM[9],
+                                AP::fd_data().hxts_can_mot_info_packet.RPM[10],
+                                AP::fd_data().hxts_can_mot_info_packet.RPM[11],
+                                AP::fd_data().hxts_can_mot_info_packet.RPM[12],
+                                AP::fd_data().hxts_can_mot_info_packet.RPM[13],
+                                AP::fd_data().hxts_can_mot_info_packet.RPM[14],
+                                AP::fd_data().hxts_can_mot_info_packet.RPM[15]);
+    AP::logger().WriteStreaming("UMT1",
+                                "TimeUS,t1,t2,t3,t4,t5,t6,t7,t8",
+                                "s--------",
+                                "F--------",
+                                "QHHHHHHHH",
+                                AP_HAL::micros64(),
+                                AP::fd_data().hxts_can_mot_info_packet.TEMP[0],
+                                AP::fd_data().hxts_can_mot_info_packet.TEMP[1],
+                                AP::fd_data().hxts_can_mot_info_packet.TEMP[2],
+                                AP::fd_data().hxts_can_mot_info_packet.TEMP[3],
+                                AP::fd_data().hxts_can_mot_info_packet.TEMP[4],
+                                AP::fd_data().hxts_can_mot_info_packet.TEMP[5],
+                                AP::fd_data().hxts_can_mot_info_packet.TEMP[6],
+                                AP::fd_data().hxts_can_mot_info_packet.TEMP[7]);
+    AP::logger().WriteStreaming("UMT2",
+                                "TimeUS,t9,t10,t11,t12,t13,t14,t15,t16",
+                                "s--------",
+                                "F--------",
+                                "QHHHHHHHH",
+                                AP_HAL::micros64(),
+                                AP::fd_data().hxts_can_mot_info_packet.TEMP[8],
+                                AP::fd_data().hxts_can_mot_info_packet.TEMP[9],
+                                AP::fd_data().hxts_can_mot_info_packet.TEMP[10],
+                                AP::fd_data().hxts_can_mot_info_packet.TEMP[11],
+                                AP::fd_data().hxts_can_mot_info_packet.TEMP[12],
+                                AP::fd_data().hxts_can_mot_info_packet.TEMP[13],
+                                AP::fd_data().hxts_can_mot_info_packet.TEMP[14],
+                                AP::fd_data().hxts_can_mot_info_packet.TEMP[15]);
 }
 
 void FD_MOT::update_cmd()

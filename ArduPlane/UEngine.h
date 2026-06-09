@@ -22,6 +22,7 @@ public:
     void send_request();
     void send_mavlink_msg(mavlink_channel_t chan);
     void handle_message(const mavlink_message_t &msg);
+    void update_log();
 
     AP_HAL::UARTDriver* get_port(void) {return _port;}
 
@@ -32,6 +33,7 @@ private:
     uint32_t _last_update_ms;
     uint32_t _last_request_ms;
     uint32_t _last_print_ms;
+    uint32_t _last_log_ms;
     bool _alive;
 
     AP_HAL::UARTDriver* _port;

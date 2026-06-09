@@ -24,6 +24,7 @@ void FD_BMS::handle_info(AP_HAL::CANFrame &in_frame, bool do_print) {
         AP::fd_data().hxts_hy_bms_c1_packet.Volt = (uint16_t)(status.Volt*10.0f);
         AP::fd_data().hxts_hy_bms_c1_packet.Current = (uint16_t)(status.Curr*10.0f);
         AP::fd_data().status.bms_c1_updated = true;
+        _allow_log_1 = true;
         if (do_print) {
             gcs().send_text(MAV_SEVERITY_INFO, "[DBug] bms c1 update");
         }
@@ -40,6 +41,7 @@ void FD_BMS::handle_info(AP_HAL::CANFrame &in_frame, bool do_print) {
         AP::fd_data().hxts_hy_bms_c1_packet.LowestVolt = (uint16_t)in_frame.data[4] << 8 | (uint16_t)in_frame.data[5];
         AP::fd_data().hxts_hy_bms_c1_packet.LowestCell = (uint16_t)in_frame.data[6] << 8 | (uint16_t)in_frame.data[7];
         AP::fd_data().status.bms_c1_updated = true;
+        _allow_log_1 = true;
         if (do_print) {
             gcs().send_text(MAV_SEVERITY_INFO, "[DBug] bms c2 update");
         }
@@ -64,15 +66,61 @@ void FD_BMS::handle_info(AP_HAL::CANFrame &in_frame, bool do_print) {
         AP::fd_data().hxts_hy_bms_c2_packet.ChargeStatus    = status.batter_status;
         AP::fd_data().hxts_hy_bms_c2_packet.ErrorCode       = status.other_error_code;
         AP::fd_data().status.bms_c2_updated = true;
+        _allow_log_2 = true;
         if (do_print) {
             gcs().send_text(MAV_SEVERITY_INFO, "[DBug] bms c3 update");
         }
     }
+
+    update_log();
 }
 
 void FD_BMS::update()
 {
     ;
+}
+
+
+void FD_MOT::update_log()
+{
+    uint32_t now_ms = millis();
+    if (now_ms - _last_log_ms < 200) {return;}
+
+    _last_log_ms = now_ms;
+
+    if (_allow_log_1) {
+        AP::logger().WriteStreaming("UBS1",
+                                    "TimeUS,SOC,SOH,Volt,Curr,HV,HC,LV,LC",
+                                    "s--------",
+                                    "F--------",
+                                    "QHHHHHHHH",
+                                    AP_HAL::micros64(),
+                                    AP::fd_data().hxts_hy_bms_c1_packet.SOC,
+                                    AP::fd_data().hxts_hy_bms_c1_packet.SOH,
+                                    AP::fd_data().hxts_hy_bms_c1_packet.Volt,
+                                    AP::fd_data().hxts_hy_bms_c1_packet.Current,
+                                    AP::fd_data().hxts_hy_bms_c1_packet.HighestVolt,
+                                    AP::fd_data().hxts_hy_bms_c1_packet.HighestCell,
+                                    AP::fd_data().hxts_hy_bms_c1_packet.LowestVolt,
+                                    AP::fd_data().hxts_hy_bms_c1_packet.LowestCell);
+    }
+
+    if (_allow_log_2) {
+        AP::logger().WriteStreaming("UBS2",
+                                    "TimeUS,CrgF,DrgF,CrgE,CrgEC,DrgE,DrEC,EC",
+                                    "s--------",
+                                    "F--------",
+                                    "QBBBBBBBB",
+                                    AP_HAL::micros64(),
+                                    AP::fd_data().hxts_hy_bms_c2_packet.ChargeFlag,
+                                    AP::fd_data().hxts_hy_bms_c2_packet.DischargeFlag,
+                                    AP::fd_data().hxts_hy_bms_c2_packet.ChargeError,
+                                    AP::fd_data().hxts_hy_bms_c2_packet.ChargeECode,
+                                    AP::fd_data().hxts_hy_bms_c2_packet.DischargeError,
+                                    AP::fd_data().hxts_hy_bms_c2_packet.DischargeECode,
+                                    AP::fd_data().hxts_hy_bms_c2_packet.ChargeStatus,
+                                    AP::fd_data().hxts_hy_bms_c2_packet.ErrorCode);
+    }
 }
 
 void FD_BMS::set_switch(uint8_t switch_in)

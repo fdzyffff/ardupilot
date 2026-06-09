@@ -26,6 +26,7 @@ public:
     void update();
     void update_cmd();
     void update_status();
+    void update_log();
     void send_cmd(uint32_t id, uint8_t *data);
     FD_CAN* _frotend_ptr;
 
@@ -45,4 +46,7 @@ public:
 
     status_t status[FD_CAN_MAX_MOT_NUM];
     uint8_t _data[8];
+
+    uint32_t _last_log_ms;
+    bool _allow_log;
 };
