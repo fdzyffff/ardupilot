@@ -14,9 +14,14 @@
 
 #include "Plane.h"
 
+const AP_Param::GroupInfo UWeight::var_info[] = {
+    AP_GROUPINFO("PRINT",      1, UWeight, print,         0),
+    AP_GROUPEND
+};
+
 UWeight::UWeight()
 {
-    ;
+    AP_Param::setup_object_defaults(this, var_info);
 }
 
 // initialise
@@ -53,6 +58,7 @@ void UWeight::read_uart()
             hxts_hy_weight_packet.LEFT = uart_msg_weight._msg_1.content.msg.value2;
             hxts_hy_weight_packet.RIGHT = uart_msg_weight._msg_1.content.msg.value3;
             _last_update_ms = millis();
+            display_info.new_data = true;
         }
     }
 }
@@ -97,5 +103,15 @@ void UWeight::handle_message(const mavlink_message_t &msg)
         uart_msg_weight._msg_1.content.msg.value2 = hxts_hy_weight_packet.LEFT;
         uart_msg_weight._msg_1.content.msg.value3 = hxts_hy_weight_packet.RIGHT;
         _last_update_ms = millis();
+        display_info.new_data = true;
+    }
+}
+
+void UWeight::do_print()
+{
+    // put your 1Hz code here
+    if ((print.get() & (1<<0) && display_info.new_data)) { // 1
+        gcs().send_text(MAV_SEVERITY_WARNING, "UWgt: %d , %d , %d", uart_msg_weight._msg_1.content.msg.value1, uart_msg_weight._msg_1.content.msg.value2, uart_msg_weight._msg_1.content.msg.value3);
+        display_info.new_data = false;
     }
 }

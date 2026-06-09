@@ -185,6 +185,7 @@ const AP_Param::GroupInfo SIM::var_info[] = {
     AP_SUBGROUPEXTENSION("",      62, SIM,  var_info3),
     AP_SUBGROUPEXTENSION("",      63, SIM,  var_info2),
     AP_SUBGROUPEXTENSION("P_",      1, SIM,  var_infosimparam),
+    AP_SUBGROUPEXTENSION("SRV",      2, SIM,  var_srvparam),
     AP_GROUPEND
 };
 
@@ -585,6 +586,27 @@ const AP_Param::GroupInfo SIM::var_infosimparam[] = {
     AP_GROUPINFO("IYY", 45, SIM, iyy,  1.0),
     AP_GROUPINFO("IZZ", 46, SIM, izz,  1.0),
 
+    AP_GROUPEND
+};
+
+// third table of user settable parameters for SITL. 
+const AP_Param::GroupInfo SIM::var_srvparam[] = {
+    AP_GROUPINFO("1_REV", 1, SIM, srv_rev[0],  0),
+    AP_GROUPINFO("2_REV", 2, SIM, srv_rev[1],  0),
+    AP_GROUPINFO("3_REV", 3, SIM, srv_rev[2],  0),
+    AP_GROUPINFO("4_REV", 4, SIM, srv_rev[3],  0),
+    AP_GROUPINFO("5_REV", 5, SIM, srv_rev[4],  0),
+    AP_GROUPINFO("6_REV", 6, SIM, srv_rev[5],  0),
+    AP_GROUPINFO("7_REV", 7, SIM, srv_rev[6],  0),
+    AP_GROUPINFO("8_REV", 8, SIM, srv_rev[7],  0),
+    AP_GROUPINFO("9_REV", 9, SIM, srv_rev[8],  0),
+    AP_GROUPINFO("10_REV", 10, SIM, srv_rev[9],  0),
+    AP_GROUPINFO("11_REV", 11, SIM, srv_rev[10],  0),
+    AP_GROUPINFO("12_REV", 12, SIM, srv_rev[11],  0),
+    AP_GROUPINFO("13_REV", 13, SIM, srv_rev[12],  0),
+    AP_GROUPINFO("14_REV", 14, SIM, srv_rev[13],  0),
+    AP_GROUPINFO("15_REV", 15, SIM, srv_rev[14],  0),
+    AP_GROUPINFO("16_REV", 16, SIM, srv_rev[15],  0),
     AP_GROUPEND
 };
 

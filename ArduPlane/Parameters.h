@@ -359,6 +359,7 @@ public:
         k_param_autotune_options,
 
         k_param_uattack,
+        k_param_uweight,
     };
 
     AP_Int16 format_version;

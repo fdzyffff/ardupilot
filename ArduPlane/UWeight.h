@@ -18,11 +18,19 @@ public:
     void send_request();
     void send_mavlink_msg(mavlink_channel_t chan);
     void handle_message(const mavlink_message_t &msg);
+    void do_print();
+    // var_info for holding Parameter information
+    static const struct AP_Param::GroupInfo var_info[];
 
     AP_HAL::UARTDriver* get_port(void) {return _port;}
 
+    struct {
+        bool new_data;
+    } display_info;
 
 private:
+
+    AP_Int16        print;
 
     uint32_t _last_update_ms;
     bool _alive;

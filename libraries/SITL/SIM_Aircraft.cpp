@@ -929,8 +929,19 @@ float Aircraft::filtered_idx(float v, uint8_t idx)
  */
 float Aircraft::filtered_servo_angle(const struct sitl_input &input, uint8_t idx)
 {
-    const float v = (input.servos[idx] - 1500)/500.0f;
-    return filtered_idx(v, idx);
+    bool rev = false;
+    if (sitl && idx < 16) {
+        rev = sitl->srv_rev[idx];
+    }
+
+    if (rev) {
+        const float v = -(input.servos[idx] - 1500)/500.0f;
+        return filtered_idx(v, idx);
+    } else {
+        const float v = (input.servos[idx] - 1500)/500.0f;
+        return filtered_idx(v, idx);
+    }
+
 }
 
 /*

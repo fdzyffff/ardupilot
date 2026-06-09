@@ -24,4 +24,5 @@ void Plane::userhook_1Hz()
     // ufollow.update();
 
     uattack.do_print();
+    uweight.do_print();
 }

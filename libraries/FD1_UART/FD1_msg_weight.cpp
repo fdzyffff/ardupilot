@@ -35,14 +35,14 @@ void FD1_msg_weight::parse(uint8_t temp)
             }
             break;
         case FD1UART_msg_parser::FD1UART_DATA:
-            if (_msg.read >= sizeof(_msg.data)-1) {
+            if (_msg.read >= sizeof(_msg.data)) {
                 _msg.msg_state = FD1UART_msg_parser::FD1UART_PREAMBLE1;
                 break;
             }
             _msg.data[_msg.read] = temp;
             _msg.read++;
 
-            if (_msg.read >= (_msg.length - 1))
+            if (_msg.read >= (_msg.length))
             {
                 _msg.msg_state = FD1UART_msg_parser::FD1UART_PREAMBLE1;
                 process_message();
@@ -72,5 +72,7 @@ void FD1_msg_weight::make_sum()
 
 void FD1_msg_weight::swap_message(void)
 {
-    ;
+    _msg_1.content.msg.value1 = swap_message_uint16_t(_msg_1.content.msg.value1);
+    _msg_1.content.msg.value2 = swap_message_uint16_t(_msg_1.content.msg.value2);
+    _msg_1.content.msg.value3 = swap_message_uint16_t(_msg_1.content.msg.value3);
 }

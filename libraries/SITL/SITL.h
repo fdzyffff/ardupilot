@@ -110,6 +110,7 @@ public:
         AP_Param::setup_object_defaults(this, var_info2);
         AP_Param::setup_object_defaults(this, var_info3);
         AP_Param::setup_object_defaults(this, var_infosimparam);
+        AP_Param::setup_object_defaults(this, var_srvparam);
 #if HAL_SIM_GPS_ENABLED
         AP_Param::setup_object_defaults(this, var_gps);
 #endif
@@ -170,6 +171,8 @@ public:
 #ifdef SFML_JOYSTICK
     static const struct AP_Param::GroupInfo var_sfml_joystick[];
 #endif //SFML_JOYSTICK
+
+    static const struct AP_Param::GroupInfo var_srvparam[];
 
     // Board Orientation (and inverse)
     Matrix3f ahrs_rotation;
@@ -310,6 +313,9 @@ public:
     AP_Float CGOffset_z;
     AP_Float mass;
     AP_Float thrust_scale;
+
+    AP_Int8 srv_rev[16];
+
     // baro parameters
     class BaroParm {
     public:
