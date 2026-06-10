@@ -997,7 +997,7 @@ void AP_CANopen::log_servos_status(void) {
                     i,
                     _servos[i].real_angle_deg,
                     _servos[i].target_angle_deg,
-                    _servos[i].real_current_A,
+                    _servos[i].real_current_A*10,
                     _servos[i].real_temperature_dc);
             }
         }
