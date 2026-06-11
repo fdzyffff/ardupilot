@@ -132,6 +132,7 @@ void UEngine::update()
     read_uart();
     write_uart();
     check_alive();
+    update_log();
 }
 
 void UEngine::read_uart()
@@ -232,7 +233,7 @@ void UEngine::update_log()
 
     _last_log_ms = now_ms;
 
-    AP::logger().WriteStreaming("UWGT",
+    AP::logger().WriteStreaming("UEN1",
                                 "TimeUS,I,Flag,T,PW1,PW2,RPM,ADV,Baro,map,mat,clnt,tps,batv",
                                 "s#------------",
                                 "F-------------",
@@ -252,7 +253,7 @@ void UEngine::update_log()
                                 (int16_t)hxts_hy_engine_packet.tps,
                                 (int16_t)hxts_hy_engine_packet.batteryvoltage);
 
-    AP::logger().WriteStreaming("UWG2",
+    AP::logger().WriteStreaming("UEN2",
                                 "TimeUS,I,afr1,afr2,barc,gamh,ve1,cad,tps,mapd,egov1,egov2",
                                 "s#----------",
                                 "F-----------",
