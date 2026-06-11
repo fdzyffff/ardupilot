@@ -59,6 +59,10 @@ void AP_BattMonitor_DroneCAN::subscribe_msgs(AP_DroneCAN* ap_dronecan)
     if (Canard::allocate_sub_arg_callback(ap_dronecan, &handle_mppt_stream_trampoline, ap_dronecan->get_driver_index()) == nullptr) {
         AP_BoardConfig::allocation_error("mppt_stream_sub");
     }
+
+    if (Canard::allocate_sub_arg_callback(ap_dronecan, &handle_battery_info_periodic_trampoline, ap_dronecan->get_driver_index()) == nullptr) {
+        AP_BoardConfig::allocation_error("battery_periodic_sub");
+    }
 }
 
 /*
@@ -183,6 +187,28 @@ void AP_BattMonitor_DroneCAN::handle_battery_info_aux(const ardupilot_equipment_
 
     _has_cell_voltages = true;
     _has_battery_info_aux = true;
+
+    uint32_t tnow_ms = AP_HAL::millis();
+    if (tnow_ms - _last_test_2_print_ms > 1000) {
+        _last_test_2_print_ms = tnow_ms;
+        gcs().send_text(MAV_SEVERITY_INFO, "Batt cycle_count aux %d", msg.cycle_count);
+    }
+}
+
+void AP_BattMonitor_DroneCAN::handle_battery_info_periodic(const ardupilot_equipment_power_BatteryPeriodic &msg)
+{
+    WITH_SEMAPHORE(_sem_battmon);
+    uint32_t tnow_ms = AP_HAL::millis();
+    if (tnow_ms - _last_test_print_ms > 1000) {
+        _last_test_print_ms = tnow_ms;
+        char name[50];
+        memcpy(name, msg.name.data, sizeof(msg.name.data));
+        gcs().send_text(MAV_SEVERITY_INFO, "Batt name: %s", name);
+        char sn[50];
+        memcpy(sn, msg.serial_number.data, sizeof(msg.serial_number.data));
+        gcs().send_text(MAV_SEVERITY_INFO, "Batt SN: %s", sn);
+        gcs().send_text(MAV_SEVERITY_INFO, "Batt cycle_count %d", msg.cycle_count);
+    }
 }
 
 void AP_BattMonitor_DroneCAN::handle_mppt_stream(const mppt_Stream &msg)
@@ -262,6 +288,15 @@ void AP_BattMonitor_DroneCAN::handle_battery_info_aux_trampoline(AP_DroneCAN *ap
         return;
     }
     driver->handle_battery_info_aux(msg);
+}
+
+void AP_BattMonitor_DroneCAN::handle_battery_info_periodic_trampoline(AP_DroneCAN *ap_dronecan, const CanardRxTransfer& transfer, const ardupilot_equipment_power_BatteryPeriodic &msg)
+{
+    AP_BattMonitor_DroneCAN* driver = get_dronecan_backend(ap_dronecan, transfer.source_node_id, transfer.source_node_id);
+    if (driver == nullptr) {
+        return;
+    }
+    driver->handle_battery_info_periodic(msg);
 }
 
 void AP_BattMonitor_DroneCAN::handle_mppt_stream_trampoline(AP_DroneCAN *ap_dronecan, const CanardRxTransfer& transfer, const mppt_Stream &msg)

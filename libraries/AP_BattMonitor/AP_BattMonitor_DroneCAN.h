@@ -51,6 +51,7 @@ public:
     static AP_BattMonitor_DroneCAN* get_dronecan_backend(AP_DroneCAN* ap_dronecan, uint8_t node_id, uint8_t battery_id);
     static void handle_battery_info_trampoline(AP_DroneCAN *ap_dronecan, const CanardRxTransfer& transfer, const uavcan_equipment_power_BatteryInfo &msg);
     static void handle_battery_info_aux_trampoline(AP_DroneCAN *ap_dronecan, const CanardRxTransfer& transfer, const ardupilot_equipment_power_BatteryInfoAux &msg);
+    static void handle_battery_info_periodic_trampoline(AP_DroneCAN *ap_dronecan, const CanardRxTransfer& transfer, const ardupilot_equipment_power_BatteryPeriodic &msg);
     static void handle_mppt_stream_trampoline(AP_DroneCAN *ap_dronecan, const CanardRxTransfer& transfer, const mppt_Stream &msg);
 
     void mppt_set_powered_state(bool power_on) override;
@@ -61,6 +62,7 @@ public:
 private:
     void handle_battery_info(const uavcan_equipment_power_BatteryInfo &msg);
     void handle_battery_info_aux(const ardupilot_equipment_power_BatteryInfoAux &msg);
+    void handle_battery_info_periodic(const ardupilot_equipment_power_BatteryPeriodic &msg);
     void update_interim_state(const float voltage, const float current, const float temperature_K, const uint8_t soc, uint8_t soh_pct);
 
     static bool match_battery_id(uint8_t instance, uint8_t battery_id);
@@ -114,5 +116,8 @@ private:
 
     Canard::ObjCallback<AP_BattMonitor_DroneCAN, mppt_OutputEnableResponse> mppt_outputenable_res_cb{this, &AP_BattMonitor_DroneCAN::handle_outputEnable_response};
     Canard::Client<mppt_OutputEnableResponse> *mppt_outputenable_client;
+
+    uint32_t _last_test_print_ms;
+    uint32_t _last_test_2_print_ms;
 };
 #endif
