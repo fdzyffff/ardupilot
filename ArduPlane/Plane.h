@@ -559,6 +559,8 @@ private:
 
         // have we finished the takeoff ratation (when it applies)?
         bool rotation_complete;
+
+        bool land_complete;
     } auto_state;
 
 #if AP_SCRIPTING_ENABLED

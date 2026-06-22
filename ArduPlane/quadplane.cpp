@@ -3114,6 +3114,45 @@ void QuadPlane::takeoff_controller(void)
         return;
     }
 
+    if (plane.auto_state.land_complete) {
+        if (spool_state != AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED) {
+            set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
+            return;
+        }
+        // send throttle to attitude controller with angle boost
+        float throttle = constrain_float(attitude_control->get_throttle_in(), 0.0, 1.0);
+        if (throttle < motors->get_throttle_hover()) {
+            throttle = constrain_float(throttle + 0.3f * plane.G_Dt / 5.0f, 0.0, 1.0);
+            // printf("1 throttle %f\n", throttle);
+        } else {
+            throttle = constrain_float(throttle + 0.2f * plane.G_Dt / 5.0f, 0.0, 1.0);
+            // printf("2 throttle %f\n", throttle);
+        }
+        // float throttle = constrain_float(attitude_control->get_throttle_in() + plane.G_Dt / g2.takeoff_throttle_slew_time, 0.0, 1.0);
+        attitude_control->set_throttle_out(throttle, true, 0.0);
+        // tell position controller to reset alt target and reset I terms
+        pos_control->init_z_controller();
+        pos_control->relax_velocity_controller_xy();
+        pos_control->update_xy_controller();
+        attitude_control->reset_rate_controller_I_terms();
+        attitude_control->input_thrust_vector_rate_heading(pos_control->get_thrust_vector(), 0.0);
+        if (throttle >= 0.8 || 
+            // (pos_control->get_z_accel_cmss() >= 0.5 * pos_control->get_max_accel_z_cmss()) ||
+            // (pos_control->get_vel_desired_cms().z >= 0.1 * pos_control->get_max_speed_up_cms()) || 
+            (pos_control->get_z_accel_cmss() >= 0.8 * pos_control->get_max_accel_z_cmss()) ||
+            (pos_control->get_vel_desired_cms().z >= MIN(50.f, 0.8 * pos_control->get_max_speed_up_cms())) || 
+            (inertial_nav.get_position_z_up_cm() > 10.f && inertial_nav.get_velocity_xy_cms().length() > 20.f ) ||
+            (inertial_nav.get_position_z_up_cm() > 30.f) ||
+            (inertial_nav.get_velocity_xy_cms().length() > 30.f) || 
+            ( (takeoff_navalt_min > 0) && (inertial_nav.get_position_z_up_cm() >= takeoff_navalt_min))) {
+            // throttle > 90%
+            // acceleration > 50% maximum acceleration
+            // velocity > 10% maximum velocity
+            // altitude change greater than half auto_takeoff_no_nav_alt_cm
+            plane.auto_state.land_complete = false;
+        }
+        return;
+    }
 
     /*
       for takeoff we use the position controller
@@ -3353,6 +3392,9 @@ bool QuadPlane::do_vtol_takeoff(const AP_Mission::Mission_Command& cmd)
     takeoff_start_time_ms = millis();
     takeoff_time_limit_ms = MAX(travel_time * takeoff_failure_scalar * 1000, 5000); // minimum time 5 seconds
 
+    if (!is_flying()) {
+        plane.auto_state.land_complete = true;
+    }
     return true;
 }
 
@@ -3960,6 +4002,7 @@ bool QuadPlane::do_user_takeoff(float takeoff_altitude)
         return false;
     }
     plane.auto_state.vtol_loiter = true;
+    plane.auto_state.land_complete = true;
     plane.prev_WP_loc = plane.current_loc;
     plane.next_WP_loc = plane.current_loc;
     plane.next_WP_loc.alt += takeoff_altitude*100;
@@ -4668,6 +4711,8 @@ void QuadPlane::mode_enter(void)
 
     force_fw_control_recovery = false;
     in_spin_recovery = false;
+
+    plane.auto_state.land_complete = false;
 }
 
 // Set attitude control yaw rate time constant to pilot input command model value
