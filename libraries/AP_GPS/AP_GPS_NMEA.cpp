@@ -220,17 +220,20 @@ bool AP_GPS_NMEA::_have_new_message()
 {
     if (_last_RMC_ms == 0 ||
         _last_GGA_ms == 0) {
+        // GCS_SEND_TEXT(MAV_SEVERITY_INFO,"GPS F1");
         return false;
     }
     uint32_t now = AP_HAL::millis();
     if (now - _last_RMC_ms > 150 ||
         now - _last_GGA_ms > 150) {
+        // GCS_SEND_TEXT(MAV_SEVERITY_INFO,"GPS F2");
         return false;
     }
-    if (_last_VTG_ms != 0 && 
-        now - _last_VTG_ms > 150) {
-        return false;
-    }
+    // if (_last_VTG_ms != 0 && 
+    //     now - _last_VTG_ms > 150) {
+    //     // GCS_SEND_TEXT(MAV_SEVERITY_INFO,"GPS F3");
+    //     return false;
+    // }
 
     /*
       if we have seen a message with 3D velocity data messages then
@@ -242,12 +245,14 @@ bool AP_GPS_NMEA::_have_new_message()
         now - _last_vvelocity_ms > 150 &&
         now - _last_vvelocity_ms < 1000) {
         // waiting on a message with velocity
+        // GCS_SEND_TEXT(MAV_SEVERITY_INFO,"GPS F4");
         return false;
     }
     if (_last_vaccuracy_ms != 0 &&
         now - _last_vaccuracy_ms > 150 &&
         now - _last_vaccuracy_ms < 1000) {
         // waiting on a message with velocity accuracy
+        // GCS_SEND_TEXT(MAV_SEVERITY_INFO,"GPS F5");
         return false;
     }
 
@@ -871,8 +876,9 @@ void AP_GPS_NMEA::send_config(void)
         port->printf("\r\nAGRICA %.3f\r\n" \
                      "MODE MOVINGBASE\r\n" \
                      "GNGGA %.3f\r\n" \
+                     "GNVTG %.3f\r\n" \
                      "GNRMC %.3f\r\n",
-                     rate_s, rate_s, rate_s);
+                     rate_s, rate_s, rate_s, rate_s);
         if (!_have_unicore_versiona) {
             // get version information for logging if we don't have it yet
             port->printf("VERSIONA\r\n");

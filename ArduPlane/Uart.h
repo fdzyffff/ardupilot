@@ -37,6 +37,7 @@ public:
         uint32_t last_cmd_ms;
         Location cmd_loc;
         float cmd_speed;
+        float cmd_throttle;
         float cmd_alt;
         float cmd_pitch;
         float cmd_roll;

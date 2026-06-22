@@ -1308,6 +1308,8 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
 #endif
     
     AP_GROUPINFO("UEXT_AUTOTHR", 39, ParametersG2, user_external_auto_throttle, 1),
+
+    AP_GROUPINFO("UEXT_CMDTHR", 40, ParametersG2, user_external_cmd_throttle, 0),
     AP_GROUPEND
 };
 

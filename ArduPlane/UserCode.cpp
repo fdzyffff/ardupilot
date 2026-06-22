@@ -12,6 +12,7 @@ void Plane::userhook_100Hz()
     uattack.update();
     uart.update();
     udelay.push();
+    update_collision();
 }
 
 void Plane::userhook_1Hz()
@@ -65,7 +66,11 @@ void Plane::user_handle_msg(const mavlink_message_t &msg)
                     if (use_yaw) {
                         target_yaw_cd = packet.yaw_cd;
                     } else {
-                        target_yaw_cd = degrees(AP::ahrs().get_yaw()) * 100;
+                        if (quadplane.ahrs_view == nullptr) {
+                            target_yaw_cd = degrees(AP::ahrs().get_yaw()) * 100;
+                        } else {
+                            target_yaw_cd = (float)quadplane.ahrs_view->yaw_sensor;
+                        }
                     }
 
                     if (use_alt && is_flying()) {
@@ -101,7 +106,11 @@ void Plane::user_handle_msg(const mavlink_message_t &msg)
                     if (use_yaw) {
                         target_yaw_cd = packet.yaw_cd;
                     } else {
-                        target_yaw_cd = degrees(AP::ahrs().get_yaw()) * 100;
+                        if (quadplane.ahrs_view == nullptr) {
+                            target_yaw_cd = degrees(AP::ahrs().get_yaw()) * 100;
+                        } else {
+                            target_yaw_cd = (float)quadplane.ahrs_view->yaw_sensor;
+                        }
                     }
 
                     float target_alt_m = 1.0f;
@@ -133,6 +142,22 @@ void Plane::user_handle_msg(const mavlink_message_t &msg)
             break;
         default:
             gcs().send_text(MAV_SEVERITY_INFO, "Unknow ls cmd [%d]", packet.type);
+        }
+    }
+}
+
+void Plane::update_collision() 
+{
+    if (is_flying() && ins.get_accel_peak_hold_neg_x() > 20) {
+        if (!collision_triggered) {
+            gcs().send_text(MAV_SEVERITY_INFO, "Collision %.0f",ins.get_accel_peak_hold_neg_x());
+            return;
+        }
+        collision_triggered = true;
+        collision_trigger_ms = millis();
+    } else {
+        if (millis() - collision_trigger_ms > 5000) {
+            collision_triggered = false;
         }
     }
 }

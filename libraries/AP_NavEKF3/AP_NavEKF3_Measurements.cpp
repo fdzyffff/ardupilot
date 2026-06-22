@@ -733,7 +733,8 @@ void NavEKF3_core::readGpsYawData()
         // normalised yaw innovations
         const ftype min_yaw_accuracy_deg = 5.0f;
         yaw_accuracy_deg = MAX(yaw_accuracy_deg, min_yaw_accuracy_deg);
-        writeEulerYawAngle(radians(yaw_deg), radians(yaw_accuracy_deg), yaw_time_ms, 2);
+        uint8_t type = (fabsF(prevTnb[0][2]) < fabsF(prevTnb[1][2])) ? 2:1;
+        writeEulerYawAngle(radians(yaw_deg), radians(yaw_accuracy_deg), yaw_time_ms, type);
     }
 }
 

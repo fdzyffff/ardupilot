@@ -596,6 +596,7 @@ public:
 #endif
 
     AP_Int8 user_external_auto_throttle;
+    AP_Int8 user_external_cmd_throttle;
 };
 
 extern const AP_Param::Info var_info[];

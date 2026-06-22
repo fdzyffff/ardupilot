@@ -1341,6 +1341,10 @@ private:
     bool position_ok() const;
     void user_handle_msg(const mavlink_message_t &msg);
 
+    void update_collision();
+    bool collision_triggered;
+    uint32_t collision_trigger_ms;
+
     Uart uart;
     UAttack uattack;
     UDelay udelay;

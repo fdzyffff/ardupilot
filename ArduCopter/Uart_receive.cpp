@@ -23,7 +23,7 @@ void Uart::handle_LS_control() {
     switch (control_status.type) {
         case 0x1A:
         {
-            control_status.cmd_speed = uart_msg_LS_control._msg_1.content.msg_0x1A.target_speed;
+            control_status.cmd_throttle = uart_msg_LS_control._msg_1.content.msg_0x1A.target_throttle;
             control_status.cmd_pitch = uart_msg_LS_control._msg_1.content.msg_0x1A.target_pitch;
             control_status.cmd_roll = uart_msg_LS_control._msg_1.content.msg_0x1A.target_roll;
             control_status.cmd = uart_msg_LS_control._msg_1.content.msg_0x1A.flight_status;

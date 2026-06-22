@@ -21,7 +21,7 @@ public:
         uint8_t type;
         uint16_t length;
         uint8_t rev;
-        float target_speed;
+        float target_throttle;
         float target_pitch;
         float target_roll;
         float flight_status;
