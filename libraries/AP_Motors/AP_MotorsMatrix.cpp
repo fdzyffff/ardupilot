@@ -231,6 +231,17 @@ void AP_MotorsMatrix::output_armed_stabilizing()
     // yaw thrust input value, +/- 1.0
     float yaw_thrust = (_yaw_in + _yaw_in_ff) * compensation_gain;
 
+    // ZFJL: when thrust loss detected, limit yaw to free up motor dynamic range for roll/pitch/throttle
+    if (_thrust_boost) {
+        const float yaw_max = _thrust_loss_yaw_max.get();
+        if (yaw_max <= 0.0f) {
+            yaw_thrust = 0.0f;
+        } else {
+            yaw_thrust = constrain_float(yaw_thrust, -yaw_max, yaw_max);
+        }
+        limit.yaw = true;  // inform upper layer that yaw is being limited
+    }
+
     // throttle thrust input value, 0.0 - 1.0
     float throttle_thrust = get_throttle() * compensation_gain;
 
@@ -315,20 +326,25 @@ void AP_MotorsMatrix::output_armed_stabilizing()
     // Let yaw access minimum amount of head room
     yaw_allowed = MAX(yaw_allowed, yaw_allowed_min);
 
-    // Include the lost motor scaled by _thrust_boost_ratio to smoothly transition this motor in and out of the calculation
-    if (_thrust_boost && motor_enabled[_motor_lost_index]) {
-        // Check the maximum yaw control that can be used on this channel
-        // Exclude any lost motors if thrust boost is enabled
-        if (!is_zero(_yaw_factor[_motor_lost_index])){
-            const float thrust_rp_best_throttle = throttle_thrust_best_rpy + _thrust_rpyt_out[_motor_lost_index];
-            float motor_room;
-            if (is_positive(yaw_thrust * _yaw_factor[_motor_lost_index])) {
-                motor_room = 1.0 - thrust_rp_best_throttle;
-            } else {
-                motor_room = thrust_rp_best_throttle;
+    // ZFJL: when thrust boost is active, yaw_thrust is already constrained above.
+    // Skip the lost motor yaw calculation to avoid artificially reducing yaw_allowed.
+    // The lost motor is allowed to go beyond 1.0, so it should not constrain the remaining motors.
+    if (!_thrust_boost) {
+        // Include the lost motor scaled by _thrust_boost_ratio to smoothly transition this motor in and out of the calculation
+        if (motor_enabled[_motor_lost_index]) {
+            // Check the maximum yaw control that can be used on this channel
+            // Exclude any lost motors if thrust boost is enabled
+            if (!is_zero(_yaw_factor[_motor_lost_index])){
+                const float thrust_rp_best_throttle = throttle_thrust_best_rpy + _thrust_rpyt_out[_motor_lost_index];
+                float motor_room;
+                if (is_positive(yaw_thrust * _yaw_factor[_motor_lost_index])) {
+                    motor_room = 1.0 - thrust_rp_best_throttle;
+                } else {
+                    motor_room = thrust_rp_best_throttle;
+                }
+                const float motor_yaw_allowed = MAX(motor_room, 0.0)/fabsf(_yaw_factor[_motor_lost_index]);
+                yaw_allowed = boost_ratio(yaw_allowed, MIN(yaw_allowed, motor_yaw_allowed));
             }
-            const float motor_yaw_allowed = MAX(motor_room, 0.0)/fabsf(_yaw_factor[_motor_lost_index]);
-            yaw_allowed = boost_ratio(yaw_allowed, MIN(yaw_allowed, motor_yaw_allowed));
         }
     }
 

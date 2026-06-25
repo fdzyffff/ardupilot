@@ -178,7 +178,15 @@ protected:
     // scaling for booster motor throttle
     AP_Float            _boost_scale;
 
-    // motor output variables
+    // @Param: TL_YAW_MAX
+    // @DisplayName: Thrust Loss Yaw Max
+    // @Description: Maximum yaw output when thrust loss (motor failure) is detected. 0 means no yaw control, 0.1 means 10% of full yaw range. This frees up motor dynamic range for roll/pitch/throttle when a motor is lost.
+    // @Range: 0 1
+    // @Increment: 0.01
+    // @User: Advanced
+    AP_Float            _thrust_loss_yaw_max;
+
+    // 38 RESERVED for BAT_POW_MAX
     bool                motor_enabled[AP_MOTORS_MAX_NUM_MOTORS];    // true if motor is enabled
 
     // spool variables
