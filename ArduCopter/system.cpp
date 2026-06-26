@@ -67,6 +67,11 @@ void Copter::init_ardupilot()
     rc().convert_options(RC_Channel::AUX_FUNC::ARMDISARM_UNUSED, RC_Channel::AUX_FUNC::ARMDISARM_AIRMODE);
     rc().init();
 
+#if ENABLE_REDUNDANCY_CONTROL
+    // initialise redundancy control
+    init_redundancy_control();
+#endif
+
     // sets up motors and output to escs
     init_rc_out();
 

@@ -71,6 +71,10 @@
 #include <AP_KDECAN/AP_KDECAN.h>
 #include <Filter/AP_Filter.h>
 #include <AP_Stats/AP_Stats.h>              // statistics library
+#include <FD_DATA/FD_DATA.h>
+#include <HXKY_Weight/HXKY_Weight.h>
+#include <HXKY_Engine/HXKY_Engine.h>
+#include <HXKY_Uart/HXKY_Uart.h>
 #if AP_SCRIPTING_ENABLED
 #include <AP_Scripting/AP_Scripting.h>
 #endif
@@ -248,6 +252,13 @@ public:
     virtual bool get_control_output(AP_Vehicle::ControlOutput control_output, float &control_value) { return false; }
 
 #endif // AP_SCRIPTING_ENABLED
+
+    // returns true if this redundancy unit is currently in control (for TMR systems)
+    // non-controlling units must not send CAN frames to avoid bus conflicts
+    virtual bool is_redundancy_in_control() const;
+
+    // returns the redundancy unit number (1/2/3) for TMR systems, 0 if not assigned
+    virtual uint8_t get_redundancy_num() const;
 
     // returns true if vehicle is in the process of landing
     virtual bool is_landing() const { return false; }
@@ -565,10 +576,25 @@ private:
 
     // Bitmask of modes to disable from gcs
     AP_Int32 flight_mode_GCS_block;
+
+    FD_DATA fd_data;
+
+    HXKY_Weight hxky_weight;
+    HXKY_Engines hxky_engines;
+    HXKY_Uart hxky_uart;
+
+public:
+
+    friend HXKY_Weight &AP::hxky_weight();
+    friend HXKY_Engines &AP::hxky_engines();
+    friend HXKY_Uart &AP::hxky_uart();
 };
 
 namespace AP {
     AP_Vehicle *vehicle();
+    HXKY_Weight &hxky_weight();
+    HXKY_Engines &hxky_engines();
+    HXKY_Uart &hxky_uart();
 };
 
 extern const AP_HAL::HAL& hal;

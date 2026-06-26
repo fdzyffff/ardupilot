@@ -119,6 +119,8 @@ public:
 #endif
         AP_Param::setup_object_defaults(this, var_mag);
         AP_Param::setup_object_defaults(this, var_ins);
+        AP_Param::setup_object_defaults(this, var_srvparam);
+        AP_Param::setup_object_defaults(this, var_infosimparam);
 #ifdef SFML_JOYSTICK
         AP_Param::setup_object_defaults(this, var_sfml_joystick);
 #endif // SFML_JOYSTICK
@@ -170,6 +172,8 @@ public:
 #endif
     static const struct AP_Param::GroupInfo var_mag[];
     static const struct AP_Param::GroupInfo var_ins[];
+    static const struct AP_Param::GroupInfo var_srvparam[];
+    static const struct AP_Param::GroupInfo var_infosimparam[];
 #ifdef SFML_JOYSTICK
     static const struct AP_Param::GroupInfo var_sfml_joystick[];
 #endif //SFML_JOYSTICK
@@ -228,6 +232,55 @@ public:
     AP_Int8  rc_chancount; // channel count
     AP_Int8  float_exception; // enable floating point exception checks
     AP_Int32 can_servo_mask; // mask of servos/escs coming from CAN
+
+    AP_Float s;
+    AP_Float b;
+    AP_Float c;
+    AP_Float ixx;
+    AP_Float iyy;
+    AP_Float izz;
+    AP_Float c_lift_0;
+    AP_Float c_lift_deltae;
+    AP_Float c_lift_a;
+    AP_Float c_lift_q;
+    AP_Float mcoeff;
+    AP_Float oswald;
+    AP_Float alpha_stall;
+    AP_Float c_drag_q;
+    AP_Float c_drag_deltae;
+    AP_Float c_drag_p;
+    AP_Float c_y_0;
+    AP_Float c_y_b;
+    AP_Float c_y_p;
+    AP_Float c_y_r;
+    AP_Float c_y_deltaa;
+    AP_Float c_y_deltar;
+    AP_Float c_l_0;
+    AP_Float c_l_p;
+    AP_Float c_l_b;
+    AP_Float c_l_r;
+    AP_Float c_l_deltaa;
+    AP_Float c_l_deltar;
+    AP_Float c_m_0;
+    AP_Float c_m_a;
+    AP_Float c_m_q;
+    AP_Float c_m_deltae;
+    AP_Float c_n_0;
+    AP_Float c_n_b;
+    AP_Float c_n_p;
+    AP_Float c_n_r;
+    AP_Float c_n_deltaa;
+    AP_Float c_n_deltar;
+    AP_Float deltaa_max;
+    AP_Float deltae_max;
+    AP_Float deltar_max;
+    AP_Float CGOffset_x;
+    AP_Float CGOffset_y;
+    AP_Float CGOffset_z;
+    AP_Float mass;
+    AP_Float thrust_scale;
+
+    AP_Int8 srv_rev[16];
 
 #if HAL_NUM_CAN_IFACES
     enum class CANTransport : uint8_t {
@@ -455,6 +508,7 @@ public:
         AP_Float lng;
         AP_Float alt; // metres
         AP_Float hdg; // 0 to 360
+        AP_Float pth; // pitch degrees
     } opos;
 
     uint16_t irlock_port;

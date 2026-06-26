@@ -269,6 +269,8 @@ const AP_Param::GroupInfo AP_GPS::var_info[] = {
 
     // 31 was GPS2_CAN_OVRIDE
 
+    AP_GROUPINFO("_SEND_HIL", 34, AP_GPS, _send_hil_gps, 0),
+
     // @Group: 1_
     // @Path: AP_GPS_Params.cpp
     AP_SUBGROUPINFO(params[0], "1_", 32, AP_GPS, AP_GPS::Params),
@@ -1455,6 +1457,29 @@ void AP_GPS::send_mavlink_gps_rtk(mavlink_channel_t chan, uint8_t inst)
     }
 }
 #endif
+
+void AP_GPS::send_mavlink_hil_gps(mavlink_channel_t chan)
+{
+    if (_send_hil_gps.get() != 1) {return;}
+    const Location &loc = location(0);
+    mavlink_msg_hil_gps_send(
+        chan,
+        last_fix_time_ms(0)*(uint64_t)1000,
+        status(0),
+        loc.lat,        // in 1E7 degrees
+        loc.lng,        // in 1E7 degrees
+        loc.alt * 10UL, // in mm
+        get_hdop(0),
+        get_vdop(0),
+        ground_speed(0)*100,  // cm/s
+        (int16_t)(velocity(0).x * 100),
+        (int16_t)(velocity(0).y * 100),
+        (int16_t)(velocity(0).z * 100),
+        ground_course(0)*100, // 1/100 degrees,
+        num_sats(0),
+        1,
+        gps_yaw_cdeg(0));
+}
 
 bool AP_GPS::first_unconfigured_gps(uint8_t &instance) const
 {

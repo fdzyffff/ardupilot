@@ -1035,6 +1035,8 @@ const AP_Param::Info Plane::var_info[] = {
     GOBJECT(quicktune, "QWIK_",  AP_Quicktune),
 #endif
 
+    GOBJECT(uattack,      "UATK_", UAttack),
+
     AP_VAREND
 };
 
@@ -1297,10 +1299,18 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
 
     // index 37 saved for 4.7-dev param FWD_BAT_THR_CUT
 
+    AP_GROUPINFO("UDEBUG_ENGINE", 43, ParametersG2, user_debug_engine, 0),
+
 #if AP_PLANE_SYSTEMID_ENABLED
     // @Group: SID
     // @Path: systemid.cpp
     AP_SUBGROUPINFO(systemid, "SID", 38, ParametersG2, AP_SystemID),
+#endif
+
+#if ENABLE_REDUNDANCY_CONTROL
+    // @Group: RDN_
+    // @Path: ../libraries/AP_Redundancy/AP_Redundancy.cpp
+    AP_SUBGROUPPTR(redundancy_ptr, "RDN_", 42, ParametersG2, AP_Redundancy),
 #endif
     
     AP_GROUPEND
@@ -1313,6 +1323,9 @@ ParametersG2::ParametersG2(void) :
 #endif
 #if HAL_SOARING_ENABLED
     ,soaring_controller(plane.TECS_controller, plane.aparm)
+#endif
+#if ENABLE_REDUNDANCY_CONTROL
+    ,redundancy_ptr(nullptr)
 #endif
 {
     AP_Param::setup_object_defaults(this, var_info);

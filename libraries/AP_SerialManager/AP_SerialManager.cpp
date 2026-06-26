@@ -586,6 +586,10 @@ void AP_SerialManager::init()
                 case SerialProtocol_PPP:
                     break;
 #endif
+                case SerialProtocol_ENGINE:
+                case SerialProtocol_WEIGHT:
+                    uart->begin(state[i].baudrate(), 128, 128);
+                    break;
                     
                 default:
                     uart->begin(state[i].baudrate());

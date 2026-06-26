@@ -804,6 +804,7 @@ private:
 
     MAV_RESULT handle_servorelay_message(const mavlink_command_int_t &packet);
     bool send_relay_status() const;
+    void send_can_servo_status() const;
 
     static bool command_long_stores_location(const MAV_CMD command);
 

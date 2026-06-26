@@ -255,6 +255,8 @@ const AP_Param::GroupInfo SIM::var_info[] = {
 #endif
     AP_SUBGROUPEXTENSION("",      62, SIM,  var_info3),
     AP_SUBGROUPEXTENSION("",      63, SIM,  var_info2),
+    AP_SUBGROUPEXTENSION("P_",     1, SIM,  var_infosimparam),
+    AP_SUBGROUPEXTENSION("SRV",    2, SIM,  var_srvparam),
     AP_GROUPEND
 };
 
@@ -508,6 +510,81 @@ const AP_Param::GroupInfo SIM::var_info2[] = {
 };
 
 // third table of user settable parameters for SITL. 
+const AP_Param::GroupInfo SIM::var_infosimparam[] = {
+    AP_GROUPINFO("S",    1, SIM, s,  0.45),
+    AP_GROUPINFO("B",    2, SIM, b,  1.88),
+    AP_GROUPINFO("C",    3, SIM, c,  0.24),
+    AP_GROUPINFO("LF0",  4, SIM, c_lift_0,  0.56),
+    AP_GROUPINFO("LFD",  5, SIM, c_lift_deltae,  0),
+    AP_GROUPINFO("LFA",  6, SIM, c_lift_a,  6.9),
+    AP_GROUPINFO("LFQ",  7, SIM, c_lift_q,  0),
+    AP_GROUPINFO("MC",   8, SIM, mcoeff,  50),
+    AP_GROUPINFO("OSW",  9, SIM, oswald,  0.9),
+    AP_GROUPINFO("AST", 10, SIM, alpha_stall,  0.4712),
+    AP_GROUPINFO("DQ",  11, SIM, c_drag_q,  0),
+    AP_GROUPINFO("DD",  12, SIM, c_drag_deltae,  0.0),
+    AP_GROUPINFO("DP",  13, SIM, c_drag_p,  0.1),
+    AP_GROUPINFO("Y0",  14, SIM, c_y_0,  0),
+    AP_GROUPINFO("YB",  15, SIM, c_y_b,  -0.98),
+    AP_GROUPINFO("YP",  16, SIM, c_y_p,  0),
+    AP_GROUPINFO("YR",  17, SIM, c_y_r,  0),
+    AP_GROUPINFO("YDA", 18, SIM, c_y_deltaa,  0),
+    AP_GROUPINFO("YDR", 19, SIM, c_y_deltar,  -0.2),
+    AP_GROUPINFO("L0",  20, SIM, c_l_0,  0),
+    AP_GROUPINFO("LP",  21, SIM, c_l_p,  -1.0),
+    AP_GROUPINFO("LB",  22, SIM, c_l_b,  -0.12),
+    AP_GROUPINFO("LR",  23, SIM, c_l_r,  0.14),
+    AP_GROUPINFO("LDA", 24, SIM, c_l_deltaa,  0.25),
+    AP_GROUPINFO("LDR", 25, SIM, c_l_deltar,  -0.037),
+    AP_GROUPINFO("M0",  26, SIM, c_m_0,  0.045),
+    AP_GROUPINFO("MA",  27, SIM, c_m_a,  -0.7),
+    AP_GROUPINFO("MQ",  28, SIM, c_m_q,  -20),
+    AP_GROUPINFO("MDE", 29, SIM, c_m_deltae,  1.0),
+    AP_GROUPINFO("N0",  30, SIM, c_n_0,  0),
+    AP_GROUPINFO("NB",  31, SIM, c_n_b,  0.25),
+    AP_GROUPINFO("NP",  32, SIM, c_n_p,  0.022),
+    AP_GROUPINFO("NR",  33, SIM, c_n_r,  -1),
+    AP_GROUPINFO("NDA", 34, SIM, c_n_deltaa,  0.00),
+    AP_GROUPINFO("NDR", 35, SIM, c_n_deltar,  0.1),
+    AP_GROUPINFO("DAM", 36, SIM, deltaa_max,  0.3491),
+    AP_GROUPINFO("DEM", 37, SIM, deltae_max,  0.3491),
+    AP_GROUPINFO("DRM", 38, SIM, deltar_max,  0.3491),
+    AP_GROUPINFO("CGX", 39, SIM, CGOffset_x,  -0.15),
+    AP_GROUPINFO("CGY", 40, SIM, CGOffset_y,  0.0),
+    AP_GROUPINFO("CGZ", 41, SIM, CGOffset_z,  -0.05),
+    AP_GROUPINFO("MAS", 42, SIM, mass, 2.0),
+    AP_GROUPINFO("TSC", 43, SIM, thrust_scale, 27),
+    AP_GROUPINFO("IXX", 44, SIM, ixx,  1.0),
+    AP_GROUPINFO("IYY", 45, SIM, iyy,  1.0),
+    AP_GROUPINFO("IZZ", 46, SIM, izz,  1.0),
+
+    AP_GROUPEND
+};
+
+// servo reverse parameter table 
+const AP_Param::GroupInfo SIM::var_srvparam[] = {
+    AP_GROUPINFO("1_REV", 1, SIM, srv_rev[0],  0),
+    AP_GROUPINFO("2_REV", 2, SIM, srv_rev[1],  0),
+    AP_GROUPINFO("3_REV", 3, SIM, srv_rev[2],  0),
+    AP_GROUPINFO("4_REV", 4, SIM, srv_rev[3],  0),
+    AP_GROUPINFO("5_REV", 5, SIM, srv_rev[4],  0),
+    AP_GROUPINFO("6_REV", 6, SIM, srv_rev[5],  0),
+    AP_GROUPINFO("7_REV", 7, SIM, srv_rev[6],  0),
+    AP_GROUPINFO("8_REV", 8, SIM, srv_rev[7],  0),
+    AP_GROUPINFO("9_REV", 9, SIM, srv_rev[8],  0),
+    AP_GROUPINFO("10_REV", 10, SIM, srv_rev[9],  0),
+    AP_GROUPINFO("11_REV", 11, SIM, srv_rev[10],  0),
+    AP_GROUPINFO("12_REV", 12, SIM, srv_rev[11],  0),
+    AP_GROUPINFO("13_REV", 13, SIM, srv_rev[12],  0),
+    AP_GROUPINFO("14_REV", 14, SIM, srv_rev[13],  0),
+    AP_GROUPINFO("15_REV", 15, SIM, srv_rev[14],  0),
+    AP_GROUPINFO("16_REV", 16, SIM, srv_rev[15],  0),
+    AP_GROUPEND
+};
+
+// third table of user settable parameters for SITL. 
+
+// third table of user settable parameters for SITL. 
 const AP_Param::GroupInfo SIM::var_info3[] = {
     // @Param: ODOM_ENABLE
     // @DisplayName: Odometry enable
@@ -715,6 +792,8 @@ const AP_Param::GroupInfo SIM::var_info3[] = {
     // @Range: 10 100
     AP_GROUPINFO("OSD_ROWS",     54, SIM,  osd_rows, 16),
 #endif
+
+    AP_GROUPINFO("OPOS_PTH",     55, SIM,  opos.pth, 0.0f),
 
 #ifdef SFML_JOYSTICK
     AP_SUBGROUPEXTENSION("",      63, SIM,  var_sfml_joystick),

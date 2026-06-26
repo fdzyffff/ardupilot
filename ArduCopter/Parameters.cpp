@@ -723,6 +723,9 @@ const AP_Param::Info Copter::var_info[] = {
     // @Path: Parameters.cpp
     GOBJECT(g2, "",  ParametersG2),
 
+    GOBJECT(uattack,      "UATK_", UAttack),
+    GOBJECT(yolo_drop,    "YDROP_", YoloDrop),
+
     // @Group:
     // @Path: ../libraries/AP_Vehicle/AP_Vehicle.cpp
     PARAM_VEHICLE_INFO,
@@ -1234,6 +1237,12 @@ const AP_Param::GroupInfo ParametersG2::var_info2[] = {
 
     // ID 62 is reserved for the AP_SUBGROUPEXTENSION
 
+#if ENABLE_REDUNDANCY_CONTROL
+    // @Group: RDN_
+    // @Path: ../libraries/AP_Redundancy/AP_Redundancy.cpp
+    AP_SUBGROUPPTR(redundancy_ptr, "RDN_", 11, ParametersG2, AP_Redundancy),
+#endif
+
     AP_GROUPEND
 };
 
@@ -1292,6 +1301,9 @@ ParametersG2::ParametersG2(void)
 
 #if WEATHERVANE_ENABLED
     ,weathervane()
+#endif
+#if ENABLE_REDUNDANCY_CONTROL
+    ,redundancy_ptr(nullptr)
 #endif
 {
     AP_Param::setup_object_defaults(this, var_info);

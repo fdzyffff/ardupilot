@@ -77,9 +77,10 @@ Aircraft::Aircraft(const char *frame_str) :
     for (uint8_t i = 0; i < ARRAY_SIZE(rangefinder_m); i++){
         rangefinder_m[i] = nanf("");
     }
+    flag_stop_on_ground = false;
 }
 
-void Aircraft::set_start_location(const Location &start_loc, const float start_yaw)
+void Aircraft::set_start_location(const Location &start_loc, const float start_yaw, float start_pitch)
 {
     home = start_loc;
     origin = home;
@@ -661,7 +662,7 @@ void Aircraft::update_home()
         loc.lat = sitl->opos.lat.get() * 1.0e7;
         loc.lng = sitl->opos.lng.get() * 1.0e7;
         loc.alt = sitl->opos.alt.get() * 1.0e2;
-        set_start_location(loc, sitl->opos.hdg.get());
+        set_start_location(loc, sitl->opos.hdg.get(), sitl->opos.pth.get());
     }
 }
 

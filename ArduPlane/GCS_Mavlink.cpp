@@ -71,6 +71,9 @@ MAV_MODE GCS_MAVLINK_Plane::base_mode() const
         break;
     case Mode::Number::INITIALISING:
         break;
+    case Mode::Number::ATTACK_LOC:
+    case Mode::Number::ATTACK_CAM:
+        break;
     }
 
     if (!plane.training_manual_pitch || !plane.training_manual_roll) {
@@ -461,6 +464,31 @@ bool GCS_MAVLINK_Plane::try_send_message(enum ap_message id)
 #endif
         break;
 
+    case MSG_HXTS_HYWEIGHT:
+        CHECK_PAYLOAD_SIZE(HXTS_HY_WEIGHT);
+        AP::hxky_weight().send_mavlink_msg(chan);
+        break;
+    case MSG_HXTS_HYENGINE:
+        CHECK_PAYLOAD_SIZE(HXTS_HY_ENGINE);
+        AP::hxky_engines().send_mavlink_msg(chan);
+        break;
+    case MSG_HXTS_HY_BMS_C1:
+        CHECK_PAYLOAD_SIZE(HXTS_HY_BMS_C1);
+        AP::fd_data().send_hxts_hy_bms_c1(chan);
+        break;
+    case MSG_HXTS_HY_BMS_C2:
+        CHECK_PAYLOAD_SIZE(HXTS_HY_BMS_C2);
+        AP::fd_data().send_hxts_hy_bms_c2(chan);
+        break;
+    case MSG_HXTS_HY_BMS_C3:
+        CHECK_PAYLOAD_SIZE(HXTS_HY_BMS_C3);
+        AP::fd_data().send_hxts_hy_bms_c3(chan);
+        break;
+    case MSG_HXTS_GPS:
+        CHECK_PAYLOAD_SIZE(GPS_RAW_INT);
+        AP::gps().send_mavlink_hil_gps(chan);
+        break;
+
     default:
         return GCS_MAVLINK::try_send_message(id);
     }
@@ -679,7 +707,13 @@ static const ap_message STREAM_EXTRA1_msgs[] = {
 #endif
 };
 static const ap_message STREAM_EXTRA2_msgs[] = {
-    MSG_VFR_HUD
+    MSG_VFR_HUD,
+    MSG_HXTS_HYWEIGHT,
+    MSG_HXTS_HYENGINE,
+    MSG_HXTS_HY_BMS_C1,
+    MSG_HXTS_HY_BMS_C2,
+    MSG_HXTS_HY_BMS_C3,
+    MSG_HXTS_GPS,
 };
 static const ap_message STREAM_EXTRA3_msgs[] = {
     MSG_AHRS,
@@ -792,6 +826,7 @@ void GCS_MAVLINK_Plane::packetReceived(const mavlink_status_t &status,
     // pass message to follow library
     plane.g2.follow.handle_msg(msg);
 #endif
+    handle_msg_hxky(msg);
     GCS_MAVLINK::packetReceived(status, msg);
 }
 

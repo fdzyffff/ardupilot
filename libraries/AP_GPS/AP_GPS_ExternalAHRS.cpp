@@ -37,7 +37,7 @@ bool AP_GPS_ExternalAHRS::read(void)
 // corresponding gps data appropriately;
 void AP_GPS_ExternalAHRS::handle_external(const AP_ExternalAHRS::gps_data_message_t &pkt)
 {
-    check_new_itow(pkt.ms_tow, sizeof(pkt));
+    // check_new_itow(pkt.ms_tow, sizeof(pkt));
 
     state.time_week = pkt.gps_week;
     state.time_week_ms = pkt.ms_tow;
@@ -62,7 +62,7 @@ void AP_GPS_ExternalAHRS::handle_external(const AP_ExternalAHRS::gps_data_messag
     state.velocity.y = pkt.ned_vel_east;
     state.velocity.z = pkt.ned_vel_down;
 
-    velocity_to_speed_course(state);
+    // velocity_to_speed_course(state);
 
     state.have_speed_accuracy = true;
     state.have_horizontal_accuracy = true;
@@ -72,6 +72,16 @@ void AP_GPS_ExternalAHRS::handle_external(const AP_ExternalAHRS::gps_data_messag
     state.horizontal_accuracy = pkt.horizontal_pos_accuracy;
     state.vertical_accuracy = pkt.vertical_pos_accuracy;
     state.speed_accuracy = pkt.horizontal_vel_accuracy;
+
+    state.gps_yaw = pkt.gps_yaw;
+    state.gps_yaw_time_ms = pkt.gps_yaw_time_ms;
+    state.gps_yaw_configured = pkt.gps_yaw_configured;
+    state.gps_yaw_accuracy = pkt.gps_yaw_accuracy;
+    state.have_gps_yaw = pkt.have_gps_yaw;
+    state.have_gps_yaw_accuracy = pkt.have_gps_yaw_accuracy;
+
+    state.ground_speed = pkt.ground_speed;
+    state.ground_course = pkt.ground_course;
 
     state.last_gps_time_ms = AP_HAL::millis();
 

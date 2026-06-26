@@ -55,7 +55,7 @@ public:
     Aircraft(const char *frame_str);
 
     // called directly after constructor:
-    virtual void set_start_location(const Location &start_loc, const float start_yaw);
+    virtual void set_start_location(const Location &start_loc, const float start_yaw, float start_pitch = 0.0f);
 
     /*
       set simulation speedup
@@ -174,6 +174,8 @@ public:
 
     ADSB *adsb;
 
+    bool flag_stop_on_ground;
+
     /*
       used by scripting to control simulated aircraft position
      */
@@ -190,6 +192,8 @@ protected:
     Location location;
 
     float ground_level;
+    void set_ground_level(float input_height) {ground_level = input_height; }
+    float get_ground_level() {return ground_level; }
     float home_yaw;
     float frame_height;
     Matrix3f dcm;                        // rotation matrix, APM conventions, from body to earth

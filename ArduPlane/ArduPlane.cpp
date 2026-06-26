@@ -22,6 +22,10 @@
 
 #include "Plane.h"
 
+#if ENABLE_REDUNDANCY_CONTROL
+#include <AP_Redundancy/AP_Redundancy.h>
+#endif
+
 #define SCHED_TASK(func, rate_hz, max_time_micros, priority) SCHED_TASK_CLASS(Plane, &plane, func, rate_hz, max_time_micros, priority)
 #define FAST_TASK(func) FAST_TASK_CLASS(Plane, &plane, func)
 
@@ -93,6 +97,9 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     SCHED_TASK(one_second_loop,         1,    400,  90),
     SCHED_TASK(three_hz_loop,           3,     75,  93),
     SCHED_TASK(check_long_failsafe,     3,    400,  96),
+#if ENABLE_REDUNDANCY_CONTROL
+    SCHED_TASK(update_redundancy_control, 400,     50,  97),
+#endif
 #if AP_RPM_ENABLED
     SCHED_TASK_CLASS(AP_RPM,           &plane.rpm_sensor,     update,     10, 100,  99),
 #endif
@@ -142,6 +149,10 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
 #if AP_QUICKTUNE_ENABLED
     SCHED_TASK(update_quicktune, 40, 100, 163),
 #endif
+    SCHED_TASK(hxky_weight_update, 100, 50, 166),
+    SCHED_TASK(hxky_engine_update, 100, 50, 169),
+    SCHED_TASK(hxky_uart_update, 100, 50, 172),
+    SCHED_TASK(hxky_one_hz, 1, 100, 175),
 };
 
 void Plane::get_scheduler_tasks(const AP_Scheduler::Task *&tasks,
@@ -990,6 +1001,20 @@ bool Plane::set_crosstrack_start(const Location &new_start_location)
 }
 
 #endif // AP_SCRIPTING_ENABLED
+
+#if ENABLE_REDUNDANCY_CONTROL
+uint8_t Plane::get_redundancy_num() const
+{
+    auto *red = AP_Redundancy::get_singleton();
+    return red ? red->get_this_redundancy_num() : 0;
+}
+
+bool Plane::is_redundancy_in_control() const
+{
+    auto *red = AP_Redundancy::get_singleton();
+    return red ? red->is_in_control() : false;
+}
+#endif
 
 // returns true if vehicle is landing.
 bool Plane::is_landing() const

@@ -209,3 +209,7 @@ enum class RangeFinderUse : uint8_t {
     CLIMB   = (1U<<3),
 };
 
+
+#ifndef ENABLE_REDUNDANCY_CONTROL
+#define ENABLE_REDUNDANCY_CONTROL 0
+#endif

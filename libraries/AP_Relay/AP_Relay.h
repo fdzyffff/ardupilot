@@ -73,6 +73,9 @@ public:
     // see if the relay is enabled
     bool enabled(AP_Relay_Params::FUNCTION function) const;
 
+    void get_servo_channel_relay_masks(uint16_t &mode_mask,
+                                       uint16_t &state_mask) const;
+
 private:
     static AP_Relay *singleton;
 

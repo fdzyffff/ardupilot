@@ -1,0 +1,239 @@
+/*
+ * This file is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This file is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Author: Oliver Walters / Currawong Engineering Pty Ltd
+ */
+
+#pragma once
+
+#include <AP_HAL/AP_HAL.h>
+#include <AP_CANManager/AP_CANDriver.h>
+
+#include <AP_Param/AP_Param.h>
+
+#define CANOPEN_MSG_RATE_HZ_DEFAULT 50
+#define CANOPEN_MSG_RATE_HZ_MIN 1
+#define CANOPEN_MSG_RATE_HZ_MAX 500
+
+#define CANOPEN_SDO_TIMEOUT_US 3000  // SDO超时时间，3000us
+
+#define CANOPEN_MAX_NUM_SERVO 16
+#define CANOPEN_SERVO_NODE_ID_START 31  // 舵机节点ID起点，servo1 - 31，servo2 - 32，以此类推（注意是十进制！）
+#define CANOPEN_SERVO_NODE_ID_END 46
+
+#define CANOPEN_INDEX_KST_SERVO_SET_TARGET_ANGLE 0x6003
+#define CANOPEN_SUBINDEX_KST_SERVO_SET_TARGET_ANGLE 0x00
+
+#define CANOPEN_INDEX_KST_SERVO_READ_STATUS 0x6005
+#define CANOPEN_SUBINDEX_KST_SERVO_READ_STATUS 0x00
+
+#define CANOPEN_INDEX_KST_SERVO_READ_RANGE_MIN 0x300A  // 读取/设置负向行程（复用同一索引）
+#define CANOPEN_SUBINDEX_KST_SERVO_READ_RANGE_MIN 0x00
+
+#define CANOPEN_INDEX_KST_SERVO_READ_RANGE_MAX 0x300B  // 读取/设置正向行程（复用同一索引）
+#define CANOPEN_SUBINDEX_KST_SERVO_READ_RANGE_MAX 0x00
+
+#define CANOPEN_INDEX_KST_SERVO_SAVE 0x1010   // 保存命令索引
+#define CANOPEN_SUBINDEX_KST_SERVO_SAVE 0x01
+#define CANOPEN_SAVE_MAGIC 0x65766173         // "save" ASCII 小端序
+
+// 功能使能字节（§2.14 协议）：bit 5 = 逻辑反向。
+// 飞控强制清除 bit 5，统一由 ArduPilot 层 SERVOx_REVERSED 实现反向，
+// 以避开 KST 固件在反向状态下 0x300A/0x300B 的语义约定差异（两者会相互影响）。
+#define CANOPEN_INDEX_KST_SERVO_ENABLE_BYTE 0x300F
+#define CANOPEN_SUBINDEX_KST_SERVO_ENABLE_BYTE 0x00
+#define CANOPEN_KST_ENABLE_BIT_REVERSE (1U << 5)
+
+#define SERVO_ONLINE_TIMEOUT_US 500000ULL  // 舵机掉线超时时间，此值为500ms，超过此值时间依然没有收到舵机发来的CAN帧，则认为其掉线
+#define SERVO_STATUS_LOG_PERIOD_MS 100  // 舵机状态保存到日志中的周期
+#define QUERY_SERVO_STATUS_PERIOD_MS 1000  // 定时查询舵机状态（温度、电流）的周期
+#define QUERY_SERVO_RANGE_PERIOD_MS 300  // 定时查询舵机运动范围的周期
+#define SET_ENABLE_SERVO_FEEDBACK_PERIOD_MS 500  // 定时重新初始化离线舵机的周期（发送NMT Start）
+#define CONFIGURE_SERVO_RANGE_PERIOD_MS 500     // 定时检查并配置舵机行程的周期
+#define RANGE_SETUP_STEP_TIMEOUT_MS 3000       // 行程配置每步 SDO 超时（ms），超时则重置为 IDLE 重试
+#define CANOPEN_TX_STATS_PERIOD_MS 5000  // 发送统计日志输出周期
+
+// KST 0x1010 "save" 命令无应答（协议 §2.10），save 后 MCU 写 flash 期间对 SDO 请求可能
+// 被忽略或返回过渡值。发送 save 后对该舵机的 SDO 读请求延迟 KST_SAVE_FLASH_WAIT_MS
+// 再恢复；150ms 覆盖常见 KST 内部 flash 写入时长且留余量。位置控制帧不受此限制。
+#define KST_SAVE_FLASH_WAIT_MS 150
+// 反向清除（0x300F bit5）写后需读回确认；若读回仍为 1 最多重试 KST_REVERSE_CLEAR_MAX_RETRIES
+// 次，超过则置 reverse_clear_failed 并拒绝 pre-arm。
+#define KST_REVERSE_CLEAR_MAX_RETRIES 3
+
+// 舵机行程配置状态机
+#define RANGE_SETUP_IDLE          0  // 等待读取硬件行程
+#define RANGE_SETUP_SET_MIN       1  // 需要写入负向行程
+#define RANGE_SETUP_SET_MAX       2  // 需要写入正向行程
+#define RANGE_SETUP_SAVE          3  // 需要发送保存命令
+#define RANGE_SETUP_DONE          4  // 配置完成
+#define RANGE_SETUP_CLEAR_REVERSE 5  // 写入清零反向位后的使能字节（优先于 SET_MIN）
+#define RANGE_SETUP_SAVE_REVERSE  6  // 保存反向清除，使其持久化
+
+// 轮询式发送：每次迭代只处理部分舵机，避免CAN TX邮箱溢出（BxCAN仅3个TX邮箱，无软件队列）
+#define CANOPEN_SERVOS_PER_SEND 4       // send_servo_target_angle 每次处理的舵机数
+#define CANOPEN_SERVOS_PER_QUERY 2      // 其他查询/使能函数每次处理的舵机数
+typedef struct _CANopen_slave_node_t
+{
+  uint8_t node_ID;  // 此从节点在总线上的节点ID
+  bool SDO_idle_semHandle;  // 此从节点的SDO服务空闲标志（没有被其他任务占用）
+  uint64_t SDO_timeout_time_us;  // SDO占用超时时间
+}CANopen_slave_node_t;
+
+typedef struct _Servo_t
+{
+    bool enabled;  // 飞控参数中是否使能了此舵机
+    CANopen_slave_node_t node;  // 此舵机对应的CANopen节点
+    uint64_t last_real_pos_feedback_timestamp_us;  // 最后一次收到舵机发来的位置反馈信息的时间
+    bool got_range_min_setting;  // 已经取得位置范围最小值的设置值
+    bool got_range_max_setting;  // 已经取得位置范围最大值的设置值
+    bool got_enable_byte;        // 已取得功能使能字节（含反向位）
+    uint8_t enable_byte;         // 功能使能字节当前值（bit 5 = 反向）
+    bool was_online;  // 上一次检查时舵机是否在线（用于检测在线→离线切换并重置初始化状态）
+    uint8_t range_setup_state;  // 行程配置状态机（RANGE_SETUP_*）
+    uint32_t range_setup_start_ms;  // 进入 SET_MIN 状态的时间戳，用于超时检测
+    uint32_t flash_write_end_ms;    // save 后 flash 写入窗口结束时刻（millis），期间跳过此舵机的 SDO 读
+    uint8_t reverse_clear_retries;  // 反向清除（0x300F bit5）重试计数；读回仍为 1 时 +1
+    bool reverse_clear_failed;      // 反向清除重试耗尽 → pre-arm 拒绝解锁
+    float range_min_deg;  // 从硬件读回的负向行程值（度），用于与参数对比
+    float range_max_deg;  // 从硬件读回的正向行程值（度），用于与参数对比
+    float real_angle_deg;  // 舵机反馈过来的当前的实际角度值，单位：度
+    float target_angle_deg;  // 此舵机的目标角度值，单位：度
+    float real_current_A;  // 舵机反馈过来的当前的实际电流值
+    float real_temperature_dc;  // 舵机反馈过来的当前的实际温度值
+}Servo_t;
+
+class AP_CANopen : public AP_CANDriver
+{
+public:
+    AP_CANopen();
+    ~AP_CANopen();
+
+    /* Do not allow copies */
+    AP_CANopen(const AP_CANopen &other) = delete;
+    AP_CANopen &operator=(const AP_CANopen&) = delete;
+
+    static const struct AP_Param::GroupInfo var_info[];
+
+    // Return CANopen from @driver_index or nullptr if it's not ready or doesn't exist
+    static AP_CANopen *get_canopen(uint8_t driver_index);
+
+    // initialize CANopen bus
+    void init(uint8_t driver_index, bool enable_filters) override;
+    bool add_interface(AP_HAL::CANIface* can_iface) override;
+
+    // called from SRV_Channels
+    void update();
+
+    // return true if a particular servo is 'active' on the Piccolo interface
+    bool is_servo_channel_active(uint8_t chan);
+
+    // return true if a particular servo has been detected on the CAN interface
+    bool is_servo_online(uint8_t chan);
+
+    // public getters for GCS scheduler access
+    float get_servo_target_angle(uint8_t idx) const { return (idx < CANOPEN_MAX_NUM_SERVO) ? _servos[idx].target_angle_deg : 0; }
+    float get_servo_real_angle(uint8_t idx) const { return (idx < CANOPEN_MAX_NUM_SERVO) ? _servos[idx].real_angle_deg : 0; }
+    float get_servo_current(uint8_t idx) const { return (idx < CANOPEN_MAX_NUM_SERVO) ? _servos[idx].real_current_A : 0; }
+    float get_servo_temperature(uint8_t idx) const { return (idx < CANOPEN_MAX_NUM_SERVO) ? _servos[idx].real_temperature_dc : 0; }
+
+    // test if the CAN driver is ready to be armed
+    bool pre_arm_check(char* reason, uint8_t reason_len);
+
+private:
+
+    // loop to send output to ESCs in background thread
+    void loop();
+
+    // write frame on CAN bus, returns true on success
+    bool write_frame(AP_HAL::CANFrame &out_frame, uint64_t timeout);
+
+    // read frame on CAN bus, returns true on succses
+    bool read_frame(AP_HAL::CANFrame &recv_frame, uint64_t timeout);
+
+    void send_servo_target_angle(void);
+
+    // interpret a servo message received over CAN
+    bool handle_servo_message(AP_HAL::CANFrame &frame);
+
+    void CANopen_set_slave_node_into_Operational_state(CANopen_slave_node_t *p_node);
+    void CANopen_set_slave_node_into_Stop_state(CANopen_slave_node_t *p_node);
+    bool CANopen_read_by_SDO(CANopen_slave_node_t *p_node, uint16_t index,
+                             uint8_t sub_index, void *data, uint8_t data_size);
+    bool CANopen_write_by_SDO(CANopen_slave_node_t *p_node, uint16_t index,
+                             uint8_t sub_index, uint32_t data, bool need_reply);
+
+    void log_servos_status(void);
+
+    void query_servos_status(void);
+
+    void query_servos_range_min(void);
+
+    void query_servos_range_max(void);
+
+    void query_servos_enable_byte(void);  // 读取功能使能字节（含反向位）
+
+    void enable_servos_feedback(void);
+
+    void rebuild_online_list(void);
+
+    void configure_servos_range(void);  // 检查并配置舵机硬件行程
+
+    void process_SDO_reply(AP_HAL::CANFrame &frame);  // 处理从机发来的SDO返回帧
+    void process_RPDO(AP_HAL::CANFrame &frame);  // 处理从机发来的PDO
+
+    bool _initialized;
+    char _thread_name[16];
+    uint8_t _driver_index;
+    AP_HAL::CANIface* _can_iface;
+    HAL_BinarySemaphore _event_handle;
+
+    Servo_t _servos[CANOPEN_MAX_NUM_SERVO];
+
+    AP_Int32 _srv_bm;       //! Servo selection bitmask
+    AP_Int16 _srv_hz;       //! Servo update rate (Hz)
+    AP_Int8 _mavlink_rate;  //! MAVLink servo status message rate (Hz, default 2Hz)
+
+    // 每个舵机的行程参数（单位：度）
+    AP_Float _ang_neg[CANOPEN_MAX_NUM_SERVO];   // 负向行程限位（如 -60 表示 -60°）
+    AP_Float _ang_pos[CANOPEN_MAX_NUM_SERVO];   // 正向行程限位（如 +20 表示 +20°）
+    AP_Float _ang_trim[CANOPEN_MAX_NUM_SERVO];  // 中位偏移（如 -5 表示中位在 -5°）
+
+    HAL_Semaphore _telem_sem;
+
+    // 在线舵机索引表（预建，确保控制帧均匀分配）
+    uint8_t _online_list[CANOPEN_MAX_NUM_SERVO];  // 在线舵机的索引
+    uint8_t _online_count = 0;                     // 在线舵机数量
+    uint8_t _online_send_pos = 0;                  // 当前发送位置
+    uint32_t _last_online_rebuild_ms = 0;          // 上次重建时间
+
+    // 轮询索引（查询/使能等低优先级操作使用）
+    uint8_t _rr_send_idx = 0;  // 保留用于兼容，不再用于控制帧
+    uint8_t _rr_query_idx = 0;
+    uint8_t _rr_range_min_idx = 0;
+    uint8_t _rr_range_max_idx = 0;
+    uint8_t _rr_enable_idx = 0;
+    uint8_t _rr_feedback_idx = 0;
+    uint8_t _rr_config_idx = 0;  // 行程配置轮询索引（仅在当前目标完成/IDLE后推进）
+    int8_t  _config_target = -1; // 当前正在配置行程的舵机索引，-1=无
+
+    // NMT Start 标记（打破 enable_servos_feedback 与 SDO 查询的循环依赖）
+    bool _nmt_start_sent = false;
+
+    // 发送失败统计
+    uint32_t _tx_fail_count = 0;
+    uint32_t _tx_total_count = 0;
+    uint32_t _last_stats_ms = 0;
+};
+

@@ -477,6 +477,21 @@ void AP_Logger::Write_ServoStatus(uint64_t time_us, uint8_t id, float position, 
 }
 
 
+void AP_Logger::Write_CAN_ServoStatus(uint64_t time_us, uint8_t id, float real_angle_deg, float target_angle_deg, float real_current_A, float real_temperature_dc)
+{
+    const struct log_CANSRV pkt {
+        LOG_PACKET_HEADER_INIT(LOG_CANSRV_MSG),
+        time_us     : time_us,
+        id          : id,
+        real_angle_deg       : real_angle_deg,
+        target_angle_deg     : target_angle_deg,
+        real_current_A       : real_current_A,
+        real_temperature_dc  : real_temperature_dc
+    };
+    WriteBlock(&pkt, sizeof(pkt));
+}
+
+
 // Write a Yaw PID packet
 void AP_Logger::Write_PID(uint8_t msg_type, const AP_PIDInfo &info)
 {

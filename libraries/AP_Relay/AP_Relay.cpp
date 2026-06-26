@@ -696,4 +696,56 @@ AP_Relay *relay()
 
 }
 
+void AP_Relay::get_servo_channel_relay_masks(uint16_t &mode_mask,
+                                             uint16_t &state_mask) const
+{
+    using F = AP_Relay_Params::FUNCTION;
+    static const F digital_local_funcs[] = {
+        F::RELAY,
+        F::IGNITION,
+        F::PARACHUTE,
+        F::CAMERA,
+        F::BRUSHED_REVERSE_1,
+        F::BRUSHED_REVERSE_2,
+        F::BRUSHED_REVERSE_3,
+        F::BRUSHED_REVERSE_4,
+        F::ICE_STARTER,
+    };
+
+    static const uint8_t MAX_REDUNDANCY_CHANNEL = 14;
+
+    for (uint8_t i = 0; i < AP_RELAY_NUM_RELAYS; i++) {
+        const F fn = (F)_params[i].function.get();
+
+        bool accepted = false;
+        for (uint8_t k = 0; k < ARRAY_SIZE(digital_local_funcs); k++) {
+            if (fn == digital_local_funcs[k]) {
+                accepted = true;
+                break;
+            }
+        }
+        if (!accepted) {
+            continue;
+        }
+
+        const int16_t pin = _params[i].pin;
+        if (pin < 0 || pin > 255) {
+            continue;
+        }
+
+        uint8_t servo_ch;
+        if (!hal.gpio->pin_to_servo_channel((uint8_t)pin, servo_ch)) {
+            continue;
+        }
+        if (servo_ch >= MAX_REDUNDANCY_CHANNEL) {
+            continue;
+        }
+
+        mode_mask |= (uint16_t)(1U << servo_ch);
+        if (get(i)) {
+            state_mask |= (uint16_t)(1U << servo_ch);
+        }
+    }
+}
+
 #endif  // AP_RELAY_ENABLED

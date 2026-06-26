@@ -85,6 +85,10 @@ protected:
         float deltaa_max = 0.3491;
         float deltae_max = 0.3491;
         float deltar_max = 0.3491;
+
+        float Ixx = 1.0f;//x方向转动惯量kgm2
+        float Iyy = 1.0f;//y方向转动惯量
+        float Izz = 1.0f;//z方向转动惯量
         // the X CoG offset should be -0.02, but that makes the plane too tail heavy
         // in manual flight. Adjusted to -0.15 gives reasonable flight
         Vector3f CGOffset{-0.15, 0, -0.05};
@@ -105,6 +109,10 @@ protected:
     float launch_accel;
     float launch_time;
     uint64_t launch_start_ms;
+
+    bool have_drop;
+    float drop_time;
+    uint64_t drop_start_ms;
 
     const uint8_t throttle_servo = 2;
     const int8_t choke_servo = 14;

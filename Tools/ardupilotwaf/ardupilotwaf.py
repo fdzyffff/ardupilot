@@ -23,6 +23,7 @@ COMMON_VEHICLE_DEPENDENT_CAN_LIBRARIES = [
     'AP_KDECAN',
     'AP_PiccoloCAN',
     'AP_PiccoloCAN/piccolo_protocol',
+    'AP_CANopen',
 ]
 
 COMMON_VEHICLE_DEPENDENT_LIBRARIES = [
@@ -129,6 +130,15 @@ COMMON_VEHICLE_DEPENDENT_LIBRARIES = [
     'AP_Arming',
     'AP_RCMapper',
     'AP_MultiHeap',
+    'FD1_UART',
+    'FD_DATA',
+    'FD_CAN',
+    'FD_Target',
+    'FD_Target_Uart',
+    'AP_Redundancy',
+    'HXKY_Weight',
+    'HXKY_Engine',
+    'HXKY_Uart',
 ]
 
 def get_legacy_defines(sketch_name, bld):

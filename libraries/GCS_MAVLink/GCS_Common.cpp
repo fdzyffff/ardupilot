@@ -92,6 +92,7 @@
 
   #include <AP_PiccoloCAN/AP_PiccoloCAN.h>
   #include <AP_DroneCAN/AP_DroneCAN.h>
+  #include <AP_CANopen/AP_CANopen.h>
 #endif
 
 #include <AP_BattMonitor/AP_BattMonitor_config.h>
@@ -1150,6 +1151,7 @@ ap_message GCS_MAVLINK::mavlink_id_to_ap_message_id(const uint32_t mavlink_id) c
 #if AP_AIRSPEED_ENABLED
         { MAVLINK_MSG_ID_AIRSPEED, MSG_AIRSPEED},
 #endif
+        { MAVLINK_MSG_ID_CAN_SERVO_STATUS, MSG_CAN_SERVO_STATUS},
             };
 
     for (uint8_t i=0; i<ARRAY_SIZE(map); i++) {
@@ -2252,6 +2254,34 @@ void GCS_MAVLINK::send_highres_imu()
 
 void GCS_MAVLINK::send_scaled_imu(uint8_t instance, void (*send_fn)(mavlink_channel_t chan, uint32_t time_ms, int16_t xacc, int16_t yacc, int16_t zacc, int16_t xgyro, int16_t ygyro, int16_t zgyro, int16_t xmag, int16_t ymag, int16_t zmag, int16_t temperature))
 {
+    if (instance == 2 && AP::externalAHRS().enabled() && !AP::externalAHRS().has_sensor(AP_ExternalAHRS::AvailableSensor::IMU)) {
+        bool have_data = false;
+        Vector3f accel{};
+        Vector3f gyro{};
+        Vector3f mag{};
+        int16_t _temperature = 0;
+        if (AP::externalAHRS().healthy()) {
+            accel = AP::externalAHRS().imu_data.accel;
+            gyro = AP::externalAHRS().imu_data.gyro;
+            have_data = true;
+        }
+        if (!have_data) {
+            return;
+        }
+        send_fn(
+            chan,
+            AP_HAL::millis(),
+            accel.x * 1000.0f / GRAVITY_MSS,
+            accel.y * 1000.0f / GRAVITY_MSS,
+            accel.z * 1000.0f / GRAVITY_MSS,
+            gyro.x * 1000.0f,
+            gyro.y * 1000.0f,
+            gyro.z * 1000.0f,
+            mag.x,
+            mag.y,
+            mag.z,
+            _temperature);
+    } else {
 #if AP_INERTIALSENSOR_ENABLED
     const AP_InertialSensor &ins = AP::ins();
     int16_t _temperature = 0;
@@ -2293,6 +2323,7 @@ void GCS_MAVLINK::send_scaled_imu(uint8_t instance, void (*send_fn)(mavlink_chan
         mag.z,
         _temperature);
 #endif
+    }
 }
 
 
@@ -4160,6 +4191,8 @@ void GCS_MAVLINK::handle_heartbeat(const mavlink_message_t &msg) const
  */
 void GCS_MAVLINK::handle_message(const mavlink_message_t &msg)
 {
+    AP::fd_data().handle_message(msg);
+
     switch (msg.msgid) {
 
     case MAVLINK_MSG_ID_HEARTBEAT: {
@@ -6031,6 +6064,62 @@ void GCS_MAVLINK::send_autopilot_state_for_gimbal_device() const
 #endif  // AP_AHRS_ENABLED
 }
 
+void GCS_MAVLINK::send_can_servo_status() const
+{
+#if HAL_MAX_CAN_PROTOCOL_DRIVERS
+    for (uint8_t drv = 0; drv < AP::can().get_num_drivers(); drv++) {
+        if (AP::can().get_driver_type(drv) != AP_CAN::Protocol::CANopen) {
+            continue;
+        }
+        AP_CANopen *canopen = AP_CANopen::get_canopen(drv);
+        if (canopen == nullptr) {
+            continue;
+        }
+
+        const uint8_t SERVOS_PER_GROUP = 4;
+        const uint8_t NUM_GROUPS = (CANOPEN_MAX_NUM_SERVO + SERVOS_PER_GROUP - 1) / SERVOS_PER_GROUP;
+
+        for (uint8_t grp = 0; grp < NUM_GROUPS; grp++) {
+            uint8_t base = grp * SERVOS_PER_GROUP;
+            uint8_t servo_mask = 0;
+
+            int16_t target_angle_deg[4] = {};
+            int16_t real_angle_deg[4] = {};
+            uint16_t real_current_A[4] = {};
+            int8_t real_temperature_dc[4] = {};
+
+            for (uint8_t j = 0; j < SERVOS_PER_GROUP; j++) {
+                uint8_t idx = base + j;
+                if (idx < CANOPEN_MAX_NUM_SERVO && canopen->is_servo_channel_active(idx)) {
+                    servo_mask |= (1 << j);
+                    target_angle_deg[j] = (int16_t)(canopen->get_servo_target_angle(idx) * 10.0f);
+                    real_angle_deg[j] = (int16_t)(canopen->get_servo_real_angle(idx) * 10.0f);
+                    real_current_A[j] = (uint16_t)(canopen->get_servo_current(idx) * 100.0f);
+                    real_temperature_dc[j] = (int8_t)canopen->get_servo_temperature(idx);
+                }
+            }
+
+            if (servo_mask == 0) {
+                continue;
+            }
+
+            if (!HAVE_PAYLOAD_SPACE(chan, CAN_SERVO_STATUS)) {
+                return;
+            }
+
+            mavlink_msg_can_servo_status_send(chan,
+                                              grp,
+                                              servo_mask,
+                                              target_angle_deg,
+                                              real_angle_deg,
+                                              real_current_A,
+                                              real_temperature_dc);
+        }
+        break;
+    }
+#endif
+}
+
 void GCS_MAVLINK::send_received_message_deprecation_warning(const char * message)
 {
     // we're not expecting very many of these ever, so a tiny bit of
@@ -6467,6 +6556,10 @@ bool GCS_MAVLINK::try_send_message(const enum ap_message id)
         ret = send_relay_status();
         break;
 #endif
+
+    case MSG_CAN_SERVO_STATUS:
+        send_can_servo_status();
+        break;
 
     default:
         // try_send_message must always at some stage return true for

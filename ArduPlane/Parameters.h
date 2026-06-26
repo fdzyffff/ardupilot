@@ -362,8 +362,10 @@ public:
 
         k_param_pullup = 270,
         k_param_quicktune,
-    };
 
+        k_param_uattack,
+
+    };
     AP_Int16 format_version;
 
     // Telemetry control
@@ -474,6 +476,8 @@ public:
     AP_Int16 gcs_pid_mask;
 };
 
+class AP_Redundancy;
+
 /*
   2nd block of parameters, to avoid going past 256 top level keys
  */
@@ -580,12 +584,17 @@ public:
     
     AP_Int8         axis_bitmask; // axes to be autotuned
 
+#if ENABLE_REDUNDANCY_CONTROL
+    AP_Redundancy  *redundancy_ptr;
+#endif
+
     // just to make compilation easier when all things are compiled out...
     uint8_t unused_integer;
 
 #if AP_RANGEFINDER_ENABLED
     // orientation of rangefinder to use for landing
     AP_Int8 rangefinder_land_orient;
+    AP_Int8 user_debug_engine;
 #endif
 
 #if AP_PLANE_SYSTEMID_ENABLED

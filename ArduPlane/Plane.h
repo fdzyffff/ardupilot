@@ -127,14 +127,30 @@
 /*
   main APM:Plane class
  */
+#include "Uart.h"
+#include "UAttack.h"
+// #include "UDelay.h"  // 已合并到 UAttack 内部
+
+#if ENABLE_REDUNDANCY_CONTROL
+#include <AP_Redundancy/AP_Redundancy.h>
+#endif
+
 class Plane : public AP_Vehicle {
 public:
     friend class GCS_MAVLINK_Plane;
+#if ENABLE_REDUNDANCY_CONTROL
+    friend class PlaneRedundancy;
+#endif
     friend class Parameters;
     friend class ParametersG2;
     friend class AP_Arming_Plane;
     friend class QuadPlane;
     friend class QAutoTune;
+    friend class ModeAttackCam;
+    friend class ModeAttackLoc;
+    friend class Uart;
+    friend class UAttack;
+    friend class UDelay;
     friend class AP_Tuning_Plane;
     friend class AP_AdvancedFailsafe_Plane;
     friend class AP_Avoidance_Plane;
@@ -274,6 +290,12 @@ private:
     // selected navigation controller
     AP_Navigation *nav_controller = &L1_controller;
 
+#if ENABLE_REDUNDANCY_CONTROL
+    AP_Redundancy *redundancy = nullptr;
+    void init_redundancy_control();
+    void update_redundancy_control();
+#endif
+
     // Camera
 #if AP_CAMERA_ENABLED
     AP_Camera camera{MASK_LOG_CAMERA};
@@ -311,6 +333,8 @@ private:
     ModeAutoTune mode_autotune;
     ModeAuto mode_auto;
     ModeRTL mode_rtl;
+    ModeAttackCam mode_attack_cam;
+    ModeAttackLoc mode_attack_loc;
     ModeLoiter mode_loiter;
 #if HAL_ADSB_ENABLED
     ModeAvoidADSB mode_avoidADSB;
@@ -941,6 +965,7 @@ private:
     float stabilize_pitch_get_pitch_out();
     void stabilize_stick_mixing_fbw();
     void stabilize_yaw();
+    void stabilize_attack();
     int16_t calc_nav_yaw_coordinated();
     int16_t calc_nav_yaw_course(void);
     int16_t calc_nav_yaw_ground(void);
@@ -1310,6 +1335,21 @@ private:
     // mode reason for entering previous mode
     ModeReason previous_mode_reason = ModeReason::UNKNOWN;
 
+    void userhook_init();
+    void userhook_100Hz();
+    void userhook_1Hz();
+
+    void hxky_weight_update();
+    void hxky_engine_update();
+    void hxky_uart_update();
+    void hxky_one_hz();
+
+    Uart uart;
+    UAttack uattack;
+    // UDelay udelay;  // 已合并到 UAttack 内部
+    // HXKY_Engines uengines;  // 已移到 AP_Vehicle，通过 AP::hxky_engines() 访问
+    // HXKY_Weight uweight;    // 已移到 AP_Vehicle，通过 AP::hxky_weight() 访问
+
     // last target alt we passed to tecs
     int32_t tecs_target_alt_cm;
 
@@ -1317,6 +1357,10 @@ public:
     void failsafe_check(void);
     bool is_landing() const override;
     bool is_taking_off() const override;
+#if ENABLE_REDUNDANCY_CONTROL
+    bool is_redundancy_in_control() const override;
+    uint8_t get_redundancy_num() const override;
+#endif
 #if AP_SCRIPTING_ENABLED || AP_EXTERNAL_CONTROL_ENABLED
     bool set_target_location(const Location& target_loc) override;
 #endif //AP_SCRIPTING_ENABLED || AP_EXTERNAL_CONTROL_ENABLED

@@ -173,6 +173,10 @@
 #include "UserParameters.h"
 #endif
 #include "mode.h"
+#include <AP_Redundancy/AP_Redundancy.h>
+#include "Uart.h"
+#include "UAttack.h"
+#include "YoloDrop.h"
 
 class Copter : public AP_Vehicle {
 public:
@@ -223,6 +227,11 @@ public:
     friend class ModeZigZag;
     friend class ModeAutorotate;
     friend class ModeTurtle;
+    friend class ModeMission;
+    friend class ModeAttackVel;
+    friend class Uart;
+    friend class UAttack;
+    friend class YoloDrop;
 
     friend class _AutoTakeoff;
 
@@ -428,6 +437,12 @@ private:
     // Motor Output
     MOTOR_CLASS *motors;
     const struct AP_Param::GroupInfo *motors_var_info;
+
+#if ENABLE_REDUNDANCY_CONTROL
+    AP_Redundancy *redundancy = nullptr;
+    void init_redundancy_control();
+    void update_redundancy_control();
+#endif
 
     int32_t _home_bearing;
     uint32_t _home_distance;
@@ -900,6 +915,12 @@ private:
     void mode_change_failed(const Mode *mode, const char *reason);
     uint8_t get_mode() const override { return (uint8_t)flightmode->mode_number(); }
     bool current_mode_requires_mission() const override;
+
+#if ENABLE_REDUNDANCY_CONTROL
+    bool is_redundancy_in_control() const override;
+    uint8_t get_redundancy_num() const override;
+#endif
+
     void update_flight_mode();
     void notify_flight_mode();
 
@@ -998,6 +1019,12 @@ private:
     void userhook_auxSwitch2(const RC_Channel::AuxSwitchPos ch_flag);
     void userhook_auxSwitch3(const RC_Channel::AuxSwitchPos ch_flag);
 
+    // HXKY_api.cpp
+    void hxky_weight_update();
+    void hxky_engine_update();
+    void hxky_uart_update();
+    void hxky_one_hz();
+
 #if MODE_ACRO_ENABLED
 #if FRAME_CONFIG == HELI_FRAME
     ModeAcro_Heli mode_acro;
@@ -1075,6 +1102,12 @@ private:
 #if MODE_TURTLE_ENABLED
     ModeTurtle mode_turtle;
 #endif
+
+    ModeMission mode_mission;
+    ModeAttackVel mode_attack_vel;
+    Uart uart;
+    UAttack uattack;
+    YoloDrop yolo_drop;
 
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);

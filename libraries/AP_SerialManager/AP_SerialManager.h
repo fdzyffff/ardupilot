@@ -86,6 +86,14 @@ public:
         // Reserving Serial Protocol 47 for SerialProtocol_IQ
         SerialProtocol_PPP = 48,
         SerialProtocol_IBUS_Telem = 49,                // i-BUS telemetry data, ie via sensor port of FS-iA6B
+        SerialProtocol_CAM = 51,
+        SerialProtocol_UART = 52,
+        SerialProtocol_ENGINE = 53,
+        SerialProtocol_WEIGHT = 54,
+        SerialProtocol_redundancy_FPGA = 55,
+        SerialProtocol_redundancy_FMUa = 56,
+        SerialProtocol_redundancy_FMUb = 57,
+        SerialProtocol_YOLO = 58,
         SerialProtocol_NumProtocols                    // must be the last value
     };
 

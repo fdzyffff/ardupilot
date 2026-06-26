@@ -51,6 +51,8 @@ public:
     // Return the number of GPS sensors sharing data to AP_GPS.
     virtual uint8_t num_gps_sensors(void) const = 0;
 
+    AP_ExternalAHRS &frontend;
+
 protected:
     AP_ExternalAHRS::state_t &state;
     uint16_t get_rate(void) const;
@@ -81,7 +83,6 @@ protected:
     const float hgt_gate_scale = 0.2;
     
 private:
-    AP_ExternalAHRS &frontend;
 };
 
 #endif  // HAL_EXTERNAL_AHRS_ENABLED

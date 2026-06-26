@@ -68,6 +68,7 @@
 
   #include <AP_PiccoloCAN/AP_PiccoloCAN.h>
   #include <AP_DroneCAN/AP_DroneCAN.h>
+  #include <AP_CANopen/AP_CANopen.h>
 #endif
 
 #include <AP_Logger/AP_Logger.h>
@@ -1290,6 +1291,15 @@ bool AP_Arming::can_checks(bool report)
 #endif
                     break;
                 }
+                case AP_CAN::Protocol::CANopen: {
+                    AP_CANopen *ap_canopen = AP_CANopen::get_canopen(i);
+
+                    if (ap_canopen != nullptr && !ap_canopen->pre_arm_check(fail_msg, ARRAY_SIZE(fail_msg))) {
+                        check_failed(ARMING_CHECK_SYSTEM, report, "CANopen: %s", fail_msg);
+                        return false;
+                    }
+                    break;
+                }
                 case AP_CAN::Protocol::USD1:
                 case AP_CAN::Protocol::TOFSenseP:
                 case AP_CAN::Protocol::RadarCAN:
@@ -1307,6 +1317,7 @@ bool AP_Arming::can_checks(bool report)
                 case AP_CAN::Protocol::None:
                 case AP_CAN::Protocol::Scripting:
                 case AP_CAN::Protocol::Scripting2:
+                case AP_CAN::Protocol::FDCAN:
                 case AP_CAN::Protocol::KDECAN:
 
                     break;

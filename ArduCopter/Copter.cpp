@@ -204,6 +204,9 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     SCHED_TASK(landinggear_update,    10,     75,  93),
 #endif
     SCHED_TASK(standby_update,        100,    75,  96),
+#if ENABLE_REDUNDANCY_CONTROL
+    SCHED_TASK(update_redundancy_control, 400,     50,  97),
+#endif
     SCHED_TASK(lost_vehicle_check,    10,     50,  99),
     SCHED_TASK_CLASS(GCS,                  (GCS*)&copter._gcs,          update_receive, 400, 180, 102),
     SCHED_TASK_CLASS(GCS,                  (GCS*)&copter._gcs,          update_send,    400, 550, 105),
@@ -254,11 +257,15 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     SCHED_TASK(userhook_SlowLoop,      3.3,   75, 162),
 #endif
 #ifdef USERHOOK_SUPERSLOWLOOP
-    SCHED_TASK(userhook_SuperSlowLoop, 1,     75, 165),
+    SCHED_TASK(userhook_SuperSlowLoop,   1,     75, 165),
 #endif
 #if HAL_BUTTON_ENABLED
     SCHED_TASK_CLASS(AP_Button,            &copter.button,              update,           5, 100, 168),
 #endif
+    SCHED_TASK(hxky_weight_update, 100, 50, 171),
+    SCHED_TASK(hxky_engine_update, 100, 50, 174),
+    SCHED_TASK(hxky_uart_update, 100, 50, 177),
+    SCHED_TASK(hxky_one_hz, 1, 100, 180),
 };
 
 void Copter::get_scheduler_tasks(const AP_Scheduler::Task *&tasks,
@@ -501,6 +508,20 @@ bool Copter::is_landing() const
 {
     return flightmode->is_landing();
 }
+
+#if ENABLE_REDUNDANCY_CONTROL
+bool Copter::is_redundancy_in_control() const
+{
+    auto *red = AP_Redundancy::get_singleton();
+    return red ? red->is_in_control() : false;
+}
+
+uint8_t Copter::get_redundancy_num() const
+{
+    auto *red = AP_Redundancy::get_singleton();
+    return red ? red->get_this_redundancy_num() : 0;
+}
+#endif
 
 // returns true if vehicle is taking off.
 bool Copter::is_taking_off() const

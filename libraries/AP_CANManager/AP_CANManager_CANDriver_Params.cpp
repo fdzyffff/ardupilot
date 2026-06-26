@@ -20,6 +20,7 @@
 
 #include <AP_DroneCAN/AP_DroneCAN.h>
 #include <AP_PiccoloCAN/AP_PiccoloCAN.h>
+#include <AP_CANopen/AP_CANopen.h>
 
 // table of user settable CAN bus parameters
 const AP_Param::GroupInfo AP_CANManager::CANDriver_Params::var_info[] = {
@@ -28,7 +29,7 @@ const AP_Param::GroupInfo AP_CANManager::CANDriver_Params::var_info[] = {
     // @DisplayName: Enable use of specific protocol over virtual driver
     // @Description: Enabling this option starts selected protocol that will use this virtual driver
     // @SortValues: AlphabeticalZeroAtTop
-    // @Values: 0:Disabled,1:DroneCAN,4:PiccoloCAN,6:EFI_NWPMU,7:USD1,8:KDECAN,10:Scripting,11:Benewake,12:Scripting2,13:TOFSenseP,14:RadarCAN (NanoRadar/Hexsoon)
+    // @Values: 0:Disabled,1:DroneCAN,4:PiccoloCAN,6:EFI_NWPMU,7:USD1,8:KDECAN,10:Scripting,11:Benewake,12:Scripting2,13:TOFSenseP,14:RadarCAN (NanoRadar/Hexsoon),16:CANopen
     // @User: Advanced
     // @RebootRequired: True
     AP_GROUPINFO("PROTOCOL", 1, AP_CANManager::CANDriver_Params, _driver_type, float(AP_CAN::Protocol::DroneCAN)),
@@ -57,7 +58,11 @@ const AP_Param::GroupInfo AP_CANManager::CANDriver_Params::var_info[] = {
     // @User: Advanced
     // @RebootRequired: True
     AP_GROUPINFO("PROTOCOL2", 6, AP_CANManager::CANDriver_Params, _driver_type_11bit, float(AP_CAN::Protocol::None)),
-    
+
+    // @Group: CO_
+    // @Path: ../AP_CANopen/AP_CANopen.cpp
+    AP_SUBGROUPPTR(_canopen, "CO_", 8, AP_CANManager::CANDriver_Params, AP_CANopen),
+
     AP_GROUPEND
 };
 #endif

@@ -87,6 +87,9 @@ void GCS_Plane::update_vehicle_sensor_status_flags(void)
 
     case Mode::Number::INITIALISING:
         break;
+    case Mode::Number::ATTACK_LOC:
+    case Mode::Number::ATTACK_CAM:
+        break;
     }
 
     if (rate_controlled) {

@@ -381,6 +381,8 @@ public:
         k_param_vehicle = 257, // vehicle common block of parameters
         k_param_throw_altitude_min,
         k_param_throw_altitude_max,
+        k_param_uattack,
+        k_param_yolo_drop,
 
         // the k_param_* space is 9-bits in size
         // 511: reserved
@@ -685,6 +687,10 @@ public:
     AP_Float pldp_range_finder_maximum_m;
     AP_Float pldp_delay_s;
     AP_Float pldp_descent_speed_ms;
+
+#if ENABLE_REDUNDANCY_CONTROL
+    AP_Redundancy  *redundancy_ptr;
+#endif
 };
 
 extern const AP_Param::Info        var_info[];

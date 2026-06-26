@@ -84,7 +84,11 @@ private:
 
     void wait_clock(uint64_t wait_time_usec);
 
-    uint16_t pwm_input[16];  // was SITL_RC_INPUT_CHANNELS
+    void _build_copter_frame();
+    void _build_heli_frame();
+    void _build_plane_frame();
+
+    uint16_t pwm_input[16];
 
     // internal state
     // enum vehicle_type _vehicle;
