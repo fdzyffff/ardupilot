@@ -355,6 +355,29 @@ void Plane::do_RTL(int32_t rtl_altitude_AMSL_cm)
     setup_turn_angle();
 }
 
+void Plane::do_RTL_external(int32_t rtl_altitude_AMSL_cm, Location &loc_in)
+{
+    auto_state.next_wp_crosstrack = false;
+    auto_state.crosstrack = false;
+    prev_WP_loc = current_loc;
+    loc_in.set_alt_cm(rtl_altitude_AMSL_cm, Location::AltFrame::ABSOLUTE);
+    next_WP_loc = loc_in;
+
+    fix_terrain_WP(next_WP_loc, __LINE__);
+
+    setup_terrain_target_alt(next_WP_loc);
+    set_target_altitude_location(next_WP_loc);
+
+    if (aparm.loiter_radius < 0) {
+        loiter.direction = -1;
+    } else {
+        loiter.direction = 1;
+    }
+
+    setup_glide_slope();
+    setup_turn_angle();
+}
+
 Location Plane::calc_best_rally_or_home_location(const Location &_current_loc, float rtl_home_alt_amsl_cm) const
 {
 #if HAL_RALLY_ENABLED

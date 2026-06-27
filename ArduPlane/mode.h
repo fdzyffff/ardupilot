@@ -471,15 +471,24 @@ public:
 
     bool does_auto_throttle() const override { return true; }
 
+    void set_return_loc(Location &loc_in);
+
+    void cancel_return_loc() {use_exter_loc = false; use_exter_loc_qrtl = false;}
+
 protected:
 
     bool _enter() override;
+    void _exit() override;
     bool _pre_arm_checks(size_t buflen, char *buffer) const override { return false; }
 
 private:
 
     // Switch to QRTL if enabled and within radius
     bool switch_QRTL();
+
+    bool use_exter_loc;
+    bool use_exter_loc_qrtl;
+    Location exter_loc;
 };
 
 class ModeStabilize : public Mode
@@ -778,9 +787,14 @@ public:
 
     float get_VTOL_return_radius() const;
 
+    void set_return_loc(Location &loc_in);
+
+    void cancel_return_loc() {use_exter_loc = false;}
+
 protected:
 
     bool _enter() override;
+    void _exit() override;
     bool _pre_arm_checks(size_t buflen, char *buffer) const override { return false; }
 
 private:
@@ -789,6 +803,9 @@ private:
         climb,
         RTL,
     } submode;
+
+    bool use_exter_loc;
+    Location exter_loc;
 };
 
 class ModeQAcro : public Mode

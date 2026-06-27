@@ -994,6 +994,7 @@ private:
     // commands_logic.cpp
     void set_next_WP(const Location &loc);
     void do_RTL(int32_t alt);
+    void do_RTL_external(int32_t alt, Location &loc_in);
     bool verify_takeoff();
     bool verify_loiter_unlim(const AP_Mission::Mission_Command &cmd);
     bool verify_loiter_time();

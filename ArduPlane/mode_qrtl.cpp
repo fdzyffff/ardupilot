@@ -18,6 +18,12 @@ bool ModeQRTL::_enter()
     if (quadplane.motors->get_desired_spool_state() == AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED) {
         // VTOL motors are active, either in VTOL flight or assisted flight
         Location destination = plane.calc_best_rally_or_home_location(plane.current_loc, RTL_alt_abs_cm);
+        if (use_exter_loc) {
+            destination.lat = exter_loc.lat;
+            destination.lng = exter_loc.lng;
+            gcs().send_text(MAV_SEVERITY_INFO, "QRTL with EXT Loc");
+            gcs().send_text(MAV_SEVERITY_INFO, "|- %d, %d", int(destination.lat), int(destination.lng));
+        }
         const float dist = plane.current_loc.get_distance(destination);
         const float radius = get_VTOL_return_radius();
 
@@ -62,7 +68,12 @@ bool ModeQRTL::_enter()
     }
 
     // use do_RTL() to setup next_WP_loc
-    plane.do_RTL(RTL_alt_abs_cm);
+    if (use_exter_loc) {
+        plane.do_RTL_external(RTL_alt_abs_cm, exter_loc);
+    } else {
+        plane.do_RTL(RTL_alt_abs_cm);
+    }
+
     quadplane.poscontrol_init_approach();
 
     int32_t from_alt;
@@ -224,6 +235,17 @@ bool ModeQRTL::allows_throttle_nudging() const
 float ModeQRTL::get_VTOL_return_radius() const
 {
     return MAX(fabsf(float(plane.aparm.loiter_radius)), fabsf(float(plane.g.rtl_radius))) * 1.5;
+}
+
+void ModeQRTL::set_return_loc(Location &loc_in)
+{
+    use_exter_loc = true;
+    exter_loc = loc_in;
+}
+
+void ModeQRTL::_exit()
+{
+    use_exter_loc = false;
 }
 
 #endif

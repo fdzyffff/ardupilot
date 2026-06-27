@@ -124,12 +124,14 @@ void Plane::user_handle_msg(const mavlink_message_t &msg)
             break;
         case 4:
             {
-                if (plane.set_mode(mode_rtl, ModeReason::GCS_COMMAND)) {
-                    Location target_loc{plane.next_WP_loc};
-                    if (use_latlng) {
-                        plane.next_WP_loc.lat = packet.lat;
-                        plane.next_WP_loc.lng = packet.lng;
-                    }
+                Location target_loc{plane.current_loc};
+                if (use_latlng) {
+                    target_loc.lat = packet.lat;
+                    target_loc.lng = packet.lng;
+                }
+                mode_rtl.set_return_loc(target_loc);
+                if (!plane.set_mode(mode_rtl, ModeReason::GCS_COMMAND)) {
+                    plane.mode_rtl.cancel_return_loc();
                 }
             }
             break;
@@ -148,10 +150,9 @@ void Plane::user_handle_msg(const mavlink_message_t &msg)
 
 void Plane::update_collision() 
 {
-    if (is_flying() && ins.get_accel_peak_hold_neg_x() > 20) {
+    if (is_flying() && ins.get_accel_peak_hold_neg_x() > 20 && control_mode == &mode_external && mode_external.is_angle_mode()) {
         if (!collision_triggered) {
             gcs().send_text(MAV_SEVERITY_INFO, "Collision %.0f",ins.get_accel_peak_hold_neg_x());
-            return;
         }
         collision_triggered = true;
         collision_trigger_ms = millis();
