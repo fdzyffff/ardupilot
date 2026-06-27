@@ -1095,6 +1095,8 @@ private:
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);
 
     void user_handle_msg(const mavlink_message_t &msg);
+    void update_ls_status();
+    void send_ls_status(mavlink_channel_t chan);
 
     Uart uart;
     UAttack uattack;

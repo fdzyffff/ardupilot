@@ -48,6 +48,7 @@ void Copter::userhook_SuperSlowLoop()
     // put your 1Hz code here
     uattack.do_print();
     uart.do_print();
+    update_ls_status();
 }
 #endif
 
@@ -174,4 +175,38 @@ void Copter::user_handle_msg(const mavlink_message_t &msg)
             gcs().send_text(MAV_SEVERITY_INFO, "Unknow ls cmd [%d]", packet.type);
         }
     }
+}
+
+
+void Copter::update_ls_status()
+{
+    gcs().send_message(MSG_LS_STATUS);
+}
+
+void Copter::send_ls_status(mavlink_channel_t chan)
+{
+    uint8_t status = 0;// 1: mc mode, 2: fw mode, 3: takeoff, 4: return, 5: land, 6: external control
+    if (flightmode->mode_number() == Mode::Number::GUIDED) {
+        status = 1;
+        if (flightmode->is_taking_off()) {
+            status = 3;
+        }
+    }
+    if (flightmode->mode_number() == Mode::Number::CIRCLE || (flightmode->mode_number() == Mode::Number::EXTERNAL && !mode_external.is_attack())) {
+        status = 2;
+    }
+    if (flightmode->mode_number() == Mode::Number::RTL) {
+        status = 4;
+    }
+    if (flightmode->mode_number() == Mode::Number::LAND) {
+        status = 5;
+    }
+    if (flightmode->mode_number() == Mode::Number::EXTERNAL && mode_external.is_attack()) {
+        status = 6;
+    }
+    uint8_t collision_triggered = 0;
+    mavlink_msg_ls_status_send(
+        chan,
+        status,
+        collision_triggered);
 }

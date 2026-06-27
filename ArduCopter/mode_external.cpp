@@ -212,6 +212,11 @@ bool ModeExternal::is_taking_off() const
     return false;
 }
 
+bool ModeExternal::is_attack()
+{
+    return stage == stage_class::ATK;
+}
+
 uint32_t ModeExternal::wp_distance() const
 {
     switch(stage) {

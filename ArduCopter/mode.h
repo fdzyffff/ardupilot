@@ -2132,6 +2132,8 @@ public:
     void update_wp();
     void update_attack();
 
+    bool is_attack();
+
 protected:
 
     const char *name() const override { return "External"; }

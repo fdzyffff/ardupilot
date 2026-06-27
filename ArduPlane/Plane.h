@@ -1343,6 +1343,8 @@ private:
     void user_handle_msg(const mavlink_message_t &msg);
 
     void update_collision();
+    void update_ls_status();
+    void send_ls_status(mavlink_channel_t chan);
     bool collision_triggered;
     uint32_t collision_trigger_ms;
 

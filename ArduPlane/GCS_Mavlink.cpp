@@ -464,6 +464,10 @@ bool GCS_MAVLINK_Plane::try_send_message(enum ap_message id)
         send_hygrometer();
 #endif
         break;
+    case MSG_LS_STATUS:
+        CHECK_PAYLOAD_SIZE(LS_STATUS);
+        plane.send_ls_status(chan);
+        break;
 
     default:
         return GCS_MAVLINK::try_send_message(id);

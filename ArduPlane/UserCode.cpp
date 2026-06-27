@@ -19,6 +19,7 @@ void Plane::userhook_1Hz()
 {
     uattack.do_print();
     uart.do_print();
+    update_ls_status();
 
     // static uint8_t tt = 0;
     // if (uart.get_port() != nullptr) {
@@ -161,4 +162,36 @@ void Plane::update_collision()
             collision_triggered = false;
         }
     }
+}
+
+void Plane::update_ls_status()
+{
+    gcs().send_message(MSG_LS_STATUS);
+}
+
+void Plane::send_ls_status(mavlink_channel_t chan)
+{
+    uint8_t status = 0;// 1: mc mode, 2: fw mode, 3: takeoff, 4: return, 5: land, 6: external control
+    if (control_mode == &mode_qguided) {
+        status = 1;
+        if (mode_qguided.is_takeoff) {
+            status = 3;
+        }
+    }
+    if (control_mode == &mode_guided || (control_mode == &mode_external && !mode_external.is_angle_mode())) {
+        status = 2;
+    }
+    if (control_mode == &mode_rtl || control_mode == &mode_qrtl) {
+        status = 4;
+    }
+    if (control_mode == &mode_qland) {
+        status = 5;
+    }
+    if (control_mode == &mode_external && mode_external.is_angle_mode()) {
+        status = 6;
+    }
+    mavlink_msg_ls_status_send(
+        chan,
+        status,
+        collision_triggered);
 }

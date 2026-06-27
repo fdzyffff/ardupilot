@@ -376,6 +376,11 @@ bool GCS_MAVLINK_Copter::try_send_message(enum ap_message id)
         break;
     }
 
+    case MSG_LS_STATUS:
+        CHECK_PAYLOAD_SIZE(LS_STATUS);
+        copter.send_ls_status(chan);
+        break;
+
     default:
         return GCS_MAVLINK::try_send_message(id);
     }
