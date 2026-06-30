@@ -96,3 +96,12 @@ void FD_BATT::send_cmd(uint32_t id, uint8_t *data) {
     txFrame.id = id;
     _frotend_ptr->write_frame(txFrame, 0);
 }
+
+void FD_BATT::send_bat_can_status(mavlink_channel_t chan)
+{
+    mavlink_msg_hxts_bat_can_status_send(chan,
+        status.vfc, status.vout, status.I, status.T1, status.T2, status.P,
+        status.PWM1, status.PWM2,
+        status.vli, status.vhy, status.vbus, status.power,
+        status.HPWM1, status.HPWM2, status.error, status.run);
+}

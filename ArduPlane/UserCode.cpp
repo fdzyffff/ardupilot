@@ -4,7 +4,6 @@ void Plane::userhook_init()
 {
     uart.init();
     uattack.init();
-    // udelay.init();  // 已合并到 UAttack 内部
 }
 
 void Plane::userhook_100Hz()

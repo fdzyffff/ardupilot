@@ -1,5 +1,10 @@
 #include "Copter.h"
 
+void Copter::hxky_init()
+{
+    AP::hxky_uart().init();
+}
+
 void Copter::hxky_weight_update()
 {
     AP::hxky_weight().update();

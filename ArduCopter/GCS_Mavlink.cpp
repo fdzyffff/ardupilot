@@ -3,6 +3,7 @@
 #include "GCS_Mavlink.h"
 #include <AP_RPM/AP_RPM_config.h>
 #include <AP_EFI/AP_EFI_config.h>
+#include <FD_CAN/FD_CAN.h>
 
 MAV_TYPE GCS_Copter::frame_type() const
 {
@@ -376,6 +377,15 @@ bool GCS_MAVLINK_Copter::try_send_message(enum ap_message id)
         break;
     }
 
+    case MSG_HXTS_BAT_CAN_STATUS: {
+        CHECK_PAYLOAD_SIZE(HXTS_BAT_CAN_STATUS);
+        FD_CAN *fd = FD_CAN::get_can_fd(0);
+        if (fd != nullptr) {
+            fd->send_bat_can_status(chan);
+        }
+        break;
+    }
+
     default:
         return GCS_MAVLINK::try_send_message(id);
     }
@@ -537,7 +547,8 @@ static const ap_message STREAM_EXTRA1_msgs[] = {
     MSG_PID_TUNING // Up to four PID_TUNING messages are sent, depending on GCS_PID_MASK parameter
 };
 static const ap_message STREAM_EXTRA2_msgs[] = {
-    MSG_VFR_HUD
+    MSG_VFR_HUD,
+    MSG_HXTS_BAT_CAN_STATUS,
 };
 static const ap_message STREAM_EXTRA3_msgs[] = {
     MSG_AHRS,

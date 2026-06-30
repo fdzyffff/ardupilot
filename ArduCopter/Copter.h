@@ -1020,6 +1020,7 @@ private:
     void userhook_auxSwitch3(const RC_Channel::AuxSwitchPos ch_flag);
 
     // HXKY_api.cpp
+    void hxky_init();
     void hxky_weight_update();
     void hxky_engine_update();
     void hxky_uart_update();

@@ -163,6 +163,7 @@ private:
         AP_CANDriver* _uavcan;
         AP_CANDriver* _piccolocan;
         AP_CANDriver* _canopen;
+        AP_CANDriver* _fdcan;
     };
 
     CANIface_Params _interfaces[HAL_NUM_CAN_IFACES];

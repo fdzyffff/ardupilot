@@ -29,6 +29,7 @@
 #include <AP_SerialManager/AP_SerialManager.h>
 #include <AP_PiccoloCAN/AP_PiccoloCAN.h>
 #include <AP_CANopen/AP_CANopen.h>
+#include <FD_CAN/FD_CAN.h>
 #include <AP_EFI/AP_EFI_NWPMU.h>
 #include <GCS_MAVLink/GCS.h>
 #if CONFIG_HAL_BOARD == HAL_BOARD_LINUX
@@ -243,6 +244,17 @@ void AP_CANManager::init()
             }
 
             AP_Param::load_object_from_eeprom((AP_CANopen*)_drivers[drv_num], AP_CANopen::var_info);
+            break;
+        }
+        case AP_CAN::Protocol::FDCAN: {
+            _drivers[drv_num] = _drv_param[drv_num]._fdcan = NEW_NOTHROW FD_CAN;
+
+            if (_drivers[drv_num] == nullptr) {
+                AP_BoardConfig::allocation_error("FD CAN %d", drv_num + 1);
+                continue;
+            }
+
+            AP_Param::load_object_from_eeprom((FD_CAN*)_drivers[drv_num], FD_CAN::var_info);
             break;
         }
         default:

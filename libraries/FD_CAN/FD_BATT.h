@@ -1,6 +1,7 @@
 #pragma once
 
 #include <AP_HAL/AP_HAL.h>
+#include <GCS_MAVLink/GCS.h>
 #include "FD_CAN.h"
 
 class FD_CAN;
@@ -18,6 +19,7 @@ public:
 
     void handle_info(AP_HAL::CANFrame &in_frame, bool do_print = false);
     void send_cmd(uint32_t id, uint8_t *data);
+    void send_bat_can_status(mavlink_channel_t chan);
 
     FD_CAN* _frotend_ptr;
 

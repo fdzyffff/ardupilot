@@ -149,10 +149,10 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
 #if AP_QUICKTUNE_ENABLED
     SCHED_TASK(update_quicktune, 40, 100, 163),
 #endif
-    SCHED_TASK(hxky_weight_update, 100, 50, 166),
-    SCHED_TASK(hxky_engine_update, 100, 50, 169),
-    SCHED_TASK(hxky_uart_update, 100, 50, 172),
-    SCHED_TASK(hxky_one_hz, 1, 100, 175),
+    SCHED_TASK(hxky_update_100hz, 100, 50, 166),
+    SCHED_TASK(hxky_update_1hz, 1, 50, 169),
+    SCHED_TASK(userhook_100Hz, 100, 100, 172),
+    SCHED_TASK(userhook_1Hz, 1, 100, 175),
 };
 
 void Plane::get_scheduler_tasks(const AP_Scheduler::Task *&tasks,

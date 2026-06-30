@@ -40,6 +40,9 @@ public:
     // called from high level code
     void update();
 
+    // send HXTS_BAT_CAN_STATUS via MAVLink
+    void send_bat_can_status(mavlink_channel_t chan);
+
     // test if the CAN driver is ready to be armed
     bool pre_arm_check(char* reason, uint8_t reason_len);
 

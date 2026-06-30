@@ -137,6 +137,8 @@ void Copter::init_ardupilot()
     USERHOOK_INIT
 #endif
 
+    hxky_init();
+
     // read Baro pressure at ground
     //-----------------------------
     barometer.set_log_baro_bit(MASK_LOG_IMU);

@@ -252,3 +252,10 @@ bool FD_CAN::pre_arm_check(char *reason, uint8_t reason_len) {
     snprintf(reason, reason_len, "FD CAN");
     return true;
 }
+
+void FD_CAN::send_bat_can_status(mavlink_channel_t chan)
+{
+    if (_batt_ptr != nullptr && _batt_enable) {
+        _batt_ptr->send_bat_can_status(chan);
+    }
+}

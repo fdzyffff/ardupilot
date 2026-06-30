@@ -1339,10 +1339,10 @@ private:
     void userhook_100Hz();
     void userhook_1Hz();
 
-    void hxky_weight_update();
-    void hxky_engine_update();
-    void hxky_uart_update();
-    void hxky_one_hz();
+    void handle_msg_hxky(const mavlink_message_t &msg);
+    void hxky_update_100hz();
+    void hxky_update_1hz();
+    void hxky_init();
 
     Uart uart;
     UAttack uattack;
