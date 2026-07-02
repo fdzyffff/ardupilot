@@ -795,6 +795,8 @@ const AP_Param::GroupInfo SIM::var_info3[] = {
 
     AP_GROUPINFO("OPOS_PTH",     55, SIM,  opos.pth, 0.0f),
 
+    AP_GROUPINFO("FRAME_TYPE",    56, SIM,  sim_frame_type, 0),
+
 #ifdef SFML_JOYSTICK
     AP_SUBGROUPEXTENSION("",      63, SIM,  var_sfml_joystick),
 #endif // SFML_JOYSTICK

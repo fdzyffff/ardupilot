@@ -313,6 +313,8 @@ public:
 
     AP_Float uart_byte_loss_pct;
 
+    AP_Int8 sim_frame_type;
+
 #ifdef SFML_JOYSTICK
     AP_Int8 sfml_joystick_id;
     AP_Int8 sfml_joystick_axis[8];

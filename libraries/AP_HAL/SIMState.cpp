@@ -32,6 +32,10 @@ using namespace AP_HAL;
 
 #include <AP_Terrain/AP_Terrain.h>
 
+// scaling value taken from AP_Airspeed_analog.cpp
+#define VOLTS_TO_PASCAL 819
+#define PASCAL_TO_VOLTS(_p) (_p/VOLTS_TO_PASCAL)
+
 #ifndef AP_SIM_FRAME_CLASS
 #if APM_BUILD_TYPE(APM_BUILD_ArduCopter)
 #define AP_SIM_FRAME_CLASS MultiCopter
@@ -143,6 +147,7 @@ void SIMState::fdm_input_local(void)
     }
     if (_sitl) {
         sitl_model->fill_fdm(_sitl->state);
+        _update_airspeed(_sitl->state.airspeed);
     }
 
     // output JSON state to ride along flight controllers
@@ -422,6 +427,43 @@ void SIMState::set_height_agl(void)
     if (_sitl != nullptr) {
         // fall back to flat earth model
         _sitl->state.height_agl = _sitl->state.altitude - home_alt;
+    }
+}
+
+/*
+  convert airspeed in m/s to an airspeed sensor value
+ */
+void SIMState::_update_airspeed(float true_airspeed)
+{
+    for (uint8_t i=0; i<AIRSPEED_MAX_SENSORS; i++) {
+        const auto &arspd = _sitl->airspeed[i];
+        float airspeed = true_airspeed / AP_Baro::get_EAS2TAS_for_alt_amsl(_sitl->state.altitude);
+        const float diff_pressure = sq(airspeed) / arspd.ratio;
+        float airspeed_raw;
+
+        // apply noise to the differential pressure
+        airspeed = sqrtf(fabsf(arspd.ratio*(diff_pressure + arspd.noise * rand_float())));
+
+        // check sensor failure
+        if (is_positive(arspd.fail)) {
+            airspeed = arspd.fail;
+        }
+
+        if (!is_zero(arspd.fail_pressure)) {
+            // compute a realistic pressure report given some level of trapped air
+            float tube_pressure = fabsf(arspd.fail_pressure - AP::baro().get_pressure() + arspd.fail_pitot_pressure);
+            airspeed = 340.29409348 * sqrt(5 * (pow((tube_pressure / SSL_AIR_PRESSURE + 1), 2.0/7.0) - 1.0));
+        }
+        float airspeed_pressure = (airspeed * airspeed) / arspd.ratio;
+
+        if (arspd.signflip) {
+            airspeed_pressure *= -1;
+        }
+
+        airspeed_raw = airspeed_pressure + arspd.offset;
+
+        _sitl->state.airspeed_raw_pressure[i] = airspeed_pressure;
+        airspeed_pin_value[i] = PASCAL_TO_VOLTS(airspeed_raw);
     }
 }
 

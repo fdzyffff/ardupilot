@@ -63,6 +63,8 @@
 
 #include <AP_RPM/RPM_DroneCAN.h>
 
+#include <AP_Parachute/AP_Parachute_DroneCAN_YHC.h>
+
 extern const AP_HAL::HAL& hal;
 
 // setup default pool size
@@ -405,6 +407,9 @@ void AP_DroneCAN::init(uint8_t driver_index, bool enable_filters)
 #endif
 #if AP_RPM_DRONECAN_ENABLED
     AP_RPM_DroneCAN::subscribe_msgs(this);
+#endif
+#if HAL_PARACHUTE_ENABLED
+    AP_Parachute_DroneCAN_YHC::subscribe_msgs(this);
 #endif
 
     act_out_array.set_timeout_ms(5);

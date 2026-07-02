@@ -92,6 +92,11 @@ public:
     // get singleton instance
     static AP_Parachute *get_singleton() { return _singleton; }
 
+    // YHC DroneCAN backend (set by subscribe_msgs)
+    void set_yhc_backend(class AP_Parachute_DroneCAN_YHC *p) { _yhc_dronecan = p; }
+    class AP_Parachute_DroneCAN_YHC *get_yhc_backend() const { return _yhc_dronecan; }
+    bool yhc_enabled() const { return _yhc_enabled > 0; }
+
 private:
     static AP_Parachute *_singleton;
     // Parameters
@@ -117,6 +122,10 @@ private:
     };
 
     AP_Int32    _options;
+
+    AP_Int8     _yhc_enabled;   // enable YHC DroneCAN parachute (1=enabled, 0=disabled)
+
+    AP_Parachute_DroneCAN_YHC *_yhc_dronecan;
 };
 
 namespace AP {

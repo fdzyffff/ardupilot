@@ -1,0 +1,3 @@
+# Bootloader for TH-7-SIM; reuse TH-7 bootloader hardware definition
+
+include ../TH-7/hwdef-bl.dat

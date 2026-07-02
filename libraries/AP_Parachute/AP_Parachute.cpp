@@ -1,4 +1,5 @@
 #include "AP_Parachute.h"
+#include "AP_Parachute_DroneCAN_YHC.h"
 
 #if HAL_PARACHUTE_ENABLED
 
@@ -83,6 +84,13 @@ const AP_Param::GroupInfo AP_Parachute::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("OPTIONS", 7, AP_Parachute, _options, AP_PARACHUTE_OPTIONS_DEFAULT),
 
+    // @Param: YHC_EN
+    // @DisplayName: YHC DroneCAN parachute enable
+    // @Description: Enable YHC (Firefly Manti4) DroneCAN parachute. Requires CAN bus setup.
+    // @Values: 0:Disabled,1:Enabled
+    // @User: Standard
+    AP_GROUPINFO("YHC_EN", 8, AP_Parachute, _yhc_enabled, 0),
+
     AP_GROUPEND
 };
 
@@ -107,6 +115,11 @@ void AP_Parachute::release()
 
     GCS_SEND_TEXT(MAV_SEVERITY_INFO,"Parachute: Released");
     LOGGER_WRITE_EVENT(LogEvent::PARACHUTE_RELEASED);
+
+    // also trigger YHC DroneCAN parachute (DEPLOY_FORCE)
+    if (_yhc_dronecan != nullptr) {
+        _yhc_dronecan->send_deploy_force();
+    }
 
     bool need_disarm = (_options.get() & uint32_t(Options::SkipDisarmBeforeParachuteRelease)) == 0;
     if (need_disarm) {
@@ -176,6 +189,11 @@ void AP_Parachute::update()
         _release_time = 0;
         // update AP_Notify
         AP_Notify::flags.parachute_release = false;
+    }
+
+    // YHC DroneCAN parachute periodic update
+    if (_yhc_dronecan != nullptr) {
+        _yhc_dronecan->update();
     }
 }
 
