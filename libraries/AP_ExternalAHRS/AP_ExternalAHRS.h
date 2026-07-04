@@ -36,6 +36,7 @@ public:
     friend class AP_ExternalAHRS_backend;
     friend class AP_ExternalAHRS_VectorNav;
     friend class AP_ExternalAHRS_MINS;
+    friend class AP_ExternalAHRS_KY1;
     friend class AP_ExternalAHRS_SITL;
 
     AP_ExternalAHRS();
@@ -67,6 +68,9 @@ public:
 
 #if AP_EXTERNAL_AHRS_MINS_ENABLED
         MINS = 15,
+#endif
+#if AP_EXTERNAL_AHRS_KY1_ENABLED
+        KY1 = 16,
 #endif
 #if AP_EXTERNAL_AHRS_SITL_ENABLED
         SITL = 99,

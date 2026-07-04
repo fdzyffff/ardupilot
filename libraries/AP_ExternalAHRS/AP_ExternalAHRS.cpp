@@ -27,6 +27,7 @@
 #include "AP_ExternalAHRS_MicroStrain7.h"
 #include "AP_ExternalAHRS_InertialLabs.h"
 #include "AP_ExternalAHRS_MINS.h"
+#include "AP_ExternalAHRS_KY1.h"
 #include "AP_ExternalAHRS_SITL.h"
 
 #include <GCS_MAVLink/GCS.h>
@@ -60,7 +61,7 @@ const AP_Param::GroupInfo AP_ExternalAHRS::var_info[] = {
     // @Param: _TYPE
     // @DisplayName: AHRS type
     // @Description: Type of AHRS device
-    // @Values: 0:None,1:VectorNav,2:MicroStrain5,5:InertialLabs,7:MicroStrain7
+    // @Values: 0:None,1:VectorNav,2:MicroStrain5,5:InertialLabs,7:MicroStrain7,15:MINS,16:KY1
     // @User: Standard
     AP_GROUPINFO_FLAGS("_TYPE", 1, AP_ExternalAHRS, devtype, HAL_EXTERNAL_AHRS_DEFAULT, AP_PARAM_FLAG_ENABLE),
 
@@ -139,6 +140,11 @@ void AP_ExternalAHRS::init(void)
 #if AP_EXTERNAL_AHRS_MINS_ENABLED
     case DevType::MINS:
         backend = NEW_NOTHROW AP_ExternalAHRS_MINS(this, state);
+        return;
+#endif
+#if AP_EXTERNAL_AHRS_KY1_ENABLED
+    case DevType::KY1:
+        backend = NEW_NOTHROW AP_ExternalAHRS_KY1(this, state);
         return;
 #endif
 #if AP_EXTERNAL_AHRS_SITL_ENABLED
