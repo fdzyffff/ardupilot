@@ -83,6 +83,17 @@ private:
     void print_ahrs_state();
     void handle_ahrs();
 
+    float ins_frame_count;
+    uint32_t _last_ins_print;
+    uint32_t _last_gps_post_ms;
+    uint32_t _last_log_ms;
+    uint32_t _last_ins_print_debug;
+    uint32_t _last_mag_pct_ms;
+    uint32_t _last_mag_print_ms;
+    uint32_t _last_airspeed_ms;
+    uint32_t _last_state_ms;
+    uint32_t _last_location_ms;
+
     FD1_msg_0XD1 _msg_0XD1;   //NAV系列惯导-惯导数据
     FD1_msg_0XCC _msg_0XCC;   //NAV系列惯导-磁校准指令
     FD1_msg_0XA1 _msg_0XA1;   //NAV系列惯导-罗盘校准状态

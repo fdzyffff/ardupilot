@@ -27,7 +27,6 @@ void Plane::userhook_1Hz()
     //     uart.get_port()->write(tt++);
     //     gcs().send_text(MAV_SEVERITY_WARNING, "Uart send");
     // }
-    
 }
 
 // position_ok - returns true if the horizontal absolute position is ok and home position is set
@@ -129,8 +128,8 @@ void Plane::user_handle_msg(const mavlink_message_t &msg)
                 if (use_latlng) {
                     target_loc.lat = packet.lat;
                     target_loc.lng = packet.lng;
+                    plane.mode_rtl.set_return_loc(target_loc);
                 }
-                mode_rtl.set_return_loc(target_loc);
                 if (!plane.set_mode(mode_rtl, ModeReason::GCS_COMMAND)) {
                     plane.mode_rtl.cancel_return_loc();
                 }

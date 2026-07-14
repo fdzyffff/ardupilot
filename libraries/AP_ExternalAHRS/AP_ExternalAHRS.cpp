@@ -28,6 +28,7 @@
 #include "AP_ExternalAHRS_InertialLabs.h"
 #include "AP_ExternalAHRS_MINS.h"
 #include "AP_ExternalAHRS_HITL.h"
+#include "AP_ExternalAHRS_SITL.h"
 
 #include <GCS_MAVLink/GCS.h>
 #include <AP_AHRS/AP_AHRS.h>
@@ -145,6 +146,12 @@ void AP_ExternalAHRS::init(void)
 #if AP_EXTERNAL_AHRS_HITL_ENABLED
     case DevType::HITL:
         backend = NEW_NOTHROW AP_ExternalAHRS_HITL(this, state);
+        return;
+#endif
+
+#if AP_EXTERNAL_AHRS_SITL_ENABLED
+    case DevType::SITL:
+        backend = NEW_NOTHROW AP_ExternalAHRS_SITL(this, state);
         return;
 #endif
 

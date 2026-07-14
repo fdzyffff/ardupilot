@@ -115,11 +115,9 @@ void AP_ExternalAHRS_MINS::build_packet_ins()
 
 void AP_ExternalAHRS_MINS::print_ahrs_state()
 {
-    static uint32_t _last_state_ms = 0;
     if (_msg_0XD1._msg_1.content.msg.state == 1) {
         return;
     }
-    _last_state_ms = AP_HAL::millis();
 
     if (AP_HAL::millis() - _last_state_ms > 5000) {
         if ((_msg_0XD1._msg_1.content.msg.state & 0b00000111) == 0) {
@@ -203,7 +201,7 @@ void AP_ExternalAHRS_MINS::handle_ahrs()
             // state.location.set_alt_cm(5322, Location::AltFrame::ABSOLUTE);
 
 
-        // if (frontend.has_sensor(AP_ExternalAHRS::AvailableSensor::GPS)) {
+        if (frontend.has_sensor(AP_ExternalAHRS::AvailableSensor::GPS)) {
             //fake gps
             uint32_t gps_week_ms = _msg_0XD1._msg_1.content.msg.gps_day * 84600 * 1000 + _msg_0XD1._msg_1.content.msg.gps_hh * 3600 * 1000 + _msg_0XD1._msg_1.content.msg.gps_mm * 60 * 1000 + _msg_0XD1._msg_1.content.msg.gps_ss * 1000 + _msg_0XD1._msg_1.content.msg.gps_ms;
             frontend.gps_data.gps_week                    = (_msg_0XD1._msg_1.content.msg.gps_week);
@@ -238,7 +236,7 @@ void AP_ExternalAHRS_MINS::handle_ahrs()
             // frontend.gps_data.ground_course               = 112.f;
 
             post_gps();
-        // }
+        }
 
         // if (frontend.has_sensor(AP_ExternalAHRS::AvailableSensor::IMU)) {
         //     post_imu();
@@ -246,27 +244,29 @@ void AP_ExternalAHRS_MINS::handle_ahrs()
 
     }
 
-    static uint32_t _last_location_ms = 0;
-
     if (!state.have_origin && state.have_location) {
         if (_last_location_ms == 0) {
             _last_location_ms = AP_HAL::millis();
         }
 
         if (_last_location_ms != 0 && (AP_HAL::millis() - _last_location_ms > 10000)) {
-            state.origin.lng = state.location.lng;
-            state.origin.lat = state.location.lat;
-            state.origin.alt = state.location.alt;
+            state.origin = Location{state.location.lat, state.location.lng, state.location.alt, Location::AltFrame::ABSOLUTE};
             state.have_origin = true;
             _last_location_ms = 0;
             gcs().send_text(MAV_SEVERITY_INFO, "Origin: %d, %d", (int)state.origin.lat, (int)state.origin.lng);
+            gcs().send_text(MAV_SEVERITY_INFO, "Origin ALT: %d", (int)state.location.alt);
         }
     }
 
-    static uint32_t _last_post = AP_HAL::millis();
-    if (AP_HAL::millis() - _last_post > 3000) {
-        _last_post = AP_HAL::millis();
+    ins_frame_count += 1.0f;
+    if (AP_HAL::millis() - _last_ins_print > 3000) {
+        float dt = (float)(AP_HAL::millis() - _last_ins_print) * 0.001f;
+        _last_ins_print = AP_HAL::millis();
         if (frontend.debug_print.get() & (1<<6)) {
+            if (!is_zero(dt)) {
+                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "INS Rate [%0.1f Hz]", ins_frame_count/dt);
+            }
+            ins_frame_count = 0.0f;
             gcs().send_text(MAV_SEVERITY_INFO, "Counter %d", int(_msg_0XD1._msg_1.content.msg.counter));
             // gcs().send_text(MAV_SEVERITY_INFO, "AHRS fix %d | ok %d", _msg_0XD1._msg_1.content.msg.gps_fix_state, _msg_0XD1._msg_1.content.msg.gps_ok);
             // gcs().send_text(MAV_SEVERITY_INFO, "AHRS lng %d | lat %d", int(_msg_0XD1._msg_1.content.msg.lng), int(_msg_0XD1._msg_1.content.msg.lat));
@@ -282,11 +282,10 @@ void AP_ExternalAHRS_MINS::handle_ahrs()
 // Posts data from an gps packet to `state` and `handle_external` methods
 void AP_ExternalAHRS_MINS::post_gps()
 {
-    static uint32_t last_gps_post_ms = AP_HAL::millis();
-    if (AP_HAL::millis() - last_gps_post_ms < 100) {
+    if (AP_HAL::millis() - _last_gps_post_ms < 100) {
         return;
     }
-    last_gps_post_ms = AP_HAL::millis();
+    _last_gps_post_ms = AP_HAL::millis();
     AP::gps().handle_external(frontend.gps_data, 0);
 }
 
@@ -300,11 +299,10 @@ void AP_ExternalAHRS_MINS::post_imu()
 void AP_ExternalAHRS_MINS::update_log()
 {
 #if HAL_LOGGING_ENABLED
-    static uint32_t last_log_ms = AP_HAL::millis();
-    if (AP_HAL::millis() - last_log_ms < 20) {
+    if (AP_HAL::millis() - _last_log_ms < 20) {
         return;
     }
-    last_log_ms = AP_HAL::millis();
+    _last_log_ms = AP_HAL::millis();
 
     uint64_t now_us = AP_HAL::micros64();
 
@@ -344,9 +342,8 @@ void AP_ExternalAHRS_MINS::update_log()
 
 void AP_ExternalAHRS_MINS::update_print()
 {
-    static uint32_t _last_post = AP_HAL::millis();
-    if (AP_HAL::millis() - _last_post > 3000) {
-        _last_post = AP_HAL::millis();
+    if (AP_HAL::millis() - _last_ins_print_debug > 3000) {
+        _last_ins_print_debug = AP_HAL::millis();
         if (mag_calibrating) {
             return;
         }
@@ -422,6 +419,12 @@ void AP_ExternalAHRS_MINS::get_filter_status(nav_filter_status &status) const
 
 bool AP_ExternalAHRS_MINS::get_variances(float &velVar, float &posVar, float &hgtVar, Vector3f &magVar, float &tasVar) const
 {
+    velVar = 0;
+    posVar = 0;
+    hgtVar = 0;
+    magVar.zero();
+    tasVar = 0;
+
     return false;
 }
 
@@ -447,7 +450,6 @@ void AP_ExternalAHRS_MINS::update_mag_cal()
     }
 
     if (mag_calibrating) {
-        static uint32_t _last_mag_pct_ms = 0;
         if (AP_HAL::millis() - _last_mag_pct_ms > 500) {
             send_mag_cal(0x04);
             _last_mag_pct_ms = AP_HAL::millis();
@@ -459,6 +461,7 @@ void AP_ExternalAHRS_MINS::update_mag_cal()
             mag_calibrating = false;
         }
 
+
         for (uint8_t mag_id = 0; mag_id < 2; mag_id++) {
             if (AP_HAL::millis() - _mag_cal[mag_id].last_cal_ms > 3000) {
                 // gcs().send_text(MAV_SEVERITY_INFO, "No cal progress, cancel");
@@ -467,7 +470,6 @@ void AP_ExternalAHRS_MINS::update_mag_cal()
             }
         }
 
-        static uint32_t _last_mag_print_ms = 0;
         if (AP_HAL::millis() - _last_mag_print_ms > 1500) {
             _last_mag_print_ms = AP_HAL::millis();
             gcs().send_text(MAV_SEVERITY_INFO, "MAG1 :%s, MAG2 :%s", _mag_cal[0].msg, _mag_cal[1].msg);
@@ -529,7 +531,6 @@ void AP_ExternalAHRS_MINS::handle_mag_cal()
 
 void AP_ExternalAHRS_MINS::update_airspeed()
 {
-    static uint32_t _last_airspeed_ms = 0;
     if (AP_HAL::millis() - _last_airspeed_ms > 1000) {
         _msg_0XA2._msg_1.length = 24;
         _msg_0XA2._msg_1.content.msg.ID = 0xA2;

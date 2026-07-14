@@ -37,6 +37,7 @@ public:
     friend class AP_ExternalAHRS_VectorNav;
     friend class AP_ExternalAHRS_MINS;
     friend class AP_ExternalAHRS_HITL;
+    friend class AP_ExternalAHRS_SITL;
 
     AP_ExternalAHRS();
 
@@ -70,6 +71,9 @@ public:
 #endif
 #if AP_EXTERNAL_AHRS_HITL_ENABLED
         HITL = 99,
+#endif
+#if AP_EXTERNAL_AHRS_SITL_ENABLED
+        SITL = 100,
 #endif
     };
 

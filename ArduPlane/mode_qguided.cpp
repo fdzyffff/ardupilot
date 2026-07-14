@@ -105,6 +105,11 @@ void ModeQGuided::wp_run()
         quadplane.pos_control->init_xy_controller();
     }
 
+
+    if (quadplane.should_relax()) {
+        ;
+    }
+
     // run wpnav controller
     quadplane.wp_nav->update_wpnav();
 
@@ -131,9 +136,24 @@ void ModeQGuided::wp_run()
 
 void ModeQGuided::do_takeoff(float alt_m, float yaw_cd)
 {
+    if (is_takeoff) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Already takeoff, is_takeoff = true");
+        return;
+    }
+
     if (plane.quadplane.is_flying()) {
-        gcs().send_text(MAV_SEVERITY_INFO, "Already flying - no takeoff");
-        return ;
+        const float thr = plane.quadplane.motors->get_throttle();
+        const bool thr_lower = plane.quadplane.motors->limit.throttle_lower;
+        const bool in_trans = plane.quadplane.tailsitter.in_vtol_transition();
+        gcs().send_text(MAV_SEVERITY_INFO, "do_takeoff: is_flying=true, thr=%.3f, thr_lower=%d, in_vtol_trans=%d, ",
+                        (float)thr, (int)thr_lower, (int)in_trans);
+
+        if (!in_trans && thr < 0.15f) {
+            gcs().send_text(MAV_SEVERITY_INFO, "takeoff with thr %0.3f", (float)thr);
+        } else {
+            gcs().send_text(MAV_SEVERITY_INFO, "Already flying - no takeoff");
+            return ;
+        }
     }
 
     if (!plane.arming.is_armed_and_safety_off()) {
