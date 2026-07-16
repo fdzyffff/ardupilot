@@ -105,8 +105,7 @@ void ModeQGuided::wp_run()
         quadplane.pos_control->init_xy_controller();
     }
 
-
-    if (quadplane.should_relax()) {
+    if (quadplane.land_detector(5000)) {
         ;
     }
 
@@ -145,11 +144,19 @@ void ModeQGuided::do_takeoff(float alt_m, float yaw_cd)
         const float thr = plane.quadplane.motors->get_throttle();
         const bool thr_lower = plane.quadplane.motors->limit.throttle_lower;
         const bool in_trans = plane.quadplane.tailsitter.in_vtol_transition();
-        gcs().send_text(MAV_SEVERITY_INFO, "do_takeoff: is_flying=true, thr=%.3f, thr_lower=%d, in_vtol_trans=%d, ",
-                        (float)thr, (int)thr_lower, (int)in_trans);
+        bool alt_ok = false;
+        int32_t alt_cm;
+        if (plane.current_loc.get_alt_cm(Location::AltFrame::ABOVE_HOME, alt_cm)) {
+            if (alt_cm < 500) {
+                alt_ok = true;
+            }
+        }
+        const float rel_alt = alt_cm * 0.01f;
+        gcs().send_text(MAV_SEVERITY_INFO, "do_takeoff: is_flying=true, thr=%.3f, thr_lower=%d, in_vtol_trans=%d, rel_alt=%.1f",
+                        (double)thr, (int)thr_lower, (int)in_trans, (double)rel_alt);
 
-        if (!in_trans && thr < 0.15f) {
-            gcs().send_text(MAV_SEVERITY_INFO, "takeoff with thr %0.3f", (float)thr);
+        if (!in_trans && (thr < 0.15f || alt_ok)) {
+            gcs().send_text(MAV_SEVERITY_INFO, "takeoff with thr %.3f alt %.1f", (double)thr, (double)rel_alt);
         } else {
             gcs().send_text(MAV_SEVERITY_INFO, "Already flying - no takeoff");
             return ;

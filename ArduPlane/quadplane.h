@@ -405,6 +405,11 @@ private:
     AP_Float tuning_ptch_d_min;
     AP_Float tuning_ptch_d_max;
 
+    // tuning update state
+    uint32_t _last_tuning_update_ms;
+    float _last_tuning_spd_f;
+    uint32_t _last_tuning_print_ms;
+
     AP_Float takeoff_q_alt;
 
     // which fwd throttle handling method is active

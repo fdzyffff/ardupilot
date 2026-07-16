@@ -126,11 +126,11 @@ float ModeExternal::attack_throttle_raw()
 
 float ModeExternal::attack_throttle_with_comp()
 {
-    float quad_hover_throttle = 35.f;
+    float quad_hover_throttle = 32.f;
     float plane_hover_throttle = attack_throttle_raw();
     float pitch_deg = 0.5* (plane.nav_pitch_cd * 0.01f + degrees(AP::ahrs().get_pitch()));
     pitch_deg = constrain_float(pitch_deg, -30.f, 30.f);
-    float ret = (quad_hover_throttle * sinf(radians(pitch_deg)) + plane_hover_throttle * cosf(radians(pitch_deg)));
+    float ret = (quad_hover_throttle * sinf(radians(pitch_deg)) + plane_hover_throttle);
     return ret;
 }
 

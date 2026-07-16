@@ -3194,12 +3194,40 @@ void QuadPlane::takeoff_controller(void)
     set_pilot_yaw_rate_time_constant();
 
     if ((plane.control_mode == &plane.mode_qguided) && (plane.mode_qguided.is_takeoff)) {
-        attitude_control->input_euler_angle_roll_pitch_yaw(plane.nav_roll_cd, plane.nav_pitch_cd, plane.mode_qguided.get_yaw_cd(), true);
+        // get height above ground
+        bool alt_ok = true;
+        float height_above_ground = -1.0f;
+        int32_t alt_above_home_cm = 0;
+        if (plane.current_loc.get_alt_cm(Location::AltFrame::ABOVE_HOME, alt_above_home_cm)) {
+            height_above_ground = alt_above_home_cm * 0.01f;
+        } else {
+            alt_ok = false;
+        }
+        float pos_z = 0.0f;
+        Location origin;
+        if (ahrs.get_origin(origin)) {
+            pos_z = (plane.next_WP_loc.alt - origin.alt) * 0.01f;
+        } else {
+            alt_ok = false;
+        }
+
+        if (alt_ok && height_above_ground < 1.5f) {
+            if (plane.ahrs.groundspeed() < 2.0f) {
+                attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(0.0f, 0.0f, 0.0f);
+            } else {
+                attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(plane.nav_roll_cd, plane.nav_pitch_cd, 0.0f);
+            }
+        } else if (alt_ok && height_above_ground < MIN(10.0f, pos_z - 2.0f)) {
+            attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(plane.nav_roll_cd, plane.nav_pitch_cd, 0.0f);
+        } else {
+            attitude_control->input_euler_angle_roll_pitch_yaw(plane.nav_roll_cd, plane.nav_pitch_cd, plane.mode_qguided.get_yaw_cd(), true);
+        }
     } else {
         attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(plane.nav_roll_cd,
                                                                       plane.nav_pitch_cd,
                                                                       get_pilot_input_yaw_rate_cds() + get_weathervane_yaw_rate_cds());
     }
+
 
     float vel_z = wp_nav->get_default_speed_up();
     if (plane.control_mode == &plane.mode_guided && guided_takeoff) {
@@ -4892,29 +4920,26 @@ void QuadPlane::Log_Write_AttRate()
 }
 
 void QuadPlane::tuning_update(float spd_f) {
-    static uint32_t _last_update_ms = millis();
-    static uint32_t _last_spd_f = spd_f;
-    if (millis() - _last_update_ms > 333) {
-        _last_update_ms = millis();
-        _last_spd_f = (spd_f - _last_spd_f)*0.5 + _last_spd_f*0.5;
+    if (millis() - _last_tuning_update_ms > 333) {
+        _last_tuning_update_ms = millis();
+        _last_tuning_spd_f = spd_f*0.1 + _last_tuning_spd_f*0.9;
 
         float ptch_p_min = tuning_ptch_p_min.get();
         float ptch_p_max = tuning_ptch_p_max.get();
         if (!is_zero(ptch_p_min) && !is_zero(ptch_p_max)) {
-            const float tuning_ptch_p_value = linear_interpolate(tuning_ptch_p_min, tuning_ptch_p_max, _last_spd_f, 0.0f, 1.0f);
+            const float tuning_ptch_p_value = linear_interpolate(tuning_ptch_p_min, tuning_ptch_p_max, _last_tuning_spd_f, 0.0f, 1.0f);
             attitude_control->get_rate_pitch_pid().set_kP(tuning_ptch_p_value);
         }
         float ptch_d_min = tuning_ptch_d_min.get();
         float ptch_d_max = tuning_ptch_d_max.get();
         if (!is_zero(ptch_d_min) && !is_zero(ptch_d_max)) {
-            const float tuning_ptch_d_value = linear_interpolate(tuning_ptch_d_min, tuning_ptch_d_max, _last_spd_f, 0.0f, 1.0f);
+            const float tuning_ptch_d_value = linear_interpolate(tuning_ptch_d_min, tuning_ptch_d_max, _last_tuning_spd_f, 0.0f, 1.0f);
             attitude_control->get_rate_pitch_pid().set_kD(tuning_ptch_d_value);
         }
     }
 
-    static uint32_t _last_print_ms = millis();
-    if (millis() - _last_print_ms > 1000) {
-        _last_print_ms = millis();
+    if (millis() - _last_tuning_print_ms > 1000) {
+        _last_tuning_print_ms = millis();
         // gcs().send_text(MAV_SEVERITY_INFO, "P|D: %0.2f | %0.2f [%0.2f]", attitude_control->get_rate_pitch_pid().kP().get(), attitude_control->get_rate_pitch_pid().kD().get(), spd_f);
     }
 }
