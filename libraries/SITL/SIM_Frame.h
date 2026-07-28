@@ -82,7 +82,7 @@ private:
      */
     const struct Model {
         // model mass kg
-        float mass = 3.0;
+        float mass = 2.0;
 
         // diameter of model
         float diagonal_size = 0.35;
@@ -90,7 +90,7 @@ private:
         /*
           the ref values are for a test at fixed angle, used to estimate drag
          */
-        float refSpd = 15.08; // m/s
+        float refSpd = 25.08; // m/s
         float refAngle = 45;  // degrees
         float refVoltage = 12.09; // Volts
         float refCurrent = 29.3; // Amps
@@ -105,7 +105,7 @@ private:
         float battCapacityAh = 0.0;
 
         // CTUN.ThO at hover at refAlt
-        float hoverThrOut = 0.39;
+        float hoverThrOut = 0.29;
 
         // MOT_THST_EXPO
         float propExpo = 0.65;
