@@ -172,6 +172,7 @@
 #include "avoidance_adsb.h"
 #endif
 // Local modules
+#include "UAttack.h"
 #include "Parameters.h"
 #if USER_PARAMS_ENABLED
 #include "UserParameters.h"
@@ -197,11 +198,13 @@ public:
     friend class ToyMode;
     friend class RC_Channel_Copter;
     friend class RC_Channels_Copter;
+    friend class UAttack;
 
     friend class AutoTune;
 
     friend class Mode;
     friend class ModeAcro;
+    friend class ModeAttack;
     friend class ModeAcro_Heli;
     friend class ModeAltHold;
     friend class ModeAuto;
@@ -478,6 +481,9 @@ private:
     AC_PosControl *pos_control;
     AC_WPNav *wp_nav;
     AC_Loiter *loiter_nav;
+
+    // fixed top-camera target acquisition and rate command generator
+    UAttack uattack;
 
 #if AC_CUSTOMCONTROL_MULTI_ENABLED
     AC_CustomControl custom_control{ahrs_view, attitude_control, motors};
@@ -1029,6 +1035,7 @@ private:
     ModeAcro mode_acro;
 #endif
 #endif
+    ModeAttack mode_attack;
     ModeAltHold mode_althold;
 #if MODE_AUTO_ENABLED
     ModeAuto mode_auto;
@@ -1110,6 +1117,9 @@ private:
 
     bool started_rate_thread;
     bool using_rate_thread;
+
+    void check_forced_land_or_rtl();
+    bool force_safe_triggered = false;
 
 public:
     void failsafe_check();      // failsafe.cpp

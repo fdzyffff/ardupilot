@@ -38,6 +38,9 @@ Mode *Copter::mode_from_mode_num(const Mode::Number mode)
             return &mode_acro;
 #endif
 
+        case Mode::Number::ATTACK:
+            return &mode_attack;
+
         case Mode::Number::STABILIZE:
             return &mode_stabilize;
 
@@ -208,7 +211,8 @@ bool Copter::gcs_mode_enabled(const Mode::Number mode_num)
         (uint8_t)Mode::Number::SYSTEMID,
         (uint8_t)Mode::Number::AUTOROTATE,
         (uint8_t)Mode::Number::AUTO_RTL,
-        (uint8_t)Mode::Number::TURTLE
+        (uint8_t)Mode::Number::TURTLE,
+        (uint8_t)Mode::Number::ATTACK
     };
 
     return !block_GCS_mode_change((uint8_t)mode_num, mode_list, ARRAY_SIZE(mode_list));
@@ -287,6 +291,7 @@ uint32_t Copter::get_available_mode_enabled_mask() const
 #if MODE_TURTLE_ENABLED
         &copter.mode_turtle,
 #endif
+        &copter.mode_attack,
     };
 
     static_assert(ARRAY_SIZE(modes) <= 32, "Flight modes must fit in 32 bit bitmask");

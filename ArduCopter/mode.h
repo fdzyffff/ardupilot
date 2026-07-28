@@ -101,6 +101,7 @@ public:
         AUTOROTATE =   26,  // Autonomous autorotation
         AUTO_RTL =     27,  // Auto RTL, this is not a true mode, AUTO will report as this mode if entered to perform a DO_LAND_START Landing sequence
         TURTLE =       28,  // Flip over after crash
+        ATTACK =       29,  // body-frame angular rate control from UAttack with automatic throttle
 
         // Mode number 30 reserved for "offboard" for external/lua control.
 
@@ -477,6 +478,31 @@ private:
     bool disable_air_mode_reset;
 };
 #endif
+
+
+class ModeAttack : public Mode {
+public:
+    using Mode::Mode;
+
+    Number mode_number() const override { return Number::ATTACK; }
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    bool requires_position() const override { return false; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(AP_Arming::Method method) const override { return true; }
+    bool is_autopilot() const override { return true; }
+    bool crash_check_enabled() const override { return false; }
+
+protected:
+    const char *name() const override { return "Attack"; }
+    const char *name4() const override { return "ATCK"; }
+
+private:
+    float throttle_out;
+    uint32_t target_lost_start_ms;
+};
+
 
 #if FRAME_CONFIG == HELI_FRAME
 class ModeAcro_Heli : public ModeAcro {
