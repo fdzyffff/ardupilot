@@ -2,17 +2,17 @@
 
 const AP_Param::GroupInfo UAttack::var_info[] = {
 
-    AP_SUBGROUPINFO(attack_pitch_pid      , "PTH_K1_", 0, UAttack, AC_PID),
-    AP_GROUPINFO("PTH_K2",      1, UAttack, attack_k2_pitch,         1.0f),
-    AP_GROUPINFO("PTH_K3",      2, UAttack, attack_k3_pitch,         1.0f),
+    AP_SUBGROUPINFO(attack_kr_pitch_pid   , "PTH_KR_", 0, UAttack, AC_PID),
+    AP_GROUPINFO("PTH_KT",      1, UAttack, attack_kt_pitch,         1.0f),
+    AP_GROUPINFO("PTH_KV",      2, UAttack, attack_kv_pitch,         1.0f),
     AP_GROUPINFO("PTH_LIM",     3, UAttack, pitch_limit,            30.f),
     AP_GROUPINFO("PTH_RLIM",    4, UAttack, pitch_rate_limit,       30.f),
     AP_GROUPINFO("PTH_OFF",     5, UAttack, attack_pitch_off,        0.0f),
-    AP_GROUPINFO("YAW_K1",      6, UAttack, attack_k1_yaw,           0.0f),
-    AP_GROUPINFO("YAW_K2",      7, UAttack, attack_k2_yaw,           1.0f),
-    AP_GROUPINFO("YAW_K3",      8, UAttack, attack_k3_yaw,           1.0f),
-    AP_SUBGROUPINFO(attack_roll_pid       , "RLL_K1_", 9, UAttack, AC_PID),
-    AP_GROUPINFO("RLL_K2",     10, UAttack, attack_k2_roll,          0.5f),
+    AP_GROUPINFO("YAW_KR",      6, UAttack, attack_kr_yaw,           0.0f),
+    AP_GROUPINFO("YAW_KT",      7, UAttack, attack_kt_yaw,           1.0f),
+    AP_GROUPINFO("YAW_KV",      8, UAttack, attack_kv_yaw,           1.0f),
+    AP_SUBGROUPINFO(attack_kr_roll_pid    , "RLL_KR_", 9, UAttack, AC_PID),
+    AP_GROUPINFO("RLL_KT",     10, UAttack, attack_kt_roll,          0.5f),
     AP_GROUPINFO("ANGLE",      11, UAttack, attack_angle,            0.f),
     AP_GROUPINFO("ANGLE_K",    12, UAttack, attack_k_angle,          1.0f),
     AP_GROUPINFO("THR",        13, UAttack, attack_throttle,        75.0f),
@@ -28,6 +28,11 @@ const AP_Param::GroupInfo UAttack::var_info[] = {
     AP_SUBGROUPPTR(_Target_ptr_cam_DYT,     "TC_",    22, UAttack,  FD_Target_DYT),
 
     AP_SUBGROUPINFO(attack_vely_pid    , "VELY_", 23, UAttack, AC_PID),
+    AP_GROUPINFO("RLL_RLIM",   24, UAttack, roll_rate_limit,          45.0f),
+    AP_GROUPINFO("RLL_LVL_K",  25, UAttack, roll_level_gain,           0.05f),
+    AP_GROUPINFO("PTH_K1",     26, UAttack, attack_k1_pitch,            1.0f),
+    AP_GROUPINFO("YAW_K1",     27, UAttack, attack_k1_yaw,              1.0f),
+    AP_GROUPINFO("RLL_K1",     28, UAttack, attack_k1_roll,             1.0f),
     AP_GROUPEND
 };
 
@@ -35,8 +40,8 @@ UAttack::UAttack()
 {
     AP_Param::setup_object_defaults(this, var_info);
 
-    _last_yaw = 0.0f;
-    _last_yaw_sample = 0.0f;
+    _last_align_angle = 0.0f;
+    _align_angle_valid = false;
 }
 
 // initialise
@@ -44,6 +49,7 @@ void UAttack::init()
 {
     udelay.init();
     _active = false;
+    _angle_only_control = false;
     bf_info.x = 0.0f;
     bf_info.y = 0.0f;
     vel_bf_info.x = 0.0f;
@@ -68,21 +74,29 @@ void UAttack::init()
     display_info.count = 0;
     _target_pitch_rate = 0.0f;
     _target_yaw_rate = 0.0f;
-    _target_roll_angle = 0.0f;
+    _target_roll_rate = 0.0f;
     _Target_ptr_cam = nullptr;
     _Target_ptr_loc = nullptr;
     _last_ms = millis();
     init_target();
 
-    _yaw_sample_filter.set_cutoff_frequency(60.f, filt_yaw_hz.get());
-    _pitch_sample_filter.set_cutoff_frequency(60.f, filt_pithc_hz.get());
+    _los_e_unit_filter.set_cutoff_frequency(60.f, MIN(filt_yaw_hz.get(), filt_pithc_hz.get()));
     gcs().send_text(MAV_SEVERITY_WARNING, "Target FILT HZ [%0.0f, %0.0f]", filt_yaw_hz.get(), filt_pithc_hz.get());
 }
 
 void UAttack::update_control_value() {
+    const float camera_spherical_angle_deg = degrees(acosf(constrain_float(cosf(radians(bf_info.y)) * cosf(radians(bf_info.x)), -1.0f, 1.0f)));
+    const bool angle_only_control = is_active() && camera_spherical_angle_deg > 40.0f;
+    if (angle_only_control != _angle_only_control) {
+        _align_angle_valid = false;
+        _align_angle_rate_filter.reset();
+        attack_kr_roll_pid.reset_I();
+        attack_kr_roll_pid.reset_filter();
+    }
+    _angle_only_control = angle_only_control;
     update_target_pitch_rate();
     update_target_yaw_rate();
-    update_target_roll_angle();
+    update_target_roll_rate();
     _last_ms = millis();
     update_log();
 }
@@ -101,7 +115,7 @@ void UAttack::update_log() {
                                 (float)ef_rate_info.x,
                                 (float)ef_rate_info.y,
                                 (float)_target_pitch_rate,
-                                (float)_target_roll_angle,
+                                (float)_target_roll_rate,
                                 (float)_target_yaw_rate);
 
     AP::logger().WriteStreaming("UAT2",
@@ -127,14 +141,14 @@ void UAttack::update_log() {
                                 "F--------",
                                 "Qffffffff",
                                 AP_HAL::micros64(),
-                                (float)attack_pitch_pid.get_pid_info().target,
-                                (float)attack_pitch_pid.get_pid_info().actual,
-                                (float)attack_pitch_pid.get_pid_info().FF,
-                                (float)attack_pitch_pid.get_pid_info().P,
-                                (float)attack_pitch_pid.get_pid_info().I,
-                                (float)attack_pitch_pid.get_pid_info().D,
-                                (float)attack_pitch_pid.get_pid_info().slew_rate,
-                                (float)attack_pitch_pid.get_pid_info().Dmod);
+                                (float)attack_kr_pitch_pid.get_pid_info().target,
+                                (float)attack_kr_pitch_pid.get_pid_info().actual,
+                                (float)attack_kr_pitch_pid.get_pid_info().FF,
+                                (float)attack_kr_pitch_pid.get_pid_info().P,
+                                (float)attack_kr_pitch_pid.get_pid_info().I,
+                                (float)attack_kr_pitch_pid.get_pid_info().D,
+                                (float)attack_kr_pitch_pid.get_pid_info().slew_rate,
+                                (float)attack_kr_pitch_pid.get_pid_info().Dmod);
 
     AP::logger().WriteStreaming("UARL",
                                 "TimeUS,target,actual,ff,P,I,D,srate,dmod",
@@ -142,14 +156,14 @@ void UAttack::update_log() {
                                 "F--------",
                                 "Qffffffff",
                                 AP_HAL::micros64(),
-                                (float)attack_roll_pid.get_pid_info().target,
-                                (float)attack_roll_pid.get_pid_info().actual,
-                                (float)attack_roll_pid.get_pid_info().FF,
-                                (float)attack_roll_pid.get_pid_info().P,
-                                (float)attack_roll_pid.get_pid_info().I,
-                                (float)attack_roll_pid.get_pid_info().D,
-                                (float)attack_roll_pid.get_pid_info().slew_rate,
-                                (float)attack_roll_pid.get_pid_info().Dmod);
+                                (float)attack_kr_roll_pid.get_pid_info().target,
+                                (float)attack_kr_roll_pid.get_pid_info().actual,
+                                (float)attack_kr_roll_pid.get_pid_info().FF,
+                                (float)attack_kr_roll_pid.get_pid_info().P,
+                                (float)attack_kr_roll_pid.get_pid_info().I,
+                                (float)attack_kr_roll_pid.get_pid_info().D,
+                                (float)attack_kr_roll_pid.get_pid_info().slew_rate,
+                                (float)attack_kr_roll_pid.get_pid_info().Dmod);
 
     AP::logger().WriteStreaming("UVEY",
                                 "TimeUS,target,actual,ff,P,I,D,srate,dmod",
@@ -243,7 +257,7 @@ void UAttack::update()
                 Location tmp_loc;
                 Vector3f tmp_vel;
                 if (plane.g2.follow.get_target_location_and_velocity(tmp_loc, tmp_vel)) {
-                    Vector3p tmp_off = Vector3p(tmp_vel.x * 2.0f, tmp_vel.y * 2.0f, tmp_vel.z * 2.0f);
+                    Vector3p tmp_off = Vector3p(tmp_vel.x * 0.1f, tmp_vel.y * 0.1f, tmp_vel.z * 0.1f);
                     tmp_loc.offset(tmp_off);
                     _Target_ptr_loc->set_target_loc(tmp_loc);
                 }
@@ -291,8 +305,10 @@ void UAttack::update()
         current_idx = 0;
 
         _target_pitch_rate = 0.0f;
-        _target_roll_angle = 0.0f;
+        _target_roll_rate = 0.0f;
         _target_yaw_rate = 0.0f;
+        _align_angle_valid = false;
+        _align_angle_rate_filter.reset();
     }
 
     float p1 = 0;
@@ -404,18 +420,29 @@ void UAttack::handle_info(float p1, float p2) {
     ef_info.x = angle_yaw;
     ef_info.y = angle_pitch;
 
-    float delta_yaw = wrap_180(wrap_360(angle_yaw) - wrap_360(_last_yaw));
-    _last_yaw = angle_yaw;
-    _last_yaw_sample += delta_yaw;
+    const Vector3f los_e_filtered = _los_e_unit_filter.apply(ef_unit);
+    Vector3f los_e_unit = los_e_filtered;
+    if (!los_e_unit.is_zero()) {
+        los_e_unit.normalize();
+    }
 
-    _yaw_sample_filter.apply(_last_yaw_sample);
-    _pitch_sample_filter.apply(angle_pitch);
+    const uint32_t sample_ms = millis();
+    _los_e_x_filter.update(los_e_unit.x, sample_ms);
+    _los_e_y_filter.update(los_e_unit.y, sample_ms);
+    _los_e_z_filter.update(los_e_unit.z, sample_ms);
 
-    _yaw_filter.update(_yaw_sample_filter.get(), millis());
-    _pitch_filter.update(_pitch_sample_filter.get(), millis());
+    Vector3f los_e_unit_dot(_los_e_x_filter.slope() * 1000.0f,
+                            _los_e_y_filter.slope() * 1000.0f,
+                            _los_e_z_filter.slope() * 1000.0f);
+    los_e_unit_dot -= los_e_unit * (los_e_unit * los_e_unit_dot);
 
-    ef_rate_info.x = _yaw_filter.slope()*1000.f;
-    ef_rate_info.y = _pitch_filter.slope()*1000.f;
+    const Vector3f los_rate_e_rads = los_e_unit % los_e_unit_dot;
+    const Matrix3f rotation_ned_to_body = AP::ahrs().get_rotation_body_to_ned().transposed();
+    _los_rate_body_dps = rotation_ned_to_body * los_rate_e_rads;
+    _los_rate_body_dps *= RAD_TO_DEG;
+
+    ef_rate_info.x = _los_rate_body_dps.z;
+    ef_rate_info.y = _los_rate_body_dps.y;
 
     display_info.new_data = true;
     display_info.count++;
@@ -423,8 +450,7 @@ void UAttack::handle_info(float p1, float p2) {
 
 // degree/second
 void UAttack::update_target_pitch_rate() {
-    // float k1_pitch = attack_k1_pitch.get();
-    float k2_pitch = attack_k2_pitch.get();
+    float kt_pitch = attack_kt_pitch.get();
     float pitch_off = attack_pitch_off.get();
     float p = attack_k_angle.get();
 
@@ -434,27 +460,36 @@ void UAttack::update_target_pitch_rate() {
 
     if (fabsf(bf_info.x) > 30.f) {
         _target_pitch_rate = 0.0f;
+        attack_kr_pitch_pid.reset_I();
+        attack_kr_pitch_pid.reset_filter();
+        return;
     }
-    // float boost_factor = constrain_float(fabsf(bf_info.y)/15.0f, 0.0f, 1.0f) * 2.0f;
-    float angle_err = constrain_float(bf_info.y + pitch_off, -30.0f, 30.0f);
+    // Use heading-level-frame elevation so bank angle does not appear as pitch error.
+    float angle_err = constrain_float(bfe_info.y + pitch_off, -30.0f, 30.0f);
 
-    _attack_angle_target = attack_angle.get();
-    _attack_angle_measure = -ef_info.y;
-    _attack_angle_rate_target = (_attack_angle_target - _attack_angle_measure) * p;
-    _attack_angle_rate_measure = -ef_rate_info.y;
+    if (_angle_only_control) {
+        _target_pitch_rate = attack_k1_pitch.get() * angle_err;
+        attack_kr_pitch_pid.reset_I();
+        attack_kr_pitch_pid.reset_filter();
+    } else {
+        _attack_angle_target = attack_angle.get();
+        _attack_angle_measure = -ef_info.y;
+        _attack_angle_rate_target = (_attack_angle_target - _attack_angle_measure) * p;
+        _attack_angle_rate_measure = -_los_rate_body_dps.y;
 
-    // float attack_angle_rate_err = _attack_angle_rate_target - _attack_angle_rate_measure;
+        // float attack_angle_rate_err = _attack_angle_rate_target - _attack_angle_rate_measure;
 
-    // attack_angle_rate_err = constrain_float(attack_angle_rate_err, -30.0f, 30.0f);
+        // attack_angle_rate_err = constrain_float(attack_angle_rate_err, -30.0f, 30.0f);
 
-    // _target_pitch_rate = k1_pitch * attack_angle_rate_err + k2_pitch * angle_err; // degrees/s
+        // _target_pitch_rate = k1_pitch * attack_angle_rate_err + k2_pitch * angle_err; // degrees/s
 
-    _target_pitch_rate = attack_pitch_pid.update_all(_attack_angle_rate_target, _attack_angle_rate_measure, dt) + k2_pitch * angle_err;
+        _target_pitch_rate = attack_kr_pitch_pid.update_all(_attack_angle_rate_target, _attack_angle_rate_measure, dt) + kt_pitch * angle_err;
 
-    if (plane.position_ok()) {
-        float k3_pitch = attack_k3_pitch.get();
-        float vel_angle_err = wrap_180(bf_info.y - vel_bf_info.y);
-        _target_pitch_rate += vel_angle_err * k3_pitch;
+        if (plane.position_ok()) {
+            float kv_pitch = attack_kv_pitch.get();
+            float vel_angle_err = wrap_180(bf_info.y - vel_bf_info.y);
+            _target_pitch_rate += vel_angle_err * kv_pitch;
+        }
     }
 
     //Limit pitch rate
@@ -472,51 +507,59 @@ void UAttack::update_target_pitch_rate() {
     // gcs().send_text(MAV_SEVERITY_INFO, "%f", _target_pitch_rate_cds);
 }
 
-// degree
-void UAttack::update_target_roll_angle() {
-    float dt = (millis() - _last_ms);
-    dt = dt * 0.001f;
-    if (dt > 0.2f) {dt = 0.2f;}
-    // _target_roll_angle = constrain_float(attack_roll_factor.get() * ef_rate_info.x, -15.f, 15.f);
-    float k2_roll = attack_k2_roll.get();
-    float angle_err = constrain_float(bfe_info.x - _delta_course, -30.0f, 30.0f);
-    _target_roll_angle = attack_roll_pid.update_all(angle_err, -ef_rate_info.x, dt) + k2_roll * angle_err;
-
-    Vector3f vel_ned;
-    if (plane.position_ok() && (!is_zero(attack_vely_pid.kP())) && plane.ahrs.get_velocity_NED(vel_ned)) {
-        Vector3f vel_ef_xy = Vector3f(vel_ned.x, vel_ned.y, 0.0f);
-        Matrix3f tmp_body_earth_m;
-        tmp_body_earth_m.from_euler(0.0f, radians(0.0f), AP::ahrs().get_yaw() + radians(bfe_info.x));
-        tmp_body_earth_m.transpose();
-        Vector3f vel_bf_xy = tmp_body_earth_m*vel_ef_xy;
-
-        _target_roll_angle += attack_vely_pid.update_all(vel_ned.length() * tanf(radians(angle_err)), vel_bf_xy.y, dt);
-
-        attack_roll_pid.reset_I();
-        attack_roll_pid.reset_filter();
-    } else {
-        attack_vely_pid.reset_I();
-        attack_vely_pid.reset_filter();
+// degree/second
+void UAttack::update_target_roll_rate() {
+    float dt = (millis() - _last_ms) * 0.001f;
+    if (dt <= 0.0f || dt > 0.2f) {
+        dt = 0.2f;
     }
+
+    float kt_yaw = attack_kt_yaw.get();
+    const float current_bf_yaw_rate = degrees(AP::ahrs().get_gyro().z);
+    const float current_roll_deg = degrees(AP::ahrs().get_roll());
+    const float current_pitch_deg = degrees(AP::ahrs().get_pitch());
+    float angle_err = constrain_float(bf_info.x - (_angle_only_control ? 0.0f : _delta_course), -30.0f, 30.0f);
+
+    float roll_level_rate = 0.0f;
+    if (fabsf(current_pitch_deg) < 80.0f) {
+        roll_level_rate = constrain_float(-current_roll_deg * roll_level_gain.get(), -5.0f, 5.0f);
+    }
+
+    if (_angle_only_control) {
+        const float desired_roll_angle = constrain_float(angle_err, -45.0f, 45.0f);
+        const float roll_angle_error = wrap_180(desired_roll_angle - current_roll_deg);
+        _target_roll_rate = attack_k1_roll.get() * roll_angle_error;
+        attack_kr_roll_pid.reset_I();
+        attack_kr_roll_pid.reset_filter();
+    } else {
+        float desired_bf_yaw_rate = attack_kt_roll.get() * _los_rate_body_dps.z + kt_yaw * angle_err;
+        _target_roll_rate = attack_kr_roll_pid.update_all(desired_bf_yaw_rate, current_bf_yaw_rate, dt);
+    }
+
+    _target_roll_rate += roll_level_rate;
+    _target_roll_rate = constrain_float(_target_roll_rate, -roll_rate_limit.get(), roll_rate_limit.get());
 }
 
 // degree/second
 void UAttack::update_target_yaw_rate() {
-    float k1_yaw = attack_k1_yaw.get();
-    float k2_yaw = attack_k2_yaw.get();
+    float kt_yaw = attack_kt_yaw.get();
     // float boost_factor = constrain_float(fabsf(bf_info.x)/15.0f, 0.0f, 1.0f) * 2.0f;
-    float angle_err = constrain_float(bf_info.x - _delta_course, -30.0f, 30.0f);
-    _target_yaw_rate = k1_yaw * ef_rate_info.x + k2_yaw * angle_err;
+    float angle_err = constrain_float(bf_info.x - (_angle_only_control ? 0.0f : _delta_course), -30.0f, 30.0f);
+    if (_angle_only_control) {
+        _target_yaw_rate = attack_k1_yaw.get() * angle_err;
+    } else {
+        _target_yaw_rate = attack_kr_yaw.get() * _los_rate_body_dps.z + kt_yaw * angle_err;
 
-    if (plane.position_ok()) {
-        float k3_yaw = attack_k3_yaw.get();
-        float vel_angle_err = wrap_180(bf_info.x - vel_bf_info.x);
-        _target_yaw_rate += vel_angle_err * k3_yaw;
+        if (plane.position_ok()) {
+            float kv_yaw = attack_kv_yaw.get();
+            float vel_angle_err = wrap_180(bf_info.x - vel_bf_info.x);
+            _target_yaw_rate += vel_angle_err * kv_yaw;
+        }
     }
 
     _target_yaw_rate = constrain_float(_target_yaw_rate, -30.0f, 30.0f);
     display_info.p11 = angle_err;
-    display_info.p12 = k2_yaw;
+    display_info.p12 = kt_yaw;
     display_info.p13 = _target_yaw_rate;
     display_info.p14 = get_target_yaw_rate();
 }
@@ -550,7 +593,7 @@ void UAttack::do_print()
         gcs().send_text(MAV_SEVERITY_WARNING, "ar (%0.1f, %0.1f, %0.2f, %0.2f)", _attack_angle_target, _attack_angle_measure, _attack_angle_rate_target, _attack_angle_rate_measure);
     }
     if (print.get() & (1<<5)) { // 32
-        gcs().send_text(MAV_SEVERITY_WARNING, "rpyt (%0.1f, %0.1f, %0.1f, %0.2f)", get_target_roll_angle(), get_target_pitch_rate(), get_target_yaw_rate(), attack_throttle.get());
+        gcs().send_text(MAV_SEVERITY_WARNING, "rpyt (%0.1f, %0.1f, %0.1f, %0.2f)", get_target_roll_rate(), get_target_pitch_rate(), get_target_yaw_rate(), attack_throttle.get());
     }
     if (print.get() & (1<<6)) { // 64
         gcs().send_text(MAV_SEVERITY_WARNING, "%0.0f, %0.0f, %0.0f, %0.0f", display_info.p11, display_info.p12, display_info.p13, display_info.p14);

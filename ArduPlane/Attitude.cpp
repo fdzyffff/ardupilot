@@ -466,16 +466,15 @@ void Plane::stabilize()
 void Plane::stabilize_attack()
 {
     const float speed_scaler = get_speed_scaler();
-    int32_t roll_angle_cd = 0;
+    float roll_rate = 0.0f;
     float pitch_rate = 0.0f;
     float yaw_rate = 0.0f;
     if (uattack.is_active()) {
-        roll_angle_cd = (int32_t)(uattack.get_target_roll_angle() * 100.f);
+        roll_rate = uattack.get_target_roll_rate();
         pitch_rate = uattack.get_target_pitch_rate();
         yaw_rate = uattack.get_target_yaw_rate();
     }
-    plane.nav_roll_cd = roll_angle_cd;
-    stabilize_roll();
+    SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, rollController.get_rate_out(roll_rate, speed_scaler));
 
     // SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, rollController.get_servo_out(roll_angle_cd, speed_scaler, false, false));
     SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, pitchController.get_rate_out(pitch_rate,  speed_scaler));

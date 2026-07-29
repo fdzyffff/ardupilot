@@ -201,9 +201,9 @@ void ModeAttackLoc::set_stage(ModeAttackLoc::stage_class stage_in)
             break;
         case stage_class::ATTACK:
             gcs().send_text(MAV_SEVERITY_INFO, "In Attack");
-            plane.uattack.attack_roll_pid.reset_I();
-            plane.uattack.attack_roll_pid.reset_filter();
-            plane.uattack.attack_roll_pid.set_integrator(0);
+            plane.uattack.attack_kr_roll_pid.reset_I();
+            plane.uattack.attack_kr_roll_pid.reset_filter();
+            plane.uattack.attack_kr_roll_pid.set_integrator(0);
             break;
         default:
             break;
