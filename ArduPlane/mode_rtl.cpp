@@ -38,7 +38,13 @@ bool ModeRTL::_enter()
             int32_t alt_cm;
             if ((plane.current_loc.get_distance(plane.next_WP_loc) < plane.mode_qrtl.get_VTOL_return_radius()) &&
                 plane.current_loc.get_alt_cm(Location::AltFrame::ABOVE_HOME, alt_cm) && (alt_cm < plane.quadplane.qrtl_alt*100)) {
-                plane.set_mode(plane.mode_qrtl, ModeReason::QRTL_INSTEAD_OF_RTL);
+                if (use_exter_loc_qrtl) {
+                    plane.mode_qrtl.set_return_loc(exter_loc);
+                }
+                if (!plane.set_mode(plane.mode_qrtl, ModeReason::RTL_COMPLETE_SWITCHING_TO_VTOL_LAND_RTL)) {
+                    plane.mode_qrtl.cancel_return_loc();
+                    return false;
+                }
                 return true;
             }
         }

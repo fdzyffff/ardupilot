@@ -103,7 +103,7 @@ void ModeExternal::update_fbwb()
     plane.nav_roll_cd = plane.uart.control_status.cmd_roll * 100.f;
     plane.update_load_factor();
     plane.target_altitude.amsl_cm = plane.uart.control_status.cmd_alt * 100.f;
-    plane.new_airspeed_cm = plane.uart.control_status.cmd_speed * 100.f;
+    plane.new_airspeed_cm = constrain_float(plane.uart.control_status.cmd_speed, plane.aparm.airspeed_min, plane.aparm.airspeed_max) * 100.f;
     plane.calc_nav_pitch();
     plane.calc_throttle();
 }
@@ -113,6 +113,7 @@ void ModeExternal::update_wp()
     plane.calc_nav_roll();
     plane.calc_nav_pitch();
     plane.calc_throttle();
+    plane.new_airspeed_cm = constrain_float(plane.uart.control_status.cmd_speed, plane.aparm.airspeed_min, plane.aparm.airspeed_max) * 100.f;
 }
 
 float ModeExternal::attack_throttle_raw()
@@ -126,7 +127,7 @@ float ModeExternal::attack_throttle_raw()
 
 float ModeExternal::attack_throttle_with_comp()
 {
-    float quad_hover_throttle = 32.f;
+    float quad_hover_throttle = 40.f;
     float plane_hover_throttle = attack_throttle_raw();
     float pitch_deg = 0.5* (plane.nav_pitch_cd * 0.01f + degrees(AP::ahrs().get_pitch()));
     pitch_deg = constrain_float(pitch_deg, -30.f, 30.f);

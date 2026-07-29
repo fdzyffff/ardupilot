@@ -66,6 +66,7 @@ void Uart::handle_LS_control() {
             control_status.cmd_loc.lat = (uart_msg_LS_control._msg_1.content.msg_0x55.wp_lat) * 1e7;
             control_status.cmd_loc.alt = uart_msg_LS_control._msg_1.content.msg_0x55.wp_alt * 100.f;
             control_status.cmd = uart_msg_LS_control._msg_1.content.msg_0x55.flight_status;
+            control_status.cmd_speed = uart_msg_LS_control._msg_1.content.msg_0x55.target_speed;
             control_status.last_cmd_ms = millis();
             if (type_change) {
                 gcs().send_text(MAV_SEVERITY_INFO, "Ext CMD Waypoint");
@@ -117,13 +118,14 @@ void Uart::update_log_spd_hgt() {
 
 void Uart::update_log_waypoint() {
     AP::logger().WriteStreaming("EWP",
-                                "TimeUS,lng,lat,alt,cmd",
-                                "s----",
-                                "F----",
-                                "Qffff",
+                                "TimeUS,lng,lat,alt,spd,cmd",
+                                "s-----",
+                                "F-----",
+                                "Qfffff",
                                 AP_HAL::micros64(),
                                 (float)control_status.cmd_loc.lng,
                                 (float)control_status.cmd_loc.lat,
                                 (float)control_status.cmd_loc.alt,
+                                (float)control_status.cmd_speed,
                                 (float)control_status.cmd);
 }

@@ -562,6 +562,10 @@ const AP_Param::GroupInfo QuadPlane::var_info2[] = {
     AP_GROUPINFO("TUNEPTCH_DMAX", 43, QuadPlane, tuning_ptch_d_max, 0.0f),
 
     AP_GROUPINFO("TKOFF_ALT_M", 44, QuadPlane, takeoff_q_alt, 1.0f),
+
+    AP_GROUPINFO("TUNEYAW_PMIN", 45, QuadPlane, tuning_yaw_p_min, 0.0f),
+    AP_GROUPINFO("TUNEYAW_PMAX", 46, QuadPlane, tuning_yaw_p_max, 0.0f),
+
     AP_GROUPEND
 };
 
@@ -928,7 +932,6 @@ void QuadPlane::multicopter_attitude_rate_update(float yaw_rate_cds)
     // tailsitter in transition to VTOL flight is not really in a VTOL mode yet
     if (use_multicopter_control) {
 
-        tuning_update(0.0f);
         // Pilot input, use yaw rate time constant
         set_pilot_yaw_rate_time_constant();
 
@@ -1793,7 +1796,6 @@ void QuadPlane::update(void)
         motors_output();
 
         transition->VTOL_update();
-
     }
 
     // disable throttle_wait when throttle rises above 10%
@@ -1812,6 +1814,7 @@ void QuadPlane::update(void)
             fwd_thr = forward_throttle_pct();
         }
         SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, fwd_thr);
+        tuning_update(0.0f);
     }
 
 #if HAL_LOGGING_ENABLED
@@ -4922,7 +4925,7 @@ void QuadPlane::Log_Write_AttRate()
 void QuadPlane::tuning_update(float spd_f) {
     if (millis() - _last_tuning_update_ms > 333) {
         _last_tuning_update_ms = millis();
-        _last_tuning_spd_f = spd_f*0.1 + _last_tuning_spd_f*0.9;
+        _last_tuning_spd_f = spd_f*0.4 + _last_tuning_spd_f*0.6;
 
         float ptch_p_min = tuning_ptch_p_min.get();
         float ptch_p_max = tuning_ptch_p_max.get();
@@ -4936,11 +4939,18 @@ void QuadPlane::tuning_update(float spd_f) {
             const float tuning_ptch_d_value = linear_interpolate(tuning_ptch_d_min, tuning_ptch_d_max, _last_tuning_spd_f, 0.0f, 1.0f);
             attitude_control->get_rate_pitch_pid().set_kD(tuning_ptch_d_value);
         }
+        float yaw_p_min = tuning_yaw_p_min.get();
+        float yaw_p_max = tuning_yaw_p_max.get();
+        if (!is_zero(yaw_p_min) && !is_zero(yaw_p_max)) {
+            const float tuning_yaw_p_value = linear_interpolate(tuning_yaw_p_min, tuning_yaw_p_max, _last_tuning_spd_f, 0.0f, 1.0f);
+            attitude_control->get_rate_yaw_pid().set_kP(tuning_yaw_p_value);
+        }
     }
 
     if (millis() - _last_tuning_print_ms > 1000) {
         _last_tuning_print_ms = millis();
-        // gcs().send_text(MAV_SEVERITY_INFO, "P|D: %0.2f | %0.2f [%0.2f]", attitude_control->get_rate_pitch_pid().kP().get(), attitude_control->get_rate_pitch_pid().kD().get(), spd_f);
+        // gcs().send_text(MAV_SEVERITY_INFO, "Pth P|D: %0.2f | %0.2f [%0.2f]", attitude_control->get_rate_pitch_pid().kP().get(), attitude_control->get_rate_pitch_pid().kD().get(), spd_f);
+        // gcs().send_text(MAV_SEVERITY_INFO, "Yaw P: %0.2f [%0.2f]", attitude_control->get_rate_yaw_pid().kP().get(), spd_f);
     }
 }
 

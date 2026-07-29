@@ -77,8 +77,9 @@ public:
         double wp_lng;
         double wp_lat;
         float wp_alt;
+        float target_speed;
         float flight_status;
-        uint8_t reserved[22];
+        uint8_t reserved[18];
         uint8_t sum;
     };
     
