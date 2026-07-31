@@ -21,7 +21,7 @@ bool ModeQRTL::_enter()
         if (use_exter_loc) {
             destination.lat = exter_loc.lat;
             destination.lng = exter_loc.lng;
-            gcs().send_text(MAV_SEVERITY_INFO, "QRTL with EXT Loc");
+            gcs().send_text(MAV_SEVERITY_INFO, "QRTL with EXT Loc 1");
             gcs().send_text(MAV_SEVERITY_INFO, "|- %d, %d", int(destination.lat), int(destination.lng));
         }
         const float dist = plane.current_loc.get_distance(destination);
@@ -143,6 +143,12 @@ void ModeQRTL::run()
 
                 int32_t RTL_alt_abs_cm = plane.home.alt + quadplane.qrtl_alt*100UL;
                 Location destination = plane.calc_best_rally_or_home_location(plane.current_loc, RTL_alt_abs_cm);
+                if (use_exter_loc) {
+                    destination.lat = exter_loc.lat;
+                    destination.lng = exter_loc.lng;
+                    gcs().send_text(MAV_SEVERITY_INFO, "QRTL with EXT Loc 2");
+                    gcs().send_text(MAV_SEVERITY_INFO, "|- %d, %d", int(destination.lat), int(destination.lng));
+                }
                 const float dist = plane.current_loc.get_distance(destination);
                 const float radius = get_VTOL_return_radius();
                 if (dist < radius) {
@@ -155,7 +161,12 @@ void ModeQRTL::run()
                     poscontrol.set_state(QuadPlane::QPOS_POSITION1);
                 }
 
-                plane.do_RTL(RTL_alt_abs_cm);
+                // plane.do_RTL(RTL_alt_abs_cm);
+                if (use_exter_loc) {
+                    plane.do_RTL_external(RTL_alt_abs_cm, exter_loc);
+                } else {
+                    plane.do_RTL(RTL_alt_abs_cm);
+                }
                 quadplane.poscontrol_init_approach();
                 if (plane.current_loc.get_alt_distance(plane.next_WP_loc, alt_diff)) {
                     poscontrol.slow_descent = is_positive(alt_diff);

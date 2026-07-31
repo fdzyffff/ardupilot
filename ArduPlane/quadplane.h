@@ -406,6 +406,7 @@ private:
     AP_Float tuning_ptch_d_max;
     AP_Float tuning_yaw_p_min;
     AP_Float tuning_yaw_p_max;
+    AP_Float tuning_yaw_p_arm;
 
     // tuning update state
     uint32_t _last_tuning_update_ms;

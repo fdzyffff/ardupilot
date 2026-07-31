@@ -565,6 +565,7 @@ const AP_Param::GroupInfo QuadPlane::var_info2[] = {
 
     AP_GROUPINFO("TUNEYAW_PMIN", 45, QuadPlane, tuning_yaw_p_min, 0.0f),
     AP_GROUPINFO("TUNEYAW_PMAX", 46, QuadPlane, tuning_yaw_p_max, 0.0f),
+    AP_GROUPINFO("TUNEYAW_PARM", 47, QuadPlane, tuning_yaw_p_arm, 0.0f),
 
     AP_GROUPEND
 };
@@ -4941,8 +4942,18 @@ void QuadPlane::tuning_update(float spd_f) {
         }
         float yaw_p_min = tuning_yaw_p_min.get();
         float yaw_p_max = tuning_yaw_p_max.get();
-        if (!is_zero(yaw_p_min) && !is_zero(yaw_p_max)) {
-            const float tuning_yaw_p_value = linear_interpolate(tuning_yaw_p_min, tuning_yaw_p_max, _last_tuning_spd_f, 0.0f, 1.0f);
+        float yaw_p_arm = tuning_yaw_p_arm.get();
+        if (is_zero(yaw_p_arm)) {
+            yaw_p_arm = yaw_p_min;
+        }
+        float tuning_yaw_p_value = 0.0f;
+        if (is_zero(spd_f) && in_vtol_mode()) {
+            const float height_above_ground = plane.relative_ground_altitude(RangeFinderUse::TAKEOFF_LANDING);
+            tuning_yaw_p_value = height_above_ground < 2.0f ? yaw_p_arm : yaw_p_min;
+        } else if (!is_zero(yaw_p_min) && !is_zero(yaw_p_max)) {
+            tuning_yaw_p_value = linear_interpolate(yaw_p_min, yaw_p_max, _last_tuning_spd_f, 0.0f, 1.0f);
+        }
+        if (!is_zero(tuning_yaw_p_value)) {
             attitude_control->get_rate_yaw_pid().set_kP(tuning_yaw_p_value);
         }
     }

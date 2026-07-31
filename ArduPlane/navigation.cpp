@@ -240,8 +240,8 @@ void Plane::calc_airspeed_errors()
     } else if (control_mode == &mode_external) {
         if (mode_external.get_stage() == ModeExternal::stage_class::FBWB) {
             target_airspeed_cm = new_airspeed_cm;
-        // } else if (mode_external.get_stage() == ModeExternal::stage_class::WP) {
-        //     target_airspeed_cm = new_airspeed_cm;
+        } else if (mode_external.get_stage() == ModeExternal::stage_class::WP) {
+            target_airspeed_cm = new_airspeed_cm;
         } else if (mode_external.does_auto_throttle()) {
             target_airspeed_cm = aparm.airspeed_cruise*100;
         }
