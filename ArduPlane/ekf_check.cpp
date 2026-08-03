@@ -163,8 +163,16 @@ void Plane::failsafe_ekf_event()
         return;
     }
 
+    if (plane.control_mode == &plane.mode_qland) {
+        return;
+    }
+
     if (quadplane.in_vtol_auto()) {
         // the pilot is not controlling via sticks so switch to QLAND
+        plane.set_mode(mode_qland, ModeReason::EKF_FAILSAFE);
+    } else if (plane.control_mode == &plane.mode_qrtl) {
+        plane.set_mode(mode_qland, ModeReason::EKF_FAILSAFE);
+    } else if (plane.control_mode == &plane.mode_qguided) {
         plane.set_mode(mode_qland, ModeReason::EKF_FAILSAFE);
     } else {
         // the pilot is controlling via sticks so fallbacl to QHOVER

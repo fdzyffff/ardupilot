@@ -14,7 +14,7 @@ bool ModeQRTL::_enter()
     submode = SubMode::RTL;
     plane.prev_WP_loc = plane.current_loc;
 
-    int32_t RTL_alt_abs_cm = plane.home.alt + quadplane.qrtl_alt*100UL;
+    int32_t RTL_alt_abs_cm = use_exter_loc ? exter_loc.alt : plane.home.alt + quadplane.qrtl_alt*100UL;
     if (quadplane.motors->get_desired_spool_state() == AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED) {
         // VTOL motors are active, either in VTOL flight or assisted flight
         Location destination = plane.calc_best_rally_or_home_location(plane.current_loc, RTL_alt_abs_cm);
@@ -69,7 +69,7 @@ bool ModeQRTL::_enter()
 
     // use do_RTL() to setup next_WP_loc
     if (use_exter_loc) {
-        plane.do_RTL_external(RTL_alt_abs_cm, exter_loc);
+        plane.do_RTL_external(exter_loc.alt, exter_loc);
     } else {
         plane.do_RTL(RTL_alt_abs_cm);
     }
@@ -141,7 +141,7 @@ void ModeQRTL::run()
                 submode = SubMode::RTL;
                 plane.prev_WP_loc = plane.current_loc;
 
-                int32_t RTL_alt_abs_cm = plane.home.alt + quadplane.qrtl_alt*100UL;
+                int32_t RTL_alt_abs_cm = use_exter_loc ? exter_loc.alt : plane.home.alt + quadplane.qrtl_alt*100UL;
                 Location destination = plane.calc_best_rally_or_home_location(plane.current_loc, RTL_alt_abs_cm);
                 if (use_exter_loc) {
                     destination.lat = exter_loc.lat;
@@ -161,9 +161,8 @@ void ModeQRTL::run()
                     poscontrol.set_state(QuadPlane::QPOS_POSITION1);
                 }
 
-                // plane.do_RTL(RTL_alt_abs_cm);
                 if (use_exter_loc) {
-                    plane.do_RTL_external(RTL_alt_abs_cm, exter_loc);
+                    plane.do_RTL_external(exter_loc.alt, exter_loc);
                 } else {
                     plane.do_RTL(RTL_alt_abs_cm);
                 }
@@ -252,11 +251,18 @@ void ModeQRTL::set_return_loc(Location &loc_in)
 {
     use_exter_loc = true;
     exter_loc = loc_in;
+    if (plane.control_mode == this) {
+        if (enter()) {
+            gcs().send_text(MAV_SEVERITY_INFO, "QRTL Loc updated");
+        } else {
+            gcs().send_text(MAV_SEVERITY_WARNING, "QRTL Loc update failed");
+        }
+    }
 }
 
 void ModeQRTL::_exit()
 {
-    use_exter_loc = false;
+    // use_exter_loc = false;
 }
 
 #endif

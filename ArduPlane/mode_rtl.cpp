@@ -5,11 +5,9 @@ bool ModeRTL::_enter()
 {
     plane.prev_WP_loc = plane.current_loc;
     if (use_exter_loc) {
-        use_exter_loc = false;
-        use_exter_loc_qrtl = true;
-        plane.do_RTL_external(plane.get_RTL_altitude_cm(), exter_loc);
+        plane.do_RTL_external(exter_loc.alt, exter_loc);
         gcs().send_text(MAV_SEVERITY_INFO, "RTL with EXT Loc");
-        gcs().send_text(MAV_SEVERITY_INFO, "|- %d, %d", int(exter_loc.lat), int(exter_loc.lng));
+        gcs().send_text(MAV_SEVERITY_INFO, "|- %d, %d, %d", int(exter_loc.lat), int(exter_loc.lng), int(exter_loc.alt));
     } else {
         plane.do_RTL(plane.get_RTL_altitude_cm());
     }
@@ -38,11 +36,11 @@ bool ModeRTL::_enter()
             int32_t alt_cm;
             if ((plane.current_loc.get_distance(plane.next_WP_loc) < plane.mode_qrtl.get_VTOL_return_radius()) &&
                 plane.current_loc.get_alt_cm(Location::AltFrame::ABOVE_HOME, alt_cm) && (alt_cm < plane.quadplane.qrtl_alt*100)) {
-                if (use_exter_loc_qrtl) {
-                    plane.mode_qrtl.set_return_loc(exter_loc);
-                }
+                // if (use_exter_loc_qrtl) {
+                //     plane.mode_qrtl.set_return_loc(exter_loc);
+                // }
                 if (!plane.set_mode(plane.mode_qrtl, ModeReason::RTL_COMPLETE_SWITCHING_TO_VTOL_LAND_RTL)) {
-                    plane.mode_qrtl.cancel_return_loc();
+                    // plane.mode_qrtl.cancel_return_loc();
                     return false;
                 }
                 return true;
@@ -173,11 +171,11 @@ bool ModeRTL::switch_QRTL()
           are within the maximum of the stopping distance and the
           RTL_RADIUS
          */
-        if (use_exter_loc_qrtl) {
-            plane.mode_qrtl.set_return_loc(exter_loc);
-        }
+        // if (use_exter_loc_qrtl) {
+        //     plane.mode_qrtl.set_return_loc(exter_loc);
+        // }
         if (!plane.set_mode(plane.mode_qrtl, ModeReason::RTL_COMPLETE_SWITCHING_TO_VTOL_LAND_RTL)) {
-            plane.mode_qrtl.cancel_return_loc();
+            // plane.mode_qrtl.cancel_return_loc();
             return false;
         }
         return true;
@@ -189,14 +187,20 @@ bool ModeRTL::switch_QRTL()
 void ModeRTL::set_return_loc(Location &loc_in)
 {
     use_exter_loc = true;
-    use_exter_loc_qrtl = true;
     exter_loc = loc_in;
+    if (plane.control_mode == this) {
+        if (enter()) {
+            gcs().send_text(MAV_SEVERITY_INFO, "RTL Loc updated");
+        } else {
+            gcs().send_text(MAV_SEVERITY_WARNING, "RTL Loc update failed");
+        }
+    }
 }
 
 void ModeRTL::_exit()
 {
-    use_exter_loc = false;
-    use_exter_loc_qrtl = false;
+    // use_exter_loc = false;
+    // use_exter_loc_qrtl = false;
 }
 
 #endif  // HAL_QUADPLANE_ENABLED

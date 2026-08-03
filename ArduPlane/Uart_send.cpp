@@ -75,9 +75,11 @@ void Uart::pack_status()
     }
 
     float airspeed = 0.0f;
-    if (AP::ahrs().airspeed_estimate(airspeed)) {
-        ;
-    }
+    // if (AP::ahrs().airspeed_estimate(airspeed)) {
+    //     ;
+    // }
+    airspeed = plane.airspeed.get_airspeed();
+
     uart_msg_LS_status._msg_1.content.msg.run_time = ((float)AP_HAL::millis()) * 0.001f;
     uart_msg_LS_status._msg_1.content.msg.gimbal_pitch = send_status.gimbal_pitch;
     uart_msg_LS_status._msg_1.content.msg.gimbal_yaw = send_status.gimbal_yaw;

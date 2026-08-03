@@ -473,7 +473,7 @@ public:
 
     void set_return_loc(Location &loc_in);
 
-    void cancel_return_loc() {use_exter_loc = false; use_exter_loc_qrtl = false;}
+    void cancel_return_loc() { use_exter_loc = false; }
 
 protected:
 
@@ -487,7 +487,7 @@ private:
     bool switch_QRTL();
 
     bool use_exter_loc;
-    bool use_exter_loc_qrtl;
+    // bool use_exter_loc_qrtl;
     Location exter_loc;
 };
 

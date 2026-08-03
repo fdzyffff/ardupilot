@@ -124,15 +124,39 @@ void Plane::user_handle_msg(const mavlink_message_t &msg)
             break;
         case 4:
             {
+                if (!use_latlng) {
+                    gcs().send_text(MAV_SEVERITY_WARNING, "RTL Loc rejected: no lat/lng");
+                    break;
+                }
+
                 Location target_loc{plane.current_loc};
-                if (use_latlng) {
-                    target_loc.lat = packet.lat;
-                    target_loc.lng = packet.lng;
-                    plane.mode_rtl.set_return_loc(target_loc);
+                target_loc.lat = packet.lat;
+                target_loc.lng = packet.lng;
+                if (!target_loc.check_latlng()) {
+                    gcs().send_text(MAV_SEVERITY_WARNING, "RTL Loc rejected: invalid lat/lng");
+                    break;
                 }
-                if (!plane.set_mode(mode_rtl, ModeReason::GCS_COMMAND)) {
-                    plane.mode_rtl.cancel_return_loc();
+
+                if (!AP::ahrs().home_is_set()) {
+                    gcs().send_text(MAV_SEVERITY_WARNING, "RTL Loc rejected: home not set");
+                    break;
                 }
+
+                int32_t target_alt_cm = plane.home.alt;
+                if (use_alt) {
+                    const int64_t alt_error_cm = (int64_t)packet.alt - (int64_t)plane.home.alt;
+                    if (llabs(alt_error_cm) <= 5000) {
+                        target_alt_cm = packet.alt;
+                    } else {
+                        gcs().send_text(MAV_SEVERITY_WARNING, "RTL Alt Partly received: use home alt");
+                    }
+                }
+                target_loc.set_alt_cm(target_alt_cm, Location::AltFrame::ABSOLUTE);
+
+                gcs().send_text(MAV_SEVERITY_INFO, "New Return Loc");
+                gcs().send_text(MAV_SEVERITY_INFO, "|- %d, %d", int(destination.lat), int(destination.lng));
+                plane.mode_rtl.set_return_loc(target_loc);
+                plane.mode_qrtl.set_return_loc(target_loc);
             }
             break;
         case 5:
