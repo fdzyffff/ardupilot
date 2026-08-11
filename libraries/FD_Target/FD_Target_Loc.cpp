@@ -37,7 +37,7 @@ void FD_Target_Loc::update()
 
         off_ef.normalized();
         Matrix3f tmp_earth_yaw_m;
-        tmp_earth_yaw_m.from_euler(radians(0.0f), radians(0.0f), AP::ahrs().get_yaw());
+        tmp_earth_yaw_m.from_euler(radians(0.0f), radians(0.0f), AP::ahrs().get_yaw_rad());
         tmp_earth_yaw_m.transpose();
         Vector3f off_eyf = tmp_earth_yaw_m * off_ef;
         off_eyf.normalized();

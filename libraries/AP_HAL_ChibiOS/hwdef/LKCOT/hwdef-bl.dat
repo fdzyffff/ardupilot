@@ -1,0 +1,39 @@
+# hw definition file for processing by chibios_pins.py
+# for HAKRC F405 bootloader
+
+# MCU class and specific type
+MCU STM32F4xx STM32F405xx
+
+# board ID for firmware load
+APJ_BOARD_ID AP_HW_HAKRC_F405
+
+# crystal frequency
+OSCILLATOR_HZ 8000000
+
+FLASH_SIZE_KB 1024
+
+# bootloader is installed at zero offset
+FLASH_RESERVE_START_KB 0
+
+# the location where the bootloader will put the firmware
+FLASH_BOOTLOADER_LOAD_KB 64
+
+# USB Setup
+# USB_STRING_MANUFACTURER "HAKRCFC"
+
+# order of UARTs
+SERIAL_ORDER OTG1
+
+# USB PA10 IO-debug-console
+PA11 OTG_FS_DM OTG1
+PA12 OTG_FS_DP OTG1
+
+# LEDs
+PC14 LED_BOOTLOADER OUTPUT LOW #green
+PC15 LED_ACTIVITY   OUTPUT LOW #blue
+define HAL_LED_ON 0
+
+# Add CS pins to ensure they are high in bootloader
+PB12 MAX7456_CS CS
+PA15 FLASH_CS CS
+PA4  ICM42688P_CS CS

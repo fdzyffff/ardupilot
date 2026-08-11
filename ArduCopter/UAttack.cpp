@@ -11,7 +11,7 @@ const AP_Param::GroupInfo UAttack::var_info[] = {
     AP_GROUPINFO("VIS_LIM", 10, UAttack, visibility_limit_deg, 20.0f),
     AP_SUBGROUPINFO(target_loc, "TL_", 11, UAttack, FD_Target_Loc),
     AP_SUBGROUPINFO(target_cam, "TC_", 12, UAttack, FD_Target_HY),
-    AP_SUBGROUPINFO(los_yaw_rate_pid, "NAV_R_", 13, UAttack, AC_PID),
+    AP_SUBGROUPINFO(los_yaw_rate_pid, "NAV_Y_", 13, UAttack, AC_PID),
     AP_SUBGROUPINFO(los_pitch_rate_pid, "NAV_P_", 14, UAttack, AC_PID),
     AP_GROUPINFO("DEBUG", 15, UAttack, debug_print, 0),
 
@@ -48,6 +48,22 @@ const AP_Param::GroupInfo UAttack::var_info[] = {
     // @Increment: 1
     // @User: Advanced
     AP_GROUPINFO("FWD_PIT", 19, UAttack, forward_pitch_deg, 30.0f),
+
+    // @Param: TRC_Y
+    // @DisplayName: Attack track yaw gain
+    // @Description: Proportional pursuit gain on camera yaw angle error, added to LOS-rate PID output in Stage 3
+    // @Range: 0 10
+    // @Increment: 0.1
+    // @User: Advanced
+    AP_GROUPINFO("TRC_Y", 20, UAttack, track_yaw_gain, 1.0f),
+
+    // @Param: TRC_P
+    // @DisplayName: Attack track pitch gain
+    // @Description: Proportional pursuit gain on camera pitch angle error, added to LOS-rate PID output in Stage 3
+    // @Range: 0 10
+    // @Increment: 0.1
+    // @User: Advanced
+    AP_GROUPINFO("TRC_P", 21, UAttack, track_pitch_gain, 1.0f),
     AP_GROUPEND
 };
 
@@ -125,9 +141,9 @@ void UAttack::init_targets()
 
 void UAttack::update_delay_history()
 {
-    const Vector3f attitude_b_deg(degrees(AP::ahrs().get_roll()),
-                                  degrees(AP::ahrs().get_pitch()),
-                                  degrees(AP::ahrs().get_yaw()));
+    const Vector3f attitude_b_deg(degrees(AP::ahrs().get_roll_rad()),
+                                  degrees(AP::ahrs().get_pitch_rad()),
+                                  degrees(AP::ahrs().get_yaw_rad()));
     attitude_delay.push(attitude_b_deg);
 
     const Vector3f gyro_b_rads = AP::ahrs().get_gyro_latest();
@@ -149,9 +165,9 @@ bool UAttack::get_delayed_state(Vector3f &attitude_b_deg, Vector3f &gyro_b_dps) 
     bool gyro_valid = gyro_delay.get_idx(delay_steps, gyro_b_dps);
 
     if (!attitude_valid) {
-        attitude_b_deg = Vector3f(degrees(AP::ahrs().get_roll()),
-                                  degrees(AP::ahrs().get_pitch()),
-                                  degrees(AP::ahrs().get_yaw()));
+        attitude_b_deg = Vector3f(degrees(AP::ahrs().get_roll_rad()),
+                                  degrees(AP::ahrs().get_pitch_rad()),
+                                  degrees(AP::ahrs().get_yaw_rad()));
     }
     if (!gyro_valid) {
         const Vector3f gyro_b_rads = AP::ahrs().get_gyro_latest();
@@ -293,6 +309,9 @@ void UAttack::update_control_value(const Vector3f &attitude_b_deg, float observa
         (camera_yaw_error_abs_deg > visibility_limit_deg_value);
 
     if (camera_pitch_error_abs_deg > 60.0f) {
+        if (_control_stage != ControlStage::PITCH_CAPTURE) {
+            gcs().send_text(MAV_SEVERITY_INFO, "UAttack stage PITCH_CAPTURE");
+        }
         _control_stage = ControlStage::PITCH_CAPTURE;
         if (los_rate_control_active) {
             los_yaw_rate_pid.reset_I();
@@ -308,6 +327,9 @@ void UAttack::update_control_value(const Vector3f &attitude_b_deg, float observa
             rate_limit_dps_value);
         _target_rate_c_dps.z = 0.0f;
     } else if (target_outside_visibility) {
+        if (_control_stage != ControlStage::ANGLE_CAPTURE) {
+            gcs().send_text(MAV_SEVERITY_INFO, "UAttack stage ANGLE_CAPTURE");
+        }
         _control_stage = ControlStage::ANGLE_CAPTURE;
         if (los_rate_control_active) {
             los_yaw_rate_pid.reset_I();
@@ -329,6 +351,9 @@ void UAttack::update_control_value(const Vector3f &attitude_b_deg, float observa
             -rate_limit_dps_value,
             rate_limit_dps_value);
     } else {
+        if (_control_stage != ControlStage::LOS_RATE) {
+            gcs().send_text(MAV_SEVERITY_INFO, "UAttack stage LOS_RATE");
+        }
         _control_stage = ControlStage::LOS_RATE;
         const float camera_pitch_forward_rate_dps = constrain_float(
             forward_pitch_deg.get() - _camera_e_deg.y,
@@ -341,16 +366,18 @@ void UAttack::update_control_value(const Vector3f &attitude_b_deg, float observa
             los_pitch_rate_pid.reset_filter();
             los_rate_control_active = true;
         }
+        const float track_yaw_rate_dps = track_yaw_gain.get() * _los_c_deg.x;
+        const float track_pitch_rate_dps = track_pitch_gain.get() * _los_c_deg.y;
         _target_rate_c_dps.x = constrain_float(
             camera_level_rate_dps,
             -rate_limit_dps_value,
             rate_limit_dps_value);
         _target_rate_c_dps.y = constrain_float(
-            -los_pitch_rate_pid.update_all(0, _los_c_rate_dps.y, observation_dt_s) + camera_pitch_forward_rate_dps,
+            -los_pitch_rate_pid.update_all(0, _los_c_rate_dps.y, observation_dt_s) + camera_pitch_forward_rate_dps + track_pitch_rate_dps,
             -rate_limit_dps_value,
             rate_limit_dps_value);
         _target_rate_c_dps.z = constrain_float(
-            -los_yaw_rate_pid.update_all(0, _los_c_rate_dps.z, observation_dt_s),
+            -los_yaw_rate_pid.update_all(0, _los_c_rate_dps.z, observation_dt_s) + track_yaw_rate_dps,
             -rate_limit_dps_value,
             rate_limit_dps_value);
     }
@@ -380,6 +407,9 @@ void UAttack::apply_target_visibility_limit()
 
 void UAttack::clear_target_output()
 {
+    if (_control_stage != ControlStage::NONE) {
+        gcs().send_text(MAV_SEVERITY_INFO, "UAttack stage NONE");
+    }
     _los_c_deg.zero();
     _los_e_deg.zero();
     _los_e_unit.zero();

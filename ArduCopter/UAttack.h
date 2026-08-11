@@ -76,6 +76,8 @@ private:
     AP_Float throttle_rate;
     AP_Float roll_level_gain;
     AP_Float forward_pitch_deg;
+    AP_Float track_yaw_gain;
+    AP_Float track_pitch_gain;
 
     FD_Target_HY target_cam;
     FD_Target_Loc target_loc;

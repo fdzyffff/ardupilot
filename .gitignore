@@ -174,5 +174,12 @@ venv.bak/
 autotest_result_*_junit.xml
 .python-version
 
-# Multi-vehicle SITL runtime data
+# User multi-vehicle SITL launch files and runtime data
+/run_target.sh
+/run_interceptor.sh
+/run_mavproxy.sh
+/target_233.parm
 /multi_sitl_test/
+
+# Locally packaged firmware artifacts
+/firmware/

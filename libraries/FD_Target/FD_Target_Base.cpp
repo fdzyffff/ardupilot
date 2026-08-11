@@ -39,7 +39,7 @@ bool FD_Target_Base::get_info(float &p1, float &p2)
         Matrix3f target_from_yaw_frame;
         target_from_yaw_frame.from_euler(0.0f, radians(_p2), radians(_p1));
         Matrix3f yaw_frame_from_body;
-        yaw_frame_from_body.from_euler(AP::ahrs().get_roll(), AP::ahrs().get_pitch(), 0.0f);
+        yaw_frame_from_body.from_euler(AP::ahrs().get_roll_rad(), AP::ahrs().get_pitch_rad(), 0.0f);
         yaw_frame_from_body.transpose();
         Vector3f target_body = yaw_frame_from_body * target_from_yaw_frame * target_axis;
         target_body.normalize();
@@ -53,7 +53,7 @@ bool FD_Target_Base::get_info(float &p1, float &p2)
         Matrix3f target_from_yaw_frame;
         target_from_yaw_frame.from_euler(0.0f, radians(_p2), radians(_p1));
         Matrix3f yaw_frame_from_body;
-        yaw_frame_from_body.from_euler(AP::ahrs().get_roll(), AP::ahrs().get_pitch(), 0.0f);
+        yaw_frame_from_body.from_euler(AP::ahrs().get_roll_rad(), AP::ahrs().get_pitch_rad(), 0.0f);
         yaw_frame_from_body.transpose();
         Matrix3f body_from_camera;
         body_from_camera.from_euler(radians(0.0f), radians(90.0f), radians(0.0f));
