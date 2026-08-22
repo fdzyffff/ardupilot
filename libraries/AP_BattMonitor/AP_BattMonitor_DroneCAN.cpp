@@ -47,6 +47,7 @@ bool AP_BattMonitor_DroneCAN::subscribe_msgs(AP_DroneCAN* ap_dronecan)
     return (Canard::allocate_sub_arg_callback(ap_dronecan, &handle_battery_info_trampoline, driver_index) != nullptr)
         && (Canard::allocate_sub_arg_callback(ap_dronecan, &handle_battery_info_aux_trampoline, driver_index) != nullptr)
         && (Canard::allocate_sub_arg_callback(ap_dronecan, &handle_mppt_stream_trampoline, driver_index) != nullptr)
+        && (Canard::allocate_sub_arg_callback(ap_dronecan, &handle_battery_info_periodic_trampoline, driver_index) != nullptr)
     ;
 }
 
@@ -177,6 +178,30 @@ void AP_BattMonitor_DroneCAN::handle_battery_info_aux(const ardupilot_equipment_
     _has_battery_info_aux = true;
 }
 
+void AP_BattMonitor_DroneCAN::handle_battery_info_periodic(const ardupilot_equipment_power_BatteryPeriodic &msg)
+{
+    WITH_SEMAPHORE(_sem_battmon);
+
+    // BatteryPeriodic carries cycle_count for packs that do not send BatteryInfoAux.
+    _cycle_count = msg.cycle_count;
+
+    uint32_t tnow_ms = AP_HAL::millis();
+    if (tnow_ms - _last_periodic_print_ms > 1000) {
+        _last_periodic_print_ms = tnow_ms;
+        char name[sizeof(msg.name.data) + 1];
+        const uint8_t name_len = MIN(msg.name.len, sizeof(msg.name.data));
+        memcpy(name, msg.name.data, name_len);
+        name[name_len] = '\0';
+        char sn[sizeof(msg.serial_number.data) + 1];
+        const uint8_t sn_len = MIN(msg.serial_number.len, sizeof(msg.serial_number.data));
+        memcpy(sn, msg.serial_number.data, sn_len);
+        sn[sn_len] = '\0';
+        gcs().send_text(MAV_SEVERITY_INFO, "Batt name: %s", name);
+        gcs().send_text(MAV_SEVERITY_INFO, "Batt SN: %s", sn);
+        gcs().send_text(MAV_SEVERITY_INFO, "Batt cycle_count %d", msg.cycle_count);
+    }
+}
+
 void AP_BattMonitor_DroneCAN::handle_mppt_stream(const mppt_Stream &msg)
 {
     const bool use_input_value = option_is_set(AP_BattMonitor_Params::Options::MPPT_Use_Input_Value);
@@ -254,6 +279,17 @@ void AP_BattMonitor_DroneCAN::handle_battery_info_aux_trampoline(AP_DroneCAN *ap
         return;
     }
     driver->handle_battery_info_aux(msg);
+}
+
+void AP_BattMonitor_DroneCAN::handle_battery_info_periodic_trampoline(AP_DroneCAN *ap_dronecan, const CanardRxTransfer& transfer, const ardupilot_equipment_power_BatteryPeriodic &msg)
+{
+    // BatteryPeriodic has no battery_id field; route by source node ID only
+    // (fixes 4.5.2 bug that passed source_node_id as battery_id).
+    AP_BattMonitor_DroneCAN* driver = get_dronecan_backend(ap_dronecan, transfer.source_node_id, transfer.source_node_id);
+    if (driver == nullptr) {
+        return;
+    }
+    driver->handle_battery_info_periodic(msg);
 }
 
 void AP_BattMonitor_DroneCAN::handle_mppt_stream_trampoline(AP_DroneCAN *ap_dronecan, const CanardRxTransfer& transfer, const mppt_Stream &msg)

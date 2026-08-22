@@ -722,6 +722,14 @@ bool ModeAuto::start_command(const AP_Mission::Mission_Command& cmd)
         do_nav_wp(cmd);
         break;
 
+    case MAV_CMD_NAV_NEW_WAYPOINT:
+        do_nav_new_wp(cmd);
+        break;
+
+    case MAV_CMD_NAV_NEW_END:
+        do_nav_new_end(cmd);
+        break;
+
     case MAV_CMD_NAV_VTOL_LAND:
     case MAV_CMD_NAV_LAND:              // 21 LAND to Waypoint
         do_land(cmd);
@@ -959,6 +967,14 @@ bool ModeAuto::verify_command(const AP_Mission::Mission_Command& cmd)
     case MAV_CMD_NAV_WAYPOINT:
     case MAV_CMD_NAV_ARC_WAYPOINT:
         cmd_complete = verify_nav_wp(cmd);
+        break;
+
+    case MAV_CMD_NAV_NEW_WAYPOINT:
+        cmd_complete = verify_nav_new_wp(cmd);
+        break;
+
+    case MAV_CMD_NAV_NEW_END:
+        cmd_complete = verify_nav_new_end(cmd);
         break;
 
     case MAV_CMD_NAV_VTOL_LAND:
@@ -1592,6 +1608,52 @@ void ModeAuto::do_nav_wp(const AP_Mission::Mission_Command& cmd)
     }
 }
 
+void ModeAuto::do_nav_new_wp(const AP_Mission::Mission_Command& cmd)
+{
+    do_nav_wp(cmd);
+
+    const uint16_t wp_type = (cmd.p1 >> 10) & 0x3FU;
+    loiter_time_max = (wp_type == 2U) ? (cmd.p1 & 0x03FFU) : 0U;
+
+    if (cmd.p2 != 0U) {
+        set_speed_NE_ms(float(cmd.p2) * 0.1f);
+    }
+
+    const uint8_t speed_up_dms = HIGHBYTE(cmd.p3);
+    const uint8_t speed_down_dms = LOWBYTE(cmd.p3);
+    if (speed_up_dms != 0U) {
+        set_speed_up_ms(float(speed_up_dms) * 0.1f);
+    }
+    if (speed_down_dms != 0U) {
+        set_speed_down_ms(float(speed_down_dms) * 0.1f);
+    }
+
+    const uint16_t yaw_type = (cmd.p4 >> 13) & 0x07U;
+    const float yaw_deg = wrap_360(float(cmd.p4 & 0x1FFFU));
+    if (yaw_type == 1U) {
+        auto_yaw.set_yaw_angle_and_rate_rad(ahrs.get_yaw_rad(), 0.0f);
+    } else if (yaw_type == 3U) {
+        auto_yaw.set_yaw_angle_and_rate_rad(radians(yaw_deg), 0.0f);
+    }
+}
+
+void ModeAuto::do_nav_new_end(const AP_Mission::Mission_Command& cmd)
+{
+    switch (cmd.p1) {
+    case 1:
+        mission.request_complete();
+        break;
+    case 2:
+        do_RTL();
+        break;
+    case 3:
+        do_land(cmd);
+        break;
+    default:
+        break;
+    }
+}
+
 // checks the next mission command and adds it as a destination if necessary
 // supports both straight line and spline waypoints
 // cmd should be the current command
@@ -1619,6 +1681,7 @@ bool ModeAuto::set_next_wp(const AP_Mission::Mission_Command& current_cmd, const
         next_cmd.content.location.alt = 0;
         FALLTHROUGH;
     case MAV_CMD_NAV_WAYPOINT:
+    case MAV_CMD_NAV_NEW_WAYPOINT:
     case MAV_CMD_NAV_LOITER_UNLIM:
 #if AP_MISSION_NAV_PAYLOAD_PLACE_ENABLED
     case MAV_CMD_NAV_PAYLOAD_PLACE:
@@ -2297,6 +2360,41 @@ bool ModeAuto::verify_nav_wp(const AP_Mission::Mission_Command& cmd)
         return true;
     }
     return false;
+}
+
+bool ModeAuto::verify_nav_new_wp(const AP_Mission::Mission_Command& cmd)
+{
+    if (!copter.wp_nav->reached_wp_destination()) {
+        return false;
+    }
+
+    bool yaw_ok = true;
+    const uint16_t yaw_type = (cmd.p4 >> 13) & 0x07U;
+    if (yaw_type == 2U || yaw_type == 3U) {
+        const float yaw_deg = wrap_360(float(cmd.p4 & 0x1FFFU));
+        auto_yaw.set_yaw_angle_and_rate_rad(radians(yaw_deg), 0.0f);
+        auto_yaw.set_mode(AutoYaw::Mode::FIXED);
+        yaw_ok = auto_yaw.reached_fixed_yaw_target();
+    }
+
+    if (loiter_time == 0U && yaw_ok) {
+        loiter_time = millis();
+    }
+    return yaw_ok && ((millis() - loiter_time) / 1000U >= loiter_time_max);
+}
+
+bool ModeAuto::verify_nav_new_end(const AP_Mission::Mission_Command& cmd)
+{
+    switch (cmd.p1) {
+    case 1:
+        return mission.state() == AP_Mission::MISSION_COMPLETE;
+    case 2:
+        return verify_RTL();
+    case 3:
+        return verify_land();
+    default:
+        return true;
+    }
 }
 
 // verify_circle - check if we have circled the point enough

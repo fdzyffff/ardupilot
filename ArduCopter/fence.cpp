@@ -38,6 +38,8 @@ void Copter::fence_checks_async()
 // called at 25hz
 void Copter::fence_check()
 {
+    if (g2.user_parameters.fence_mode.get() != 0) {return;}
+
     // only take action if there is a new breach
     if (!fence_breaches.have_updates) {
         return;

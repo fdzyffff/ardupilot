@@ -583,6 +583,12 @@ void AP_SerialManager::init()
                 case SerialProtocol_IOMCU:
                     // nothing to do, AP_IOMCU handles this
                     break;
+                case SerialProtocol_RID:
+                    uart->begin(state[i].baudrate(), 128, 256);
+                    break;
+                case SerialProtocol_BUZZER:
+                    uart->begin(state[i].baudrate(), 0, 64);
+                    break;
                 default:
                     uart->begin(state[i].baudrate());
             }

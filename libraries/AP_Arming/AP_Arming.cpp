@@ -38,6 +38,7 @@
 #include <AP_AHRS/AP_AHRS.h>
 #include <AP_Baro/AP_Baro.h>
 #include <AP_RangeFinder/AP_RangeFinder.h>
+#include <FD_DATA/FD_DATA.h>
 #include <AP_Generator/AP_Generator.h>
 #include <AP_Terrain/AP_Terrain.h>
 #include <AP_ADSB/AP_ADSB.h>
@@ -1672,6 +1673,15 @@ bool AP_Arming::estop_checks(bool display_failure)
     return false;
 }
 
+bool AP_Arming::zfjl_checks(bool report)
+{
+    if (!AP::fd_data().pre_arm_checks()) {
+        check_failed(report, "ZFJL GCS Connection needed");
+        return false;
+    }
+    return true;
+}
+
 bool AP_Arming::pre_arm_checks(bool report)
 {
 #if !APM_BUILD_COPTER_OR_HELI
@@ -1757,7 +1767,8 @@ bool AP_Arming::pre_arm_checks(bool report)
         & crashdump_checks(report)
 #endif
         &  serial_protocol_checks(report)
-        &  estop_checks(report);
+        &  estop_checks(report)
+        &  zfjl_checks(report);
 
     if (!checks_result && last_prearm_checks_result) { // check went from true to false
         report_immediately = true;

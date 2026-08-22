@@ -87,6 +87,7 @@
 #endif
 
 #include <AP_IBus_Telem/AP_IBus_Telem.h>
+#include <FD_DATA/FD_DATA.h>
 
 class AP_DDS_Client;
 
@@ -501,6 +502,8 @@ protected:
 #if AP_RPM_ENABLED
     AP_RPM rpm_sensor;
 #endif
+
+    FD_DATA fd_data;
 
     static const struct AP_Param::GroupInfo var_info[];
 #if AP_SCHEDULER_ENABLED

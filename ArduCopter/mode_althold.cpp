@@ -83,6 +83,8 @@ void ModeAltHold::run()
         copter.avoid.adjust_roll_pitch_rad(target_roll_rad, target_pitch_rad, attitude_control->lean_angle_max_rad());
 #endif
 
+        copter.user_update_assit(target_roll_rad, target_pitch_rad);
+
         // get avoidance adjusted climb rate
         target_climb_rate_ms = get_avoidance_adjusted_climbrate_ms(target_climb_rate_ms);
 
@@ -101,4 +103,10 @@ void ModeAltHold::run()
 
     // run the vertical position controller and set output throttle
     pos_control->D_update_controller();
+
+    if (copter.ufence.triggered()) {
+        copter.ufence.set_triggered(false);
+        copter.set_mode(Mode::Number::BRAKE, ModeReason::FENCE_BREACHED);
+        copter.mode_brake.timeout_to_loiter_ms(0);
+    }
 }

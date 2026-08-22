@@ -16,6 +16,8 @@
 #include <AP_HAL/AP_HAL.h>
 #include "AP_MotorsMatrix.h"
 #include <AP_Vehicle/AP_Vehicle_Type.h>
+#include <FD_DATA/FD_DATA.h>
+#include <AP_Logger/AP_Logger.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -169,6 +171,10 @@ void AP_MotorsMatrix::output_to_motors()
             for (i = 0; i < AP_MOTORS_MAX_NUM_MOTORS; i++) {
                 if (motor_enabled[i]) {
                     set_actuator_with_slew(_actuator[i], thr_lin.thrust_to_actuator(_thrust_rpyt_out[i]));
+
+                    if (AP::fd_data().get_mot_fail(i)) {
+                        _actuator[i] = 0.0f;
+                    }
                 }
             }
             break;
@@ -224,6 +230,17 @@ void AP_MotorsMatrix::output_armed_stabilizing()
     // yaw thrust input value, +/- 1.0
     float yaw_thrust = (_yaw_in + _yaw_in_ff) * compensation_gain;
 
+    // ZFJL: when thrust loss detected, limit yaw to free up motor dynamic range for roll/pitch/throttle
+    if (_thrust_boost) {
+        const float yaw_max = _thrust_loss_yaw_max.get();
+        if (yaw_max <= 0.0f) {
+            yaw_thrust = 0.0f;
+        } else {
+            yaw_thrust = constrain_float(yaw_thrust, -yaw_max, yaw_max);
+        }
+        limit.yaw = true;  // inform upper layer that yaw is being limited
+    }
+
     // throttle thrust input value, 0.0 - 1.0
     float throttle_thrust = get_throttle() * compensation_gain;
 
@@ -248,7 +265,8 @@ void AP_MotorsMatrix::output_armed_stabilizing()
 
     // throttle providing maximum roll, pitch and yaw range
     // calculate the highest allowed average thrust that will provide maximum control range
-    float throttle_thrust_best_rpy = MIN(0.5f, throttle_avg_max);
+    float throttle_thrust_best_rpy = MIN(0.7f, throttle_avg_max);
+    // float throttle_thrust_best_rpy = throttle_avg_max;
 
     // calculate throttle that gives most possible room for yaw which is the lower of:
     //      1. 0.5f - (rpy_low+rpy_high)/2.0 - this would give the maximum possible margin above the highest motor and below the lowest
@@ -307,20 +325,25 @@ void AP_MotorsMatrix::output_armed_stabilizing()
     // Let yaw access minimum amount of head room
     yaw_allowed = MAX(yaw_allowed, yaw_allowed_min);
 
-    // Include the lost motor scaled by _thrust_boost_ratio to smoothly transition this motor in and out of the calculation
-    if (_thrust_boost && motor_enabled[_motor_lost_index]) {
-        // Check the maximum yaw control that can be used on this channel
-        // Exclude any lost motors if thrust boost is enabled
-        if (!is_zero(_yaw_factor[_motor_lost_index])){
-            const float thrust_rp_best_throttle = throttle_thrust_best_rpy + _thrust_rpyt_out[_motor_lost_index];
-            float motor_room;
-            if (is_positive(yaw_thrust * _yaw_factor[_motor_lost_index])) {
-                motor_room = 1.0 - thrust_rp_best_throttle;
-            } else {
-                motor_room = thrust_rp_best_throttle;
+    // ZFJL: when thrust boost is active, yaw_thrust is already constrained above.
+    // Skip the lost motor yaw calculation to avoid artificially reducing yaw_allowed.
+    // The lost motor is allowed to go beyond 1.0, so it should not constrain the remaining motors.
+    if (!_thrust_boost) {
+        // Include the lost motor scaled by _thrust_boost_ratio to smoothly transition this motor in and out of the calculation
+        if (motor_enabled[_motor_lost_index]) {
+            // Check the maximum yaw control that can be used on this channel
+            // Exclude any lost motors if thrust boost is enabled
+            if (!is_zero(_yaw_factor[_motor_lost_index])){
+                const float thrust_rp_best_throttle = throttle_thrust_best_rpy + _thrust_rpyt_out[_motor_lost_index];
+                float motor_room;
+                if (is_positive(yaw_thrust * _yaw_factor[_motor_lost_index])) {
+                    motor_room = 1.0 - thrust_rp_best_throttle;
+                } else {
+                    motor_room = thrust_rp_best_throttle;
+                }
+                const float motor_yaw_allowed = MAX(motor_room, 0.0)/fabsf(_yaw_factor[_motor_lost_index]);
+                yaw_allowed = boost_ratio(yaw_allowed, MIN(yaw_allowed, motor_yaw_allowed));
             }
-            const float motor_yaw_allowed = MAX(motor_room, 0.0)/fabsf(_yaw_factor[_motor_lost_index]);
-            yaw_allowed = boost_ratio(yaw_allowed, MIN(yaw_allowed, motor_yaw_allowed));
         }
     }
 
@@ -338,7 +361,7 @@ void AP_MotorsMatrix::output_armed_stabilizing()
             _thrust_rpyt_out[i] = _thrust_rpyt_out[i] + yaw_thrust * _yaw_factor[i];
 
             // record lowest roll + pitch + yaw command
-            if (_thrust_rpyt_out[i] < rpy_low) {
+            if (_thrust_rpyt_out[i] < rpy_low && (!_thrust_boost || i != _motor_lost_index)) {
                 rpy_low = _thrust_rpyt_out[i];
             }
             // record highest roll + pitch + yaw command
@@ -401,6 +424,39 @@ void AP_MotorsMatrix::output_armed_stabilizing()
 
     // check for failed motor
     check_for_failed_motor(throttle_thrust_best_plus_adj);
+
+    static uint32_t _last_log_ms = AP_HAL::millis();
+    if (AP_HAL::millis() - _last_log_ms > 50) {
+        _last_log_ms = AP_HAL::millis();
+        AP::logger().WriteStreaming("UMOT",
+                                    "TimeUS,tadj,brpy,rpys,badj,limr,limp,limy,limt",
+                                    "s--------",
+                                    "F--------",
+                                    "Qffffffff",
+                                    AP_HAL::micros64(),
+                                    (float)thr_adj,
+                                    (float)throttle_thrust_best_rpy,
+                                    (float)rpy_scale,
+                                    (float)throttle_thrust_best_plus_adj,
+                                    (float)limit.roll,
+                                    (float)limit.pitch,
+                                    (float)limit.yaw,
+                                    (float)limit.throttle_upper);
+        AP::logger().WriteStreaming("UMO2",
+                                    "TimeUS,t1,t2,t3,t4,t5,t6,rh,rl",
+                                    "s--------",
+                                    "F--------",
+                                    "Qffffffff",
+                                    AP_HAL::micros64(),
+                                    (float)_thrust_rpyt_out[0],
+                                    (float)_thrust_rpyt_out[1],
+                                    (float)_thrust_rpyt_out[2],
+                                    (float)_thrust_rpyt_out[3],
+                                    (float)_thrust_rpyt_out[4],
+                                    (float)_thrust_rpyt_out[5],
+                                    (float)rpy_high,
+                                    (float)rpy_low);
+    }
 }
 
 // check for failed motor
@@ -452,6 +508,16 @@ void AP_MotorsMatrix::check_for_failed_motor(float throttle_thrust_best_plus_adj
     }
     if (thrust_balance <= 1.25f && !_thrust_balanced) {
         _thrust_balanced = true;
+    }
+
+    for (uint8_t i = 0; i < AP_MOTORS_MAX_NUM_MOTORS; i++) {
+        if (motor_enabled[i]) {
+            if (AP::fd_data().get_mot_fail(i)) {
+                _motor_lost_index = i;
+                _thrust_balanced = false;
+                break;
+            }
+        }
     }
 
     // check to see if thrust boost is using more throttle than _throttle_thrust_max
@@ -542,6 +608,20 @@ void AP_MotorsMatrix::add_motor(int8_t motor_num, float roll_factor_in_degrees, 
         cosf(radians(pitch_factor_in_degrees)),
         yaw_factor,
         testing_order);
+}
+
+// remove_motor - disabled motor and clears all roll, pitch, throttle factors for this motor
+void AP_MotorsMatrix::remove_motor_pub(int8_t motor_num)
+{
+    // ensure valid motor number is provided
+    if (motor_num >= 0 && motor_num < AP_MOTORS_MAX_NUM_MOTORS) {
+        // disable the motor, set all factors to zero
+        _roll_factor[motor_num] = 0.0f;
+        _pitch_factor[motor_num] = 0.0f;
+        _yaw_factor[motor_num] = 0.0f;
+        _throttle_factor[motor_num] = 0.0f;
+        _actuator[motor_num] = 0.0f;
+    }
 }
 
 // remove_motor - disabled motor and clears all roll, pitch, throttle factors for this motor

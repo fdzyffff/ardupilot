@@ -81,9 +81,24 @@ void SIMState::update()
 {
     static bool init_done;
     if (!init_done) {
-        AP::sitl()->init();
-        init_done = true;
+        if (_sitl == nullptr) {
+            _sitl = AP::sitl();
+        }
+        if (_sitl == nullptr) {
+            return;
+        }
+        _sitl->init();
+#if APM_BUILD_TYPE(APM_BUILD_ArduCopter)
+        _build_copter_frame();
+#elif APM_BUILD_TYPE(APM_BUILD_Heli)
+        _build_heli_frame();
+#elif APM_BUILD_TYPE(APM_BUILD_ArduPlane)
+        _build_plane_frame();
+#else
+        // use SITL params to control model initialisation
         sitl_model = SITL::AP_SIM_FRAME_CLASS::create(AP_SIM_FRAME_STRING);
+#endif
+        init_done = true;
     }
 
     _fdm_input_step();

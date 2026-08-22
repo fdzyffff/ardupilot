@@ -1203,6 +1203,12 @@ ap_message GCS_MAVLINK::mavlink_id_to_ap_message_id(const uint32_t mavlink_id) c
 #if AP_MAVLINK_MSG_FLIGHT_INFORMATION_ENABLED
         { MAVLINK_MSG_ID_FLIGHT_INFORMATION, MSG_FLIGHT_INFORMATION},
 #endif
+        { MAVLINK_MSG_ID_ZFJL_SN, MSG_ZFJL_SN},
+        { MAVLINK_MSG_ID_ZFJL_RT, MSG_ZFJL_RT},
+        { MAVLINK_MSG_ID_ZFJL_UAS, MSG_ZFJL_UAS},
+        { MAVLINK_MSG_ID_ZFJL_UAV_HEARTBEAT, MSG_ZFJL_UAV_HEARTBEAT},
+        { MAVLINK_MSG_ID_ZF6666_STATUS, MSG_ZF6666_STATUS},
+        { MAVLINK_MSG_ID_ZF8888_STATUS, MSG_ZF8888_STATUS},
     };
 
     for (uint8_t i=0; i<ARRAY_SIZE(map); i++) {
@@ -3164,6 +3170,28 @@ void GCS_MAVLINK::send_heartbeat() const
         base_mode(),
         gcs().custom_mode(),
         system_status());
+}
+
+void GCS_MAVLINK::send_zf6666_status() const
+{
+    mavlink_msg_zf6666_status_send(
+        chan,
+        1,
+        1,
+        1,
+        1
+        );
+}
+
+void GCS_MAVLINK::send_zf8888_status() const
+{
+    mavlink_msg_zf8888_status_send(
+        chan,
+        1,
+        1,
+        1,
+        1
+        );
 }
 
 #if AP_RC_CHANNEL_ENABLED
@@ -6413,6 +6441,36 @@ bool GCS_MAVLINK::try_send_message(const enum ap_message id)
     bool ret = true;
 
     switch(id) {
+
+    case MSG_ZFJL_SN:
+        CHECK_PAYLOAD_SIZE(ZFJL_SN);
+        AP::fd_data().send_zfjl_sn(chan);
+        break;
+
+    case MSG_ZFJL_RT:
+        CHECK_PAYLOAD_SIZE(ZFJL_RT);
+        AP::fd_data().send_zfjl_rt(chan);
+        break;
+
+    case MSG_ZFJL_UAS:
+        CHECK_PAYLOAD_SIZE(ZFJL_UAS);
+        AP::fd_data().send_zfjl_uas(chan);
+        break;
+
+    case MSG_ZFJL_UAV_HEARTBEAT:
+        CHECK_PAYLOAD_SIZE(ZFJL_UAV_HEARTBEAT);
+        AP::fd_data().send_zfjl_uav_heartbeat(chan);
+        break;
+
+    case MSG_ZF6666_STATUS:
+        CHECK_PAYLOAD_SIZE(ZF6666_STATUS);
+        send_zf6666_status();
+        break;
+
+    case MSG_ZF8888_STATUS:
+        CHECK_PAYLOAD_SIZE(ZF8888_STATUS);
+        send_zf8888_status();
+        break;
 
 #if AP_AHRS_ENABLED
     case MSG_ATTITUDE:

@@ -109,6 +109,8 @@ public:
     float get_throttle_avg_max() const;
     int16_t get_yaw_headroom() const;
 
+    virtual void        remove_motor_pub(int8_t motor_num) {}
+
     // Thrust Linearization handling
     Thrust_Linearization thr_lin {*this};
 
@@ -202,6 +204,14 @@ protected:
 
     // scaling for booster motor throttle
     AP_Float            _boost_scale;
+
+    // @Param: TL_YAW_MAX
+    // @DisplayName: Thrust Loss Yaw Max
+    // @Description: Maximum yaw output when thrust loss (motor failure) is detected. 0 means no yaw control, 0.1 means 10% of full yaw range. This frees up motor dynamic range for roll/pitch/throttle when a motor is lost.
+    // @Range: 0 1
+    // @Increment: 0.01
+    // @User: Advanced
+    AP_Float            _thrust_loss_yaw_max;
 
     // motor output variables
     bool                motor_enabled[AP_MOTORS_MAX_NUM_MOTORS];    // true if motor is enabled

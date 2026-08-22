@@ -117,6 +117,17 @@ void Copter::thrust_loss_check()
         return;
     }
 
+    for (uint8_t i = 0; i < AP_MOTORS_MAX_NUM_MOTORS; i++) {
+        if (AP::fd_data().get_mot_fail(i)) {
+            motors->set_thrust_boost(true);
+            thrust_loss_counter = 0;
+            LOGGER_WRITE_ERROR(LogErrorSubsystem::THRUST_LOSS_CHECK, LogErrorCode::FAILSAFE_OCCURRED);
+            // send message to gcs
+            gcs().send_text(MAV_SEVERITY_EMERGENCY, "F Potential Thrust Loss (%d)", i + 1);
+            break;
+        }
+    }
+
     // exit immediately if in standby
     if (standby_active) {
         return;

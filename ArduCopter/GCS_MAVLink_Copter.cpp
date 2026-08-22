@@ -379,6 +379,7 @@ void GCS_MAVLINK_Copter::packetReceived(const mavlink_status_t &status,
         copter.avoidance_adsb.handle_msg(msg);
     }
 #endif
+    AP::fd_data().handle_message(chan, msg);
     GCS_MAVLINK::packetReceived(status, msg);
 }
 

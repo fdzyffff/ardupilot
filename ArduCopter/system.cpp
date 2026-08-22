@@ -128,6 +128,8 @@ void Copter::init_ardupilot()
     landinggear.init();
 #endif
 
+    uart.init();
+
 #ifdef USERHOOK_INIT
     USERHOOK_INIT
 #endif

@@ -52,6 +52,7 @@ public:
     static void handle_battery_info_trampoline(AP_DroneCAN *ap_dronecan, const CanardRxTransfer& transfer, const uavcan_equipment_power_BatteryInfo &msg);
     static void handle_battery_info_aux_trampoline(AP_DroneCAN *ap_dronecan, const CanardRxTransfer& transfer, const ardupilot_equipment_power_BatteryInfoAux &msg);
     static void handle_mppt_stream_trampoline(AP_DroneCAN *ap_dronecan, const CanardRxTransfer& transfer, const mppt_Stream &msg);
+    static void handle_battery_info_periodic_trampoline(AP_DroneCAN *ap_dronecan, const CanardRxTransfer& transfer, const ardupilot_equipment_power_BatteryPeriodic &msg);
 
     void set_powered_state(bool power_on) override;
 
@@ -61,6 +62,7 @@ public:
 private:
     void handle_battery_info(const uavcan_equipment_power_BatteryInfo &msg);
     void handle_battery_info_aux(const ardupilot_equipment_power_BatteryInfoAux &msg);
+    void handle_battery_info_periodic(const ardupilot_equipment_power_BatteryPeriodic &msg);
     void update_interim_state(const float voltage, const float current, const float temperature_K, const uint8_t soc, uint8_t soh_pct);
 
     static bool match_battery_id(uint8_t instance, uint8_t battery_id);
@@ -92,6 +94,7 @@ private:
     uint8_t _soc;
     uint8_t _node_id;
     uint16_t _cycle_count;
+    uint32_t _last_periodic_print_ms;
     float _remaining_capacity_wh;
     float _full_charge_capacity_wh;
     bool _has_temperature;

@@ -254,6 +254,14 @@ const AP_Param::GroupInfo AP_MotorsMulticopter::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("IDLE_SEC", 45, AP_MotorsMulticopter, _idle_time_delay_s, 0),
 
+    // @Param: TL_YAW_MAX
+    // @DisplayName: Thrust Loss Yaw Max
+    // @Description: Maximum yaw output when thrust loss (motor failure) is detected. 0 means no yaw control, 0.1 means 10% of full yaw range. This frees up motor dynamic range for roll/pitch/throttle when a motor is lost.
+    // @Range: 0 1
+    // @Increment: 0.01
+    // @User: Advanced
+    AP_GROUPINFO("TL_YAW_MAX", 46, AP_MotorsMulticopter, _thrust_loss_yaw_max, 0.1f),
+
     AP_GROUPEND
 };
 

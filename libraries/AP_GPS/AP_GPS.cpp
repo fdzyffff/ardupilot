@@ -285,6 +285,15 @@ const AP_Param::GroupInfo AP_GPS::var_info[] = {
     AP_SUBGROUPINFO(params[1], "2_", 33, AP_GPS, AP_GPS::Params),
 #endif
 
+    // @Param: _YAW_OFFSET
+    // @DisplayName: GPS yaw offset
+    // @Description: Offset added to GPS yaw (e.g. moving baseline heading) returned to consumers
+    // @Units: deg
+    // @Range: -180 180
+    // @Increment: 0.1
+    // @User: Advanced
+    AP_GROUPINFO("_YAW_OFFSET", 34, AP_GPS, _yaw_offset, 0.0f),
+
     AP_GROUPEND
 };
 
@@ -2006,7 +2015,7 @@ bool AP_GPS::gps_yaw_deg(uint8_t instance, float &yaw_deg, float &accuracy_deg, 
     if (!have_gps_yaw(instance)) {
         return false;
     }
-    yaw_deg = state[instance].gps_yaw;
+    yaw_deg = wrap_360(state[instance].gps_yaw + constrain_float(_yaw_offset.get(), -180.0f, 180.0f));
 
     // get lagged timestamp
     time_ms = state[instance].gps_yaw_time_ms;

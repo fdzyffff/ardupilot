@@ -1093,6 +1093,8 @@ private:
     void afs_fs_check(void);
 #endif
     void one_second_loop(void);
+    void check_forced_rtl_or_qland();
+    bool force_safe_triggered = false;
     void three_hz_loop(void);
 #if AP_AIRSPEED_AUTOCAL_ENABLE
     void airspeed_ratio_update(void);

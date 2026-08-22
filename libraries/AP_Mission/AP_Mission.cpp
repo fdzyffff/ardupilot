@@ -82,7 +82,7 @@ void AP_Mission::init()
     if (_storage.size() >= AP_MISSION_EEPROM_COMMAND_SIZE+4) {
         _commands_max = (_storage.size()-4U) / AP_MISSION_EEPROM_COMMAND_SIZE;
     }
-    if (_cmd_total.get() > _commands_max) {
+    if (_cmd_total.get() > _commands_max && _storage.read_uint32(0) == AP_MISSION_EEPROM_VERSION) {
         // wipe mission if storage not available, but don't save. This allows sdcard error to be fixed and reboot
         _cmd_total.set(0);
     }
@@ -543,7 +543,9 @@ bool AP_Mission::is_nav_cmd(const Mission_Command& cmd)
     return (cmd.id <= MAV_CMD_NAV_LAST ||
             cmd.id == MAV_CMD_NAV_SET_YAW_SPEED ||
             cmd.id == MAV_CMD_NAV_SCRIPT_TIME ||
-            cmd.id == MAV_CMD_NAV_ATTITUDE_TIME);
+            cmd.id == MAV_CMD_NAV_ATTITUDE_TIME ||
+            cmd.id == MAV_CMD_NAV_NEW_WAYPOINT ||
+            cmd.id == MAV_CMD_NAV_NEW_END);
 }
 
 /// get_next_nav_cmd - gets next "navigation" command found at or after start_index
@@ -841,27 +843,19 @@ bool AP_Mission::read_cmd_from_storage(uint16_t index, Mission_Command& cmd) con
     const uint16_t pos_in_storage = 4 + (index * AP_MISSION_EEPROM_COMMAND_SIZE);
 
     PackedContent packed_content {};
-
-    const uint8_t b1 = _storage.read_byte(pos_in_storage);
-    if (b1 == 0 || b1 == 1) {
-        cmd.id = _storage.read_uint16(pos_in_storage+1);
-        cmd.p1 = _storage.read_uint16(pos_in_storage+3);
-        _storage.read_block(packed_content.bytes, pos_in_storage+5, 10);
-        format_conversion(b1, cmd, packed_content);
-    } else {
-        cmd.id = b1;
-        cmd.p1 = _storage.read_uint16(pos_in_storage+1);
-        _storage.read_block(packed_content.bytes, pos_in_storage+3, 12);
-    }
+    cmd.id = _storage.read_uint16(pos_in_storage);
+    cmd.p1 = _storage.read_uint16(pos_in_storage + 2);
+    cmd.p2 = _storage.read_uint16(pos_in_storage + 4);
+    cmd.p3 = _storage.read_uint16(pos_in_storage + 6);
+    cmd.p4 = _storage.read_uint16(pos_in_storage + 8);
+    _storage.read_block(packed_content.bytes, pos_in_storage + 10, sizeof(packed_content.bytes));
 
     if (stored_in_location(cmd.id)) {
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-        // NOTE!  no 16-bit command may be stored_in_location as only
-        // 10 bytes are available for storage and lat/lon/alt required
-        // 4*sizeof(float) == 12 bytes of storage.
-        if (b1 == 0) {
-            AP_HAL::panic("May not store location for 16-bit commands");
-        }
+        // Current 22-byte storage provides the complete 12-byte PackedLocation
+        // for all 16-bit command IDs.
+        static_assert(AP_MISSION_EEPROM_COMMAND_SIZE >= 22,
+                      "location storage must hold 16-bit command IDs");
 #endif
         // Location is not PACKED; field-wise copy it:
         cmd.content.location.relative_alt = packed_content.location.flags.relative_alt;
@@ -923,6 +917,7 @@ bool AP_Mission::stored_in_location(uint16_t id)
     case MAV_CMD_NAV_FENCE_RETURN_POINT:
     case MAV_CMD_NAV_RALLY_POINT:
     case MAV_CMD_NAV_ARC_WAYPOINT:
+    case MAV_CMD_NAV_NEW_WAYPOINT:
         return true;
     default:
         return false;
@@ -962,28 +957,13 @@ bool AP_Mission::write_cmd_to_storage(uint16_t index, const Mission_Command& cmd
     }
 
     // calculate where in storage the command should be placed
-    uint16_t pos_in_storage = 4 + (index * AP_MISSION_EEPROM_COMMAND_SIZE);
-
-    if (cmd.id < 256) {
-        // for commands below 256 we store up to 12 bytes
-        _storage.write_byte(pos_in_storage, cmd.id);
-        _storage.write_uint16(pos_in_storage+1, cmd.p1);
-        _storage.write_block(pos_in_storage+3, packed.bytes, 12);
-    } else {
-        // if the command ID is above 256 we store a tag byte followed
-        // by the 16 bit command ID. The tag byte is 1 for commands
-        // where we have changed the storage format (see
-        // format_conversion), 0 otherwise
-        uint8_t tag_byte = 0;
-        // currently the only converted structure is NAV_SCRIPT_TIME
-        if (cmd.id == MAV_CMD_NAV_SCRIPT_TIME) {
-            tag_byte = 1;
-        }
-        _storage.write_byte(pos_in_storage, tag_byte);
-        _storage.write_uint16(pos_in_storage+1, cmd.id);
-        _storage.write_uint16(pos_in_storage+3, cmd.p1);
-        _storage.write_block(pos_in_storage+5, packed.bytes, 10);
-    }
+    const uint16_t pos_in_storage = 4 + (index * AP_MISSION_EEPROM_COMMAND_SIZE);
+    _storage.write_uint16(pos_in_storage, cmd.id);
+    _storage.write_uint16(pos_in_storage + 2, cmd.p1);
+    _storage.write_uint16(pos_in_storage + 4, cmd.p2);
+    _storage.write_uint16(pos_in_storage + 6, cmd.p3);
+    _storage.write_uint16(pos_in_storage + 8, cmd.p4);
+    _storage.write_block(pos_in_storage + 10, packed.bytes, sizeof(packed.bytes));
 
     // remember when the mission last changed
     if (index != 0) {
@@ -1342,6 +1322,32 @@ MAV_MISSION_RESULT AP_Mission::mavlink_int_to_mission_cmd(const mavlink_mission_
         cmd.content.altitude_wait.altitude = packet.param1;
         cmd.content.altitude_wait.descent_rate = packet.param2;
         cmd.content.altitude_wait.wiggle_time = packet.param3;
+        break;
+
+    case MAV_CMD_NAV_NEW_WAYPOINT:
+        if (packet.param1 < 0 || packet.param1 > UINT16_MAX ||
+            packet.param2 < 0 || packet.param2 > UINT16_MAX ||
+            packet.param3 < 0 || packet.param3 > UINT16_MAX ||
+            packet.param4 < 0 || packet.param4 > UINT16_MAX) {
+            return MAV_MISSION_INVALID;
+        }
+        cmd.p1 = uint16_t(packet.param1);
+        cmd.p2 = uint16_t(packet.param2);
+        cmd.p3 = uint16_t(packet.param3);
+        cmd.p4 = uint16_t(packet.param4);
+        break;
+
+    case MAV_CMD_NAV_NEW_END:
+        if (packet.param1 < 0 || packet.param1 > 3 ||
+            packet.param2 < 0 || packet.param2 > UINT16_MAX ||
+            packet.param3 < 0 || packet.param3 > UINT16_MAX ||
+            packet.param4 < 0 || packet.param4 > UINT16_MAX) {
+            return MAV_MISSION_INVALID;
+        }
+        cmd.p1 = uint16_t(packet.param1);
+        cmd.p2 = uint16_t(packet.param2);
+        cmd.p3 = uint16_t(packet.param3);
+        cmd.p4 = uint16_t(packet.param4);
         break;
 
     case MAV_CMD_NAV_VTOL_TAKEOFF:
@@ -1872,6 +1878,14 @@ bool AP_Mission::mission_cmd_to_mavlink_int(const AP_Mission::Mission_Command& c
         packet.param3 = cmd.content.altitude_wait.wiggle_time;
         break;
 
+    case MAV_CMD_NAV_NEW_WAYPOINT:
+    case MAV_CMD_NAV_NEW_END:
+        packet.param1 = cmd.p1;
+        packet.param2 = cmd.p2;
+        packet.param3 = cmd.p3;
+        packet.param4 = cmd.p4;
+        break;
+
     case MAV_CMD_NAV_VTOL_TAKEOFF:
         break;
 
@@ -2039,6 +2053,10 @@ bool AP_Mission::mission_cmd_to_mavlink_int(const AP_Mission::Mission_Command& c
 /// complete - mission is marked complete and clean-up performed including calling the mission_complete_fn
 void AP_Mission::complete()
 {
+    if (_flags.state == MISSION_COMPLETE) {
+        return;
+    }
+
     // flag mission as complete
     _flags.state = MISSION_COMPLETE;
     _flags.in_landing_sequence = false;
@@ -2046,6 +2064,15 @@ void AP_Mission::complete()
 
     // callback to main program's mission complete function
     _mission_complete_fn();
+}
+
+bool AP_Mission::request_complete()
+{
+    if (_flags.state != MISSION_RUNNING) {
+        return false;
+    }
+    complete();
+    return true;
 }
 
 /// advance_current_nav_cmd - moves current nav command forward
@@ -2101,7 +2128,11 @@ bool AP_Mission::advance_current_nav_cmd(uint16_t starting_index)
             }
             // set current navigation command and start it
             _nav_cmd = cmd;
-            if (start_command(_nav_cmd)) {
+            const bool command_started = start_command(_nav_cmd);
+            if (_flags.state != MISSION_RUNNING) {
+                return false;
+            }
+            if (command_started) {
                 _flags.nav_cmd_loaded = true;
                 if (_jump_tag.age > 0 && _jump_tag.age < UINT16_MAX) {
                     // we're tracking a tag so increase it's age on every new NAV item
@@ -2418,14 +2449,59 @@ void AP_Mission::increment_jump_times_run(Mission_Command& cmd, bool send_gcs_ms
 // command list will be cleared if they do not match
 void AP_Mission::check_eeprom_version()
 {
-    uint32_t eeprom_version = _storage.read_uint32(0);
+    const uint32_t eeprom_version = _storage.read_uint32(0);
 
-    // if eeprom version does not match, clear the command list and update the eeprom version
-    if (eeprom_version != AP_MISSION_EEPROM_VERSION) {
-        if (clear()) {
-            _storage.write_uint32(0, AP_MISSION_EEPROM_VERSION);
+    if (eeprom_version == AP_MISSION_EEPROM_VERSION) {
+        return;
+    }
+
+    if (eeprom_version == AP_MISSION_EEPROM_VERSION_15_BYTE && migrate_15_byte_storage()) {
+        _storage.write_uint32(0, AP_MISSION_EEPROM_VERSION);
+        return;
+    }
+
+    if (clear()) {
+        _storage.write_uint32(0, AP_MISSION_EEPROM_VERSION);
+    }
+}
+
+bool AP_Mission::migrate_15_byte_storage()
+{
+    const uint16_t count = _cmd_total.get();
+    const uint16_t old_commands_max = (_storage.size() - 4U) / AP_MISSION_EEPROM_COMMAND_SIZE_OLD;
+    if (count > old_commands_max || count > _commands_max) {
+        return false;
+    }
+
+    // Move backwards so expanding a slot never overwrites an unread source slot.
+    for (uint16_t index = count; index > 0; index--) {
+        const uint16_t command_index = index - 1;
+        const uint16_t old_pos = 4 + command_index * AP_MISSION_EEPROM_COMMAND_SIZE_OLD;
+        const uint16_t new_pos = 4 + command_index * AP_MISSION_EEPROM_COMMAND_SIZE;
+        uint8_t old_slot[AP_MISSION_EEPROM_COMMAND_SIZE_OLD] {};
+        uint8_t new_slot[AP_MISSION_EEPROM_COMMAND_SIZE] {};
+        if (!_storage.read_block(old_slot, old_pos, sizeof(old_slot))) {
+            return false;
+        }
+
+        uint16_t id;
+        uint16_t p1;
+        if (old_slot[0] == 0 || old_slot[0] == 1) {
+            memcpy(&id, &old_slot[1], sizeof(id));
+            memcpy(&p1, &old_slot[3], sizeof(p1));
+            memcpy(&new_slot[10], &old_slot[5], 10);
+        } else {
+            id = old_slot[0];
+            memcpy(&p1, &old_slot[1], sizeof(p1));
+            memcpy(&new_slot[10], &old_slot[3], 12);
+        }
+        memcpy(&new_slot[0], &id, sizeof(id));
+        memcpy(&new_slot[2], &p1, sizeof(p1));
+        if (!_storage.write_block(new_pos, new_slot, sizeof(new_slot))) {
+            return false;
         }
     }
+    return true;
 }
 
 // find the nearest landing sequence starting point (DO_LAND_START) and
@@ -2952,17 +3028,7 @@ const char *AP_Mission::Mission_Command::type() const
 uint16_t AP_Mission::get_command_id(uint16_t index) const
 {
     const uint16_t pos_in_storage = 4 + (index * AP_MISSION_EEPROM_COMMAND_SIZE);
-    uint8_t b[3] {};
-    if (!_storage.read_block(b, pos_in_storage, sizeof(b))) {
-        return 0U;
-    }
-    uint16_t id = 0;
-    if (b[0] == 0 || b[0] == 1) {
-        memcpy((void*)&id, (void*)&b[1], 2);
-    } else {
-        id = b[0];
-    }
-    return id;
+    return _storage.read_uint16(pos_in_storage);
 }
 
 /*

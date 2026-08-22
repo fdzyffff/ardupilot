@@ -31,6 +31,9 @@
 #include "AP_Proximity_Scripting.h"
 #include "AP_Proximity_LD06.h"
 #include "AP_Proximity_MR72_CAN.h"
+#include "AP_Proximity_LidarM10P.h"
+#include "AP_Proximity_LidarM10.h"
+#include "AP_Proximity_LidarN10P.h"
 
 
 #include <AP_Logger/AP_Logger.h>
@@ -264,6 +267,33 @@ void AP_Proximity::init()
             if (AP_Proximity_LD06::detect(serial_instance)) {
                 state[instance].instance = instance;
                 drivers[instance] = NEW_NOTHROW AP_Proximity_LD06(*this, state[instance], params[instance], serial_instance);
+                serial_instance++;
+            }
+            break;
+#endif
+#if AP_PROXIMITY_LIDARM10P_ENABLED
+        case Type::LIDARM10P:
+            if (AP_Proximity_LidarM10P::detect(serial_instance)) {
+                state[instance].instance = instance;
+                drivers[instance] = NEW_NOTHROW AP_Proximity_LidarM10P(*this, state[instance], params[instance], serial_instance);
+                serial_instance++;
+            }
+            break;
+#endif
+#if AP_PROXIMITY_LIDARM10_ENABLED
+        case Type::LIDARM10:
+            if (AP_Proximity_LidarM10::detect(serial_instance)) {
+                state[instance].instance = instance;
+                drivers[instance] = NEW_NOTHROW AP_Proximity_LidarM10(*this, state[instance], params[instance], serial_instance);
+                serial_instance++;
+            }
+            break;
+#endif
+#if AP_PROXIMITY_LIDARN10P_ENABLED
+        case Type::LIDARN10P:
+            if (AP_Proximity_LidarN10P::detect(serial_instance)) {
+                state[instance].instance = instance;
+                drivers[instance] = NEW_NOTHROW AP_Proximity_LidarN10P(*this, state[instance], params[instance], serial_instance);
                 serial_instance++;
             }
             break;

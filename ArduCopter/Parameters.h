@@ -6,6 +6,10 @@
 #include "RC_Channel_Copter.h"
 #include <AP_Proximity/AP_Proximity.h>
 
+#if USER_PARAMS_ENABLED
+#include "UserParameters.h"
+#endif
+
 class ModeRTL;
 
 #if MODE_FOLLOW_ENABLED
@@ -575,14 +579,14 @@ public:
     AP_Follow follow;
 #endif
 
-#if USER_PARAMS_ENABLED
-    // User custom parameters
-    UserParameters user_parameters;
-#endif
-
 #if AUTOTUNE_ENABLED
     // we need a pointer to autotune for the G2 table
     void *autotune_ptr;
+#endif
+
+#if USER_PARAMS_ENABLED
+    // User custom parameters
+    UserParameters user_parameters;
 #endif
 
 #if AP_RC_TRANSMITTER_TUNING_ENABLED

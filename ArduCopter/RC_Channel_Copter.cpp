@@ -685,6 +685,28 @@ bool RC_Channel_Copter::do_aux_function(const AuxFuncTrigger &trigger)
         break;
 #endif  // AP_RC_TRANSMITTER_TUNING_ENABLED
 
+        case AUX_FUNC::ARMDISARM:
+            if (copter.g2.user_parameters.arm_mode.get() == 1) {
+                // arm or disarm the vehicle
+                switch (ch_flag) {
+                    case AuxSwitchPos::HIGH:
+                        if (copter.user_arm_switch_count()) {
+                            if (!copter.arming.is_armed())
+                            {
+                                AP::arming().arm(AP_Arming::Method::AUXSWITCH, true);
+                            } else {
+                                AP::arming().disarm(AP_Arming::Method::AUXSWITCH);
+                            }
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            } else {
+                do_aux_function_armdisarm(ch_flag);
+            }
+            break;
+
     default:
         return RC_Channel::do_aux_function(trigger);
     }

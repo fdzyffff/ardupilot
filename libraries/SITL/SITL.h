@@ -261,6 +261,8 @@ public:
 
     AP_Float uart_byte_loss_pct;
 
+    AP_Int8 sim_frame_type;
+
 #ifdef SFML_JOYSTICK
     AP_Int8 sfml_joystick_id;
     AP_Int8 sfml_joystick_axis[8];
@@ -513,6 +515,7 @@ public:
         AP_Float lng;
         AP_Float alt; // metres
         AP_Float hdg; // 0 to 360
+        AP_Float pth; // -180 to 180
     } opos;
 
     uint16_t irlock_port;

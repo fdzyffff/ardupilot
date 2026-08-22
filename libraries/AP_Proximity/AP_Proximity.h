@@ -95,6 +95,15 @@ public:
 #if AP_PROXIMITY_HEXSOONRADAR_ENABLED
         Hexsoon_Radar = 18,
 #endif
+#if AP_PROXIMITY_LIDARM10P_ENABLED
+        LIDARM10P = 19,
+#endif
+#if AP_PROXIMITY_LIDARM10_ENABLED
+        LIDARM10 = 20,
+#endif
+#if AP_PROXIMITY_LIDARN10P_ENABLED
+        LIDARN10P = 21,
+#endif
     };
 
     enum class Status {

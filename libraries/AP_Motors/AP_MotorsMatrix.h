@@ -120,6 +120,7 @@ protected:
 
     // remove_motor
     void                remove_motor(int8_t motor_num);
+    void                remove_motor_pub(int8_t motor_num) override;
 
     // configures the motors for the defined frame_class and frame_type
     virtual void        setup_motors(motor_frame_class frame_class, motor_frame_type frame_type);

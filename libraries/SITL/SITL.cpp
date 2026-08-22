@@ -470,6 +470,11 @@ const AP_Param::GroupInfo SIM::var_info2[] = {
     // @Description: Specifies vehicle's startup heading (0-360)
     // @User: Advanced
     AP_GROUPINFO("OPOS_HDG",    54, SIM,  opos.hdg, 353.0f),
+    // @Param: FRAME_TYPE
+    // @DisplayName: Simulation frame type
+    // @Description: SimOnHW only. Selects the simulated vehicle frame. Copter: 0=+ 1=quad 2=copter 3=x 4=bfxrev 5=bfx 6=djix 7=cwx 8=hexa 9=hexa-cwx 10=hexa-dji 11=octa 12=octa-cwx 13=octa-dji 14=octa-quad-cwx 15=dodeca-hexa 16=tri 17=y6 18=deca 19=deca-cwx. Heli: 0=heli 1=heli-dual 2=heli-compound 3=heli-blade360. Plane: 0=plane 1=plane-catapult 2=plane-bungee 3=plane-throw 4=plane-drop 10..24=quadplane variants. Invalid value falls back to default frame.
+    // @User: Advanced
+    AP_GROUPINFO("FRAME_TYPE",    57, SIM,  sim_frame_type, 0),
     // @Param: LOOP_DELAY
     // @DisplayName: Extra delay per main loop
     // @Description: Extra time delay per main loop
@@ -547,6 +552,14 @@ const AP_Param::GroupInfo SIM::var_info3[] = {
     // @Description: SITL Loop rate
     // @Units: Hz
     AP_GROUPINFO("RATE_HZ",  22, SIM,  loop_rate_hz, SIM_RATE_HZ_DEFAULT),
+
+    // @Param: OPOS_PTH
+    // @DisplayName: OPOS pitch
+    // @Description: Original pitch for simulation start
+    // @Units: deg
+    // @Range: -180 180
+    // @User: Advanced
+    AP_GROUPINFO("OPOS_PTH",      2, SIM,  opos.pth, 0.0f),
 
     // @Param: IMU_COUNT
     // @DisplayName: IMU count

@@ -177,6 +177,8 @@
 #include "UserParameters.h"
 #endif
 #include "mode.h"
+#include "Uart.h"
+#include "UFence.h"
 
 class Copter : public AP_Vehicle {
 public:
@@ -227,6 +229,8 @@ public:
     friend class ModeZigZag;
     friend class ModeAutorotate;
     friend class ModeTurtle;
+    friend class Uart;
+    friend class UFence;
 
     friend class _AutoTakeoff;
 
@@ -1021,6 +1025,19 @@ private:
     void userhook_auxSwitch1(const RC_Channel::AuxSwitchPos ch_flag);
     void userhook_auxSwitch2(const RC_Channel::AuxSwitchPos ch_flag);
     void userhook_auxSwitch3(const RC_Channel::AuxSwitchPos ch_flag);
+    void fd_data_update();
+    void rid_update();
+    uint8_t user_get_uav_status();
+    bool user_arm_switch_count();
+    void user_update_assit(float &target_roll, float &target_pitch);
+    void user_gps_fail_check();
+    bool user_ekf_second_ok();
+    bool user_ekf_third_ok();
+    void check_forced_land_or_rtl();
+    bool force_safe_triggered = false;
+
+    Uart uart;
+    UFence ufence;
 
 #if MODE_ACRO_ENABLED
 #if FRAME_CONFIG == HELI_FRAME

@@ -262,6 +262,8 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     // don't delete this, there is an equivalent (virtual) in AP_Vehicle for the non-rate loop case
     SCHED_TASK(update_dynamic_notch_at_specified_rate_main,                       LOOP_RATE, 200, 215),
 #endif
+    SCHED_TASK(fd_data_update,          1,     75, 218),
+    SCHED_TASK(rid_update,             10,    100, 221),
 };
 
 void Copter::get_scheduler_tasks(const AP_Scheduler::Task *&tasks,

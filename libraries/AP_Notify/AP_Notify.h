@@ -102,6 +102,10 @@ public:
 #if HAL_WITH_IO_MCU && AP_IOMCU_PROFILED_SUPPORT_ENABLED
         Notify_LED_ProfiLED_IOMCU           = (1 << 19), // ProfiLED IOMCU
 #endif
+#if AP_NOTIFY_LP5817_I2C_ENABLED
+        Notify_LED_LP5817_I2C_External      = (1 << 20), // LP5817
+        Notify_LED_LP5817_I2C_Internal      = (1 << 21), // LP5817
+#endif
         Notify_LED_MAX
     };
 
@@ -251,6 +255,7 @@ private:
     AP_Int8 _buzzer_level;
     AP_Int8 _buzzer_volume;
     AP_Int8 _led_len;
+    AP_Int8 _lp5817_current;
 
     char _send_text[NOTIFY_TEXT_BUFFER_SIZE];
     uint32_t _send_text_updated_millis; // last time text changed

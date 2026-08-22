@@ -31,6 +31,7 @@
 #include "ToneAlarm.h"
 #include "ToshibaLED_I2C.h"
 #include "LP5562.h"
+#include "LP5817_I2C.h"
 #include "VRBoard_LED.h"
 #include "DiscreteRGBLed.h"
 #include "DiscoLED.h"
@@ -43,6 +44,7 @@
 #include "ScriptingLED.h"
 #include "DShotLED.h"
 #include "ProfiLED_IOMCU.h"
+#include "Buzzer_uart.h"
 
 extern const AP_HAL::HAL& hal;
 
@@ -182,7 +184,7 @@ const AP_Param::GroupInfo AP_Notify::var_info[] = {
     // @Param: LED_TYPES
     // @DisplayName: LED Driver Types
     // @Description: Controls what types of LEDs will be enabled
-    // @Bitmask: 0:Built-in LED, 1:Internal ToshibaLED, 2:External ToshibaLED, 3:External PCA9685, 4:Oreo LED, 5:DroneCAN, 6:NCP5623 External, 7:NCP5623 Internal, 8:NeoPixel, 9:ProfiLED, 10:Scripting, 11:DShot, 12:ProfiLED_SPI, 13:LP5562 External, 14: LP5562 Internal, 15:IS31FL3195 External, 16: IS31FL3195 Internal, 17: DiscreteRGB, 18: NeoPixelRGB, 19:ProfiLED_IOMCU
+    // @Bitmask: 0:Built-in LED, 1:Internal ToshibaLED, 2:External ToshibaLED, 3:External PCA9685, 4:Oreo LED, 5:DroneCAN, 6:NCP5623 External, 7:NCP5623 Internal, 8:NeoPixel, 9:ProfiLED, 10:Scripting, 11:DShot, 12:ProfiLED_SPI, 13:LP5562 External, 14: LP5562 Internal, 15:IS31FL3195 External, 16: IS31FL3195 Internal, 17: DiscreteRGB, 18: NeoPixelRGB, 19:ProfiLED_IOMCU, 20:LP5817 External, 21: LP5817 Internal
     // @User: Advanced
     AP_GROUPINFO("LED_TYPES", 6, AP_Notify, _led_type, DEFAULT_NTF_LED_TYPES),
 
@@ -207,6 +209,15 @@ const AP_Param::GroupInfo AP_Notify::var_info[] = {
     // @User: Advanced
     // @RebootRequired: True
     AP_GROUPINFO("LED_LEN", 9, AP_Notify, _led_len, NOTIFY_LED_LEN_DEFAULT),
+
+#if AP_NOTIFY_LP5817_I2C_ENABLED
+    // @Param: LP5817_CURRENT
+    // @DisplayName: LP5817 RGB LED maximum current
+    // @Description: Maximum current range for the LP5817 RGB LED driver.
+    // @Values: 0:25.5mA,1:51mA
+    // @User: Advanced
+    AP_GROUPINFO("LP5817_CURRENT", 10, AP_Notify, _lp5817_current, 0),
+#endif
 
     AP_GROUPEND
 };
@@ -376,6 +387,18 @@ void AP_Notify::add_backends(void)
                 }
                 break;
 #endif
+#if AP_NOTIFY_LP5817_I2C_ENABLED
+            case Notify_LED_LP5817_I2C_External:
+                FOREACH_I2C_EXTERNAL(b) {
+                    ADD_BACKEND(NEW_NOTHROW LP5817_I2C(b, _lp5817_current));
+                }
+                break;
+            case Notify_LED_LP5817_I2C_Internal:
+                FOREACH_I2C_INTERNAL(b) {
+                    ADD_BACKEND(NEW_NOTHROW LP5817_I2C(b, _lp5817_current));
+                }
+                break;
+#endif
 #if AP_NOTIFY_DISCRETE_RGB_ENABLED
             case Notify_LED_DiscreteRGB:
                 ADD_BACKEND(NEW_NOTHROW DiscreteRGBLed(DISCRETE_RGB_RED_PIN,
@@ -405,6 +428,8 @@ void AP_Notify::add_backends(void)
 #ifdef WITH_SITL_RGBLED
     ADD_BACKEND(NEW_NOTHROW SITL_SFML_LED());
 #endif
+
+    ADD_BACKEND(NEW_NOTHROW Buzzer_uart());
 }
 
 // initialisation

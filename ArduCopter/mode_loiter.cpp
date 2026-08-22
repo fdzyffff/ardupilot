@@ -98,6 +98,10 @@ void ModeLoiter::run()
     // get pilot's desired yaw rate
     target_yaw_rate_rads = get_pilot_desired_yaw_rate_rads();
 
+    // ZFJL: first-order lowpass on pilot yaw rate (coefficient from 4.5.2)
+    _target_yaw_rate_rads = 0.997f*_target_yaw_rate_rads + 0.003f*target_yaw_rate_rads;
+    target_yaw_rate_rads = _target_yaw_rate_rads;
+
     // get pilot desired climb rate
     target_climb_rate_ms = get_pilot_desired_climb_rate_ms();
     target_climb_rate_ms = constrain_float(target_climb_rate_ms, -get_pilot_speed_dn_ms(), get_pilot_speed_up_ms());

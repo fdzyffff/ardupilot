@@ -292,6 +292,10 @@ const AP_Param::GroupInfo AP_Vehicle::var_info[] = {
     AP_SUBGROUPINFO(rpm_sensor, "RPM", 32, AP_Vehicle, AP_RPM),
 #endif
 
+    // @Group: ZFJL
+    // @Path: ../FD_DATA/FD_DATA.cpp
+    AP_SUBGROUPINFO(fd_data, "ZFJL", 33, AP_Vehicle, FD_DATA),
+
     AP_GROUPEND
 };
 
