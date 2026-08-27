@@ -29,7 +29,7 @@ public:
     void update();
     const Vector2f& get_bf_info();
     const Vector2f& get_ef_info();
-    const Vector2f& get_ef_rate_info();
+    const Vector2f& get_los_bf_rate();
     const Vector2f& get_bfe_info();
 
     float get_target_pitch_rate() {return _target_pitch_rate;}
@@ -72,7 +72,7 @@ public:
     Vector2f bfe_info; // in body frame without pitch and roll
     Vector2f vel_bf_info;
     Vector2f ef_info;
-    Vector2f ef_rate_info;
+    Vector2f los_bf_rate;
     Vector3f _los_rate_body_dps;
     bool _active;
     bool _angle_only_control;

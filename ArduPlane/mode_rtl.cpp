@@ -5,7 +5,7 @@ bool ModeRTL::_enter()
 {
     plane.prev_WP_loc = plane.current_loc;
     if (use_exter_loc) {
-        plane.do_RTL_external(exter_loc.alt, exter_loc);
+        plane.do_RTL_external(plane.get_RTL_altitude_cm(), exter_loc);
         gcs().send_text(MAV_SEVERITY_INFO, "RTL with EXT Loc");
         gcs().send_text(MAV_SEVERITY_INFO, "|- %d, %d, %d", int(exter_loc.lat), int(exter_loc.lng), int(exter_loc.alt));
     } else {

@@ -14,15 +14,16 @@ bool ModeQRTL::_enter()
     submode = SubMode::RTL;
     plane.prev_WP_loc = plane.current_loc;
 
-    int32_t RTL_alt_abs_cm = use_exter_loc ? exter_loc.alt : plane.home.alt + quadplane.qrtl_alt*100UL;
+    int32_t RTL_alt_abs_cm = (use_exter_loc ? exter_loc.alt : plane.home.alt) + quadplane.qrtl_alt*100UL;
     if (quadplane.motors->get_desired_spool_state() == AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED) {
         // VTOL motors are active, either in VTOL flight or assisted flight
         Location destination = plane.calc_best_rally_or_home_location(plane.current_loc, RTL_alt_abs_cm);
         if (use_exter_loc) {
             destination.lat = exter_loc.lat;
             destination.lng = exter_loc.lng;
-            gcs().send_text(MAV_SEVERITY_INFO, "QRTL with EXT Loc 1");
-            gcs().send_text(MAV_SEVERITY_INFO, "|- %d, %d", int(destination.lat), int(destination.lng));
+            destination.alt = RTL_alt_abs_cm;
+            gcs().send_text(MAV_SEVERITY_INFO, "[i] QRTL with EXT Loc 1");
+            gcs().send_text(MAV_SEVERITY_INFO, "|- %d, %d, %d", int(destination.lat), int(destination.lng), int(destination.alt));
         }
         const float dist = plane.current_loc.get_distance(destination);
         const float radius = get_VTOL_return_radius();
@@ -40,7 +41,7 @@ bool ModeQRTL::_enter()
 #endif
 
         const float dist_to_climb = target_alt - plane.relative_ground_altitude(RangeFinderUse::CLIMB, use_terrain);
-        if (is_positive(dist_to_climb)) {
+        if (is_positive(dist_to_climb) && (dist > radius)) {
             // climb before returning, only next waypoint altitude is used
             submode = SubMode::climb;
             plane.next_WP_loc = plane.current_loc;
@@ -58,18 +59,18 @@ bool ModeQRTL::_enter()
             // Above home "cone", return at curent altitude if lower than QRTL alt
             int32_t current_alt_abs_cm;
             if (plane.current_loc.get_alt_cm(Location::AltFrame::ABSOLUTE, current_alt_abs_cm)) {
-                RTL_alt_abs_cm = MIN(RTL_alt_abs_cm, current_alt_abs_cm);
+                RTL_alt_abs_cm = MAX(plane.home.alt + target_alt * 100UL, current_alt_abs_cm);
             }
 
             // we're close to destination and already running VTOL motors, don't transition and don't climb
-            gcs().send_text(MAV_SEVERITY_INFO,"VTOL position1 d=%.1f r=%.1f", dist, radius);
+            gcs().send_text(MAV_SEVERITY_INFO,"[i] VTOL position1 d=%.1f r=%.1f", dist, radius);
             poscontrol.set_state(QuadPlane::QPOS_POSITION1);
         }
     }
 
     // use do_RTL() to setup next_WP_loc
     if (use_exter_loc) {
-        plane.do_RTL_external(exter_loc.alt, exter_loc);
+        plane.do_RTL_external(RTL_alt_abs_cm, exter_loc);
     } else {
         plane.do_RTL(RTL_alt_abs_cm);
     }
@@ -141,12 +142,12 @@ void ModeQRTL::run()
                 submode = SubMode::RTL;
                 plane.prev_WP_loc = plane.current_loc;
 
-                int32_t RTL_alt_abs_cm = use_exter_loc ? exter_loc.alt : plane.home.alt + quadplane.qrtl_alt*100UL;
+                int32_t RTL_alt_abs_cm = (use_exter_loc ? exter_loc.alt : plane.home.alt) + quadplane.qrtl_alt*100UL;
                 Location destination = plane.calc_best_rally_or_home_location(plane.current_loc, RTL_alt_abs_cm);
                 if (use_exter_loc) {
                     destination.lat = exter_loc.lat;
                     destination.lng = exter_loc.lng;
-                    gcs().send_text(MAV_SEVERITY_INFO, "QRTL with EXT Loc 2");
+                    gcs().send_text(MAV_SEVERITY_INFO, "[c] QRTL with EXT Loc");
                     gcs().send_text(MAV_SEVERITY_INFO, "|- %d, %d", int(destination.lat), int(destination.lng));
                 }
                 const float dist = plane.current_loc.get_distance(destination);
@@ -157,12 +158,12 @@ void ModeQRTL::run()
                     if (plane.next_WP_loc.get_alt_cm(Location::AltFrame::ABSOLUTE, target_alt_abs_cm)) {
                         RTL_alt_abs_cm = MIN(RTL_alt_abs_cm, target_alt_abs_cm);
                     }
-                    gcs().send_text(MAV_SEVERITY_INFO,"VTOL position1 d=%.1f r=%.1f", dist, radius);
+                    gcs().send_text(MAV_SEVERITY_INFO,"[c] VTOL position1 d=%.1f r=%.1f", dist, radius);
                     poscontrol.set_state(QuadPlane::QPOS_POSITION1);
                 }
 
                 if (use_exter_loc) {
-                    plane.do_RTL_external(exter_loc.alt, exter_loc);
+                    plane.do_RTL_external(RTL_alt_abs_cm, exter_loc);
                 } else {
                     plane.do_RTL(RTL_alt_abs_cm);
                 }

@@ -50,6 +50,20 @@ void Plane::user_handle_msg(const mavlink_message_t &msg)
     if (msg.msgid == MAVLINK_MSG_ID_LS_CMD) {
         mavlink_ls_cmd_t packet;
         mavlink_msg_ls_cmd_decode(&msg, &packet);
+        AP::logger().WriteStreaming("LCMD",
+                                    "TimeUS,Type,Flag,P1,Rad,Yaw,Lat,Lng,Alt",
+                                    "s----dDUm",
+                                    "F----BUUB",
+                                    "QBBBhiiii",
+                                    AP_HAL::micros64(),
+                                    packet.type,
+                                    packet.flag,
+                                    packet.p1,
+                                    packet.radius,
+                                    packet.yaw_cd,
+                                    packet.lat,
+                                    packet.lng,
+                                    packet.alt);
         bool use_alt = packet.flag & (1<<0);
         bool use_latlng = packet.flag & (1<<1);
         bool use_yaw = packet.flag & (1<<2);
@@ -113,7 +127,7 @@ void Plane::user_handle_msg(const mavlink_message_t &msg)
                         }
                     }
 
-                    float target_alt_m = 1.0f;
+                    float target_alt_m = 2.5f;
                     if (use_alt) {
                         target_alt_m = (float)packet.alt * 0.01f;
                     }
@@ -143,20 +157,24 @@ void Plane::user_handle_msg(const mavlink_message_t &msg)
                 }
 
                 int32_t target_alt_cm = plane.home.alt;
-                if (use_alt) {
-                    const int64_t alt_error_cm = (int64_t)packet.alt - (int64_t)plane.home.alt;
-                    if (llabs(alt_error_cm) <= 5000) {
-                        target_alt_cm = packet.alt;
-                    } else {
-                        gcs().send_text(MAV_SEVERITY_WARNING, "RTL Alt Partly received: use home alt");
-                    }
-                }
+                // if (use_alt) {
+                //     const int64_t alt_error_cm = (int64_t)packet.alt - (int64_t)plane.home.alt;
+                //     if (llabs(alt_error_cm) <= 5000) {
+                //         target_alt_cm = packet.alt;
+                //     } else {
+                //         gcs().send_text(MAV_SEVERITY_WARNING, "RTL Alt Partly received: use home alt");
+                //     }
+                // }
                 target_loc.set_alt_cm(target_alt_cm, Location::AltFrame::ABSOLUTE);
 
-                gcs().send_text(MAV_SEVERITY_INFO, "New Return Loc");
-                gcs().send_text(MAV_SEVERITY_INFO, "|- %d, %d", int(destination.lat), int(destination.lng));
+                gcs().send_text(MAV_SEVERITY_WARNING, "New Return Loc");
+                gcs().send_text(MAV_SEVERITY_WARNING, "|- %d, %d, %d", int(target_loc.lat), int(target_loc.lng), int(target_loc.alt));
                 plane.mode_rtl.set_return_loc(target_loc);
                 plane.mode_qrtl.set_return_loc(target_loc);
+                
+                // if (plane.set_mode(mode_rtl, ModeReason::GCS_COMMAND)) {
+                //     ;
+                // }
             }
             break;
         case 5:
@@ -167,7 +185,7 @@ void Plane::user_handle_msg(const mavlink_message_t &msg)
             }
             break;
         default:
-            gcs().send_text(MAV_SEVERITY_INFO, "Unknow ls cmd [%d]", packet.type);
+            gcs().send_text(MAV_SEVERITY_WARNING, "Unknow ls cmd [%d]", packet.type);
         }
     }
 }

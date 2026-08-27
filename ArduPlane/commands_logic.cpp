@@ -360,8 +360,8 @@ void Plane::do_RTL_external(int32_t rtl_altitude_AMSL_cm, Location &loc_in)
     auto_state.next_wp_crosstrack = false;
     auto_state.crosstrack = false;
     prev_WP_loc = current_loc;
-    loc_in.set_alt_cm(rtl_altitude_AMSL_cm, Location::AltFrame::ABSOLUTE);
     next_WP_loc = loc_in;
+    next_WP_loc.set_alt_cm(rtl_altitude_AMSL_cm, Location::AltFrame::ABSOLUTE);
 
     fix_terrain_WP(next_WP_loc, __LINE__);
 

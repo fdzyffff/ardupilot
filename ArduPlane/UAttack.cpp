@@ -56,8 +56,8 @@ void UAttack::init()
     vel_bf_info.y = 0.0f;
     ef_info.x = 0.0f;
     ef_info.y = 0.0f;
-    ef_rate_info.x = 0.0f;
-    ef_rate_info.y = 0.0f;
+    los_bf_rate.x = 0.0f;
+    los_bf_rate.y = 0.0f;
     display_info.new_data = false;
     display_info.p1 = 0.0f;
     display_info.p2 = 0.0f;
@@ -112,8 +112,8 @@ void UAttack::update_log() {
                                 (float)bf_info.y,
                                 (float)ef_info.x,
                                 (float)ef_info.y,
-                                (float)ef_rate_info.x,
-                                (float)ef_rate_info.y,
+                                (float)los_bf_rate.x,
+                                (float)los_bf_rate.y,
                                 (float)_target_pitch_rate,
                                 (float)_target_roll_rate,
                                 (float)_target_yaw_rate);
@@ -189,8 +189,8 @@ const Vector2f& UAttack::get_ef_info() {
     return ef_info;
 }
 
-const Vector2f& UAttack::get_ef_rate_info() {
-    return ef_rate_info;
+const Vector2f& UAttack::get_los_bf_rate() {
+    return los_bf_rate;
 }
 
 const Vector2f& UAttack::get_bfe_info() {
@@ -441,8 +441,8 @@ void UAttack::handle_info(float p1, float p2) {
     _los_rate_body_dps = rotation_ned_to_body * los_rate_e_rads;
     _los_rate_body_dps *= RAD_TO_DEG;
 
-    ef_rate_info.x = _los_rate_body_dps.z;
-    ef_rate_info.y = _los_rate_body_dps.y;
+    los_bf_rate.x = _los_rate_body_dps.z;
+    los_bf_rate.y = _los_rate_body_dps.y;
 
     display_info.new_data = true;
     display_info.count++;
@@ -584,7 +584,7 @@ void UAttack::do_print()
         gcs().send_text(MAV_SEVERITY_WARNING, "ef_angle (%0.2f, %0.2f) on:%d", get_ef_info().x,get_ef_info().y, is_active());
     }
     if (print.get() & (1<<2)) { // 4
-        gcs().send_text(MAV_SEVERITY_WARNING, "ef_rate (%0.2f, %0.2f) on:%d", get_ef_rate_info().x,get_ef_rate_info().y, is_active());
+        gcs().send_text(MAV_SEVERITY_WARNING, "ef_rate (%0.2f, %0.2f) on:%d", get_los_bf_rate().x,get_los_bf_rate().y, is_active());
     }
     if (print.get() & (1<<3)) { // 8
         gcs().send_text(MAV_SEVERITY_WARNING, "bfe_angle (%0.2f, %0.2f, %0.2f) on:%d", get_bfe_info().x,get_bfe_info().y, _delta_course, is_active());

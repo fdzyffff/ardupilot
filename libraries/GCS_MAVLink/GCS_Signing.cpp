@@ -69,6 +69,8 @@ bool GCS_MAVLINK::signing_key_load(struct SigningKey &key)
  */
 void GCS_MAVLINK::handle_setup_signing(const mavlink_message_t &msg) const
 {
+    (void)msg;
+    return;   // signing disabled at build time
     // setting up signing key when armed generally not useful /
     // possibly not a good idea
     if (hal.util->get_soft_armed()) {
@@ -132,6 +134,7 @@ static bool accept_unsigned_callback(const mavlink_status_t *status, uint32_t ms
  */
 void GCS_MAVLINK::load_signing_key(void)
 {
+    return;   // signing disabled at build time
     struct SigningKey key;
     if (!signing_key_load(key)) {
         return;

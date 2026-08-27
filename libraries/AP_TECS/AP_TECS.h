@@ -508,4 +508,7 @@ private:
 
     // Update the allowable pitch range.
     void _update_pitch_limits(const int32_t ptchMinCO_cd);
+
+    // return true if a healthy airspeed sensor is available and enabled, bypassing EKF airspeed rejection
+    bool _use_airspeed_sensor(void) const;
 };

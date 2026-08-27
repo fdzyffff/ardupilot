@@ -1002,10 +1002,8 @@ void QuadPlane::multicopter_attitude_rate_update(float yaw_rate_cds)
                                                                           yaw_rate_cds + offset_deg.z*100);
         }
     } else {
-        float scaler_f = 1.0f / constrain_float(plane.get_speed_scaler(), 0.2f, 2.0f);
-        // use the fixed wing desired rates
-        Vector3f bf_input_cd { plane.rollController.get_pid_info().target * 100.0f * scaler_f * scaler_f,
-                               plane.pitchController.get_pid_info().target * 100.0f * scaler_f * scaler_f,
+        Vector3f bf_input_cd { plane.rollController.get_pid_info().target * 100.0f,
+                               plane.pitchController.get_pid_info().target * 100.0f,
                                yaw_rate_cds };
 
         // rotate into multicopter attitude refence frame
@@ -1473,9 +1471,9 @@ float QuadPlane::desired_auto_yaw_rate_cds(void) const
         aspeed = 1;
     }
     const float roll_rad = radians(plane.nav_roll_cd * 0.01f);
-    const float pitch_rad = radians(plane.nav_pitch_cd * 0.01f);
+    // const float pitch_rad = radians(plane.nav_pitch_cd * 0.01f);
     const float earth_yaw_rate_cds = degrees(GRAVITY_MSS * tanf(roll_rad) / aspeed) * 100.0f;
-    float yaw_rate = earth_yaw_rate_cds * cosf(roll_rad) * cosf(pitch_rad);
+    float yaw_rate = earth_yaw_rate_cds * cosf(roll_rad);// * cosf(pitch_rad);
 
     // float yaw_rate = degrees(GRAVITY_MSS * tanf(radians(plane.nav_roll_cd*0.01f))/aspeed) * 100;
     
@@ -2691,6 +2689,8 @@ void QuadPlane::vtol_position_controller(void)
 
         // use input shaping and abide by accel and jerk limits
         pos_control->input_vel_accel_xy(target_speed_xy_cms, target_accel_cms);
+        // During POS1, we only want to control velocity and acceleration
+        pos_control->stop_pos_xy_stabilisation();
 
         // run horizontal velocity controller
         run_xy_controller(MAX(target_accel, transition_decel)*1.5);
