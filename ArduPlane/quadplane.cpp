@@ -2555,7 +2555,7 @@ void QuadPlane::vtol_position_controller(void)
         // calculate speed we should be at to reach the position2
         // target speed at the position2 distance threshold, assuming
         // Q_TRANS_DECEL is correct
-        const float stopping_speed = safe_sqrt(MAX(0, distance-position2_dist_threshold) * 2 * transition_decel) + position2_target_speed;
+        const float stopping_speed = safe_sqrt(MAX(0, distance-position2_dist_threshold) * 2 * transition_decel + sq(position2_target_speed));
 
         float target_speed = stopping_speed;
 
@@ -2646,20 +2646,20 @@ void QuadPlane::vtol_position_controller(void)
         }
 
         // use input shaping and abide by accel and jerk limits
-        pos_control->input_vel_accel_xy(target_speed_xy_cms, target_accel_cms);
+        // accel feedforward removed per test feedback (was causing POSITION1 pitch-up)
+        // pos_control->input_vel_accel_xy(target_speed_xy_cms, target_accel_cms);
+        pos_control->input_vel_accel_xy(target_speed_xy_cms, Vector2f());
+        // During POS1, we only want to control velocity and acceleration
+        pos_control->stop_pos_xy_stabilisation();
 
         // run horizontal velocity controller
         run_xy_controller(MAX(target_accel, transition_decel)*1.5);
 
-        if (!poscontrol.done_accel_init) {
-            /*
-              the pos controller init assumes zero accel, we need to
-              override that so that we can start decelerating more
-              quickly at the start of POSITION1
-             */
-            poscontrol.done_accel_init = true;
-            pos_control->set_accel_desired_xy_cmss(target_accel_cms);
-        }
+        // accel feedforward init removed per test feedback (was causing POSITION1 pitch-up)
+        // if (!poscontrol.done_accel_init) {
+        //     poscontrol.done_accel_init = true;
+        //     pos_control->set_accel_desired_xy_cmss(target_accel_cms);
+        // }
         
         // nav roll and pitch are controller by position controller
         plane.nav_roll_cd = pos_control->get_roll_cd();
@@ -4407,7 +4407,7 @@ float QuadPlane::get_land_airspeed(void)
 
     if (qstate == QPOS_AIRBRAKE) {
         // during airbraking ask TECS to slow us to stall speed
-        return plane.aparm.airspeed_min;
+        return MAX(MAX(plane.aparm.airspeed_min-2, assist.speed)-2, 0);
     }
     
     // calculate speed based on landing desired velocity
