@@ -33,6 +33,13 @@ bool FD_Target_HY::init()
     }
 
     gcs().send_text(MAV_SEVERITY_WARNING, "UAttack HY UART initialized");
+
+    // 上电后自动配置导引头工作模式：交替发送 4.4.1/4.4.5 各5次。
+    cfg_state = CfgState::RUNNING;
+    cfg_detect_count = 0;
+    cfg_autolock_count = 0;
+    cfg_next_is_detect = true;
+    cfg_last_ms = AP_HAL::millis();
     return true;
 }
 
@@ -48,6 +55,7 @@ void FD_Target_HY::update()
             break;
         }
         uart_msg_HY_miss.parse((uint8_t)read_value);
+        uart_msg_HY_ack.parse((uint8_t)read_value);
     }
 
     if (uart_msg_HY_miss._msg_1.updated) {
@@ -56,6 +64,10 @@ void FD_Target_HY::update()
     }
 
     const uint32_t now_ms = AP_HAL::millis();
+
+    handle_control_ack();
+    run_startup_config(now_ms);
+
     if ((target_timeout.get() > 0) &&
         (now_ms - _last_ms > (uint32_t)target_timeout.get())) {
         _valid = false;
@@ -64,7 +76,7 @@ void FD_Target_HY::update()
     const int32_t period_ms = auto_lock_period_ms.get();
     if ((auto_lock_enable.get() != 0) && (period_ms > 0) &&
         (now_ms - last_auto_lock_ms >= (uint32_t)period_ms)) {
-        uart_msg_HY_control.pack_auto_lock();
+        uart_msg_HY_control.pack_auto_lock(0x02, 0x00);
         send_control();
         last_auto_lock_ms = now_ms;
     }
@@ -143,4 +155,56 @@ void FD_Target_HY::update_log_miss(int16_t yaw_cdeg, int16_t pitch_cdeg,
         pitch_cdeg,
         w,
         h);
+}
+
+void FD_Target_HY::run_startup_config(uint32_t now_ms)
+{
+    if (cfg_state != CfgState::RUNNING) {
+        return;
+    }
+    if (now_ms - cfg_last_ms < 500U) {
+        return;
+    }
+    cfg_last_ms = now_ms;
+
+    if (cfg_next_is_detect) {
+        uart_msg_HY_control.pack_detect(0x01);
+        send_control();
+        cfg_detect_count++;
+        gcs().send_text(MAV_SEVERITY_INFO, "UAttack HY cfg 4.4.1 #%d sent",
+                        cfg_detect_count);
+    } else {
+        uart_msg_HY_control.pack_auto_lock(0x02, 0x00);
+        send_control();
+        cfg_autolock_count++;
+        gcs().send_text(MAV_SEVERITY_INFO, "UAttack HY cfg 4.4.5 #%d sent",
+                        cfg_autolock_count);
+    }
+    cfg_next_is_detect = !cfg_next_is_detect;
+
+    if ((cfg_detect_count >= 5U) && (cfg_autolock_count >= 5U)) {
+        cfg_state = CfgState::DONE;
+        gcs().send_text(MAV_SEVERITY_INFO, "UAttack HY cfg done");
+    }
+}
+
+void FD_Target_HY::handle_control_ack()
+{
+    if (!uart_msg_HY_ack._msg_1.updated) {
+        return;
+    }
+    const FD1_msg_HY_ack::MSG_Collection &msg = uart_msg_HY_ack._msg_1.content.msg;
+    const uint8_t result = msg.payload[0];
+    const uint8_t state = msg.payload[1];
+
+    if (msg.cmd1 == 0x81) {  // 4.4.1 目标检测控制响应
+        gcs().send_text(MAV_SEVERITY_INFO,
+                        "UAttack HY cfg ack 4.4.1 result=%s state=%d",
+                        (result == 0) ? "OK" : "FAIL", state);
+    } else if (msg.cmd1 == 0x85) {  // 4.4.5 自动锁定响应
+        gcs().send_text(MAV_SEVERITY_INFO,
+                        "UAttack HY cfg ack 4.4.5 result=%s state=%d",
+                        (result == 0) ? "OK" : "FAIL", state);
+    }
+    uart_msg_HY_ack._msg_1.updated = false;
 }

@@ -7,7 +7,7 @@ const AP_Param::GroupInfo UAttack::var_info[] = {
     AP_GROUPINFO("FILT_HZ", 3, UAttack, los_vector_filt_hz, 2.0f),
     AP_GROUPINFO("YAW_P", 7, UAttack, yaw_angle_gain, 1.0f),
     AP_GROUPINFO("PIT_P", 8, UAttack, pitch_angle_gain, 1.0f),
-    AP_GROUPINFO("RATE_MAX", 9, UAttack, rate_limit_dps, 60.0f),
+    AP_GROUPINFO("RATE_MAX", 9, UAttack, rate_limit_dps, 30.0f),
     AP_GROUPINFO("VIS_LIM", 10, UAttack, visibility_limit_deg, 20.0f),
     AP_SUBGROUPINFO(target_loc, "TL_", 11, UAttack, FD_Target_Loc),
     AP_SUBGROUPINFO(target_cam, "TC_", 12, UAttack, FD_Target_HY),
@@ -64,6 +64,63 @@ const AP_Param::GroupInfo UAttack::var_info[] = {
     // @Increment: 0.1
     // @User: Advanced
     AP_GROUPINFO("TRC_P", 21, UAttack, track_pitch_gain, 1.0f),
+
+    // @Param: FWD_EN
+    // @DisplayName: Attack forward pitch rate enable
+    // @Description: When set to 0 the camera pitch forward rate term in Stage 3 is forced to 0 (disabled); when non-zero the term is enabled
+    // @User: Advanced
+    AP_GROUPINFO("FWD_EN", 22, UAttack, forward_pitch_en, 0),
+
+    // @Param: LAG_P_HL
+    // @DisplayName: Pitch lag compensation half-life
+    // @Description: Half-life in seconds of the leaky integrator estimating how far the velocity direction lags the camera pitch axis (sideslip). 0 disables pitch compensation. Effective time constant is half-life/ln(2). Default 0.5: with LAG_BC=1 the self-excitation loop is broken so stability no longer constrains half-life; sim shows 0.5-0.7 recovers the compensation strength that BC removes (BC at h=0.3 yields only ~half the physical lag angle in steady state). Tune on site, range 0.3-0.8.
+    // @Units: s
+    // @Range: 0 3
+    // @Increment: 0.05
+    // @User: Advanced
+    AP_GROUPINFO("LAG_P_HL", 23, UAttack, lag_pitch_half_life_s, 0.5f),
+
+    // @Param: LAG_P_MAX
+    // @DisplayName: Pitch lag compensation limit
+    // @Description: Maximum absolute value of the pitch lag compensation offset added to the camera pitch angle error in Stage 3
+    // @Units: deg
+    // @Range: 0 30
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("LAG_P_MAX", 24, UAttack, lag_pitch_max_deg, 15.0f),
+
+    // @Param: LAG_Y_HL
+    // @DisplayName: Yaw lag compensation half-life
+    // @Description: Half-life in seconds of the leaky integrator estimating how far the velocity direction lags the camera yaw axis (sideslip). 0 disables yaw compensation. Effective time constant is half-life/ln(2); expect roughly 0.6*flight_time seconds. Tune on site.
+    // @Units: s
+    // @Range: 0 3
+    // @Increment: 0.05
+    // @User: Advanced
+    AP_GROUPINFO("LAG_Y_HL", 25, UAttack, lag_yaw_half_life_s, 0.3f),
+
+    // @Param: LAG_Y_MAX
+    // @DisplayName: Yaw lag compensation limit
+    // @Description: Maximum absolute value of the yaw lag compensation offset added to the camera yaw angle error in Stage 3
+    // @Units: deg
+    // @Range: 0 30
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("LAG_Y_MAX", 26, UAttack, lag_yaw_max_deg, 15.0f),
+
+    // @Param: LAG_BC
+    // @DisplayName: Lag compensation back-calculation enable
+    // @Description: The lag estimator integrates the previous COMMANDED rate (pure decaying feedforward on the command). This switch subtracts the compensator's own contribution (TRC*offset, only in LOS_RATE stage where the offset is actually injected) from the integrator input. MUST stay 1: with 0 the command->offset->command positive feedback is direct and the offset diverges/oscillates. 0 exists only for A/B comparison.
+    // @Values: 0:Disabled,1:Enabled
+    // @User: Advanced
+    AP_GROUPINFO("LAG_BC", 27, UAttack, lag_bc_en, 1),
+
+    // @Param: FF_ATK
+    // @DisplayName: Attack pitch rate feedforward gain
+    // @Description: 离架确认后注入 pitch 速率环的静态速率前馈增益（AC_PID kff，单位同 ATC_RAT_PIT_FF）。平时（悬停/自稳/锁架期/退出 ATTACK 后）恒为 0。0=禁用。要求 ATC_RAT_PIT_FF 保持 0，避免双控制源。
+    // @Range: 0 1
+    // @Increment: 0.001
+    // @User: Advanced
+    AP_GROUPINFO("FF_ATK", 28, UAttack, ff_atk, 0.0f),
     AP_GROUPEND
 };
 
@@ -78,6 +135,8 @@ UAttack::UAttack()
     last_observation_ms = 0;
     last_filter_config_ms = 0;
     last_log_ms = 0;
+    update_call_count = 0;
+    update_rate_last_ms = 0;
     AP_Param::setup_object_defaults(this, var_info);
 }
 
@@ -103,6 +162,9 @@ void UAttack::init()
     _los_c_rate_dps.zero();
     _target_rate_c_dps.zero();
     _target_rate_b_dps.zero();
+    _guid_rate_c_dps.zero();
+    _lag_offset_pitch_deg = 0.0f;
+    _lag_offset_yaw_deg = 0.0f;
     _control_stage = ControlStage::NONE;
 
     los_yaw_rate_pid.reset_I();
@@ -204,9 +266,13 @@ void UAttack::process_observation(const Vector2f &los_c_deg,
 
     if (!have_last_target) {
         have_last_target = true;
-        los_e_x_filter.reset(_los_e_unit.x);
-        los_e_y_filter.reset(_los_e_unit.y);
-        los_e_z_filter.reset(_los_e_unit.z);
+        // 低通滤波已移到 _los_e_rate_dps 求导之后，首帧用样本自动初始化即可
+        // los_e_x_filter.reset(_los_e_unit.x);
+        // los_e_y_filter.reset(_los_e_unit.y);
+        // los_e_z_filter.reset(_los_e_unit.z);
+        los_e_x_filter.reset();
+        los_e_y_filter.reset();
+        los_e_z_filter.reset();
         los_e_x_derivative.reset();
         los_e_y_derivative.reset();
         los_e_z_derivative.reset();
@@ -215,12 +281,13 @@ void UAttack::process_observation(const Vector2f &los_c_deg,
     const uint32_t now_ms = AP_HAL::millis();
     const float observation_dt_s = last_observation_ms == 0 ?
                                    0.01f :
-                                   (now_ms - last_observation_ms) * 0.001f;
+                                   (float)(now_ms - last_observation_ms) * 0.001f;
     last_observation_ms = now_ms;
 
-    los_e_x_derivative.update(los_e_x_filter.apply(_los_e_unit.x), now_ms);
-    los_e_y_derivative.update(los_e_y_filter.apply(_los_e_unit.y), now_ms);
-    los_e_z_derivative.update(los_e_z_filter.apply(_los_e_unit.z), now_ms);
+    // 低通滤波移到求导之后：先直接对单位向量分量求导，再对所得角速度滤波
+    los_e_x_derivative.update(_los_e_unit.x, now_ms);
+    los_e_y_derivative.update(_los_e_unit.y, now_ms);
+    los_e_z_derivative.update(_los_e_unit.z, now_ms);
 
     _los_e_dot.x = los_e_x_derivative.slope() * 1000.0f;
     _los_e_dot.y = los_e_y_derivative.slope() * 1000.0f;
@@ -228,9 +295,9 @@ void UAttack::process_observation(const Vector2f &los_c_deg,
     _los_e_dot -= _los_e_unit * (_los_e_unit * _los_e_dot);
 
     const Vector3f los_e_rate_rads = _los_e_unit % _los_e_dot;
-    _los_e_rate_dps = Vector3f(degrees(los_e_rate_rads.x),
-                               degrees(los_e_rate_rads.y),
-                               degrees(los_e_rate_rads.z));
+    _los_e_rate_dps = Vector3f(los_e_x_filter.apply(degrees(los_e_rate_rads.x)),
+                               los_e_y_filter.apply(degrees(los_e_rate_rads.y)),
+                               los_e_z_filter.apply(degrees(los_e_rate_rads.z)));
 
     Matrix3f rotation_camera_from_ned = rotation_ned_from_camera;
     rotation_camera_from_ned.transpose();
@@ -295,13 +362,37 @@ void UAttack::update_control_value(const Vector3f &attitude_b_deg, float observa
 
     const float camera_pitch_error_abs_deg = fabsf(_los_c_deg.y);
     const float camera_yaw_error_abs_deg = fabsf(_los_c_deg.x);
+
+    if (observation_dt_s > 0.0f) {
+        if (_enable_lag_offset) {
+            const float lag_decay_pitch = (lag_pitch_half_life_s.get() > 0.001f) ?
+                powf(0.5f, observation_dt_s / lag_pitch_half_life_s.get()) : 0.0f;
+            const float lag_decay_yaw = (lag_yaw_half_life_s.get() > 0.001f) ?
+                powf(0.5f, observation_dt_s / lag_yaw_half_life_s.get()) : 0.0f;
+            const Vector3f &lag_ref_dps = (lag_bc_en.get() != 0) ?
+                _guid_rate_c_dps : _target_rate_c_dps;
+            _lag_offset_pitch_deg =
+                (_lag_offset_pitch_deg + lag_ref_dps.y * observation_dt_s) * lag_decay_pitch;
+            _lag_offset_yaw_deg =
+                (_lag_offset_yaw_deg + lag_ref_dps.z * observation_dt_s) * lag_decay_yaw;
+            const float lag_pitch_max = MAX(lag_pitch_max_deg.get(), 0.0f);
+            const float lag_yaw_max = MAX(lag_yaw_max_deg.get(), 0.0f);
+            _lag_offset_pitch_deg = constrain_float(_lag_offset_pitch_deg,
+                                                    -lag_pitch_max, lag_pitch_max);
+            _lag_offset_yaw_deg = constrain_float(_lag_offset_yaw_deg,
+                                                  -lag_yaw_max, lag_yaw_max);
+        } else {
+            _lag_offset_pitch_deg = 0.0f;
+            _lag_offset_yaw_deg = 0.0f;
+        }
+    }
     const float camera_yaw_p_rate_dps = yaw_angle_gain.get() * _los_c_deg.x;
     const float camera_pitch_p_rate_dps = pitch_angle_gain.get() * _los_c_deg.y;
-    const float camera_level_rate_dps = fabsf(_camera_e_deg.y) < 80.0f ?
+    const float camera_level_rate_dps = fabsf(_camera_e_deg.y) < 70.0f ?
                                         -roll_level_gain.get() * _camera_e_deg.x :
                                         0.0f;
 
-    const float rate_limit_dps_value = MAX(rate_limit_dps.get(), 30.0f);
+    const float rate_limit_dps_value = MAX(rate_limit_dps.get(), 10.0f);
     const float visibility_limit_deg_value =
         MAX(visibility_limit_deg.get(), 0.0f);
     const bool target_outside_visibility =
@@ -326,6 +417,7 @@ void UAttack::update_control_value(const Vector3f &attitude_b_deg, float observa
             -rate_limit_dps_value,
             rate_limit_dps_value);
         _target_rate_c_dps.z = 0.0f;
+        _guid_rate_c_dps = _target_rate_c_dps;   // 捕获阶段无补偿注入，基础指令=最终指令
     } else if (target_outside_visibility) {
         if (_control_stage != ControlStage::ANGLE_CAPTURE) {
             gcs().send_text(MAV_SEVERITY_INFO, "UAttack stage ANGLE_CAPTURE");
@@ -350,15 +442,12 @@ void UAttack::update_control_value(const Vector3f &attitude_b_deg, float observa
             camera_yaw_p_rate_dps,
             -rate_limit_dps_value,
             rate_limit_dps_value);
+        _guid_rate_c_dps = _target_rate_c_dps;   // 捕获阶段无补偿注入，基础指令=最终指令
     } else {
         if (_control_stage != ControlStage::LOS_RATE) {
             gcs().send_text(MAV_SEVERITY_INFO, "UAttack stage LOS_RATE");
         }
         _control_stage = ControlStage::LOS_RATE;
-        const float camera_pitch_forward_rate_dps = constrain_float(
-            forward_pitch_deg.get() - _camera_e_deg.y,
-            0.0f,
-            5.0f);
         if (!los_rate_control_active) {
             los_yaw_rate_pid.reset_I();
             los_yaw_rate_pid.reset_filter();
@@ -366,18 +455,31 @@ void UAttack::update_control_value(const Vector3f &attitude_b_deg, float observa
             los_pitch_rate_pid.reset_filter();
             los_rate_control_active = true;
         }
-        const float track_yaw_rate_dps = track_yaw_gain.get() * _los_c_deg.x;
-        const float track_pitch_rate_dps = track_pitch_gain.get() * _los_c_deg.y;
-        _target_rate_c_dps.x = constrain_float(
+
+        const float track_yaw_base_dps = track_yaw_gain.get() * _los_c_deg.x;
+        const float track_pitch_bias_deg =
+            (forward_pitch_en.get() == 0) ? 0.0f : forward_pitch_deg.get();
+        const float track_pitch_base_dps =
+            track_pitch_gain.get() * (_los_c_deg.y + track_pitch_bias_deg);
+        _guid_rate_c_dps.x = constrain_float(
             camera_level_rate_dps,
             -rate_limit_dps_value,
             rate_limit_dps_value);
+        _guid_rate_c_dps.y = constrain_float(
+            -los_pitch_rate_pid.update_all(0, _los_c_rate_dps.y, observation_dt_s) + track_pitch_base_dps,
+            -rate_limit_dps_value,
+            rate_limit_dps_value);
+        _guid_rate_c_dps.z = constrain_float(
+            -los_yaw_rate_pid.update_all(0, _los_c_rate_dps.z, observation_dt_s) + track_yaw_base_dps,
+            -rate_limit_dps_value,
+            rate_limit_dps_value);
+        _target_rate_c_dps = _guid_rate_c_dps;
         _target_rate_c_dps.y = constrain_float(
-            -los_pitch_rate_pid.update_all(0, _los_c_rate_dps.y, observation_dt_s) + camera_pitch_forward_rate_dps + track_pitch_rate_dps,
+            _guid_rate_c_dps.y + track_pitch_gain.get() * _lag_offset_pitch_deg,
             -rate_limit_dps_value,
             rate_limit_dps_value);
         _target_rate_c_dps.z = constrain_float(
-            -los_yaw_rate_pid.update_all(0, _los_c_rate_dps.z, observation_dt_s) + track_yaw_rate_dps,
+            _guid_rate_c_dps.z + track_yaw_gain.get() * _lag_offset_yaw_deg,
             -rate_limit_dps_value,
             rate_limit_dps_value);
     }
@@ -424,6 +526,9 @@ void UAttack::clear_target_output()
     _los_c_rate_dps.zero();
     _target_rate_c_dps.zero();
     _target_rate_b_dps.zero();
+    _guid_rate_c_dps.zero();
+    _lag_offset_pitch_deg = 0.0f;
+    _lag_offset_yaw_deg = 0.0f;
     _control_stage = ControlStage::NONE;
     have_last_target = false;
     los_rate_control_active = false;
@@ -439,6 +544,8 @@ void UAttack::clear_target_output()
 
 void UAttack::update()
 {
+    update_call_count++;
+
     update_delay_history();
 
     const uint32_t now_ms = AP_HAL::millis();
@@ -539,6 +646,16 @@ void UAttack::set_target_loc(Location &loc_in)
     }
 }
 
+void UAttack::set_lag_offset_enabled(bool en)
+{
+    _enable_lag_offset = en;
+    if (!en) {
+        // 关闭时确定性归零，不依赖下一帧观测
+        _lag_offset_pitch_deg = 0.0f;
+        _lag_offset_yaw_deg = 0.0f;
+    }
+}
+
 void UAttack::update_log()
 {
     const uint32_t now_ms = AP_HAL::millis();
@@ -565,17 +682,18 @@ void UAttack::update_log()
 
     AP::logger().WriteStreaming(
         "UAT2",
-        "TimeUS,LeX,LeY,LeZ,LdX,LdY,LdZ",
-        "s------",
-        "F------",
-        "Qffffff",
+        "TimeUS,LeX,LeY,LeZ,LdX,LdY,LdZ,Fps",
+        "s------z",
+        "F-------",
+        "Qfffffff",
         AP_HAL::micros64(),
         _los_e_unit.x,
         _los_e_unit.y,
         _los_e_unit.z,
         _los_e_dot.x,
         _los_e_dot.y,
-        _los_e_dot.z);
+        _los_e_dot.z,
+        target_cam.get_fps());
 
     AP::logger().WriteStreaming(
         "UAT3",
@@ -616,11 +734,32 @@ void UAttack::update_log()
         _camera_log_e_deg.z,
         _velocity_e_deg.y,
         _velocity_e_deg.x);
+    AP::logger().WriteStreaming(
+        "UAT6",
+        "TimeUS,OfP,OfY",
+        "sdd",
+        "F--",
+        "Qff",
+        AP_HAL::micros64(),
+        _lag_offset_pitch_deg,
+        _lag_offset_yaw_deg);
 }
 
 void UAttack::do_print()
 {
     const int16_t print_mask = debug_print.get();
+
+    // measure actual update() call rate over the 1Hz print window
+    const uint32_t now_ms = AP_HAL::millis();
+    float update_rate_hz = 0.0f;
+    if (update_rate_last_ms != 0) {
+        const float dt_s = (now_ms - update_rate_last_ms) * 0.001f;
+        if (dt_s > 0.0f) {
+            update_rate_hz = update_call_count / dt_s;
+        }
+    }
+    update_call_count = 0;
+    update_rate_last_ms = now_ms;
 
     if (print_mask & (1U << 0)) {
         gcs().send_text(MAV_SEVERITY_WARNING,
@@ -634,6 +773,10 @@ void UAttack::do_print()
                         _camera_e_deg.x,
                         _camera_e_deg.y,
                         _camera_e_deg.z);
+        // FPS 打印移到 bit6，与 update 调用频率一起输出
+        // gcs().send_text(MAV_SEVERITY_WARNING,
+        //                 "ATK FPS:%.1f",
+        //                 target_cam.get_fps());
     }
     if (print_mask & (1U << 1)) {
         gcs().send_text(MAV_SEVERITY_WARNING,
@@ -675,6 +818,12 @@ void UAttack::do_print()
                         (unsigned)_control_stage,
                         _los_c_deg.x,
                         _los_c_deg.y);
+    }
+    if (print_mask & (1U << 6)) {
+        gcs().send_text(MAV_SEVERITY_WARNING,
+                        "ATK FPS:%.1f UpdHz:%.1f",
+                        target_cam.get_fps(),
+                        update_rate_hz);
     }
 }
 

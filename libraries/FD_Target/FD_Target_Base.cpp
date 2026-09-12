@@ -8,6 +8,8 @@ FD_Target_Base::FD_Target_Base() :
     _valid(false),
     _p1(0.0f),
     _p2(0.0f),
+    _fps(0.0f),
+    _fps_last_ms(0),
     _type(0)
 {
 }
@@ -16,6 +18,17 @@ void FD_Target_Base::handle_info(float p1, float p2)
 {
     _valid = true;
     _last_ms = AP_HAL::millis();
+
+    // 统计有效数据到达帧率（一阶低通平滑）
+    if (_fps_last_ms != 0) {
+        const float dt_ms = (float)(_last_ms - _fps_last_ms);
+        if (dt_ms > 0.0f) {
+            const float inst_fps = 1000.0f / dt_ms;
+            _fps = _fps * 0.8f + inst_fps * 0.2f;
+        }
+    }
+    _fps_last_ms = _last_ms;
+
     _p1 = p1;
     _p2 = p2;
     _new_data = true;

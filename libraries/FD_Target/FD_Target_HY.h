@@ -4,11 +4,13 @@
  * FD_Target_HY — 慧眼(HY)图像跟踪板目标源
  *
  * 接收4.1.3测偏数据；可按参数周期发送4.4.5目标检测后自动锁定。
+ * 上电后自动交替发送 4.4.1/4.4.5 各5次配置工作模式，并解析响应反馈。
  */
 
 #include "FD_Target.h"
 #include <FD_UART/FD1_msg_HY_telem.h>
 #include <FD_UART/FD1_msg_HY_control.h>
+#include <FD_UART/FD1_msg_HY_ack.h>
 
 class FD_Target_HY : public FD_Target_Base {
 public:
@@ -23,7 +25,15 @@ public:
     AP_HAL::UARTDriver *get_port() const { return _port; }
 
 private:
+    enum class CfgState : uint8_t {
+        IDLE = 0,       // 未配置
+        RUNNING = 1,    // 正在交替发送 4.4.1/4.4.5
+        DONE = 2        // 配置完成
+    };
+
     void handle_miss_msg();
+    void run_startup_config(uint32_t now_ms);
+    void handle_control_ack();
 
     // 中心原点像素脱靶量(右正/上正)转换为相机球面角(deg)。
     bool pixel_offset_to_spherical_deg(float offset_x, float offset_y,
@@ -44,5 +54,12 @@ private:
     AP_HAL::UARTDriver *_port;
     FD1_msg_HY_miss uart_msg_HY_miss;
     FD1_msg_HY_control uart_msg_HY_control;
+    FD1_msg_HY_ack uart_msg_HY_ack;
     uint32_t last_auto_lock_ms = 0;
+
+    CfgState cfg_state = CfgState::IDLE;
+    uint8_t cfg_detect_count = 0;
+    uint8_t cfg_autolock_count = 0;
+    bool cfg_next_is_detect = true;
+    uint32_t cfg_last_ms = 0;
 };

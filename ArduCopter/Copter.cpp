@@ -263,7 +263,7 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     SCHED_TASK(update_dynamic_notch_at_specified_rate_main,                       LOOP_RATE, 200, 215),
 #endif
     SCHED_TASK(check_forced_land_or_rtl, 1, 100, 218),
-    SCHED_TASK_CLASS(UAttack, &copter.uattack, update, 100, 100, 221),
+    SCHED_TASK_CLASS(UAttack, &copter.uattack, update, 150, 100, 221),
     SCHED_TASK_CLASS(UAttack, &copter.uattack, do_print, 1, 100, 224),
 };
 

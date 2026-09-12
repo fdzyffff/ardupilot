@@ -20,6 +20,7 @@ public:
     uint8_t get_type();
     void set_type(uint8_t type_in);
     void set_valid(bool valid_in);
+    float get_fps() const { return _valid ? _fps : 0.0f; }
     virtual Location &get_target_loc() { return _target_loc; }
 
 protected:
@@ -28,6 +29,8 @@ protected:
     bool _valid;
     float _p1;
     float _p2;
+    float _fps;
+    uint32_t _fps_last_ms;
     uint8_t _type;
     Location _target_loc;
 };

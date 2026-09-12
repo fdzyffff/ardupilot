@@ -43,7 +43,8 @@ public:
     void parse(uint8_t temp) override { (void)temp; }
     void swap_message() override {}
 
-    void pack_auto_lock();
+    void pack_detect(uint8_t mode);
+    void pack_auto_lock(uint8_t mode, uint8_t strategy);
     void make_sum();
 
     FD1UART_MSG_1 _msg_1;

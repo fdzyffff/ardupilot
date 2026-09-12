@@ -487,6 +487,7 @@ public:
     Number mode_number() const override { return Number::ATTACK; }
     bool init(bool ignore_checks) override;
     void run() override;
+    void exit() override;
 
     bool requires_position() const override { return false; }
     bool has_manual_throttle() const override { return false; }
@@ -501,6 +502,14 @@ protected:
 private:
     float throttle_out;
     uint32_t target_lost_start_ms;
+
+    // 速率误差锁定（input_rate_bf_roll_pitch_yaw_3_rads）一次性切换：
+    // 进入模式后飞机锁定在发射架上（约10s），期间走纯速率路径（_2_rads）；
+    // check_launched() 确认离架后一次性切到带速率误差积分的 _3_rads，不切回
+    bool check_launched();
+    bool rate_locking_active;
+    float entry_alt_cm;
+    uint32_t launch_move_start_ms;
 };
 
 

@@ -34,6 +34,9 @@ public:
     float get_throttle_rate() const { return throttle_rate.get(); }
     Location get_target_loc();
     void set_target_loc(Location &loc_in);
+    // 滞后补偿使能（锁架期由 ModeAttack 关闭；发射锁存后/退出模式时恢复）。
+    void set_lag_offset_enabled(bool en);
+    float get_ff_atk() const { return ff_atk.get(); }
 
 private:
     enum class TargetSource : uint8_t {
@@ -76,8 +79,15 @@ private:
     AP_Float throttle_rate;
     AP_Float roll_level_gain;
     AP_Float forward_pitch_deg;
+    AP_Int8 forward_pitch_en;
     AP_Float track_yaw_gain;
     AP_Float track_pitch_gain;
+    AP_Float lag_pitch_half_life_s;
+    AP_Float lag_pitch_max_deg;
+    AP_Float lag_yaw_half_life_s;
+    AP_Float lag_yaw_max_deg;
+    AP_Int8  lag_bc_en;         // 滞后补偿反激励开关（1=扣除自身角速度分量，防自激震荡）
+    AP_Float ff_atk;            // 拦截离架档 pitch 速率环 FF 前馈增益（平时恒 0，须保持 ATC_RAT_PIT_FF=0）
 
     FD_Target_HY target_cam;
     FD_Target_Loc target_loc;
@@ -115,9 +125,15 @@ private:
 
     bool have_last_target;
     bool los_rate_control_active;
+    bool _enable_lag_offset = true;   // 滞后补偿估计使能（锁架期禁用，见 set_lag_offset_enabled）
+    float _lag_offset_pitch_deg;
+    float _lag_offset_yaw_deg;
+    Vector3f _guid_rate_c_dps;             // 制导基础指令（不含滞后补偿分量），滞后估计器积分输入
     uint32_t last_observation_ms;
     uint32_t last_filter_config_ms;
     uint32_t last_log_ms;
+    uint32_t update_call_count;
+    uint32_t update_rate_last_ms;
 };
 
 
