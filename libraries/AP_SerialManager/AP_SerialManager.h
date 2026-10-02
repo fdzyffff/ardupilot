@@ -87,7 +87,9 @@ public:
         SerialProtocol_PPP = 48,
         SerialProtocol_IBUS_Telem = 49,                // i-BUS telemetry data, ie via sensor port of FS-iA6B
         SerialProtocol_IOMCU = 50,                     // IOMCU 
-        SerialProtocol_NET = 51,                       // target recognition network
+        SerialProtocol_DYT = 51,                       // HUOJIAN: 导引头(DYT/HY 相机类串口，原 NET)
+        SerialProtocol_Detector = 52,                  // HUOJIAN: 近距探测器(lk) 目标距离上报
+        SerialProtocol_Fuze = 53,                      // HUOJIAN: 引信(TCQ) 自检/装定与回帧
         SerialProtocol_NumProtocols                    // must be the last value
     };
 

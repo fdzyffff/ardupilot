@@ -23,6 +23,10 @@ bool ModeAttack::init(bool ignore_checks)
     // 平时档：pitch 速率环 FF 恒 0（ATC_RAT_PIT_FF 须保持 0），离架确认后才注入 UATK_FF_ATK；
     // 无条件写 0 保证状态自愈，即使上次异常退出有残留也被清掉
     attitude_control->get_rate_pitch_pid().set_ff(0.0f);
+    // HUOJIAN: 从 CHASE 起飞后切入本模式时飞机已在空中，直接锁存离架，避免滞留 _2_rads
+    if (copter.motors->armed() && !copter.ap.land_complete) {
+        set_launched();
+    }
     return true;
 }
 
@@ -48,14 +52,11 @@ bool ModeAttack::check_launched()
     const float climb_cms = fabsf(pos_control->get_vel_estimate_U_ms()*100.f);
     const bool moving_1 = (alt_change_cm > 1000.0f);
     const bool moving_2 = (climb_cms > 200.0f);
-    if (moving_1) {
-        rate_locking_active = true;
-        // 切换瞬间清零锁架期间速率环可能积下的 I 项，防止脱锁冲击
-        attitude_control->relax_attitude_controllers();
-        // 离架确认：重新允许 UAttack 滞后补偿（锁架期已禁用，offset 从 0 起步）
-        copter.uattack.set_lag_offset_enabled(true);
-        // 离架确认：注入拦截档 pitch FF（与滞后补偿同一锁存沿）
-        attitude_control->get_rate_pitch_pid().set_ff(copter.uattack.get_ff_atk());
+    // HUOJIAN: 新增判据——相对原点高度>50m 也视为已离架（平飞段高度变化小，用绝对高度兜底）
+    const bool moving_3 = (pos_control->get_pos_estimate_U_m() > 50.0f);
+    if (moving_1 || moving_3) {
+        // HUOJIAN: 原离架锁存内联代码（清 I、恢复滞后补偿、注入 FF）改由 set_launched() 统一处理
+        set_launched();
         GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Attack: launched, rate mode -> 3_rads");
     }
 
@@ -63,13 +64,8 @@ bool ModeAttack::check_launched()
         if (launch_move_start_ms == 0) {
             launch_move_start_ms = AP_HAL::millis();
         } else if (AP_HAL::millis() - launch_move_start_ms > 1500U) {
-            rate_locking_active = true;
-            // 切换瞬间清零锁架期间速率环可能积下的 I 项，防止脱锁冲击
-            attitude_control->relax_attitude_controllers();
-            // 离架确认：重新允许 UAttack 滞后补偿（锁架期已禁用，offset 从 0 起步）
-            copter.uattack.set_lag_offset_enabled(true);
-            // 离架确认：注入拦截档 pitch FF（与滞后补偿同一锁存沿）
-            attitude_control->get_rate_pitch_pid().set_ff(copter.uattack.get_ff_atk());
+            // HUOJIAN: 同上，统一走 set_launched()
+            set_launched();
             GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Attack: launched, rate mode -> 3_rads");
         }
     } else {
@@ -154,4 +150,36 @@ void ModeAttack::run()
     throttle_out = constrain_float(throttle_out, 0.0f, 1.0f);
 
     attitude_control->set_throttle_out(throttle_out, false, copter.g.throttle_filt);
+}
+
+// HUOJIAN: 离架锁存统一入口，一次性锁存不切回（原 check_launched 内三处内联代码合并）
+void ModeAttack::set_launched()
+{
+    if (rate_locking_active) {
+        return;
+    }
+    rate_locking_active = true;
+    // 切换瞬间清零锁架期间速率环可能积下的 I 项，防止脱锁冲击
+    attitude_control->relax_attitude_controllers();
+    // 离架确认：重新允许 UAttack 滞后补偿（锁架期已禁用，offset 从 0 起步）
+    copter.uattack.set_lag_offset_enabled(true);
+    // 离架确认：注入拦截档 pitch FF（与滞后补偿同一锁存沿）
+    attitude_control->get_rate_pitch_pid().set_ff(copter.uattack.get_ff_atk());
+}
+
+// HUOJIAN: 地面站"与目标距离/方位"读数，取标位目标（目标无效报 0）
+float ModeAttack::wp_distance_m() const
+{
+    if (!copter.uattack.is_target_loc_valid()) {
+        return 0.0f;
+    }
+    return copter.current_loc.get_distance(copter.uattack.get_target_loc());
+}
+
+float ModeAttack::wp_bearing_deg() const
+{
+    if (!copter.uattack.is_target_loc_valid()) {
+        return 0.0f;
+    }
+    return degrees(copter.current_loc.get_bearing(copter.uattack.get_target_loc()));
 }

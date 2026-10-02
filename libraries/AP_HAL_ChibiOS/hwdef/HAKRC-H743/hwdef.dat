@@ -207,3 +207,9 @@ ROMFS_WILDCARD libraries/AP_OSD/fonts/font*.bin
 
 # build ABIN for flash-from-bootloader support:
 env BUILD_ABIN True
+
+# HUOJIAN: 打开外部位置源，用于把地面指控注入的拦截机位置当 GPS 用
+# HUOJIAN: LK 后端提供 GPS 端口，AP_GPS 才会创建 ExternalAHRS 驱动（其余后端仍不编译）
+define AP_EXTERNAL_AHRS_ENABLED 1
+define AP_EXTERNAL_AHRS_BACKEND_DEFAULT_ENABLED 0
+define AP_EXTERNAL_AHRS_LK_ENABLED 1

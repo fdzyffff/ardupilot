@@ -3,6 +3,7 @@
 #include <AP_Logger/AP_Logger.h>
 
 const AP_Param::GroupInfo FD_Target_HY::var_info[] = {
+    // TOUT 为基类 FD_Target_Cam 的共用成员，由本类注册（AP_Param 嵌套层数限制，见 FD_Target_Cam.h）
     AP_GROUPINFO("TOUT", 0, FD_Target_HY, target_timeout, 2000),
     AP_GROUPINFO("RESX", 3, FD_Target_HY, res_x, 1920.0f),
     AP_GROUPINFO("RESY", 4, FD_Target_HY, res_y, 1080.0f),
@@ -13,8 +14,7 @@ const AP_Param::GroupInfo FD_Target_HY::var_info[] = {
     AP_GROUPEND
 };
 
-FD_Target_HY::FD_Target_HY() :
-    _port(nullptr)
+FD_Target_HY::FD_Target_HY()
 {
     AP_Param::setup_object_defaults(this, var_info);
 }
@@ -26,8 +26,7 @@ bool FD_Target_HY::init()
     last_auto_lock_ms = 0;
     set_type(0);
 
-    _port = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_NET, 0);
-    if (_port == nullptr) {
+    if (!init_port()) {
         gcs().send_text(MAV_SEVERITY_WARNING, "UAttack HY UART unavailable");
         return false;
     }
@@ -68,10 +67,7 @@ void FD_Target_HY::update()
     handle_control_ack();
     run_startup_config(now_ms);
 
-    if ((target_timeout.get() > 0) &&
-        (now_ms - _last_ms > (uint32_t)target_timeout.get())) {
-        _valid = false;
-    }
+    update_timeout(now_ms);
 
     const int32_t period_ms = auto_lock_period_ms.get();
     if ((auto_lock_enable.get() != 0) && (period_ms > 0) &&
@@ -133,11 +129,7 @@ float FD_Target_HY::cal_frame_angle(float pixel, float angle, float x_in) const
 
 void FD_Target_HY::send_control()
 {
-    if (_port == nullptr) {
-        return;
-    }
-    _port->write(uart_msg_HY_control._msg_1.content.data,
-                 uart_msg_HY_control._msg_1.length);
+    write_bytes(uart_msg_HY_control._msg_1.content.data, uart_msg_HY_control._msg_1.length);
 }
 
 void FD_Target_HY::update_log_miss(int16_t yaw_cdeg, int16_t pitch_cdeg,

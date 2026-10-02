@@ -172,7 +172,10 @@
 #include "avoidance_adsb.h"
 #endif
 // Local modules
-#include "UAttack.h"
+#include "FD_Attack_Copter.h"
+#include "UChase.h"   // HUOJIAN: 地面指控通信层
+#include "UDetector.h"   // HUOJIAN: 近距探测器(lk)
+#include <FD_DATA/FD_DATA.h>   // HUOJIAN: 自定义 MAVLink 收发
 #include "Parameters.h"
 #if USER_PARAMS_ENABLED
 #include "UserParameters.h"
@@ -198,13 +201,15 @@ public:
     friend class ToyMode;
     friend class RC_Channel_Copter;
     friend class RC_Channels_Copter;
-    friend class UAttack;
+    friend class FD_Attack_Copter;
+    friend class UChase;   // HUOJIAN
 
     friend class AutoTune;
 
     friend class Mode;
     friend class ModeAcro;
     friend class ModeAttack;
+    friend class ModeChase;   // HUOJIAN
     friend class ModeAcro_Heli;
     friend class ModeAltHold;
     friend class ModeAuto;
@@ -483,7 +488,9 @@ private:
     AC_Loiter *loiter_nav;
 
     // fixed top-camera target acquisition and rate command generator
-    UAttack uattack;
+    FD_Attack_Copter uattack;
+    UChase uchase;   // HUOJIAN: 地面指控通信层（CHASE 协议收发）
+    UDetector udetector;   // HUOJIAN: 两路近距探测器(lk)
 
 #if AC_CUSTOMCONTROL_MULTI_ENABLED
     AC_CustomControl custom_control{ahrs_view, attitude_control, motors};
@@ -1001,6 +1008,7 @@ private:
     bool ekf_has_relative_position() const;
     bool ekf_alt_ok() const;
     void update_auto_armed();
+    void fd_data_update();   // HUOJIAN: FD_DATA 1Hz 周期处理
     bool should_log(uint32_t mask);
     const char* get_frame_string() const;
     void allocate_motors(void);
@@ -1036,6 +1044,9 @@ private:
 #endif
 #endif
     ModeAttack mode_attack;
+#if MODE_GUIDED_ENABLED
+    ModeChase mode_chase;   // HUOJIAN: CHASE 任务容器模式
+#endif
     ModeAltHold mode_althold;
 #if MODE_AUTO_ENABLED
     ModeAuto mode_auto;

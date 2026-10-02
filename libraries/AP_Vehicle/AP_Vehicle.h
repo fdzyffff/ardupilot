@@ -84,6 +84,7 @@
 #include <AP_RPM/AP_RPM_config.h>
 #if AP_RPM_ENABLED
 #include <AP_RPM/AP_RPM.h>
+#include <FD_DATA/FD_DATA.h>   // HUOJIAN: 自定义 MAVLink 收发
 #endif
 
 #include <AP_IBus_Telem/AP_IBus_Telem.h>
@@ -501,6 +502,9 @@ protected:
 #if AP_RPM_ENABLED
     AP_RPM rpm_sensor;
 #endif
+
+    // HUOJIAN: 工程自定义 MAVLink 收发与状态
+    FD_DATA fd_data;
 
     static const struct AP_Param::GroupInfo var_info[];
 #if AP_SCHEDULER_ENABLED

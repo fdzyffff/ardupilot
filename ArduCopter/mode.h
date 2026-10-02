@@ -101,9 +101,12 @@ public:
         AUTOROTATE =   26,  // Autonomous autorotation
         AUTO_RTL =     27,  // Auto RTL, this is not a true mode, AUTO will report as this mode if entered to perform a DO_LAND_START Landing sequence
         TURTLE =       28,  // Flip over after crash
-        ATTACK =       29,  // body-frame angular rate control from UAttack with automatic throttle
+        // HUOJIAN: 模式号按地面指控协议重排：29=CHASE(任务容器)，30=STRIKE(打击)
+        // ATTACK =       29,  // body-frame angular rate control from UAttack with automatic throttle
+        CHASE =        29,  // HUOJIAN: CHASE 任务容器模式（起飞/等待/飞行）
+        ATTACK =       30,  // HUOJIAN: 打击模式，UAttack 角速率控制+自动油门（协议名 STRIKE）
 
-        // Mode number 30 reserved for "offboard" for external/lua control.
+        // Mode number 30 reserved for "offboard" for external/lua control.  // HUOJIAN: 30 已改用为 ATTACK
 
         // Mode number 127 reserved for the "drone show mode" in the Skybrush
         // fork at https://github.com/skybrush-io/ardupilot
@@ -499,6 +502,10 @@ protected:
     const char *name() const override { return "Attack"; }
     const char *name4() const override { return "ATCK"; }
 
+    // HUOJIAN: 地面站"与目标距离/方位"读数（NAV_CONTROLLER_OUTPUT.wp_dist/wp_bearing_deg），基类默认 0
+    float wp_distance_m() const override;
+    float wp_bearing_deg() const override;
+
 private:
     float throttle_out;
     uint32_t target_lost_start_ms;
@@ -507,10 +514,61 @@ private:
     // 进入模式后飞机锁定在发射架上（约10s），期间走纯速率路径（_2_rads）；
     // check_launched() 确认离架后一次性切到带速率误差积分的 _3_rads，不切回
     bool check_launched();
+    void set_launched();   // HUOJIAN: 离架锁存统一入口（清 I、恢复滞后补偿、注入 FF）
     bool rate_locking_active;
     float entry_alt_cm;
     uint32_t launch_move_start_ms;
 };
+
+#if MODE_GUIDED_ENABLED
+// HUOJIAN: CHASE 任务容器模式，起飞/等待/飞行三态，内部复用 GUIDED 的起飞与位置控制
+class ModeChase : public Mode {
+public:
+    using Mode::Mode;
+
+    Number mode_number() const override { return Number::CHASE; }
+    bool init(bool ignore_checks) override;
+    void run() override;
+    void exit() override;
+
+    bool requires_position() const override { return false; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(AP_Arming::Method method) const override { return true; }
+    bool is_autopilot() const override { return true; }
+    bool crash_check_enabled() const override { return false; }
+
+    enum class Chase_State : uint8_t {
+        Takeoff = 0,
+        Standby,
+        Fly,
+    };
+
+    Chase_State get_state() const { return chase_state; }
+    // HUOJIAN: 收到发射指令(31010)后由 UChase 调用，发起起飞
+    void start_takeoff();
+    bool is_taking_off() const override { return chase_state == Chase_State::Takeoff; }
+
+protected:
+    const char *name() const override { return "Chase"; }
+    const char *name4() const override { return "CHAS"; }
+
+    // HUOJIAN: 同为地面站距离/方位读数，CHASE 侧取标位目标（目标无效报 0）
+    float wp_distance_m() const override;
+    float wp_bearing_deg() const override;
+
+private:
+    void set_state(Chase_State state_in);
+    void update_state();
+    void fly_update();
+    bool target_valid() const;
+    float target_distance_m() const;
+
+    Chase_State chase_state;
+    uint32_t last_fly_dest_ms;
+    // HUOJIAN: 收到过起飞指令(31010)的标记——解锁只能由地面站 ARM 指令完成
+    bool takeoff_requested;
+};
+#endif  // MODE_GUIDED_ENABLED
 
 
 #if FRAME_CONFIG == HELI_FRAME

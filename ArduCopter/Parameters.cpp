@@ -577,8 +577,12 @@ const AP_Param::Info Copter::var_info[] = {
 #endif
 
     // @Group: UATK_
-    // @Path: UAttack.cpp
-    GOBJECT(uattack, "UATK_", UAttack),
+    // @Path: FD_Attack_Copter.cpp
+    GOBJECT(uattack, "UATK_", FD_Attack_Copter),
+
+    // @Group: DET_
+    // @Path: UDetector.cpp
+    GOBJECT(udetector, "DET_", UDetector),
 
     // @Group:
     // @Path: Parameters.cpp

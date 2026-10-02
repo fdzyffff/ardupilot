@@ -37,6 +37,7 @@ public:
     friend class AP_ExternalAHRS_SBG;
     friend class AP_ExternalAHRS_VectorNav;
     friend class AP_ExternalAHRS_SensAItion;
+    friend class AP_ExternalAHRS_LK;
 
     AP_ExternalAHRS();
 
@@ -71,6 +72,10 @@ public:
         // 10 reserved for Aeron
 #if AP_EXTERNAL_AHRS_SENSAITION_ENABLED
         SensAItion = 11,
+#endif
+#if AP_EXTERNAL_AHRS_LK_ENABLED
+        // HUOJIAN: 地面站注入（31016 拦截机信息）当 GPS 用
+        LK = 12,
 #endif
     };
 
@@ -176,6 +181,9 @@ public:
         float differential_pressure; // Pa
         float temperature; // degC
     } airspeed_data_message_t;
+
+    // HUOJIAN: 把地面站注入的 GPS 数据交给 LK 后端
+    bool handle_ext_gps(const gps_data_message_t &pkt);
 
     // set GNSS disable for auxillary function GPS_DISABLE
     void set_gnss_disable(bool disable) {

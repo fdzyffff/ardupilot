@@ -104,6 +104,7 @@
 #include <AP_GPS/AP_GPS.h>
 
 #include <AP_RCProtocol/AP_RCProtocol_config.h>
+#include <FD_DATA/FD_DATA.h>   // HUOJIAN: 自定义 MAVLink 收发
 #if AP_RCPROTOCOL_ENABLED
 #include <AP_RCProtocol/AP_RCProtocol.h>
 #endif
@@ -1203,6 +1204,10 @@ ap_message GCS_MAVLINK::mavlink_id_to_ap_message_id(const uint32_t mavlink_id) c
 #if AP_MAVLINK_MSG_FLIGHT_INFORMATION_ENABLED
         { MAVLINK_MSG_ID_FLIGHT_INFORMATION, MSG_FLIGHT_INFORMATION},
 #endif
+        // HUOJIAN: CHASE 协议自定义上报（决定 SR* 流速率参数能否控速）
+        { MAVLINK_MSG_ID_CHASE_STATUS, MSG_CHASE_STATUS},
+        { MAVLINK_MSG_ID_CHASE_TRACKER, MSG_CHASE_TRACKER},
+        { MAVLINK_MSG_ID_CHASE_FUZE, MSG_CHASE_FUZE},
     };
 
     for (uint8_t i=0; i<ARRAY_SIZE(map); i++) {
@@ -6867,6 +6872,22 @@ bool GCS_MAVLINK::try_send_message(const enum ap_message id)
 #endif
         // ADSB should be moved down into here
     case MSG_ADSB_VEHICLE:
+        break;
+
+    // HUOJIAN: CHASE 协议自定义上报
+    case MSG_CHASE_STATUS:
+        CHECK_PAYLOAD_SIZE(CHASE_STATUS);
+        AP::fd_data().send_chase_status(chan);
+        break;
+
+    case MSG_CHASE_TRACKER:
+        CHECK_PAYLOAD_SIZE(CHASE_TRACKER);
+        AP::fd_data().send_chase_tracker(chan);
+        break;
+
+    case MSG_CHASE_FUZE:
+        CHECK_PAYLOAD_SIZE(CHASE_FUZE);
+        AP::fd_data().send_chase_fuze(chan);
         break;
 
     default:

@@ -387,6 +387,7 @@ public:
         k_param_throw_altitude_descend,
         k_param_throw_altitude_ascend,
         k_param_uattack = 263,
+        k_param_udetector = 264,   // HUOJIAN: 探测器参数组
 
         // the k_param_* space is 9-bits in size
         // 511: reserved

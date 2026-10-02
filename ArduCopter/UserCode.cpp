@@ -163,3 +163,9 @@ void Copter::check_forced_land_or_rtl()
         arming.disarm(AP_Arming::Method::TERMINATION);
     }
 }
+
+// HUOJIAN: FD_DATA 1Hz 周期处理（自定义 MAVLink 扩展点）
+void Copter::fd_data_update()
+{
+    AP::fd_data().update();
+}

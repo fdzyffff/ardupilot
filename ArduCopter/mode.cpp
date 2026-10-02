@@ -41,6 +41,11 @@ Mode *Copter::mode_from_mode_num(const Mode::Number mode)
         case Mode::Number::ATTACK:
             return &mode_attack;
 
+#if MODE_GUIDED_ENABLED
+        case Mode::Number::CHASE:
+            return &mode_chase;
+#endif
+
         case Mode::Number::STABILIZE:
             return &mode_stabilize;
 
@@ -212,7 +217,8 @@ bool Copter::gcs_mode_enabled(const Mode::Number mode_num)
         (uint8_t)Mode::Number::AUTOROTATE,
         (uint8_t)Mode::Number::AUTO_RTL,
         (uint8_t)Mode::Number::TURTLE,
-        (uint8_t)Mode::Number::ATTACK
+        (uint8_t)Mode::Number::ATTACK,
+        (uint8_t)Mode::Number::CHASE   // HUOJIAN
     };
 
     return !block_GCS_mode_change((uint8_t)mode_num, mode_list, ARRAY_SIZE(mode_list));
@@ -238,6 +244,7 @@ uint32_t Copter::get_available_mode_enabled_mask() const
 #endif
 #if MODE_GUIDED_ENABLED
         &copter.mode_guided,
+        &copter.mode_chase,   // HUOJIAN
 #endif
         &copter.mode_land,
 #if MODE_RTL_ENABLED

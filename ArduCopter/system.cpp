@@ -174,6 +174,8 @@ void Copter::init_ardupilot()
 
     uattack.init();
 
+    udetector.init();
+
 #if AC_CUSTOMCONTROL_MULTI_ENABLED
     custom_control.init();
 #endif

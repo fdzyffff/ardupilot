@@ -115,5 +115,9 @@ enum ap_message : uint8_t {
 #if AP_MAVLINK_MSG_FLIGHT_INFORMATION_ENABLED
     MSG_FLIGHT_INFORMATION             = 100,
 #endif
+    // HUOJIAN: CHASE 协议自定义上报
+    MSG_CHASE_STATUS                   = 101,
+    MSG_CHASE_TRACKER                  = 102,
+    MSG_CHASE_FUZE                     = 103,
     MSG_LAST // MSG_LAST must be the last entry in this enum
 };

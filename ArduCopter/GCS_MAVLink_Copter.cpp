@@ -379,6 +379,9 @@ void GCS_MAVLINK_Copter::packetReceived(const mavlink_status_t &status,
         copter.avoidance_adsb.handle_msg(msg);
     }
 #endif
+    copter.uchase.msg_received(msg);
+    // HUOJIAN: 自定义 MAVLink 接收统一入口
+    AP::fd_data().handle_message(chan, msg);
     copter.uattack.handle_attack_msg(msg);
     GCS_MAVLINK::packetReceived(status, msg);
 }
@@ -501,6 +504,12 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_int_do_reposition(const mavlink_co
 
 MAV_RESULT GCS_MAVLINK_Copter::handle_command_int_packet(const mavlink_command_int_t &packet, const mavlink_message_t &msg)
 {
+    // HUOJIAN: CHASE 地面指控协议指令(31010~31018、181)优先分发
+    MAV_RESULT chase_result = MAV_RESULT_ACCEPTED;
+    if (copter.uchase.handle_command_int(packet, chase_result)) {
+        return chase_result;
+    }
+
     switch(packet.command) {
 
     case MAV_CMD_CONDITION_YAW:

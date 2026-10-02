@@ -29,6 +29,7 @@
 #include "AP_ExternalAHRS_SBG.h"
 #include "AP_ExternalAHRS_GSOF.h"
 #include "AP_ExternalAHRS_SensAItion.h"
+#include "AP_ExternalAHRS_LK.h"
 
 #include <GCS_MAVLink/GCS.h>
 #include <AP_AHRS/AP_AHRS.h>
@@ -61,7 +62,7 @@ const AP_Param::GroupInfo AP_ExternalAHRS::var_info[] = {
     // @Param: _TYPE
     // @DisplayName: AHRS type
     // @Description: Type of AHRS device
-    // @Values: 0:None,1:VectorNav,2:MicroStrain5,5:InertialLabs,6:Trimble GSOF,7:MicroStrain7,8:SBG,11:SensAItion
+    // @Values: 0:None,1:VectorNav,2:MicroStrain5,5:InertialLabs,6:Trimble GSOF,7:MicroStrain7,8:SBG,11:SensAItion,12:LK
     // @User: Standard
     AP_GROUPINFO_FLAGS("_TYPE", 1, AP_ExternalAHRS, devtype, HAL_EXTERNAL_AHRS_DEFAULT, AP_PARAM_FLAG_ENABLE),
 
@@ -150,6 +151,12 @@ void AP_ExternalAHRS::init(void)
         return;
 #endif // AP_EXTERNAL_AHRS_SBG_ENABLED
 
+#if AP_EXTERNAL_AHRS_LK_ENABLED
+    case DevType::LK:
+        backend = NEW_NOTHROW AP_ExternalAHRS_LK(this, state);
+        return;
+#endif // AP_EXTERNAL_AHRS_LK_ENABLED
+
     }
 
     GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Unsupported ExternalAHRS type %u", unsigned(devtype));
@@ -168,6 +175,15 @@ int8_t AP_ExternalAHRS::get_port(AvailableSensor sensor) const
     }
     return backend->get_port();
 };
+
+// HUOJIAN: 地面站注入的 GPS 数据转交 LK 后端
+bool AP_ExternalAHRS::handle_ext_gps(const gps_data_message_t &pkt)
+{
+    if (backend == nullptr) {
+        return false;
+    }
+    return backend->handle_ext_gps(pkt);
+}
 
 // accessors for AP_AHRS
 bool AP_ExternalAHRS::healthy(void) const
@@ -280,34 +296,37 @@ bool AP_ExternalAHRS::pre_arm_check(char *failure_msg, uint8_t failure_msg_len) 
     if (!backend->pre_arm_check(failure_msg, failure_msg_len)) {
         return false;
     }
-    // Verify the user has configured the GPS to accept EAHRS data.
-    if (has_sensor(AvailableSensor::GPS)) {
-        const auto eahrs_gps_sensors = backend->num_gps_sensors();
-
-        const auto &gps = AP::gps();
-        uint8_t n_configured_eahrs_gps = 0;
-        for (uint8_t i = 0; i < GPS_MAX_INSTANCES; ++i) {
-            const auto gps_type = gps.get_type(i);
-            if (gps_type == AP_GPS::GPS_TYPE_EXTERNAL_AHRS) {
-                n_configured_eahrs_gps++;
-            }
-        }
-
-        // Once AP supports at least 3 GPS's, change to == and remove the second condition.
-        // At that point, enforce that all GPS's in EAHRS can report to AP_GPS.
-        if (n_configured_eahrs_gps < 1 && eahrs_gps_sensors >= 1) {
-            hal.util->snprintf(failure_msg, failure_msg_len, "ExternalAHRS: Incorrect number of GPS sensors configured for EAHRS");
-            return false;
-        }
-    }
-    AP_AHRS &ahrs = AP::ahrs();
-    if (ahrs.configured_ekf_type() == AP_AHRS::EKFType::EXTERNAL) {
-        // when using EAHRS as the EKF source, we must have a valid position origin
-        if (!state.have_origin) {
-            hal.util->snprintf(failure_msg, failure_msg_len, "ExternalAHRS: No origin");
-            return false;
-        }
-    }
+    // HUOJIAN: 跳过 EAHRS 侧预解锁门限（GPS1_TYPE 是否=21、是否有 origin）。
+    // 本工程由 LK 后端接收地面注入的 GPS，有没有外部目标指引都能飞，
+    // 定位有效性交给 AP_GPS/EKF 自身的检查，这里不做额外操作。
+    // // Verify the user has configured the GPS to accept EAHRS data.
+    // if (has_sensor(AvailableSensor::GPS)) {
+    //     const auto eahrs_gps_sensors = backend->num_gps_sensors();
+    //
+    //     const auto &gps = AP::gps();
+    //     uint8_t n_configured_eahrs_gps = 0;
+    //     for (uint8_t i = 0; i < GPS_MAX_INSTANCES; ++i) {
+    //         const auto gps_type = gps.get_type(i);
+    //         if (gps_type == AP_GPS::GPS_TYPE_EXTERNAL_AHRS) {
+    //             n_configured_eahrs_gps++;
+    //         }
+    //     }
+    //
+    //     // Once AP supports at least 3 GPS's, change to == and remove the second condition.
+    //     // At that point, enforce that all GPS's in EAHRS can report to AP_GPS.
+    //     if (n_configured_eahrs_gps < 1 && eahrs_gps_sensors >= 1) {
+    //         hal.util->snprintf(failure_msg, failure_msg_len, "ExternalAHRS: Incorrect number of GPS sensors configured for EAHRS");
+    //         return false;
+    //     }
+    // }
+    // AP_AHRS &ahrs = AP::ahrs();
+    // if (ahrs.configured_ekf_type() == AP_AHRS::EKFType::EXTERNAL) {
+    //     // when using EAHRS as the EKF source, we must have a valid position origin
+    //     if (!state.have_origin) {
+    //         hal.util->snprintf(failure_msg, failure_msg_len, "ExternalAHRS: No origin");
+    //         return false;
+    //     }
+    // }
     return true;
 }
 

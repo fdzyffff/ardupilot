@@ -51,6 +51,9 @@ public:
     // Return the number of GPS sensors sharing data to AP_GPS.
     virtual uint8_t num_gps_sensors(void) const = 0;
 
+    // HUOJIAN: 地面站注入的 GPS 数据入口，默认不支持
+    virtual bool handle_ext_gps(const AP_ExternalAHRS::gps_data_message_t &pkt) { return false; }
+
 protected:
     AP_ExternalAHRS::state_t &state;
     uint16_t get_rate(void) const;

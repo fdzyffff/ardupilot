@@ -4,6 +4,7 @@
 #include <AP_SerialManager/AP_SerialManager.h>
 
 const AP_Param::GroupInfo FD_Target_DYT::var_info[] = {
+    // TOUT 为基类 FD_Target_Cam 的共用成员，由本类注册（AP_Param 嵌套层数限制，见 FD_Target_Cam.h）
     AP_GROUPINFO("TOUT", 0, FD_Target_DYT, target_timeout, 2000),
     AP_GROUPINFO("CENT", 1, FD_Target_DYT, center_time, 3000),
     AP_GROUPINFO("TRKT", 2, FD_Target_DYT, track_time, 200),
@@ -11,7 +12,6 @@ const AP_Param::GroupInfo FD_Target_DYT::var_info[] = {
 };
 
 FD_Target_DYT::FD_Target_DYT() :
-    _port(nullptr),
     last_center_ms(0),
     last_track_ms(0),
     last_cancel_ms(0)
@@ -25,8 +25,7 @@ bool FD_Target_DYT::init()
     _valid = false;
     set_type(0);
 
-    _port = AP::serialmanager().find_serial(AP_SerialManager::SerialProtocol_NET, 0);
-    if (_port == nullptr) {
+    if (!init_port()) {
         return false;
     }
 
@@ -36,12 +35,12 @@ bool FD_Target_DYT::init()
 
 void FD_Target_DYT::update()
 {
-    if (_port == nullptr) {
+    if (get_port() == nullptr) {
         return;
     }
 
-    while (_port->available() > 0) {
-        const int16_t read_value = _port->read();
+    while (get_port()->available() > 0) {
+        const int16_t read_value = get_port()->read();
         if (read_value < 0) {
             break;
         }
@@ -72,26 +71,23 @@ void FD_Target_DYT::update()
     }
 
     const uint32_t now_ms = AP_HAL::millis();
-    if ((target_timeout.get() > 0) &&
-        (now_ms - _last_ms > (uint32_t)target_timeout.get())) {
-        _valid = false;
-    }
+    update_timeout(now_ms);
 
     if (!_valid) {
         if (now_ms - last_center_ms > (uint32_t)center_time.get()) {
             uart_msg_DYT_control.pack_center();
-            _port->write(uart_msg_DYT_control._msg_1.content.data,
-                         sizeof(uart_msg_DYT_control._msg_1.content.data));
+            write_bytes(uart_msg_DYT_control._msg_1.content.data,
+                        sizeof(uart_msg_DYT_control._msg_1.content.data));
             uart_msg_DYT_control.pack_open_recognition();
-            _port->write(uart_msg_DYT_control._msg_1.content.data,
-                         sizeof(uart_msg_DYT_control._msg_1.content.data));
+            write_bytes(uart_msg_DYT_control._msg_1.content.data,
+                        sizeof(uart_msg_DYT_control._msg_1.content.data));
             last_center_ms = now_ms;
         }
         if ((now_ms - last_track_ms > (uint32_t)track_time.get()) &&
             (now_ms - last_cancel_ms > 2000U)) {
             uart_msg_DYT_control.pack_track();
-            _port->write(uart_msg_DYT_control._msg_1.content.data,
-                         sizeof(uart_msg_DYT_control._msg_1.content.data));
+            write_bytes(uart_msg_DYT_control._msg_1.content.data,
+                        sizeof(uart_msg_DYT_control._msg_1.content.data));
             last_track_ms = now_ms;
         }
         return;
@@ -106,8 +102,8 @@ void FD_Target_DYT::update()
          (fabsf(gimbal_pitch_deg) > 40.0f) ||
          ((fabsf(target_yaw_deg) > 8.0f) && (fabsf(target_pitch_deg) > 5.0f)))) {
         uart_msg_DYT_control.pack_cancel();
-        _port->write(uart_msg_DYT_control._msg_1.content.data,
-                     sizeof(uart_msg_DYT_control._msg_1.content.data));
+        write_bytes(uart_msg_DYT_control._msg_1.content.data,
+                    sizeof(uart_msg_DYT_control._msg_1.content.data));
         _valid = false;
         last_cancel_ms = now_ms;
     }

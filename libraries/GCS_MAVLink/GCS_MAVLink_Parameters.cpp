@@ -371,6 +371,10 @@ static const ap_message STREAM_EXTRA3_msgs[] = {
 #if !APM_BUILD_TYPE(APM_BUILD_AntennaTracker)
     MSG_VIBRATION,
 #endif
+    // HUOJIAN: CHASE 协议自定义上报
+    MSG_CHASE_STATUS,
+    MSG_CHASE_TRACKER,
+    MSG_CHASE_FUZE,
 };
 
 static const ap_message STREAM_PARAMS_msgs[] = {
