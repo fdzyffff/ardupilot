@@ -43,16 +43,25 @@ public:
     void handle_message_command_long_sn(const mavlink_message_t &msg);
     void handle_message_command_long_rt(const mavlink_message_t &msg);
 
+    void handle_message_command_long_switch(const mavlink_message_t &msg);
     void send_mav_serial_number();
     void send_mav_runtime_flying(uint32_t runtime_flying);
     void send_hxts_hy_bms_c1(mavlink_channel_t chan);
     void send_hxts_hy_bms_c2(mavlink_channel_t chan);
     void send_hxts_hy_bms_c3(mavlink_channel_t chan);
+    void send_hxts_hy_bms_cell(mavlink_channel_t chan);
+    void send_hxts_hy_bms_temp(mavlink_channel_t chan);
+    void send_hxts_hy_bms_strv(mavlink_channel_t chan);
+    void send_hxts_hy_bms_strv2(mavlink_channel_t chan);
     void send_hxts_can_mot_info(mavlink_channel_t chan);
 
     mavlink_hxts_hy_bms_c1_t hxts_hy_bms_c1_packet;
     mavlink_hxts_hy_bms_c2_t hxts_hy_bms_c2_packet;
     mavlink_hxts_hy_bms_c3_t hxts_hy_bms_c3_packet;
+    mavlink_hxts_hy_bms_cell_t hxts_hy_bms_cell_packet;
+    mavlink_hxts_hy_bms_temp_t hxts_hy_bms_temp_packet;
+    mavlink_hxts_hy_bms_strv_t hxts_hy_bms_strv_packet;
+    mavlink_hxts_hy_bms_strv2_t hxts_hy_bms_strv2_packet;
 
     mavlink_hxts_can_mot_info_t hxts_can_mot_info_packet;
     void do_switch(bool switch_on);

@@ -115,27 +115,10 @@ void HXKY_Engine::read_uart()
             _uart_response._msg_1.updated = false;
             _packet.Instance = _id;
             _packet.Flag = _uart_response._msg_1.content.msg.flag;
-            _packet.seconds = _uart_response._msg_1.content.msg.seconds;
-            _packet.pulsewidth1 = _uart_response._msg_1.content.msg.pulsewidth1;
-            _packet.pulsewidth2 = _uart_response._msg_1.content.msg.pulsewidth2;
-            _packet.rpm = _uart_response._msg_1.content.msg.rpm;
-            _packet.advance = _uart_response._msg_1.content.msg.advance;
-            _packet.barometer = _uart_response._msg_1.content.msg.barometer;
-            _packet.map = _uart_response._msg_1.content.msg.map;
-            _packet.mat = _uart_response._msg_1.content.msg.mat;
-            _packet.coolant = _uart_response._msg_1.content.msg.coolant;
-            _packet.tps = _uart_response._msg_1.content.msg.tps;
-            _packet.batteryvoltage = _uart_response._msg_1.content.msg.batteryvoltage;
-            _packet.afr1 = _uart_response._msg_1.content.msg.afr1;
-            _packet.afr2 = _uart_response._msg_1.content.msg.afr2;
-            _packet.barocorrection = _uart_response._msg_1.content.msg.barocorrection;
-            _packet.gammaenrich = _uart_response._msg_1.content.msg.gammaenrich;
-            _packet.ve1 = _uart_response._msg_1.content.msg.ve1;
-            _packet.cold_adv_deg = _uart_response._msg_1.content.msg.cold_adv_deg;
-            _packet.tpsdot = _uart_response._msg_1.content.msg.tpsdot;
-            _packet.mapdot = _uart_response._msg_1.content.msg.mapdot;
-            _packet.egov1 = _uart_response._msg_1.content.msg.egov1;
-            _packet.egov2 = _uart_response._msg_1.content.msg.egov2;
+            _packet.Seconds = _uart_response._msg_1.content.msg.seconds;
+            _packet.RPM = _uart_response._msg_1.content.msg.rpm;
+            _packet.Coolant = _uart_response._msg_1.content.msg.coolant;
+            _packet.BattVolt = _uart_response._msg_1.content.msg.batteryvoltage;
 
             _last_update_ms = AP_HAL::millis();
 
@@ -208,27 +191,10 @@ void HXKY_Engine::handle_message(const mavlink_message_t &msg)
         if (packet.Instance == _id) {
             _packet = packet;
             _uart_response._msg_1.content.msg.flag = packet.Flag;
-            _uart_response._msg_1.content.msg.seconds = packet.seconds;
-            _uart_response._msg_1.content.msg.pulsewidth1 = packet.pulsewidth1;
-            _uart_response._msg_1.content.msg.pulsewidth2 = packet.pulsewidth2;
-            _uart_response._msg_1.content.msg.rpm = packet.rpm;
-            _uart_response._msg_1.content.msg.advance = packet.advance;
-            _uart_response._msg_1.content.msg.barometer = packet.barometer;
-            _uart_response._msg_1.content.msg.map = packet.map;
-            _uart_response._msg_1.content.msg.mat = packet.mat;
-            _uart_response._msg_1.content.msg.coolant = packet.coolant;
-            _uart_response._msg_1.content.msg.tps = packet.tps;
-            _uart_response._msg_1.content.msg.batteryvoltage = packet.batteryvoltage;
-            _uart_response._msg_1.content.msg.afr1 = packet.afr1;
-            _uart_response._msg_1.content.msg.afr2 = packet.afr2;
-            _uart_response._msg_1.content.msg.barocorrection = packet.barocorrection;
-            _uart_response._msg_1.content.msg.gammaenrich = packet.gammaenrich;
-            _uart_response._msg_1.content.msg.ve1 = packet.ve1;
-            _uart_response._msg_1.content.msg.cold_adv_deg = packet.cold_adv_deg;
-            _uart_response._msg_1.content.msg.tpsdot = packet.tpsdot;
-            _uart_response._msg_1.content.msg.mapdot = packet.mapdot;
-            _uart_response._msg_1.content.msg.egov1 = packet.egov1;
-            _uart_response._msg_1.content.msg.egov2 = packet.egov2;
+            _uart_response._msg_1.content.msg.seconds = packet.Seconds;
+            _uart_response._msg_1.content.msg.rpm = packet.RPM;
+            _uart_response._msg_1.content.msg.coolant = packet.Coolant;
+            _uart_response._msg_1.content.msg.batteryvoltage = packet.BattVolt;
             _last_update_ms = AP_HAL::millis();
         }
     }
@@ -251,19 +217,19 @@ void HXKY_Engine::update_log()
                                 "F-------------",
                                 "QBBHHHHhhhhhhh",
                                 AP_HAL::micros64(),
-                                (uint8_t)_packet.Instance,
-                                (uint16_t)_packet.Flag,
-                                (uint16_t)_packet.seconds,
-                                (uint16_t)_packet.pulsewidth1,
-                                (uint16_t)_packet.pulsewidth2,
-                                (uint16_t)_packet.rpm,
-                                (int16_t)_packet.advance,
-                                (int16_t)_packet.barometer,
-                                (int16_t)_packet.map,
-                                (int16_t)_packet.mat,
-                                (int16_t)_packet.coolant,
-                                (int16_t)_packet.tps,
-                                (int16_t)_packet.batteryvoltage);
+                                (uint8_t)_id,
+                                (uint16_t)_uart_response._msg_1.content.msg.flag,
+                                (uint16_t)_uart_response._msg_1.content.msg.seconds,
+                                (uint16_t)_uart_response._msg_1.content.msg.pulsewidth1,
+                                (uint16_t)_uart_response._msg_1.content.msg.pulsewidth2,
+                                (uint16_t)_uart_response._msg_1.content.msg.rpm,
+                                (int16_t)_uart_response._msg_1.content.msg.advance,
+                                (int16_t)_uart_response._msg_1.content.msg.barometer,
+                                (int16_t)_uart_response._msg_1.content.msg.map,
+                                (int16_t)_uart_response._msg_1.content.msg.mat,
+                                (int16_t)_uart_response._msg_1.content.msg.coolant,
+                                (int16_t)_uart_response._msg_1.content.msg.tps,
+                                (int16_t)_uart_response._msg_1.content.msg.batteryvoltage);
 
     AP::logger().WriteStreaming("HXEN2",
                                 "TimeUS,I,afr1,afr2,barc,gamh,ve1,cad,tpsd,mapd,egov1,egov2",
@@ -271,15 +237,15 @@ void HXKY_Engine::update_log()
                                 "F-----------",
                                 "QBhhhhhhhhhh",
                                 AP_HAL::micros64(),
-                                (uint8_t)_packet.Instance,
-                                (int16_t)_packet.afr1,
-                                (int16_t)_packet.afr2,
-                                (int16_t)_packet.barocorrection,
-                                (int16_t)_packet.gammaenrich,
-                                (int16_t)_packet.ve1,
-                                (int16_t)_packet.cold_adv_deg,
-                                (int16_t)_packet.tpsdot,
-                                (int16_t)_packet.mapdot,
-                                (int16_t)_packet.egov1,
-                                (int16_t)_packet.egov2);
+                                (uint8_t)_id,
+                                (int16_t)_uart_response._msg_1.content.msg.afr1,
+                                (int16_t)_uart_response._msg_1.content.msg.afr2,
+                                (int16_t)_uart_response._msg_1.content.msg.barocorrection,
+                                (int16_t)_uart_response._msg_1.content.msg.gammaenrich,
+                                (int16_t)_uart_response._msg_1.content.msg.ve1,
+                                (int16_t)_uart_response._msg_1.content.msg.cold_adv_deg,
+                                (int16_t)_uart_response._msg_1.content.msg.tpsdot,
+                                (int16_t)_uart_response._msg_1.content.msg.mapdot,
+                                (int16_t)_uart_response._msg_1.content.msg.egov1,
+                                (int16_t)_uart_response._msg_1.content.msg.egov2);
 }

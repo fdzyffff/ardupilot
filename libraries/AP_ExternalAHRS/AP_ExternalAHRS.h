@@ -29,6 +29,8 @@
 #include <AP_GPS/AP_GPS_FixType.h>
 
 class AP_ExternalAHRS_backend;
+class AP_ExternalAHRS_MINS;
+class AP_ExternalAHRS_KY2;
 
 class AP_ExternalAHRS {
 
@@ -37,6 +39,7 @@ public:
     friend class AP_ExternalAHRS_VectorNav;
     friend class AP_ExternalAHRS_MINS;
     friend class AP_ExternalAHRS_KY1;
+    friend class AP_ExternalAHRS_KY2;
     friend class AP_ExternalAHRS_SITL;
 
     AP_ExternalAHRS();
@@ -71,6 +74,9 @@ public:
 #endif
 #if AP_EXTERNAL_AHRS_KY1_ENABLED
         KY1 = 16,
+#endif
+#if AP_EXTERNAL_AHRS_KY2_ENABLED
+        KY2 = 17,
 #endif
 #if AP_EXTERNAL_AHRS_SITL_ENABLED
         SITL = 99,
@@ -220,7 +226,10 @@ private:
     AP_Int16         options;
     AP_Int16         sensors;
     AP_Int8          debug_print;
-    AP_Int8          mag_cal;
+
+    // Sub-group pointers for device-specific parameters
+    AP_ExternalAHRS_MINS *_mins_ptr;
+    AP_ExternalAHRS_KY2  *_ky2_ptr;
 
     static AP_ExternalAHRS *_singleton;
 

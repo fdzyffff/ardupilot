@@ -19,6 +19,24 @@
 
 extern const AP_HAL::HAL &hal;
 
+const AP_Param::GroupInfo AP_ExternalAHRS_MINS::var_info[] = {
+    // @Param: MAG_CAL
+    // @DisplayName: MINS mag calibration trigger
+    // @Description: Set to 1 to start mag calibration (auto-resets to 0)
+    // @Values: 0:Off,1:Start
+    // @User: Advanced
+    AP_GROUPINFO("CAL", 0, AP_ExternalAHRS_MINS, _mag_cal_trigger, 0),
+
+    // @Param: LOG
+    // @DisplayName: MINS log level
+    // @Description: 0=Off, 1=On
+    // @Values: 0:Off,1:On
+    // @User: Advanced
+    AP_GROUPINFO("LOG", 1, AP_ExternalAHRS_MINS, _log_level, 0),
+
+    AP_GROUPEND
+};
+
 
 AP_ExternalAHRS_MINS::AP_ExternalAHRS_MINS(AP_ExternalAHRS *_frontend,
         AP_ExternalAHRS::state_t &_state): AP_ExternalAHRS_backend(_frontend, _state)//.构造函数，初始化 MINS 后端
@@ -298,6 +316,9 @@ void AP_ExternalAHRS_MINS::post_imu()
 
 void AP_ExternalAHRS_MINS::update_log()
 {
+    if (_log_level.get() == 0) {
+        return;
+    }
 #if HAL_LOGGING_ENABLED
     if (AP_HAL::millis() - _last_log_ms < 20) {
         return;
@@ -435,10 +456,10 @@ void AP_ExternalAHRS_MINS::send_ins_setting()
 
 void AP_ExternalAHRS_MINS::update_mag_cal()
 {
-    if (frontend.mag_cal.get() != 0) {
+    if (_mag_cal_trigger.get() != 0) {
         send_mag_cal(0x01);
         mag_calibrating = true;
-        frontend.mag_cal.set_and_save(0);
+        _mag_cal_trigger.set_and_save(0);
         _last_cal_ms = AP_HAL::millis();
         for (uint8_t mag_id = 0; mag_id < 2; mag_id++) {
             hal.util->snprintf(_mag_cal[mag_id].msg, 5, "NONE");

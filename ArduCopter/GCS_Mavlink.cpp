@@ -386,6 +386,39 @@ bool GCS_MAVLINK_Copter::try_send_message(enum ap_message id)
         break;
     }
 
+    case MSG_HXTS_HY_BMS_C1:
+        CHECK_PAYLOAD_SIZE(HXTS_HY_BMS_C1);
+        AP::fd_data().send_hxts_hy_bms_c1(chan);
+        break;
+    case MSG_HXTS_HY_BMS_C2:
+        CHECK_PAYLOAD_SIZE(HXTS_HY_BMS_C2);
+        AP::fd_data().send_hxts_hy_bms_c2(chan);
+        break;
+    case MSG_HXTS_HY_BMS_C3:
+        CHECK_PAYLOAD_SIZE(HXTS_HY_BMS_C3);
+        AP::fd_data().send_hxts_hy_bms_c3(chan);
+        break;
+    case MSG_HXTS_HY_BMS_CELL:
+        CHECK_PAYLOAD_SIZE(HXTS_HY_BMS_CELL);
+        AP::fd_data().send_hxts_hy_bms_cell(chan);
+        break;
+    case MSG_HXTS_HY_BMS_TEMP:
+        CHECK_PAYLOAD_SIZE(HXTS_HY_BMS_TEMP);
+        AP::fd_data().send_hxts_hy_bms_temp(chan);
+        break;
+    case MSG_HXTS_HY_BMS_STRV:
+        CHECK_PAYLOAD_SIZE(HXTS_HY_BMS_STRV);
+        AP::fd_data().send_hxts_hy_bms_strv(chan);
+        break;
+    case MSG_HXTS_HY_BMS_STRV2:
+        CHECK_PAYLOAD_SIZE(HXTS_HY_BMS_STRV2);
+        AP::fd_data().send_hxts_hy_bms_strv2(chan);
+        break;
+    case MSG_HXTS_CAN_MOT_INFO:
+        CHECK_PAYLOAD_SIZE(HXTS_CAN_MOT_INFO);
+        AP::fd_data().send_hxts_can_mot_info(chan);
+        break;
+
     default:
         return GCS_MAVLINK::try_send_message(id);
     }
@@ -549,6 +582,14 @@ static const ap_message STREAM_EXTRA1_msgs[] = {
 static const ap_message STREAM_EXTRA2_msgs[] = {
     MSG_VFR_HUD,
     MSG_HXTS_BAT_CAN_STATUS,
+    MSG_HXTS_HY_BMS_C1,
+    MSG_HXTS_HY_BMS_C2,
+    MSG_HXTS_HY_BMS_C3,
+    MSG_HXTS_HY_BMS_CELL,
+    MSG_HXTS_HY_BMS_TEMP,
+    MSG_HXTS_HY_BMS_STRV,
+    MSG_HXTS_HY_BMS_STRV2,
+    MSG_HXTS_CAN_MOT_INFO,
 };
 static const ap_message STREAM_EXTRA3_msgs[] = {
     MSG_AHRS,

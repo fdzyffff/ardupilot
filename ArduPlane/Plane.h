@@ -1338,6 +1338,8 @@ private:
     void userhook_init();
     void userhook_100Hz();
     void userhook_1Hz();
+    void check_forced_rtl_or_qland();
+    bool force_safe_triggered = false;
 
     void handle_msg_hxky(const mavlink_message_t &msg);
     void hxky_update_100hz();

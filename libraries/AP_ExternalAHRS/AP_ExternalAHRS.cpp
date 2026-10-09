@@ -28,6 +28,7 @@
 #include "AP_ExternalAHRS_InertialLabs.h"
 #include "AP_ExternalAHRS_MINS.h"
 #include "AP_ExternalAHRS_KY1.h"
+#include "AP_ExternalAHRS_KY2.h"
 #include "AP_ExternalAHRS_SITL.h"
 
 #include <GCS_MAVLink/GCS.h>
@@ -61,7 +62,7 @@ const AP_Param::GroupInfo AP_ExternalAHRS::var_info[] = {
     // @Param: _TYPE
     // @DisplayName: AHRS type
     // @Description: Type of AHRS device
-    // @Values: 0:None,1:VectorNav,2:MicroStrain5,5:InertialLabs,7:MicroStrain7,15:MINS,16:KY1
+    // @Values: 0:None,1:VectorNav,2:MicroStrain5,5:InertialLabs,7:MicroStrain7,15:MINS,16:KY1,17:KY2
     // @User: Standard
     AP_GROUPINFO_FLAGS("_TYPE", 1, AP_ExternalAHRS, devtype, HAL_EXTERNAL_AHRS_DEFAULT, AP_PARAM_FLAG_ENABLE),
 
@@ -94,9 +95,14 @@ const AP_Param::GroupInfo AP_ExternalAHRS::var_info[] = {
     AP_GROUPINFO("_LOG_RATE", 5, AP_ExternalAHRS, log_rate, 10),
     
     AP_GROUPINFO("_DEBUG", 6, AP_ExternalAHRS, debug_print, 0),
-    
-    AP_GROUPINFO("_MAG_CAL", 7, AP_ExternalAHRS, mag_cal, 0),
-    
+
+#if AP_EXTERNAL_AHRS_MINS_ENABLED
+    AP_SUBGROUPPTR(_mins_ptr, "MINS_", 7, AP_ExternalAHRS, AP_ExternalAHRS_MINS),
+#endif
+#if AP_EXTERNAL_AHRS_KY2_ENABLED
+    AP_SUBGROUPPTR(_ky2_ptr, "KY2_", 8, AP_ExternalAHRS, AP_ExternalAHRS_KY2),
+#endif
+
     AP_GROUPEND
 };
 
@@ -140,11 +146,24 @@ void AP_ExternalAHRS::init(void)
 #if AP_EXTERNAL_AHRS_MINS_ENABLED
     case DevType::MINS:
         backend = NEW_NOTHROW AP_ExternalAHRS_MINS(this, state);
+        _mins_ptr = static_cast<AP_ExternalAHRS_MINS*>(backend);
+        if (_mins_ptr) {
+            AP_Param::load_object_from_eeprom(_mins_ptr, AP_ExternalAHRS_MINS::var_info);
+        }
         return;
 #endif
 #if AP_EXTERNAL_AHRS_KY1_ENABLED
     case DevType::KY1:
         backend = NEW_NOTHROW AP_ExternalAHRS_KY1(this, state);
+        return;
+#endif
+#if AP_EXTERNAL_AHRS_KY2_ENABLED
+    case DevType::KY2:
+        backend = NEW_NOTHROW AP_ExternalAHRS_KY2(this, state);
+        _ky2_ptr = static_cast<AP_ExternalAHRS_KY2*>(backend);
+        if (_ky2_ptr) {
+            AP_Param::load_object_from_eeprom(_ky2_ptr, AP_ExternalAHRS_KY2::var_info);
+        }
         return;
 #endif
 #if AP_EXTERNAL_AHRS_SITL_ENABLED

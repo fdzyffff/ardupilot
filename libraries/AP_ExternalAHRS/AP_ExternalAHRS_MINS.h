@@ -49,6 +49,8 @@ public:
     void update_log();
     void update_print();
 
+    static const struct AP_Param::GroupInfo var_info[];
+
 protected:
 
     uint8_t num_gps_sensors(void) const override {
@@ -69,6 +71,10 @@ private:
     uint32_t last_ahrs_pkt;
     uint32_t _last_cal_ms;
     bool mag_calibrating;
+
+    // Parameters (subgroup under EAHRS_MINS_)
+    AP_Int8 _mag_cal_trigger;
+    AP_Int8 _log_level;
 
     struct {
         uint8_t cal_status;

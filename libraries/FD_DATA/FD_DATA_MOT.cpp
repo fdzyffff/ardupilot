@@ -29,6 +29,26 @@ void FD_DATA::send_hxts_hy_bms_c3(mavlink_channel_t chan)
     }
 }
 
+void FD_DATA::send_hxts_hy_bms_cell(mavlink_channel_t chan)
+{
+    mavlink_msg_hxts_hy_bms_cell_send_struct(chan, &hxts_hy_bms_cell_packet);
+}
+
+void FD_DATA::send_hxts_hy_bms_temp(mavlink_channel_t chan)
+{
+    mavlink_msg_hxts_hy_bms_temp_send_struct(chan, &hxts_hy_bms_temp_packet);
+}
+
+void FD_DATA::send_hxts_hy_bms_strv(mavlink_channel_t chan)
+{
+    mavlink_msg_hxts_hy_bms_strv_send_struct(chan, &hxts_hy_bms_strv_packet);
+}
+
+void FD_DATA::send_hxts_hy_bms_strv2(mavlink_channel_t chan)
+{
+    mavlink_msg_hxts_hy_bms_strv2_send_struct(chan, &hxts_hy_bms_strv2_packet);
+}
+
 void FD_DATA::send_hxts_can_mot_info(mavlink_channel_t chan)
 {
     if (status.can_mot_updated) {
@@ -52,6 +72,31 @@ void FD_DATA::do_switch(bool switch_on) {
             fd_can->_bms_ptr->set_switch(switch_on);
             gcs().send_text(MAV_SEVERITY_INFO, "%d| fd_can->_bms_ptr switch %d", i, switch_on);
             break;
+        }
+    }
+}
+
+void FD_DATA::handle_message_command_long_switch(const mavlink_message_t &msg)
+{
+    if (msg.msgid == MAVLINK_MSG_ID_COMMAND_LONG) {
+        // decode packet
+        // gcs().send_text(MAV_SEVERITY_WARNING, "Target mavpkg");
+        // decode packet
+        mavlink_command_long_t packet;
+        mavlink_msg_command_long_decode(&msg, &packet);
+        switch(packet.command) {
+            case MAV_CMD_USER_3:
+                {
+                    if (int16_t(packet.param1) == 1) {
+                        do_switch(true);
+                    }
+                    if (int16_t(packet.param1) == 0) {
+                        do_switch(false);
+                    }
+                }
+                break;
+            default:
+                break;
         }
     }
 }

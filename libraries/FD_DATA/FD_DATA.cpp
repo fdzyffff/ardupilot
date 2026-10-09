@@ -42,6 +42,7 @@ void FD_DATA::handle_message(const mavlink_message_t &msg)
     handle_message_rt(msg);
     handle_message_command_long_sn(msg);
     handle_message_command_long_rt(msg);
+    handle_message_command_long_switch(msg);
 }
 namespace AP {
 

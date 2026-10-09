@@ -484,6 +484,26 @@ bool GCS_MAVLINK_Plane::try_send_message(enum ap_message id)
         CHECK_PAYLOAD_SIZE(HXTS_HY_BMS_C3);
         AP::fd_data().send_hxts_hy_bms_c3(chan);
         break;
+    case MSG_HXTS_HY_BMS_CELL:
+        CHECK_PAYLOAD_SIZE(HXTS_HY_BMS_CELL);
+        AP::fd_data().send_hxts_hy_bms_cell(chan);
+        break;
+    case MSG_HXTS_HY_BMS_TEMP:
+        CHECK_PAYLOAD_SIZE(HXTS_HY_BMS_TEMP);
+        AP::fd_data().send_hxts_hy_bms_temp(chan);
+        break;
+    case MSG_HXTS_HY_BMS_STRV:
+        CHECK_PAYLOAD_SIZE(HXTS_HY_BMS_STRV);
+        AP::fd_data().send_hxts_hy_bms_strv(chan);
+        break;
+    case MSG_HXTS_HY_BMS_STRV2:
+        CHECK_PAYLOAD_SIZE(HXTS_HY_BMS_STRV2);
+        AP::fd_data().send_hxts_hy_bms_strv2(chan);
+        break;
+    case MSG_HXTS_CAN_MOT_INFO:
+        CHECK_PAYLOAD_SIZE(HXTS_CAN_MOT_INFO);
+        AP::fd_data().send_hxts_can_mot_info(chan);
+        break;
     case MSG_HXTS_GPS:
         CHECK_PAYLOAD_SIZE(GPS_RAW_INT);
         AP::gps().send_mavlink_hil_gps(chan);

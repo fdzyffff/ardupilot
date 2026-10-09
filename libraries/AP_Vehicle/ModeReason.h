@@ -73,4 +73,5 @@ enum class ModeReason : uint8_t {
   AUX_FUNCTION = 53,
   FENCE_REENABLE = 55,
   ATTACK_END = 56,
+  USER_FORCE_SAFE = 57,
 };
