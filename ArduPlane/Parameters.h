@@ -598,6 +598,10 @@ public:
 #if AP_PLANE_SYSTEMID_ENABLED
     AP_SystemID systemid;
 #endif
+
+    // 时统 GPIO，-1 关闭；对应 SERIALx_PROTOCOL 必须为 -1
+    AP_Int16        pps_out_pin;
+    AP_Int16        sync_in_pin;
 };
 
 extern const AP_Param::Info var_info[];

@@ -2,6 +2,8 @@
 
 #include <FD_UART/FD_UART.h>
 
+// 时统 GPIO 由参数 PPS_OUT_PIN / SYNC_IN_PIN 配置；对应 SERIALx_PROTOCOL 必须为 -1
+
 class Uart {
 
 public:
@@ -22,6 +24,11 @@ public:
     void handle_info_shuangmu();
     void handle_info_waibu();
     void send_hangdong();
+    void request_send();
+    void check_time_scale();
+    void pps_tick();
+    void sync_irq(uint8_t pin, bool state, uint32_t timestamp);
+    bool sync_valid() const;
     void get_Time(uint8_t &year_out, uint8_t &month_out, uint8_t &day_out, uint8_t &hour_out, uint8_t &minute_out, uint8_t &second_out);
     uint32_t get_time_ms(FD1_message::Time_t time);
     void set_tims_ms(FD1_message::Time_t &time);
@@ -33,19 +40,35 @@ private:
 
     uint32_t cali_last_ms;
     uint32_t cali_last_ms_global;
+    uint32_t time_check_ms;
+    uint32_t time_gps_sec_last;
+    uint32_t time_edge_local;
+    uint32_t time_edge_count;
+    int32_t time_edge_err_sum;
+
+    uint16_t pps_count;
+    int16_t pps_gpio;
+    int16_t sync_gpio;
+    bool timesync_printed;
+    volatile bool sync_pending;
+    volatile uint32_t sync_last_us;
+    volatile uint32_t sync_count;
 
     struct {
         uint32_t last_diaocang_ms;
         uint32_t last_huokong_ms;
         uint32_t last_huokong_ok_ms;
         uint32_t last_shuangmu_ms;
+        uint32_t last_waibu_ms;
         bool valid_diaocang;
         bool valid_huokong;
         bool valid_huokong_ok;
         bool valid_shuangmu;
+        bool valid_waibu;
         uint16_t count_diaocang;
         uint16_t count_huokong;
         uint16_t count_shuangmu;
+        uint16_t count_waibu;
         uint8_t target_diaocang;
     } status;
 

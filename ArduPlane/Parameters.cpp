@@ -1308,6 +1308,20 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_GROUPINFO("USR_CAL_PTH", 39, ParametersG2, usr_calibration_pitch, 0.0f),
     AP_GROUPINFO("USR_CAL_YAW", 40, ParametersG2, usr_calibration_yaw, 0.0f),
     AP_GROUPINFO("USR_PRINT", 41, ParametersG2, uart_print, 0),
+
+    // @Param: PPS_OUT_PIN
+    // @DisplayName: PPS output GPIO
+    // @Description: GPIO number driving the 1PPS output through the external RS-422 driver. -1 disables. The matching SERIALx_PROTOCOL must be -1 so the UART does not reclaim the pin.
+    // @Range: -1 255
+    // @User: Advanced
+    AP_GROUPINFO("PPS_OUT_PIN", 42, ParametersG2, pps_out_pin, 68),
+
+    // @Param: SYNC_IN_PIN
+    // @DisplayName: 20ms sync input GPIO
+    // @Description: GPIO number receiving the 20ms time-sync pulse from the external RS-422 receiver. -1 disables. The matching SERIALx_PROTOCOL must be -1 so the UART does not reclaim the pin.
+    // @Range: -1 255
+    // @User: Advanced
+    AP_GROUPINFO("SYNC_IN_PIN", 43, ParametersG2, sync_in_pin, 69),
     AP_GROUPEND
 };
 

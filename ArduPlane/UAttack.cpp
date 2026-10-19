@@ -25,6 +25,13 @@ const AP_Param::GroupInfo UAttack::var_info[] = {
 
     AP_SUBGROUPPTR(_Target_ptr_loc,           "TL_",    20, UAttack,  FD_Target_Loc),
     AP_SUBGROUPPTR(_Target_ptr_cam_FP847,     "TC_",    21, UAttack,  FD_Target_FP847),
+    AP_GROUPINFO("AIM_DIST",   22, UAttack, aim_dist,          60.0f),
+    AP_GROUPINFO("AWAY_DIST",  23, UAttack, away_dist,        120.0f),
+    AP_GROUPINFO("AWAY_PTH",   24, UAttack, away_pitch,        10.0f),
+    AP_GROUPINFO("AWAY_RLL",   25, UAttack, away_roll,         20.0f),
+    AP_GROUPINFO("REC_RAD",    26, UAttack, recover_radius,    2000),
+    AP_GROUPINFO("REC_DIST",   27, UAttack, recover_dist,    1000.0f),
+    AP_GROUPINFO("APR_DIST",   28, UAttack, approach_dist,    600.0f),
     AP_GROUPEND
 };
 
@@ -34,6 +41,8 @@ UAttack::UAttack()
 
     _last_yaw = 0.0f;
     _last_yaw_sample = 0.0f;
+    _target_dist = 0.0f;
+    _target_dist_ms = 0;
 }
 
 // initialise
@@ -390,4 +399,19 @@ void UAttack::do_print()
     if (print.get() & (1<<6)) { // 364
         gcs().send_text(MAV_SEVERITY_WARNING, "%0.0f , %0.0f , %0.0f , %0.0f", display_info.p11, display_info.p12, display_info.p13, display_info.p14);
     }
+}
+
+void UAttack::set_target_dist(float dist_m)
+{
+    _target_dist = dist_m;
+    _target_dist_ms = millis();
+}
+
+bool UAttack::get_target_dist(float &dist_m, uint32_t timeout_ms) const
+{
+    if (_target_dist_ms == 0 || (millis() - _target_dist_ms) > timeout_ms) {
+        return false;
+    }
+    dist_m = _target_dist;
+    return true;
 }

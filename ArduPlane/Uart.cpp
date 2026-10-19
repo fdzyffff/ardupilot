@@ -16,13 +16,45 @@
 
 Uart::Uart()
 {
-    ;
+    time_check_ms = 0;
+    time_gps_sec_last = 0;
+    time_edge_local = 0;
+    time_edge_count = 0;
+    time_edge_err_sum = 0;
+    pps_count = 0;
+    pps_gpio = -1;
+    sync_gpio = -1;
+    timesync_printed = false;
+    sync_pending = false;
+    sync_last_us = 0;
+    sync_count = 0;
 }
 
 // initialise
 void Uart::init()
 {
     _port = nullptr;
+
+    // 时统 GPIO 由 PPS_OUT_PIN / SYNC_IN_PIN 配置，-1 关闭；对应 SERIALx_PROTOCOL 必须为 -1
+    pps_gpio = plane.g2.pps_out_pin.get();
+    sync_gpio = plane.g2.sync_in_pin.get();
+#if !AP_SIM_ENABLED
+    if (pps_gpio >= 0) {
+        hal.gpio->pinMode(pps_gpio, HAL_GPIO_OUTPUT);
+        hal.gpio->write(pps_gpio, 0);
+    }
+    if (sync_gpio >= 0) {
+        hal.gpio->pinMode(sync_gpio, HAL_GPIO_INPUT);
+        hal.gpio->attach_interrupt(sync_gpio,
+                                   FUNCTOR_BIND_MEMBER(&Uart::sync_irq, void, uint8_t, bool, uint32_t),
+                                   AP_HAL::GPIO::INTERRUPT_RISING);
+    }
+#endif
+    hal.scheduler->register_timer_process(FUNCTOR_BIND_MEMBER(&Uart::pps_tick, void));
+
+    gcs().send_text(MAV_SEVERITY_WARNING, "TIMESYNC PPS_OUT_PIN=%d SYNC_IN_PIN=%d",
+                    (int)pps_gpio, (int)sync_gpio);
+
     const AP_SerialManager &serial_manager = AP::serialmanager();
 
     // check for protocol configured for a serial port - only the first serial port with one of these protocols will then run (cannot have FrSky on multiple serial ports)
@@ -38,7 +70,7 @@ void Uart::update()
     read_uart();
     write_uart();
     update_status();
-
+    check_time_scale();
     bool auto_switch0 = plane.uattack.is_active_cam();
     bool auto_switch1 = plane.control_mode == &plane.mode_auto;
     bool auto_switch2 = (status.valid_diaocang) && (status.target_diaocang>0);
@@ -90,6 +122,11 @@ void Uart::read_byte(uint8_t temp)
 
 void Uart::write_uart()
 {
+    // 20ms 时统中断只置同步标志，打包发送仍在 100Hz 任务里做
+    if (sync_pending) {
+        sync_pending = false;
+        request_send();
+    }
     send_hangdong();
 }
 
@@ -148,6 +185,19 @@ void Uart::update_status()
         }
         status.valid_shuangmu = true;
     }
+
+    // update status of waibu
+    if (millis() - status.last_waibu_ms > 2000) {
+        if (status.valid_waibu) {
+            gcs().send_text(MAV_SEVERITY_INFO, "MSG Waibu Lost");
+        }
+        status.valid_waibu = false;
+    } else {
+        if (!status.valid_waibu) {
+            gcs().send_text(MAV_SEVERITY_INFO, "MSG Waibu Get");
+        }
+        status.valid_waibu = true;
+    }
 }
 
 void Uart::handle_info_diaocang()
@@ -158,6 +208,11 @@ void Uart::handle_info_diaocang()
         // 目标i跟踪好
         {
             status.target_diaocang++;
+
+            uint16_t target_dist = uart_msg_diaocang_cast._msg_1.content.msg.target_dist;
+            if (target_dist > 0) {
+                plane.uattack.set_target_dist((float)target_dist);
+            }
 
             float gimbal_yaw = uart_msg_diaocang_cast.get_angle(uart_msg_diaocang_cast._msg_1.content.msg.gimbal_yaw);
             float gimbal_pitch = uart_msg_diaocang_cast.get_angle(uart_msg_diaocang_cast._msg_1.content.msg.gimbal_pitch);
@@ -214,7 +269,7 @@ void Uart::handle_info_huokong()
     }
 
     cali_last_ms = millis();
-    cali_last_ms_global = get_time_ms(uart_msg_diaocang_cast._msg_1.content.msg.time);
+    cali_last_ms_global = get_time_ms(uart_msg_huokong_cast._msg_1.content.msg.time);
 
     status.last_huokong_ms = millis();
     status.count_huokong++;
@@ -228,9 +283,12 @@ void Uart::handle_info_shuangmu()
 
 void Uart::handle_info_waibu()
 {
+    status.last_waibu_ms = millis();
+    status.count_waibu++;
     Location base_loc;
-    base_loc.lat = uart_msg_waibu_single._msg_1.content.msg.base_loc.lat;
-    base_loc.lng = uart_msg_waibu_single._msg_1.content.msg.base_loc.lng;
+    // 协议 Loc_t 的经纬度是 1e-6 度，Location 内部是 1e-7 度
+    base_loc.lat = (int32_t)uart_msg_waibu_single._msg_1.content.msg.base_loc.lat * 10;
+    base_loc.lng = (int32_t)uart_msg_waibu_single._msg_1.content.msg.base_loc.lng * 10;
     if ((uart_msg_waibu_single._msg_1.content.msg.base_loc.quadrant &0xF) == 0x02) {
         base_loc.lat = -base_loc.lat;
     }
@@ -258,15 +316,19 @@ void Uart::handle_info_waibu()
 
 void Uart::send_hangdong()
 {
-    // check send condition
+    // 20ms 周期作为保底；收到触发指令（need_send）时立即发送
     static uint32_t last_ms = millis();
     uint32_t now = millis();
-    if (now - last_ms < 20) {
+    // 有 20ms 时统时只在时统沿发送；时统丢失（>100ms 无沿）才回落到内部 20ms 周期
+    const bool periodic = !sync_valid() && ((now - last_ms) >= 20);
+    const bool triggered = uart_msg_hangdong_cast._msg_1.need_send;
+    if (!periodic && !triggered) {
         return;
     }
-    last_ms = now;
 
     if (get_port() == nullptr) {return;}
+
+    last_ms = now;
 
     set_tims_ms(uart_msg_hangdong_cast._msg_1.content.msg.time);
     uart_msg_hangdong_cast._msg_1.content.msg.status_1 = 0b0010111;
@@ -341,26 +403,148 @@ void Uart::send_hangdong()
 
     uart_msg_hangdong_cast.make_sum();
     get_port()->write(uart_msg_hangdong_cast._msg_1.content.data, uart_msg_hangdong_cast._msg_1.content.msg.length);
+    uart_msg_hangdong_cast._msg_1.need_send = false;
     // gcs().send_text(MAV_SEVERITY_INFO, "r: %0.1f, p: %0.1f, y: %0.1f", degrees(earth_rate.x), degrees(earth_rate.y), degrees(earth_rate.z));
+}
+
+void Uart::request_send()
+{
+    uart_msg_hangdong_cast._msg_1.need_send = true;
+}
+
+// 1kHz 定时器：1pps，脉宽 10ms
+void Uart::pps_tick()
+{
+    if (pps_gpio < 0) {
+        return;
+    }
+#if !AP_SIM_ENABLED
+    hal.gpio->write(pps_gpio, pps_count < 10);
+#endif
+    if (++pps_count >= 1000) {
+        pps_count = 0;
+    }
+}
+
+// 20ms 时统上升沿中断
+void Uart::sync_irq(uint8_t pin, bool state, uint32_t timestamp)
+{
+    if (!state) {
+        return;
+    }
+    sync_last_us = timestamp;
+    sync_count++;
+    sync_pending = true;
+}
+
+bool Uart::sync_valid() const
+{
+    return (sync_gpio >= 0) && (sync_count > 0) && ((AP_HAL::micros() - sync_last_us) < 100000);
+}
+
+void Uart::check_time_scale()
+{
+    if (AP::gps().status() < AP_GPS::GPS_OK_FIX_3D) {
+        time_check_ms = 0;
+        return;
+    }
+
+    const uint32_t now = millis();
+    const uint32_t gps_ms = AP::gps().time_week_ms();
+
+    if (time_check_ms == 0) {
+        time_check_ms = now;
+        time_gps_sec_last = gps_ms / 1000;
+        time_edge_local = now;
+        time_edge_count = 0;
+        time_edge_err_sum = 0;
+        return;
+    }
+
+    // GPS 时间随每次定位更新（5Hz），只在整秒跳变时取基准
+    const uint32_t gps_sec = gps_ms / 1000;
+    if (gps_sec == time_gps_sec_last) {
+        return;
+    }
+    time_gps_sec_last = gps_sec;
+
+    const uint32_t dt = now - time_edge_local;
+    time_edge_local = now;
+    if (time_edge_count > 0 && dt < 2000) {
+        time_edge_err_sum += (int32_t)dt - 1000;
+    }
+    time_edge_count++;
+
+    if (time_edge_count >= 60 && (time_edge_count % 60) == 0) {
+        const int32_t mean = time_edge_err_sum / (int32_t)(time_edge_count - 1);
+        const int32_t ppm = mean * 1000;
+        gcs().send_text(MAV_SEVERITY_INFO, "UTIM n=%lu e=%ld ppm=%ld",
+                        (unsigned long)time_edge_count, (long)mean, (long)ppm);
+    }
 }
 
 void Uart::do_print()
 {
+    // 开机文本在 GCS 通道就绪前会丢，延迟到 5s 再补一次引脚配置
+    if (!timesync_printed && millis() > 5000) {
+        gcs().send_text(MAV_SEVERITY_WARNING, "TIMESYNC PPS_OUT_PIN=%d SYNC_IN_PIN=%d",
+                        (int)pps_gpio, (int)sync_gpio);
+        timesync_printed = true;
+    }
     if (plane.g2.uart_print.get() > 0) {
         gcs().send_text(MAV_SEVERITY_WARNING, "|~~~~~~~ MSG ~~~~~~~|");
     }
     // put your 1Hz code here
+
+    // 发送方向：航动发出去的位置+姿态（证明发了且值对）
     if (plane.g2.uart_print.get() & (1<<0)) { // 1
-        gcs().send_text(MAV_SEVERITY_WARNING, "HK status [%d] %d, %0.0f, %0.0f", status.count_huokong, uart_msg_huokong_cast._msg_1.content.msg.status_1, uart_msg_huokong_cast.get_angle(uart_msg_huokong_cast._msg_1.content.msg.aim_yaw), uart_msg_huokong_cast.get_angle(uart_msg_huokong_cast._msg_1.content.msg.aim_pitch));
+        const FD1_msg_hangdong_cast::MSG_Collection &m = uart_msg_hangdong_cast._msg_1.content.msg;
+        float lat_deg = (float)m.current_loc.lat / 1e6f;
+        if (m.current_loc.quadrant & 0x02) { lat_deg = -lat_deg; }
+        float lng_deg = (float)m.current_loc.lng / 1e6f;
+        if (m.current_loc.quadrant & 0x20) { lng_deg = -lng_deg; }
+        gcs().send_text(MAV_SEVERITY_WARNING, "HD send lat=%.6f lng=%.6f alt=%d yaw=%.1f pit=%.1f rol=%.1f gspd=%d",
+                        lat_deg, lng_deg, (int)m.current_loc.abs_alt,
+                        (float)m.yaw/10000.0f, (float)m.pitch/10000.0f, (float)m.roll/10000.0f, (int)m.ground_speed);
     }
+
+    // 接收方向：火控诸元
     if (plane.g2.uart_print.get() & (1<<1)) { // 2
-        gcs().send_text(MAV_SEVERITY_WARNING, "DC status [%d] %d, %0.0f, %0.0f, %d", status.count_diaocang, uart_msg_diaocang_cast._msg_1.content.msg.status_1, uart_msg_diaocang_cast.get_angle(uart_msg_diaocang_cast._msg_1.content.msg.gimbal_yaw), uart_msg_diaocang_cast.get_angle(uart_msg_diaocang_cast._msg_1.content.msg.gimbal_pitch), uart_msg_diaocang_cast._msg_1.content.msg.target_dist);
+        const FD1_msg_huokong_cast::MSG_Collection &m = uart_msg_huokong_cast._msg_1.content.msg;
+        gcs().send_text(MAV_SEVERITY_WARNING, "HK recv [%d] st=%d aim=(%.1f,%.1f) tlat=%lu tlng=%lu",
+                        status.count_huokong, m.status_1,
+                        uart_msg_huokong_cast.get_angle(m.aim_yaw), uart_msg_huokong_cast.get_angle(m.aim_pitch),
+                        (unsigned long)m.target_loc.lat, (unsigned long)m.target_loc.lng);
     }
+
+    // 接收方向：吊舱
     if (plane.g2.uart_print.get() & (1<<2)) { // 4
-        gcs().send_text(MAV_SEVERITY_WARNING, "SH status [%d] %d, %0.0f, %0.0f", status.count_shuangmu, uart_msg_shuangmu_cast._msg_1.content.msg.status_1, (float)(uart_msg_shuangmu_cast._msg_1.content.msg.target.yaw)*0.001f, (float)(uart_msg_shuangmu_cast._msg_1.content.msg.target.pitch)*0.001f);
+        const FD1_msg_diaocang_cast::MSG_Collection &m = uart_msg_diaocang_cast._msg_1.content.msg;
+        gcs().send_text(MAV_SEVERITY_WARNING, "DC recv [%d] st=%d dist=%d gyaw=%.1f gpit=%.1f",
+                        status.count_diaocang, m.status_1, (int)m.target_dist,
+                        uart_msg_diaocang_cast.get_angle(m.gimbal_yaw), uart_msg_diaocang_cast.get_angle(m.gimbal_pitch));
+    }
+
+    // 接收方向：双目
+    if (plane.g2.uart_print.get() & (1<<3)) { // 8
+        const FD1_msg_shuangmu_cast::MSG_Collection &m = uart_msg_shuangmu_cast._msg_1.content.msg;
+        gcs().send_text(MAV_SEVERITY_WARNING, "SH recv [%d] st=%d dist=%d tyaw=%.2f tpit=%.2f",
+                        status.count_shuangmu, m.status_1, (int)m.target_dist,
+                        (float)m.target.yaw*0.001f, (float)m.target.pitch*0.001f);
+    }
+
+    // 接收方向：任务/地面终端
+    if (plane.g2.uart_print.get() & (1<<4)) { // 16
+        const FD1_msg_waibu_single::MSG_Collection &m = uart_msg_waibu_single._msg_1.content.msg;
+        const FD1_msg_waibu_single::Target_base_t &t = m.target[0];
+        gcs().send_text(MAV_SEVERITY_WARNING, "WA recv [%d] ctl=%d blat=%lu blng=%lu R=%.1f A=%.2f E=%.2f",
+                        status.count_waibu, m.control_1,
+                        (unsigned long)m.base_loc.lat, (unsigned long)m.base_loc.lng,
+                        (float)t.R*0.1f, (float)t.A*0.01f, (float)t.E*0.01f);
     }
 
     status.count_huokong = 0;
     status.count_diaocang = 0;
     status.count_shuangmu = 0;
+    status.count_waibu = 0;
 }

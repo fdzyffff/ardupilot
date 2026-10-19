@@ -2280,7 +2280,6 @@ void QuadPlane::PosControlState::set_state(enum position_control_state s)
             // if it is active then the rate control should not be reset at all
             qp.attitude_control->reset_yaw_target_and_rate(false);
             pos1_speed_limit = plane.ahrs.groundspeed_vector().length();
-            done_accel_init = false;
         } else if (s == QPOS_AIRBRAKE) {
             // start with zero integrator on vertical throttle
             qp.pos_control->get_accel_z_pid().set_integrator(0);
@@ -2555,7 +2554,7 @@ void QuadPlane::vtol_position_controller(void)
         // calculate speed we should be at to reach the position2
         // target speed at the position2 distance threshold, assuming
         // Q_TRANS_DECEL is correct
-        const float stopping_speed = safe_sqrt(MAX(0, distance-position2_dist_threshold) * 2 * transition_decel) + position2_target_speed;
+        const float stopping_speed = safe_sqrt(MAX(0, distance-position2_dist_threshold) * 2 * transition_decel + sq(position2_target_speed));
 
         float target_speed = stopping_speed;
 
@@ -2585,14 +2584,12 @@ void QuadPlane::vtol_position_controller(void)
         plane.nav_controller->update_waypoint(plane.current_loc, loc);
 
         Vector2f target_speed_xy_cms;
-        Vector2f target_accel_cms;
         bool have_target_yaw = false;
         float target_yaw_deg;
         const float target_accel = MIN(accel_needed(distance, sq(closing_groundspeed)), transition_decel*2);
         if (distance > 0.1) {
             Vector2f diff_wp_norm = diff_wp.normalized();
             target_speed_xy_cms = diff_wp_norm * target_speed * 100;
-            target_accel_cms = diff_wp_norm * (-target_accel*100);
             target_yaw_deg = degrees(diff_wp_norm.angle());
             const float yaw_err_deg = wrap_180(target_yaw_deg - degrees(plane.ahrs.get_yaw()));
             bool overshoot = (closing_groundspeed < 0 || fabsf(yaw_err_deg) > 60);
@@ -2608,8 +2605,6 @@ void QuadPlane::vtol_position_controller(void)
                    point nose at the landing point. Set target speed
                    to our position2 threshold speed
                 */
-                target_accel_cms.zero();
-
                 // allow up to the WP speed when we are further away, slowing to the pos2 target speed
                 // when we are close
                 target_speed = linear_interpolate(position2_target_speed, wp_speed,
@@ -2645,22 +2640,14 @@ void QuadPlane::vtol_position_controller(void)
             poscontrol.pos1_speed_limit = sqrtf(rel_groundspeed_sq);
         }
 
-        // use input shaping and abide by accel and jerk limits
-        pos_control->input_vel_accel_xy(target_speed_xy_cms, target_accel_cms);
+        // POSITION1 only controls velocity: no deceleration feed-forward (the attitude
+        // controller turns it into a forced nose-up lean angle) and no position correction
+        pos_control->input_vel_accel_xy(target_speed_xy_cms, Vector2f());
+        pos_control->stop_pos_xy_stabilisation();
 
         // run horizontal velocity controller
         run_xy_controller(MAX(target_accel, transition_decel)*1.5);
 
-        if (!poscontrol.done_accel_init) {
-            /*
-              the pos controller init assumes zero accel, we need to
-              override that so that we can start decelerating more
-              quickly at the start of POSITION1
-             */
-            poscontrol.done_accel_init = true;
-            pos_control->set_accel_desired_xy_cmss(target_accel_cms);
-        }
-        
         // nav roll and pitch are controller by position controller
         plane.nav_roll_cd = pos_control->get_roll_cd();
         plane.nav_pitch_cd = pos_control->get_pitch_cd();
@@ -4363,8 +4350,8 @@ float QuadPlane::get_land_airspeed(void)
     }
 
     if (qstate == QPOS_AIRBRAKE) {
-        // during airbraking ask TECS to slow us to stall speed
-        return plane.aparm.airspeed_min;
+        // during airbraking ask TECS to slow us down below the POSITION1 exit threshold
+        return MAX(MAX(plane.aparm.airspeed_min-2, assist.speed)-2, 0);
     }
     
     // calculate speed based on landing desired velocity

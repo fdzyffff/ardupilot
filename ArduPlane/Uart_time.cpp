@@ -27,11 +27,12 @@ uint32_t Uart::get_time_ms(FD1_message::Time_t time)
 void Uart::set_tims_ms(FD1_message::Time_t &time)
 {
     uint32_t ms_global = cali_last_ms_global + millis() - cali_last_ms;
-    time.bits.ms = ms_global%(24 * 60 * 60 * 1000);
-    time.bits.sec = (ms_global/1000)%(24 * 60 * 60);
-    time.bits.min = (ms_global/(60 * 1000))%(24 * 60);
-    time.bits.h = (ms_global/(60 * 60 * 1000))%(24);
-    time.bits.day = (ms_global/(24 * 60 * 60 * 1000));
+    uint32_t ms_of_day = ms_global % 86400000UL;
+    time.bits.ms = ms_of_day % 1000;
+    time.bits.sec = (ms_of_day / 1000) % 60;
+    time.bits.min = (ms_of_day / 60000) % 60;
+    time.bits.h = (ms_of_day / 3600000) % 24;
+    time.bits.day = (ms_global / 86400000UL) & 0x1F;
 }
 
 void Uart::get_Time(uint8_t &year_out, uint8_t &month_out, uint8_t &day_out, uint8_t &hour_out, uint8_t &minute_out, uint8_t &second_out)

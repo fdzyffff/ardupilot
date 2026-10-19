@@ -37,6 +37,9 @@ public:
     void handle_attack_msg(const mavlink_message_t &msg);
     void handle_info(float p1, float p2, uint8_t cam_type);
 
+    void set_target_dist(float dist_m);
+    bool get_target_dist(float &dist_m, uint32_t timeout_ms) const;
+
     void update_target_pitch_rate();
     void update_target_roll_angle();
     void update_target_yaw_rate();
@@ -97,6 +100,13 @@ private:
     AP_Int8         use_target_cam_type;
     AP_Float        filt_yaw_hz;
     AP_Float        filt_pithc_hz;
+    AP_Float        aim_dist;
+    AP_Float        away_dist;
+    AP_Float        away_pitch;
+    AP_Float        away_roll;
+    AP_Int16        recover_radius;
+    AP_Float        recover_dist;
+    AP_Float        approach_dist;
     AC_PID          attack_roll_pid{0.5f, 0.1f, 0.01f, 0.0f, 1.0f, 5.0f, 5.0f, 5.0f, 0.5f};
 
     FD_Target_Base*       _Target_ptr_cam;
@@ -113,4 +123,6 @@ private:
     LowPassFilterConstDtFloat _pitch_sample_filter;
     float _last_yaw;
     float _last_yaw_sample;
+    float _target_dist;
+    uint32_t _target_dist_ms;
 };

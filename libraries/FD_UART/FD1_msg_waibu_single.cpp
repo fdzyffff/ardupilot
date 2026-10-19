@@ -47,7 +47,7 @@ void FD1_msg_waibu_single::parse(uint8_t temp)
             }
             break;
         case FD1UART_msg_parser::FD1UART_DATA:
-            if (_msg.read >= sizeof(_msg.data)-1) {
+            if (_msg.read >= sizeof(_msg.data)) {
                 _msg.msg_state = FD1UART_msg_parser::FD1UART_PREAMBLE1;
                 break;
             }

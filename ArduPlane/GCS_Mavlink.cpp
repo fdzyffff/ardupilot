@@ -1130,6 +1130,14 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_int_packet(const mavlink_command_in
         return MAV_RESULT_ACCEPTED;
 #endif
         
+    case MAV_CMD_USER_2:
+        // param1=1：触发式发送一帧航动数据（周期发送仍按 20ms 保底）
+        if (is_equal(packet.param1, 1.0f)) {
+            plane.uart.request_send();
+            return MAV_RESULT_ACCEPTED;
+        }
+        return MAV_RESULT_DENIED;
+
     default:
         return GCS_MAVLINK::handle_command_int_packet(packet, msg);
     }

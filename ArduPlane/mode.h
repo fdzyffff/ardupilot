@@ -925,7 +925,7 @@ public:
 
     enum class stage_class{
         APPROACH,
-        ATTACK,
+        AIM,
         AWAY,
         RECOVER,
     };
@@ -937,9 +937,9 @@ public:
 
     void run() override;
 
-    bool does_auto_navigation() const override { return (stage == stage_class::APPROACH); }
+    bool does_auto_navigation() const override { return (stage == stage_class::APPROACH) || (stage == stage_class::RECOVER); }
 
-    bool does_auto_throttle() const override { return (stage == stage_class::APPROACH); }
+    bool does_auto_throttle() const override { return (stage == stage_class::APPROACH) || (stage == stage_class::RECOVER); }
 
 
     void build_path();
@@ -953,6 +953,9 @@ public:
     bool check_target();
     void set_stage(ModeAttackLoc::stage_class stage_in);
     float get_cmd_throttle();
+    float get_target_distance(bool &valid);
+    void update_dist_source(uint8_t src);
+    void start_recover();
     Location target_loc;
 
 protected:
@@ -965,4 +968,7 @@ protected:
     } last_attack_info;
 
     stage_class stage;
+    Location recover_center;
+    int32_t recover_alt_cm;
+    uint8_t _dist_src;
 };
