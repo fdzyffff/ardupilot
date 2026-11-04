@@ -1259,6 +1259,8 @@ private:
     bool _precision_loiter_active; // true if user has switched on prec loiter
 #endif
 
+    float _target_yaw_rate;
+
 };
 
 

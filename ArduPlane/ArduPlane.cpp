@@ -144,6 +144,7 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
 #if AC_PRECLAND_ENABLED
     SCHED_TASK(precland_update, 400, 50, 160),
 #endif
+    SCHED_TASK(check_forced_rtl_or_qland, 1, 100, 163),
 };
 
 void Plane::get_scheduler_tasks(const AP_Scheduler::Task *&tasks,

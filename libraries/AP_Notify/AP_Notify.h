@@ -100,6 +100,12 @@ public:
 #if AP_NOTIFY_NEOPIXEL_ENABLED
         Notify_LED_NeoPixelRGB              = (1 << 18), // NeoPixel AdaFruit 4544 Worldsemi WS2811
 #endif
+#if AP_NOTIFY_LP5817_I2C_ENABLED
+        // NOTE: bit 19 is reserved for Notify_LED_ProfiLED_IOMCU (present in 4.7 upstream);
+        // LP5817 keeps bit 20 so NTF_LED_TYPES is portable between the 4.5.2
+        // and 4.7.0 ZFJL trees (1171655 enables it).
+        Notify_LED_LP5817_I2C_External      = (1 << 20), // LP5817
+#endif
         Notify_LED_MAX
     };
 
@@ -245,6 +251,7 @@ private:
     AP_Int8 _buzzer_level;
     AP_Int8 _buzzer_volume;
     AP_Int8 _led_len;
+    AP_Int8 _lp5817_current;
 
     char _send_text[NOTIFY_TEXT_BUFFER_SIZE];
     uint32_t _send_text_updated_millis; // last time text changed

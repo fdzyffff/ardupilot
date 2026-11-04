@@ -2,10 +2,10 @@
 
 #include "FD1_message.h"
 
-#define FD1_MSG_UOM_LEN 203
-#define FD1_MSG_UOM_MSG_NUM 21
-#define FD1_MSG_UOM_MSG_LENGT_MAX 20
-class FD1_msg_UOM : public FD1_message{
+#define FD1_MSG_RID_LEN 203
+#define FD1_MSG_RID_MSG_NUM 21
+#define FD1_MSG_RID_MSG_LENGT_MAX 20
+class FD1_msg_RID : public FD1_message{
 public:
     
     struct PACKED MSG_Collection {
@@ -18,7 +18,7 @@ public:
     // message structure
     union PACKED Content_1 {
         MSG_Collection msg;
-        uint8_t data[FD1_MSG_UOM_LEN];
+        uint8_t data[FD1_MSG_RID_LEN];
     };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -31,11 +31,11 @@ public:
         Content_1 content;
     };
 
-    FD1_msg_UOM();
+    FD1_msg_RID();
     
     /* Do not allow copies */
-    FD1_msg_UOM(const FD1_msg_UOM &other) = delete;
-    FD1_msg_UOM &operator=(const FD1_msg_UOM&) = delete;
+    FD1_msg_RID(const FD1_msg_RID &other) = delete;
+    FD1_msg_RID &operator=(const FD1_msg_RID&) = delete;
 
     void process_message(void) override;
     void parse(uint8_t temp) override;

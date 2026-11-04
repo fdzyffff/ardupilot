@@ -112,6 +112,9 @@ void ModeLoiter::run()
         loiter_nav->clear_pilot_desired_acceleration();
     }
 
+    _target_yaw_rate = 0.997f*_target_yaw_rate + 0.003f*target_yaw_rate;
+    target_yaw_rate = _target_yaw_rate;
+
     // relax loiter target if we might be landed
     if (copter.ap.land_complete_maybe) {
         loiter_nav->soften_for_landing();

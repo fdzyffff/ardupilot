@@ -30,6 +30,7 @@
 #include "ToneAlarm.h"
 #include "ToshibaLED_I2C.h"
 #include "LP5562.h"
+#include "LP5817_I2C.h"
 #include "VRBoard_LED.h"
 #include "DiscreteRGBLed.h"
 #include "DiscoLED.h"
@@ -215,7 +216,7 @@ const AP_Param::GroupInfo AP_Notify::var_info[] = {
     // @Param: LED_TYPES
     // @DisplayName: LED Driver Types
     // @Description: Controls what types of LEDs will be enabled
-    // @Bitmask: 0:Built-in LED, 1:Internal ToshibaLED, 2:External ToshibaLED, 3:External PCA9685, 4:Oreo LED, 5:DroneCAN, 6:NCP5623 External, 7:NCP5623 Internal, 8:NeoPixel, 9:ProfiLED, 10:Scripting, 11:DShot, 12:ProfiLED_SPI, 13:LP5562 External, 14: LP5562 Internal, 15:IS31FL3195 External, 16: IS31FL3195 Internal, 17: DiscreteRGB, 18: NeoPixelRGB
+    // @Bitmask: 0:Built-in LED, 1:Internal ToshibaLED, 2:External ToshibaLED, 3:External PCA9685, 4:Oreo LED, 5:DroneCAN, 6:NCP5623 External, 7:NCP5623 Internal, 8:NeoPixel, 9:ProfiLED, 10:Scripting, 11:DShot, 12:ProfiLED_SPI, 13:LP5562 External, 14: LP5562 Internal, 15:IS31FL3195 External, 16: IS31FL3195 Internal, 17: DiscreteRGB, 18: NeoPixelRGB, 20:LP5817 External
     // @User: Advanced
     AP_GROUPINFO("LED_TYPES", 6, AP_Notify, _led_type, DEFAULT_NTF_LED_TYPES),
 
@@ -240,6 +241,16 @@ const AP_Param::GroupInfo AP_Notify::var_info[] = {
     // @User: Advanced
     // @RebootRequired: True
     AP_GROUPINFO("LED_LEN", 9, AP_Notify, _led_len, NOTIFY_LED_LEN_DEFAULT),
+
+#if AP_NOTIFY_LP5817_I2C_ENABLED
+    // @Param: LP5817_CURRENT
+    // @DisplayName: LP5817 RGB LED maximum current
+    // @Description: Maximum current range for the LP5817 RGB LED driver.
+    // @Values: 0:25.5mA,1:51mA
+    // @User: Advanced
+    // @RebootRequired: True
+    AP_GROUPINFO("LP5817_CUR", 10, AP_Notify, _lp5817_current, 0),
+#endif
 
     AP_GROUPEND
 };
@@ -404,6 +415,21 @@ void AP_Notify::add_backends(void)
             case Notify_LED_IS31FL3195_I2C_Internal:
                 FOREACH_I2C_INTERNAL(b) {
                     ADD_BACKEND(new IS31FL3195(b, 0x54));
+                }
+                break;
+#endif
+#if AP_NOTIFY_LP5817_I2C_ENABLED
+            case Notify_LED_LP5817_I2C_External:
+                // Probe both external and internal buses: boards (e.g. APzH7)
+                // often route the user I2C connector over a bus that the hwdef
+                // marks internal because onboard sensors share it. Each backend
+                // asynchronously probes its own bus for 0x2D, so the LED is
+                // found regardless of which bus the board routes it to.
+                FOREACH_I2C_EXTERNAL(b) {
+                    ADD_BACKEND(new LP5817_I2C(b, _lp5817_current.get()));
+                }
+                FOREACH_I2C_INTERNAL(b) {
+                    ADD_BACKEND(new LP5817_I2C(b, _lp5817_current.get()));
                 }
                 break;
 #endif

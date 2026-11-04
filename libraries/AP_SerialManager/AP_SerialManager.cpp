@@ -587,8 +587,13 @@ void AP_SerialManager::init()
                                          AP_SERIALMANAGER_PPP_BUFSIZE_TX);
                     break;
 #endif
-                case SerialProtocol_UOM:
+                case SerialProtocol_RID:
                     uart->begin(state[i].baudrate(), 128, 128);
+                    break;
+
+                case SerialProtocol_RTKRID:
+                    // ASCII 命令型（*NAME_W:value#）：1 Hz 状态 + 15 s 探测 burst，TX 给 256
+                    uart->begin(state[i].baudrate(), 128, 256);
                     break;
                     
                 default:

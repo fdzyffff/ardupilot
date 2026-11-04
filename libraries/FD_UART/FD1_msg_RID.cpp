@@ -1,33 +1,33 @@
-#include "FD1_msg_UOM.h"
+#include "FD1_msg_RID.h"
 #include <GCS_MAVLink/GCS.h>
 #include <AP_HAL/AP_HAL.h>
 #include <cstdio>
 
 extern const AP_HAL::HAL &hal;
 
-FD1_msg_UOM::FD1_msg_UOM(void)
+FD1_msg_RID::FD1_msg_RID(void)
 {
     _enable = false;
     _msg_1.need_send = false;
     _msg_1.updated = false;
 }
 
-void FD1_msg_UOM::parse(uint8_t temp)
+void FD1_msg_RID::parse(uint8_t temp)
 {
     ;
 }
 
-void FD1_msg_UOM::process_message(void)
+void FD1_msg_RID::process_message(void)
 {
     ;
 }
 
-void FD1_msg_UOM::make_sum()
+void FD1_msg_RID::make_sum()
 {
     ;
 }
 
-void FD1_msg_UOM::make_init()
+void FD1_msg_RID::make_init()
 {
     _msg_1.content.msg.type = 255;
     _msg_1.content.msg.version = 1;
@@ -36,19 +36,19 @@ void FD1_msg_UOM::make_init()
     _msg_1.length = 4;
 }
 
-void FD1_msg_UOM::swap_message(void)
+void FD1_msg_RID::swap_message(void)
 {
     ;
 }
 
-bool FD1_msg_UOM::have_msg_id(uint8_t msg_id, uint8_t (&msg_mask)[4])
+bool FD1_msg_RID::have_msg_id(uint8_t msg_id, uint8_t (&msg_mask)[4])
 {
     uint8_t current_mask[4] = {0};
     get_msg_mask(msg_id, current_mask);
     return have_msg_mask(msg_mask, current_mask);
 }
 
-bool FD1_msg_UOM::have_msg_mask(uint8_t (&msg_mask)[4], uint8_t (&current_mask)[4])
+bool FD1_msg_RID::have_msg_mask(uint8_t (&msg_mask)[4], uint8_t (&current_mask)[4])
 {
     for (uint8_t i_mask = 0; i_mask < 4; i_mask ++) {
         if (msg_mask[i_mask] & current_mask[i_mask]) {
@@ -58,7 +58,7 @@ bool FD1_msg_UOM::have_msg_mask(uint8_t (&msg_mask)[4], uint8_t (&current_mask)[
     return false;
 }
 
-void FD1_msg_UOM::get_msg_mask(uint8_t msg_id, uint8_t (&msg_mask)[4])
+void FD1_msg_RID::get_msg_mask(uint8_t msg_id, uint8_t (&msg_mask)[4])
 {
     uint8_t shift_byte = (msg_id - 1) / 7;
     uint8_t shift_bit = 7 - ((msg_id - 1) % 7);
@@ -66,7 +66,7 @@ void FD1_msg_UOM::get_msg_mask(uint8_t msg_id, uint8_t (&msg_mask)[4])
     msg_mask[shift_byte] = 1 << (shift_bit);
 }
 
-uint8_t FD1_msg_UOM::get_msg_length(uint8_t msg_id)
+uint8_t FD1_msg_RID::get_msg_length(uint8_t msg_id)
 {
     switch (msg_id) {
         case 1:
@@ -116,7 +116,7 @@ uint8_t FD1_msg_UOM::get_msg_length(uint8_t msg_id)
     }
 }
 
-void FD1_msg_UOM::insert_msg(uint8_t msg_id, uint8_t (&msg_data)[20])
+void FD1_msg_RID::insert_msg(uint8_t msg_id, uint8_t (&msg_data)[20])
 {
     uint8_t msg_mask_length = 1;
 

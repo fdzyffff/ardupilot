@@ -83,7 +83,8 @@ public:
         // Reserving Serial Protocol 47 for SerialProtocol_IQ
         SerialProtocol_PPP = 48,
         SerialProtocol_BUZZER = 49,
-        SerialProtocol_UOM = 50,
+        SerialProtocol_RID = 50,
+        SerialProtocol_RTKRID = 51,                    // RID + RTK 一体化板卡（ASCII 命令协议）
         SerialProtocol_NumProtocols                    // must be the last value
     };
 

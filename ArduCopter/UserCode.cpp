@@ -1,5 +1,15 @@
 #include "Copter.h"
 
+// USER_FORCE_SAFE: 判定飞机解锁且位于 fence 坐标 100km 内时强制 LAND/RTL/DISARM
+// fence 中心: 40.1570981, 116.4080429 (北京)
+// 滞回: dist > 101km 复位触发; 100~101km 触发 RTL 一次;
+//       95~100km 每秒强制 LAND; <95km 强制上锁
+#define USER_FORCE_SAFE_FENCE_LAT     401570981    // deg * 1e7
+#define USER_FORCE_SAFE_FENCE_LNG     1164080429   // deg * 1e7
+#define USER_FORCE_SAFE_RADIUS_M      100000.0f    // 100 km 强制半径
+#define USER_FORCE_SAFE_REARM_M       101000.0f    // 101 km 复位半径
+#define USER_FORCE_SAFE_DISARM_M       95000.0f    //  95 km 强制上锁半径
+
 #ifdef USERHOOK_INIT
 void Copter::userhook_init()
 {
@@ -75,6 +85,7 @@ void Copter::userhook_SuperSlowLoop()
 
     AP::fd_data().set_uav_status(user_get_uav_status());
 
+    check_forced_land_or_rtl();
 }
 #endif
 
@@ -248,5 +259,48 @@ bool Copter::user_ekf_third_ok()
         }
     }
     return false;
+}
+
+// USER_FORCE_SAFE: 滞回判定, 1Hz 由 userhook_SuperSlowLoop 调用
+//   dist > 101km        复位触发标志, 不动作
+//   100km < dist <=101  首次进入触发 RTL 一次
+//   95km < dist <=100   每秒强制 LAND (不可切出)
+//   dist <= 95km        强制上锁
+void Copter::check_forced_land_or_rtl()
+{
+    if (!arming.is_armed()) {
+        return;
+    }
+
+    Location cur = current_loc;
+    if (cur.lat == 0 && cur.lng == 0) {
+        // current_loc 无数据, 尝试 GPS 后备
+        if (AP::gps().status() < AP_GPS::GPS_OK_FIX_2D) {
+            return;
+        }
+        cur = AP::gps().location();
+    }
+
+    Location fence_loc(USER_FORCE_SAFE_FENCE_LAT,
+                       USER_FORCE_SAFE_FENCE_LNG,
+                       0,
+                       Location::AltFrame::ABOVE_ORIGIN);
+    const float dist = cur.get_distance(fence_loc);
+
+    if (dist > USER_FORCE_SAFE_REARM_M) {
+        force_safe_triggered = false;
+    } else if (dist > USER_FORCE_SAFE_RADIUS_M) {
+        if (!force_safe_triggered) {
+            gcs().send_text(MAV_SEVERITY_CRITICAL, "Force Land for Safety Reason");
+            set_mode(Mode::Number::RTL, ModeReason::USER_FORCE_SAFE);
+            force_safe_triggered = true;
+        }
+    } else if (dist > USER_FORCE_SAFE_DISARM_M) {
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "Force Land for Safety Reason");
+        set_mode(Mode::Number::LAND, ModeReason::USER_FORCE_SAFE);
+    } else {
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "Force Disarm for Safety Reason");
+        arming.disarm(AP_Arming::Method::TERMINATION);
+    }
 }
 
